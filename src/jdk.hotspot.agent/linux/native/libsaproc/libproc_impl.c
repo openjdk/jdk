@@ -29,6 +29,7 @@
 #include <sys/procfs.h>
 #include "libproc_impl.h"
 #include "proc_service.h"
+#include "salibelf.h"
 
 #define SA_ALTROOT "SA_ALTROOT"
 
@@ -127,6 +128,7 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
      if (lib->symtab) {
         destroy_symtab(lib->symtab);
      }
+     free(lib->eh_frame.data);
      free(lib);
      lib = next;
    }
@@ -155,6 +157,81 @@ Prelease(struct ps_prochandle* ph) {
 
 lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base) {
    return add_lib_info_fd(ph, libname, -1, base);
+}
+
+static bool fill_instr_info(lib_info* lib) {
+  off_t current_pos;
+  ELF_EHDR ehdr;
+  ELF_PHDR* phbuf = NULL;
+  ELF_PHDR* ph = NULL;
+  int cnt;
+  long align = sysconf(_SC_PAGE_SIZE);
+
+  current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);
+  lseek(lib->fd, (off_t)0L, SEEK_SET);
+  read_elf_header(lib->fd, &ehdr);
+  if ((phbuf = read_program_header_table(lib->fd, &ehdr)) == NULL) {
+    lseek(lib->fd, current_pos, SEEK_SET);
+    return false;
+  }
+
+  lib->exec_start = (uintptr_t)-1L;
+  lib->exec_end = (uintptr_t)-1L;
+  for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
+    if ((ph->p_type == PT_LOAD) && (ph->p_flags & PF_X)) {
+      print_debug("[%d] vaddr = 0x%lx, memsz = 0x%lx, filesz = 0x%lx\n", cnt, ph->p_vaddr, ph->p_memsz, ph->p_filesz);
+      if ((lib->exec_start == -1L) || (lib->exec_start > ph->p_vaddr)) {
+        lib->exec_start = ph->p_vaddr;
+      }
+      if ((lib->exec_end == (uintptr_t)-1L) || (lib->exec_end < (ph->p_vaddr + ph->p_memsz))) {
+        lib->exec_end = ph->p_vaddr + ph->p_memsz;
+      }
+      align = ph->p_align;
+    }
+  }
+
+  free(phbuf);
+  lseek(lib->fd, current_pos, SEEK_SET);
+
+  if ((lib->exec_start == -1L) || (lib->exec_end == -1L)) {
+    return false;
+  } else {
+    lib->exec_start = (lib->exec_start + lib->base) & ~(align - 1);
+    lib->exec_end = (lib->exec_end + lib->base + align) & ~(align - 1);
+    return true;
+  }
+
+}
+
+bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
+  off_t current_pos = -1;
+  ELF_EHDR ehdr;
+  ELF_SHDR* shbuf = NULL;
+  ELF_SHDR* sh = NULL;
+  char* strtab = NULL;
+  void* result = NULL;
+  int cnt;
+
+  current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);
+  lseek(lib->fd, (off_t)0L, SEEK_SET);
+
+  read_elf_header(lib->fd, &ehdr);
+  shbuf = read_section_header_table(lib->fd, &ehdr);
+  strtab = read_section_data(lib->fd, &ehdr, &shbuf[ehdr.e_shstrndx]);
+
+  for (cnt = 0, sh = shbuf; cnt < ehdr.e_shnum; cnt++, sh++) {
+    if (strcmp(".eh_frame", sh->sh_name + strtab) == 0) {
+      lib->eh_frame.library_base_addr = lib->base;
+      lib->eh_frame.v_addr = sh->sh_addr;
+      lib->eh_frame.data = read_section_data(lib->fd, &ehdr, sh);
+      break;
+    }
+  }
+
+  free(strtab);
+  free(shbuf);
+  lseek(lib->fd, current_pos, SEEK_SET);
+  return lib->eh_frame.data != NULL;
 }
 
 lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base) {
@@ -195,6 +272,14 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
    newlib->symtab = build_symtab(newlib->fd, libname);
    if (newlib->symtab == NULL) {
       print_debug("symbol table build failed for %s\n", newlib->name);
+   }
+
+   if (fill_instr_info(newlib)) {
+     if (!read_eh_frame(ph, newlib)) {
+       print_debug("Could not find .eh_frame section in %s\n", newlib->name);
+     }
+   } else {
+      print_debug("Could not find executable section in %s\n", newlib->name);
    }
 
    // even if symbol table building fails, we add the lib_info.
@@ -354,6 +439,17 @@ bool find_lib(struct ps_prochandle* ph, const char *lib_name) {
     p = p->next;
   }
   return false;
+}
+
+struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc) {
+  lib_info *p = ph->libs;
+  while (p) {
+    if ((p->exec_start <= pc) && (pc < p->exec_end)) {
+      return p;
+    }
+    p = p->next;
+  }
+  return NULL;
 }
 
 //--------------------------------------------------------------------------

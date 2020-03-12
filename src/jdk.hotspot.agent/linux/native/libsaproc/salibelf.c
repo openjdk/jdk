@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,4 +123,33 @@ uintptr_t find_base_address(int fd, ELF_EHDR* ehdr) {
 quit:
   if (phbuf) free(phbuf);
   return baseaddr;
+}
+
+struct elf_section *find_section_by_name(char *name,
+                                         int fd,
+                                         ELF_EHDR *ehdr,
+                                         struct elf_section *scn_cache) {
+  char *strtab;
+  int cnt;
+  int strtab_size;
+
+  // Section cache have to already contain data for e_shstrndx section.
+  // If it's not true - elf file is broken, so just bail out
+  if (scn_cache[ehdr->e_shstrndx].c_data == NULL) {
+    return NULL;
+  }
+
+  strtab = scn_cache[ehdr->e_shstrndx].c_data;
+  strtab_size = scn_cache[ehdr->e_shstrndx].c_shdr->sh_size;
+
+  for (cnt = 0; cnt < ehdr->e_shnum; ++cnt) {
+    if (scn_cache[cnt].c_shdr->sh_name < strtab_size) {
+      if (strcmp(scn_cache[cnt].c_shdr->sh_name + strtab, name) == 0) {
+        scn_cache[cnt].c_data = read_section_data(fd, ehdr, scn_cache[cnt].c_shdr);
+        return &scn_cache[cnt];
+      }
+    }
+  }
+
+  return NULL;
 }
