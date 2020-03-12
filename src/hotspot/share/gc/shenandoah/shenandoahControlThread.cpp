@@ -178,6 +178,9 @@ void ShenandoahControlThread::run_service() {
     if (gc_requested) {
       heap->reset_bytes_allocated_since_gc_start();
 
+      // Use default constructor to snapshot the Metaspace state before GC.
+      metaspace::MetaspaceSizesSnapshot meta_sizes;
+
       // If GC was requested, we are sampling the counters even without actual triggers
       // from allocation machinery. This captures GC phases more accurately.
       set_forced_counters_update(true);
@@ -187,28 +190,24 @@ void ShenandoahControlThread::run_service() {
         ShenandoahHeapLocker locker(heap->lock());
         heap->free_set()->log_status();
       }
-    }
 
-    switch (mode) {
-      case none:
-        break;
-      case concurrent_traversal:
-        service_concurrent_traversal_cycle(cause);
-        break;
-      case concurrent_normal:
-        service_concurrent_normal_cycle(cause);
-        break;
-      case stw_degenerated:
-        service_stw_degenerated_cycle(cause, degen_point);
-        break;
-      case stw_full:
-        service_stw_full_cycle(cause);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+      switch (mode) {
+        case concurrent_traversal:
+          service_concurrent_traversal_cycle(cause);
+          break;
+        case concurrent_normal:
+          service_concurrent_normal_cycle(cause);
+          break;
+        case stw_degenerated:
+          service_stw_degenerated_cycle(cause, degen_point);
+          break;
+        case stw_full:
+          service_stw_full_cycle(cause);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
 
-    if (gc_requested) {
       // If this was the requested GC cycle, notify waiters about it
       if (explicit_gc_requested || implicit_gc_requested) {
         notify_gc_waiters();
@@ -243,6 +242,9 @@ void ShenandoahControlThread::run_service() {
       if (heap->unload_classes()) {
         heuristics->clear_metaspace_oom();
       }
+
+      // Print Metaspace change following GC (if logging is enabled).
+      MetaspaceUtils::print_metaspace_change(meta_sizes);
 
       // GC is over, we are at idle now
       if (ShenandoahPacing) {
