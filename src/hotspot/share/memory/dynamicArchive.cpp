@@ -956,7 +956,7 @@ void DynamicArchiveBuilder::relocate_buffer_to_target() {
   RelocateBufferToTarget patcher(this, (address*)_alloc_bottom, _buffer_to_target_delta);
   ArchivePtrMarker::ptrmap()->iterate(&patcher);
 
-  Array<u8>* table = FileMapInfo::shared_path_table().table();
+  Array<u8>* table = FileMapInfo::saved_shared_path_table().table();
   SharedPathTable runtime_table(to_target(table), FileMapInfo::shared_path_table().size());
   _header->set_shared_path_table(runtime_table);
 

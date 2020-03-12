@@ -1375,7 +1375,7 @@ public:
         it->push(_global_klass_objects->adr_at(i));
       }
     }
-    FileMapInfo::metaspace_pointers_do(it);
+    FileMapInfo::metaspace_pointers_do(it, false);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     SymbolTable::metaspace_pointers_do(it);
