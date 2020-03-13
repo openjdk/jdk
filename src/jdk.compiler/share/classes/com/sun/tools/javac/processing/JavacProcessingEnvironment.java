@@ -1636,6 +1636,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 }
                 if (node.sym != null) {
                     node.sym.completer = new ImplicitCompleter(topLevel);
+                    List<? extends RecordComponent> recordComponents = node.sym.getRecordComponents();
+                    for (RecordComponent rc : recordComponents) {
+                        List<JCAnnotation> originalAnnos = rc.getOriginalAnnos();
+                        originalAnnos.stream().forEach(a -> visitAnnotation(a));
+                    }
                 }
                 node.sym = null;
             }
