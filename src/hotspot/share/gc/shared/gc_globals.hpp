@@ -187,10 +187,6 @@
              "Inject thread creation failures for "                         \
              "UseDynamicNumberOfGCThreads")                                 \
                                                                             \
-  diagnostic(bool, ForceDynamicNumberOfGCThreads, false,                    \
-          "Force dynamic selection of the number of "                       \
-          "parallel threads parallel gc will use to aid debugging")         \
-                                                                            \
   product(size_t, HeapSizePerGCThread, ScaleForWordSize(32*M),              \
           "Size of heap (bytes) per GC thread used in calculating the "     \
           "number of GC threads")                                           \
