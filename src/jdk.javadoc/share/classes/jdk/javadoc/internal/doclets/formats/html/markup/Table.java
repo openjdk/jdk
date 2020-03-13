@@ -357,7 +357,7 @@ public class Table extends Content {
 
         if (stripedStyles != null) {
             int rowIndex = bodyRows.size();
-            row.put(HtmlAttr.CLASS, stripedStyles.get(rowIndex % 2).name());
+            row.setStyle(stripedStyles.get(rowIndex % 2));
         }
         int colIndex = 0;
         for (Content c : contents) {
@@ -444,7 +444,7 @@ public class Table extends Content {
                 }
             }
             HtmlTree tabpanel = new HtmlTree(HtmlTag.DIV)
-                    .put(HtmlAttr.ID, tableStyle + "_tabpanel")
+                    .put(HtmlAttr.ID, tableStyle.cssName() + "_tabpanel")
                     .put(HtmlAttr.ROLE, "tabpanel");
             table.add(getTableBody());
             tabpanel.add(table);
@@ -458,7 +458,7 @@ public class Table extends Content {
         HtmlTree tab = new HtmlTree(HtmlTag.BUTTON)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
-                .put(HtmlAttr.ARIA_CONTROLS, tableStyle + "_tabpanel")
+                .put(HtmlAttr.ARIA_CONTROLS, tableStyle.cssName() + "_tabpanel")
                 .put(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
                 .put(HtmlAttr.ONKEYDOWN, "switchTab(event)")
                 .put(HtmlAttr.ID, tabId)
@@ -543,7 +543,7 @@ public class Table extends Content {
 
     private void appendStyleInfo(StringBuilder sb, HtmlStyle... styles) {
         for (HtmlStyle style : styles) {
-            sb.append("var ").append(style).append(" = \"").append(style).append("\";\n");
+            sb.append("var ").append(style.name()).append(" = \"").append(style.cssName()).append("\";\n");
         }
 
     }

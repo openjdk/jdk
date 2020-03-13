@@ -69,8 +69,8 @@ public class TestPrivateClasses extends JavadocTester {
                 + "<div class=\"inheritance\">pkg.PublicChild</div>\n"
                 + "</div>",
                 // Method is documented as though it is declared in the inheriting method.
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">"
                 + "methodInheritedFromParent</span>&#8203;(<span class=\"arguments\">int&nbsp;p1)</span>\n"
                 + "                               throws <span class=\"exceptions\">java.lang.Exception</span></div>",
                 "<dl class=\"notes\">\n"
@@ -92,12 +92,12 @@ public class TestPrivateClasses extends JavadocTester {
 
         checkOutput("pkg/PublicChild.html", false,
                 // Should not document comments from private inherited interfaces
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-last\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#methodInterface(int)\">"
                 + "methodInterface</a></span>&#8203;(int&nbsp;p1)</code>\n"
                 + "<div class=\"block\">Comment from interface.</div>\n</td>",
                 // and similarly one more
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-last\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#methodInterface2(int)\">"
                 + "methodInterface2</a></span>&#8203;(int&nbsp;p1)</code>\n"
                 + "<div class=\"block\">Comment from interface.</div>\n</td>"
@@ -130,7 +130,7 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg2/C.html", false,
                 //Do not inherit private interface method with generic parameters.
                 //This method has been implemented.
-                "<span class=\"memberNameLink\"><a href=\"I.html#hello(T)\">hello</a></span>");
+                "<span class=\"member-name-link\"><a href=\"I.html#hello(T)\">hello</a></span>");
 
         checkOutput("constant-values.html", false,
                 // Make inherited constant are documented correctly.
@@ -181,7 +181,7 @@ public class TestPrivateClasses extends JavadocTester {
                 + "<code><a href=\"PublicInterface.html\" title=\"interface in pkg\">"
                 + "PublicInterface</a></code></dd>\n"
                 + "</dl>",
-                "<pre>public class <span class=\"typeNameLabel\">PublicChild</span>");
+                "<pre>public class <span class=\"type-name-label\">PublicChild</span>");
 
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritence from non-public superinterface.
@@ -214,7 +214,7 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg2/C.html", true,
                 //Since private flag is used, we can document that private interface method
                 //with generic parameters has been implemented.
-                "<span class=\"descfrmTypeLabel\">Description copied from interface:&nbsp;<code>"
+                "<span class=\"descfrm-type-label\">Description copied from interface:&nbsp;<code>"
                 + "<a href=\"I.html#hello(T)\">I</a></code></span>",
                 "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"I.html#hello(T)\">hello</a></code>"
@@ -225,9 +225,9 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PrivateParent.html", true,
                 //Make sure when no modifier appear in the class signature, the
                 //signature is displayed correctly without extra space at the beginning.
-                "<pre>class <span class=\"typeNameLabel\">PrivateParent</span>");
+                "<pre>class <span class=\"type-name-label\">PrivateParent</span>");
 
         checkOutput("pkg/PrivateParent.html", false,
-                "<pre> class <span class=\"typeNameLabel\">PrivateParent</span>");
+                "<pre> class <span class=\"type-name-label\">PrivateParent</span>");
     }
 }

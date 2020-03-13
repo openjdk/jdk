@@ -74,7 +74,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("index.html",
-                "<header role=\"banner\" class=\"flexHeader\">\n"
+                "<header role=\"banner\" class=\"flex-header\">\n"
                 + "<nav role=\"navigation\">",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">\n"
@@ -98,7 +98,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("index.html",
-                "<header role=\"banner\" class=\"flexHeader\">\n"
+                "<header role=\"banner\" class=\"flex-header\">\n"
                 + "<nav role=\"navigation\">",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">\n"
@@ -130,7 +130,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg1/doc-files/s.html",
-                "<header role=\"banner\" class=\"flexHeader\">\n"
+                "<header role=\"banner\" class=\"flex-header\">\n"
                 + "<nav role=\"navigation\">\n",
                 "<main role=\"main\">"
                 + "A sample doc file",

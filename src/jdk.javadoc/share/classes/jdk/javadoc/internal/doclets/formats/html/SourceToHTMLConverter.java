@@ -287,7 +287,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(HtmlTag.BODY).put(HtmlAttr.CLASS, "source");
+        return new HtmlTree(HtmlTag.BODY).setStyle(HtmlStyle.source);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,18 +61,18 @@ public class TestAnchorNames extends JavadocTester {
 
         // Test some section markers and links to these markers
         checkOutput("pkg1/RegClass.html", true,
-                "<span class=\"skipNav\" id=\"skip.navbar.top\">",
+                "<span class=\"skip-nav\" id=\"skip.navbar.top\">",
                 "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">",
-                "<section class=\"nestedClassSummary\" id=\"nested.class.summary\">\n"
+                "<section class=\"nested-class-summary\" id=\"nested.class.summary\">\n"
                 + "<h2>Nested Class Summary</h2>",
                 "<a href=\"#nested.class.summary\">",
-                "<section class=\"methodSummary\" id=\"method.summary\">\n"
+                "<section class=\"method-summary\" id=\"method.summary\">\n"
                 + "<h2>Method Summary</h2>",
                 "<a href=\"#method.summary\">",
-                "<section class=\"fieldDetails\" id=\"field.detail\">\n"
+                "<section class=\"field-details\" id=\"field.detail\">\n"
                 + "<h2>Field Details</h2>",
                 "<a href=\"#field.detail\">",
-                "<section class=\"constructorDetails\" id=\"constructor.detail\">\n"
+                "<section class=\"constructor-details\" id=\"constructor.detail\">\n"
                 + "<h2>Constructor Details</h2>",
                 "<a href=\"#constructor.detail\">");
 
@@ -155,7 +155,7 @@ public class TestAnchorNames extends JavadocTester {
         // Test serialized form page
         checkOutput("serialized-form.html", true,
                 //This is the marker for the link that appears in the pkg1.RegClass.html page
-                "<section class=\"serializedClassDetails\" id=\"pkg1.RegClass\">");
+                "<section class=\"serialized-class-details\" id=\"pkg1.RegClass\">");
 
         // Test member name index page
         checkOutput("index-all.html", true,

@@ -77,7 +77,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("com.ex2/com/ex2/B.html", true,
                 "<a href=\"../../../../out1a/com.ex1/com/ex1/A.html\" "
-                + "title=\"class or interface in com.ex1\" class=\"externalLink\">A</a>");
+                + "title=\"class or interface in com.ex1\" class=\"external-link\">A</a>");
     }
 
     @Test
@@ -96,7 +96,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("com/ex2/B.html", true,
                 "<a href=\"../../../out2a/com/ex1/A.html\" title=\"class or interface in com.ex1\" "
-                + "class=\"externalLink\">A</a>");
+                + "class=\"external-link\">A</a>");
     }
 
     @Test

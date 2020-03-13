@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,22 +88,22 @@ public class TestIndexInPackageFiles extends JavadocTester {
         // to match the A-Z index files checked here.
 
         checkOutput("p/q/package-summary.html", true,
-            "<span id=\"test.name.1\" class=\"searchTagResult\">test.name.1</span>",
-            "<span id=\"test.property.1\" class=\"searchTagResult\">test.property.1</span>");
+            "<span id=\"test.name.1\" class=\"search-tag-result\">test.name.1</span>",
+            "<span id=\"test.property.1\" class=\"search-tag-result\">test.property.1</span>");
 
         checkOutput("p/q/doc-files/extra.html", true,
-            "<span id=\"test.name.2\" class=\"searchTagResult\">test.name.2</span>",
-            "<span id=\"test.property.2\" class=\"searchTagResult\">test.property.2</span>");
+            "<span id=\"test.name.2\" class=\"search-tag-result\">test.name.2</span>",
+            "<span id=\"test.property.2\" class=\"search-tag-result\">test.property.2</span>");
 
         checkOutput("index.html", true,
-            "<span id=\"test.name.3\" class=\"searchTagResult\">test.name.3</span>");
+            "<span id=\"test.name.3\" class=\"search-tag-result\">test.name.3</span>");
 
         checkOutput("index-all.html", true,
-            "<span class=\"searchTagLink\"><a href=\"p/q/package-summary.html#test.name.1\">test.name.1</a></span>",
-            "<span class=\"searchTagLink\"><a href=\"p/q/doc-files/extra.html#test.name.2\">test.name.2</a></span>",
-            "<span class=\"searchTagLink\"><a href=\"index.html#test.name.3\">test.name.3</a></span> - Search tag in Overview</dt>",
-            "<span class=\"searchTagLink\"><a href=\"p/q/package-summary.html#test.property.1\">test.property.1</a></span>",
-            "<span class=\"searchTagLink\"><a href=\"p/q/doc-files/extra.html#test.property.2\">test.property.2</a></span>");
+            "<span class=\"search-tag-link\"><a href=\"p/q/package-summary.html#test.name.1\">test.name.1</a></span>",
+            "<span class=\"search-tag-link\"><a href=\"p/q/doc-files/extra.html#test.name.2\">test.name.2</a></span>",
+            "<span class=\"search-tag-link\"><a href=\"index.html#test.name.3\">test.name.3</a></span> - Search tag in Overview</dt>",
+            "<span class=\"search-tag-link\"><a href=\"p/q/package-summary.html#test.property.1\">test.property.1</a></span>",
+            "<span class=\"search-tag-link\"><a href=\"p/q/doc-files/extra.html#test.property.2\">test.property.2</a></span>");
     }
 }
 

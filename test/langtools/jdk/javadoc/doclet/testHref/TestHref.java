@@ -70,7 +70,7 @@ public class TestHref extends JavadocTester {
                 //Header does not link to the page itself.
                 "Class C4&lt;E extends C4&lt;E&gt;&gt;</h1>",
                 //Signature does not link to the page itself.
-                "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
+                "public abstract class <span class=\"type-name-label\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         );
 
         checkOutput(Output.OUT, false,

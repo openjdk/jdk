@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,62 +49,62 @@ public class TestAbstractMethod extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/A.html", true,
-                "<td class=\"colFirst\"><code>default void</code></td>",
+                "<td class=\"col-first\"><code>default void</code></td>",
                 "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\" "
-                + "aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + "aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\" "
-                + "onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\""
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\" "
+                + "onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
                 + " onclick=\"show(2);\">Instance Methods</button><button role=\"tab\""
-                + " aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"tableTab\" onclick=\"show(4);\">"
+                + " aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" onclick=\"show(4);\">"
                 + "Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"tableTab\" onclick=\"show(16);\">"
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">"
                 + "Default Methods</button></div>");
 
         checkOutput("pkg/B.html", true,
                 "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + " aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">"
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
                 + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"tableTab\" onclick=\"show(4);\">"
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" onclick=\"show(4);\">"
                 + "Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"tableTab\""
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"table-tab\""
                 + " onclick=\"show(8);\">Concrete Methods</button></div>",
-                "<td class=\"colFirst\"><code>abstract void</code></td>");
+                "<td class=\"col-first\"><code>abstract void</code></td>");
 
         checkOutput("pkg/C.html", true,
                 "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"
+                + " aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\" onclick=\"show(2);\">"
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
                 + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"memberSummary_tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"tableTab\" onclick=\"show(16);\">"
+                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">"
                 + "Default Methods</button></div>");
 
         checkOutput("pkg/A.html", false,
-                "<td class=\"colFirst\"><code>abstract void</code></td>");
+                "<td class=\"col-first\"><code>abstract void</code></td>");
 
         checkOutput("pkg/B.html", false,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
-                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t5\" class=\"tableTab\""
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\""
                 + " onclick=\"show(16);\">Default Methods</button>",
-                "<td class=\"colFirst\"><code>default void</code></td>");
+                "<td class=\"col-first\"><code>default void</code></td>");
 
         checkOutput("pkg/C.html", false,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"memberSummary_tabpanel\""
-                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"tableTab\""
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\""
+                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\""
                 + " onclick=\"show(4);\">Abstract Methods</button>"
-                + "<span class=\"tabEnd\">&nbsp;</span>");
+                + "<span class=\"tab-end\">&nbsp;</span>");
     }
 }

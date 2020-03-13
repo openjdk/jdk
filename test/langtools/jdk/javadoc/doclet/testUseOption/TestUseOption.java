@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,15 +122,15 @@ public class TestUseOption extends JavadocTester {
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             "Subinterfaces of <a href=\"../UsedInterface.html\" title=\"interface in pkg1\">"
             + "UsedInterface</a> in <a href=\"../package-summary.html\">pkg1",
-            "<td class=\"colFirst\"><code>interface&nbsp;</code></td>\n<th class=\"colSecond\" scope=\"row\">"
-            + "<code><span class=\"memberNameLink\"><a href=\"../SubInterface.html\" "
+            "<td class=\"col-first\"><code>interface&nbsp;</code></td>\n<th class=\"col-second\" scope=\"row\">"
+            + "<code><span class=\"member-name-link\"><a href=\"../SubInterface.html\" "
             + "title=\"interface in pkg1\">SubInterface</a>&lt;T&gt;</span></code></th>"
         );
         checkOutput("pkg1/class-use/UsedThrowable.html", true,
             "Methods in <a href=\"../package-summary.html\">pkg1</a> that throw "
             + "<a href=\"../UsedThrowable.html\" title=\"class in pkg1\">UsedThrowable</a>",
-            "<td class=\"colFirst\"><code>void</code></td>\n<th class=\"colSecond\" scope=\"row\"><span class="
-            + "\"typeNameLabel\">C1.</span><code><span class=\"memberNameLink\">"
+            "<td class=\"col-first\"><code>void</code></td>\n<th class=\"col-second\" scope=\"row\"><span class="
+            + "\"type-name-label\">C1.</span><code><span class=\"member-name-link\">"
             + "<a href=\"../C1.html#methodInC1ThrowsThrowable()\">methodInC1ThrowsThrowable"
             + "</a></span>()</code></th>"
         );
@@ -149,14 +149,14 @@ public class TestUseOption extends JavadocTester {
                 + "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
         );
         checkOutput("class-use/UsedInC.html", true,
-                "<li class=\"blockList\">\n"
+                "<li class=\"block-list\">\n"
                 + "<section class=\"detail\" id=\"unnamed.package\">\n"
         );
         checkOutput("package-use.html", true,
-                "<th class=\"colFirst\" scope=\"row\">"
+                "<th class=\"col-first\" scope=\"row\">"
                 + "<a href=\"class-use/UsedInC.html#unnamed.package\">UsedInC</a></th>",
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>"
+                "<th class=\"col-first\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>\n"
+                + "<td class=\"col-last\">&nbsp;</td>"
         );
     }
 

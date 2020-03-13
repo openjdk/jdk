@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,23 +56,23 @@ public class TestHtmlTableStyles extends JavadocTester {
 
         checkOutput("pkg1/TestTable.html", true,
                 "<table summary=\"Summary\" border cellpadding=3 cellspacing=1>",
-                "<div class=\"memberSummary\">\n<table>",
-                "<div class=\"memberSummary\">\n<table>",
-                "<div class=\"memberSummary\">\n<table>");
+                "<div class=\"member-summary\">\n<table>",
+                "<div class=\"member-summary\">\n<table>",
+                "<div class=\"member-summary\">\n<table>");
 
         checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"typeSummary\">\n<table>");
+                "<div class=\"type-summary\">\n<table>");
 
         checkOutput("pkg1/class-use/TestTable.html", true,
-                "<div class=\"useSummary\">\n<table>");
+                "<div class=\"use-summary\">\n<table>");
 
         checkOutput("index.html", true,
-                "<div class=\"overviewSummary\">\n<table>");
+                "<div class=\"overview-summary\">\n<table>");
 
         checkOutput("deprecated-list.html", true,
-            "<div class=\"deprecatedSummary\" id=\"method\">\n<table>");
+            "<div class=\"deprecated-summary\" id=\"method\">\n<table>");
 
         checkOutput("constant-values.html", true,
-            "<div class=\"constantsSummary\">\n<table>");
+            "<div class=\"constants-summary\">\n<table>");
     }
 }

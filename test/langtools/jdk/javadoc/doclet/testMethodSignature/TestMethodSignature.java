@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,26 +48,26 @@ public class TestMethodSignature extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                "<div class=\"member-signature\"><span class=\"annotations\">"
                 + "@Generated(\"GeneratedConstructor\")\n"
                 + "</span><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"memberName\">C</span>()</div>",
+                + "<span class=\"member-name\">C</span>()</div>",
 
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>"
-                + "&nbsp;<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public static</span>"
+                + "&nbsp;<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">"
                 + "simpleMethod</span>&#8203;(<span class=\"arguments\">int&nbsp;i,\n"
                 + "java.lang.String&nbsp;s,\nboolean&nbsp;b)</span></div>",
 
-                "<div class=\"memberSignature\"><span class=\"annotations\">@Generated"
+                "<div class=\"member-signature\"><span class=\"annotations\">@Generated"
                 + "(value=\"SomeGeneratedName\",\n           date=\"a date\",\n"
                 + "           comments=\"some comment about the method below\")\n"
                 + "</span><span class=\"modifiers\">public static</span>&nbsp;<span "
-                + "class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">annotatedMethod"
+                + "class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">annotatedMethod"
                 + "</span>&#8203;(<span class=\"arguments\">int&nbsp;i,\n"
                 + "java.lang.String&nbsp;s,\nboolean&nbsp;b)</span></div>",
 
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>"
-                + "&nbsp;<span class=\"typeParametersLong\">&lt;T1 extends java.lang.AutoCloseable,&#8203;\n"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public static</span>"
+                + "&nbsp;<span class=\"type-parameters-long\">&lt;T1 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T2 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T3 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T4 extends java.lang.AutoCloseable,&#8203;\n"
@@ -75,10 +75,10 @@ public class TestMethodSignature extends JavadocTester {
                 + "T6 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T7 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T8 extends java.lang.AutoCloseable&gt;</span>\n"
-                + "<span class=\"returnType\"><a href=\"C.With8Types.html\" "
+                + "<span class=\"return-type\"><a href=\"C.With8Types.html\" "
                 + "title=\"class in pkg\">C.With8Types</a>&lt;T1,&#8203;T2,&#8203;T3,"
                 + "&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#8203;T8&gt;</span>&nbsp;"
-                + "<span class=\"memberName\">bigGenericMethod</span>&#8203;("
+                + "<span class=\"member-name\">bigGenericMethod</span>&#8203;("
                 + "<span class=\"arguments\"><a href=\"C.F0.html\" "
                 + "title=\"interface in pkg\">C.F0</a>&lt;? extends T1&gt;&nbsp;t1,\n"
                 + "<a href=\"C.F0.html\" title=\"interface in pkg\">"
@@ -99,12 +99,12 @@ public class TestMethodSignature extends JavadocTester {
                 + "throws <span class=\"exceptions\">java.lang.IllegalArgumentException,\n"
                 + "java.lang.IllegalStateException</span></div>",
 
-                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                "<div class=\"member-signature\"><span class=\"annotations\">"
                 + "@Generated(value=\"SomeGeneratedName\",\n"
                 + "           date=\"a date\",\n"
                 + "           comments=\"some comment about the method below\")\n"
                 + "</span><span class=\"modifiers\">public static</span>&nbsp;"
-                + "<span class=\"typeParametersLong\">"
+                + "<span class=\"type-parameters-long\">"
                 + "&lt;T1 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T2 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T3 extends java.lang.AutoCloseable,&#8203;\n"
@@ -113,10 +113,10 @@ public class TestMethodSignature extends JavadocTester {
                 + "T6 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T7 extends java.lang.AutoCloseable,&#8203;\n"
                 + "T8 extends java.lang.AutoCloseable&gt;</span>\n"
-                + "<span class=\"returnType\"><a href=\"C.With8Types.html\" "
+                + "<span class=\"return-type\"><a href=\"C.With8Types.html\" "
                 + "title=\"class in pkg\">C.With8Types</a>&lt;T1,&#8203;T2,&#8203;T3,"
                 + "&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#8203;T8&gt;</span>&nbsp;"
-                + "<span class=\"memberName\">bigGenericAnnotatedMethod</span>&#8203;("
+                + "<span class=\"member-name\">bigGenericAnnotatedMethod</span>&#8203;("
                 + "<span class=\"arguments\"><a href=\"C.F0.html\" "
                 + "title=\"interface in pkg\">C.F0</a>&lt;? extends T1&gt;&nbsp;t1,\n"
                 + "<a href=\"C.F0.html\" title=\"interface in pkg\">"

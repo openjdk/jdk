@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ public class TestPackageAnnotation extends JavadocTester {
                 "pkg2");
         checkExit(Exit.OK);
         checkOutput("pkg2/package-summary.html", true,
-                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">This package is deprecated.</div>\n"
+                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\">This package is deprecated.</div>\n"
                 + "</div>\n"
                 + "<div class=\"block\">This is the description of package pkg2.</div>\n"
                 + "</section>");

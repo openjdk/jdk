@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ public class TestPackageDeprecation extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">This package is Deprecated.</div>"
+                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\">This package is Deprecated.</div>"
         );
 
         checkOutput("deprecated-list.html", true,
@@ -70,7 +70,7 @@ public class TestPackageDeprecation extends JavadocTester {
         checkOutput("index.html", false,
                 "pkg1");
         checkOutput("class-use/C2.ModalExclusionType.html", true,
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>");
+                "<th class=\"col-first\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>");
 
         checkFiles(false,
                 "pkg1/package-summary.html",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class TestModulePackages extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("m/module-summary.html", false,
                 "<h3>Packages</h3>\n"
-                + "<table class=\"packagesSummary\" summary=\"Packages table, "
+                + "<table class=\"packages-summary\" summary=\"Packages table, "
                 + "listing packages, and an explanation\">");
     }
 
@@ -416,25 +416,25 @@ public class TestModulePackages extends JavadocTester {
             StringBuilder sb = new StringBuilder();
             sb.append("<div role=\"tablist\" aria-orientation=\"horizontal\">"
                         + "<button role=\"tab\" aria-selected=\"true\""
-                        + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"0\""
+                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"0\""
                         + " onkeydown=\"switchTab(event)\""
-                        + " id=\"t0\" class=\"activeTableTab\">All Packages</button>");
+                        + " id=\"t0\" class=\"active-table-tab\">All Packages</button>");
             if (kindSet.contains(TabKind.EXPORTS)) {
                 sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\""
-                        + " onkeydown=\"switchTab(event)\" id=\"t1\" class=\"tableTab\""
+                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"-1\""
+                        + " onkeydown=\"switchTab(event)\" id=\"t1\" class=\"table-tab\""
                         + " onclick=\"show(1);\">Exports</button>");
             }
             if (kindSet.contains(TabKind.OPENS)) {
                 sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\""
-                        + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"tableTab\""
+                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"-1\""
+                        + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
                         + " onclick=\"show(2);\">Opens</button>");
             }
             if (kindSet.contains(TabKind.CONCEALED)) {
                 sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"packagesSummary_tabpanel\" tabindex=\"-1\" "
-                        + "onkeydown=\"switchTab(event)\" id=\"t3\" class=\"tableTab\" "
+                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"-1\" "
+                        + "onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" "
                         + "onclick=\"show(4);\">Concealed</button>");
             }
             sb.append("</div>");
@@ -444,7 +444,7 @@ public class TestModulePackages extends JavadocTester {
             String name = k.toString().charAt(0) + k.toString().substring(1).toLowerCase();
             expect = "<caption>"
                         + "<span>" + name + "</span>"
-                        + "<span class=\"tabEnd\">&nbsp;</span>"
+                        + "<span class=\"tab-end\">&nbsp;</span>"
                         + "</caption>";
         }
 
@@ -456,14 +456,14 @@ public class TestModulePackages extends JavadocTester {
         Set<ColKind> kindSet = Set.of(kinds);
         StringBuilder sb = new StringBuilder();
         sb.append("<tr>\n"
-            + "<th class=\"colFirst\" scope=\"col\">Package</th>\n");
+            + "<th class=\"col-first\" scope=\"col\">Package</th>\n");
         if (kindSet.contains(ColKind.EXPORTED_TO)) {
-            sb.append("<th class=\"colSecond\" scope=\"col\">Exported To Modules</th>\n");
+            sb.append("<th class=\"col-second\" scope=\"col\">Exported To Modules</th>\n");
         }
         if (kindSet.contains(ColKind.OPENED_TO)) {
-            sb.append("<th class=\"colSecond\" scope=\"col\">Opened To Modules</th>\n");
+            sb.append("<th class=\"col-second\" scope=\"col\">Opened To Modules</th>\n");
         }
-        sb.append("<th class=\"colLast\" scope=\"col\">Description</th>\n"
+        sb.append("<th class=\"col-last\" scope=\"col\">Description</th>\n"
             + "</tr>");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
@@ -473,18 +473,18 @@ public class TestModulePackages extends JavadocTester {
             String id, String exportedTo, String openedTo, String desc) {
         StringBuilder sb = new StringBuilder();
         int idNum = Integer.parseInt(id.substring(1));
-        String color = (idNum % 2 == 1 ? "rowColor" : "altColor");
+        String color = (idNum % 2 == 1 ? "row-color" : "alt-color");
         sb.append("<tr class=\"" + color + "\" id=\"" + id + "\">\n"
-                + "<th class=\"colFirst\" scope=\"row\">"
+                + "<th class=\"col-first\" scope=\"row\">"
                 + "<a href=\"" + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></th>\n");
         if (exportedTo != null) {
-            sb.append("<td class=\"colSecond\">" + exportedTo + "</td>\n");
+            sb.append("<td class=\"col-second\">" + exportedTo + "</td>\n");
         }
         if (openedTo != null) {
-            sb.append("<td class=\"colSecond\">" + openedTo + "</td>\n");
+            sb.append("<td class=\"col-second\">" + openedTo + "</td>\n");
         }
-        sb.append("<td class=\"colLast\">" + desc + "</td>");
+        sb.append("<td class=\"col-last\">" + desc + "</td>");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }

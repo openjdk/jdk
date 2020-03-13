@@ -55,14 +55,14 @@ public class TestExternalOverriddenMethod extends JavadocTester {
         checkOutput("pkg/XReader.html", true,
                 "<dt>Overrides:</dt>\n"
                 + "<dd><code><a href=\"" + uri + "/java/io/FilterReader.html#read()\" "
-                + "title=\"class or interface in java.io\" class=\"externalLink\">read</a></code>&nbsp;in class&nbsp;<code>"
+                + "title=\"class or interface in java.io\" class=\"external-link\">read</a></code>&nbsp;in class&nbsp;<code>"
                 + "<a href=\"" + uri + "/java/io/FilterReader.html\" "
-                + "title=\"class or interface in java.io\" class=\"externalLink\">FilterReader</a></code></dd>",
+                + "title=\"class or interface in java.io\" class=\"external-link\">FilterReader</a></code></dd>",
                 "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"" + uri + "/java/io/DataInput.html#readInt()\" "
-                + "title=\"class or interface in java.io\" class=\"externalLink\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
+                + "title=\"class or interface in java.io\" class=\"external-link\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"" + uri + "/java/io/DataInput.html\" "
-                + "title=\"class or interface in java.io\" class=\"externalLink\">DataInput</a></code></dd>"
+                + "title=\"class or interface in java.io\" class=\"external-link\">DataInput</a></code></dd>"
         );
     }
 }

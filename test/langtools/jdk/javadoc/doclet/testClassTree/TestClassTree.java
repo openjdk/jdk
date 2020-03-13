@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,11 @@ public class TestClassTree extends JavadocTester {
         checkOutput("pkg/package-tree.html", true,
                 "<ul>\n"
                 + "<li class=\"circle\">pkg.<a href=\"ParentClass.html\" "
-                + "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a>",
+                + "title=\"class in pkg\"><span class=\"type-name-link\">ParentClass</span></a>",
                 "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n"
                 + "<ul>\n"
                 + "<li class=\"circle\">pkg.<a href=\"AnnotationType.html\" "
-                + "title=\"annotation in pkg\"><span class=\"typeNameLink\">AnnotationType</span></a> "
+                + "title=\"annotation in pkg\"><span class=\"type-name-link\">AnnotationType</span></a> "
                 + "(implements java.lang.annotation.Annotation)</li>\n"
                 + "</ul>",
                 "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n"
@@ -67,7 +67,7 @@ public class TestClassTree extends JavadocTester {
                 + "<li class=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang.Comparable&lt;T&gt;, java.lang.constant.Constable, java.io.Serializable)\n"
                 + "<ul>\n"
                 + "<li class=\"circle\">pkg.<a href=\"Coin.html\" "
-                + "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>\n"
+                + "title=\"enum in pkg\"><span class=\"type-name-link\">Coin</span></a></li>\n"
                 + "</ul>\n"
                 + "</li>\n"
                 + "</ul>\n"
@@ -76,6 +76,6 @@ public class TestClassTree extends JavadocTester {
 
         checkOutput("pkg/package-tree.html", false,
                 "<li class=\"circle\">class pkg.<a href=\".ParentClass.html\" "
-                + "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a></li>");
+                + "title=\"class in pkg\"><span class=\"type-name-link\">ParentClass</span></a></li>");
     }
 }

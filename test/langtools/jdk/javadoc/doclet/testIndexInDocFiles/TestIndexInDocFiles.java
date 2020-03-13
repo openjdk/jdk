@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,12 @@ public class TestIndexInDocFiles extends JavadocTester {
 
         checkOutput("doc-files/top-level-file.html", true,
                 "<h1>Package HTML file</h1>\n"
-                + "<span id=\"top-level-index\" class=\"searchTagResult\">top-level-index</span>\n"
-                + "<code><span id=\"top.level.property\" class=\"searchTagResult\">top.level.property</span></code>\n");
+                + "<span id=\"top-level-index\" class=\"search-tag-result\">top-level-index</span>\n"
+                + "<code><span id=\"top.level.property\" class=\"search-tag-result\">top.level.property</span></code>\n");
         checkOutput("p/q/doc-files/package-file.html", true,
                 "<h1>Package HTML file</h1>\n"
-                + "<span id=\"package-index\" class=\"searchTagResult\">package-index</span>\n"
-                + "<code><span id=\"package.property\" class=\"searchTagResult\">package.property</span></code>\n");
+                + "<span id=\"package-index\" class=\"search-tag-result\">package-index</span>\n"
+                + "<code><span id=\"package.property\" class=\"search-tag-result\">package.property</span></code>\n");
         checkOutput("tag-search-index.js", true,
                 "{\"l\":\"package-index\",\"h\":\"package p.q\",\"d\":\"additional info\","
                 + "\"u\":\"p/q/doc-files/package-file.html#package-index\"}",
@@ -157,12 +157,12 @@ public class TestIndexInDocFiles extends JavadocTester {
 
         checkOutput("m.n/doc-files/module-file.html", true,
                 "<h1>Module HTML file</h1>\n"
-                + "<span id=\"module-index\" class=\"searchTagResult\">module-index</span>\n"
-                + "<code><span id=\"module.property\" class=\"searchTagResult\">module.property</span></code>\n");
+                + "<span id=\"module-index\" class=\"search-tag-result\">module-index</span>\n"
+                + "<code><span id=\"module.property\" class=\"search-tag-result\">module.property</span></code>\n");
         checkOutput("m.n/p/q/doc-files/package-file.html", true,
                 "<h1>Package HTML file</h1>\n"
-                + "<span id=\"package-index\" class=\"searchTagResult\">package-index</span>\n"
-                + "<code><span id=\"package.property\" class=\"searchTagResult\">package.property</span></code>\n");
+                + "<span id=\"package-index\" class=\"search-tag-result\">package-index</span>\n"
+                + "<code><span id=\"package.property\" class=\"search-tag-result\">package.property</span></code>\n");
         checkOutput("tag-search-index.js", true,
                 "{\"l\":\"module-index\",\"h\":\"module m.n\",\"d\":\"additional info\","
                 + "\"u\":\"m.n/doc-files/module-file.html#module-index\"}",

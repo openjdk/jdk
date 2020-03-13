@@ -147,7 +147,7 @@ public class HtmlTree extends Content {
      * @return this object
      */
     public HtmlTree setStyle(HtmlStyle style) {
-        return put(HtmlAttr.CLASS, style.toString());
+        return put(HtmlAttr.CLASS, style.cssName());
     }
 
     /**
