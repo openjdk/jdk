@@ -852,12 +852,10 @@ bool universe_post_init() {
   assert(!is_init_completed(), "Error: initialization not yet completed!");
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
-  { ResourceMark rm;
-    Interpreter::initialize();      // needed for interpreter entry points
-    if (!UseSharedSpaces) {
-      Universe::reinitialize_vtables(CHECK_false);
-      Universe::reinitialize_itables(CHECK_false);
-    }
+  if (!UseSharedSpaces) {
+    ResourceMark rm;
+    Universe::reinitialize_vtables(CHECK_false);
+    Universe::reinitialize_itables(CHECK_false);
   }
 
   HandleMark hm(THREAD);

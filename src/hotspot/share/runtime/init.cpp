@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ void gc_barrier_stubs_init();
 void interpreter_init();       // before any methods loaded
 void invocationCounter_init(); // before any methods loaded
 void accessFlags_init();
-void templateTable_init();
 void InterfaceSupport_init();
 void universe2_init();  // dependent on codeCache_init and stubRoutines_init, loads primordial classes
 void referenceProcessor_init();
@@ -123,7 +122,6 @@ jint init_globals() {
   interpreter_init();        // before any methods loaded
   invocationCounter_init();  // before any methods loaded
   accessFlags_init();
-  templateTable_init();
   InterfaceSupport_init();
   VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();

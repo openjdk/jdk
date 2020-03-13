@@ -36,7 +36,6 @@
 // and the snippet generator, a template is assigned to each bytecode which can be
 // used to generate the bytecode's implementation if needed.
 
-class BarrierSet;
 class InterpreterMacroAssembler;
 
 // A Template describes the properties of a code template for a given bytecode
@@ -87,14 +86,11 @@ class TemplateTable: AllStatic {
   enum RewriteControl { may_rewrite, may_not_rewrite };  // control for fast code under CDS
 
  private:
-  static bool            _is_initialized;        // true if TemplateTable has been initialized
   static Template        _template_table     [Bytecodes::number_of_codes];
   static Template        _template_table_wide[Bytecodes::number_of_codes];
 
   static Template*       _desc;                  // the current template to be generated
   static Bytecodes::Code bytecode()              { return _desc->bytecode(); }
-
-  static BarrierSet*     _bs;                    // Cache the barrier set.
  public:
   //%note templates_1
   static InterpreterMacroAssembler* _masm;       // the assembler used when generating templates

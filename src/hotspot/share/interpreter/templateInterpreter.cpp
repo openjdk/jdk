@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@
 # define __ _masm->
 
 void TemplateInterpreter::initialize() {
-  if (_code != NULL) return;
   // assertions
+  assert(_code == NULL, "must only initialize once");
   assert((int)Bytecodes::number_of_codes <= (int)DispatchTable::length,
          "dispatch table too small");
 
