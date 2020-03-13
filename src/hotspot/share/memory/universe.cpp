@@ -863,7 +863,7 @@ bool universe_post_init() {
   Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
 
   // Setup preallocated OutOfMemoryError errors
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
+  Klass* k = SystemDictionary::OutOfMemoryError_klass();
   InstanceKlass* ik = InstanceKlass::cast(k);
   Universe::_out_of_memory_error_java_heap = ik->allocate_instance(CHECK_false);
   Universe::_out_of_memory_error_metaspace = ik->allocate_instance(CHECK_false);
@@ -889,8 +889,7 @@ bool universe_post_init() {
   k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ArithmeticException(), true, CHECK_false);
   Universe::_arithmetic_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
   // Virtual Machine Error for when we get into a situation we can't resolve
-  k = SystemDictionary::resolve_or_fail(
-    vmSymbols::java_lang_VirtualMachineError(), true, CHECK_false);
+  k = SystemDictionary::VirtualMachineError_klass();
   bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
   if (!linked) {
      tty->print_cr("Unable to link/verify VirtualMachineError class");
