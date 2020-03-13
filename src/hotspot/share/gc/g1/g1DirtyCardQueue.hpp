@@ -212,7 +212,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // If the queue contains more cards than configured here, the
   // mutator must start doing some of the concurrent refinement work.
   size_t _max_cards;
-  size_t _max_cards_padding;
+  volatile size_t _padded_max_cards;
   static const size_t MaxCardsUnlimited = SIZE_MAX;
 
   // Array of cumulative dirty cards refined by mutator threads.
@@ -316,19 +316,18 @@ public:
   // If any threads have partial logs, add them to the global list of logs.
   void concatenate_logs();
 
-  void set_max_cards(size_t m) {
-    _max_cards = m;
-  }
-  size_t max_cards() const {
-    return _max_cards;
-  }
+  // Threshold for mutator threads to also do refinement when there
+  // are concurrent refinement threads.
+  size_t max_cards() const;
 
-  void set_max_cards_padding(size_t padding) {
-    _max_cards_padding = padding;
-  }
-  size_t max_cards_padding() const {
-    return _max_cards_padding;
-  }
+  // Set threshold for mutator threads to also do refinement.
+  void set_max_cards(size_t value);
+
+  // Artificially increase mutator refinement threshold.
+  void set_max_cards_padding(size_t padding);
+
+  // Discard artificial increase of mutator refinement threshold.
+  void discard_max_cards_padding();
 
   // Total dirty cards refined by mutator threads.
   size_t total_mutator_refined_cards() const;

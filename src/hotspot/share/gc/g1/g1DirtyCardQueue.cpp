@@ -77,7 +77,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(BufferNode::Allocator* allocator) :
   _free_ids(par_ids_start(), num_par_ids()),
   _process_cards_threshold(ProcessCardsThresholdNever),
   _max_cards(MaxCardsUnlimited),
-  _max_cards_padding(0),
+  _padded_max_cards(MaxCardsUnlimited),
   _mutator_refined_cards_counters(NEW_C_HEAP_ARRAY(size_t, num_par_ids(), mtGC))
 {
   ::memset(_mutator_refined_cards_counters, 0, num_par_ids() * sizeof(size_t));
@@ -566,10 +566,8 @@ bool G1DirtyCardQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) 
   if (Thread::current()->is_Java_thread()) {
     // If the number of buffers exceeds the limit, make this Java
     // thread do the processing itself.  Calculation is racy but we
-    // don't need precision here.  The add of padding could overflow,
-    // which is treated as unlimited.
-    size_t limit = max_cards() + max_cards_padding();
-    if ((num_cards() > limit) && (limit >= max_cards())) {
+    // don't need precision here.
+    if (num_cards() > Atomic::load(&_padded_max_cards)) {
       if (mut_process_buffer(node)) {
         return true;
       }
@@ -655,4 +653,29 @@ void G1DirtyCardQueueSet::concatenate_logs() {
   enqueue_all_paused_buffers();
   verify_num_cards();
   set_max_cards(old_limit);
+}
+
+size_t G1DirtyCardQueueSet::max_cards() const {
+  return _max_cards;
+}
+
+void G1DirtyCardQueueSet::set_max_cards(size_t value) {
+  _max_cards = value;
+  Atomic::store(&_padded_max_cards, value);
+}
+
+void G1DirtyCardQueueSet::set_max_cards_padding(size_t padding) {
+  // Compute sum, clipping to max.
+  size_t limit = _max_cards + padding;
+  if (limit < padding) {        // Check for overflow.
+    limit = MaxCardsUnlimited;
+  }
+  Atomic::store(&_padded_max_cards, limit);
+}
+
+void G1DirtyCardQueueSet::discard_max_cards_padding() {
+  // Being racy here is okay, since all threads store the same value.
+  if (_max_cards != Atomic::load(&_padded_max_cards)) {
+    Atomic::store(&_padded_max_cards, _max_cards);
+  }
 }

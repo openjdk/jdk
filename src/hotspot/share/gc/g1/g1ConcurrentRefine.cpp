@@ -451,10 +451,8 @@ bool G1ConcurrentRefine::do_refinement_step(uint worker_id,
   size_t curr_cards = dcqs.num_cards();
   // If the number of the cards falls down into the yellow zone,
   // that means that the transition period after the evacuation pause has ended.
-  // Since the value written to the DCQS is the same for all threads, there is no
-  // need to synchronize.
-  if (dcqs.max_cards_padding() > 0 && curr_cards <= yellow_zone()) {
-    dcqs.set_max_cards_padding(0);
+  if (curr_cards <= yellow_zone()) {
+    dcqs.discard_max_cards_padding();
   }
 
   maybe_activate_more_threads(worker_id, curr_cards);
