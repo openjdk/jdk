@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ GENSRC_JAVA_BASE += $(GENSRC_LSREQUIVMAPS)
 ################################################################################
 
 INTPOLY_GEN_DONE := $(GENSRC_DIR)/_intpoly-gensrc.marker
-INTPOLY_HEADER := $(TOPDIR)/make/templates/gpl-cp-header
+INTPOLY_HEADER := $(TOPDIR)/make/jdk/src/classes/build/tools/intpoly/header.txt
 $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(GENSRC_DIR))
 	$(call LogInfo, Generating fixed-field math classes for java.base)
