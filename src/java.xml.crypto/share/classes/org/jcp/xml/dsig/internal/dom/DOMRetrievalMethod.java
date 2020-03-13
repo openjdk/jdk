@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Portions copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================

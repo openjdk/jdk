@@ -28,7 +28,7 @@
  * ===========================================================================
  */
 /*
- * Portions copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMXPathFilter2Transform.java 1854026 2019-02-21 09:30:01Z coheigea $
