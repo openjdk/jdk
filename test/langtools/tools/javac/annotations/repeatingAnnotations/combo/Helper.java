@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,10 @@ public class Helper {
     static File destDir = new File(System.getProperty("user.dir"));
 
     public static boolean compileCode(DiagnosticCollector<JavaFileObject> diagnostics, Iterable<? extends JavaFileObject> files) {
+        return compileCode(diagnostics, files, null);
+    }
+
+    public static boolean compileCode(DiagnosticCollector<JavaFileObject> diagnostics, Iterable<? extends JavaFileObject> files, Iterable<String> options) {
         boolean ok = false;
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
@@ -105,7 +109,7 @@ public class Helper {
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             // Assuming filesCount can maximum be 2 and if true, one file is package-info.java
             if (isPkgInfoPresent(files)) {
-                JavacTask task = (JavacTask) compiler.getTask(null, fm, diagnostics, null, null, files);
+                JavacTask task = (JavacTask) compiler.getTask(null, fm, diagnostics, options, null, files);
                 try {
                     fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
                     task.generate();
@@ -120,7 +124,7 @@ public class Helper {
                 }
                 ok = (err == 0);
             } else {
-                CompilationTask task = compiler.getTask(null, null, diagnostics, null, null, files);
+                CompilationTask task = compiler.getTask(null, null, diagnostics, options, null, files);
                 ok = task.call();
             }
             return ok;

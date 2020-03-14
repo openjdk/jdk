@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class TargetAnnoCombo {
     final static Set<ElementType> empty = EnumSet.noneOf(ElementType.class);
 
     // [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE,
-    // PACKAGE, TYPE_PARAMETER, TYPE_USE]
+    // PACKAGE, TYPE_PARAMETER, TYPE_USE, RECORD_COMPONENT]
     final static Set<ElementType> allTargets = EnumSet.allOf(ElementType.class);
 
     // [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE,
@@ -93,16 +93,22 @@ public class TargetAnnoCombo {
         private Set<ElementType> baseAnnotations;
         private Set<ElementType> containerAnnotations;
         private IgnoreKind ignore;
+        java.util.List<String> options;
 
         public TestCase(Set<ElementType> baseAnnotations, Set<ElementType> containerAnnotations) {
-            this(baseAnnotations, containerAnnotations, IgnoreKind.RUN);
+            this(baseAnnotations, containerAnnotations, IgnoreKind.RUN, null);
+        }
+
+        public TestCase(Set<ElementType> baseAnnotations, Set<ElementType> containerAnnotations, List<String> options) {
+            this(baseAnnotations, containerAnnotations, IgnoreKind.RUN, options);
         }
 
         public TestCase(Set<ElementType> baseAnnotations, Set<ElementType> containerAnnotations,
-                        IgnoreKind ignoreKind) {
+                        IgnoreKind ignoreKind, java.util.List<String> options) {
             this.baseAnnotations = baseAnnotations;
             this.containerAnnotations = containerAnnotations;
             this.ignore = ignoreKind;
+            this.options = options;
         }
 
         public Set getBaseAnnotations() {
@@ -198,6 +204,12 @@ public class TargetAnnoCombo {
         }
     }
 
+    // options to be passed if all targets, including RECORD_COMPONENTS, are to be considered
+    List<String> previewOptions = List.of(
+            "--enable-preview",
+            "-source", Integer.toString(Runtime.version().feature())
+    );
+
     private void generate() {
         // Adding test cases to run.
         testCases.addAll(Arrays.asList(
@@ -257,7 +269,7 @@ public class TargetAnnoCombo {
                 // No container against jdk7 targets plus one or both of TYPE_USE, TYPE_PARAMETER
                 new TestCase(plus(jdk7, TYPE_USE), noSet),
                 new TestCase(plus(jdk7, TYPE_PARAMETER), noSet),
-                new TestCase(allTargets, noSet),
+                new TestCase(allTargets, noSet, previewOptions),
                 // Empty container target against any lone target.
                 new TestCase(plus(empty, TYPE), empty),
                 new TestCase(plus(empty, PARAMETER), empty),
@@ -270,34 +282,34 @@ public class TargetAnnoCombo {
                 new TestCase(plus(empty, TYPE_USE), empty),
                 new TestCase(plus(empty, TYPE_PARAMETER), empty),
                 // All base targets against all container targets.
-                new TestCase(allTargets, allTargets),
+                new TestCase(allTargets, allTargets, previewOptions),
                 // All base targets against all but one container targets.
-                new TestCase(allTargets, less(allTargets, TYPE)),
-                new TestCase(allTargets, less(allTargets, PARAMETER)),
-                new TestCase(allTargets, less(allTargets, PACKAGE)),
-                new TestCase(allTargets, less(allTargets, METHOD)),
-                new TestCase(allTargets, less(allTargets, LOCAL_VARIABLE)),
-                new TestCase(allTargets, less(allTargets, FIELD)),
-                new TestCase(allTargets, less(allTargets, CONSTRUCTOR)),
-                new TestCase(allTargets, less(allTargets, ANNOTATION_TYPE)),
-                new TestCase(allTargets, less(allTargets, TYPE_USE)),
-                new TestCase(allTargets, less(allTargets, TYPE_PARAMETER)),
+                new TestCase(allTargets, less(allTargets, TYPE), previewOptions),
+                new TestCase(allTargets, less(allTargets, PARAMETER), previewOptions),
+                new TestCase(allTargets, less(allTargets, PACKAGE), previewOptions),
+                new TestCase(allTargets, less(allTargets, METHOD), previewOptions),
+                new TestCase(allTargets, less(allTargets, LOCAL_VARIABLE), previewOptions),
+                new TestCase(allTargets, less(allTargets, FIELD), previewOptions),
+                new TestCase(allTargets, less(allTargets, CONSTRUCTOR), previewOptions),
+                new TestCase(allTargets, less(allTargets, ANNOTATION_TYPE), previewOptions),
+                new TestCase(allTargets, less(allTargets, TYPE_USE), previewOptions),
+                new TestCase(allTargets, less(allTargets, TYPE_PARAMETER), previewOptions),
                 // All container targets against all but one base targets.
-                new TestCase(less(allTargets, TYPE), allTargets),
-                new TestCase(less(allTargets, PARAMETER), allTargets),
-                new TestCase(less(allTargets, PACKAGE), allTargets),
-                new TestCase(less(allTargets, METHOD), allTargets),
-                new TestCase(less(allTargets, LOCAL_VARIABLE), allTargets),
-                new TestCase(less(allTargets, FIELD), allTargets),
-                new TestCase(less(allTargets, CONSTRUCTOR), allTargets),
-                new TestCase(less(allTargets, ANNOTATION_TYPE), allTargets),
-                new TestCase(less(allTargets, TYPE_USE), allTargets),
-                new TestCase(less(allTargets, TYPE_PARAMETER), allTargets)));
+                new TestCase(less(allTargets, TYPE), allTargets, previewOptions),
+                new TestCase(less(allTargets, PARAMETER), allTargets, previewOptions),
+                new TestCase(less(allTargets, PACKAGE), allTargets, previewOptions),
+                new TestCase(less(allTargets, METHOD), allTargets, previewOptions),
+                new TestCase(less(allTargets, LOCAL_VARIABLE), allTargets, previewOptions),
+                new TestCase(less(allTargets, FIELD), allTargets, previewOptions),
+                new TestCase(less(allTargets, CONSTRUCTOR), allTargets, previewOptions),
+                new TestCase(less(allTargets, ANNOTATION_TYPE), allTargets, previewOptions),
+                new TestCase(less(allTargets, TYPE_USE), allTargets, previewOptions),
+                new TestCase(less(allTargets, TYPE_PARAMETER), allTargets, previewOptions)));
         // Generates 100 test cases for any lone base target contained in Set
         // allTargets against any lone container target.
         for (ElementType b : allTargets) {
             for (ElementType c : allTargets) {
-                testCases.add(new TestCase(plus(empty, b), plus(empty, c)));
+                testCases.add(new TestCase(plus(empty, b), plus(empty, c), previewOptions));
             }
         }
     }
@@ -325,7 +337,7 @@ public class TargetAnnoCombo {
         boolean shouldCompile = testCase.isValidSubSet();
         Iterable<? extends JavaFileObject> files = getFileList(className, testCase, shouldCompile);
         // Get result of compiling test src file(s).
-        boolean result = getCompileResult(className, shouldCompile, files);
+        boolean result = getCompileResult(className, shouldCompile, files, testCase.options);
         // List test src code if test fails.
         if (!result) {
             System.out.println("FAIL: Test " + index);
@@ -420,11 +432,11 @@ public class TargetAnnoCombo {
 
     // Compile the test source file(s) and return test result.
     private boolean getCompileResult(String className, boolean shouldCompile,
-            Iterable<? extends JavaFileObject> files) {
+            Iterable<? extends JavaFileObject> files, Iterable<String> options) {
 
         DiagnosticCollector<JavaFileObject> diagnostics =
                 new DiagnosticCollector<JavaFileObject>();
-        Helper.compileCode(diagnostics, files);
+        Helper.compileCode(diagnostics, files, options);
         // Test case pass or fail.
         boolean ok = false;
         String errMesg = "";
@@ -440,8 +452,13 @@ public class TargetAnnoCombo {
         } else {
             if (shouldCompile) {
                 // did not compile.
-                errMesg = "Test failed, did not compile.";
-                ok = false;
+                List<Diagnostic<? extends JavaFileObject>> allDiagnostics = diagnostics.getDiagnostics();
+                if (allDiagnostics.stream().noneMatch(d -> d.getKind() == javax.tools.Diagnostic.Kind.ERROR)) {
+                    ok = true;
+                } else {
+                    errMesg = "Test failed, compiled unexpectedly.";
+                    ok = false;
+                }
             } else {
                 // Error in compilation as expected.
                 String expectedErrKey = "compiler.err.invalid.repeatable."

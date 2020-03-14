@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ tools/javac/warnings/suppress/TypeAnnotations.java                              
 tools/javac/modules/SourceInSymlinkTest.java                                    8180263    windows-all    fails when run on a subst drive
 tools/javac/importscope/T8193717.java                                           8203925    generic-all    the test requires too much memory
 tools/javac/options/BCPOrSystemNotSpecified.java                                8231179    windows-all    fails when creating a test bootclasspath
-tools/javac/annotations/repeatingAnnotations/combo/TargetAnnoCombo.java         8235339    generic-all    fails after new annotation target RECORD_COMPONENT was introduced
 
 ###########################################################################
 #

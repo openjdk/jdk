@@ -157,6 +157,9 @@ public class Check {
                 enforceMandatoryWarnings, "sunapi", null);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
+
+        allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
+                Feature.RECORDS.allowedInSource(source);
     }
 
     /** Character for synthetic names
@@ -187,6 +190,10 @@ public class Check {
     /** A handler for deferred lint warnings.
      */
     private DeferredLintHandler deferredLintHandler;
+
+    /** Are records allowed
+     */
+    private final boolean allowRecords;
 
 /* *************************************************************************
  * Errors and Warnings
@@ -3164,7 +3171,9 @@ public class Check {
             targets.add(names.ANNOTATION_TYPE);
             targets.add(names.CONSTRUCTOR);
             targets.add(names.FIELD);
-            targets.add(names.RECORD_COMPONENT);
+            if (allowRecords) {
+                targets.add(names.RECORD_COMPONENT);
+            }
             targets.add(names.LOCAL_VARIABLE);
             targets.add(names.METHOD);
             targets.add(names.PACKAGE);
