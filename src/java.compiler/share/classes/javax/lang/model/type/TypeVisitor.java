@@ -41,33 +41,31 @@ import javax.lang.model.util.*;
  * is {@code null}; see documentation of the implementing class for
  * details.
  *
- * <p> <b>WARNING:</b> It is possible that methods will be added to
- * this interface to accommodate new, currently unknown, language
- * structures added to future versions of the Java&trade; programming
- * language.  Therefore, visitor classes directly implementing this
- * interface may be source incompatible with future versions of the
- * platform.  To avoid this source incompatibility, visitor
- * implementations are encouraged to instead extend the appropriate
- * abstract visitor class that implements this interface.  However, an
- * API should generally use this visitor interface as the type for
- * parameters, return type, etc. rather than one of the abstract
- * classes.
- *
- * <p>Note that methods to accommodate new language constructs could
- * be added in a source <em>compatible</em> way if they were added as
- * <em>default methods</em>.  However, default methods are only
- * available on Java SE 8 and higher releases and the {@code
- * javax.lang.model.*} packages bundled in Java SE 8 were required to
- * also be runnable on Java SE 7.  Therefore, default methods
- * were <em>not</em> used when extending {@code javax.lang.model.*}
- * to cover Java SE 8 language features.  However, default methods
- * are used in subsequent revisions of the {@code javax.lang.model.*}
- * packages that are only required to run on Java SE 8 and higher
- * platform versions.
- *
  * @apiNote
+ * <strong>WARNING:</strong> It is possible that methods will be added
+ * to this interface to accommodate new, currently unknown, language
+ * structures added to future versions of the Java&trade; programming
+ * language.
  *
- * There are several families of classes implementing this visitor
+ * Such additions have already occurred to support language features
+ * added after this API was introduced.
+ *
+ * Visitor classes directly implementing this interface may be source
+ * incompatible with future versions of the platform.  To avoid this
+ * source incompatibility, visitor implementations are encouraged to
+ * instead extend the appropriate abstract visitor class that
+ * implements this interface.  However, an API should generally use
+ * this visitor interface as the type for parameters, return type,
+ * etc. rather than one of the abstract classes.
+ *
+ * <p>Methods to accommodate new language constructs are expected to
+ * be added as default methods to provide strong source
+ * compatibility. The implementations of the default methods will in
+ * turn call {@link visitUnknown visitUnknown}, behavior that will be
+ * overridden in concrete visitors supporting the source version with
+ * the new language construct.
+ *
+ * <p>There are several families of classes implementing this visitor
  * interface in the {@linkplain javax.lang.model.util util
  * package}. The families follow a naming pattern along the lines of
  * {@code FooVisitor}<i>N</i> where <i>N</i> indicates the

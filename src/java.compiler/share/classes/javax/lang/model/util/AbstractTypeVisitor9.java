@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,29 +35,14 @@ import static javax.lang.model.SourceVersion.*;
  * source versions {@link SourceVersion#RELEASE_9 RELEASE_9} through
  * {@link SourceVersion#RELEASE_14 RELEASE_14}.
  *
- * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
- * by this class may have methods added to it in the future to
- * accommodate new, currently unknown, language structures added to
- * future versions of the Java&trade; programming language.
- * Therefore, methods whose names begin with {@code "visit"} may be
- * added to this class in the future; to avoid incompatibilities,
- * classes which extend this class should not declare any instance
- * methods with names beginning with {@code "visit"}.
- *
- * <p>When such a new visit method is added, the default
- * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new abstract type visitor
- * class will also be introduced to correspond to the new language
- * level; this visitor will have different default behavior for the
- * visit method in question.  When the new visitor is introduced, all
- * or portions of this visitor may be deprecated.
- *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
  * @param <P> the type of the additional parameter to this visitor's
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
+ * @see <a href="AbstractTypeVisitor6.html#note_for_subclasses">
+ * <strong>Compatibility note for subclasses</strong></a>
  * @see AbstractTypeVisitor6
  * @see AbstractTypeVisitor7
  * @see AbstractTypeVisitor8
