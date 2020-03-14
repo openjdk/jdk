@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3317,6 +3317,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
 
                 s.add(AccessibleState.SELECTABLE);
+                s.add(AccessibleState.VISIBLE);
                 if (parent.isFocusOwner()
                     && (indexInParent == parent.getLeadSelectionIndex())) {
                     s.add(AccessibleState.ACTIVE);
@@ -3328,11 +3329,6 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                     s.add(AccessibleState.SHOWING);
                 } else if (s.contains(AccessibleState.SHOWING)) {
                     s.remove(AccessibleState.SHOWING);
-                }
-                if (this.isVisible()) {
-                    s.add(AccessibleState.VISIBLE);
-                } else if (s.contains(AccessibleState.VISIBLE)) {
-                    s.remove(AccessibleState.VISIBLE);
                 }
                 s.add(AccessibleState.TRANSIENT); // cell-rendered
                 return s;
