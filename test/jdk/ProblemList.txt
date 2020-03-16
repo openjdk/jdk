@@ -825,7 +825,6 @@ javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
 javax/swing/JCheckBox/8032667/bug8032667_image_diff.java 8199063 macosx-all
 javax/swing/JComboBox/7031551/bug7031551.java 8199056 generic-all
 javax/swing/JScrollBar/6924059/bug6924059.java 8199078 generic-all
-javax/swing/JTabbedPane/TabProb.java 8236635 linux-all
 javax/swing/JTree/8003830/bug8003830.java 8199057 generic-all
 javax/swing/plaf/nimbus/ColorCustomizationTest.java 8199080 generic-all
 javax/swing/SwingWorker/6432565/bug6432565.java 8199077 generic-all

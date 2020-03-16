@@ -82,6 +82,7 @@ public class TabProb extends JFrame {
         panel.add(label);
         tabpanel.add("TEST", panel);
         add(tabpanel, BorderLayout.CENTER);
+        setUndecorated(true);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
