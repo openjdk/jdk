@@ -188,3 +188,38 @@ TEST(globalDefinitions, byte_size_in_exact_unit) {
   EXPECT_EQ(M + K + 1, byte_size_in_exact_unit(G + M + K));
 #endif
 }
+
+#define EXPECT_EQ_LOG2(fn, type)                                \
+{                                                               \
+  int limit = sizeof (type) * BitsPerByte;                      \
+  if (IsSigned<type>::value) {                                  \
+    EXPECT_EQ(limit - 1, fn(std::numeric_limits<type>::min())); \
+    EXPECT_EQ(limit - 1, fn((type)-1));                         \
+    limit--;                                                    \
+  }                                                             \
+  {                                                             \
+    /* Test the all-1s bit patterns */                          \
+    type var = 1;                                               \
+    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {     \
+      EXPECT_EQ(i, fn(var));                                    \
+    }                                                           \
+  }                                                             \
+  {                                                             \
+    /* Test the powers of 2 and powers + 1*/                    \
+    type var = 1;                                               \
+    for (int i = 0; i < limit; i++, var <<= 1) {                \
+      EXPECT_EQ(i, fn(var));                                    \
+      EXPECT_EQ(i, fn(var | 1));                                \
+    }                                                           \
+  }                                                             \
+}
+
+TEST(globalDefinitions, log2) {
+  EXPECT_EQ_LOG2(log2_intptr, uintptr_t);
+  EXPECT_EQ_LOG2(log2_intptr, intptr_t);
+  EXPECT_EQ_LOG2(log2_long, julong);
+  EXPECT_EQ_LOG2(log2_int, int);
+  EXPECT_EQ_LOG2(log2_jint, jint);
+  EXPECT_EQ_LOG2(log2_uint, uint);
+  EXPECT_EQ_LOG2(log2_jlong, jlong);
+}

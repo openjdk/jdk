@@ -1022,12 +1022,12 @@ inline int log2_intptr(intptr_t x) {
 
 inline int log2_int(int x) {
   STATIC_ASSERT(sizeof(int) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)x);
+  return log2_intptr((uintptr_t)(unsigned int)x);
 }
 
 inline int log2_jint(jint x) {
   STATIC_ASSERT(sizeof(jint) <= sizeof(uintptr_t));
-  return log2_intptr((uintptr_t)x);
+  return log2_intptr((uintptr_t)(juint)x);
 }
 
 inline int log2_uint(uint x) {
