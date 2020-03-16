@@ -349,6 +349,7 @@ void Thread::record_stack_base_and_size() {
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
   set_stack_base(os::current_stack_base());
+  assert(_stack_base != NULL, "current_stack_base failed for %s", name());
   set_stack_size(os::current_stack_size());
 
 #ifdef SOLARIS
