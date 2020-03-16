@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test jdk.MetaspaceAllocationFailure event
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler
  * @run main/othervm -Xmx1G -XX:MaxMetaspaceSize=200M
