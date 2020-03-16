@@ -26,6 +26,7 @@
 #define SHARE_OPTO_MACHNODE_HPP
 
 #include "opto/callnode.hpp"
+#include "opto/constantTable.hpp"
 #include "opto/matcher.hpp"
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
@@ -447,7 +448,7 @@ public:
 // Machine node that holds a constant which is stored in the constant table.
 class MachConstantNode : public MachTypeNode {
 protected:
-  Compile::Constant _constant;  // This node's constant.
+  ConstantTable::Constant _constant;  // This node's constant.
 
 public:
   MachConstantNode() : MachTypeNode() {

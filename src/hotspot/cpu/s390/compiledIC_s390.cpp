@@ -54,7 +54,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
   // That's why we must use the macroassembler to generate a stub.
   MacroAssembler _masm(&cbuf);
 
-  address stub = __ start_a_stub(Compile::MAX_stubs_size);
+  address stub = __ start_a_stub(CompiledStaticCall::to_interp_stub_size());
   if (stub == NULL) {
     return NULL;  // CodeBuffer::expand failed.
   }

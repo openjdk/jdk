@@ -1002,7 +1002,7 @@ void emit_hi(CodeBuffer &cbuf, int val) {  }
 //=============================================================================
 const RegMask& MachConstantBaseNode::_out_RegMask = PTR_REG_mask();
 
-int Compile::ConstantTable::calculate_table_base_offset() const {
+int ConstantTable::calculate_table_base_offset() const {
   if (UseRDPCForConstantTableBase) {
     // The table base offset might be less but then it fits into
     // simm13 anyway and we are good (cf. MachConstantBaseNode::emit).
@@ -1023,7 +1023,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
 
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
-  Compile::ConstantTable& constant_table = C->constant_table();
+  ConstantTable& constant_table = C->output()->constant_table();
   MacroAssembler _masm(&cbuf);
 
   Register r = as_Register(ra_->get_encode(this));
@@ -1128,15 +1128,15 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
     st->print_cr("Verify_Thread"); st->print("\t");
   }
 
-  size_t framesize = C->frame_size_in_bytes();
-  int bangsize = C->bang_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
 
   // Calls to C2R adapters often do not accept exceptional returns.
   // We require that their callers must bang for them.  But be careful, because
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(bangsize)) {
+  if (C->output()->need_stack_bang(bangsize)) {
     st->print_cr("! stack bang (%d bytes)", bangsize); st->print("\t");
   }
 
@@ -1161,17 +1161,17 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ verify_thread();
 
-  size_t framesize = C->frame_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
   assert(framesize >= 16*wordSize, "must have room for reg. save area");
   assert(framesize%(2*wordSize) == 0, "must preserve 2*wordSize alignment");
-  int bangsize = C->bang_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
 
   // Calls to C2R adapters often do not accept exceptional returns.
   // We require that their callers must bang for them.  But be careful, because
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(bangsize)) {
+  if (C->output()->need_stack_bang(bangsize)) {
     __ generate_stack_overflow_check(bangsize);
   }
 
@@ -1182,12 +1182,12 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ add(G3, -framesize & 0x3ff, G3);
     __ save(SP, G3, SP);
   }
-  C->set_frame_complete( __ offset() );
+  C->output()->set_frame_complete( __ offset() );
 
   if (!UseRDPCForConstantTableBase && C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
     // emitted before MachConstantBaseNode.
-    Compile::ConstantTable& constant_table = C->constant_table();
+    ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
 }
@@ -1570,7 +1570,7 @@ void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
   // BoxLockNode is not a MachNode, so we can't just call MachNode::size(ra_)
   assert(ra_ == ra_->C->regalloc(), "sanity");
-  return ra_->C->scratch_emit_size(this);
+  return ra_->C->output()->scratch_emit_size(this);
 }
 
 //=============================================================================
@@ -2426,7 +2426,7 @@ encode %{
   enc_class call_epilog %{
     if( VerifyStackAtCalls ) {
       MacroAssembler _masm(&cbuf);
-      int framesize = ra_->C->frame_size_in_bytes();
+      int framesize = ra_->C->output()->frame_size_in_bytes();
       Register temp_reg = G3;
       __ add(SP, framesize, temp_reg);
       __ cmp(temp_reg, FP);
@@ -8854,7 +8854,7 @@ instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
     // zero offsets because they might change when
     // MachConstantBaseNode decides to optimize the constant table
     // base.
-    if ((constant_offset() == 0) && !Compile::current()->in_scratch_emit_size()) {
+    if ((constant_offset() == 0) && !Compile::current()->output()->in_scratch_emit_size()) {
       table_reg = $constanttablebase;
     } else {
       table_reg = O7;

@@ -36,6 +36,7 @@
 #include "opto/macro.hpp"
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
+#include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
@@ -85,7 +86,7 @@ static ZBarrierSetC2State* barrier_set_state() {
 
 ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak) {
   ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref, tmp, weak);
-  if (!Compile::current()->in_scratch_emit_size()) {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
     barrier_set_state()->stubs()->append(stub);
   }
 
@@ -130,7 +131,7 @@ Label* ZLoadBarrierStubC2::entry() {
   // However, we still need to return a label that is not bound now, but
   // will eventually be bound. Any lable will do, as it will only act as
   // a placeholder, so we return the _continuation label.
-  return Compile::current()->in_scratch_emit_size() ? &_continuation : &_entry;
+  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
 }
 
 Label* ZLoadBarrierStubC2::continuation() {
@@ -152,7 +153,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(Compile::MAX_inst_size) && cb.blob() == NULL) {
+    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -165,12 +166,12 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 
 int ZBarrierSetC2::estimate_stub_size() const {
   Compile* const C = Compile::current();
-  BufferBlob* const blob = C->scratch_buffer_blob();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
   GrowableArray<ZLoadBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
   int size = 0;
 
   for (int i = 0; i < stubs->length(); i++) {
-    CodeBuffer cb(blob->content_begin(), (address)C->scratch_locs_memory() - blob->content_begin());
+    CodeBuffer cb(blob->content_begin(), (address)C->output()->scratch_locs_memory() - blob->content_begin());
     MacroAssembler masm(&cb);
     ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, stubs->at(i));
     size += cb.insts_size();

@@ -3374,7 +3374,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
   }
 
   // Start code line.
-  encoding->add_code("    _constant = C->constant_table().add");
+  encoding->add_code("    _constant = C->output()->constant_table().add");
 
   // Parse everything in ( ) expression.
   encoding->add_code("(this, ");

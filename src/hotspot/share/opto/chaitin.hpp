@@ -29,11 +29,11 @@
 #include "memory/resourceArea.hpp"
 #include "opto/connode.hpp"
 #include "opto/live.hpp"
+#include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
-#include "opto/machnode.hpp"
 
 class Matcher;
 class PhaseCFG;

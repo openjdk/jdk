@@ -2605,7 +2605,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // For MachConstantNodes which are ideal jump nodes, fill the jump table.
   if (inst.is_mach_constant() && inst.is_ideal_jump()) {
-    fprintf(fp, "  ra_->C->constant_table().fill_jump_table(cbuf, (MachConstantNode*) this, _index2label);\n");
+    fprintf(fp, "  ra_->C->output()->constant_table().fill_jump_table(cbuf, (MachConstantNode*) this, _index2label);\n");
   }
 
   // Output each operand's offset into the array of registers.
@@ -2679,7 +2679,7 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
 
   // For ideal jump nodes, add a jump-table entry.
   if (inst.is_ideal_jump()) {
-    fprintf(fp, "  _constant = C->constant_table().add_jump_table(this);\n");
+    fprintf(fp, "  _constant = C->output()->constant_table().add_jump_table(this);\n");
   }
 
   // If user did not define an encode section,

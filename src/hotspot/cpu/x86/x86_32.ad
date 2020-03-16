@@ -523,7 +523,7 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 //=============================================================================
 const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
 
-int Compile::ConstantTable::calculate_table_base_offset() const {
+int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
@@ -552,13 +552,13 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
 
-  int framesize = C->frame_size_in_bytes();
-  int bangsize = C->bang_size_in_bytes();
+  int framesize = C->output()->frame_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove wordSize for return addr which is already pushed.
   framesize -= wordSize;
 
-  if (C->need_stack_bang(bangsize)) {
+  if (C->output()->need_stack_bang(bangsize)) {
     framesize -= wordSize;
     st->print("# stack bang (%d bytes)", bangsize);
     st->print("\n\t");
@@ -616,17 +616,17 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  int framesize = C->frame_size_in_bytes();
-  int bangsize = C->bang_size_in_bytes();
+  int framesize = C->output()->frame_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
 
-  C->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(cbuf.insts_size());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
     // emitted before MachConstantBaseNode.
-    Compile::ConstantTable& constant_table = C->constant_table();
+    ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
 }
@@ -643,7 +643,7 @@ int MachPrologNode::reloc() const {
 #ifndef PRODUCT
 void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   Compile *C = ra_->C;
-  int framesize = C->frame_size_in_bytes();
+  int framesize = C->output()->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
@@ -682,7 +682,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     _masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
 
-  int framesize = C->frame_size_in_bytes();
+  int framesize = C->output()->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;

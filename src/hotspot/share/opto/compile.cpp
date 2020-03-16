@@ -250,7 +250,7 @@ void Compile::print_statistics() {
     Parse::print_statistics();
     PhaseCCP::print_statistics();
     PhaseRegAlloc::print_statistics();
-    Scheduling::print_statistics();
+    PhaseOutput::print_statistics();
     PhasePeephole::print_statistics();
     PhaseIdealLoop::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
@@ -261,17 +261,6 @@ void Compile::print_statistics() {
   }
 }
 #endif //PRODUCT
-
-// Support for bundling info
-Bundle* Compile::node_bundling(const Node *n) {
-  assert(valid_bundle_info(n), "oob");
-  return &_node_bundling_base[n->_idx];
-}
-
-bool Compile::valid_bundle_info(const Node *n) {
-  return (_node_bundling_limit > n->_idx);
-}
-
 
 void Compile::gvn_replace_by(Node* n, Node* nn) {
   for (DUIterator_Last imin, i = n->last_outs(imin); i >= imin; ) {
@@ -423,24 +412,6 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
 
-//------------------------------frame_size_in_words-----------------------------
-// frame_slots in units of words
-int Compile::frame_size_in_words() const {
-  // shift is 0 in LP32 and 1 in LP64
-  const int shift = (LogBytesPerWord - LogBytesPerInt);
-  int words = _frame_slots >> shift;
-  assert( words << shift == _frame_slots, "frame size must be properly aligned in LP64" );
-  return words;
-}
-
-// To bang the stack of this compiled method we use the stack size
-// that the interpreter would need in case of a deoptimization. This
-// removes the need to bang the stack in the deoptimization blob which
-// in turn simplifies stack overflow handling.
-int Compile::bang_size_in_bytes() const {
-  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes(), _interpreter_frame_size);
-}
-
 // ============================================================================
 //------------------------------CompileWrapper---------------------------------
 class CompileWrapper : public StackObj {
@@ -468,14 +439,11 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   compile->set_indexSet_free_block_list(NULL);
   compile->init_type_arena();
   Type::Initialize(compile);
-  _compile->set_scratch_buffer_blob(NULL);
   _compile->begin_method();
   _compile->clone_map().set_debug(_compile->has_method() && _compile->directive()->CloneMapDebugOption);
 }
 CompileWrapper::~CompileWrapper() {
   _compile->end_method();
-  if (_compile->scratch_buffer_blob() != NULL)
-    BufferBlob::free(_compile->scratch_buffer_blob());
   _compile->env()->set_compiler_data(NULL);
 }
 
@@ -520,104 +488,6 @@ void Compile::print_compile_messages() {
 #endif
 }
 
-
-//-----------------------init_scratch_buffer_blob------------------------------
-// Construct a temporary BufferBlob and cache it for this compile.
-void Compile::init_scratch_buffer_blob(int const_size) {
-  // If there is already a scratch buffer blob allocated and the
-  // constant section is big enough, use it.  Otherwise free the
-  // current and allocate a new one.
-  BufferBlob* blob = scratch_buffer_blob();
-  if ((blob != NULL) && (const_size <= _scratch_const_size)) {
-    // Use the current blob.
-  } else {
-    if (blob != NULL) {
-      BufferBlob::free(blob);
-    }
-
-    ResourceMark rm;
-    _scratch_const_size = const_size;
-    int size = C2Compiler::initial_code_buffer_size(const_size);
-    blob = BufferBlob::create("Compile::scratch_buffer", size);
-    // Record the buffer blob for next time.
-    set_scratch_buffer_blob(blob);
-    // Have we run out of code space?
-    if (scratch_buffer_blob() == NULL) {
-      // Let CompilerBroker disable further compilations.
-      record_failure("Not enough space for scratch buffer in CodeCache");
-      return;
-    }
-  }
-
-  // Initialize the relocation buffers
-  relocInfo* locs_buf = (relocInfo*) blob->content_end() - MAX_locs_size;
-  set_scratch_locs_memory(locs_buf);
-}
-
-
-//-----------------------scratch_emit_size-------------------------------------
-// Helper function that computes size by emitting code
-uint Compile::scratch_emit_size(const Node* n) {
-  // Start scratch_emit_size section.
-  set_in_scratch_emit_size(true);
-
-  // Emit into a trash buffer and count bytes emitted.
-  // This is a pretty expensive way to compute a size,
-  // but it works well enough if seldom used.
-  // All common fixed-size instructions are given a size
-  // method by the AD file.
-  // Note that the scratch buffer blob and locs memory are
-  // allocated at the beginning of the compile task, and
-  // may be shared by several calls to scratch_emit_size.
-  // The allocation of the scratch buffer blob is particularly
-  // expensive, since it has to grab the code cache lock.
-  BufferBlob* blob = this->scratch_buffer_blob();
-  assert(blob != NULL, "Initialize BufferBlob at start");
-  assert(blob->size() > MAX_inst_size, "sanity");
-  relocInfo* locs_buf = scratch_locs_memory();
-  address blob_begin = blob->content_begin();
-  address blob_end   = (address)locs_buf;
-  assert(blob->contains(blob_end), "sanity");
-  CodeBuffer buf(blob_begin, blob_end - blob_begin);
-  buf.initialize_consts_size(_scratch_const_size);
-  buf.initialize_stubs_size(MAX_stubs_size);
-  assert(locs_buf != NULL, "sanity");
-  int lsize = MAX_locs_size / 3;
-  buf.consts()->initialize_shared_locs(&locs_buf[lsize * 0], lsize);
-  buf.insts()->initialize_shared_locs( &locs_buf[lsize * 1], lsize);
-  buf.stubs()->initialize_shared_locs( &locs_buf[lsize * 2], lsize);
-  // Mark as scratch buffer.
-  buf.consts()->set_scratch_emit();
-  buf.insts()->set_scratch_emit();
-  buf.stubs()->set_scratch_emit();
-
-  // Do the emission.
-
-  Label fakeL; // Fake label for branch instructions.
-  Label*   saveL = NULL;
-  uint save_bnum = 0;
-  bool is_branch = n->is_MachBranch();
-  if (is_branch) {
-    MacroAssembler masm(&buf);
-    masm.bind(fakeL);
-    n->as_MachBranch()->save_label(&saveL, &save_bnum);
-    n->as_MachBranch()->label_set(&fakeL, 0);
-  }
-  n->emit(buf, this->regalloc());
-
-  // Emitting into the scratch buffer should not fail
-  assert (!failing(), "Must not have pending failure. Reason is: %s", failure_reason());
-
-  if (is_branch) // Restore label.
-    n->as_MachBranch()->label_set(saveL, save_bnum);
-
-  // End scratch_emit_size section.
-  set_in_scratch_emit_size(false);
-
-  return buf.insts_size();
-}
-
-
 // ============================================================================
 //------------------------------Compile standard-------------------------------
 debug_only( int Compile::_debug_idx = 100000; )
@@ -626,7 +496,7 @@ debug_only( int Compile::_debug_idx = 100000; )
 // the continuation bci for on stack replacement.
 
 
-Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr_bci,
+Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing, DirectiveSet* directive)
                 : Phase(Compiler),
                   _compile_id(ci_env->compile_id()),
@@ -640,8 +510,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _stub_name(NULL),
                   _stub_entry_point(NULL),
                   _max_node_limit(MaxNodeLimit),
-                  _orig_pc_slot(0),
-                  _orig_pc_slot_offset_in_bytes(0),
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _do_cleanup(false),
@@ -683,12 +551,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _replay_inline_data(NULL),
                   _java_calls(0),
                   _inner_loops(0),
-                  _interpreter_frame_size(0),
-                  _node_bundling_limit(0),
-                  _node_bundling_base(NULL),
-                  _code_buffer("Compile::Fill_buffer"),
-                  _scratch_const_size(-1),
-                  _in_scratch_emit_size(false)
+                  _interpreter_frame_size(0)
 #ifndef PRODUCT
                   , _in_dump_cnt(0)
 #endif
@@ -906,9 +769,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
   // Now that we know the size of all the monitors we can add a fixed slot
   // for the original deopt pc.
-
-  _orig_pc_slot =  fixed_slots();
-  int next_slot = _orig_pc_slot + (sizeof(address) / VMRegImpl::stack_slot_size);
+  int next_slot = fixed_slots() + (sizeof(address) / VMRegImpl::stack_slot_size);
   set_fixed_slots(next_slot);
 
   // Compute when to use implicit null checks. Used by matching trap based
@@ -917,41 +778,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
   // Now generate code
   Code_Gen();
-  if (failing())  return;
-
-  // Check if we want to skip execution of all compiled code.
-  {
-#ifndef PRODUCT
-    if (OptoNoExecute) {
-      record_method_not_compilable("+OptoNoExecute");  // Flag as failed
-      return;
-    }
-#endif
-    TracePhase tp("install_code", &timers[_t_registerMethod]);
-
-    if (is_osr_compilation()) {
-      _code_offsets.set_value(CodeOffsets::Verified_Entry, 0);
-      _code_offsets.set_value(CodeOffsets::OSR_Entry, _first_block_size);
-    } else {
-      _code_offsets.set_value(CodeOffsets::Verified_Entry, _first_block_size);
-      _code_offsets.set_value(CodeOffsets::OSR_Entry, 0);
-    }
-
-    env()->register_method(_method, _entry_bci,
-                           &_code_offsets,
-                           _orig_pc_slot_offset_in_bytes,
-                           code_buffer(),
-                           frame_size_in_words(), _oop_map_set,
-                           &_handler_table, &_inc_table,
-                           compiler,
-                           has_unsafe_access(),
-                           SharedRuntime::is_wide_vector(max_vector_size()),
-                           rtm_state()
-                           );
-
-    if (log() != NULL) // Print code cache state into compiler log
-      log()->code_cache_state();
-  }
 }
 
 //------------------------------Compile----------------------------------------
@@ -977,8 +803,6 @@ Compile::Compile( ciEnv* ci_env,
     _stub_name(stub_name),
     _stub_entry_point(NULL),
     _max_node_limit(MaxNodeLimit),
-    _orig_pc_slot(0),
-    _orig_pc_slot_offset_in_bytes(0),
     _inlining_progress(false),
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
@@ -1016,9 +840,6 @@ Compile::Compile( ciEnv* ci_env,
     _java_calls(0),
     _inner_loops(0),
     _interpreter_frame_size(0),
-    _node_bundling_limit(0),
-    _node_bundling_base(NULL),
-    _code_buffer("Compile::Fill_buffer"),
 #ifndef PRODUCT
     _in_dump_cnt(0),
 #endif
@@ -1053,34 +874,8 @@ Compile::Compile( ciEnv* ci_env,
   }
 
   NOT_PRODUCT( verify_graph_edges(); )
+
   Code_Gen();
-  if (failing())  return;
-
-
-  // Entry point will be accessed using compile->stub_entry_point();
-  if (code_buffer() == NULL) {
-    Matcher::soft_match_failure();
-  } else {
-    if (PrintAssembly && (WizardMode || Verbose))
-      tty->print_cr("### Stub::%s", stub_name);
-
-    if (!failing()) {
-      assert(_fixed_slots == 0, "no fixed slots used for runtime stubs");
-
-      // Make the NMethod
-      // For now we mark the frame as never safe for profile stackwalking
-      RuntimeStub *rs = RuntimeStub::new_runtime_stub(stub_name,
-                                                      code_buffer(),
-                                                      CodeOffsets::frame_never_safe,
-                                                      // _code_offsets.value(CodeOffsets::Frame_Complete),
-                                                      frame_size_in_words(),
-                                                      _oop_map_set,
-                                                      save_arg_registers);
-      assert(rs != NULL && rs->is_runtime_stub(), "sanity check");
-
-      _stub_entry_point = rs->entry_point();
-    }
-  }
 }
 
 //------------------------------Init-------------------------------------------
@@ -2545,8 +2340,11 @@ void Compile::Code_Gen() {
 
   // Convert Nodes to instruction bits in a buffer
   {
-    TraceTime tp("output", &timers[_t_output], CITime);
-    Output();
+    TracePhase tp("output", &timers[_t_output]);
+    PhaseOutput output;
+    output.Output();
+    if (failing())  return;
+    output.install();
   }
 
   print_method(PHASE_FINAL_CODE);
@@ -2555,143 +2353,6 @@ void Compile::Code_Gen() {
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);
   _regalloc = (PhaseChaitin*)((intptr_t)0xdeadbeef);
 }
-
-
-//------------------------------dump_asm---------------------------------------
-// Dump formatted assembly
-#if defined(SUPPORT_OPTO_ASSEMBLY)
-void Compile::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
-
-  int pc_digits = 3; // #chars required for pc
-  int sb_chars  = 3; // #chars for "start bundle" indicator
-  int tab_size  = 8;
-  if (pcs != NULL) {
-    int max_pc = 0;
-    for (uint i = 0; i < pc_limit; i++) {
-      max_pc = (max_pc < pcs[i]) ? pcs[i] : max_pc;
-    }
-    pc_digits  = ((max_pc < 4096) ? 3 : ((max_pc < 65536) ? 4 : ((max_pc < 65536*256) ? 6 : 8))); // #chars required for pc
-  }
-  int prefix_len = ((pc_digits + sb_chars + tab_size - 1)/tab_size)*tab_size;
-
-  bool cut_short = false;
-  st->print_cr("#");
-  st->print("#  ");  _tf->dump_on(st);  st->cr();
-  st->print_cr("#");
-
-  // For all blocks
-  int pc = 0x0;                 // Program counter
-  char starts_bundle = ' ';
-  _regalloc->dump_frame();
-
-  Node *n = NULL;
-  for (uint i = 0; i < _cfg->number_of_blocks(); i++) {
-    if (VMThread::should_terminate()) {
-      cut_short = true;
-      break;
-    }
-    Block* block = _cfg->get_block(i);
-    if (block->is_connector() && !Verbose) {
-      continue;
-    }
-    n = block->head();
-    if ((pcs != NULL) && (n->_idx < pc_limit)) {
-      pc = pcs[n->_idx];
-      st->print("%*.*x", pc_digits, pc_digits, pc);
-    }
-    st->fill_to(prefix_len);
-    block->dump_head(_cfg, st);
-    if (block->is_connector()) {
-      st->fill_to(prefix_len);
-      st->print_cr("# Empty connector block");
-    } else if (block->num_preds() == 2 && block->pred(1)->is_CatchProj() && block->pred(1)->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
-      st->fill_to(prefix_len);
-      st->print_cr("# Block is sole successor of call");
-    }
-
-    // For all instructions
-    Node *delay = NULL;
-    for (uint j = 0; j < block->number_of_nodes(); j++) {
-      if (VMThread::should_terminate()) {
-        cut_short = true;
-        break;
-      }
-      n = block->get_node(j);
-      if (valid_bundle_info(n)) {
-        Bundle* bundle = node_bundling(n);
-        if (bundle->used_in_unconditional_delay()) {
-          delay = n;
-          continue;
-        }
-        if (bundle->starts_bundle()) {
-          starts_bundle = '+';
-        }
-      }
-
-      if (WizardMode) {
-        n->dump();
-      }
-
-      if( !n->is_Region() &&    // Dont print in the Assembly
-          !n->is_Phi() &&       // a few noisely useless nodes
-          !n->is_Proj() &&
-          !n->is_MachTemp() &&
-          !n->is_SafePointScalarObject() &&
-          !n->is_Catch() &&     // Would be nice to print exception table targets
-          !n->is_MergeMem() &&  // Not very interesting
-          !n->is_top() &&       // Debug info table constants
-          !(n->is_Con() && !n->is_Mach())// Debug info table constants
-          ) {
-        if ((pcs != NULL) && (n->_idx < pc_limit)) {
-          pc = pcs[n->_idx];
-          st->print("%*.*x", pc_digits, pc_digits, pc);
-        } else {
-          st->fill_to(pc_digits);
-        }
-        st->print(" %c ", starts_bundle);
-        starts_bundle = ' ';
-        st->fill_to(prefix_len);
-        n->format(_regalloc, st);
-        st->cr();
-      }
-
-      // If we have an instruction with a delay slot, and have seen a delay,
-      // then back up and print it
-      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        // Coverity finding - Explicit null dereferenced.
-        guarantee(delay != NULL, "no unconditional delay instruction");
-        if (WizardMode) delay->dump();
-
-        if (node_bundling(delay)->starts_bundle())
-          starts_bundle = '+';
-        if ((pcs != NULL) && (n->_idx < pc_limit)) {
-          pc = pcs[n->_idx];
-          st->print("%*.*x", pc_digits, pc_digits, pc);
-        } else {
-          st->fill_to(pc_digits);
-        }
-        st->print(" %c ", starts_bundle);
-        starts_bundle = ' ';
-        st->fill_to(prefix_len);
-        delay->format(_regalloc, st);
-        st->cr();
-        delay = NULL;
-      }
-
-      // Dump the exception table as well
-      if( n->is_Catch() && (Verbose || WizardMode) ) {
-        // Print the exception table for this offset
-        _handler_table.print_subtable_for(pc);
-      }
-      st->bol(); // Make sure we start on a new line
-    }
-    st->cr(); // one empty line between blocks
-    assert(cut_short || delay == NULL, "no unconditional delay branch");
-  } // End of per-block dump
-
-  if (cut_short)  st->print_cr("*** disassembly is cut short ***");
-}
-#endif
 
 //------------------------------Final_Reshape_Counts---------------------------
 // This class defines counters to help identify when a method
@@ -3982,222 +3643,6 @@ Compile::TracePhase::~TracePhase() {
 
   if (_log != NULL) {
     _log->done("phase name='%s' nodes='%d' live='%d'", _phase_name, C->unique(), C->live_nodes());
-  }
-}
-
-//=============================================================================
-// Two Constant's are equal when the type and the value are equal.
-bool Compile::Constant::operator==(const Constant& other) {
-  if (type()          != other.type()         )  return false;
-  if (can_be_reused() != other.can_be_reused())  return false;
-  // For floating point values we compare the bit pattern.
-  switch (type()) {
-  case T_INT:
-  case T_FLOAT:   return (_v._value.i == other._v._value.i);
-  case T_LONG:
-  case T_DOUBLE:  return (_v._value.j == other._v._value.j);
-  case T_OBJECT:
-  case T_ADDRESS: return (_v._value.l == other._v._value.l);
-  case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries
-  case T_METADATA: return (_v._metadata == other._v._metadata);
-  default: ShouldNotReachHere(); return false;
-  }
-}
-
-static int type_to_size_in_bytes(BasicType t) {
-  switch (t) {
-  case T_INT:     return sizeof(jint   );
-  case T_LONG:    return sizeof(jlong  );
-  case T_FLOAT:   return sizeof(jfloat );
-  case T_DOUBLE:  return sizeof(jdouble);
-  case T_METADATA: return sizeof(Metadata*);
-    // We use T_VOID as marker for jump-table entries (labels) which
-    // need an internal word relocation.
-  case T_VOID:
-  case T_ADDRESS:
-  case T_OBJECT:  return sizeof(jobject);
-  default:
-    ShouldNotReachHere();
-    return -1;
-  }
-}
-
-int Compile::ConstantTable::qsort_comparator(Constant* a, Constant* b) {
-  // sort descending
-  if (a->freq() > b->freq())  return -1;
-  if (a->freq() < b->freq())  return  1;
-  return 0;
-}
-
-void Compile::ConstantTable::calculate_offsets_and_size() {
-  // First, sort the array by frequencies.
-  _constants.sort(qsort_comparator);
-
-#ifdef ASSERT
-  // Make sure all jump-table entries were sorted to the end of the
-  // array (they have a negative frequency).
-  bool found_void = false;
-  for (int i = 0; i < _constants.length(); i++) {
-    Constant con = _constants.at(i);
-    if (con.type() == T_VOID)
-      found_void = true;  // jump-tables
-    else
-      assert(!found_void, "wrong sorting");
-  }
-#endif
-
-  int offset = 0;
-  for (int i = 0; i < _constants.length(); i++) {
-    Constant* con = _constants.adr_at(i);
-
-    // Align offset for type.
-    int typesize = type_to_size_in_bytes(con->type());
-    offset = align_up(offset, typesize);
-    con->set_offset(offset);   // set constant's offset
-
-    if (con->type() == T_VOID) {
-      MachConstantNode* n = (MachConstantNode*) con->get_jobject();
-      offset = offset + typesize * n->outcnt();  // expand jump-table
-    } else {
-      offset = offset + typesize;
-    }
-  }
-
-  // Align size up to the next section start (which is insts; see
-  // CodeBuffer::align_at_start).
-  assert(_size == -1, "already set?");
-  _size = align_up(offset, (int)CodeEntryAlignment);
-}
-
-void Compile::ConstantTable::emit(CodeBuffer& cb) {
-  MacroAssembler _masm(&cb);
-  for (int i = 0; i < _constants.length(); i++) {
-    Constant con = _constants.at(i);
-    address constant_addr = NULL;
-    switch (con.type()) {
-    case T_INT:    constant_addr = _masm.int_constant(   con.get_jint()   ); break;
-    case T_LONG:   constant_addr = _masm.long_constant(  con.get_jlong()  ); break;
-    case T_FLOAT:  constant_addr = _masm.float_constant( con.get_jfloat() ); break;
-    case T_DOUBLE: constant_addr = _masm.double_constant(con.get_jdouble()); break;
-    case T_OBJECT: {
-      jobject obj = con.get_jobject();
-      int oop_index = _masm.oop_recorder()->find_index(obj);
-      constant_addr = _masm.address_constant((address) obj, oop_Relocation::spec(oop_index));
-      break;
-    }
-    case T_ADDRESS: {
-      address addr = (address) con.get_jobject();
-      constant_addr = _masm.address_constant(addr);
-      break;
-    }
-    // We use T_VOID as marker for jump-table entries (labels) which
-    // need an internal word relocation.
-    case T_VOID: {
-      MachConstantNode* n = (MachConstantNode*) con.get_jobject();
-      // Fill the jump-table with a dummy word.  The real value is
-      // filled in later in fill_jump_table.
-      address dummy = (address) n;
-      constant_addr = _masm.address_constant(dummy);
-      // Expand jump-table
-      for (uint i = 1; i < n->outcnt(); i++) {
-        address temp_addr = _masm.address_constant(dummy + i);
-        assert(temp_addr, "consts section too small");
-      }
-      break;
-    }
-    case T_METADATA: {
-      Metadata* obj = con.get_metadata();
-      int metadata_index = _masm.oop_recorder()->find_index(obj);
-      constant_addr = _masm.address_constant((address) obj, metadata_Relocation::spec(metadata_index));
-      break;
-    }
-    default: ShouldNotReachHere();
-    }
-    assert(constant_addr, "consts section too small");
-    assert((constant_addr - _masm.code()->consts()->start()) == con.offset(),
-            "must be: %d == %d", (int) (constant_addr - _masm.code()->consts()->start()), (int)(con.offset()));
-  }
-}
-
-int Compile::ConstantTable::find_offset(Constant& con) const {
-  int idx = _constants.find(con);
-  guarantee(idx != -1, "constant must be in constant table");
-  int offset = _constants.at(idx).offset();
-  guarantee(offset != -1, "constant table not emitted yet?");
-  return offset;
-}
-
-void Compile::ConstantTable::add(Constant& con) {
-  if (con.can_be_reused()) {
-    int idx = _constants.find(con);
-    if (idx != -1 && _constants.at(idx).can_be_reused()) {
-      _constants.adr_at(idx)->inc_freq(con.freq());  // increase the frequency by the current value
-      return;
-    }
-  }
-  (void) _constants.append(con);
-}
-
-Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, BasicType type, jvalue value) {
-  Block* b = Compile::current()->cfg()->get_block_for_node(n);
-  Constant con(type, value, b->_freq);
-  add(con);
-  return con;
-}
-
-Compile::Constant Compile::ConstantTable::add(Metadata* metadata) {
-  Constant con(metadata);
-  add(con);
-  return con;
-}
-
-Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* oper) {
-  jvalue value;
-  BasicType type = oper->type()->basic_type();
-  switch (type) {
-  case T_LONG:    value.j = oper->constantL(); break;
-  case T_FLOAT:   value.f = oper->constantF(); break;
-  case T_DOUBLE:  value.d = oper->constantD(); break;
-  case T_OBJECT:
-  case T_ADDRESS: value.l = (jobject) oper->constant(); break;
-  case T_METADATA: return add((Metadata*)oper->constant()); break;
-  default: guarantee(false, "unhandled type: %s", type2name(type));
-  }
-  return add(n, type, value);
-}
-
-Compile::Constant Compile::ConstantTable::add_jump_table(MachConstantNode* n) {
-  jvalue value;
-  // We can use the node pointer here to identify the right jump-table
-  // as this method is called from Compile::Fill_buffer right before
-  // the MachNodes are emitted and the jump-table is filled (means the
-  // MachNode pointers do not change anymore).
-  value.l = (jobject) n;
-  Constant con(T_VOID, value, next_jump_table_freq(), false);  // Labels of a jump-table cannot be reused.
-  add(con);
-  return con;
-}
-
-void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const {
-  // If called from Compile::scratch_emit_size do nothing.
-  if (Compile::current()->in_scratch_emit_size())  return;
-
-  assert(labels.is_nonempty(), "must be");
-  assert((uint) labels.length() == n->outcnt(), "must be equal: %d == %d", labels.length(), n->outcnt());
-
-  // Since MachConstantNode::constant_offset() also contains
-  // table_base_offset() we need to subtract the table_base_offset()
-  // to get the plain offset into the constant table.
-  int offset = n->constant_offset() - table_base_offset();
-
-  MacroAssembler _masm(&cb);
-  address* jump_table_base = (address*) (_masm.code()->consts()->start() + offset);
-
-  for (uint i = 0; i < n->outcnt(); i++) {
-    address* constant_addr = &jump_table_base[i];
-    assert(*constant_addr == (((address) n) + i), "all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, p2i(*constant_addr), p2i(((address) n) + i));
-    *constant_addr = cb.consts()->target(*labels.at(i), (address) constant_addr);
-    cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
   }
 }
 
