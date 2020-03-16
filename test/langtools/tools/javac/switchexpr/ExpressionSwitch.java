@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986 8222169 8224031
+ * @bug 8206986 8222169 8224031 8240964
  * @summary Check expression switch works.
  * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
  * @compile ExpressionSwitch.java
@@ -101,6 +101,21 @@ public class ExpressionSwitch {
             case "A", "B": yield 0;
             case "C": yield 1;
             default: yield -1;
+        };
+    }
+
+    private Object yieldDisambiguationLiterals(String s) {
+        return switch (s) {
+            case "a": yield 0;
+            case "b": yield 0L;
+            case "c": yield 0.0f;
+            case "d": yield 0.0d;
+            case "e": yield true;
+            case "f": yield false;
+            case "g": yield '0';
+            case "h": yield "";
+            case "i": yield null;
+            default: yield 0;
         };
     }
 
