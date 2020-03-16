@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,14 @@ import java.util.stream.Stream;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 
 /**
  * Tests Era.getDisplayName() correctly returns the name based on each
  * chrono implementation.
  * Note: The exact result may depend on locale data provider's implementation.
  *
- * @bug 8171049 8224105
+ * @bug 8171049 8224105 8240626
  */
 @Test
 public class TestEraDisplayName {
@@ -150,6 +151,19 @@ public class TestEraDisplayName {
             .toArray(Object[][]::new);
     }
 
+    @DataProvider
+    Object[][] allEras() {
+        return Stream.of(IsoEra.values(),
+                        JapaneseEra.values(),
+                        HijrahEra.values(),
+                        ThaiBuddhistEra.values(),
+                        MinguoEra.values())
+            .flatMap(v -> Arrays.stream(v))
+            .map(Stream::of)
+            .map(Stream::toArray)
+            .toArray(Object[][]::new);
+    }
+
     @Test(dataProvider="eraDisplayName")
     public void test_eraDisplayName(Era era, TextStyle style, Locale locale, String expected) {
         assertEquals(era.getDisplayName(style, locale), expected);
@@ -159,5 +173,20 @@ public class TestEraDisplayName {
     public void test_reiwaNames(Locale locale) throws DateTimeParseException {
         DateTimeFormatter f = JAPANESE_FORMATTER.withLocale(locale);
         assertEquals(LocalDate.parse(REIWA_1ST.format(f), f), REIWA_1ST);
+    }
+
+    // Make sure era display names aren't empty
+    // @bug 8240626
+    @Test(dataProvider="allEras")
+    public void test_noEmptyEraNames(Era era) {
+        Arrays.stream(Locale.getAvailableLocales())
+            .forEach(l -> {
+                Arrays.stream(TextStyle.values())
+                    .forEach(s -> {
+                        assertFalse(era.getDisplayName(s, l).isEmpty(),
+                            "getDisplayName() returns empty display name for era: " + era
+                            + ", style: " + s + ", locale: " + l);
+                    });
+            });
     }
 }
