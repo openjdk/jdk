@@ -2302,6 +2302,19 @@ void os::Linux::print_full_memory_info(outputStream* st) {
   st->print("\n/proc/meminfo:\n");
   _print_ascii_file("/proc/meminfo", st);
   st->cr();
+
+  // some information regarding THPs; for details see
+  // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
+  st->print_cr("/sys/kernel/mm/transparent_hugepage/enabled:");
+  if (!_print_ascii_file("/sys/kernel/mm/transparent_hugepage/enabled", st)) {
+    st->print_cr("  <Not Available>");
+  }
+  st->cr();
+  st->print_cr("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter):");
+  if (!_print_ascii_file("/sys/kernel/mm/transparent_hugepage/defrag", st)) {
+    st->print_cr("  <Not Available>");
+  }
+  st->cr();
 }
 
 void os::Linux::print_ld_preload_file(outputStream* st) {
