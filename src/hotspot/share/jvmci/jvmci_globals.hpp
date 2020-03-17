@@ -107,9 +107,6 @@ class fileStream;
   experimental(intx, JVMCINMethodSizeLimit, (80*K)*wordSize,                \
           "Maximum size of a compiled method.")                             \
                                                                             \
-  experimental(intx, MethodProfileWidth, 0,                                 \
-          "Number of methods to record in call profile")                    \
-                                                                            \
   experimental(ccstr, JVMCILibPath, NULL,                                   \
           "LD path for loading the JVMCI shared library")                   \
                                                                             \

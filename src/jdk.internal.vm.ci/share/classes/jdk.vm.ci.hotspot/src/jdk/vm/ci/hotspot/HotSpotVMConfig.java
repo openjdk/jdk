@@ -313,7 +313,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int bciProfileWidth = getFlag("BciProfileWidth", Integer.class);
     final int typeProfileWidth = getFlag("TypeProfileWidth", Integer.class);
-    final int methodProfileWidth = getFlag("MethodProfileWidth", Integer.class);
+    final int methodProfileWidth = getFlag("MethodProfileWidth", Integer.class, 0);
 
     final int deoptReasonNone = getConstant("Deoptimization::Reason_none", Integer.class);
     final int deoptReasonNullCheck = getConstant("Deoptimization::Reason_null_check", Integer.class);

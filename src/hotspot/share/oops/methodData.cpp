@@ -409,28 +409,6 @@ void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
   }
 }
 
-#if INCLUDE_JVMCI
-void VirtualCallData::clean_weak_klass_links(bool always_clean) {
-  ReceiverTypeData::clean_weak_klass_links(always_clean);
-  for (uint row = 0; row < method_row_limit(); row++) {
-    Method* p = method(row);
-    if (p != NULL && (always_clean || !p->method_holder()->is_loader_alive())) {
-      clear_method_row(row);
-    }
-  }
-}
-
-void VirtualCallData::clean_weak_method_links() {
-  ReceiverTypeData::clean_weak_method_links();
-  for (uint row = 0; row < method_row_limit(); row++) {
-    Method* p = method(row);
-    if (p != NULL && p->is_old()) {
-      clear_method_row(row);
-    }
-  }
-}
-#endif // INCLUDE_JVMCI
-
 void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
@@ -461,35 +439,9 @@ void ReceiverTypeData::print_data_on(outputStream* st, const char* extra) const 
   print_receiver_data_on(st);
 }
 
-#if INCLUDE_JVMCI
-void VirtualCallData::print_method_data_on(outputStream* st) const {
-  uint row;
-  int entries = 0;
-  for (row = 0; row < method_row_limit(); row++) {
-    if (method(row) != NULL) entries++;
-  }
-  tab(st);
-  st->print_cr("method_entries(%u)", entries);
-  int total = count();
-  for (row = 0; row < method_row_limit(); row++) {
-    if (method(row) != NULL) {
-      total += method_count(row);
-    }
-  }
-  for (row = 0; row < method_row_limit(); row++) {
-    if (method(row) != NULL) {
-      tab(st);
-      method(row)->print_value_on(st);
-      st->print_cr("(%u %4.2f)", method_count(row), (float) method_count(row) / (float) total);
-    }
-  }
-}
-#endif // INCLUDE_JVMCI
-
 void VirtualCallData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "VirtualCallData", extra);
   print_receiver_data_on(st);
-  print_method_data_on(st);
 }
 
 // ==================================================================

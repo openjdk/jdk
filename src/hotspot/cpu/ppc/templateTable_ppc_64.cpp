@@ -3664,7 +3664,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Found entry. Jump off!
   // Argument and return type profiling.
   __ profile_arguments_type(Rmethod2, Rscratch1, Rscratch2, true);
-  //__ profile_called_method(Rindex, Rscratch1);
   __ call_from_interpreter(Rmethod2, Rret_addr, Rscratch1, Rscratch2);
 
   // Vtable entry was NULL => Throw abstract method error.

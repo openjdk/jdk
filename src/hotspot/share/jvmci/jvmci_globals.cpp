@@ -108,7 +108,6 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCICountersExcludeCompiler, EnableJVMCI)
   CHECK_NOT_SET(JVMCIUseFastLocking,          EnableJVMCI)
   CHECK_NOT_SET(JVMCINMethodSizeLimit,        EnableJVMCI)
-  CHECK_NOT_SET(MethodProfileWidth,           EnableJVMCI)
   CHECK_NOT_SET(JVMCIPrintProperties,         EnableJVMCI)
   CHECK_NOT_SET(UseJVMCINativeLibrary,        EnableJVMCI)
   CHECK_NOT_SET(JVMCILibPath,                 EnableJVMCI)
