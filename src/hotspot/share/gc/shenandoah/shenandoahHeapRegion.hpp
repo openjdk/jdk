@@ -261,7 +261,7 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
-  HeapWord* volatile _update_watermark;
+  HeapWord* _update_watermark;
 
   // Claim some space at the end to protect next region
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
@@ -431,13 +431,20 @@ public:
   }
 
   HeapWord* get_update_watermark() const {
-    assert(bottom() <= _update_watermark && _update_watermark <= top(), "within bounds");
-    return Atomic::load_acquire(&_update_watermark);
+    // Updates to the update-watermark only happen at safepoints or, when pushing
+    // back the watermark for evacuation regions, under the Shenandoah heap-lock.
+    // Consequently, we should access the field under the same lock. However, since
+    // those updates are only monotonically increasing, possibly reading a stale value
+    // is only conservative - we would not miss to update any fields.
+    HeapWord* watermark = _update_watermark;
+    assert(bottom() <= watermark && watermark <= top(), "within bounds");
+    return watermark;
   }
 
   void set_update_watermark(HeapWord* w) {
+    _heap->assert_heaplock_or_safepoint();
     assert(bottom() <= w && w <= top(), "within bounds");
-    Atomic::release_store(&_update_watermark, w);
+    _update_watermark = w;
   }
 
 private:
