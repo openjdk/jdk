@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "asm/macroAssembler.hpp"
 #include "opto/block.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/machnode.hpp"

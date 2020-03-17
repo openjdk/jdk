@@ -339,15 +339,15 @@ class Address {
 
  private:
   bool base_needs_rex() const {
-    return _base != noreg && _base->encoding() >= 8;
+    return _base->is_valid() && _base->encoding() >= 8;
   }
 
   bool index_needs_rex() const {
-    return _index != noreg &&_index->encoding() >= 8;
+    return _index->is_valid() &&_index->encoding() >= 8;
   }
 
   bool xmmindex_needs_rex() const {
-    return _xmmindex != xnoreg && _xmmindex->encoding() >= 8;
+    return _xmmindex->is_valid() && _xmmindex->encoding() >= 8;
   }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
@@ -659,7 +659,7 @@ private:
   bool _legacy_mode_dq;
   bool _legacy_mode_vl;
   bool _legacy_mode_vlbw;
-  bool _is_managed;
+  NOT_LP64(bool _is_managed;)
 
   class InstructionAttr *_attributes;
 
@@ -870,16 +870,18 @@ private:
     _legacy_mode_dq = (VM_Version::supports_avx512dq() == false);
     _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
     _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
-    _is_managed = false;
+    NOT_LP64(_is_managed = false;)
     _attributes = NULL;
   }
 
   void set_attributes(InstructionAttr *attributes) { _attributes = attributes; }
   void clear_attributes(void) { _attributes = NULL; }
 
-  void set_managed(void) { _is_managed = true; }
-  void clear_managed(void) { _is_managed = false; }
-  bool is_managed(void) { return _is_managed; }
+  void set_managed(void) { NOT_LP64(_is_managed = true;) }
+  void clear_managed(void) { NOT_LP64(_is_managed = false;) }
+  bool is_managed(void) {
+    NOT_LP64(return _is_managed;)
+    LP64_ONLY(return false;) }
 
   void lea(Register dst, Address src);
 
@@ -2280,22 +2282,20 @@ public:
     bool no_reg_mask,   // when true, k0 is used when EVEX encoding is chosen, else embedded_opmask_register_specifier is used
     bool uses_vl)       // This instruction may have legacy constraints based on vector length for EVEX
     :
-      _avx_vector_len(vector_len),
       _rex_vex_w(rex_vex_w),
-      _rex_vex_w_reverted(false),
-      _legacy_mode(legacy_mode),
+      _legacy_mode(legacy_mode || UseAVX < 3),
       _no_reg_mask(no_reg_mask),
       _uses_vl(uses_vl),
-      _tuple_type(Assembler::EVEX_ETUP),
-      _input_size_in_bits(Assembler::EVEX_NObit),
+      _rex_vex_w_reverted(false),
       _is_evex_instruction(false),
-      _evex_encoding(0),
       _is_clear_context(true),
       _is_extended_context(false),
+      _avx_vector_len(vector_len),
+      _tuple_type(Assembler::EVEX_ETUP),
+      _input_size_in_bits(Assembler::EVEX_NObit),
+      _evex_encoding(0),
       _embedded_opmask_register_specifier(0), // hard code k0
-      _current_assembler(NULL) {
-    if (UseAVX < 3) _legacy_mode = true;
-  }
+      _current_assembler(NULL) { }
 
   ~InstructionAttr() {
     if (_current_assembler != NULL) {
@@ -2305,37 +2305,37 @@ public:
   }
 
 private:
-  int  _avx_vector_len;
   bool _rex_vex_w;
-  bool _rex_vex_w_reverted;
   bool _legacy_mode;
   bool _no_reg_mask;
   bool _uses_vl;
-  int  _tuple_type;
-  int  _input_size_in_bits;
+  bool _rex_vex_w_reverted;
   bool _is_evex_instruction;
-  int  _evex_encoding;
   bool _is_clear_context;
   bool _is_extended_context;
+  int  _avx_vector_len;
+  int  _tuple_type;
+  int  _input_size_in_bits;
+  int  _evex_encoding;
   int _embedded_opmask_register_specifier;
 
   Assembler *_current_assembler;
 
 public:
   // query functions for field accessors
-  int  get_vector_len(void) const { return _avx_vector_len; }
   bool is_rex_vex_w(void) const { return _rex_vex_w; }
-  bool is_rex_vex_w_reverted(void) { return _rex_vex_w_reverted; }
   bool is_legacy_mode(void) const { return _legacy_mode; }
   bool is_no_reg_mask(void) const { return _no_reg_mask; }
   bool uses_vl(void) const { return _uses_vl; }
-  int  get_tuple_type(void) const { return _tuple_type; }
-  int  get_input_size(void) const { return _input_size_in_bits; }
-  int  is_evex_instruction(void) const { return _is_evex_instruction; }
-  int  get_evex_encoding(void) const { return _evex_encoding; }
+  bool is_rex_vex_w_reverted(void) { return _rex_vex_w_reverted; }
+  bool is_evex_instruction(void) const { return _is_evex_instruction; }
   bool is_clear_context(void) const { return _is_clear_context; }
   bool is_extended_context(void) const { return _is_extended_context; }
-  int get_embedded_opmask_register_specifier(void) const { return _embedded_opmask_register_specifier; }
+  int  get_vector_len(void) const { return _avx_vector_len; }
+  int  get_tuple_type(void) const { return _tuple_type; }
+  int  get_input_size(void) const { return _input_size_in_bits; }
+  int  get_evex_encoding(void) const { return _evex_encoding; }
+  int  get_embedded_opmask_register_specifier(void) const { return _embedded_opmask_register_specifier; }
 
   // Set the vector len manually
   void set_vector_len(int vector_len) { _avx_vector_len = vector_len; }

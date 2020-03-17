@@ -255,15 +255,16 @@ public:
 
     // Step 1: Process GC roots.
     // For oops in code roots, they are marked, evacuated, enqueued for further traversal,
-    // and the references to the oops are updated during init pause. New nmethods are handled
-    // in similar way during nmethod-register process. Therefore, we don't need to rescan code
-    // roots here.
+    // and the references to the oops are updated during init pause. We only need to rescan
+    // on stack code roots, in case of class unloading is enabled. Otherwise, code roots are
+    // scanned during init traversal or degenerated GC will update them at the end.
     if (!_heap->is_degenerated_gc_in_progress()) {
       ShenandoahTraversalRootsClosure roots_cl(q, rp);
       ShenandoahTraversalSATBThreadsClosure tc(&satb_cl);
       if (unload_classes) {
         ShenandoahRemarkCLDClosure remark_cld_cl(&roots_cl);
-        _rp->strong_roots_do(worker_id, &roots_cl, &remark_cld_cl, NULL, &tc);
+        MarkingCodeBlobClosure code_cl(&roots_cl, CodeBlobToOopClosure::FixRelocations);
+        _rp->strong_roots_do(worker_id, &roots_cl, &remark_cld_cl, &code_cl, &tc);
       } else {
         CLDToOopClosure cld_cl(&roots_cl, ClassLoaderData::_claim_strong);
         _rp->roots_do(worker_id, &roots_cl, &cld_cl, NULL, &tc);
