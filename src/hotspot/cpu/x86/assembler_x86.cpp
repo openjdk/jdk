@@ -7900,7 +7900,7 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
   // is allowed in legacy mode and has resources which will fit in it.
   // Pure EVEX instructions will have is_evex_instruction set in their definition.
   if (!attributes->is_legacy_mode()) {
-    if (UseAVX > 2 && !attributes->is_evex_instruction() && !_is_managed) {
+    if (UseAVX > 2 && !attributes->is_evex_instruction() && !is_managed()) {
       if ((attributes->get_vector_len() != AVX_512bit) && (nds_enc < 16) && (xreg_enc < 16)) {
           attributes->set_is_legacy_mode();
       }
@@ -7915,7 +7915,7 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
     assert(((nds_enc < 16 && xreg_enc < 16) || (!attributes->is_legacy_mode())),"XMM register should be 0-15");
   }
 
-  _is_managed = false;
+  clear_managed();
   if (UseAVX > 2 && !attributes->is_legacy_mode())
   {
     bool evex_r = (xreg_enc >= 16);
@@ -7947,7 +7947,7 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   // is allowed in legacy mode and has resources which will fit in it.
   // Pure EVEX instructions will have is_evex_instruction set in their definition.
   if (!attributes->is_legacy_mode()) {
-    if (UseAVX > 2 && !attributes->is_evex_instruction() && !_is_managed) {
+    if (UseAVX > 2 && !attributes->is_evex_instruction() && !is_managed()) {
       if ((!attributes->uses_vl() || (attributes->get_vector_len() != AVX_512bit)) &&
           (dst_enc < 16) && (nds_enc < 16) && (src_enc < 16)) {
           attributes->set_is_legacy_mode();
@@ -7969,7 +7969,7 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
     assert(((dst_enc < 16 && nds_enc < 16 && src_enc < 16) || (!attributes->is_legacy_mode())),"XMM register should be 0-15");
   }
 
-  _is_managed = false;
+  clear_managed();
   if (UseAVX > 2 && !attributes->is_legacy_mode())
   {
     bool evex_r = (dst_enc >= 16);
