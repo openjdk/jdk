@@ -31,7 +31,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm TestClhsdbJstackLock
  */

@@ -32,7 +32,7 @@ import jtreg.SkippedException;
 /**
  * @test
  * @library /test/lib
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @requires vm.flavor == "server" & !vm.emulatedClient & !(vm.opt.TieredStopAtLevel == 1)
  * @build jdk.test.lib.apps.*
  * @run main/othervm TestPrintMdo
@@ -41,7 +41,6 @@ import jtreg.SkippedException;
 public class TestPrintMdo {
 
     public static void main (String... args) throws Exception {
-
         System.out.println("Starting TestPrintMdo test");
         LingeredApp app = null;
         try {

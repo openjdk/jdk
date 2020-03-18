@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 
 public class TmtoolTestScenario {
@@ -110,8 +111,8 @@ public class TmtoolTestScenario {
                 launcher.addToolArg("--pid");
                 launcher.addToolArg(Long.toString(theApp.getPid()));
 
-                ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
-                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+                ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
+               processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
                 Process toolProcess = processBuilder.start();
 
                 // By default child process output stream redirected to pipe, so we are reading it in foreground.

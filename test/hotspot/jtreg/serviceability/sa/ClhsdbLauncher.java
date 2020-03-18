@@ -33,8 +33,6 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
-import jtreg.SkippedException;
-
 
 /**
  * This is a framework to run 'jhsdb clhsdb' commands.
@@ -45,11 +43,9 @@ import jtreg.SkippedException;
 public class ClhsdbLauncher {
 
     private Process toolProcess;
-    private boolean needPrivileges;
 
     public ClhsdbLauncher() {
         toolProcess = null;
-        needPrivileges = false;
     }
 
     /**
@@ -66,11 +62,7 @@ public class ClhsdbLauncher {
             System.out.println("Starting clhsdb against " + lingeredAppPid);
         }
 
-        List<String> cmdStringList = Arrays.asList(launcher.getCommand());
-        if (needPrivileges) {
-            cmdStringList = SATestUtils.addPrivileges(cmdStringList);
-        }
-        ProcessBuilder processBuilder = new ProcessBuilder(cmdStringList);
+        ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
         toolProcess = processBuilder.start();
     }
 
@@ -203,22 +195,7 @@ public class ClhsdbLauncher {
                       Map<String, List<String>> unExpectedStrMap)
         throws Exception {
 
-        if (!Platform.shouldSAAttach()) {
-            if (Platform.isOSX()) {
-                if (Platform.isSignedOSX()) {
-                    throw new SkippedException("SA attach not expected to work. JDK is signed.");
-                } else if (SATestUtils.canAddPrivileges()) {
-                    needPrivileges = true;
-                }
-            }
-            if (!needPrivileges)  {
-               // Skip the test if we don't have enough permissions to attach
-               // and cannot add privileges.
-               throw new SkippedException(
-                   "SA attach not expected to work. Insufficient privileges.");
-           }
-        }
-
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         attach(lingeredAppPid);
         return runCmd(commands, expectedStrMap, unExpectedStrMap);
     }

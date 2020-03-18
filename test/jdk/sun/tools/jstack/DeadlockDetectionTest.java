@@ -27,19 +27,19 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.apps.LingeredAppWithDeadlock;
-import jdk.test.lib.Platform;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-
 import jdk.test.lib.Utils;
-import jdk.test.lib.JDKToolLauncher;
+
+import jtreg.SkippedException;
 
 /**
  * @test
  * @summary Test deadlock detection
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
- * @build jdk.test.lib.apps.* jdk.test.lib.Platform
+ * @build jdk.test.lib.apps.*
  * @build DeadlockDetectionTest
  * @run main DeadlockDetectionTest
  */
@@ -83,13 +83,11 @@ public class DeadlockDetectionTest {
             System.out.println(output.getOutput());
 
             if (output.getExitValue() == 3) {
-                System.out.println("Test can't run for some reason. Skipping");
-            }
-            else {
+                throw new SkippedException("Test can't run for some reason");
+            } else {
                 output.shouldHaveExitValue(0);
                 output.shouldContain("Found 1 deadlock.");
             }
-
         } finally {
             LingeredApp.stopApp(theApp);
         }

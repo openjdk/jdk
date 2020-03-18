@@ -33,18 +33,19 @@ import sun.jvm.hotspot.utilities.MethodArray;
 import sun.jvm.hotspot.ui.classbrowser.HTMLGenerator;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
-import jdk.test.lib.Asserts;
 
 /**
  * @test
  * @library /test/lib
- * @requires vm.hasSAandCanAttach & os.family != "mac"
+ * @requires vm.hasSA
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
@@ -103,6 +104,7 @@ public class TestCpoolForInvokeDynamic {
 
         // Start a new process to attach to the lingered app
         ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(toolArgs);
+        SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);
         System.out.println(SAOutput.getOutput());
@@ -115,6 +117,7 @@ public class TestCpoolForInvokeDynamic {
     }
 
     public static void main (String... args) throws Exception {
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
         String[] instanceKlassNames = new String[] {
                                           "LingeredAppWithInvokeDynamic"

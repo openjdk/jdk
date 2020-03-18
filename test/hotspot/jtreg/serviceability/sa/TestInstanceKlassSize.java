@@ -30,13 +30,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
-import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Asserts;
 
 import java.io.*;
 import java.util.*;
@@ -44,7 +45,7 @@ import java.util.*;
 /**
  * @test
  * @library /test/lib
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
@@ -97,6 +98,7 @@ public class TestInstanceKlassSize {
 
             ProcessBuilder processBuilder = ProcessTools
                                             .createJavaProcessBuilder(toolArgs);
+            SATestUtils.addPrivilegesIfNeeded(processBuilder);
             output = ProcessTools.executeProcess(processBuilder);
             System.out.println(output.getOutput());
             output.shouldHaveExitValue(0);
@@ -148,7 +150,7 @@ public class TestInstanceKlassSize {
     }
 
     public static void main(String[] args) throws Exception {
-
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         if (args == null || args.length == 0) {
             System.out.println ("No args run. Starting with args now.");
             startMeWithArgs();

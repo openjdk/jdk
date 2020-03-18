@@ -26,15 +26,12 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class Platform {
     public  static final String vmName      = privilegedGetProperty("java.vm.name");
@@ -217,6 +214,10 @@ public class Platform {
         return osArch;
     }
 
+    public static boolean isRoot() {
+        return userName.equals("root");
+    }
+
     /**
      * Return a boolean for whether SA and jhsdb are ported/available
      * on this platform.
@@ -284,77 +285,6 @@ public class Platform {
                                codesignProcess.exitValue());
             return false; // not signed
         }
-    }
-
-    /**
-     * Return a boolean for whether we expect to be able to attach
-     * the SA to our own processes on this system.  This requires
-     * that SA is ported/available on this platform.
-     */
-    public static boolean shouldSAAttach() throws IOException {
-        if (!hasSA()) return false;
-        if (isLinux()) {
-            return canPtraceAttachLinux();
-        } else if (isOSX()) {
-            return canAttachOSX() && !isSignedOSX();
-        } else {
-            // Other platforms expected to work:
-            return true;
-        }
-    }
-
-    /**
-     * On Linux, first check the SELinux boolean "deny_ptrace" and return false
-     * as we expect to be denied if that is "1".  Then expect permission to attach
-     * if we are root, so return true.  Then return false for an expected denial
-     * if "ptrace_scope" is 1, and true otherwise.
-     */
-    private static boolean canPtraceAttachLinux() throws IOException {
-        // SELinux deny_ptrace:
-        File deny_ptrace = new File("/sys/fs/selinux/booleans/deny_ptrace");
-        if (deny_ptrace.exists()) {
-            try (RandomAccessFile file = AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<RandomAccessFile>) () -> new RandomAccessFile(deny_ptrace, "r"))) {
-                if (file.readByte() != '0') {
-                    return false;
-                }
-            } catch (PrivilegedActionException e) {
-                IOException t = (IOException) e.getException();
-                throw t;
-            }
-        }
-
-        // YAMA enhanced security ptrace_scope:
-        // 0 - a process can PTRACE_ATTACH to any other process running under the same uid
-        // 1 - restricted ptrace: a process must be a children of the inferior or user is root
-        // 2 - only processes with CAP_SYS_PTRACE may use ptrace or user is root
-        // 3 - no attach: no processes may use ptrace with PTRACE_ATTACH
-        File ptrace_scope = new File("/proc/sys/kernel/yama/ptrace_scope");
-        if (ptrace_scope.exists()) {
-            try (RandomAccessFile file = AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<RandomAccessFile>) () -> new RandomAccessFile(ptrace_scope, "r"))) {
-                byte yama_scope = file.readByte();
-                if (yama_scope == '3') {
-                    return false;
-                }
-
-                if (!userName.equals("root") && yama_scope != '0') {
-                    return false;
-                }
-            } catch (PrivilegedActionException e) {
-                IOException t = (IOException) e.getException();
-                throw t;
-            }
-        }
-        // Otherwise expect to be permitted:
-        return true;
-    }
-
-    /**
-     * On OSX, expect permission to attach only if we are root.
-     */
-    private static boolean canAttachOSX() {
-        return userName.equals("root");
     }
 
     private static boolean isArch(String archnameRE) {

@@ -30,18 +30,19 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 
 /**
  * @test
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main JhsdbThreadInfoTest
  */
 public class JhsdbThreadInfoTest {
 
     public static void main(String[] args) throws Exception {
-
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 
         try {
@@ -54,8 +55,7 @@ public class JhsdbThreadInfoTest {
             jhsdbLauncher.addToolArg("--pid");
             jhsdbLauncher.addToolArg(Long.toString(app.getPid()));
 
-            ProcessBuilder pb = new ProcessBuilder();
-            pb.command(jhsdbLauncher.getCommand());
+            ProcessBuilder pb = SATestUtils.createProcessBuilder(jhsdbLauncher);
             Process jhsdb = pb.start();
 
             OutputAnalyzer out = new OutputAnalyzer(jhsdb);

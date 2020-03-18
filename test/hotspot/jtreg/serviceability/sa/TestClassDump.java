@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.SA.SATestUtils;
 
 /**
  * @test
  * @bug 8184982
  * @summary Test ClassDump tool
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm TestClassDump
  */
@@ -50,6 +51,7 @@ public class TestClassDump {
         pb = ProcessTools.createJavaProcessBuilder(
                 "-Dsun.jvm.hotspot.tools.jcore.outputDir=jtreg_classes",
                 "-m", "jdk.hotspot.agent/sun.jvm.hotspot.tools.jcore.ClassDump", String.valueOf(lingeredAppPid));
+        SATestUtils.addPrivilegesIfNeeded(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (!Files.isDirectory(Paths.get("jtreg_classes"))) {
@@ -69,6 +71,7 @@ public class TestClassDump {
                 "-Dsun.jvm.hotspot.tools.jcore.outputDir=jtreg_classes2",
                 "-Dsun.jvm.hotspot.tools.jcore.PackageNameFilter.pkgList=jdk,sun",
                 "-m", "jdk.hotspot.agent/sun.jvm.hotspot.tools.jcore.ClassDump", String.valueOf(lingeredAppPid));
+        SATestUtils.addPrivilegesIfNeeded(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (Files.exists(Paths.get("jtreg_classes2", "java", "math", "BigInteger.class"))) {
@@ -83,6 +86,7 @@ public class TestClassDump {
     }
 
     public static void main(String[] args) throws Exception {
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp theApp = null;
         try {
             theApp = LingeredApp.startApp();
