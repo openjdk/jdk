@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,7 @@ const oop Edge::pointee() const {
 }
 
 const oop Edge::reference_owner() const {
-  return is_root() ? (oop)NULL : _parent->reference().dereference();
-}
-
-static const Klass* resolve_klass(const oop obj) {
-  assert(obj != NULL, "invariant");
-  return java_lang_Class::is_instance(obj) ?
-    java_lang_Class::as_Klass(obj) : obj->klass();
-}
-
-const Klass* Edge::pointee_klass() const {
-  return resolve_klass(pointee());
-}
-
-const Klass* Edge::reference_owner_klass() const {
-  const oop ref_owner = reference_owner();
-  return ref_owner != NULL ? resolve_klass(ref_owner) : NULL;
+  return is_root() ? (oop)NULL : _parent->pointee();
 }
 
 size_t Edge::distance_to_root() const {
