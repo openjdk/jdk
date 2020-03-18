@@ -137,7 +137,7 @@ public class TableHeader extends Content {
      */
     private Content toContent() {
         String scope = "col";
-        Content tr = new HtmlTree(HtmlTag.TR);
+        Content tr = new HtmlTree(TagName.TR);
         int i = 0;
         for (Content cellContent : cellContents) {
             HtmlStyle style = (styles != null) ? styles.get(i)

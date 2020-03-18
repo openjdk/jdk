@@ -43,7 +43,7 @@ import javax.tools.Diagnostic;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -305,7 +305,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the class elements will be added
      */
     protected void addClassList(Content contentTree) {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
             HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail).setId(getPackageAnchorName(pkg));
@@ -437,7 +437,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
-        headingContent.add(new HtmlTree(HtmlTag.BR));
+        headingContent.add(new HtmlTree(TagName.BR));
         headingContent.add(clname);
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headingContent);

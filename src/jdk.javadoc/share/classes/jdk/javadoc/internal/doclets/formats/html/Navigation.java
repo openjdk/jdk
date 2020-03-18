@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -917,7 +917,7 @@ public class Navigation {
         }
         Content tree = HtmlTree.NAV();
 
-        HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
+        HtmlTree navDiv = new HtmlTree(TagName.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         SectionName navListSection;
         Content aboutContent;
@@ -951,7 +951,7 @@ public class Navigation {
                 throw new Error();
         }
 
-        HtmlTree navList = new HtmlTree(HtmlTag.UL)
+        HtmlTree navList = new HtmlTree(TagName.UL)
                 .setId(navListSection.getName())
                 .setStyle(HtmlStyle.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
@@ -961,15 +961,15 @@ public class Navigation {
         navDiv.add(aboutDiv);
         tree.add(navDiv);
 
-        HtmlTree subDiv = new HtmlTree(HtmlTag.DIV).setStyle(HtmlStyle.subNav);
+        HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);
 
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV);
         // Add the summary links if present.
-        HtmlTree ulNavSummary = new HtmlTree(HtmlTag.UL).setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavSummary = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
         addSummaryLinks(ulNavSummary);
         div.add(ulNavSummary);
         // Add the detail links if present.
-        HtmlTree ulNavDetail = new HtmlTree(HtmlTag.UL).setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
         addDetailLinks(ulNavDetail);
         div.add(ulNavDetail);
         subDiv.add(div);

@@ -45,7 +45,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -238,7 +238,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         dt.add(contents.module_);
         dt.add(" " + moduleName);
         dlTree.add(dt);
-        Content dd = new HtmlTree(HtmlTag.DD);
+        Content dd = new HtmlTree(TagName.DD);
         addSummaryComment(mdle, dd);
         dlTree.add(dd);
     }
@@ -262,7 +262,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         dt.add(contents.package_);
         dt.add(" " + utils.getPackageName(pkg));
         dlTree.add(dt);
-        Content dd = new HtmlTree(HtmlTag.DD);
+        Content dd = new HtmlTree(TagName.DD);
         addSummaryComment(pkg, dd);
         dlTree.add(dd);
     }
@@ -284,7 +284,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         dt.add(" - ");
         addClassInfo(typeElement, dt);
         dlTree.add(dt);
-        Content dd = new HtmlTree(HtmlTag.DD);
+        Content dd = new HtmlTree(TagName.DD);
         addComment(typeElement, dd);
         dlTree.add(dd);
     }
@@ -334,7 +334,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         dt.add(" - ");
         addMemberDesc(member, dt);
         dlTree.add(dt);
-        Content dd = new HtmlTree(HtmlTag.DD);
+        Content dd = new HtmlTree(TagName.DD);
         addComment(member, dd);
         dlTree.add(dd);
     }
@@ -347,7 +347,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", sii.getHolder()));
         dlTree.add(dt);
-        Content dd = new HtmlTree(HtmlTag.DD);
+        Content dd = new HtmlTree(TagName.DD);
         if (sii.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
@@ -368,7 +368,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void addComment(Element element, Content contentTree) {
         List<? extends DocTree> tags;
         Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);

@@ -37,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -106,7 +106,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
@@ -117,7 +117,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     new StringContent(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
-        Content annotationContent = new HtmlTree(HtmlTag.P);
+        Content annotationContent = new HtmlTree(TagName.P);
         addAnnotationInfo(packageElement, annotationContent);
         div.add(annotationContent);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -145,7 +145,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         List<? extends DocTree> deprs = utils.getBlockTags(packageElement, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
-            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
             deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
@@ -161,7 +161,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public Content getSummaryHeader() {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         return ul;
     }

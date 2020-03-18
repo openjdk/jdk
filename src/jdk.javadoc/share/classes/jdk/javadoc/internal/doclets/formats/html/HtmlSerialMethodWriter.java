@@ -30,7 +30,7 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -62,7 +62,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getSerializableMethodsHeader() {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
@@ -75,7 +75,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getMethodsContentHeader(boolean isLastContent) {
-        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        HtmlTree li = new HtmlTree(TagName.LI);
         li.setStyle(HtmlStyle.blockList);
         return li;
     }

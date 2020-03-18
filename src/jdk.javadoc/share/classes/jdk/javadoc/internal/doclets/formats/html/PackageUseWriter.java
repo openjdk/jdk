@@ -36,7 +36,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -192,7 +192,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addClassList(Content contentTree) {
         TableHeader classTableHeader = new TableHeader(
                 contents.classLabel, contents.descriptionLabel);
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
@@ -245,7 +245,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
-        headingContent.add(new HtmlTree(HtmlTag.BR));
+        headingContent.add(new HtmlTree(TagName.BR));
         headingContent.add(name);
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headingContent);

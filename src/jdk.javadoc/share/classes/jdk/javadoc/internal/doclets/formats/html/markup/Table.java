@@ -106,7 +106,7 @@ public class Table extends Content {
      */
     public Table setCaption(Content captionContent) {
         if (captionContent instanceof HtmlTree
-                && ((HtmlTree) captionContent).htmlTag == HtmlTag.CAPTION) {
+                && ((HtmlTree) captionContent).tagName == TagName.CAPTION) {
             caption = captionContent;
         } else {
             caption = getCaption(captionContent);
@@ -353,7 +353,7 @@ public class Table extends Content {
             throw new NullPointerException();
         }
 
-        HtmlTree row = new HtmlTree(HtmlTag.TR);
+        HtmlTree row = new HtmlTree(TagName.TR);
 
         if (stripedStyles != null) {
             int rowIndex = bodyRows.size();
@@ -411,12 +411,12 @@ public class Table extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
+        HtmlTree mainDiv = new HtmlTree(TagName.DIV);
         mainDiv.setStyle(tableStyle);
         if (id != null) {
             mainDiv.setId(id);
         }
-        HtmlTree table = new HtmlTree(HtmlTag.TABLE);
+        HtmlTree table = new HtmlTree(TagName.TABLE);
         if (tabMap == null || tabs.size() == 1) {
             if (tabMap == null) {
                 table.add(caption);
@@ -427,7 +427,7 @@ public class Table extends Content {
             table.add(getTableBody());
             mainDiv.add(table);
         } else {
-            HtmlTree tablist = new HtmlTree(HtmlTag.DIV)
+            HtmlTree tablist = new HtmlTree(TagName.DIV)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
@@ -443,7 +443,7 @@ public class Table extends Content {
                     tablist.add(tab);
                 }
             }
-            HtmlTree tabpanel = new HtmlTree(HtmlTag.DIV)
+            HtmlTree tabpanel = new HtmlTree(TagName.DIV)
                     .put(HtmlAttr.ID, tableStyle.cssName() + "_tabpanel")
                     .put(HtmlAttr.ROLE, "tabpanel");
             table.add(getTableBody());
@@ -455,7 +455,7 @@ public class Table extends Content {
     }
 
     private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
-        HtmlTree tab = new HtmlTree(HtmlTag.BUTTON)
+        HtmlTree tab = new HtmlTree(TagName.BUTTON)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
                 .put(HtmlAttr.ARIA_CONTROLS, tableStyle.cssName() + "_tabpanel")
@@ -469,10 +469,10 @@ public class Table extends Content {
 
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
-        Content thead = new HtmlTree(HtmlTag.THEAD);
+        Content thead = new HtmlTree(TagName.THEAD);
         thead.add(header);
         tableContent.add(thead);
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
+        Content tbody = new HtmlTree(TagName.TBODY);
         bodyRows.forEach(tbody::add);
         tableContent.add(tbody);
         return tableContent;
@@ -549,7 +549,7 @@ public class Table extends Content {
     }
 
     private HtmlTree getCaption(Content title) {
-        return new HtmlTree(HtmlTag.CAPTION)
+        return new HtmlTree(TagName.CAPTION)
                 .add(HtmlTree.SPAN(title))
                 .add(HtmlTree.SPAN(tabEnd, Entity.NO_BREAK_SPACE));
     }

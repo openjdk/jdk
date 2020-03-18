@@ -45,7 +45,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -115,7 +115,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
@@ -192,9 +192,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override @SuppressWarnings("preview")
     public void addClassSignature(String modifiers, Content classInfoTree) {
-        Content hr = new HtmlTree(HtmlTag.HR);
+        Content hr = new HtmlTree(TagName.HR);
         classInfoTree.add(hr);
-        Content pre = new HtmlTree(HtmlTag.PRE);
+        Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
         pre.add(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
@@ -443,7 +443,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 dl.add(HtmlTree.DT(utils.isInterface(e)
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
-                Content dd = new HtmlTree(HtmlTag.DD);
+                Content dd = new HtmlTree(TagName.DD);
                 dd.add(getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS, e)));
                 dl.add(dd);
@@ -458,7 +458,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (isFunctionalInterface()) {
             HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.functionalInterface));
-            Content dd = new HtmlTree(HtmlTag.DD);
+            Content dd = new HtmlTree(TagName.DD);
             dd.add(contents.functionalInterfaceMessage);
             dl.add(dd);
             classInfoTree.add(dl);

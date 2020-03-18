@@ -253,7 +253,7 @@ public class Head extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        HtmlTree tree = new HtmlTree(HtmlTag.HEAD);
+        HtmlTree tree = new HtmlTree(TagName.HEAD);
         tree.add(getGeneratedBy(showTimestamp, generatedDate));
         tree.add(HtmlTree.TITLE(title));
 
@@ -279,7 +279,7 @@ public class Head extends Content {
         }
 
         if (canonicalLink != null) {
-            HtmlTree link = new HtmlTree(HtmlTag.LINK);
+            HtmlTree link = new HtmlTree(TagName.LINK);
             link.put(HtmlAttr.REL, "canonical");
             link.put(HtmlAttr.HREF, canonicalLink.getPath());
             tree.add(link);

@@ -46,7 +46,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
@@ -194,9 +194,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         navBar.setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
-        Content annotationContent = new HtmlTree(HtmlTag.P);
+        Content annotationContent = new HtmlTree(TagName.P);
         addAnnotationInfo(mdle, annotationContent);
         div.add(annotationContent);
         Content label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
@@ -225,7 +225,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     @Override
     public Content getSummaryHeader() {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
@@ -793,7 +793,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 }
             // Only display the implementation details in the "all" mode.
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
-                desc.add(new HtmlTree(HtmlTag.BR));
+                desc.add(new HtmlTree(TagName.BR));
                 desc.add("(");
                 HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
                 desc.add(implSpan);
@@ -819,7 +819,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         List<? extends DocTree> deprs = utils.getBlockTags(mdle, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
-            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
             deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
             deprDiv.add(deprPhrase);
@@ -883,7 +883,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         List<? extends DocTree> deprs;
         if (utils.isDeprecated(pkg)) {
             deprs = utils.getDeprecatedTrees(pkg);
-            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
             deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));
             deprDiv.add(deprPhrase);

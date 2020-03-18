@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 
 import java.io.*;
-import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -37,10 +36,9 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -212,7 +210,7 @@ public class SourceToHTMLConverter {
                     .resolve(configuration.docPaths.forPackage(te))
                     .invert();
             Content body = getHeader();
-            Content pre = new HtmlTree(HtmlTag.PRE);
+            Content pre = new HtmlTree(TagName.PRE);
             try (LineNumberReader reader = new LineNumberReader(r)) {
                 while ((line = reader.readLine()) != null) {
                     addLineNo(pre, lineno);
@@ -287,7 +285,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(HtmlTag.BODY).setStyle(HtmlStyle.source);
+        return new HtmlTree(TagName.BODY).setStyle(HtmlStyle.source);
     }
 
     /**
@@ -297,7 +295,7 @@ public class SourceToHTMLConverter {
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
-        HtmlTree span = new HtmlTree(HtmlTag.SPAN);
+        HtmlTree span = new HtmlTree(TagName.SPAN);
         span.setStyle(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
             span.add("00" + Integer.toString(lineno));

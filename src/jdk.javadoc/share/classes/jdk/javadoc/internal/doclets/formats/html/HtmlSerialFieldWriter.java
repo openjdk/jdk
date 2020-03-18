@@ -35,7 +35,7 @@ import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -72,7 +72,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public Content getSerializableFieldsHeader() {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
@@ -85,7 +85,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public Content getFieldsContentHeader(boolean isLastContent) {
-        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        HtmlTree li = new HtmlTree(TagName.LI);
         li.setStyle(HtmlStyle.blockList);
         return li;
     }
@@ -116,7 +116,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         Content nameContent = new StringContent(fieldName);
         Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         contentTree.add(heading);
-        Content pre = new HtmlTree(HtmlTag.PRE);
+        Content pre = new HtmlTree(TagName.PRE);
         if (fieldType == null) {
             pre.add(fieldTypeStr);
         } else {
@@ -132,9 +132,9 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
         Content nameContent = new StringContent(fieldName);
-        Content heading = HtmlTree.HEADING(HtmlTag.H5, nameContent);
+        Content heading = HtmlTree.HEADING(TagName.H5, nameContent);
         contentTree.add(heading);
-        Content pre = new HtmlTree(HtmlTag.PRE);
+        Content pre = new HtmlTree(TagName.PRE);
         Content fieldContent = writer.getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
         pre.add(fieldContent);

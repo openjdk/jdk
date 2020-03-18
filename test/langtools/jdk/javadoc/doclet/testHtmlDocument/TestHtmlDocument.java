@@ -70,37 +70,37 @@ public class TestHtmlDocument extends JavadocTester {
     // Generate the HTML output using the HTML document generation within doclet.
     public static String generateHtmlTree() {
         // Document type for the HTML document
-        HtmlTree html = new HtmlTree(HtmlTag.HTML);
-        HtmlTree head = new HtmlTree(HtmlTag.HEAD);
-        HtmlTree title = new HtmlTree(HtmlTag.TITLE);
+        HtmlTree html = new HtmlTree(TagName.HTML);
+        HtmlTree head = new HtmlTree(TagName.HEAD);
+        HtmlTree title = new HtmlTree(TagName.TITLE);
         // String content within the document
         StringContent titleContent = new StringContent("Markup test");
         title.add(titleContent);
         head.add(title);
         // Test META tag
-        HtmlTree meta = new HtmlTree(HtmlTag.META);
+        HtmlTree meta = new HtmlTree(TagName.META);
         meta.put(HtmlAttr.NAME, "keywords");
         meta.put(HtmlAttr.CONTENT, "testContent");
         head.add(meta);
         // Test invalid META tag
-        HtmlTree invmeta = new HtmlTree(HtmlTag.META);
+        HtmlTree invmeta = new HtmlTree(TagName.META);
         head.add(invmeta);
         // Test LINK tag
-        HtmlTree link = new HtmlTree(HtmlTag.LINK);
+        HtmlTree link = new HtmlTree(TagName.LINK);
         link.put(HtmlAttr.REL, "testRel");
         link.put(HtmlAttr.HREF, "testLink.html");
         head.add(link);
         // Test invalid LINK tag
-        HtmlTree invlink = new HtmlTree(HtmlTag.LINK);
+        HtmlTree invlink = new HtmlTree(TagName.LINK);
         head.add(invlink);
         html.add(head);
         // Comment within the document
         Comment bodyMarker = new Comment("======== START OF BODY ========");
         html.add(bodyMarker);
-        HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        HtmlTree body = new HtmlTree(TagName.BODY);
         Comment pMarker = new Comment("======== START OF PARAGRAPH ========");
         body.add(pMarker);
-        HtmlTree p = new HtmlTree(HtmlTag.P);
+        HtmlTree p = new HtmlTree(TagName.P);
         StringContent bodyContent = new StringContent(
                 "This document is generated from sample source code and HTML " +
                 "files with examples of a wide variety of Java language constructs: packages, " +
@@ -113,24 +113,24 @@ public class TestHtmlDocument extends JavadocTester {
         StringContent pContent = new StringContent(" to <test> out a link.");
         p.add(pContent);
         body.add(p);
-        HtmlTree p1 = new HtmlTree(HtmlTag.P);
+        HtmlTree p1 = new HtmlTree(TagName.P);
         // Test another version of A tag.
-        HtmlTree anchor = new HtmlTree(HtmlTag.A);
+        HtmlTree anchor = new HtmlTree(TagName.A);
         anchor.put(HtmlAttr.HREF, "testLink.html");
         anchor.put(HtmlAttr.ID, "Another version of a tag");
         p1.add(anchor);
         body.add(p1);
         // Test for empty tags.
-        HtmlTree dl = new HtmlTree(HtmlTag.DL);
+        HtmlTree dl = new HtmlTree(TagName.DL);
         html.add(dl);
         // Test for empty nested tags.
-        HtmlTree dlTree = new HtmlTree(HtmlTag.DL);
-        dlTree.add(new HtmlTree(HtmlTag.DT));
-        dlTree.add(new HtmlTree (HtmlTag.DD));
+        HtmlTree dlTree = new HtmlTree(TagName.DL);
+        dlTree.add(new HtmlTree(TagName.DT));
+        dlTree.add(new HtmlTree (TagName.DD));
         html.add(dlTree);
-        HtmlTree dlDisplay = new HtmlTree(HtmlTag.DL);
-        dlDisplay.add(new HtmlTree(HtmlTag.DT));
-        HtmlTree dd = new HtmlTree (HtmlTag.DD);
+        HtmlTree dlDisplay = new HtmlTree(TagName.DL);
+        dlDisplay.add(new HtmlTree(TagName.DT));
+        HtmlTree dd = new HtmlTree (TagName.DD);
         StringContent ddContent = new StringContent("Test DD");
         dd.add(ddContent);
         dlDisplay.add(dd);
@@ -139,7 +139,7 @@ public class TestHtmlDocument extends JavadocTester {
         body.add(emptyString);
         Comment emptyComment = new Comment("");
         body.add(emptyComment);
-        HtmlTree hr = new HtmlTree(HtmlTag.HR);
+        HtmlTree hr = new HtmlTree(TagName.HR);
         body.add(hr);
         html.add(body);
         HtmlDocument htmlDoc = new HtmlDocument(html);

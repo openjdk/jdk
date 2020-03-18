@@ -30,7 +30,7 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -150,7 +150,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                 contents.packageHierarchies);
         div.add(span);
-        HtmlTree ul = new HtmlTree (HtmlTag.UL);
+        HtmlTree ul = new HtmlTree (TagName.UL);
         ul.setStyle(HtmlStyle.horizontal);
         ul.add(getNavLinkMainTree(resources.getText("doclet.All_Packages")));
         div.add(ul);

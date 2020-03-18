@@ -80,7 +80,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
@@ -2095,7 +2095,7 @@ public class HtmlDocletWriter {
      * @return an HtmlTree for the BODY tag
      */
     public HtmlTree getBody(String title) {
-        HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        HtmlTree body = new HtmlTree(TagName.BODY);
         body.put(HtmlAttr.CLASS, getBodyClass());
 
         this.winTitle = title;

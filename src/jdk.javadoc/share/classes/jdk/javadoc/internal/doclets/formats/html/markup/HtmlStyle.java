@@ -35,6 +35,14 @@ import java.util.regex.Pattern;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
+ *
+ * @apiNote
+ * Despite the name, the members of this enum provide values for the HTML {@code class} attribute,
+ * and <strong>not</strong> the HTML {@code style} attribute.
+ * This is to avoid confusion with the widespread use of the word "class" in the Java ecosystem,
+ * and the potential for clashes with methods called {@code setClass} instead of {@code setStyle}.
+ *
+ * @see <a href="https://html.spec.whatwg.org/#classes>WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
     aboutLanguage,

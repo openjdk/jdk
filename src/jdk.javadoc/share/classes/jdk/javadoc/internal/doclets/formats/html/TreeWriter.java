@@ -32,7 +32,7 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -142,7 +142,7 @@ public class TreeWriter extends AbstractTreeWriter {
             Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
             contentTree.add(span);
-            HtmlTree ul = new HtmlTree(HtmlTag.UL);
+            HtmlTree ul = new HtmlTree(TagName.UL);
             ul.setStyle(HtmlStyle.horizontal);
             int i = 0;
             for (PackageElement pkg : packages) {

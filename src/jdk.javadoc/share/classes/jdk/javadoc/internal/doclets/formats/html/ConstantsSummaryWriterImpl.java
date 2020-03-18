@@ -37,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -108,7 +108,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public Content getContentsHeader() {
-        return new HtmlTree(HtmlTag.UL);
+        return new HtmlTree(TagName.UL);
     }
 
     @Override
@@ -176,7 +176,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public Content getClassConstantHeader() {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
@@ -227,7 +227,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     private Content getTypeColumn(VariableElement member) {
         Content typeContent = new ContentBuilder();
         String id = currentTypeElement.getQualifiedName() + "." + member.getSimpleName();
-        Content code = new HtmlTree(HtmlTag.CODE).setId(id);
+        Content code = new HtmlTree(TagName.CODE).setId(id);
         for (Modifier mod : member.getModifiers()) {
             Content modifier = new StringContent(mod.toString());
             code.add(modifier);

@@ -43,7 +43,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -205,7 +205,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      */
     protected void addModifierAndType(Element member, TypeMirror type,
             Content tdSummaryType) {
-        HtmlTree code = new HtmlTree(HtmlTag.CODE);
+        HtmlTree code = new HtmlTree(TagName.CODE);
         addModifier(member, code);
         if (type == null) {
             code.add(utils.isClass(member) ? "class" : "interface");
@@ -220,7 +220,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
                     code.add(typeParameters);
                 //Code to avoid ugly wrapping in member summary table.
                 if (typeParameters.charCount() > 10) {
-                    code.add(new HtmlTree(HtmlTag.BR));
+                    code.add(new HtmlTree(TagName.BR));
                 } else {
                     code.add(Entity.NO_BREAK_SPACE);
                 }
@@ -347,7 +347,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
                         && !utils.isClass(element)
                         && !utils.isInterface(element)
                         && !utils.isAnnotationType(element)) {
-                    HtmlTree name = new HtmlTree(HtmlTag.SPAN);
+                    HtmlTree name = new HtmlTree(TagName.SPAN);
                     name.setStyle(HtmlStyle.typeNameLabel);
                     name.add(name(te) + ".");
                     typeContent.add(name);
@@ -435,7 +435,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      */
     @Override
     public Content getInheritedSummaryLinksTree() {
-        return new HtmlTree(HtmlTag.CODE);
+        return new HtmlTree(TagName.CODE);
     }
 
     /**
@@ -581,7 +581,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
             }
 
             // Name
-            HtmlTree nameSpan = new HtmlTree(HtmlTag.SPAN);
+            HtmlTree nameSpan = new HtmlTree(TagName.SPAN);
             nameSpan.setStyle(HtmlStyle.memberName);
             if (options.linkSource()) {
                 Content name = new StringContent(name(element));
