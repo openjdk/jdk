@@ -2904,7 +2904,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     break;
                 case "gc":
                 case "general_category":
-                    p = CharPredicates.forProperty(value);
+                    p = CharPredicates.forProperty(value, has(CASE_INSENSITIVE));
                     break;
                 default:
                     break;
@@ -2920,17 +2920,16 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             } else if (name.startsWith("Is")) {
                 // \p{IsGeneralCategory} and \p{IsScriptName}
                 String shortName = name.substring(2);
-                p = CharPredicates.forUnicodeProperty(shortName);
+                p = CharPredicates.forUnicodeProperty(shortName, has(CASE_INSENSITIVE));
                 if (p == null)
-                    p = CharPredicates.forProperty(shortName);
+                    p = CharPredicates.forProperty(shortName, has(CASE_INSENSITIVE));
                 if (p == null)
                     p = CharPredicates.forUnicodeScript(shortName);
             } else {
-                if (has(UNICODE_CHARACTER_CLASS)) {
-                    p = CharPredicates.forPOSIXName(name);
-                }
+                if (has(UNICODE_CHARACTER_CLASS))
+                    p = CharPredicates.forPOSIXName(name, has(CASE_INSENSITIVE));
                 if (p == null)
-                    p = CharPredicates.forProperty(name);
+                    p = CharPredicates.forProperty(name, has(CASE_INSENSITIVE));
             }
             if (p == null)
                 throw error("Unknown character property name {" + name + "}");
@@ -5675,7 +5674,7 @@ NEXT:       while (i <= last) {
             return ch -> is(ch) || p.is(ch);
         }
         default CharPredicate union(CharPredicate p1,
-                                    CharPredicate p2 ) {
+                                    CharPredicate p2) {
             return ch -> is(ch) || p1.is(ch) || p2.is(ch);
         }
         default CharPredicate negate() {
