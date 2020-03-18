@@ -47,5 +47,5 @@ serviceability/sa/TestHeapDumpForLargeArray.java              8220624   generic-
 serviceability/sa/TestJhsdbJstackLock.java                    8220624   generic-all
 serviceability/sa/TestJhsdbJstackMixed.java                   8220624   generic-all
 serviceability/sa/TestJmapCore.java                           8220624   generic-all
-serviceability/sa/TestJmapCoreMetaspace.java                  8219443   generic-all
+serviceability/sa/TestJmapCoreMetaspace.java                  8220624   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8220624   generic-all
