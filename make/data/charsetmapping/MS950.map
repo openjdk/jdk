@@ -23,10 +23,10 @@
 #    0xF9FD -> u256F -> 0xA2A3 
 #    0xA2CC -> u5341 -> 0xA451 
 #    0xA2CE -> u5345 -> 0xA4CA  
-#    0xF9F9 -> u2550 -> 0xA2A4
-#    0xF9E9 -> u255E -> 0xA2A5	
-#    0xF9EA -> u256A -> 0xA2A6	
-#    0xF9EB -> u2561 -> 0xA2A7
+#    0xA2A4 -> u2550 -> 0xF9F9
+#    0xA2A5 -> u255E -> 0xF9E9
+#    0xA2A6 -> u256A -> 0xF9EA
+#    0xA2A7 -> u2561 -> 0xF9EB
 #
 # Column #1 is the cp950 code (in hex)
 # Column #2 is the Unicode (in hex as 0xXXXX)
