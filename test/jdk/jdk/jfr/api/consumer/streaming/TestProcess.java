@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import jdk.internal.misc.Unsafe;
 import jdk.jfr.Event;
+import jdk.test.lib.jfr.StreamingUtils;
 import jdk.test.lib.process.ProcessTools;
 
 import com.sun.tools.attach.VirtualMachine;
@@ -91,22 +92,8 @@ public final class TestProcess implements AutoCloseable {
         }
     }
 
-    public Path getRepository() {
-        while (true) {
-            try {
-                VirtualMachine vm = VirtualMachine.attach(String.valueOf(process.pid()));
-                Properties p = vm.getSystemProperties();
-                vm.detach();
-                String repo = (String) p.get("jdk.jfr.repository");
-                if (repo != null) {
-                    return Paths.get(repo);
-                }
-            } catch (Exception e) {
-                System.out.println("Attach failed: " + e.getMessage());
-                System.out.println("Retrying...");
-            }
-            takeNap();
-        }
+    public Path getRepository() throws Exception {
+        return StreamingUtils.getJfrRepository(process);
     }
 
     private static void takeNap() {
