@@ -6838,7 +6838,7 @@ void Assembler::vzeroupper() {
 void Assembler::cmp_literal32(Register src1, int32_t imm32, RelocationHolder const& rspec) {
   // NO PREFIX AS NEVER 64BIT
   InstructionMark im(this);
-  emit_int8((unsigned char)0x81, (0xF8 | src1->encoding()));
+  emit_int16((unsigned char)0x81, (0xF8 | src1->encoding()));
   emit_data(imm32, rspec, 0);
 }
 
@@ -7638,7 +7638,7 @@ void Assembler::pusha() { // 32bit
 }
 
 void Assembler::set_byte_if_not_zero(Register dst) {
-  emit_int8(0x0F, (unsigned char)0x95, (0xE0 | dst->encoding()));
+  emit_int24(0x0F, (unsigned char)0x95, (0xE0 | dst->encoding()));
 }
 
 #else // LP64
