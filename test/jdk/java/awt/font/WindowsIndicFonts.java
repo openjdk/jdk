@@ -42,11 +42,13 @@
  * and understand cases where those fonts may not be installed.
  */
 import java.awt.Font;
+import java.io.File;
 
 public class WindowsIndicFonts {
 
   static boolean failed = false;
   static Font dialog = new Font(Font.DIALOG, Font.PLAIN, 12);
+  static String windowsFontDir = "c:\\windows\\fonts";
 
   public static void main(String args[]) {
 
@@ -54,27 +56,38 @@ public class WindowsIndicFonts {
          return;
      }
 
-     test("\u0905", "Devanagari"); // from Mangal font
-     test("\u0985", "Bengali");    // from Vrinda font
-     test("\u0a05", "Gurmukhi");   // from Raavi font
-     test("\u0a85", "Gujurati");   // from Shruti font
-     test("\u0b05", "Oriya");      // from Kalinga font
-     test("\u0b85", "Tamil");      // from Latha font
-     test("\u0c05", "Telugu");     // from Gautami font
-     test("\u0c85", "Kannada");    // from Tunga font
-     test("\u0d05", "Malayalam");  // from Kartika font
-     test("\u0c05", "Sinhala");    // from Iskoola Pota font
-     test("\u0e05", "Thai");       // from DokChampa font
-     test("\u0e87", "Lao");        // from DokChampa font
-     test("\u0e05", "Khmer");      // from Khmer UI font
-     test("\u1820", "Mongolian");  // from Mongolian Baiti font
+     String sysRootDir = System.getenv("SYSTEMROOT");
+     System.out.println("SysRootDir=" + sysRootDir);
+     if (sysRootDir != null) {
+        windowsFontDir = sysRootDir + "\\fonts";
+     }
+     test("\u0905", "Devanagari", "mangal.ttf"); // from Mangal font
+     test("\u0985", "Bengali", "vrinda.ttf");    // from Vrinda font
+     test("\u0a05", "Gurmukhi", "raavi.ttf");   // from Raavi font
+     test("\u0a85", "Gujurati", "shruti.ttf");   // from Shruti font
+     test("\u0b05", "Oriya", "kalinga.ttf");      // from Kalinga font
+     test("\u0b85", "Tamil", "latha.ttf");      // from Latha font
+     test("\u0c05", "Telugu", "gautami.ttf");     // from Gautami font
+     test("\u0c85", "Kannada", "tunga.ttf");    // from Tunga font
+     test("\u0d05", "Malayalam", "kartika.ttf");  // from Kartika font
+     test("\u0c05", "Sinhala", "iskpota.ttf");    // from Iskoola Pota font
+     test("\u0e05", "Thai", "dokchamp.ttf");       // from DokChampa font
+     test("\u0e87", "Lao", "dokchamp.ttf");        // from DokChampa font
+     test("\u0e05", "Khmer", "khmerui.ttf");      // from Khmer UI font
+     test("\u1820", "Mongolian", "monbaiti.ttf");  // from Mongolian Baiti font
 
      if (failed) {
          throw new RuntimeException("Missing support for a script");
      }
   }
 
-  static void test(String text, String script) {
+  static void test(String text, String script, String filename) {
+     File f = new File(windowsFontDir, filename);
+     if (!f.exists()) {
+          System.out.println("Can't find required font file: " + filename);
+          return;
+     }
+     System.out.println("found:" + f + " for " + script);
      if (dialog.canDisplayUpTo(text) != -1) {
          failed = true;
          System.out.println("No codepoint for " + script);
