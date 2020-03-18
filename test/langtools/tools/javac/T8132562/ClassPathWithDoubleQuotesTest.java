@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.sun.tools.javac.util.Assert;
 import toolbox.TestRunner;
 import toolbox.JarTask;
@@ -53,24 +56,27 @@ public class ClassPathWithDoubleQuotesTest extends TestRunner {
     private static final String JarSrc = "public class J {}";
     private static final String[] jarArgs = {"cf", "test/jarOut/J.jar", "-C", "test/jarSrc", "J.java"};
     public static final String NEW_LINE = System.getProperty("line.separator");
-    private static final String expectedFailureOutput1 =
-            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
-            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
-            "2 errors" + NEW_LINE;
-    private static final String expectedFailureOutput2A =
-            "- compiler.warn.invalid.path: \"test/jarOut/J.jar" + NEW_LINE +
-            "- compiler.warn.invalid.path: test/src\"" + NEW_LINE +
-            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
-            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
-            "2 errors" + NEW_LINE +
-            "2 warnings" + NEW_LINE;
-    private static final String expectedFailureOutput2B =
-            "- compiler.warn.path.element.not.found: \"test/jarOut/J.jar" + NEW_LINE +
-            "- compiler.warn.path.element.not.found: test/src\"" + NEW_LINE +
-            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
-            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
-            "2 errors" + NEW_LINE +
-            "2 warnings" + NEW_LINE;
+    private static final List<String> expectedFailureOutput1 = List.of(
+            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)",
+            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)",
+            "2 errors"
+    );
+    private static final List<String> expectedFailureOutput2A = List.of(
+            "- compiler.warn.invalid.path: \"test/jarOut/J.jar",
+            "- compiler.warn.invalid.path: test/src\"",
+            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)",
+            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)",
+            "2 errors",
+            "2 warnings"
+    );
+    private static final List<String> expectedFailureOutput2B = List.of(
+            "- compiler.warn.path.element.not.found: \"test/jarOut/J.jar",
+            "- compiler.warn.path.element.not.found: test/src\"",
+            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)",
+            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)",
+            "2 errors",
+            "2 warnings"
+    );
 
     public static void main(String... args) throws Exception {
         new ClassPathWithDoubleQuotesTest().runTests();
@@ -117,26 +123,26 @@ public class ClassPathWithDoubleQuotesTest extends TestRunner {
         // testing scenario 2
         System.err.println("Simulate a system in which double quotes are preserved in the environment variable," +
                 "and for which they are a legal filename character");
-        String log = new JavacTask(tb, Task.Mode.EXEC)
+        List<String> log = new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "Ztest/jarOut/J.jar" + File.pathSeparator + "test/srcZ")
                 .options("-XDrawDiagnostics")
                 .files("test/src/A.java").run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(Task.OutputKind.STDERR);
-        Assert.check(log.equals(expectedFailureOutput1), "unexpected output");
+                .getOutputLines(Task.OutputKind.STDERR);
+        log = log.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
+        tb.checkEqual(log, expectedFailureOutput1);
         System.err.println("compilation is expected to fail");
         System.err.println();
 
         // testing scenario 3
         System.err.println("invoking javac EXEC mode with double quotes in the CLASSPATH env variable");
-        String log2 = new JavacTask(tb, Task.Mode.EXEC)
+        List<String> log2 = new JavacTask(tb, Task.Mode.EXEC)
                     .envVar("CLASSPATH", "\"test/jarOut/J.jar" + File.pathSeparator + "test/src\"")
                     .options("-Xlint:path", "-XDrawDiagnostics")
                     .files("test/src/A.java").run(Task.Expect.FAIL)
                     .writeAll()
-                    .getOutput(Task.OutputKind.STDERR);
-        System.err.println();
-        System.err.println("the log:" + log2);
+                    .getOutputLines(Task.OutputKind.STDERR);
+        log2 = log2.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
         Assert.check(log2.equals(expectedFailureOutput2A) || log2.equals(expectedFailureOutput2B),
                 "unexpected output");
     }

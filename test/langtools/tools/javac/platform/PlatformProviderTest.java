@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -117,7 +118,7 @@ public class PlatformProviderTest implements PlatformProvider {
                               "compiler.misc.count.warn",
                               "close");
         List<String> actualOutput = result.getOutputLines(Task.OutputKind.STDERR);
-        result.writeAll();
+        actualOutput = actualOutput.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
         if (!expectedOutput.equals(actualOutput)) {
             throw new AssertionError(  "Expected output: " + expectedOutput +
                                      "; actual output: " + actualOutput);
@@ -144,12 +145,8 @@ public class PlatformProviderTest implements PlatformProvider {
                               "error: release version fail not supported",
                               "javac.msg.usage");
         List<String> actualOutput = result.getOutputLines(Task.OutputKind.STDERR);
-        result.writeAll();
-        if (!expectedOutput.equals(actualOutput)) {
-            throw new AssertionError(  "Expected output: " + expectedOutput +
-                                     "; actual output: " + actualOutput);
-        }
-        result.writeAll();
+        actualOutput = actualOutput.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
+        tb.checkEqual(expectedOutput, actualOutput);
     }
 
     @Override

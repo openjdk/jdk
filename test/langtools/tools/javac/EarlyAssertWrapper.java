@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,11 @@ public class EarlyAssertWrapper {
         String line;
         DataInputStream in = new DataInputStream(p.getInputStream());
         try {
-        while ((line = in.readLine()) != null)
-            pw.println(line);
+            while ((line = in.readLine()) != null) {
+                if (!line.matches("^Picked up .*JAVA.*OPTIONS:.*")) {
+                    pw.println(line);
+                }
+            }
         } finally {
             in.close();
         }
