@@ -42,7 +42,7 @@ void GCTimer::register_gc_end(const Ticks& time) {
 }
 
 void GCTimer::register_gc_pause_start(const char* name, const Ticks& time) {
-  _time_partitions.report_gc_phase_start(name, time);
+  _time_partitions.report_gc_phase_start_top_level(name, time, GCPhase::PausePhaseType);
 }
 
 void GCTimer::register_gc_pause_end(const Ticks& time) {
@@ -50,7 +50,7 @@ void GCTimer::register_gc_pause_end(const Ticks& time) {
 }
 
 void GCTimer::register_gc_phase_start(const char* name, const Ticks& time) {
-  _time_partitions.report_gc_phase_start(name, time);
+  _time_partitions.report_gc_phase_start_sub_phase(name, time);
 }
 
 void GCTimer::register_gc_phase_end(const Ticks& time) {
@@ -67,26 +67,12 @@ void STWGCTimer::register_gc_end(const Ticks& time) {
   GCTimer::register_gc_end(time);
 }
 
-void ConcurrentGCTimer::register_gc_pause_start(const char* name, const Ticks& time) {
-  assert(!_is_concurrent_phase_active, "A pause phase can't be started while a concurrent phase is active.");
-  GCTimer::register_gc_pause_start(name, time);
-}
-
-void ConcurrentGCTimer::register_gc_pause_end(const Ticks& time) {
-  assert(!_is_concurrent_phase_active, "A pause phase can't be ended while a concurrent phase is active.");
-  GCTimer::register_gc_pause_end(time);
-}
-
 void ConcurrentGCTimer::register_gc_concurrent_start(const char* name, const Ticks& time) {
-  assert(!_is_concurrent_phase_active, "A concurrent phase is already active.");
-  _time_partitions.report_gc_phase_start(name, time, GCPhase::ConcurrentPhaseType);
-  _is_concurrent_phase_active = true;
+  _time_partitions.report_gc_phase_start_top_level(name, time, GCPhase::ConcurrentPhaseType);
 }
 
 void ConcurrentGCTimer::register_gc_concurrent_end(const Ticks& time) {
-  assert(_is_concurrent_phase_active, "A concurrent phase is not active.");
-  _time_partitions.report_gc_phase_end(time, GCPhase::ConcurrentPhaseType);
-  _is_concurrent_phase_active = false;
+  _time_partitions.report_gc_phase_end(time);
 }
 
 void PhasesStack::clear() {
@@ -109,6 +95,21 @@ int PhasesStack::pop() {
 
 int PhasesStack::count() const {
   return _next_phase_level;
+}
+
+int PhasesStack::phase_index(int level) const {
+  assert(level < count(), "Out-of-bounds");
+  return _phase_indices[level];
+}
+
+GCPhase::PhaseType TimePartitions::current_phase_type() const {
+  int level = _active_phases.count();
+  assert(level > 0, "No active phase");
+
+  int index = _active_phases.phase_index(level - 1);
+  GCPhase phase = _phases->at(index);
+  GCPhase::PhaseType type = phase.type();
+  return type;
 }
 
 TimePartitions::TimePartitions() {
@@ -144,6 +145,23 @@ void TimePartitions::report_gc_phase_start(const char* name, const Ticks& time, 
   _active_phases.push(index);
 }
 
+void TimePartitions::report_gc_phase_start_top_level(const char* name, const Ticks& time, GCPhase::PhaseType type) {
+  int level = _active_phases.count();
+  assert(level == 0, "Must be a top-level phase");
+
+  report_gc_phase_start(name, time, type);
+}
+
+void TimePartitions::report_gc_phase_start_sub_phase(const char* name, const Ticks& time) {
+  int level = _active_phases.count();
+  assert(level > 0, "Must be a sub-phase");
+
+  // Inherit phase type from parent phase.
+  GCPhase::PhaseType type = current_phase_type();
+
+  report_gc_phase_start(name, time, type);
+}
+
 void TimePartitions::update_statistics(GCPhase* phase) {
   if ((phase->type() == GCPhase::PausePhaseType) && (phase->level() == 0)) {
     const Tickspan pause = phase->end() - phase->start();
@@ -152,7 +170,7 @@ void TimePartitions::update_statistics(GCPhase* phase) {
   }
 }
 
-void TimePartitions::report_gc_phase_end(const Ticks& time, GCPhase::PhaseType type) {
+void TimePartitions::report_gc_phase_end(const Ticks& time) {
   int phase_index = _active_phases.pop();
   GCPhase* phase = _phases->adr_at(phase_index);
   phase->set_end(time);

@@ -303,10 +303,11 @@ class PhaseSender : public PhaseVisitor {
   }
 
   void visit_concurrent(GCPhase* phase) {
-    assert(phase->level() < 1, "There is only one level for ConcurrentPhase");
+    assert(phase->level() < 2, "There is only two levels for ConcurrentPhase");
 
     switch (phase->level()) {
       case 0: send_phase<EventGCPhaseConcurrent>(phase); break;
+      case 1: send_phase<EventGCPhaseConcurrentLevel1>(phase); break;
       default: /* Ignore sending this phase */ break;
     }
   }

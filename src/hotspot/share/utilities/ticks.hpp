@@ -235,7 +235,7 @@ class TimeInstant : public Rep<TimeSource> {
   friend class ObjectSample;
   friend class EventEmitter;
   // GC unit tests
-  friend class TimePartitionPhasesIteratorTest;
+  friend class TimePartitionsTest;
   friend class GCTimerTest;
   friend class CompilerEvent;
 };

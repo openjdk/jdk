@@ -140,7 +140,7 @@ void ShenandoahUnload::unlink() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   {
     MutexLocker cldg_ml(ClassLoaderDataGraph_lock);
-    unloading_occurred = SystemDictionary::do_unloading(heap->gc_timer());
+    unloading_occurred = SystemDictionary::do_unloading(NULL /* gc_timer */);
   }
 
   Klass::clean_weak_klass_links(unloading_occurred);

@@ -453,6 +453,11 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="GCPhaseConcurrentLevel1" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 1" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
   <Event name="GCPhaseParallel" category="Java Virtual Machine, GC, Phases" label="GC Phase Parallel"
          startTime="true" thread="true" description="GC phases for parallel workers">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>

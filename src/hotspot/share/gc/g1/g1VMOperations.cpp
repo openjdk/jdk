@@ -147,7 +147,13 @@ void VM_G1Concurrent::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  GCTraceTime(Info, gc) t(_message, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
+
+  // GCTraceTime(...) only supports sub-phases, so a more verbose version
+  // is needed when we report the top-level pause phase.
+  GCTraceTimeLogger(Info, gc) logger(_message, GCCause::_no_gc, true);
+  GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
+  GCTraceTimeDriver           t(&logger, &timer);
+
   TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;

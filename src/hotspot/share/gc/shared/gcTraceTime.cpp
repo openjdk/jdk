@@ -23,9 +23,52 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/universe.hpp"
 #include "runtime/os.hpp"
+
+void GCTraceTimeLoggerImpl::log_start(Ticks start) {
+  _start = start;
+
+  LogStream out(_out_start);
+
+  out.print("%s", _title);
+  if (_gc_cause != GCCause::_no_gc) {
+    out.print(" (%s)", GCCause::to_string(_gc_cause));
+  }
+  out.cr();
+
+  if (_log_heap_usage) {
+    _heap_usage_before = Universe::heap()->used();
+  }
+}
+
+void GCTraceTimeLoggerImpl::log_end(Ticks end) {
+  double duration_in_ms = TimeHelper::counter_to_millis(end.value() - _start.value());
+  double start_time_in_secs = TimeHelper::counter_to_seconds(_start.value());
+  double stop_time_in_secs = TimeHelper::counter_to_seconds(end.value());
+
+  LogStream out(_out_end);
+
+  out.print("%s", _title);
+
+  if (_gc_cause != GCCause::_no_gc) {
+    out.print(" (%s)", GCCause::to_string(_gc_cause));
+  }
+
+  if (_heap_usage_before != SIZE_MAX) {
+    CollectedHeap* heap = Universe::heap();
+    size_t used_before_m = _heap_usage_before / M;
+    size_t used_m = heap->used() / M;
+    size_t capacity_m = heap->capacity() / M;
+    out.print(" " SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)", used_before_m, used_m, capacity_m);
+  }
+
+  out.print_cr(" %.3fms", duration_in_ms);
+}
 
 GCTraceCPUTime::GCTraceCPUTime() :
   _active(log_is_enabled(Info, gc, cpu)),

@@ -77,7 +77,7 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_typ
 
   // FIXME: It seems that JMC throws away level 0 events, which are the Shenandoah
   // pause events. Create this pseudo level 0 event to push real events to level 1.
-  _heap->gc_timer()->register_gc_phase_start("Shenandoah", Ticks::now());
+  _heap->gc_timer()->register_gc_pause_start("Shenandoah", Ticks::now());
   _trace_pause.initialize(_heap->stw_memory_manager(), _heap->gc_cause(),
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
@@ -93,7 +93,7 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_typ
 }
 
 ShenandoahGCPauseMark::~ShenandoahGCPauseMark() {
-  _heap->gc_timer()->register_gc_phase_end(Ticks::now());
+  _heap->gc_timer()->register_gc_pause_end(Ticks::now());
   _heap->heuristics()->record_gc_end();
 }
 
