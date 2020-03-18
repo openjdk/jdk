@@ -1,4 +1,4 @@
-File-Date: 2019-09-16
+File-Date: 2020-03-16
 %%
 Type: language
 Subtag: aa
@@ -47127,6 +47127,16 @@ Added: 2009-09-05
 Prefix: djk
 Comments: Pamaka dialect of the "Busi Nenge Tongo" English-based
   Creole continuum in Eastern Suriname and Western French Guiana
+%%
+Type: variant
+Subtag: peano
+Description: Latino Sine Flexione
+Description: Interlingua de API
+Description: Interlingua de Peano
+Prefix: la
+Comments: Peano’s Interlingua, created in 1903 by Giuseppe Peano as an
+  international auxiliary language
+Added: 2020-03-12
 %%
 Type: variant
 Subtag: petr1708
