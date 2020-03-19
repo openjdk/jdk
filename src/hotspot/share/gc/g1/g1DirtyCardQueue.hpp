@@ -245,11 +245,13 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // processed and removed from the buffer.
   bool refine_buffer(BufferNode* node, uint worker_id, size_t* total_refined_cards);
 
-  bool mut_process_buffer(BufferNode* node);
+  // Deal with buffer after a call to refine_buffer.  If fully processed,
+  // deallocate the buffer.  Otherwise, record it as paused.
+  void handle_refined_buffer(BufferNode* node, bool fully_processed);
 
-  // If the number of completed buffers is > stop_at, then remove and
-  // return a completed buffer from the list.  Otherwise, return NULL.
-  BufferNode* get_completed_buffer(size_t stop_at = 0);
+  // Remove and return a completed buffer from the list, or return NULL
+  // if none available.
+  BufferNode* get_completed_buffer();
 
 public:
   G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
@@ -264,11 +266,6 @@ public:
   static uint num_par_ids();
 
   static void handle_zero_index_for_thread(Thread* t);
-
-  // Either process the entire buffer and return true, or enqueue the
-  // buffer and return false.  If the buffer is completely processed,
-  // it can be reused in place.
-  bool process_or_enqueue_completed_buffer(BufferNode* node);
 
   virtual void enqueue_completed_buffer(BufferNode* node);
 
@@ -294,6 +291,17 @@ public:
   void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
   G1BufferNodeList take_all_completed_buffers();
+
+  // Helper for G1DirtyCardQueue::handle_completed_buffer().
+  // Enqueue the buffer, and optionally perform refinement by the mutator.
+  // Mutator refinement is only done by Java threads, and only if there
+  // are more than max_cards (possibly padded) cards in the completed
+  // buffers.
+  //
+  // Mutator refinement, if performed, stops processing a buffer if
+  // SuspendibleThreadSet::should_yield(), recording the incompletely
+  // processed buffer for later processing of the remainder.
+  void handle_completed_buffer(BufferNode* node);
 
   // If there are more than stop_at cards in the completed buffers, pop
   // a buffer, refine its contents, and return true.  Otherwise return

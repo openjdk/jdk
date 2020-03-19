@@ -55,14 +55,10 @@ G1DirtyCardQueue::~G1DirtyCardQueue() {
 }
 
 void G1DirtyCardQueue::handle_completed_buffer() {
-  assert(_buf != NULL, "precondition");
+  assert(!is_empty(), "precondition");
   BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
-  G1DirtyCardQueueSet* dcqs = dirty_card_qset();
-  if (dcqs->process_or_enqueue_completed_buffer(node)) {
-    reset();                    // Buffer fully processed, reset index.
-  } else {
-    allocate_buffer();          // Buffer enqueued, get a new one.
-  }
+  allocate_buffer();
+  dirty_card_qset()->handle_completed_buffer(node);
 }
 
 // Assumed to be zero by concurrent threads.
@@ -227,11 +223,7 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   }
 }
 
-BufferNode* G1DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
-  if (Atomic::load_acquire(&_num_cards) < stop_at) {
-    return NULL;
-  }
-
+BufferNode* G1DirtyCardQueueSet::get_completed_buffer() {
   BufferNode* result = _completed.pop();
   if (result == NULL) {         // Unlikely if no paused buffers.
     enqueue_previous_paused_buffers();
@@ -548,71 +540,61 @@ bool G1DirtyCardQueueSet::refine_buffer(BufferNode* node,
   return buffered_cards.refine();
 }
 
-#ifndef ASSERT
-#define assert_fully_consumed(node, buffer_size)
-#else
-#define assert_fully_consumed(node, buffer_size)                \
-  do {                                                          \
-    size_t _afc_index = (node)->index();                        \
-    size_t _afc_size = (buffer_size);                           \
-    assert(_afc_index == _afc_size,                             \
-           "Buffer was not fully consumed as claimed: index: "  \
-           SIZE_FORMAT ", size: " SIZE_FORMAT,                  \
-            _afc_index, _afc_size);                             \
-  } while (0)
-#endif // ASSERT
-
-bool G1DirtyCardQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) {
-  if (Thread::current()->is_Java_thread()) {
-    // If the number of buffers exceeds the limit, make this Java
-    // thread do the processing itself.  Calculation is racy but we
-    // don't need precision here.
-    if (num_cards() > Atomic::load(&_padded_max_cards)) {
-      if (mut_process_buffer(node)) {
-        return true;
-      }
-      // Buffer was incompletely processed because of a pending safepoint
-      // request.  Unlike with refinement thread processing, for mutator
-      // processing the buffer did not come from the completed buffer queue,
-      // so it is okay to add it to the queue rather than to the paused set.
-      // Indeed, it can't be added to the paused set because we didn't pass
-      // through enqueue_previous_paused_buffers.
-    }
+void G1DirtyCardQueueSet::handle_refined_buffer(BufferNode* node,
+                                                bool fully_processed) {
+  if (fully_processed) {
+    assert(node->index() == buffer_size(),
+           "Buffer not fully consumed: index: " SIZE_FORMAT ", size: " SIZE_FORMAT,
+           node->index(), buffer_size());
+    deallocate_buffer(node);
+  } else {
+    assert(node->index() < buffer_size(), "Buffer fully consumed.");
+    // Buffer incompletely processed because there is a pending safepoint.
+    // Record partially processed buffer, to be finished later.
+    record_paused_buffer(node);
   }
-  enqueue_completed_buffer(node);
-  return false;
 }
 
-bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
+void G1DirtyCardQueueSet::handle_completed_buffer(BufferNode* new_node) {
+  enqueue_completed_buffer(new_node);
+
+  // No need for mutator refinement if number of cards is below limit.
+  if (Atomic::load(&_num_cards) <= Atomic::load(&_padded_max_cards)) {
+    return;
+  }
+
+  // Only Java threads perform mutator refinement.
+  if (!Thread::current()->is_Java_thread()) {
+    return;
+  }
+
+  BufferNode* node = get_completed_buffer();
+  if (node == NULL) return;     // Didn't get a buffer to process.
+
+  // Refine cards in buffer.
+
   uint worker_id = _free_ids.claim_par_id(); // temporarily claim an id
   uint counter_index = worker_id - par_ids_start();
   size_t* counter = &_mutator_refined_cards_counters[counter_index];
-  bool result = refine_buffer(node, worker_id, counter);
+  bool fully_processed = refine_buffer(node, worker_id, counter);
   _free_ids.release_par_id(worker_id); // release the id
 
-  if (result) {
-    assert_fully_consumed(node, buffer_size());
-  }
-  return result;
+  // Deal with buffer after releasing id, to let another thread use id.
+  handle_refined_buffer(node, fully_processed);
 }
 
 bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_id,
                                                                size_t stop_at,
                                                                size_t* total_refined_cards) {
-  BufferNode* node = get_completed_buffer(stop_at);
-  if (node == NULL) {
-    return false;
-  } else if (refine_buffer(node, worker_id, total_refined_cards)) {
-    assert_fully_consumed(node, buffer_size());
-    // Done with fully processed buffer.
-    deallocate_buffer(node);
-    return true;
-  } else {
-    // Buffer incompletely processed because there is a pending safepoint.
-    // Record partially processed buffer, to be finished later.
-    record_paused_buffer(node);
-    return true;
-  }
+  // Not enough cards to trigger processing.
+  if (Atomic::load(&_num_cards) <= stop_at) return false;
+
+  BufferNode* node = get_completed_buffer();
+  if (node == NULL) return false; // Didn't get a buffer to process.
+
+  bool fully_processed = refine_buffer(node, worker_id, total_refined_cards);
+  handle_refined_buffer(node, fully_processed);
+  return true;
 }
 
 void G1DirtyCardQueueSet::abandon_logs() {
