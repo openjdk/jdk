@@ -672,7 +672,7 @@ void Parse::do_all_blocks() {
             // Need correct bci for predicate.
             // It is fine to set it here since do_one_block() will set it anyway.
             set_parse_bci(block->start());
-            add_predicate();
+            add_empty_predicates();
           }
           // Add new region for back branches.
           int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
@@ -1654,7 +1654,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         if (target->start() == 0) {
           // Add loop predicate for the special case when
           // there are backbranches to the method entry.
-          add_predicate();
+          add_empty_predicates();
         }
       }
       // Add a Region to start the new basic block.  Phis will be added
