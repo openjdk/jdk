@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 
 /*
- * A minature launcher for use by CustomLauncherTest.sh.  It sets
+ * A miniature launcher for use by CustomLauncherTest.java test. It sets
  * up the absolute minimal execution environment.
  */
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <dlfcn.h>
 
 #include "jni.h"
