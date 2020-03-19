@@ -87,6 +87,8 @@ public class bug8020708 {
             public void run() {
                 frame = new JFrame("Test");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setUndecorated(true);
+                frame.setLocationRelativeTo(null);
                 frame.setSize(300, 200);
 
                 JDesktopPane desktop = new JDesktopPane();
@@ -132,6 +134,7 @@ public class bug8020708 {
                 frame.dispose();
             }
         });
+        robot.delay(500);
     }
 
     static final boolean installLookAndFeel(String lafName) throws Exception {
