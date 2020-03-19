@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8215038 8239487
+ * @bug 8215038 8239487 8240476
  * @summary Add a page that lists all system properties
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -65,6 +65,15 @@ public class TestSystemPropertyPage extends JavadocTester {
                 "<a href=\"system-properties.html\">System Properties</a>");
 
         checkOutput("system-properties.html", true,
+                "<div class=\"flex-box\">\n" +
+                "<header role=\"banner\" class=\"flex-header\">",
+
+                "<div class=\"flex-content\">\n" +
+                "<main role=\"main\">\n" +
+                "<div class=\"header\">\n" +
+                "<h1>System Properties</h1>\n" +
+                "</div>",
+
                 "<table>\n" +
                 "<caption><span>System Properties Summary</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +

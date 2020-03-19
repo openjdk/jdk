@@ -25,6 +25,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -60,11 +61,6 @@ import static java.util.stream.Collectors.toList;
  *  deletion without notice.</b>
  */
 public class SystemPropertiesWriter extends HtmlDocletWriter {
-
-    /**
-     * The HTML tree for main tag.
-     */
-    private final HtmlTree mainTree = HtmlTree.MAIN();
 
     private final Navigation navBar;
 
@@ -108,28 +104,26 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      * Prints all the system properties to the file.
      */
     protected void buildSystemPropertiesPage() throws DocFileIOException {
-        String label = resources.getText("doclet.systemProperties");
-        HtmlTree bodyTree = getBody(getWindowTitle(label));
-        HtmlTree header = HtmlTree.HEADER();
-        addTop(header);
+        String title = resources.getText("doclet.systemProperties");
+        HtmlTree body = getBody(getWindowTitle(title));
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.add(navBar.getContent(Navigation.Position.TOP));
-        bodyTree.add(header);
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         addSystemProperties(mainContent);
-        Content titleContent = new StringContent(resources.getText("doclet.systemProperties"));
-        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, titleContent);
-        Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        mainTree.add(headerDiv);
-        mainTree.add(mainContent);
-        bodyTree.add(mainTree);
         Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
-        bodyTree.add(footer);
-        printHtmlDocument(null, "system properties", bodyTree);
+        body.add(new BodyContents()
+                .setHeader(headerContent)
+                .addMainContent(HtmlTree.DIV(HtmlStyle.header,
+                        HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+                                contents.getContent("doclet.systemProperties"))))
+                .addMainContent(mainContent)
+                .setFooter(footer));
+        printHtmlDocument(null, "system properties", body);
     }
 
     /**
