@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -60,37 +60,7 @@
     </target>
 
 
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- Call rmic-jmx subtargets -->
-
-    <target name="-rmic-jmx" depends="-init,-rmic-jmx-jrmp"
-	    description="Calls -init,-rmic-jmx-jrmp"
-    />
-
-
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- Generate RMI JRMP stub class files for remote objects -->
-    <!-- Generated java files are kept in a separate directory -->
-
-    <target name="-rmic-jmx-jrmp" depends="-init"
-            description="Generate RMI JRMP stub class files for remote objects. Keep generated java files in separate dir." >
-
-	<!-- Dir to keep generated stub source -->
-        <mkdir dir="${gensrc.dir}" />
-
-        <rmic 	base="${classes.dir}/javax/management"
-		sourcebase="${gensrc.dir}"
-		includeAntRuntime="no"
-		includeJavaRuntime="no"
-		stubversion="1.2"
-		>
-	    <include name="javax/management/remote/rmi/RMIConnectionImpl.class" />
-	    <include name="javax/management/remote/rmi/RMIServerImpl.class" />
-	</rmic>
-
-    </target>
-
-    <target name="-post-compile" depends="-init,-rmic-jmx"
+    <target name="-post-compile" depends="-init"
             description="Jar JMX class files (including RMI stubs)" >
        <mkdir dir="${dist.dir}/lib"/>
        <jar jarfile="${dist.dir}/lib/${jar.jmx.name}"

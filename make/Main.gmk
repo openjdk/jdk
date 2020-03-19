@@ -72,9 +72,6 @@ buildtools-langtools:
 interim-langtools:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimLangtools.gmk)
 
-interim-rmic:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
-
 interim-tzdb:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopyInterimTZDB.gmk)
 
@@ -89,7 +86,7 @@ buildtools-hotspot:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileToolsHotspot.gmk)
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
-    interim-rmic interim-tzdb buildtools-jdk buildtools-modules \
+    interim-tzdb buildtools-jdk buildtools-modules \
     buildtools-hotspot
 
 ################################################################################
@@ -192,16 +189,6 @@ endef
 $(foreach m, $(JAVA_MODULES), $(eval $(call DeclareCompileJavaRecipe,$m)))
 
 ALL_TARGETS += $(JAVA_TARGETS)
-
-################################################################################
-# Targets for running rmic.
-$(eval $(call DeclareRecipesForPhase, RMIC, \
-    TARGET_SUFFIX := rmic, \
-    FILE_PREFIX := Rmic, \
-    MAKE_SUBDIR := rmic, \
-    CHECK_MODULES := $(ALL_MODULES)))
-
-ALL_TARGETS += $(RMIC_TARGETS)
 
 ################################################################################
 # Targets for compiling native libraries
@@ -688,10 +675,6 @@ else
 
   $(GENDATA_TARGETS): interim-langtools buildtools-jdk
 
-  interim-rmic: interim-langtools
-
-  $(RMIC_TARGETS): interim-langtools interim-rmic
-
   $(JAVA_TARGETS): interim-langtools
 
   # Declare dependencies between hotspot-<variant>* targets
@@ -732,9 +715,6 @@ else
   # Declare dependencies between the module meta targets
   $(foreach m, $(ALL_MODULES), $(eval $m: $(call FindDepsForModule,$m)))
 
-  # Declare dependencies between <module>-rmic to <module>-java
-  $(foreach m, $(RMIC_MODULES), $(eval $m-rmic: $m-java))
-
   # Declare dependencies from <module>-lib to <module>-java
   # Skip modules that do not have java source.
   $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs: $m-java))
@@ -768,7 +748,7 @@ else
   jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
   jdk.internal.vm.compiler.management-gensrc-moduleinfo: jdk.internal.vm.compiler.management-gensrc-src
 
-  jdk.jdeps-gendata: java rmic
+  jdk.jdeps-gendata: java
 
   # The ct.sym generation uses all the moduleinfos as input
   jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
@@ -790,7 +770,6 @@ else
   # Declare dependencies from <module>-jmod to all other module targets
   $(foreach m, $(JAVA_MODULES), $(eval $m_JMOD_DEPS += $m-java))
   $(foreach m, $(GENDATA_MODULES), $(eval $m_JMOD_DEPS += $m-gendata))
-  $(foreach m, $(RMIC_MODULES), $(eval $m_JMOD_DEPS += $m-rmic))
   $(foreach m, $(LIBS_MODULES), $(eval $m_JMOD_DEPS += $m-libs))
   $(foreach m, $(LAUNCHER_MODULES), $(eval $m_JMOD_DEPS += $m-launchers))
   $(foreach m, $(COPY_MODULES), $(eval $m_JMOD_DEPS += $m-copy))
@@ -856,7 +835,7 @@ else
   zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
       $(filter jdk.crypto%, $(JAVA_TARGETS))
 
-  zip-source: gensrc rmic
+  zip-source: gensrc
 
   jrtfs-jar: interim-langtools
 
@@ -903,11 +882,11 @@ else
 
   bootcycle-images: jdk-image
 
-  docs-jdk-api-javadoc: $(GENSRC_TARGETS) rmic
+  docs-jdk-api-javadoc: $(GENSRC_TARGETS)
 
-  docs-javase-api-javadoc: $(GENSRC_TARGETS) rmic
+  docs-javase-api-javadoc: $(GENSRC_TARGETS)
 
-  docs-reference-api-javadoc: $(GENSRC_TARGETS) rmic
+  docs-reference-api-javadoc: $(GENSRC_TARGETS)
 
   docs-jdk-api-modulegraph: exploded-image buildtools-modules
 
@@ -989,7 +968,7 @@ endif
 
 # If not already set, set the JVM specific tools targets
 JVM_TOOLS_TARGETS ?= buildtools-hotspot
-buildtools: buildtools-langtools interim-langtools interim-rmic \
+buildtools: buildtools-langtools interim-langtools \
     buildtools-jdk $(JVM_TOOLS_TARGETS)
 
 # Declare dependencies from hotspot-<variant> targets
@@ -1012,8 +991,6 @@ copy: $(ALL_COPY_TARGETS)
 
 java: $(JAVA_TARGETS)
 
-rmic: $(RMIC_TARGETS)
-
 libs: $(LIBS_TARGETS)
 
 static-libs: $(STATIC_LIBS_TARGETS)
@@ -1031,7 +1008,6 @@ jdk.jdwp.agent-gensrc: jdk.jdi-gensrc
 $(foreach m, $(GENSRC_MODULES), $(eval $m: $m-gensrc))
 $(foreach m, $(JAVA_MODULES), $(eval $m: $m-java))
 $(foreach m, $(GENDATA_MODULES), $(eval $m: $m-gendata))
-$(foreach m, $(RMIC_MODULES), $(eval $m: $m-rmic))
 $(foreach m, $(LIBS_MODULES), $(eval $m: $m-libs))
 $(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
 $(foreach m, $(ALL_COPY_MODULES), $(eval $m: $m-copy))
@@ -1131,7 +1107,7 @@ all-images: product-images test-image docs-image
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
 
 ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
-    copy java rmic libs static-libs launchers jmods \
+    copy java libs static-libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image \
     create-buildjdk docs-jdk-api docs-javase-api docs-reference-api docs-jdk \
