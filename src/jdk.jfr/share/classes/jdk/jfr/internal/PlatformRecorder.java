@@ -86,7 +86,7 @@ public final class PlatformRecorder {
         startDiskMonitor();
         activeRecordingEvent = EventType.getEventType(ActiveRecordingEvent.class);
         activeSettingEvent = EventType.getEventType(ActiveSettingEvent.class);
-        shutdownHook = SecuritySupport.createThreadWitNoPermissions("JFR: Shutdown Hook", new ShutdownHook(this));
+        shutdownHook = SecuritySupport.createThreadWitNoPermissions("JFR Shutdown Hook", new ShutdownHook(this));
         SecuritySupport.setUncaughtExceptionHandler(shutdownHook, new ShutdownHook.ExceptionHandler());
         SecuritySupport.registerShutdownHook(shutdownHook);
 
