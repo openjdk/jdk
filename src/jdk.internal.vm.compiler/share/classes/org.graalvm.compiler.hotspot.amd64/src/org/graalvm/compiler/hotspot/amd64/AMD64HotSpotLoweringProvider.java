@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.amd64.AMD64ArrayIndexOfDispatchNode;
 import org.graalvm.compiler.replacements.amd64.AMD64ConvertSnippets;
@@ -61,8 +62,8 @@ public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider
     private AMD64X87MathSnippets.Templates mathSnippets;
 
     public AMD64HotSpotLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, HotSpotRegistersProvider registers,
-                    HotSpotConstantReflectionProvider constantReflection, TargetDescription target) {
-        super(runtime, metaAccess, foreignCalls, registers, constantReflection, target);
+                    HotSpotConstantReflectionProvider constantReflection, PlatformConfigurationProvider platformConfig, TargetDescription target) {
+        super(runtime, metaAccess, foreignCalls, registers, constantReflection, platformConfig, target);
     }
 
     @Override

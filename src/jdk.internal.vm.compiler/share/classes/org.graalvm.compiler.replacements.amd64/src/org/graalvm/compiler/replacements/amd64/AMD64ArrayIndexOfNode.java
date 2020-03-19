@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValueNodeUtil;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -59,7 +59,7 @@ public class AMD64ArrayIndexOfNode extends FixedWithNextNode implements LIRLower
     @Input private ValueNode fromIndex;
     @Input private NodeInputList<ValueNode> searchValues;
 
-    @OptionalInput(InputType.Memory) private MemoryNode lastLocationAccess;
+    @OptionalInput(InputType.Memory) private MemoryKill lastLocationAccess;
 
     public AMD64ArrayIndexOfNode(@ConstantNodeParameter JavaKind arrayKind, @ConstantNodeParameter JavaKind valueKind, @ConstantNodeParameter boolean findTwoConsecutive,
                     ValueNode arrayPointer, ValueNode arrayLength, ValueNode fromIndex, ValueNode... searchValues) {
@@ -95,12 +95,12 @@ public class AMD64ArrayIndexOfNode extends FixedWithNextNode implements LIRLower
     }
 
     @Override
-    public MemoryNode getLastLocationAccess() {
+    public MemoryKill getLastLocationAccess() {
         return lastLocationAccess;
     }
 
     @Override
-    public void setLastLocationAccess(MemoryNode lla) {
+    public void setLastLocationAccess(MemoryKill lla) {
         updateUsages(ValueNodeUtil.asNode(lastLocationAccess), ValueNodeUtil.asNode(lla));
         lastLocationAccess = lla;
     }

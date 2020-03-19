@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.graalvm.compiler.debug.GraalError;
 
@@ -40,6 +41,7 @@ import sun.misc.Unsafe;
 public class Fields {
 
     private static final Unsafe UNSAFE = getUnsafe();
+    private static final Fields EMPTY_FIELDS = new Fields(Collections.emptyList());
 
     /**
      * Offsets used with {@link Unsafe} to access the fields.
@@ -61,10 +63,10 @@ public class Fields {
     public static Fields forClass(Class<?> clazz, Class<?> endClazz, boolean includeTransient, FieldsScanner.CalcOffset calcOffset) {
         FieldsScanner scanner = new FieldsScanner(calcOffset == null ? new FieldsScanner.DefaultCalcOffset() : calcOffset);
         scanner.scan(clazz, endClazz, includeTransient);
-        return new Fields(scanner.data);
+        return create(scanner.data);
     }
 
-    public Fields(ArrayList<? extends FieldsScanner.FieldInfo> fields) {
+    protected Fields(List<? extends FieldsScanner.FieldInfo> fields) {
         Collections.sort(fields);
         this.offsets = new long[fields.size()];
         this.names = new String[offsets.length];
@@ -78,6 +80,13 @@ public class Fields {
             declaringClasses[index] = f.declaringClass;
             index++;
         }
+    }
+
+    public static Fields create(ArrayList<? extends FieldsScanner.FieldInfo> fields) {
+        if (fields.size() == 0) {
+            return EMPTY_FIELDS;
+        }
+        return new Fields(fields);
     }
 
     /**

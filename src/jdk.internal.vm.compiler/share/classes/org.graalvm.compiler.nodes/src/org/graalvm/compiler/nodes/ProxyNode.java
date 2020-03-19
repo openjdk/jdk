@@ -31,13 +31,13 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
+import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
-import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.Proxy;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
@@ -87,7 +87,7 @@ public abstract class ProxyNode extends FloatingNode implements Proxy, ValueNumb
         return exit.graph().unique(new GuardProxyNode(value, exit));
     }
 
-    public static MemoryProxyNode forMemory(MemoryNode value, LoopExitNode exit, LocationIdentity locationIdentity) {
+    public static MemoryProxyNode forMemory(MemoryKill value, LoopExitNode exit, LocationIdentity locationIdentity) {
         return exit.graph().unique(new MemoryProxyNode(value, exit, locationIdentity));
     }
 

@@ -317,12 +317,14 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
                 boolean isAny = false;
                 if (n instanceof SingleMemoryKill) {
                     isAny = ((SingleMemoryKill) n).getKilledLocationIdentity().isAny();
-                } else {
+                } else if (n instanceof MultiMemoryKill) {
                     for (LocationIdentity ident : ((MultiMemoryKill) n).getKilledLocationIdentities()) {
                         if (ident.isAny()) {
                             isAny = true;
                         }
                     }
+                } else {
+                    throw GraalError.shouldNotReachHere("Unknown type of memory kill " + n);
                 }
                 if (isAny && n instanceof FixedWithNextNode) {
                     /*

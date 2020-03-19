@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package org.graalvm.compiler.hotspot;
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.UseEncodedGraphs;
-import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 
 import java.util.Set;
 
@@ -182,7 +182,7 @@ public class HotSpotReplacementsImpl extends ReplacementsImpl {
         snippetRegistrationClosed = true;
     }
 
-    private static SymbolicSnippetEncoder.EncodedSnippets getEncodedSnippets(OptionValues options) {
+    public static SymbolicSnippetEncoder.EncodedSnippets getEncodedSnippets(OptionValues options) {
         if (!IS_IN_NATIVE_IMAGE && snippetEncoder != null) {
             snippetEncoder.encode(options);
         }

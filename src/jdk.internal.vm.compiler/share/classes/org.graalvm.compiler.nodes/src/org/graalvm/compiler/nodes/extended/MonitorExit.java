@@ -24,11 +24,11 @@
 
 package org.graalvm.compiler.nodes.extended;
 
-import org.graalvm.compiler.nodes.memory.MemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 
 /**
  * Denotes monitor unlocking transition.
  */
-public interface MonitorExit extends MemoryKill {
+public interface MonitorExit extends SingleMemoryKill {
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,14 @@ import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.VirtualStackSlot;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
@@ -124,8 +121,6 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     RegisterConfig getRegisterConfig();
 
-    boolean hasBlockEnd(AbstractBlockBase<?> block);
-
     MoveFactory getMoveFactory();
 
     /**
@@ -135,8 +130,6 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
      * values that require interaction with register allocation are strictly forbidden.
      */
     MoveFactory getSpillMoveFactory();
-
-    BlockScope getBlockScope(AbstractBlockBase<?> block);
 
     boolean canInlineConstant(Constant constant);
 
@@ -188,8 +181,6 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     Variable emitForeignCall(ForeignCallLinkage linkage, LIRFrameState state, Value... args);
 
-    RegisterAttributes attributes(Register register);
-
     /**
      * Create a new {@link Variable}.
      *
@@ -217,14 +208,6 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
     void emitUnwind(Value operand);
 
     /**
-     * Called just before register allocation is performed on the LIR owned by this generator.
-     * Overriding implementations of this method must call the overridden method.
-     */
-    void beforeRegisterAllocation();
-
-    void emitIncomingValues(Value[] params);
-
-    /**
      * Emits a return instruction. Implementations need to insert a move if the input is not in the
      * correct location.
      */
@@ -234,43 +217,13 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     Variable load(Value value);
 
-    Value loadNonConst(Value value);
-
-    /**
-     * Determines if only oop maps are required for the code generated from the LIR.
-     */
-    boolean needOnlyOopMaps();
-
-    /**
-     * Gets the ABI specific operand used to return a value of a given kind from a method.
-     *
-     * @param javaKind the {@link JavaKind} of value being returned
-     * @param valueKind the backend type of the value being returned
-     * @return the operand representing the ABI defined location used return a value of kind
-     *         {@code kind}
-     */
-    AllocatableValue resultOperandFor(JavaKind javaKind, ValueKind<?> valueKind);
-
     <I extends LIRInstruction> I append(I op);
 
-    void setSourcePosition(NodeSourcePosition position);
-
     void emitJump(LabelRef label);
-
-    void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
-                    double trueDestinationProbability);
-
-    void emitOverflowCheckBranch(LabelRef overflow, LabelRef noOverflow, LIRKind cmpKind, double overflowProbability);
-
-    void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability);
 
     Variable emitConditionalMove(PlatformKind cmpKind, Value leftVal, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue);
 
     Variable emitIntegerTestMove(Value leftVal, Value right, Value trueValue, Value falseValue);
-
-    void emitStrategySwitch(JavaConstant[] keyConstants, double[] keyProbabilities, LabelRef[] keyTargets, LabelRef defaultTarget, Variable value);
-
-    void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget);
 
     Variable emitByteSwap(Value operand);
 

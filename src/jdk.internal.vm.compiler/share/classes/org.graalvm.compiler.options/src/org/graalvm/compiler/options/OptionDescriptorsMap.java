@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,30 @@
  */
 
 
-package org.graalvm.compiler.nodes.memory;
+package org.graalvm.compiler.options;
 
-import org.graalvm.compiler.nodes.ValueNodeInterface;
+import java.util.Iterator;
+
+import jdk.internal.vm.compiler.collections.EconomicMap;
 
 /**
- * This interface marks nodes that are part of the memory graph.
+ * A {@link OptionDescriptor} implementation that wraps an existing map from {@link String}s to
+ * {@link OptionDescriptor}s.
  */
-public interface MemoryNode extends ValueNodeInterface {
+public final class OptionDescriptorsMap implements OptionDescriptors {
+    private final EconomicMap<String, OptionDescriptor> map;
 
+    public OptionDescriptorsMap(EconomicMap<String, OptionDescriptor> map) {
+        this.map = map;
+    }
+
+    @Override
+    public OptionDescriptor get(String key) {
+        return map.get(key);
+    }
+
+    @Override
+    public Iterator<OptionDescriptor> iterator() {
+        return map.getValues().iterator();
+    }
 }

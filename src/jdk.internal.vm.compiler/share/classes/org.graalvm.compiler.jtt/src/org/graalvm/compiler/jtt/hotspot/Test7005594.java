@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@ package org.graalvm.compiler.jtt.hotspot;
 //@formatter:off
 
 /**
+ * Array overflow not handled correctly with loop optimzations.
+ *
  * @test
  * @bug 7005594
- * @summary Array overflow not handled correctly with loop optimzations
- *
  * @run shell Test7005594.sh
  */
 public class Test7005594 {

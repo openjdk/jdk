@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@ package org.graalvm.compiler.options;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;
@@ -210,8 +212,9 @@ public class OptionValues {
             Object value = desc.getOptionKey().getValue(this);
             if (value instanceof String) {
                 value = '"' + String.valueOf(value) + '"';
+            } else if (value instanceof String[]) {
+                value = '"' + Arrays.stream((String[]) value).collect(Collectors.joining(",")) + '"';
             }
-
             String name = namePrefix + e.getKey();
             String assign = containsKey(desc.getOptionKey()) ? ":=" : "=";
             String typeName = desc.getOptionKey() instanceof EnumOptionKey ? "String" : desc.getOptionValueType().getSimpleName();

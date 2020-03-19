@@ -24,12 +24,11 @@
 
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.compiler.nodes.FixedNode;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 /**
- * This interface marks subclasses of {@link FixedNode} that kill a single memory location
- * represented by {@linkplain LocationIdentity}.
+ * This interface marks nodes that kill a single memory location represented by
+ * {@linkplain LocationIdentity}.
  */
 public interface SingleMemoryKill extends MemoryKill {
 
@@ -40,4 +39,5 @@ public interface SingleMemoryKill extends MemoryKill {
      * @return the identity of the location killed by this node.
      */
     LocationIdentity getKilledLocationIdentity();
+
 }

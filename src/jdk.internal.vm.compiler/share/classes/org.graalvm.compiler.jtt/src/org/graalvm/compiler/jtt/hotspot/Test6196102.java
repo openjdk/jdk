@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,10 @@ import org.junit.Test;
 import org.graalvm.compiler.jtt.JTTTest;
 
 /**
- * @bug 6196102
- * @summary Integer seems to be greater than {@link Integer#MAX_VALUE}.
+ * Integer seems to be greater than {@link Integer#MAX_VALUE}.
  *
+ * @test
+ * @bug 6196102
  * @run main Test6196102
  */
 public class Test6196102 extends JTTTest {

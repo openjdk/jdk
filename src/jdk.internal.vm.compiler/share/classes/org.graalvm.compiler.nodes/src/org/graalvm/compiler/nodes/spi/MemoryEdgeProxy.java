@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 
 package org.graalvm.compiler.nodes.spi;
 
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
-public interface MemoryProxy extends Proxy, MemoryNode {
+public interface MemoryEdgeProxy extends Proxy, MemoryKill {
 
     LocationIdentity getLocationIdentity();
 
-    MemoryNode getOriginalMemoryNode();
+    MemoryKill getOriginalMemoryNode();
 }

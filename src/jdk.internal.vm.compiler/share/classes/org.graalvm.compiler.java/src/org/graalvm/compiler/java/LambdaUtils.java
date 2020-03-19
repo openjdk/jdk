@@ -33,9 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.ClassInitializationPlugin;
@@ -46,8 +44,12 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+
 public final class LambdaUtils {
-    private static final Pattern LAMBDA_PATTERN = Pattern.compile("\\$\\$Lambda\\$\\d+/\\d+");
+    private static final Pattern LAMBDA_PATTERN = Pattern.compile("\\$\\$Lambda\\$\\d+/[^/]+;");
     private static final char[] HEX = "0123456789abcdef".toCharArray();
 
     private static GraphBuilderConfiguration buildLambdaParserConfig(ClassInitializationPlugin cip) {
@@ -105,22 +107,19 @@ public final class LambdaUtils {
 
     public static boolean isLambdaType(ResolvedJavaType type) {
         String typeName = type.getName();
-        final boolean isFinal = type.isFinalFlagSet();
-        final boolean containsSlash = typeName.contains("/");
-        final boolean lamdaInName = typeName.contains("$$Lambda$");
-        final boolean matchesLamda = lambdaMatcher(type.getName()).find();
-        return isFinal && containsSlash && lamdaInName && matchesLamda;
+        return type.isFinalFlagSet() && typeName.contains("/") && typeName.contains("$$Lambda$") && lambdaMatcher(type.getName()).find();
     }
 
     private static String createStableLambdaName(ResolvedJavaType lambdaType, List<ResolvedJavaMethod> targetMethods) {
-        assert lambdaMatcher(lambdaType.getName()).find() : "Stable name should be created only for lambda types.";
+        final String lambdaName = lambdaType.getName();
+        assert lambdaMatcher(lambdaName).find() : "Stable name should be created only for lambda types: " + lambdaName;
 
-        Matcher m = lambdaMatcher(lambdaType.getName());
+        Matcher m = lambdaMatcher(lambdaName);
         StringBuilder sb = new StringBuilder();
         targetMethods.forEach((targetMethod) -> {
             sb.append(targetMethod.format("%H.%n(%P)%R"));
         });
-        return m.replaceFirst("\\$\\$Lambda\\$" + digest(sb.toString()));
+        return m.replaceFirst(Matcher.quoteReplacement("$$Lambda$" + digest(sb.toString()) + ";"));
     }
 
     private static Matcher lambdaMatcher(String value) {

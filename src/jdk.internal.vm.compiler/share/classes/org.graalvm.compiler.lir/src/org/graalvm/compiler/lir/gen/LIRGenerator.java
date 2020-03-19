@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         return res.getRegisterConfig();
     }
 
-    @Override
     public RegisterAttributes attributes(Register register) {
         return getRegisterConfig().getAttributesMap()[register.number];
     }
@@ -294,7 +293,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         return (Variable) value;
     }
 
-    @Override
     public Value loadNonConst(Value value) {
         if (isConstantValue(value) && !moveFactory.canInlineConstant(asConstant(value))) {
             return emitMove(value);
@@ -305,7 +303,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     /**
      * Determines if only oop maps are required for the code generated from the LIR.
      */
-    @Override
     public boolean needOnlyOopMaps() {
         return false;
     }
@@ -318,7 +315,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
      * @return the operand representing the ABI defined location used return a value of kind
      *         {@code kind}
      */
-    @Override
     public AllocatableValue resultOperandFor(JavaKind javaKind, ValueKind<?> valueKind) {
         Register reg = getRegisterConfig().getReturnRegister(javaKind);
         assert target().arch.canStoreValue(reg.getRegisterCategory(), valueKind.getPlatformKind()) : reg.getRegisterCategory() + " " + valueKind.getPlatformKind();
@@ -327,7 +323,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     NodeSourcePosition currentPosition;
 
-    @Override
     public void setSourcePosition(NodeSourcePosition position) {
         currentPosition = position;
     }
@@ -346,7 +341,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         return op;
     }
 
-    @Override
     public boolean hasBlockEnd(AbstractBlockBase<?> block) {
         ArrayList<LIRInstruction> ops = getResult().getLIR().getLIRforBlock(block);
         if (ops.size() == 0) {
@@ -400,7 +394,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     }
 
-    @Override
     public final BlockScope getBlockScope(AbstractBlockBase<?> block) {
         BlockScopeImpl blockScope = new BlockScopeImpl(block);
         blockScope.doBlockStart();
@@ -425,7 +418,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         return matchScope;
     }
 
-    @Override
     public void emitIncomingValues(Value[] params) {
         ((LabelOp) res.getLIR().getLIRforBlock(getCurrentBlock()).get(0)).setIncomingValues(params);
     }
@@ -433,14 +425,11 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     @Override
     public abstract void emitJump(LabelRef label);
 
-    @Override
     public abstract void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
                     double trueDestinationProbability);
 
-    @Override
     public abstract void emitOverflowCheckBranch(LabelRef overflow, LabelRef noOverflow, LIRKind cmpKind, double overflowProbability);
 
-    @Override
     public abstract void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability);
 
     @Override
@@ -488,7 +477,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         }
     }
 
-    @Override
     public void emitStrategySwitch(JavaConstant[] keyConstants, double[] keyProbabilities, LabelRef[] keyTargets, LabelRef defaultTarget, Variable value) {
         SwitchStrategy strategy = SwitchStrategy.getBestStrategy(keyProbabilities, keyConstants, keyTargets);
 
@@ -539,7 +527,6 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         }
     }
 
-    @Override
     public abstract void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget);
 
     protected abstract void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key);
@@ -554,7 +541,10 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " doesn't support hash table switches");
     }
 
-    @Override
+    /**
+     * Called just before register allocation is performed on the LIR owned by this generator.
+     * Overriding implementations of this method must call the overridden method.
+     */
     public void beforeRegisterAllocation() {
     }
 

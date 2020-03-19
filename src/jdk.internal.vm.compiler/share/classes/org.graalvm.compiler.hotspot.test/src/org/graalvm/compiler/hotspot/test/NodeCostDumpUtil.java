@@ -85,7 +85,7 @@ public class NodeCostDumpUtil {
             System.err.printf("NodeCostDumpUtil does not support JDK versions greater than 1.8, current version is %s.\n", version);
             System.exit(-1);
         }
-        String[] jvmciCP = System.getProperty("jvmci.class.path.append").split(File.pathSeparator);
+        String[] jvmciCP = System.getProperty("sun.boot.class.path").split(File.pathSeparator);
         String[] primarySuiteCP = System.getProperty("primary.suite.cp").split(File.pathSeparator);
         ClassLoader applicationClassLoader = Thread.currentThread().getContextClassLoader();
         HashSet<Class<?>> classes = new HashSet<>();

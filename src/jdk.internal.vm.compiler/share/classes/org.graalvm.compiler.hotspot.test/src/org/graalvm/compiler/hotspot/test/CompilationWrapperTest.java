@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public class CompilationWrapperTest extends GraalCompilerTest {
     @Test
     public void testTruffleCompilation2() throws IOException, InterruptedException {
         Probe[] probes = {
-                        new Probe("Exiting VM due to TruffleCompilationExceptionsAreFatal=true", 1),
+                        new Probe("Exiting VM due to engine.CompilationExceptionsAreFatal=true", 1),
         };
         testHelper(Arrays.asList(probes),
                         Arrays.asList(
@@ -191,7 +191,7 @@ public class CompilationWrapperTest extends GraalCompilerTest {
     public void testTruffleCompilation3() throws IOException, InterruptedException {
         assumeManagementLibraryIsLoadable();
         Probe[] probes = {
-                        new Probe("Exiting VM due to TrufflePerformanceWarningsAreFatal=true", 1),
+                        new Probe("Exiting VM due to engine.PerformanceWarningsAreFatal=true", 1),
         };
         testHelper(Arrays.asList(probes),
                         Arrays.asList(
