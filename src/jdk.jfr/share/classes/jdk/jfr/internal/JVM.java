@@ -42,7 +42,7 @@ public final class JVM {
     // JVM signals file changes by doing Object#notifu on this object
     static final Object FILE_DELTA_CHANGE = new Object();
 
-    static final long RESERVED_CLASS_ID_LIMIT = 400;
+    static final long RESERVED_CLASS_ID_LIMIT = 500;
 
     private volatile boolean nativeOK;
 
