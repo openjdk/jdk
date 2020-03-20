@@ -1379,12 +1379,12 @@ s.writeObject(this.parameterArray());
 
             /**
              * This implementation returns {@code true} if {@code obj} is another
-             * {@code WeakEntry} whose referent is equals to this referent, or
-             * if {@code obj} is equals to the referent of this. This allows
+             * {@code WeakEntry} whose referent is equal to this referent, or
+             * if {@code obj} is equal to the referent of this. This allows
              * lookups to be made without wrapping in a {@code WeakEntry}.
              *
              * @param obj the object to compare
-             * @return true if {@code obj} is equals to this or the referent of this
+             * @return true if {@code obj} is equal to this or the referent of this
              * @see MethodType#equals(Object)
              * @see Object#equals(Object)
              */

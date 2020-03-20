@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns the first boundary following the specified character offset. If the
-     * specified offset equals to the last text boundary, it returns
+     * specified offset is equal to the last text boundary, it returns
      * {@code BreakIterator.DONE} and the iterator's current position is unchanged.
      * Otherwise, the iterator's current position is set to the returned boundary.
      * The value returned is always greater than the offset or the value
@@ -334,7 +334,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns the last boundary preceding the specified character offset. If the
-     * specified offset equals to the first text boundary, it returns
+     * specified offset is equal to the first text boundary, it returns
      * {@code BreakIterator.DONE} and the iterator's current position is unchanged.
      * Otherwise, the iterator's current position is set to the returned boundary.
      * The value returned is always less than the offset or the value

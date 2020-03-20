@@ -658,7 +658,7 @@ public class MulticastSocket extends DatagramSocket {
     }
 
     /**
-     * Disable/Enable local loopback of multicast datagrams
+     * Disable/Enable local loopback of multicast datagrams.
      * The option is used by the platform's networking code as a hint
      * for setting whether multicast data will be looped back to
      * the local socket.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public final class StringJoiner {
     private int len;
 
     /**
-     * When overridden by the user to be non-null via {@link setEmptyValue}, the
-     * string returned by toString() when no elements have yet been added.
+     * When overridden by the user to be non-null via {@link #setEmptyValue(CharSequence)},
+     * the string returned by toString() when no elements have yet been added.
      * When null, prefix + suffix is used as the empty value.
      */
     private String emptyValue;

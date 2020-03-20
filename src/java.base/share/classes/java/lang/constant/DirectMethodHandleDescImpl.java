@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,8 +194,8 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
      * descriptor.
      * @param o a {@code DirectMethodHandleDescImpl} to compare to this
      *       {@code DirectMethodHandleDescImpl}
-     * @return {@code true} if the specified {@code DirectMethodHandleDescImpl} is
-     *      equals to this {@code DirectMethodHandleDescImpl}.
+     * @return {@code true} if the specified {@code DirectMethodHandleDescImpl}
+     *      is equal to this {@code DirectMethodHandleDescImpl}.
      */
     @Override
     public boolean equals(Object o) {

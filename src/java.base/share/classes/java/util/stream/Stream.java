@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -932,7 +932,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * additional synchronization is needed for a parallel reduction.
      *
      * @apiNote
-     * The following will accumulate strings into an ArrayList:
+     * The following will accumulate strings into a List:
      * <pre>{@code
      *     List<String> asList = stringStream.collect(Collectors.toList());
      * }</pre>

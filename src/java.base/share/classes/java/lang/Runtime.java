@@ -960,7 +960,7 @@ public class Runtime {
 
         /*
          * List of version number components passed to this constructor MUST
-         * be at least unmodifiable (ideally immutable). In the case on an
+         * be at least unmodifiable (ideally immutable). In the case of an
          * unmodifiable list, the caller MUST hand the list over to this
          * constructor and never change the underlying list.
          */

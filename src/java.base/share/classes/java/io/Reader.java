@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public abstract class Reader implements Readable, Closeable {
      * effect.
      *
      * <p> While the stream is open, the {@code read()}, {@code read(char[])},
-     * {@code read(char[], int, int)}, {@code read(Charbuffer)}, {@code
+     * {@code read(char[], int, int)}, {@code read(CharBuffer)}, {@code
      * ready()}, {@code skip(long)}, and {@code transferTo()} methods all
      * behave as if end of stream has been reached. After the stream has been
      * closed, these methods all throw {@code IOException}.
@@ -183,7 +183,7 @@ public abstract class Reader implements Readable, Closeable {
      * @throws java.nio.ReadOnlyBufferException if target is a read only buffer
      * @since 1.5
      */
-    public int read(java.nio.CharBuffer target) throws IOException {
+    public int read(CharBuffer target) throws IOException {
         int len = target.remaining();
         char[] cbuf = new char[len];
         int n = read(cbuf, 0, len);

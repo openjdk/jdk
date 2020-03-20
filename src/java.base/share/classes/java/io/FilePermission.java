@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -540,7 +540,7 @@ public final class FilePermission extends Permission implements Serializable {
      * If {@code jdk.io.permissionsUseCanonicalPath} is {@code true}, a
      * simple {@code cpath} is inside a wildcard {@code cpath} if and only if
      * after removing the base name (the last name in the pathname's name
-     * sequence) from the former the remaining part equals to the latter,
+     * sequence) from the former the remaining part is equal to the latter,
      * a simple {@code cpath} is recursively inside a wildcard {@code cpath}
      * if and only if the former starts with the latter.
      * <p>

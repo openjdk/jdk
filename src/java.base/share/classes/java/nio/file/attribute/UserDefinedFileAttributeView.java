@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ public interface UserDefinedFileAttributeView
      * Suppose we want to write a file's MIME type as a user-defined attribute:
      * <pre>
      *    UserDefinedFileAttributeView view =
-     *        FIles.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
      *    view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
      * </pre>
      *

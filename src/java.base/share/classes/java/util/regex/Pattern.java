@@ -778,14 +778,13 @@ public final class Pattern
     implements java.io.Serializable
 {
 
-    /**
+    /*
      * Regular expression modifier values.  Instead of being passed as
      * arguments, they can also be passed as inline modifiers.
      * For example, the following statements have the same effect.
-     * <pre>
-     * Pattern p1 = Pattern.compile("abc", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
-     * Pattern p2 = Pattern.compile("(?im)abc", 0);
-     * </pre>
+     *
+     *   Pattern p1 = Pattern.compile("abc", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
+     *   Pattern p2 = Pattern.compile("(?im)abc", 0);
      */
 
     /**
