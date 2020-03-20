@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,12 @@ final class EventSupport {
         if (debug) {
             System.err.println("EventSupport.removeDeadNotifier: " + info.name);
         }
-        notifiers.remove(info);
+        if (notifiers != null) {
+            // Only do this if cleanup() not been triggered, otherwise here
+            // will throw NullPointerException since notifiers will be set to
+            // null in cleanup()
+            notifiers.remove(info);
+        }
     }
 
     /**
@@ -329,6 +334,11 @@ final class EventSupport {
      */
     synchronized void queueEvent(EventObject event,
                                  Vector<? extends NamingListener> vector) {
+        if (notifiers == null) {
+            // That means cleanup() already done, not queue event anymore,
+            // otherwise, new created EventQueue will not been cleanup.
+            return;
+        }
         if (eventQueue == null)
             eventQueue = new EventQueue();
 

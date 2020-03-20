@@ -39,7 +39,7 @@ import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
- * @bug 8176192
+ * @bug 8176192 8241130
  * @summary Incorrect usage of Iterator in Java 8 In com.sun.jndi.ldap.
  * EventSupport.removeNamingListener
  * @modules java.naming
