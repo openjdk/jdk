@@ -1558,6 +1558,11 @@ public:
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);
 
+  bool contains(const Node* n) const {
+    fatal("use faster member() instead");
+    return false;
+  }
+
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }
 #endif
