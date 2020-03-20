@@ -269,7 +269,7 @@ G1CMRootMemRegions::G1CMRootMemRegions(uint const max_regions) :
     _should_abort(false) { }
 
 G1CMRootMemRegions::~G1CMRootMemRegions() {
-  FREE_C_HEAP_ARRAY(MemRegion, _root_regions);
+  MemRegion::destroy_array(_root_regions, _max_regions);
 }
 
 void G1CMRootMemRegions::reset() {

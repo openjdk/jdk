@@ -1782,10 +1782,11 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
 
   struct Cleanup {
     MemRegion* _regions;
+    uint _length;
     bool _aborted;
-    Cleanup(MemRegion* regions) : _regions(regions), _aborted(true) { }
-    ~Cleanup() { if (_aborted) { FREE_C_HEAP_ARRAY(MemRegion, _regions); } }
-  } cleanup(regions);
+    Cleanup(MemRegion* regions, uint length) : _regions(regions), _length(length), _aborted(true) { }
+    ~Cleanup() { if (_aborted) { MemRegion::destroy_array(_regions, _length); } }
+  } cleanup(regions, max);
 
   FileMapRegion* si;
   int region_num = 0;
