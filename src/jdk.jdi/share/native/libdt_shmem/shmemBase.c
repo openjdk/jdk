@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,21 @@
                                   return error; \
                               } \
                           } while (0)
+
+#define ENTER_CONNECTION(connection) \
+        do { \
+            InterlockedIncrement(&connection->refcount); \
+            if (IS_STATE_CLOSED(connection->state)) { \
+                setLastErrorMsg("stream closed"); \
+                InterlockedDecrement(&connection->refcount); \
+                return SYS_ERR; \
+            } \
+        } while (0)
+
+#define LEAVE_CONNECTION(connection) \
+        do { \
+            InterlockedDecrement(&connection->refcount); \
+        } while (0)
 
 /*
  * The following assertions should hold anytime the stream's mutex is not held
@@ -154,6 +169,8 @@ typedef struct SharedMemoryConnection {
     Stream outgoing;
     sys_process_t otherProcess;
     sys_event_t shutdown;           /* signalled to indicate shutdown */
+    volatile DWORD32 refcount;
+    jint state;
 } SharedMemoryConnection;
 
 static jdwpTransportCallback *callback;
@@ -361,7 +378,7 @@ signalData(Stream *stream)
 
 
 static jint
-closeStream(Stream *stream, jboolean linger)
+closeStream(Stream *stream, jboolean linger, volatile DWORD32 *refcount)
 {
     /*
      * Lock stream during close - ignore shutdown event as we are
@@ -373,10 +390,8 @@ closeStream(Stream *stream, jboolean linger)
     stream->state = STATE_CLOSED;
     /* wake up waitForData() if it is in sysEventWait() */
     sysEventSignal(stream->hasData);
-    sysEventClose(stream->hasData);
     /* wake up waitForSpace() if it is in sysEventWait() */
     sysEventSignal(stream->hasSpace);
-    sysEventClose(stream->hasSpace);
 
     /*
      * If linger requested then give the stream a few seconds to
@@ -393,8 +408,20 @@ closeStream(Stream *stream, jboolean linger)
     }
 
     CHECK_ERROR(leaveMutex(stream));
-    sysIPMutexClose(stream->mutex);
-    return SYS_OK;
+
+    /* Attempt to close resources */
+    int attempts = 10;
+    while (attempts > 0) {
+        if (*refcount == 0) {
+            sysEventClose(stream->hasData);
+            sysEventClose(stream->hasSpace);
+            sysIPMutexClose(stream->mutex);
+            return SYS_OK;
+        }
+        sysSleep(200);
+        attempts--;
+    }
+    return SYS_ERR;
 }
 
 /*
@@ -417,7 +444,7 @@ createStream(char *name, Stream *stream)
     error = createWithGeneratedName(objectName, stream->shared->hasDataEventName,
                                     createEvent, &stream->hasData);
     if (error != SYS_OK) {
-        (void)closeStream(stream, JNI_FALSE);
+        sysIPMutexClose(stream->mutex);
         return error;
     }
 
@@ -425,7 +452,8 @@ createStream(char *name, Stream *stream)
     error = createWithGeneratedName(objectName, stream->shared->hasSpaceEventName,
                                     createEvent, &stream->hasSpace);
     if (error != SYS_OK) {
-        (void)closeStream(stream, JNI_FALSE);
+        sysIPMutexClose(stream->mutex);
+        sysEventClose(stream->hasData);
         return error;
     }
 
@@ -451,7 +479,7 @@ openStream(Stream *stream)
                              &stream->hasData);
     if (error != SYS_OK) {
         setLastError(error);
-        (void)closeStream(stream, JNI_FALSE);
+        sysIPMutexClose(stream->mutex);
         return error;
     }
 
@@ -459,7 +487,8 @@ openStream(Stream *stream)
                              &stream->hasSpace);
     if (error != SYS_OK) {
         setLastError(error);
-        (void)closeStream(stream, JNI_FALSE);
+        sysIPMutexClose(stream->mutex);
+        sysEventClose(stream->hasData);
         return error;
     }
 
@@ -480,6 +509,7 @@ allocConnection(void)
     if (conn != NULL) {
         memset(conn, 0, sizeof(SharedMemoryConnection));
     }
+    conn->state = STATE_OPEN;
     return conn;
 }
 
@@ -492,6 +522,9 @@ freeConnection(SharedMemoryConnection *connection)
 static void
 closeConnection(SharedMemoryConnection *connection)
 {
+    /* mark the connection as closed */
+    connection->state = STATE_CLOSED;
+
     /*
      * Signal all threads accessing this connection that we are
      * shutting down.
@@ -500,29 +533,26 @@ closeConnection(SharedMemoryConnection *connection)
         sysEventSignal(connection->shutdown);
     }
 
-
-    (void)closeStream(&connection->outgoing, JNI_TRUE);
-    (void)closeStream(&connection->incoming, JNI_FALSE);
-
-    if (connection->sharedMemory) {
-        sysSharedMemClose(connection->sharedMemory, connection->shared);
+    Stream * stream = &connection->outgoing;
+    if (stream->state == STATE_OPEN) {
+        (void)closeStream(stream, JNI_TRUE, &connection->refcount);
     }
-    if (connection->otherProcess) {
-        sysProcessClose(connection->otherProcess);
+    stream = &connection->incoming;
+    if (stream->state == STATE_OPEN) {
+        (void)closeStream(stream, JNI_FALSE, &connection->refcount);
     }
 
-    /*
-     * Ideally we should close the connection->shutdown event and
-     * free the connection structure. However as closing the
-     * connection is asynchronous it means that other threads may
-     * still be accessing the connection structure. On Win32 this
-     * means we leak 132 bytes and one event per connection. This
-     * memory will be reclaim at process exit.
-     *
-     * if (connection->shutdown)
-     *     sysEventClose(connection->shutdown);
-     * freeConnection(connection);
-     */
+    if (connection->refcount == 0) {
+        if (connection->sharedMemory) {
+            sysSharedMemClose(connection->sharedMemory, connection->shared);
+        }
+        if (connection->otherProcess) {
+            sysProcessClose(connection->otherProcess);
+        }
+        if (connection->shutdown) {
+            sysEventClose(connection->shutdown);
+        }
+    }
 }
 
 
@@ -545,7 +575,7 @@ openConnection(SharedMemoryTransport *transport, jlong otherPID,
     error = sysSharedMemOpen(connection->name, &connection->sharedMemory,
                              &connection->shared);
     if (error != SYS_OK) {
-        closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -556,12 +586,14 @@ openConnection(SharedMemoryTransport *transport, jlong otherPID,
     error = openStream(&connection->incoming);
     if (error != SYS_OK) {
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
     error = openStream(&connection->outgoing);
     if (error != SYS_OK) {
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -569,6 +601,7 @@ openConnection(SharedMemoryTransport *transport, jlong otherPID,
     if (error != SYS_OK) {
         setLastError(error);
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -582,6 +615,7 @@ openConnection(SharedMemoryTransport *transport, jlong otherPID,
     if (error != SYS_OK) {
         setLastError(error);
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -609,7 +643,7 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
     error = sysSharedMemCreate(connection->name, sizeof(SharedMemory),
                                &connection->sharedMemory, &connection->shared);
     if (error != SYS_OK) {
-        closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -624,6 +658,7 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
     error = createStream(streamName, &connection->incoming);
     if (error != SYS_OK) {
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -632,6 +667,7 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
     error = createStream(streamName, &connection->outgoing);
     if (error != SYS_OK) {
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -639,6 +675,7 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
     if (error != SYS_OK) {
         setLastError(error);
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -652,6 +689,7 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
     if (error != SYS_OK) {
         setLastError(error);
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -847,7 +885,6 @@ shmemBase_accept(SharedMemoryTransport *transport,
         transport->shared->isAccepted = JNI_FALSE;
         sysEventSignal(transport->acceptEvent);
 
-        freeConnection(connection);
         return error;
     }
 
@@ -858,6 +895,7 @@ shmemBase_accept(SharedMemoryTransport *transport,
          * No real point trying to reject it.
          */
         closeConnection(connection);
+        freeConnection(connection);
         return error;
     }
 
@@ -927,6 +965,26 @@ shmemBase_closeConnection(SharedMemoryConnection *connection)
 {
     clearLastError();
     closeConnection(connection);
+    /*
+     * Ideally we should free the connection structure. However,
+     * since the connection has already being published, other
+     * threads may still be accessing it. In particular, refcount
+     * and state fields could be accessed at any time even after
+     * closing the connection. On Win32 this means we leak 140
+     * bytes. This memory will be reclaimed at process exit.
+     *
+     * In general reference counting should exist externally to
+     * the object being managed so that it can be freed. If we
+     * want to free SharedMemoryConnection, one alternative could
+     * be to define a new struct X and move all those fields there
+     * except refcount and state. We would have a pointer to a
+     * dynamically allocated X from SharedMemoryConnection. Then
+     * if refcount is 0 we could also free X. This would leak
+     * 12 bytes instead of 140.
+     *
+     * freeConnection(connection);
+     *
+     */
 }
 
 void
@@ -936,8 +994,8 @@ shmemBase_closeTransport(SharedMemoryTransport *transport)
     closeTransport(transport);
 }
 
-jint
-shmemBase_sendByte(SharedMemoryConnection *connection, jbyte data)
+static jint
+shmemBase_sendByte_internal(SharedMemoryConnection *connection, jbyte data)
 {
     Stream *stream = &connection->outgoing;
     SharedStream *shared = stream->shared;
@@ -962,7 +1020,16 @@ shmemBase_sendByte(SharedMemoryConnection *connection, jbyte data)
 }
 
 jint
-shmemBase_receiveByte(SharedMemoryConnection *connection, jbyte *data)
+shmemBase_sendByte(SharedMemoryConnection *connection, jbyte data)
+{
+    ENTER_CONNECTION(connection);
+    jint rc = shmemBase_sendByte_internal(connection, data);
+    LEAVE_CONNECTION(connection);
+    return rc;
+}
+
+static jint
+shmemBase_receiveByte_internal(SharedMemoryConnection *connection, jbyte *data)
 {
     Stream *stream = &connection->incoming;
     SharedStream *shared = stream->shared;
@@ -984,6 +1051,15 @@ shmemBase_receiveByte(SharedMemoryConnection *connection, jbyte *data)
     CHECK_ERROR(signalSpace(stream));
 
     return SYS_OK;
+}
+
+jint
+shmemBase_receiveByte(SharedMemoryConnection *connection, jbyte *data)
+{
+    ENTER_CONNECTION(connection);
+    jint rc = shmemBase_receiveByte_internal(connection, data);
+    LEAVE_CONNECTION(connection);
+    return rc;
 }
 
 static jint
@@ -1030,8 +1106,8 @@ sendBytes(SharedMemoryConnection *connection, const void *bytes, jint length)
 /*
  * Send packet header followed by data.
  */
-jint
-shmemBase_sendPacket(SharedMemoryConnection *connection, const jdwpPacket *packet)
+static jint
+shmemBase_sendPacket_internal(SharedMemoryConnection *connection, const jdwpPacket *packet)
 {
     jint data_length;
 
@@ -1056,6 +1132,15 @@ shmemBase_sendPacket(SharedMemoryConnection *connection, const jdwpPacket *packe
     }
 
     return SYS_OK;
+}
+
+jint
+shmemBase_sendPacket(SharedMemoryConnection *connection, const jdwpPacket *packet)
+{
+    ENTER_CONNECTION(connection);
+    jint rc = shmemBase_sendPacket_internal(connection, packet);
+    LEAVE_CONNECTION(connection);
+    return rc;
 }
 
 static jint
@@ -1100,8 +1185,8 @@ receiveBytes(SharedMemoryConnection *connection, void *bytes, jint length)
  * Read packet header and insert into packet structure.
  * Allocate space for the data and fill it in.
  */
-jint
-shmemBase_receivePacket(SharedMemoryConnection *connection, jdwpPacket *packet)
+static jint
+shmemBase_receivePacket_internal(SharedMemoryConnection *connection, jdwpPacket *packet)
 {
     jint data_length;
     jint error;
@@ -1140,6 +1225,15 @@ shmemBase_receivePacket(SharedMemoryConnection *connection, jdwpPacket *packet)
     }
 
     return SYS_OK;
+}
+
+jint
+shmemBase_receivePacket(SharedMemoryConnection *connection, jdwpPacket *packet)
+{
+    ENTER_CONNECTION(connection);
+    jint rc = shmemBase_receivePacket_internal(connection, packet);
+    LEAVE_CONNECTION(connection);
+    return rc;
 }
 
 jint
