@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, alloc)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, alloc, region)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, barrier)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, breakpoint)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, classhisto)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, compaction)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, cpu)) \

@@ -68,10 +68,10 @@ void ConcurrentGCBreakpoints::run_to_idle_impl(bool acquiring_control) {
   MonitorLocker ml(monitor());
   if (acquiring_control) {
     assert(!is_controlled(), "precondition");
-    log_debug(gc, breakpoint)("acquire_control");
+    log_trace(gc, breakpoint)("acquire_control");
   } else {
     assert(is_controlled(), "precondition");
-    log_debug(gc, breakpoint)("run_to_idle");
+    log_trace(gc, breakpoint)("run_to_idle");
   }
   reset_request_state();
   _want_idle = true;
@@ -88,7 +88,7 @@ void ConcurrentGCBreakpoints::acquire_control() {
 void ConcurrentGCBreakpoints::release_control() {
   assert_Java_thread();
   MonitorLocker ml(monitor());
-  log_debug(gc, breakpoint)("release_control");
+  log_trace(gc, breakpoint)("release_control");
   reset_request_state();
   ml.notify_all();
 }
@@ -103,13 +103,13 @@ bool ConcurrentGCBreakpoints::run_to(const char* breakpoint) {
 
   MonitorLocker ml(monitor());
   assert(is_controlled(), "precondition");
-  log_debug(gc, breakpoint)("run_to %s", breakpoint);
+  log_trace(gc, breakpoint)("run_to %s", breakpoint);
   reset_request_state();
   _run_to = breakpoint;
   ml.notify_all();
 
   if (_is_idle) {
-    log_debug(gc, breakpoint)("run_to requesting collection %s", breakpoint);
+    log_trace(gc, breakpoint)("run_to requesting collection %s", breakpoint);
     MutexUnlocker mul(monitor());
     Universe::heap()->collect(GCCause::_wb_breakpoint);
   }
@@ -119,10 +119,10 @@ bool ConcurrentGCBreakpoints::run_to(const char* breakpoint) {
     if (_want_idle) {
       // Completed cycle and resumed idle without hitting requested stop.
       // That replaced our request with a run_to_idle() request.
-      log_debug(gc, breakpoint)("run_to missed %s", breakpoint);
+      log_trace(gc, breakpoint)("run_to missed %s", breakpoint);
       return false;             // Missed.
     } else if (_is_stopped) {
-      log_debug(gc, breakpoint)("run_to stopped at %s", breakpoint);
+      log_trace(gc, breakpoint)("run_to stopped at %s", breakpoint);
       return true;              // Success.
     } else {
       ml.wait();
@@ -159,11 +159,10 @@ void ConcurrentGCBreakpoints::notify_active_to_idle() {
   // Notify pending run_to request of miss by replacing the run_to() request
   // with a run_to_idle() request.
   if (_run_to != NULL) {
-    log_debug(gc, breakpoint)("Now idle and clearing breakpoint %s", _run_to);
+    log_debug(gc, breakpoint)
+             ("Concurrent cycle completed without reaching breakpoint %s", _run_to);
     _run_to = NULL;
     _want_idle = true;
-  } else {
-    log_debug(gc, breakpoint)("Now idle");
   }
   _is_idle = true;
   monitor()->notify_all();
@@ -171,6 +170,5 @@ void ConcurrentGCBreakpoints::notify_active_to_idle() {
 
 void ConcurrentGCBreakpoints::notify_idle_to_active() {
   assert_locked_or_safepoint(monitor());
-  log_debug(gc, breakpoint)("Now active");
   _is_idle = false;
 }
