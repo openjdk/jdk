@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -891,8 +891,8 @@ public interface HttpResponse<T> {
      * objects:
      *
      * <pre>{@code    // Streams the response body to a File
-     *   HttpResponse<byte[]> response = client
-     *     .send(request, responseInfo -> BodySubscribers.ofByteArray());
+     *   HttpResponse<Path> response = client
+     *     .send(request, responseInfo -> BodySubscribers.ofFile(Paths.get("example.html"));
      *
      *   // Accumulates the response body and returns it as a byte[]
      *   HttpResponse<byte[]> response = client
