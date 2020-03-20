@@ -32,7 +32,6 @@
 import java.io.*;
 import java.security.SecureRandom;
 import java.security.KeyStore;
-import javax.security.cert.*;
 import java.util.Date;
 import java.util.Vector;
 import java.util.ArrayList;
