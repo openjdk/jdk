@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
 package nsk.share;
 
 import java.io.PrintStream;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Wicket provides a means for one or more threads to suspend execution
@@ -59,6 +63,9 @@ public class Wicket {
 
     /** Wicket's string identifier */
     private String name = "";
+
+    private final Lock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     /**
      * Construct a Wicket with only one closed lock.
@@ -106,18 +113,26 @@ public class Wicket {
      *
      * <p>Please note, that the method would ignore Thread.interrupt() requests.
      */
-    public synchronized void waitFor() {
-        ++waiters;
-        if (debugOutput != null) {
-            debugOutput.printf("Wicket %s: waitFor()\n", name);
-        }
+    public void waitFor() {
+        long id = System.currentTimeMillis();
 
-        while (count > 0) {
-            try {
-                wait();
-            } catch (InterruptedException e) {}
+        try {
+            lock.lock();
+            ++waiters;
+            if (debugOutput != null) {
+                debugOutput.printf("Wicket %d %s: waitFor(). There are %d waiters totally now.\n", id, name, waiters);
+            }
+
+            while (count > 0) {
+                try {
+                    condition.await();
+                } catch (InterruptedException e) {
+                }
+            }
+            --waiters;
+        } finally {
+            lock.unlock();
         }
-        --waiters;
     }
 
     /**
@@ -150,25 +165,35 @@ public class Wicket {
      * @return the number of closed locks
      * @throws IllegalArgumentException if timeout is less than 0
      */
-    public synchronized int waitFor(long timeout) {
-        if (debugOutput != null) {
-            debugOutput.printf("Wicket %s: waitFor(%d)\n", name, timeout);
-        }
-
+    public int waitFor(long timeout) {
         if (timeout < 0)
             throw new IllegalArgumentException(
-                "timeout value is negative: " + timeout);
-        ++waiters;
-        long waitTime = timeout;
-        long startTime = System.currentTimeMillis();
-        while (count > 0 && waitTime > 0) {
-            try {
-                wait(waitTime);
-            } catch (InterruptedException e) {}
-            waitTime = timeout - (System.currentTimeMillis() - startTime);
+                    "timeout value is negative: " + timeout);
+
+        long id = System.currentTimeMillis();
+
+        try {
+            lock.lock();
+            ++waiters;
+            if (debugOutput != null) {
+                debugOutput.printf("Wicket %d %s: waitFor(). There are %d waiters totally now.\n", id, name, waiters);
+            }
+
+            long waitTime = timeout;
+            long startTime = System.currentTimeMillis();
+
+            while (count > 0  && waitTime > 0) {
+                try {
+                    condition.await(waitTime, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                }
+                waitTime = timeout - (System.currentTimeMillis() - startTime);
+            }
+            --waiters;
+            return count;
+        } finally {
+            lock.unlock();
         }
-        --waiters;
-        return (count);
     }
 
     /**
@@ -182,17 +207,23 @@ public class Wicket {
      *
      * @throws IllegalStateException if there is no one closed lock
      */
-    public synchronized void unlock() {
-        if (debugOutput != null) {
-            debugOutput.printf("Wicket %s: unlock()\n", name);
-        }
+    public void unlock() {
 
-        if (count == 0)
-            throw new IllegalStateException("locks are already open");
+        try {
+            lock.lock();
+            if (count == 0)
+                throw new IllegalStateException("locks are already open");
 
-        --count;
-        if (count == 0) {
-            notifyAll();
+            --count;
+            if (debugOutput != null) {
+                debugOutput.printf("Wicket %s: unlock() the count is now %d\n", name, count);
+            }
+
+            if (count == 0) {
+                condition.signalAll();
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -205,13 +236,18 @@ public class Wicket {
      * this Wicket then they will be released and re-enabled for thread
      * scheduling purposes.
      */
-    public synchronized void unlockAll() {
+    public void unlockAll() {
         if (debugOutput != null) {
             debugOutput.printf("Wicket %s: unlockAll()\n", name);
         }
 
-        count = 0;
-        notifyAll();
+        try {
+            lock.lock();
+            count = 0;
+            condition.signalAll();
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -220,10 +256,15 @@ public class Wicket {
      *
      * @return number of waiters
      */
-    public synchronized int getWaiters() {
-        if (debugOutput != null) {
-            debugOutput.printf("Wicket %s: getWaiters()\n", name);
+    public int getWaiters() {
+        try {
+            lock.lock();
+            if (debugOutput != null) {
+                debugOutput.printf("Wicket %s: getWaiters()\n", name);
+            }
+            return waiters;
+        } finally {
+            lock.unlock();
         }
-        return waiters;
     }
 }
