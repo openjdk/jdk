@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3796,6 +3796,23 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     INLINE_BAILOUT("mdo allocation failed");
   }
 
+  const bool is_invokedynamic = (bc == Bytecodes::_invokedynamic);
+  const bool has_receiver = (bc != Bytecodes::_invokestatic && !is_invokedynamic);
+
+  const int args_base = state()->stack_size() - callee->arg_size();
+  assert(args_base >= 0, "stack underflow during inlining");
+
+  Value recv = NULL;
+  if (has_receiver) {
+    assert(!callee->is_static(), "callee must not be static");
+    assert(callee->arg_size() > 0, "must have at least a receiver");
+
+    recv = state()->stack_at(args_base);
+    if (recv->is_null_obj()) {
+      INLINE_BAILOUT("receiver is always null");
+    }
+  }
+
   // now perform tests that are based on flag settings
   bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
   if (callee->force_inline() || inlinee_by_directive) {
@@ -3838,21 +3855,11 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
 
   BlockBegin* orig_block = block();
 
-  const bool is_invokedynamic = bc == Bytecodes::_invokedynamic;
-  const bool has_receiver = (bc != Bytecodes::_invokestatic && !is_invokedynamic);
-
-  const int args_base = state()->stack_size() - callee->arg_size();
-  assert(args_base >= 0, "stack underflow during inlining");
-
   // Insert null check if necessary
-  Value recv = NULL;
   if (has_receiver) {
     // note: null check must happen even if first instruction of callee does
     //       an implicit null check since the callee is in a different scope
     //       and we must make sure exception handling does the right thing
-    assert(!callee->is_static(), "callee must not be static");
-    assert(callee->arg_size() > 0, "must have at least a receiver");
-    recv = state()->stack_at(args_base);
     null_check(recv);
   }
 
