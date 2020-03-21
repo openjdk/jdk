@@ -1264,8 +1264,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                                   int offs, int len) {
             attr = a;
             this.type = type;
-            this.data = txt == null ? null : Arrays.copyOfRange(txt, offs, offs+len);
-            this.offs = 0;
+            this.data = txt == null ? null : Arrays.copyOf(txt, txt.length);
+            this.offs = offs;
             this.len = len;
             this.direction = OriginateDirection;
         }
