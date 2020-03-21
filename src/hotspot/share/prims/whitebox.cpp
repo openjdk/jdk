@@ -1513,6 +1513,7 @@ struct CodeBlobStub {
 };
 
 static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBlobStub* cb) {
+  ResourceMark rm;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
   jobjectArray result = env->NewObjectArray(4, clazz, NULL);
