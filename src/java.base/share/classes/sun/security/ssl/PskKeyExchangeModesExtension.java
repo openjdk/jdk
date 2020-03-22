@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,11 +95,13 @@ final class PskKeyExchangeModesExtension {
             this.modes = modes;
         }
 
-        PskKeyExchangeModesSpec(ByteBuffer m) throws IOException {
+        PskKeyExchangeModesSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException {
             if (m.remaining() < 2) {
-                throw new SSLProtocolException(
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid psk_key_exchange_modes extension: " +
-                    "insufficient data");
+                    "insufficient data"));
             }
 
             this.modes = Record.getBytes8(m);
@@ -151,9 +153,9 @@ final class PskKeyExchangeModesExtension {
     private static final
             class PskKeyExchangeModesStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new PskKeyExchangeModesSpec(buffer)).toString();
+                return (new PskKeyExchangeModesSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -197,12 +199,8 @@ final class PskKeyExchangeModesExtension {
             }
 
             // Parse the extension.
-            PskKeyExchangeModesSpec spec;
-            try {
-                spec = new PskKeyExchangeModesSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            PskKeyExchangeModesSpec spec =
+                    new PskKeyExchangeModesSpec(shc, buffer);
 
             // Update the context.
             shc.handshakeExtensions.put(

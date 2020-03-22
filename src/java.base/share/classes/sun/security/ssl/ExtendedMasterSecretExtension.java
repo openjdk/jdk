@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,14 @@ final class ExtendedMasterSecretExtension {
             // blank
         }
 
-        private ExtendedMasterSecretSpec(ByteBuffer m) throws IOException {
+        private ExtendedMasterSecretSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException {
             // Parse the extension.
             if (m.hasRemaining()) {
-                throw new SSLProtocolException(
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid extended_master_secret extension data: " +
-                    "not empty");
+                    "not empty"));
             }
         }
 
@@ -86,9 +88,9 @@ final class ExtendedMasterSecretExtension {
     private static final
             class ExtendedMasterSecretStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new ExtendedMasterSecretSpec(buffer)).toString();
+                return (new ExtendedMasterSecretSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -168,13 +170,8 @@ final class ExtendedMasterSecretExtension {
             }
 
             // Parse the extension.
-            ExtendedMasterSecretSpec spec;
-            try {
-                spec = new ExtendedMasterSecretSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            ExtendedMasterSecretSpec spec =
+                    new ExtendedMasterSecretSpec(shc, buffer);
             if (shc.isResumption && shc.resumingSession != null &&
                     !shc.resumingSession.useExtendedMasterSecret) {
                 // For abbreviated handshake request, If the original
@@ -323,13 +320,8 @@ final class ExtendedMasterSecretExtension {
             }
 
             // Parse the extension.
-            ExtendedMasterSecretSpec spec;
-            try {
-                spec = new ExtendedMasterSecretSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            ExtendedMasterSecretSpec spec =
+                    new ExtendedMasterSecretSpec(chc, buffer);
             if (chc.isResumption && chc.resumingSession != null &&
                     !chc.resumingSession.useExtendedMasterSecret) {
                 throw chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,

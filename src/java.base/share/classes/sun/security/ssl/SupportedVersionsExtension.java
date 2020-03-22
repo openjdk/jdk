@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,22 +73,26 @@ final class SupportedVersionsExtension {
             this.requestedProtocols = requestedProtocols;
         }
 
-        private CHSupportedVersionsSpec(ByteBuffer m) throws IOException  {
+        private CHSupportedVersionsSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException  {
             if (m.remaining() < 3) {        //  1: the length of the list
                                             // +2: one version at least
-                throw new SSLProtocolException(
-                    "Invalid supported_versions extension: insufficient data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_versions extension: insufficient data"));
             }
 
             byte[] vbs = Record.getBytes8(m);   // Get the version bytes.
             if (m.hasRemaining()) {
-                throw new SSLProtocolException(
-                    "Invalid supported_versions extension: unknown extra data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_versions extension: unknown extra data"));
             }
 
             if (vbs == null || vbs.length == 0 || (vbs.length & 0x01) != 0) {
-                throw new SSLProtocolException(
-                    "Invalid supported_versions extension: incomplete data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_versions extension: incomplete data"));
             }
 
             int[] protocols = new int[vbs.length >> 1];
@@ -136,9 +140,9 @@ final class SupportedVersionsExtension {
     private static final
             class CHSupportedVersionsStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new CHSupportedVersionsSpec(buffer)).toString();
+                return (new CHSupportedVersionsSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -221,12 +225,8 @@ final class SupportedVersionsExtension {
             }
 
             // Parse the extension.
-            CHSupportedVersionsSpec spec;
-            try {
-                spec = new CHSupportedVersionsSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            CHSupportedVersionsSpec spec =
+                    new CHSupportedVersionsSpec(shc, buffer);
 
             // Update the context.
             shc.handshakeExtensions.put(CH_SUPPORTED_VERSIONS, spec);
@@ -249,10 +249,12 @@ final class SupportedVersionsExtension {
             this.selectedVersion = selectedVersion.id;
         }
 
-        private SHSupportedVersionsSpec(ByteBuffer m) throws IOException  {
+        private SHSupportedVersionsSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException  {
             if (m.remaining() != 2) {       // 2: the selected version
-                throw new SSLProtocolException(
-                    "Invalid supported_versions: insufficient data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_versions: insufficient data"));
             }
 
             byte major = m.get();
@@ -275,9 +277,9 @@ final class SupportedVersionsExtension {
     private static final
             class SHSupportedVersionsStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new SHSupportedVersionsSpec(buffer)).toString();
+                return (new SHSupportedVersionsSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -363,12 +365,8 @@ final class SupportedVersionsExtension {
             }
 
             // Parse the extension.
-            SHSupportedVersionsSpec spec;
-            try {
-                spec = new SHSupportedVersionsSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            SHSupportedVersionsSpec spec =
+                    new SHSupportedVersionsSpec(chc, buffer);
 
             // Update the context.
             chc.handshakeExtensions.put(SH_SUPPORTED_VERSIONS, spec);
@@ -452,12 +450,8 @@ final class SupportedVersionsExtension {
             }
 
             // Parse the extension.
-            SHSupportedVersionsSpec spec;
-            try {
-                spec = new SHSupportedVersionsSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            SHSupportedVersionsSpec spec =
+                    new SHSupportedVersionsSpec(chc, buffer);
 
             // Update the context.
             chc.handshakeExtensions.put(HRR_SUPPORTED_VERSIONS, spec);

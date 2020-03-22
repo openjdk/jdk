@@ -346,7 +346,8 @@ final class SSLExtensions {
                     }
                     if (ext != null) {
                         builder.append(
-                                ext.toString(ByteBuffer.wrap(en.getValue())));
+                            ext.toString(handshakeMessage.handshakeContext,
+                                    ByteBuffer.wrap(en.getValue())));
                     } else {
                         builder.append(toString(en.getKey(), en.getValue()));
                     }
@@ -359,7 +360,8 @@ final class SSLExtensions {
                         builder.append(",\n");
                     }
                     builder.append(
-                        en.getKey().toString(ByteBuffer.wrap(en.getValue())));
+                        en.getKey().toString(handshakeMessage.handshakeContext,
+                                ByteBuffer.wrap(en.getValue())));
                 }
 
                 return builder.toString();

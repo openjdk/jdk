@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,21 +78,25 @@ final class SupportedGroupsExtension {
             }
         }
 
-        private SupportedGroupsSpec(ByteBuffer m) throws IOException  {
+        private SupportedGroupsSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException  {
             if (m.remaining() < 2) {      // 2: the length of the list
-                throw new SSLProtocolException(
-                    "Invalid supported_groups extension: insufficient data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_groups extension: insufficient data"));
             }
 
             byte[] ngs = Record.getBytes16(m);
             if (m.hasRemaining()) {
-                throw new SSLProtocolException(
-                    "Invalid supported_groups extension: unknown extra data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_groups extension: unknown extra data"));
             }
 
             if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
-                throw new SSLProtocolException(
-                    "Invalid supported_groups extension: incomplete data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_groups extension: incomplete data"));
             }
 
             int[] ids = new int[ngs.length / 2];
@@ -138,9 +142,9 @@ final class SupportedGroupsExtension {
     private static final
             class SupportedGroupsStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new SupportedGroupsSpec(buffer)).toString();
+                return (new SupportedGroupsSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -414,12 +418,7 @@ final class SupportedGroupsExtension {
             }
 
             // Parse the extension.
-            SupportedGroupsSpec spec;
-            try {
-                spec = new SupportedGroupsSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            SupportedGroupsSpec spec = new SupportedGroupsSpec(shc, buffer);
 
             // Update the context.
             List<NamedGroup> knownNamedGroups = new LinkedList<>();
@@ -535,12 +534,7 @@ final class SupportedGroupsExtension {
             }
 
             // Parse the extension.
-            SupportedGroupsSpec spec;
-            try {
-                spec = new SupportedGroupsSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            SupportedGroupsSpec spec = new SupportedGroupsSpec(chc, buffer);
 
             // Update the context.
             List<NamedGroup> knownNamedGroups =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,14 @@ final class RenegoInfoExtension {
                     renegotiatedConnection, renegotiatedConnection.length);
         }
 
-        private RenegotiationInfoSpec(ByteBuffer m) throws IOException {
+        private RenegotiationInfoSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException {
             // Parse the extension.
             if (!m.hasRemaining() || m.remaining() < 1) {
-                throw new SSLProtocolException(
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid renegotiation_info extension data: " +
-                    "insufficient data");
+                    "insufficient data"));
             }
             this.renegotiatedConnection = Record.getBytes8(m);
         }
@@ -105,9 +107,9 @@ final class RenegoInfoExtension {
     private static final
             class RenegotiationInfoStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new RenegotiationInfoSpec(buffer)).toString();
+                return (new RenegotiationInfoSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -220,13 +222,7 @@ final class RenegoInfoExtension {
             }
 
             // Parse the extension.
-            RenegotiationInfoSpec spec;
-            try {
-                spec = new RenegotiationInfoSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            RenegotiationInfoSpec spec = new RenegotiationInfoSpec(shc, buffer);
             if (!shc.conContext.isNegotiated) {
                 // initial handshaking.
                 if (spec.renegotiatedConnection.length != 0) {
@@ -433,14 +429,7 @@ final class RenegoInfoExtension {
             }
 
             // Parse the extension.
-            RenegotiationInfoSpec spec;
-            try {
-                spec = new RenegotiationInfoSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
-
+            RenegotiationInfoSpec spec = new RenegotiationInfoSpec(chc, buffer);
             if (!chc.conContext.isNegotiated) {     // initial handshake
                 // If the extension is present, set the secure_renegotiation
                 // flag to TRUE.  The client MUST then verify that the

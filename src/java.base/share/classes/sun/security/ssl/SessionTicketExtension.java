@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,18 +237,21 @@ final class SessionTicketExtension {
             data = zero;
         }
 
-        SessionTicketSpec(byte[] b) throws IOException {
-            this(ByteBuffer.wrap(b));
+        SessionTicketSpec(HandshakeContext hc, byte[] b) throws IOException {
+            this(hc, ByteBuffer.wrap(b));
         }
 
-        SessionTicketSpec(ByteBuffer buf) throws IOException {
+        SessionTicketSpec(HandshakeContext hc,
+                ByteBuffer buf) throws IOException {
             if (buf == null) {
-                throw new SSLProtocolException(
-                        "SessionTicket buffer too small");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "SessionTicket buffer too small"));
             }
             if (buf.remaining() > 65536) {
-                throw new SSLProtocolException(
-                        "SessionTicket buffer too large. " + buf.remaining());
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "SessionTicket buffer too large. " + buf.remaining()));
             }
 
             data = buf;
@@ -366,12 +369,10 @@ final class SessionTicketExtension {
     }
 
     static final class SessionTicketStringizer implements SSLStringizer {
-        SessionTicketStringizer() {}
-
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return new SessionTicketSpec(buffer).toString();
+                return new SessionTicketSpec(hc, buffer).toString();
             } catch (IOException e) {
                 return e.getMessage();
             }
@@ -455,16 +456,7 @@ final class SessionTicketExtension {
             }
 
             // Parse the extension.
-            SessionTicketSpec spec;
-            try {
-                 spec = new SessionTicketSpec(buffer);
-            } catch (IOException | RuntimeException e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("SessionTicket data invalid. Doing full " +
-                            "handshake.");
-                }
-                return;
-            }
+            SessionTicketSpec spec = new SessionTicketSpec(shc, buffer);
             ByteBuffer b = spec.decrypt(shc);
             if (b != null) {
                 shc.resumingSession = new SSLSessionImpl(shc, b);
@@ -531,14 +523,8 @@ final class SessionTicketExtension {
                 return;
             }
 
-            try {
-                if (new SessionTicketSpec(buffer) == null) {
-                    return;
-                }
-                chc.statelessResumption = true;
-            } catch (IOException e) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, e);
-            }
+            SessionTicketSpec spec = new SessionTicketSpec(chc, buffer);
+            chc.statelessResumption = true;
         }
     }
 }

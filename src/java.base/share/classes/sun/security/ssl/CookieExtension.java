@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,13 @@ public class CookieExtension {
     static class CookieSpec implements SSLExtensionSpec {
         final byte[] cookie;
 
-        private CookieSpec(ByteBuffer m) throws IOException {
+        private CookieSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException {
             // opaque cookie<1..2^16-1>;
             if (m.remaining() < 3) {
-                throw new SSLProtocolException(
-                    "Invalid cookie extension: insufficient data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid cookie extension: insufficient data"));
             }
 
             this.cookie = Record.getBytes16(m);
@@ -90,9 +92,9 @@ public class CookieExtension {
 
     private static final class CookieStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new CookieSpec(buffer)).toString();
+                return (new CookieSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -159,13 +161,7 @@ public class CookieExtension {
                 return;     // ignore the extension
             }
 
-            CookieSpec spec;
-            try {
-                spec = new CookieSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            CookieSpec spec = new CookieSpec(shc, buffer);
             shc.handshakeExtensions.put(SSLExtension.CH_COOKIE, spec);
 
             // No impact on session resumption.
@@ -264,13 +260,7 @@ public class CookieExtension {
                 return;     // ignore the extension
             }
 
-            CookieSpec spec;
-            try {
-                spec = new CookieSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            CookieSpec spec = new CookieSpec(chc, buffer);
             chc.handshakeExtensions.put(SSLExtension.HRR_COOKIE, spec);
         }
     }
