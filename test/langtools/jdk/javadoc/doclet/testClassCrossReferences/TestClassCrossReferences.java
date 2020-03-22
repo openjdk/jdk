@@ -54,16 +54,16 @@ public class TestClassCrossReferences extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("C.html", true,
-                "<a href=\"" + uri + "java/math/package-summary.html\" class=\"externalLink\">"
+                "<a href=\"" + uri + "java/math/package-summary.html\" class=\"external-link\">"
                 + "<code>Link to math package</code></a>",
                 "<a href=\"" + uri + "javax/swing/text/AbstractDocument.AttributeContext.html\" "
-                + "title=\"class or interface in javax.swing.text\" class=\"externalLink\"><code>Link to AttributeContext innerclass</code></a>",
+                + "title=\"class or interface in javax.swing.text\" class=\"external-link\"><code>Link to AttributeContext innerclass</code></a>",
                 "<a href=\"" + uri + "java/math/BigDecimal.html\" "
-                + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external class BigDecimal</code></a>",
+                + "title=\"class or interface in java.math\" class=\"external-link\"><code>Link to external class BigDecimal</code></a>",
                 "<a href=\"" + uri + "java/math/BigInteger.html#gcd(java.math.BigInteger)\" "
-                + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>",
+                + "title=\"class or interface in java.math\" class=\"external-link\"><code>Link to external member gcd</code></a>",
                 "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html#uri\" "
-                + "title=\"class or interface in javax.tools\" class=\"externalLink\"><code>Link to external member URI</code></a>",
+                + "title=\"class or interface in javax.tools\" class=\"external-link\"><code>Link to external member URI</code></a>",
                 "<dl class=\"notes\">\n"
                 + "<dt>Overrides:</dt>\n"
                 + "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n"

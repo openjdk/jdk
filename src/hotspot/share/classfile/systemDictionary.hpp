@@ -226,7 +226,6 @@ class GCTimer;
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
   friend class VMStructs;
-  friend class SystemDictionaryHandles;
 
  public:
   enum WKID {
@@ -594,6 +593,11 @@ protected:
                                                 InstanceKlass* k, TRAPS);
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       Handle class_loader, TRAPS);
+  static bool check_shared_class_super_type(InstanceKlass* child, InstanceKlass* super,
+                                            Handle class_loader,  Handle protection_domain,
+                                            bool is_superclass, TRAPS);
+  static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
+                                               Handle protection_domain, TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,

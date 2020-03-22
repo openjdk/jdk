@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,7 +490,7 @@ public abstract class AbstractDrbg {
         // (not using derivation function) is so confusing
         // (does it need only strength or seedlen of entropy?)
         // that it's safer to assume minLength. In all other
-        // cases minLength equals to minEntropy.
+        // cases minLength is equal to minEntropy.
         return getEntropyInput(minLength, minLength, maxLength, isPr);
     }
 

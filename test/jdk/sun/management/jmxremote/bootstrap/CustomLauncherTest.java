@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,15 @@
  * questions.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashSet;
-import java.util.Set;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -47,80 +41,35 @@ import jdk.test.lib.process.ProcessTools;
  *          jdk.attach
  *          jdk.management.agent/jdk.internal.agent
  *
+ * @requires (os.family == "linux" | os.family == "solaris")
  * @build TestManager TestApplication CustomLauncherTest
- * @run main/othervm CustomLauncherTest
+ * @run main/othervm/native CustomLauncherTest
  */
 public class CustomLauncherTest {
-    private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
-    private static final  String TEST_JDK = System.getProperty("test.jdk");
-    private static final  String WORK_DIR = System.getProperty("user.dir");
 
-    private static final  String TEST_SRC = System.getProperty("test.src");
-    private static final  String OSNAME = System.getProperty("os.name");
-    private static final  String ARCH;
-    static {
-        // magic with os.arch
-        String osarch = System.getProperty("os.arch");
-        switch (osarch) {
-            case "i386":
-            case "i486":
-            case "i586":
-            case "i686":
-            case "i786":
-            case "i886":
-            case "i986": {
-                ARCH = "i586";
-                break;
-            }
-            case "x86_64":
-            case "amd64": {
-                ARCH = "amd64";
-                break;
-            }
-            case "sparc":
-                ARCH = "sparcv9";
-                break;
-            default: {
-                ARCH = osarch;
-            }
-        }
-    }
+    public static final String TEST_NATIVE_PATH = System.getProperty("test.nativepath");
 
     public static void main(String[] args) throws Exception {
-        if (TEST_CLASSPATH == null || TEST_CLASSPATH.isEmpty()) {
+        if (".".equals(Utils.TEST_CLASS_PATH)) {
             System.out.println("Test is designed to be run from jtreg only");
             return;
         }
 
-        if (getPlatform() == null) {
-            System.out.println("Test not designed to run on this operating " +
-                                "system (" + OSNAME + "), skipping...");
-            return;
-        }
-
-        final FileSystem FS = FileSystems.getDefault();
-
-        Path libjvmPath = findLibjvm(FS);
-        if (libjvmPath == null) {
-            throw new Error("Unable to locate 'libjvm.so' in " + TEST_JDK);
-        }
-
+        Path libjvm = Platform.jvmLibDir().resolve("libjvm.so");
         Process serverPrc = null, clientPrc = null;
 
         try {
-            String[] launcher = getLauncher();
-
-            if (launcher == null) return; // launcher not available for the tested platform; skip
+            String launcher = getLauncher();
 
             System.out.println("Starting custom launcher:");
             System.out.println("=========================");
-            System.out.println("  launcher  : " + launcher[0]);
-            System.out.println("  libjvm    : " + libjvmPath.toString());
-            System.out.println("  classpath : " + TEST_CLASSPATH);
+            System.out.println("  launcher  : " + launcher);
+            System.out.println("  libjvm    : " + libjvm);
+            System.out.println("  classpath : " + Utils.TEST_CLASS_PATH);
             ProcessBuilder server = new ProcessBuilder(
-                launcher[1],
-                libjvmPath.toString(),
-                TEST_CLASSPATH,
+                launcher,
+                libjvm.toString(),
+                Utils.TEST_CLASS_PATH,
                 "TestApplication"
             );
 
@@ -148,7 +97,7 @@ public class CustomLauncherTest {
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
-                TEST_CLASSPATH,
+                Utils.TEST_CLASS_PATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",
                 "TestManager",
                 String.valueOf(serverPrc.pid()),
@@ -182,87 +131,8 @@ public class CustomLauncherTest {
         }
     }
 
-    private static Path findLibjvm(FileSystem FS) {
-        Path libjvmPath = findLibjvm(FS.getPath(TEST_JDK, "lib"));
-        return libjvmPath;
-    }
-
-    private static Path findLibjvm(Path libPath) {
-        // libjvm.so -> server/libjvm.so -> client/libjvm.so
-        Path libjvmPath = libPath.resolve("libjvm.so");
-        if (isFileOk(libjvmPath)) {
-            return libjvmPath;
-        }
-        libjvmPath = libPath.resolve("server/libjvm.so");
-        if (isFileOk(libjvmPath)) {
-            return libjvmPath;
-        }
-        libjvmPath = libPath.resolve("client/libjvm.so");
-        if (isFileOk(libPath)) {
-            return libjvmPath;
-        }
-
-        return null;
-    }
-
-    private static boolean isFileOk(Path path) {
-        return Files.isRegularFile(path) && Files.isReadable(path);
-    }
-
-    private static String getPlatform() {
-        String platform = null;
-        switch (OSNAME.toLowerCase()) {
-            case "linux": {
-                platform = "linux";
-                break;
-            }
-            case "sunos": {
-                platform = "solaris";
-                break;
-            }
-            default: {
-                platform = null;
-            }
-        }
-
-        return platform;
-    }
-
-    private static String[] getLauncher() throws IOException {
-        String platform = getPlatform();
-        if (platform == null) {
-            return null;
-        }
-
-        String launcher = TEST_SRC + File.separator + platform + "-" + ARCH +
-                          File.separator + "launcher";
-
-        final FileSystem FS = FileSystems.getDefault();
-        Path launcherPath = FS.getPath(launcher);
-
-        final boolean hasLauncher = Files.isRegularFile(launcherPath, LinkOption.NOFOLLOW_LINKS)&&
-                                    Files.isReadable(launcherPath);
-        if (!hasLauncher) {
-            System.out.println("Launcher [" + launcher + "] does not exist. Skipping the test.");
-            return null;
-        }
-
-        // It is impossible to store an executable file in the source control
-        // We need to copy the launcher to the working directory
-        // and set the executable flag
-        Path localLauncherPath = FS.getPath(WORK_DIR, "launcher");
-        Files.copy(launcherPath, localLauncherPath,
-                   StandardCopyOption.REPLACE_EXISTING);
-        if (!Files.isExecutable(localLauncherPath)) {
-            Set<PosixFilePermission> perms = new HashSet<>(
-                Files.getPosixFilePermissions(
-                    localLauncherPath,
-                    LinkOption.NOFOLLOW_LINKS
-                )
-            );
-            perms.add(PosixFilePermission.OWNER_EXECUTE);
-            Files.setPosixFilePermissions(localLauncherPath, perms);
-        }
-        return new String[] {launcher, localLauncherPath.toAbsolutePath().toString()};
+    private static String getLauncher() {
+        Path launcherPath = Paths.get(TEST_NATIVE_PATH, "launcher");
+        return launcherPath.toAbsolutePath().toString();
     }
 }

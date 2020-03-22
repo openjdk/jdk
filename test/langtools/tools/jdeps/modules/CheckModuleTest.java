@@ -92,6 +92,10 @@ public class CheckModuleTest {
             ModuleDescriptor[] descriptors = analyzer.descriptors(name);
             for (int i = 0; i < 3; i++) {
                 descriptors[i].requires().stream()
+                    /* jcov has a dependency on java.logging, just ignore it in case this test is being executed with jcov
+                     * this dependency from jcov should be fixed once bug: CODETOOLS-7902642 gets fixed
+                     */
+                    .filter(req -> !req.toString().equals("java.logging"))
                     .forEach(req -> data.checkRequires(req));
             }
         }

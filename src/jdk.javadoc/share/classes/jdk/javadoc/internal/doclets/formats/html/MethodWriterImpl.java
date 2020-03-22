@@ -104,7 +104,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDocTreeHeader(ExecutableElement method) {
         String erasureAnchor;
         Content methodDocTree = new ContentBuilder();
-        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(method)));
         if ((erasureAnchor = getErasureAnchor(method)) != null) {
             heading.setId(erasureAnchor);

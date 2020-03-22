@@ -35,11 +35,12 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 
 /**
  * @test
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm TestJhsdbJstackLock
  */
@@ -47,7 +48,7 @@ import jdk.test.lib.Utils;
 public class TestJhsdbJstackLock {
 
     public static void main (String... args) throws Exception {
-
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 
         try {
@@ -60,8 +61,7 @@ public class TestJhsdbJstackLock {
             launcher.addToolArg("--pid");
             launcher.addToolArg(Long.toString(app.getPid()));
 
-            ProcessBuilder pb = new ProcessBuilder();
-            pb.command(launcher.getCommand());
+            ProcessBuilder pb = SATestUtils.createProcessBuilder(launcher);
             Process jhsdb = pb.start();
             OutputAnalyzer out = new OutputAnalyzer(jhsdb);
 

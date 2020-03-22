@@ -242,6 +242,7 @@ tier2_gc_shenandoah = \
   gc/ergonomics/TestInitialGCThreadLogging.java \
   gc/ergonomics/TestDynamicNumberOfGCThreads.java \
   gc/logging/TestGCId.java \
+  gc/logging/TestMetaSpaceLog.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/startup_warnings/TestShenandoah.java \

@@ -124,6 +124,7 @@ private:
   template <class T>
   oop load_reference_barrier_native_impl(oop obj, T* load_addr);
 
+  inline bool skip_bulk_update(HeapWord* dst);
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>

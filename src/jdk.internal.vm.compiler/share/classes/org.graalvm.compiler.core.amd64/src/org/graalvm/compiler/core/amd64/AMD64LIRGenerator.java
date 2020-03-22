@@ -253,9 +253,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
 
         if (isLogic) {
             assert trueValue.getValueKind().equals(falseValue.getValueKind());
-            Variable result = newVariable(trueValue.getValueKind());
-            append(new CondMoveOp(result, Condition.EQ, asAllocatable(trueValue), falseValue));
-            return result;
+            return emitCondMoveOp(Condition.EQ, trueValue, falseValue, false, false);
         } else {
             if (isXmm) {
                 return arithmeticLIRGen.emitReinterpret(accessKind, aRes);
@@ -461,31 +459,35 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
             finalCondition = emitCompare(cmpKind, left, right, cond);
         }
 
-        boolean isParityCheckNecessary = isFloatComparison && unorderedIsTrue != AMD64ControlFlow.trueOnUnordered(finalCondition);
-        Variable result = newVariable(finalTrueValue.getValueKind());
-        if (!isParityCheckNecessary && isIntConstant(finalTrueValue, 1) && isIntConstant(finalFalseValue, 0)) {
+        return emitCondMoveOp(finalCondition, finalTrueValue, finalFalseValue, isFloatComparison, unorderedIsTrue);
+    }
+
+    private Variable emitCondMoveOp(Condition condition, Value trueValue, Value falseValue, boolean isFloatComparison, boolean unorderedIsTrue) {
+        boolean isParityCheckNecessary = isFloatComparison && unorderedIsTrue != AMD64ControlFlow.trueOnUnordered(condition);
+        Variable result = newVariable(trueValue.getValueKind());
+        if (!isParityCheckNecessary && isIntConstant(trueValue, 1) && isIntConstant(falseValue, 0)) {
             if (isFloatComparison) {
-                append(new FloatCondSetOp(result, finalCondition));
+                append(new FloatCondSetOp(result, condition));
             } else {
-                append(new CondSetOp(result, finalCondition));
+                append(new CondSetOp(result, condition));
             }
-        } else if (!isParityCheckNecessary && isIntConstant(finalTrueValue, 0) && isIntConstant(finalFalseValue, 1)) {
+        } else if (!isParityCheckNecessary && isIntConstant(trueValue, 0) && isIntConstant(falseValue, 1)) {
             if (isFloatComparison) {
-                if (unorderedIsTrue == AMD64ControlFlow.trueOnUnordered(finalCondition.negate())) {
-                    append(new FloatCondSetOp(result, finalCondition.negate()));
+                if (unorderedIsTrue == AMD64ControlFlow.trueOnUnordered(condition.negate())) {
+                    append(new FloatCondSetOp(result, condition.negate()));
                 } else {
-                    append(new FloatCondSetOp(result, finalCondition));
+                    append(new FloatCondSetOp(result, condition));
                     Variable negatedResult = newVariable(result.getValueKind());
                     append(new AMD64Binary.ConstOp(AMD64BinaryArithmetic.XOR, OperandSize.get(result.getPlatformKind()), negatedResult, result, 1));
                     result = negatedResult;
                 }
             } else {
-                append(new CondSetOp(result, finalCondition.negate()));
+                append(new CondSetOp(result, condition.negate()));
             }
         } else if (isFloatComparison) {
-            append(new FloatCondMoveOp(result, finalCondition, unorderedIsTrue, load(finalTrueValue), load(finalFalseValue)));
+            append(new FloatCondMoveOp(result, condition, unorderedIsTrue, load(trueValue), load(falseValue)));
         } else {
-            append(new CondMoveOp(result, finalCondition, load(finalTrueValue), loadNonConst(finalFalseValue)));
+            append(new CondMoveOp(result, condition, load(trueValue), loadNonConst(falseValue)));
         }
         return result;
     }
@@ -493,9 +495,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     @Override
     public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
         emitIntegerTest(left, right);
-        Variable result = newVariable(trueValue.getValueKind());
-        append(new CondMoveOp(result, Condition.EQ, load(trueValue), loadNonConst(falseValue)));
-        return result;
+        return emitCondMoveOp(Condition.EQ, load(trueValue), loadNonConst(falseValue), false, false);
     }
 
     protected static AVXSize getRegisterSize(Value a) {

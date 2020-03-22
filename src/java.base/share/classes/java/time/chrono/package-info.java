@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,10 +97,10 @@
  *
  * <h2>Example</h2>
  * <p>
- * This example lists todays date for all of the available calendars.
+ * This example lists today's date for all of the available calendars.
  * </p>
  * <pre>
- *   // Enumerate the list of available calendars and print todays date for each.
+ *   // Enumerate the list of available calendars and print today's date for each.
  *       Set&lt;Chronology&gt; chronos = Chronology.getAvailableChronologies();
  *       for (Chronology chrono : chronos) {
  *           ChronoLocalDate date = chrono.dateNow();

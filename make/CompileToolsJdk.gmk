@@ -53,6 +53,7 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
         build/tools/jigsaw \
         build/tools/depend \
         , \
+    DISABLED_WARNINGS := unchecked rawtypes deprecation cast, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
     ADD_JAVAC_FLAGS := \
         --add-exports java.desktop/sun.awt=ALL-UNNAMED \

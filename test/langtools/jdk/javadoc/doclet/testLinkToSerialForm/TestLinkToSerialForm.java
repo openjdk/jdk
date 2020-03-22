@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestLinkToSerialForm extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
-                "<section class=\"serializedClassDetails\" id=\"pkg.C\">");
+                "<section class=\"serialized-class-details\" id=\"pkg.C\">");
         checkOutput("pkg/C.html", true,
                 "<a href=\"../serialized-form.html#pkg.C\">");
     }

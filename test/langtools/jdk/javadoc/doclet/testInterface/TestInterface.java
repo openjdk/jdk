@@ -66,10 +66,10 @@ public class TestInterface extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Interface.html", true,
-                "<div class=\"memberSignature\"><span class=\"returnType\">int</span>&nbsp;"
-                + "<span class=\"memberName\">method</span>()</div>",
-                "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">field</span></div>",
+                "<div class=\"member-signature\"><span class=\"return-type\">int</span>&nbsp;"
+                + "<span class=\"member-name\">method</span>()</div>",
+                "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">field</span></div>",
                 // Make sure known implementing class list is correct and omits type parameters.
                 "<dl class=\"notes\">\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
@@ -125,29 +125,29 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg/ClassWithStaticMembers.html", true,
                 "<section class=\"detail\" id=\"f\">\n"
                 + "<h3>f</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>&nbsp;"
-                + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">f</span></div>\n"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">public static</span>&nbsp;"
+                + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">f</span></div>\n"
                 + "<div class=\"block\">A hider field</div>",
 
-                "<td class=\"colFirst\"><code>static void</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-first\"><code>static void</code></td>\n"
+                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#m()\">m</a></span>()</code></th>\n"
-                + "<td class=\"colLast\">\n"
+                + "<td class=\"col-last\">\n"
                 + "<div class=\"block\">A hider method</div>\n"
                 + "</td>\n",
 
                 "<section class=\"detail\" id=\"staticMethod()\">\n"
                 + "<h3>staticMethod</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>&nbsp;"
-                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">staticMethod</span>()</div>\n"
-                + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">public static</span>&nbsp;"
+                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">staticMethod</span>()</div>\n"
+                + "<div class=\"block\"><span class=\"descfrm-type-label\">"
                 + "Description copied from interface:&nbsp;<code>"
                 + "<a href=\"InterfaceWithStaticMembers.html#staticMethod()\">"
                 + "InterfaceWithStaticMembers</a></code></span></div>\n"
                 + "<div class=\"block\">A static method</div>\n");
 
         checkOutput("pkg/ClassWithStaticMembers.InnerClass.html", true,
-                "<pre>public static class <span class=\"typeNameLabel\">"
+                "<pre>public static class <span class=\"type-name-label\">"
                 + "ClassWithStaticMembers.InnerClass</span>\n"
                 + "extends java.lang.Object</pre>\n"
                 + "<div class=\"block\">A hider inner class</div>");

@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -34,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @bug 8208091
- * @requires (os.family == "linux") & (vm.hasSAandCanAttach)
+ * @requires (os.family == "linux") & (vm.hasSA)
  * @library /test/lib
  * @run main/othervm TestJhsdbJstackMixed
  */
@@ -135,8 +136,7 @@ public class TestJhsdbJstackMixed {
             launcher.addToolArg("--pid");
             launcher.addToolArg(Long.toString(app.getPid()));
 
-            ProcessBuilder pb = new ProcessBuilder();
-            pb.command(launcher.getCommand());
+            ProcessBuilder pb = SATestUtils.createProcessBuilder(launcher);
             Process jhsdb = pb.start();
             OutputAnalyzer out = new OutputAnalyzer(jhsdb);
 
@@ -161,7 +161,7 @@ public class TestJhsdbJstackMixed {
     }
 
     public static void main(String... args) throws Exception {
-
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 
         try {

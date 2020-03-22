@@ -241,9 +241,19 @@ The simplest way to run tests with JCov coverage report is to use the special
 target `jcov-test` instead of `test`, e.g. `make jcov-test TEST=jdk_lang`. This
 will make sure the JCov image is built, and that JCov reporting is enabled.
 
-The JCov report is stored in `build/$BUILD/test-results/jcov-output`.
+The JCov report is stored in `build/$BUILD/test-results/jcov-output/report`.
 
 Please note that running with JCov reporting can be very memory intensive.
+
+#### JCOV_DIFF_CHANGESET
+
+While collecting code coverage with JCov, it is also possible to find coverage
+for only recently changed code. JCOV_DIFF_CHANGESET specifies a source
+revision. A textual report will be generated showing coverage of the diff
+between the specified revision and the repository tip. 
+
+The report is stored in `build/$BUILD/test-results/jcov-output/diff_coverage_report`
+file.
 
 ### JTReg keywords
 

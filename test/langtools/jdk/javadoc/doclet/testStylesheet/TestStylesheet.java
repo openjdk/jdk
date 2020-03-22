@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,10 @@ public class TestStylesheet extends JavadocTester {
                 "ul {\n"
                 + "    list-style-type:disc;\n"
                 + "}",
-                ".overviewSummary caption, .memberSummary caption, .typeSummary caption,\n"
-                + ".useSummary caption, .constantsSummary caption, .deprecatedSummary caption,\n"
-                + ".requiresSummary caption, .packagesSummary caption, .providesSummary caption,\n"
-                + ".usesSummary caption, .systemPropertiesSummary caption {\n"
+                ".overview-summary caption, .member-summary caption, .type-summary caption,\n"
+                + ".use-summary caption, .constants-summary caption, .deprecated-summary caption,\n"
+                + ".requires-summary caption, .packages-summary caption, .provides-summary caption,\n"
+                + ".uses-summary caption, .system-properties-summary caption {\n"
                 + "    position:relative;\n"
                 + "    text-align:left;\n"
                 + "    background-repeat:no-repeat;\n"
@@ -92,10 +92,10 @@ public class TestStylesheet extends JavadocTester {
                 + "    margin:0px;\n"
                 + "    white-space:pre;\n"
                 + "}",
-                ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,\n"
-                + ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span,\n"
-                + ".requiresSummary caption span, .packagesSummary caption span, .providesSummary caption span,\n"
-                + ".usesSummary caption span, .systemPropertiesSummary caption span {\n"
+                ".overview-summary caption span, .member-summary caption span, .type-summary caption span,\n"
+                + ".use-summary caption span, .constants-summary caption span, .deprecated-summary caption span,\n"
+                + ".requires-summary caption span, .packages-summary caption span, .provides-summary caption span,\n"
+                + ".uses-summary caption span, .system-properties-summary caption span {\n"
                 + "    white-space:nowrap;\n"
                 + "    padding-top:5px;\n"
                 + "    padding-left:12px;\n"
@@ -107,62 +107,62 @@ public class TestStylesheet extends JavadocTester {
                 + "    border: none;\n"
                 + "    height:16px;\n"
                 + "}",
-                ".overviewSummary [role=tablist] button, .memberSummary [role=tablist] button,\n"
-                + ".typeSummary [role=tablist] button, .packagesSummary [role=tablist] button {\n"
+                ".overview-summary [role=tablist] button, .member-summary [role=tablist] button,\n"
+                + ".type-summary [role=tablist] button, .packages-summary [role=tablist] button {\n"
                 + "   border: none;\n"
                 + "   cursor: pointer;\n"
                 + "   padding: 5px 12px 7px 12px;\n"
                 + "   font-weight: bold;\n"
                 + "   margin-right: 3px;\n"
                 + "}",
-                ".overviewSummary [role=tablist] .activeTableTab, .memberSummary [role=tablist] .activeTableTab,\n"
-                + ".typeSummary [role=tablist] .activeTableTab, .packagesSummary [role=tablist] .activeTableTab {\n"
+                ".overview-summary [role=tablist] .active-table-tab, .member-summary [role=tablist] .active-table-tab,\n"
+                + ".type-summary [role=tablist] .active-table-tab, .packages-summary [role=tablist] .active-table-tab {\n"
                 + "   background: #F8981D;\n"
                 + "   color: #253441;\n"
                 + "}",
-                ".overviewSummary [role=tablist] .tableTab, .memberSummary [role=tablist] .tableTab,\n"
-                + ".typeSummary [role=tablist] .tableTab, .packagesSummary [role=tablist] .tableTab {\n"
+                ".overview-summary [role=tablist] .table-tab, .member-summary [role=tablist] .table-tab,\n"
+                + ".type-summary [role=tablist] .table-tab, .packages-summary [role=tablist] .table-tab {\n"
                 + "   background: #4D7A97;\n"
                 + "   color: #FFFFFF;\n"
                 + "}",
                 // Test the formatting styles for proper content display in use and constant values pages.
-                ".overviewSummary td.colFirst, .overviewSummary th.colFirst,\n"
-                + ".requiresSummary td.colFirst, .requiresSummary th.colFirst,\n"
-                + ".packagesSummary td.colFirst, .packagesSummary td.colSecond, .packagesSummary th.colFirst, .packagesSummary th,\n"
-                + ".usesSummary td.colFirst, .usesSummary th.colFirst,\n"
-                + ".providesSummary td.colFirst, .providesSummary th.colFirst,\n"
-                + ".memberSummary td.colFirst, .memberSummary th.colFirst,\n"
-                + ".memberSummary td.colSecond, .memberSummary th.colSecond, .memberSummary th.colConstructorName,\n"
-                + ".typeSummary td.colFirst, .typeSummary th.colFirst {\n"
+                ".overview-summary td.col-first, .overview-summary th.col-first,\n"
+                + ".requires-summary td.col-first, .requires-summary th.col-first,\n"
+                + ".packages-summary td.col-first, .packages-summary td.col-second, .packages-summary th.col-first, .packages-summary th,\n"
+                + ".uses-summary td.col-first, .uses-summary th.col-first,\n"
+                + ".provides-summary td.col-first, .provides-summary th.col-first,\n"
+                + ".member-summary td.col-first, .member-summary th.col-first,\n"
+                + ".member-summary td.col-second, .member-summary th.col-second, .member-summary th.col-constructor-name,\n"
+                + ".type-summary td.col-first, .type-summary th.col-first {\n"
                 + "    vertical-align:top;\n"
                 + "}",
-                ".overviewSummary td, .memberSummary td, .typeSummary td,\n"
-                + ".useSummary td, .constantsSummary td, .deprecatedSummary td,\n"
-                + ".requiresSummary td, .packagesSummary td, .providesSummary td,\n"
-                + ".usesSummary td, .systemPropertiesSummary td {\n"
+                ".overview-summary td, .member-summary td, .type-summary td,\n"
+                + ".use-summary td, .constants-summary td, .deprecated-summary td,\n"
+                + ".requires-summary td, .packages-summary td, .provides-summary td,\n"
+                + ".uses-summary td, .system-properties-summary td {\n"
                 + "    text-align:left;\n"
                 + "    padding:0px 0px 12px 10px;\n"
                 + "}",
                 "@import url('resources/fonts/dejavu.css');",
-                ".searchTagResult:target {\n"
+                ".search-tag-result:target {\n"
                 + "    background-color:yellow;\n"
                 + "}",
                 "a[href]:hover, a[href]:focus {\n"
                 + "    text-decoration:none;\n"
                 + "    color:#bb7a2a;\n"
                 + "}",
-                "td.colFirst a:link, td.colFirst a:visited,\n"
-                + "td.colSecond a:link, td.colSecond a:visited,\n"
-                + "th.colFirst a:link, th.colFirst a:visited,\n"
-                + "th.colSecond a:link, th.colSecond a:visited,\n"
-                + "th.colConstructorName a:link, th.colConstructorName a:visited,\n"
-                + "th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited,\n"
-                + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited,\n"
-                + ".allClassesContainer td a:link, .allClassesContainer td a:visited,\n"
-                + ".allPackagesContainer td a:link, .allPackagesContainer td a:visited {\n"
+                "td.col-first a:link, td.col-first a:visited,\n"
+                + "td.col-second a:link, td.col-second a:visited,\n"
+                + "th.col-first a:link, th.col-first a:visited,\n"
+                + "th.col-second a:link, th.col-second a:visited,\n"
+                + "th.col-constructor-name a:link, th.col-constructor-name a:visited,\n"
+                + "th.col-deprecated-item-name a:link, th.col-deprecated-item-name a:visited,\n"
+                + ".constant-values-container td a:link, .constant-values-container td a:visited,\n"
+                + ".all-classes-container td a:link, .all-classes-container td a:visited,\n"
+                + ".all-packages-container td a:link, .all-packages-container td a:visited {\n"
                 + "    font-weight:bold;\n"
                 + "}",
-                ".deprecationBlock {\n"
+                ".deprecation-block {\n"
                 + "    font-size:14px;\n"
                 + "    font-family:'DejaVu Serif', Georgia, \"Times New Roman\", Times, serif;\n"
                 + "    border-style:solid;\n"
@@ -201,7 +201,7 @@ public class TestStylesheet extends JavadocTester {
                 + " an <a id=\"named_anchor1\">anchor_with_id</a>.</div>");
 
         checkOutput("pkg/package-summary.html", true,
-                "<td class=\"colLast\">\n"
+                "<td class=\"col-last\">\n"
                 + "<div class=\"block\">Test comment for a class which has an <a name=\"named_anchor\">"
                 + "anchor_with_name</a> and\n"
                 + " an <a id=\"named_anchor1\">anchor_with_id</a>.</div>\n"
@@ -223,13 +223,13 @@ public class TestStylesheet extends JavadocTester {
                 + "    text-decoration:none;\n"
                 + "    color:#353833;\n"
                 + "}",
-                "td.colFirst a:link, td.colFirst a:visited,\n"
-                + "td.colSecond a:link, td.colSecond a:visited,\n"
-                + "th.colFirst a:link, th.colFirst a:visited,\n"
-                + "th.colSecond a:link, th.colSecond a:visited,\n"
-                + "th.colConstructorName a:link, th.colConstructorName a:visited,\n"
-                + "td.colLast a:link, td.colLast a:visited,\n"
-                + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited {\n"
+                "td.col-first a:link, td.col-first a:visited,\n"
+                + "td.col-second a:link, td.col-second a:visited,\n"
+                + "th.col-first a:link, th.col-first a:visited,\n"
+                + "th.col-second a:link, th.col-second a:visited,\n"
+                + "th.col-constructor-name a:link, th.col-constructor-name a:visited,\n"
+                + "td.col-last a:link, td.col-last a:visited,\n"
+                + ".constant-values-container td a:link, .constant-values-container td a:visited {\n"
                 + "    font-weight:bold;\n"
                 + "}");
     }

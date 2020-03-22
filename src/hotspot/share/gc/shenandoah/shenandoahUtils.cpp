@@ -29,7 +29,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shenandoah/shenandoahAllocTracker.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -37,14 +36,13 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "utilities/debug.hpp"
 
-ShenandoahPhaseTimings::Phase ShenandoahGCPhase::_current_phase = ShenandoahGCPhase::_invalid_phase;
+ShenandoahPhaseTimings::Phase ShenandoahGCPhase::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
 ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _heap(ShenandoahHeap::heap()),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
-  assert(!ShenandoahGCPhase::is_valid_phase(ShenandoahGCPhase::current_phase()),
-    "No current GC phase");
+  assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
 
   _heap->set_gc_cause(cause);
   _timer->register_gc_start();
@@ -70,8 +68,7 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _timer->register_gc_end();
   _heap->trace_heap(GCWhen::AfterGC, _tracer);
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
-  assert(!ShenandoahGCPhase::is_valid_phase(ShenandoahGCPhase::current_phase()),
-    "No current GC phase");
+  assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
   _heap->set_gc_cause(GCCause::_no_gc);
 }
 
@@ -101,24 +98,23 @@ ShenandoahGCPauseMark::~ShenandoahGCPauseMark() {
 }
 
 ShenandoahGCPhase::ShenandoahGCPhase(const ShenandoahPhaseTimings::Phase phase) :
-  _heap(ShenandoahHeap::heap()), _phase(phase) {
-   assert(!Thread::current()->is_Worker_thread() &&
+  _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
+  assert(!Thread::current()->is_Worker_thread() &&
               (Thread::current()->is_VM_thread() ||
                Thread::current()->is_ConcurrentGC_thread()),
           "Must be set by these threads");
   _parent_phase = _current_phase;
   _current_phase = phase;
-
-  _heap->phase_timings()->record_phase_start(_phase);
+  _start = os::elapsedTime();
 }
 
 ShenandoahGCPhase::~ShenandoahGCPhase() {
-  _heap->phase_timings()->record_phase_end(_phase);
+  _timings->record_phase_time(_phase, os::elapsedTime() - _start);
   _current_phase = _parent_phase;
 }
 
-bool ShenandoahGCPhase::is_valid_phase(ShenandoahPhaseTimings::Phase phase) {
-  return phase >= 0 && phase < ShenandoahPhaseTimings::_num_phases;
+bool ShenandoahGCPhase::is_current_phase_valid() {
+  return _current_phase < ShenandoahPhaseTimings::_num_phases;
 }
 
 bool ShenandoahGCPhase::is_root_work_phase() {
@@ -136,6 +132,15 @@ bool ShenandoahGCPhase::is_root_work_phase() {
     default:
       return false;
   }
+}
+
+ShenandoahGCWorkerPhase::ShenandoahGCWorkerPhase(const ShenandoahPhaseTimings::Phase phase) :
+    _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
+  _timings->record_workers_start(_phase);
+}
+
+ShenandoahGCWorkerPhase::~ShenandoahGCWorkerPhase() {
+  _timings->record_workers_end(_phase);
 }
 
 ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) : _worker_id(worker_id) {

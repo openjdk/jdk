@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * Defines the JMX graphical tool, <em>{@index jconsole jconsole}</em>,
  * for monitoring and managing a running application.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">See Also:
+ * <dl class="notes">
+ * <dt>See Also:
  * <dd>{@extLink using_jconsole Using JConsole}
  * </dl>
  *

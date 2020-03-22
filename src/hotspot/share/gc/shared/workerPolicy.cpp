@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
-bool WorkerPolicy::_debug_perturbation = false;
 uint WorkerPolicy::_parallel_worker_threads = 0;
 bool WorkerPolicy::_parallel_worker_threads_initialized = false;
 
@@ -133,26 +132,6 @@ uint WorkerPolicy::calc_default_active_workers(uintx total_workers,
   assert(new_active_workers >= min_workers, "Minimum workers not observed");
   assert(new_active_workers <= total_workers, "Total workers not observed");
 
-  if (ForceDynamicNumberOfGCThreads) {
-    // Assume this is debugging and jiggle the number of GC threads.
-    if (new_active_workers == prev_active_workers) {
-      if (new_active_workers < total_workers) {
-        new_active_workers++;
-      } else if (new_active_workers > min_workers) {
-        new_active_workers--;
-      }
-    }
-    if (new_active_workers == total_workers) {
-      if (_debug_perturbation) {
-        new_active_workers =  min_workers;
-      }
-      _debug_perturbation = !_debug_perturbation;
-    }
-    assert((new_active_workers <= ParallelGCThreads) &&
-           (new_active_workers >= min_workers),
-           "Jiggled active workers too much");
-  }
-
   log_trace(gc, task)("WorkerPolicy::calc_default_active_workers() : "
     "active_workers(): " UINTX_FORMAT "  new_active_workers: " UINTX_FORMAT "  "
     "prev_active_workers: " UINTX_FORMAT "\n"
@@ -173,8 +152,7 @@ uint WorkerPolicy::calc_active_workers(uintx total_workers,
   // number of workers to all the workers.
 
   uint new_active_workers;
-  if (!UseDynamicNumberOfGCThreads ||
-     (!FLAG_IS_DEFAULT(ParallelGCThreads) && !ForceDynamicNumberOfGCThreads)) {
+  if (!UseDynamicNumberOfGCThreads || !FLAG_IS_DEFAULT(ParallelGCThreads)) {
     new_active_workers = total_workers;
   } else {
     uintx min_workers = (total_workers == 1) ? 1 : 2;
@@ -190,8 +168,7 @@ uint WorkerPolicy::calc_active_workers(uintx total_workers,
 uint WorkerPolicy::calc_active_conc_workers(uintx total_workers,
                                             uintx active_workers,
                                             uintx application_workers) {
-  if (!UseDynamicNumberOfGCThreads ||
-     (!FLAG_IS_DEFAULT(ConcGCThreads) && !ForceDynamicNumberOfGCThreads)) {
+  if (!UseDynamicNumberOfGCThreads || !FLAG_IS_DEFAULT(ConcGCThreads)) {
     return ConcGCThreads;
   } else {
     uint no_of_gc_threads = calc_default_active_workers(total_workers,

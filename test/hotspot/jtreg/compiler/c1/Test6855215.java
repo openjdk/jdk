@@ -26,7 +26,7 @@
  * @bug 6855215
  * @summary Calculation error (NaN) after about 1500 calculations
  *
- * @run main/othervm -Xbatch -XX:UseSSE=0 compiler.c1.Test6855215
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseSSE=0 compiler.c1.Test6855215
  */
 
 package compiler.c1;

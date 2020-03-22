@@ -231,7 +231,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
             inputsIteration = computeIterationMask(inputs.type(), inputs.getDirectCount(), inputs.getOffsets());
         }
         try (DebugCloseable t1 = Init_Data.start(debug)) {
-            data = new Fields(fs.data);
+            data = Fields.create(fs.data);
         }
 
         isLeafNode = inputs.getCount() + successors.getCount() == 0;

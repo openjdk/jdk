@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class TestBadOverride extends JavadocTester {
         checkOutput("pkg4/Foo.html", true,
                 "<section class=\"detail\" id=\"toString()\">\n"
                 + "<h3>toString</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">toString</span>()</div>\n"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">toString</span>()</div>\n"
                 + "<div class=\"block\">Why can't I do this ?</div>\n"
                 + "</section>");
     }

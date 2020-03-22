@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class TestValueTagInModule extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m1/module-summary.html", true,
-                "<section class=\"moduleDescription\" id=\"module.description\">\n"
+                "<section class=\"module-description\" id=\"module.description\">\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<div class=\"block\">value of field CONS : <a href=\"pkg/A.html#CONS\">100</a></div>");
     }

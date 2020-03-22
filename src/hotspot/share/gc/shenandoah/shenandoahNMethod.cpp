@@ -175,15 +175,54 @@ ShenandoahNMethod* ShenandoahNMethod::for_nmethod(nmethod* nm) {
   return new ShenandoahNMethod(nm, oops, non_immediate_oops);
 }
 
+template <bool HAS_FWD>
+class ShenandoahKeepNMethodMetadataAliveClosure : public OopClosure {
+private:
+  ShenandoahBarrierSet* const _bs;
+public:
+  ShenandoahKeepNMethodMetadataAliveClosure() :
+    _bs(static_cast<ShenandoahBarrierSet*>(BarrierSet::barrier_set())) {
+  }
+
+  virtual void do_oop(oop* p) {
+    oop obj = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(obj)) {
+      if (HAS_FWD) {
+        obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      }
+      _bs->enqueue(obj);
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
 void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
-  assert(ShenandoahHeap::heap()->is_concurrent_root_in_progress(), "Only this phase");
   ShenandoahNMethod* data = gc_data(nm);
   assert(data != NULL, "Sanity");
   assert(data->lock()->owned_by_self(), "Must hold the lock");
 
-  ShenandoahEvacOOMScope evac_scope;
-  ShenandoahEvacuateUpdateRootsClosure<> cl;
-  data->oops_do(&cl, true /*fix relocation*/);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->is_concurrent_mark_in_progress()) {
+    if (heap->has_forwarded_objects()) {
+      ShenandoahKeepNMethodMetadataAliveClosure<true> cl;
+      data->oops_do(&cl);
+    } else {
+      ShenandoahKeepNMethodMetadataAliveClosure<false> cl;
+      data->oops_do(&cl);
+    }
+  } else if (heap->is_concurrent_root_in_progress()) {
+    ShenandoahEvacOOMScope evac_scope;
+    ShenandoahEvacuateUpdateRootsClosure<> cl;
+    data->oops_do(&cl, true /*fix relocation*/);
+  } else {
+    // There is possibility that GC is cancelled when it arrives final mark.
+    // In this case, concurrent root phase is skipped and degenerated GC should be
+    // followed, where nmethods are disarmed.
+    assert(heap->cancelled_gc(), "What else?");
+  }
 }
 
 #ifdef ASSERT

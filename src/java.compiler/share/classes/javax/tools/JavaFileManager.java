@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ import static javax.tools.JavaFileObject.Kind;
  * section&nbsp;3.3.  Informally, this should be true:
  *
  * <!-- URI.create(relativeName).normalize().getPath().equals(relativeName) -->
- * <pre>  URI.{@linkplain java.net.URI#create create}(relativeName).{@linkplain java.net.URI#normalize normalize}().{@linkplain java.net.URI#getPath getPath}().equals(relativeName)</pre>
+ * <pre>  URI.{@linkplain java.net.URI#create create}(relativeName).{@linkplain java.net.URI#normalize() normalize}().{@linkplain java.net.URI#getPath getPath}().equals(relativeName)</pre>
  *
  * <p>All methods in this interface might throw a SecurityException.
  *

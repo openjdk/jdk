@@ -36,17 +36,17 @@ public interface MemoryAccess {
 
     /**
      *
-     * @return a {@linkplain MemoryNode} that represents the last memory state in the memory graph
+     * @return a {@linkplain MemoryKill} that represents the last memory state in the memory graph
      *         for the {@linkplain LocationIdentity} returned by
      *         {@linkplain MemoryAccess#getLocationIdentity()}
      */
-    MemoryNode getLastLocationAccess();
+    MemoryKill getLastLocationAccess();
 
     /**
-     * @param lla the {@link MemoryNode} that represents the last kill of the
+     * @param lla the {@link MemoryKill} that represents the last kill of the
      *            {@linkplain LocationIdentity} returned by
      *            {@linkplain MemoryAccess#getLocationIdentity()}
      */
-    void setLastLocationAccess(MemoryNode lla);
+    void setLastLocationAccess(MemoryKill lla);
 
 }

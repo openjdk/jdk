@@ -39,14 +39,10 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -59,13 +55,14 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.perf.PerfCounter;
 import jdk.internal.loader.BootLoader;
+import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.loader.NativeLibrary;
+import jdk.internal.loader.NativeLibraries;
+import jdk.internal.perf.PerfCounter;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.ref.CleanerFactory;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.StaticProperty;
@@ -2377,328 +2374,64 @@ public abstract class ClassLoader {
         return null;
     }
 
-    /**
-     * The inner class NativeLibrary denotes a loaded native library instance.
-     * Every classloader contains a vector of loaded native libraries in the
-     * private field {@code nativeLibraries}.  The native libraries loaded
-     * into the system are entered into the {@code systemNativeLibraries}
-     * vector.
-     *
-     * <p> Every native library requires a particular version of JNI. This is
-     * denoted by the private {@code jniVersion} field.  This field is set by
-     * the VM when it loads the library, and used by the VM to pass the correct
-     * version of JNI to the native methods.  </p>
-     *
-     * @see      ClassLoader
-     * @since    1.2
-     */
-    static class NativeLibrary {
-        // the class from which the library is loaded, also indicates
-        // the loader this native library belongs.
-        final Class<?> fromClass;
-        // the canonicalized name of the native library.
-        // or static library name
-        final String name;
-        // Indicates if the native library is linked into the VM
-        final boolean isBuiltin;
-
-        // opaque handle to native library, used in native code.
-        long handle;
-        // the version of JNI environment the native library requires.
-        int jniVersion;
-
-        native boolean load0(String name, boolean isBuiltin);
-
-        native long findEntry(String name);
-
-        NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
-            this.name = name;
-            this.fromClass = fromClass;
-            this.isBuiltin = isBuiltin;
-        }
-
-        /*
-         * Loads the native library and registers for cleanup when its
-         * associated class loader is unloaded
-         */
-        boolean load() {
-            if (handle != 0) {
-                throw new InternalError("Native library " + name + " has been loaded");
-            }
-
-            if (!load0(name, isBuiltin)) return false;
-
-            // register the class loader for cleanup when unloaded
-            // builtin class loaders are never unloaded
-            ClassLoader loader = fromClass.getClassLoader();
-            if (loader != null &&
-                loader != getBuiltinPlatformClassLoader() &&
-                loader != getBuiltinAppClassLoader()) {
-                CleanerFactory.cleaner().register(loader,
-                        new Unloader(name, handle, isBuiltin));
-            }
-            return true;
-        }
-
-        static boolean loadLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
-            ClassLoader loader =
-                fromClass == null ? null : fromClass.getClassLoader();
-
-            synchronized (loadedLibraryNames) {
-                Map<String, NativeLibrary> libs =
-                    loader != null ? loader.nativeLibraries() : systemNativeLibraries();
-                if (libs.containsKey(name)) {
-                    return true;
-                }
-
-                if (loadedLibraryNames.contains(name)) {
-                    throw new UnsatisfiedLinkError("Native Library " + name +
-                        " already loaded in another classloader");
-                }
-
-                /*
-                 * When a library is being loaded, JNI_OnLoad function can cause
-                 * another loadLibrary invocation that should succeed.
-                 *
-                 * We use a static stack to hold the list of libraries we are
-                 * loading because this can happen only when called by the
-                 * same thread because this block is synchronous.
-                 *
-                 * If there is a pending load operation for the library, we
-                 * immediately return success; otherwise, we raise
-                 * UnsatisfiedLinkError.
-                 */
-                for (NativeLibrary lib : nativeLibraryContext) {
-                    if (name.equals(lib.name)) {
-                        if (loader == lib.fromClass.getClassLoader()) {
-                            return true;
-                        } else {
-                            throw new UnsatisfiedLinkError("Native Library " +
-                                name + " is being loaded in another classloader");
-                        }
-                    }
-                }
-                NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
-                // load the native library
-                nativeLibraryContext.push(lib);
-                try {
-                    if (!lib.load()) return false;
-                } finally {
-                    nativeLibraryContext.pop();
-                }
-                // register the loaded native library
-                loadedLibraryNames.add(name);
-                libs.put(name, lib);
-            }
-            return true;
-        }
-
-        // Invoked in the VM to determine the context class in JNI_OnLoad
-        // and JNI_OnUnload
-        static Class<?> getFromClass() {
-            return nativeLibraryContext.peek().fromClass;
-        }
-
-        // native libraries being loaded
-        static Deque<NativeLibrary> nativeLibraryContext = new ArrayDeque<>(8);
-
-        /*
-         * The run() method will be invoked when this class loader becomes
-         * phantom reachable to unload the native library.
-         */
-        static class Unloader implements Runnable {
-            // This represents the context when a native library is unloaded
-            // and getFromClass() will return null,
-            static final NativeLibrary UNLOADER =
-                new NativeLibrary(null, "dummy", false);
-            final String name;
-            final long handle;
-            final boolean isBuiltin;
-
-            Unloader(String name, long handle, boolean isBuiltin) {
-                if (handle == 0) {
-                    throw new IllegalArgumentException(
-                        "Invalid handle for native library " + name);
-                }
-
-                this.name = name;
-                this.handle = handle;
-                this.isBuiltin = isBuiltin;
-            }
-
-            @Override
-            public void run() {
-                synchronized (loadedLibraryNames) {
-                    /* remove the native library name */
-                    loadedLibraryNames.remove(name);
-                    nativeLibraryContext.push(UNLOADER);
-                    try {
-                        unload(name, isBuiltin, handle);
-                    } finally {
-                        nativeLibraryContext.pop();
-                    }
-
-                }
-            }
-        }
-
-        // JNI FindClass expects the caller class if invoked from JNI_OnLoad
-        // and JNI_OnUnload is NativeLibrary class
-        static native void unload(String name, boolean isBuiltin, long handle);
-    }
-
-    /**
-     * Holds system and user library paths derived from the
-     * {@code java.library.path} and {@code sun.boot.library.path} system
-     * properties. The system properties are eagerly read at bootstrap, then
-     * lazily parsed on first use to avoid initialization ordering issues.
-     */
-    private static class LibraryPaths {
-        static final String[] USER =
-                ClassLoaderHelper.parsePath(StaticProperty.javaLibraryPath());
-        static final String[] SYS =
-                ClassLoaderHelper.parsePath(StaticProperty.sunBootLibraryPath());
-    }
+    private final NativeLibraries libraries = new NativeLibraries(this);
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
-    static void loadLibrary(Class<?> fromClass, String name,
-                            boolean isAbsolute) {
-        ClassLoader loader =
-            (fromClass == null) ? null : fromClass.getClassLoader();
+    static NativeLibrary loadLibrary(Class<?> fromClass, File file) {
+        ClassLoader loader = (fromClass == null) ? null : fromClass.getClassLoader();
+        NativeLibraries libs = loader != null ? loader.libraries : BootLoader.getNativeLibraries();
+        NativeLibrary nl = libs.loadLibrary(fromClass, file);
+        if (nl != null) {
+            return nl;
+        }
+        throw new UnsatisfiedLinkError("Can't load library: " + file);
+    }
+    static NativeLibrary loadLibrary(Class<?> fromClass, String name) {
+        ClassLoader loader = (fromClass == null) ? null : fromClass.getClassLoader();
+        if (loader == null) {
+            NativeLibrary nl = BootLoader.getNativeLibraries().loadLibrary(fromClass, name);
+            if (nl != null) {
+                return nl;
+            }
+            throw new UnsatisfiedLinkError("no " + name +
+                    " in system library path: " + StaticProperty.sunBootLibraryPath());
+        }
 
-        if (isAbsolute) {
-            if (loadLibrary0(fromClass, new File(name))) {
-                return;
-            }
-            throw new UnsatisfiedLinkError("Can't load library: " + name);
-        }
-        if (loader != null) {
-            String libfilename = loader.findLibrary(name);
-            if (libfilename != null) {
-                File libfile = new File(libfilename);
-                if (!libfile.isAbsolute()) {
-                    throw new UnsatisfiedLinkError(
+        NativeLibraries libs = loader.libraries;
+        // First load from the file returned from ClassLoader::findLibrary, if found.
+        String libfilename = loader.findLibrary(name);
+        if (libfilename != null) {
+            File libfile = new File(libfilename);
+            if (!libfile.isAbsolute()) {
+                throw new UnsatisfiedLinkError(
                         "ClassLoader.findLibrary failed to return an absolute path: " + libfilename);
-                }
-                if (loadLibrary0(fromClass, libfile)) {
-                    return;
-                }
-                throw new UnsatisfiedLinkError("Can't load " + libfilename);
             }
+            NativeLibrary nl = libs.loadLibrary(fromClass, libfile);
+            if (nl != null) {
+                return nl;
+            }
+            throw new UnsatisfiedLinkError("Can't load " + libfilename);
         }
-        for (String sysPath : LibraryPaths.SYS) {
-            File libfile = new File(sysPath, System.mapLibraryName(name));
-            if (loadLibrary0(fromClass, libfile)) {
-                return;
-            }
-            libfile = ClassLoaderHelper.mapAlternativeName(libfile);
-            if (libfile != null && loadLibrary0(fromClass, libfile)) {
-                return;
-            }
+        // Then load from system library path and java library path
+        NativeLibrary nl = libs.loadLibrary(fromClass, name);
+        if (nl != null) {
+            return nl;
         }
-        if (loader != null) {
-            for (String userPath : LibraryPaths.USER) {
-                File libfile = new File(userPath, System.mapLibraryName(name));
-                if (loadLibrary0(fromClass, libfile)) {
-                    return;
-                }
-                libfile = ClassLoaderHelper.mapAlternativeName(libfile);
-                if (libfile != null && loadLibrary0(fromClass, libfile)) {
-                    return;
-                }
-            }
-        }
+
         // Oops, it failed
         throw new UnsatisfiedLinkError("no " + name +
-            " in java.library.path: " + Arrays.toString(LibraryPaths.USER));
-    }
-
-    private static native String findBuiltinLib(String name);
-
-    private static boolean loadLibrary0(Class<?> fromClass, final File file) {
-        // Check to see if we're attempting to access a static library
-        String name = findBuiltinLib(file.getName());
-        boolean isBuiltin = (name != null);
-        if (!isBuiltin) {
-            name = AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public String run() {
-                        try {
-                            return file.exists() ? file.getCanonicalPath() : null;
-                        } catch (IOException e) {
-                            return null;
-                        }
-                    }
-                });
-            if (name == null) {
-                return false;
-            }
-        }
-        return NativeLibrary.loadLibrary(fromClass, name, isBuiltin);
+                " in java.library.path: " + StaticProperty.javaLibraryPath());
     }
 
     /*
      * Invoked in the VM class linking code.
      */
     private static long findNative(ClassLoader loader, String entryName) {
-        Map<String, NativeLibrary> libs =
-            loader != null ? loader.nativeLibraries() : systemNativeLibraries();
-        if (libs.isEmpty())
-            return 0;
-
-        // the native libraries map may be updated in another thread
-        // when a native library is being loaded.  No symbol will be
-        // searched from it yet.
-        for (NativeLibrary lib : libs.values()) {
-            long entry = lib.findEntry(entryName);
-            if (entry != 0) return entry;
+        if (loader == null) {
+            return BootLoader.getNativeLibraries().find(entryName);
+        } else {
+            return loader.libraries.find(entryName);
         }
-        return 0;
-    }
-
-    // All native library names we've loaded.
-    // This also serves as the lock to obtain nativeLibraries
-    // and write to nativeLibraryContext.
-    private static final Set<String> loadedLibraryNames = new HashSet<>();
-
-    // Native libraries belonging to system classes.
-    private static volatile Map<String, NativeLibrary> systemNativeLibraries;
-
-    // Native libraries associated with the class loader.
-    private volatile Map<String, NativeLibrary> nativeLibraries;
-
-    /*
-     * Returns the native libraries map associated with bootstrap class loader
-     * This method will create the map at the first time when called.
-     */
-    private static Map<String, NativeLibrary> systemNativeLibraries() {
-        Map<String, NativeLibrary> libs = systemNativeLibraries;
-        if (libs == null) {
-            synchronized (loadedLibraryNames) {
-                libs = systemNativeLibraries;
-                if (libs == null) {
-                    libs = systemNativeLibraries = new ConcurrentHashMap<>();
-                }
-            }
-        }
-        return libs;
-    }
-
-    /*
-     * Returns the native libraries map associated with this class loader
-     * This method will create the map at the first time when called.
-     */
-    private Map<String, NativeLibrary> nativeLibraries() {
-        Map<String, NativeLibrary> libs = nativeLibraries;
-        if (libs == null) {
-            synchronized (loadedLibraryNames) {
-                libs = nativeLibraries;
-                if (libs == null) {
-                    libs = nativeLibraries = new ConcurrentHashMap<>();
-                }
-            }
-        }
-        return libs;
     }
 
     // -- Assertion management --

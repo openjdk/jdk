@@ -34,13 +34,26 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
   ciKlass* superk = super_t->is_klassptr()->klass();
   ciKlass* subk   = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass() : sub_t->is_oopptr()->klass();
 
-  bool xsuperk = super_t->is_klassptr()->klass_is_exact();
   bool xsubk = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass_is_exact() : sub_t->is_oopptr()->klass_is_exact();
 
+
+  // Oop can't be a subtype of abstract type that has no subclass.
+  if (sub_t->isa_oopptr() && superk->is_instance_klass() &&
+      !superk->is_interface() && superk->is_abstract() &&
+      !superk->as_instance_klass()->has_subklass()) {
+    Compile::current()->dependencies()->assert_leaf_type(superk);
+    return TypeInt::CC_GT;
+  }
+
   // Similar to logic in CmpPNode::sub()
+
+  // Interfaces can't be trusted unless the subclass is an exact
+  // interface (it can then only be a constant) or the subclass is an
+  // exact array of interfaces (a newly allocated array of interfaces
+  // for instance)
   if (superk && subk &&
       superk->is_loaded() && !superk->is_interface() &&
-      subk->is_loaded() && !subk->is_interface() &&
+      subk->is_loaded() && (!subk->is_interface() || xsubk) &&
       (!superk->is_obj_array_klass() ||
        !superk->as_obj_array_klass()->base_element_klass()->is_interface()) &&
       (!subk->is_obj_array_klass() ||
@@ -50,10 +63,15 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
     if (superk->equals(subk)) {
       // skip
     } else if (superk->is_subtype_of(subk)) {
+      // If the subclass is exact then the superclass is a subtype of
+      // the subclass. Given they're no equals, that subtype check can
+      // only fail.
       unrelated_classes = xsubk;
     } else if (subk->is_subtype_of(superk)) {
       // skip
     } else {
+      // Neither class subtypes the other: they are unrelated and this
+      // type check is known to fail.
       unrelated_classes = true;
     }
     if (unrelated_classes) {
@@ -84,9 +102,6 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
 }
 
 Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Verify that optimizing the subtype check to a simple code pattern
-  // when possible would not constant fold better
-#ifdef ASSERT
   Node* obj_or_subklass = in(ObjOrSubKlass);
   Node* superklass = in(SuperKlass);
 
@@ -103,7 +118,28 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
+  Node* addr = NULL;
+  if (obj_or_subklass->is_DecodeNKlass()) {
+    if (obj_or_subklass->in(1) != NULL &&
+        obj_or_subklass->in(1)->Opcode() == Op_LoadNKlass) {
+      addr = obj_or_subklass->in(1)->in(MemNode::Address);
+    }
+  } else if (obj_or_subklass->Opcode() == Op_LoadKlass) {
+    addr = obj_or_subklass->in(MemNode::Address);
+  }
 
+  if (addr != NULL) {
+    intptr_t con = 0;
+    Node* obj = AddPNode::Ideal_base_and_offset(addr, phase, con);
+    if (con == oopDesc::klass_offset_in_bytes() && obj != NULL && phase->type(obj)->isa_oopptr()) {
+      set_req(ObjOrSubKlass, obj);
+      return this;
+    }
+  }
+
+  // Verify that optimizing the subtype check to a simple code pattern
+  // when possible would not constant fold better
+#ifdef ASSERT
   ciKlass* superk = super_t->is_klassptr()->klass();
   ciKlass* subk   = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass() : sub_t->is_oopptr()->klass();
 

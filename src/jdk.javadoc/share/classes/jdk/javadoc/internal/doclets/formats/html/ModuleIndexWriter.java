@@ -117,8 +117,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
                 }
             }
 
-            Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
-            main.add(div);
+            main.add(table);
 
             if (table.needsScript()) {
                 mainBodyScript.append(table.getScript());

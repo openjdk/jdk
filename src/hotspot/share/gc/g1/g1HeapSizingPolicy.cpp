@@ -51,15 +51,26 @@ void G1HeapSizingPolicy::clear_ratio_check_data() {
 }
 
 size_t G1HeapSizingPolicy::expansion_amount() {
-  double recent_gc_overhead = _analytics->recent_avg_pause_time_ratio() * 100.0;
-  double last_gc_overhead = _analytics->last_pause_time_ratio() * 100.0;
   assert(GCTimeRatio > 0,
          "we should have set it to a default value set_g1_gc_flags() "
          "if a user set it to 0");
+
+  double recent_gc_overhead = _analytics->recent_avg_pause_time_ratio() * 100.0;
+  double last_gc_overhead = _analytics->last_pause_time_ratio() * 100.0;
+  size_t expand_bytes = 0;
+
+  if (_g1h->capacity() == _g1h->max_capacity()) {
+    log_trace(gc, ergo, heap)("Can not expand (heap already fully expanded) "
+                              "recent GC overhead: %1.2f %%  committed: " SIZE_FORMAT "B",
+                              recent_gc_overhead, _g1h->capacity());
+
+    clear_ratio_check_data();
+    return expand_bytes;
+  }
+
   const double gc_overhead_percent = 100.0 * (1.0 / (1.0 + GCTimeRatio));
 
   double threshold = gc_overhead_percent;
-  size_t expand_bytes = 0;
 
   // If the heap is at less than half its maximum size, scale the threshold down,
   // to a limit of 1. Thus the smaller the heap is, the more likely it is to expand,

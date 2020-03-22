@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
      * </pre>
      *
      * @param encoded the attribute's ASN.1 DER encoding. It is cloned
-     *     to prevent subsequent modificaion.
+     *     to prevent subsequent modification.
      *
      * @throws    NullPointerException if {@code encoded} is
      *     {@code null}

@@ -107,9 +107,6 @@ public:
   static InlineTree* build_inline_tree_root();
   static InlineTree* find_subtree_from_root(InlineTree* root, JVMState* jvms, ciMethod* callee);
 
-  // For temporary (stack-allocated, stateless) ilts:
-  InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms, float site_invoke_ratio, int max_inline_level);
-
   // See if it is OK to inline.
   // The receiver is the inline tree for the caller.
   //

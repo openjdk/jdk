@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,20 @@
 
 #define BUF_SIZE     (PATH_MAX + NAME_MAX + 1)
 
+// .eh_frame data
+typedef struct eh_frame_info {
+  uintptr_t library_base_addr;
+  uintptr_t v_addr;
+  unsigned char* data;
+} eh_frame_info;
+
 // list of shared objects
 typedef struct lib_info {
   char             name[BUF_SIZE];
   uintptr_t        base;
+  uintptr_t        exec_start;
+  uintptr_t        exec_end;
+  eh_frame_info    eh_frame;
   struct symtab*   symtab;
   int              fd;        // file descriptor for lib
   struct lib_info* next;
@@ -101,6 +111,10 @@ struct ps_prochandle {
    struct core_data*  core;      // data only used for core dumps, NULL for process
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int pathmap_open(const char* name);
 
 void print_debug(const char* format,...);
@@ -122,5 +136,9 @@ thread_info* add_thread_info(struct ps_prochandle* ph, lwpid_t lwp_id);
 
 // a test for ELF signature without using libelf
 bool is_elf_file(int fd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_LIBPROC_IMPL_H_

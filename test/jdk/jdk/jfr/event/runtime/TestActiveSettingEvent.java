@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,7 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.TLSHandshake + "#threshold", "0 ns");
         settingValues.put(EventNames.X509Certificate + "#threshold", "0 ns");
         settingValues.put(EventNames.X509Validation + "#threshold", "0 ns");
+        settingValues.put(EventNames.ProcessStart + "#threshold", "0 ns");
 
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();

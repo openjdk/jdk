@@ -91,8 +91,8 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
-                "<td class=\"colFirst\"><code>static java.time.Period</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-first\"><code>static java.time.Period</code></td>\n"
+                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#between(java.time.LocalDate,java.time.LocalDate)\">"
                 + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
                 + "java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
@@ -106,25 +106,25 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 "<section class=\"description\">\n<hr>\n"
-                + "<pre>public abstract class <span class=\"typeNameLabel\">"
+                + "<pre>public abstract class <span class=\"type-name-label\">"
                 + "DocumentedNonGenericChild</span>\n"
                 + "extends java.lang.Object</pre>\n"
                 + "</section>");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<td class=\"colFirst\"><code>protected abstract java.lang.String</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-first\"><code>protected abstract java.lang.String</code></td>\n"
+                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#parentMethod(T)\">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>\n"
-                + "<td class=\"colLast\">\n"
+                + "<td class=\"col-last\">\n"
                 + "<div class=\"block\">Returns some value.</div>\n"
                 + "</td>\n");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 "<section class=\"detail\" id=\"parentMethod(T)\">\n"
                 + "<h3 id=\"parentMethod(java.lang.Object)\">parentMethod</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">protected abstract</span>"
-                + "&nbsp;<span class=\"returnType\">java.lang.String</span>&nbsp;"
-                + "<span class=\"memberName\">parentMethod</span>&#8203;"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">protected abstract</span>"
+                + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
+                + "<span class=\"member-name\">parentMethod</span>&#8203;"
                 + "(<span class=\"arguments\">java.lang.String&nbsp;t)</span>\n"
                 + "                                          "
                 + "throws <span class=\"exceptions\">java.lang.IllegalArgumentException,\n"
@@ -138,27 +138,27 @@ public class TestMemberInheritance extends JavadocTester {
                 + "<dd><code>java.lang.IllegalArgumentException</code></dd>");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<td class=\"colFirst\"><code>java.lang.String</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-first\"><code>java.lang.String</code></td>\n"
+                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#f\">f</a></span></code></th>\n"
-                + "<td class=\"colLast\">\n"
+                + "<td class=\"col-last\">\n"
                 + "<div class=\"block\">A field.</div>",
                 "<section class=\"detail\" id=\"f\">\n"
                 + "<h3>f</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">f</span></div>\n"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\">java.lang.String</span>&nbsp;<span class=\"member-name\">f</span></div>\n"
                 + "<div class=\"block\">A field.</div>\n"
                 + "</section>");
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
-                "<td class=\"colFirst\"><code>java.lang.String</code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-first\"><code>java.lang.String</code></td>\n"
+                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#method(T)\">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>",
                 "<section class=\"detail\" id=\"method(T)\">\n"
                 + "<h3 id=\"method(java.lang.Object)\">method</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>"
-                + "&nbsp;<span class=\"returnType\">java.lang.String</span>&nbsp;"
-                + "<span class=\"memberName\">method</span>&#8203;(<span class=\"arguments\">"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>"
+                + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
+                + "<span class=\"member-name\">method</span>&#8203;(<span class=\"arguments\">"
                 + "java.lang.String&nbsp;t)</span></div>\n"
                 + "</section>");
     }

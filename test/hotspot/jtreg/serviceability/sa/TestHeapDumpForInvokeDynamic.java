@@ -34,13 +34,14 @@ import sun.jvm.hotspot.HotSpotAgent;
 import sun.jvm.hotspot.debugger.*;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.hprof.parser.HprofReader;
 import jdk.test.lib.hprof.parser.PositionDataInputStream;
@@ -49,7 +50,7 @@ import jdk.test.lib.hprof.model.Snapshot;
 /**
  * @test
  * @library /test/lib
- * @requires vm.hasSAandCanAttach & os.family != "mac"
+ * @requires vm.hasSA
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
@@ -97,8 +98,7 @@ public class TestHeapDumpForInvokeDynamic {
         launcher.addToolArg("--pid");
         launcher.addToolArg(Long.toString(lingeredAppPid));
 
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(launcher.getCommand());
+        ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
         System.out.println(
             processBuilder.command().stream().collect(Collectors.joining(" ")));
 
@@ -112,7 +112,7 @@ public class TestHeapDumpForInvokeDynamic {
     }
 
     public static void main (String... args) throws Exception {
-
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         String heapDumpFileName = "lambdaHeapDump.bin";
 
         File heapDumpFile = new File(heapDumpFileName);

@@ -816,14 +816,14 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(Node* src, PhaseGVN& gvn) {
 void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* ctrl = ac->in(TypeFunc::Control);
   Node* mem = ac->in(TypeFunc::Memory);
-  Node* src = ac->in(ArrayCopyNode::Src);
+  Node* src_base = ac->in(ArrayCopyNode::Src);
   Node* src_offset = ac->in(ArrayCopyNode::SrcPos);
-  Node* dest = ac->in(ArrayCopyNode::Dest);
+  Node* dest_base = ac->in(ArrayCopyNode::Dest);
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
-  assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
-  assert (src->is_AddP(), "for clone the src should be the interior ptr");
-  assert (dest->is_AddP(), "for clone the dst should be the interior ptr");
+
+  Node* src = phase->basic_plus_adr(src_base, src_offset);
+  Node* dest = phase->basic_plus_adr(dest_base, dest_offset);
 
   if (ShenandoahCloneBarrier && clone_needs_barrier(src, phase->igvn())) {
     // Check if heap is has forwarded objects. If it does, we need to call into the special
@@ -860,7 +860,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
                     CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier),
                     "shenandoah_clone",
                     TypeRawPtr::BOTTOM,
-                    src->in(AddPNode::Base));
+                    src_base);
     call = phase->transform_later(call);
 
     ctrl = phase->transform_later(new ProjNode(call, TypeFunc::Control));

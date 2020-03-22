@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ static void test_remove_dependent_nmethod(int id) {
   nmethod* nm = &c._nmethods[id];
   depContext.remove_dependent_nmethod(nm);
 
-  NOT_PRODUCT(ASSERT_FALSE(depContext.is_dependent_nmethod(nm)));
+  ASSERT_FALSE(depContext.is_dependent_nmethod(nm));
 }
 
 TEST_VM(code, dependency_context) {

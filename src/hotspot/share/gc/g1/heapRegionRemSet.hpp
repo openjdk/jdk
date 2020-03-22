@@ -81,8 +81,8 @@ class OtherRegionsTable {
   PerRegionTable** _fine_grain_regions;
   size_t           _n_fine_entries;
 
-  // The fine grain remembered sets are doubly linked together using
-  // their 'next' and 'prev' fields.
+  // The fine grain remembered sets are linked together using
+  // their 'next' fields.
   // This allows fast bulk freeing of all the fine grain remembered
   // set entries, and fast finding of all of them without iterating
   // over the _fine_grain_regions table.
@@ -113,8 +113,6 @@ class OtherRegionsTable {
 
   // link/add the given fine grain remembered set into the "all" list
   void link_to_all(PerRegionTable * prt);
-  // unlink/remove the given fine grain remembered set into the "all" list
-  void unlink_from_all(PerRegionTable * prt);
 
   bool contains_reference_locked(OopOrNarrowOopStar from) const;
 
@@ -167,9 +165,6 @@ class PerRegionTable: public CHeapObj<mtGC> {
   // next pointer for free/allocated 'all' list
   PerRegionTable* _next;
 
-  // prev pointer for the allocated 'all' list
-  PerRegionTable* _prev;
-
   // next pointer in collision list
   PerRegionTable * _collision_list_next;
 
@@ -181,7 +176,7 @@ protected:
     _hr(hr),
     _bm(HeapRegion::CardsPerRegion, mtGC),
     _occupied(0),
-    _next(NULL), _prev(NULL),
+    _next(NULL),
     _collision_list_next(NULL)
   {}
 
@@ -243,16 +238,11 @@ public:
 
   PerRegionTable* next() const { return _next; }
   void set_next(PerRegionTable* next) { _next = next; }
-  PerRegionTable* prev() const { return _prev; }
-  void set_prev(PerRegionTable* prev) { _prev = prev; }
 
   // Accessor and Modification routines for the pointer for the
   // singly linked collision list that links the PRTs within the
   // OtherRegionsTable::_fine_grain_regions hash table.
   //
-  // It might be useful to also make the collision list doubly linked
-  // to avoid iteration over the collisions list during scrubbing/deletion.
-  // OTOH there might not be many collisions.
 
   PerRegionTable* collision_list_next() const {
     return _collision_list_next;

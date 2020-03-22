@@ -27,6 +27,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "opto/machnode.hpp"
+#include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "utilities/vmError.hpp"
 
@@ -154,7 +155,7 @@ uint MachNode::size(PhaseRegAlloc *ra_) const {
 uint MachNode::emit_size(PhaseRegAlloc *ra_) const {
   // Emit into a trash buffer and count bytes emitted.
   assert(ra_ == ra_->C->regalloc(), "sanity");
-  return ra_->C->scratch_emit_size(this);
+  return ra_->C->output()->scratch_emit_size(this);
 }
 
 
@@ -541,13 +542,13 @@ void MachTypeNode::dump_spec(outputStream *st) const {
 int MachConstantNode::constant_offset() {
   // Bind the offset lazily.
   if (_constant.offset() == -1) {
-    Compile::ConstantTable& constant_table = Compile::current()->constant_table();
+    ConstantTable& constant_table = Compile::current()->output()->constant_table();
     int offset = constant_table.find_offset(_constant);
     // If called from Compile::scratch_emit_size return the
     // pre-calculated offset.
     // NOTE: If the AD file does some table base offset optimizations
     // later the AD file needs to take care of this fact.
-    if (Compile::current()->in_scratch_emit_size()) {
+    if (Compile::current()->output()->in_scratch_emit_size()) {
       return constant_table.calculate_table_base_offset() + offset;
     }
     _constant.set_offset(constant_table.table_base_offset() + offset);

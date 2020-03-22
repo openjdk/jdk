@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ class EdgeUtils : public AllStatic {
   static int array_index(const Edge& edge);
   static int array_size(const Edge& edge);
 
-  static const Symbol* field_name_symbol(const Edge& edge);
-  static jshort field_modifiers(const Edge& edge);
+  static const Symbol* field_name(const Edge& edge, jshort* modifiers);
+
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHAINS_EDGEUTILS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import toolbox.JavaTask;
 import toolbox.JavacTask;
@@ -257,18 +260,15 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        String log = new JavaTask(tb)
+        List<String> log = new JavaTask(tb)
                 .vmOptions("--module-path", m3Classes.toString(), "--add-modules", "m3x")
                 .className("m3x.Test")
                 .run()
                 .writeAll()
-                .getOutput(OutputKind.STDERR);
+                .getOutputLines(OutputKind.STDERR);
+        log = log.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
 
-        String expected = "ok" + System.getProperty("line.separator");
-
-        if (!expected.equals(log)) {
-            throw new AssertionError("Unexpected output: " + log);
-        }
+        tb.checkEqual(log, List.of("ok"));
     }
 
     @Test
@@ -332,19 +332,16 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        String log = new JavaTask(tb)
+        List<String> log = new JavaTask(tb)
                 .vmOptions("--module-path", m2Classes.toString() + File.pathSeparator + m3Classes.toString(),
                            "--add-modules", "m3x")
                 .className("m3x.Test")
                 .run()
                 .writeAll()
-                .getOutput(OutputKind.STDERR);
+                .getOutputLines(OutputKind.STDERR);
+        log = log.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
 
-        String expected = "ok" + System.getProperty("line.separator");
-
-        if (!expected.equals(log)) {
-            throw new AssertionError("Unexpected output: " + log);
-        }
+        tb.checkEqual(log, List.of("ok"));
     }
 
     @Test

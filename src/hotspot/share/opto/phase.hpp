@@ -59,6 +59,7 @@ public:
     Ideal_Loop,                       // Find idealized trip-counted loops
     Macro_Expand,                     // Expand macro nodes
     Peephole,                         // Apply peephole optimizations
+    Output,
     last_phase
   };
 

@@ -269,7 +269,7 @@ private:
   // (a) cause == _g1_humongous_allocation,
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent,
   // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent,
-  // (d) cause == _wb_conc_mark,
+  // (d) cause == _wb_conc_mark or _wb_breakpoint,
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
@@ -1423,8 +1423,7 @@ public:
   void verify(VerifyOption vo);
 
   // WhiteBox testing support.
-  virtual bool supports_concurrent_phase_control() const;
-  virtual bool request_concurrent_phase(const char* phase);
+  virtual bool supports_concurrent_gc_breakpoints() const;
   bool is_heterogeneous_heap() const;
 
   virtual WorkGang* get_safepoint_workers() { return _workers; }

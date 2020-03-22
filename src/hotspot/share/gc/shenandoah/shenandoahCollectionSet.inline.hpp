@@ -40,10 +40,11 @@ bool ShenandoahCollectionSet::is_in(ShenandoahHeapRegion* r) const {
 }
 
 bool ShenandoahCollectionSet::is_in(oop p) const {
-  return is_in(cast_from_oop<HeapWord*>(p));
+  shenandoah_assert_in_heap(NULL, p);
+  return is_in_loc(cast_from_oop<void*>(p));
 }
 
-bool ShenandoahCollectionSet::is_in(HeapWord* p) const {
+bool ShenandoahCollectionSet::is_in_loc(void* p) const {
   assert(_heap->is_in(p), "Must be in the heap");
   uintx index = ((uintx) p) >> _region_size_bytes_shift;
   // no need to subtract the bottom of the heap from p,

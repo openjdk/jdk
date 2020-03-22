@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
 import java.util.*;
 
 public class MakeBooleanComparable {
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Random rnd = new Random();
-        List<Boolean> list = new ArrayList<Boolean>();
+        List<Boolean> list = new ArrayList<>();
         int numFalse = 0;
         for (int i = 0; i < 1000; i++) {
             boolean element = rnd.nextBoolean();

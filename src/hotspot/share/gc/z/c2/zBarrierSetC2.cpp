@@ -36,6 +36,7 @@
 #include "opto/macro.hpp"
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
+#include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
@@ -85,7 +86,7 @@ static ZBarrierSetC2State* barrier_set_state() {
 
 ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak) {
   ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref, tmp, weak);
-  if (!Compile::current()->in_scratch_emit_size()) {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
     barrier_set_state()->stubs()->append(stub);
   }
 
@@ -130,7 +131,7 @@ Label* ZLoadBarrierStubC2::entry() {
   // However, we still need to return a label that is not bound now, but
   // will eventually be bound. Any lable will do, as it will only act as
   // a placeholder, so we return the _continuation label.
-  return Compile::current()->in_scratch_emit_size() ? &_continuation : &_entry;
+  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
 }
 
 Label* ZLoadBarrierStubC2::continuation() {
@@ -152,7 +153,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(Compile::MAX_inst_size) && cb.blob() == NULL) {
+    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -165,12 +166,12 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 
 int ZBarrierSetC2::estimate_stub_size() const {
   Compile* const C = Compile::current();
-  BufferBlob* const blob = C->scratch_buffer_blob();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
   GrowableArray<ZLoadBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
   int size = 0;
 
   for (int i = 0; i < stubs->length(); i++) {
-    CodeBuffer cb(blob->content_begin(), (address)C->scratch_locs_memory() - blob->content_begin());
+    CodeBuffer cb(blob->content_begin(), (address)C->output()->scratch_locs_memory() - blob->content_begin());
     MacroAssembler masm(&cb);
     ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, stubs->at(i));
     size += cb.insts_size();
@@ -233,22 +234,6 @@ static const TypeFunc* clone_type() {
   return TypeFunc::make(domain, range);
 }
 
-// Node n is pointing to the start of oop payload - return base pointer
-static Node* get_base_for_arracycopy_clone(PhaseMacroExpand* phase, Node* n) {
-  // This would normally be handled by optimizations, but the type system
-  // checks get confused when it thinks it already has a base pointer.
-  const int base_offset = BarrierSetC2::arraycopy_payload_base_offset(false);
-
-  if (n->is_AddP() &&
-      n->in(AddPNode::Offset)->is_Con() &&
-      n->in(AddPNode::Offset)->get_long() == base_offset) {
-    assert(n->in(AddPNode::Base) == n->in(AddPNode::Address), "Sanity check");
-    return n->in(AddPNode::Base);
-  } else {
-    return phase->basic_plus_adr(n, phase->longcon(-base_offset));
-  }
-}
-
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
   if (ac->is_clone_array()) {
@@ -258,24 +243,16 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   }
 
   // Clone instance
-  assert(ac->is_clone_inst(), "Sanity check");
-
   Node* const ctrl       = ac->in(TypeFunc::Control);
   Node* const mem        = ac->in(TypeFunc::Memory);
   Node* const dst        = ac->in(ArrayCopyNode::Dest);
-  Node* const src_offset = ac->in(ArrayCopyNode::SrcPos);
-  Node* const dst_offset = ac->in(ArrayCopyNode::DestPos);
   Node* const size       = ac->in(ArrayCopyNode::Length);
 
-  assert(src_offset == NULL, "Should be null");
-  assert(dst_offset == NULL, "Should be null");
+  assert(ac->is_clone_inst(), "Sanity check");
   assert(size->bottom_type()->is_long(), "Should be long");
 
-  // The src and dst point to the object payload rather than the object base
-  Node* const src_base = get_base_for_arracycopy_clone(phase, src);
-  Node* const dst_base = get_base_for_arracycopy_clone(phase, dst);
-
-  // The size must also be increased to match the instance size
+  // The native clone we are calling here expects the instance size in words
+  // Add header/offset size to payload size to get instance size.
   Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(false) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
 
@@ -285,8 +262,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
                                            ZBarrierSetRuntime::clone_addr(),
                                            "ZBarrierSetRuntime::clone",
                                            TypeRawPtr::BOTTOM,
-                                           src_base,
-                                           dst_base,
+                                           src,
+                                           dst,
                                            full_size,
                                            phase->top());
   phase->transform_later(call);

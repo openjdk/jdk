@@ -100,8 +100,8 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>setUndecorated(boolean)</code></a>.</div>\n"
                 + "</div>\n"
@@ -116,8 +116,8 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>setUndecorated(boolean)</code></a>.</div>\n"
                 + "</div>\n"
@@ -126,7 +126,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.io.IOException</code> - on error</dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
+                "<span class=\"deprecated-label\">Deprecated.</span>"
                 + "</div>\n"
                 + "<div class=\"block\">"
                 + "The name for this class.</div>");
@@ -138,16 +138,16 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     void checkNoComment(boolean expectFound) {
         checkOutput("serialized-form.html", expectFound,
                 "<pre>boolean undecorated</pre>\n"
-                + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">"
+                + "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\">"
                 + "As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated(boolean)\"><code>"
                 + "setUndecorated(boolean)</code></a>.</div>\n"
                 + "</div>\n"
                 + "</li>",
-                "<span class=\"deprecatedLabel\">"
+                "<span class=\"deprecated-label\">"
                 + "Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">As of JDK version"
+                + "<div class=\"deprecation-comment\">As of JDK version"
                 + " 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>setUndecorated(boolean)</code></a>.</div>\n"

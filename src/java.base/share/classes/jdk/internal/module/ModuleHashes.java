@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -134,7 +135,7 @@ public final class ModuleHashes {
      * @return ModuleHashes that encapsulates the hashes
      */
     public static ModuleHashes generate(Map<String, Path> map, String algorithm) {
-        Map<String, byte[]> nameToHash = new HashMap<>();
+        Map<String, byte[]> nameToHash = new TreeMap<>();
         for (Map.Entry<String, Path> entry: map.entrySet()) {
             String name = entry.getKey();
             Path path = entry.getValue();

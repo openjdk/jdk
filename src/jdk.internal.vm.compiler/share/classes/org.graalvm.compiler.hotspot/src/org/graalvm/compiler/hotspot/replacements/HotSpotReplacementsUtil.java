@@ -156,9 +156,13 @@ public class HotSpotReplacementsUtil {
 
     @Fold
     public static int getFieldOffset(ResolvedJavaType type, String fieldName) {
+        return getField(type, fieldName).getOffset();
+    }
+
+    private static ResolvedJavaField getField(ResolvedJavaType type, String fieldName) {
         for (ResolvedJavaField field : type.getInstanceFields(true)) {
             if (field.getName().equals(fieldName)) {
-                return field.getOffset();
+                return field;
             }
         }
         throw new GraalError("missing field " + fieldName + " in type " + type);
@@ -865,7 +869,12 @@ public class HotSpotReplacementsUtil {
 
     @Fold
     public static long referentOffset(@InjectedParameter MetaAccessProvider metaAccessProvider) {
-        return getFieldOffset(metaAccessProvider.lookupJavaType(Reference.class), "referent");
+        return referentField(metaAccessProvider).getOffset();
+    }
+
+    @Fold
+    public static ResolvedJavaField referentField(@InjectedParameter MetaAccessProvider metaAccessProvider) {
+        return getField(metaAccessProvider.lookupJavaType(Reference.class), "referent");
     }
 
     @Fold

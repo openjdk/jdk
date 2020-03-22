@@ -374,7 +374,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
                 return next;
             } catch (IndexOutOfBoundsException e) {
                 checkForComodification();
-                throw new NoSuchElementException();
+                throw new NoSuchElementException(e);
             }
         }
 
@@ -418,7 +418,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
                 return previous;
             } catch (IndexOutOfBoundsException e) {
                 checkForComodification();
-                throw new NoSuchElementException();
+                throw new NoSuchElementException(e);
             }
         }
 

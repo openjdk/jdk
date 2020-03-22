@@ -24,6 +24,7 @@
 package test.java.time.zone;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,16 +38,17 @@ import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneRules;
 import java.util.Collections;
+import java.util.List;
 
-import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
  * @summary Tests for ZoneRules class.
  *
- * @bug 8212970 8236903
+ * @bug 8212970 8236903 8239836
  */
 @Test
 public class TestZoneRules {
@@ -59,37 +61,44 @@ public class TestZoneRules {
     private static final ZoneId TOKYO = ZoneId.of("Asia/Tokyo");
     private static final LocalTime ONE_AM = LocalTime.of(1, 0);
 
+    private static final ZoneOffset OFF_0 = ZoneOffset.ofHours(0);
+    private static final ZoneOffset OFF_1 = ZoneOffset.ofHours(1);
+    private static final ZoneOffset OFF_2 = ZoneOffset.ofHours(2);
+    private static final List EL = Collections.emptyList();
+    private static final ZoneOffsetTransition ZOT = ZoneId.of("America/Los_Angeles").getRules().getTransitions().get(0);
+    private static final ZoneOffsetTransitionRule ZOTR = ZoneId.of("America/Los_Angeles").getRules().getTransitionRules().get(0);
+
     @DataProvider
     private Object[][] negativeDST () {
         return new Object[][] {
             // ZoneId, localDate, offset, standard offset, isDaylightSavings
             // Europe/Dublin for the Rule "Eire"
-            {DUBLIN, LocalDate.of(1970, 6, 23), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {DUBLIN, LocalDate.of(1971, 6, 23), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {DUBLIN, LocalDate.of(1971, 11, 1), ZoneOffset.ofHours(0), ZoneOffset.ofHours(0), false},
-            {DUBLIN, LocalDate.of(2019, 6, 23), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {DUBLIN, LocalDate.of(2019, 12, 23), ZoneOffset.ofHours(0), ZoneOffset.ofHours(0), false},
+            {DUBLIN, LocalDate.of(1970, 6, 23), OFF_1, OFF_0, true},
+            {DUBLIN, LocalDate.of(1971, 6, 23), OFF_1, OFF_0, true},
+            {DUBLIN, LocalDate.of(1971, 11, 1), OFF_0, OFF_0, false},
+            {DUBLIN, LocalDate.of(2019, 6, 23), OFF_1, OFF_0, true},
+            {DUBLIN, LocalDate.of(2019, 12, 23), OFF_0, OFF_0, false},
 
             // Europe/Prague which contains fixed negative savings (not a named Rule)
-            {PRAGUE, LocalDate.of(1946, 9, 30), ZoneOffset.ofHours(2), ZoneOffset.ofHours(1), true},
-            {PRAGUE, LocalDate.of(1946, 10, 10), ZoneOffset.ofHours(1), ZoneOffset.ofHours(1), false},
-            {PRAGUE, LocalDate.of(1946, 12, 3), ZoneOffset.ofHours(0), ZoneOffset.ofHours(0), false},
-            {PRAGUE, LocalDate.of(1947, 2, 25), ZoneOffset.ofHours(1), ZoneOffset.ofHours(1), false},
-            {PRAGUE, LocalDate.of(1947, 4, 30), ZoneOffset.ofHours(2), ZoneOffset.ofHours(1), true},
+            {PRAGUE, LocalDate.of(1946, 9, 30), OFF_2, OFF_1, true},
+            {PRAGUE, LocalDate.of(1946, 10, 10), OFF_1, OFF_1, false},
+            {PRAGUE, LocalDate.of(1946, 12, 3), OFF_0, OFF_0, false},
+            {PRAGUE, LocalDate.of(1947, 2, 25), OFF_1, OFF_1, false},
+            {PRAGUE, LocalDate.of(1947, 4, 30), OFF_2, OFF_1, true},
 
             // Africa/Windhoek for the Rule "Namibia"
-            {WINDHOEK, LocalDate.of(1994, 3, 23), ZoneOffset.ofHours(1), ZoneOffset.ofHours(1), false},
-            {WINDHOEK, LocalDate.of(2016, 9, 23), ZoneOffset.ofHours(2), ZoneOffset.ofHours(1), true},
+            {WINDHOEK, LocalDate.of(1994, 3, 23), OFF_1, OFF_1, false},
+            {WINDHOEK, LocalDate.of(2016, 9, 23), OFF_2, OFF_1, true},
 
             // Africa/Casablanca for the Rule "Morocco" Defines negative DST till 2037 as of 2019a.
-            {CASABLANCA, LocalDate.of(1939, 9, 13), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {CASABLANCA, LocalDate.of(1939, 11, 20), ZoneOffset.ofHours(0), ZoneOffset.ofHours(0), false},
-            {CASABLANCA, LocalDate.of(2018, 6, 18), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {CASABLANCA, LocalDate.of(2019, 1, 1), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {CASABLANCA, LocalDate.of(2019, 5, 6), ZoneOffset.ofHours(0), ZoneOffset.ofHours(0), false},
-            {CASABLANCA, LocalDate.of(2037, 10, 5), ZoneOffset.ofHours(0), ZoneOffset.ofHours(0), false},
-            {CASABLANCA, LocalDate.of(2037, 11, 16), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
-            {CASABLANCA, LocalDate.of(2038, 11, 1), ZoneOffset.ofHours(1), ZoneOffset.ofHours(0), true},
+            {CASABLANCA, LocalDate.of(1939, 9, 13), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(1939, 11, 20), OFF_0, OFF_0, false},
+            {CASABLANCA, LocalDate.of(2018, 6, 18), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(2019, 1, 1), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(2019, 5, 6), OFF_0, OFF_0, false},
+            {CASABLANCA, LocalDate.of(2037, 10, 5), OFF_0, OFF_0, false},
+            {CASABLANCA, LocalDate.of(2037, 11, 16), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(2038, 11, 1), OFF_1, OFF_0, true},
         };
     }
 
@@ -105,6 +114,28 @@ public class TestZoneRules {
             {TOKYO, LocalDateTime.of(LocalDate.of(1949, 9, 11), ONE_AM), ZoneOffset.ofHours(10), ZoneOffset.ofHours(9)},
             {TOKYO, LocalDateTime.of(LocalDate.of(1950, 9, 10), ONE_AM), ZoneOffset.ofHours(10), ZoneOffset.ofHours(9)},
             {TOKYO, LocalDateTime.of(LocalDate.of(1951, 9, 9), ONE_AM), ZoneOffset.ofHours(10), ZoneOffset.ofHours(9)},
+        };
+    }
+
+    @DataProvider
+    private Object[][] emptyTransitionList() {
+        return new Object[][] {
+            // days, offset, std offset, savings, isDST
+            {7, 1, 2, -1, true},
+            {-7, 1, 1, 0, false},
+        };
+    }
+
+    @DataProvider
+    private Object[][] isFixedOffset() {
+        return new Object[][] {
+            // ZoneRules, expected
+            {ZoneRules.of(OFF_0), true},
+            {ZoneRules.of(OFF_0, OFF_0, EL, EL, EL), true},
+            {ZoneRules.of(OFF_0, OFF_1, EL, EL, EL), false},
+            {ZoneRules.of(OFF_0, OFF_0, Collections.singletonList(ZOT), EL, EL), false},
+            {ZoneRules.of(OFF_0, OFF_0, EL, Collections.singletonList(ZOT), EL), false},
+            {ZoneRules.of(OFF_0, OFF_0, EL, EL, Collections.singletonList(ZOTR)), false},
         };
     }
 
@@ -147,28 +178,57 @@ public class TestZoneRules {
                 59,
                 59,
                 999999999).toInstant(ZoneOffset.UTC);
-        ZoneOffset offsetZero = ZoneOffset.ofHours(0);
-        ZoneOffset offsetPlusOneHour = ZoneOffset.ofHours(1);
-        ZoneRules zoneRulesA = ZoneRules.of(offsetPlusOneHour);
-        ZoneOffsetTransition transition = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(0, 0, offsetZero),
-                offsetZero,
-                offsetPlusOneHour);
+        ZoneRules zoneRulesA = ZoneRules.of(OFF_1);
+        ZoneOffsetTransition transition = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(0, 0, OFF_0),
+                OFF_0,
+                OFF_1);
         ZoneOffsetTransitionRule transitionRule = ZoneOffsetTransitionRule.of(Month.JANUARY,
                 1,
                 DayOfWeek.SUNDAY,
                 LocalTime.MIDNIGHT,
                 true,
                 ZoneOffsetTransitionRule.TimeDefinition.STANDARD,
-                offsetZero,
-                offsetZero,
-                offsetPlusOneHour);
-        ZoneRules zoneRulesB = ZoneRules.of(offsetZero,
-                offsetZero,
+                OFF_0,
+                OFF_0,
+                OFF_1);
+        ZoneRules zoneRulesB = ZoneRules.of(OFF_0,
+                OFF_0,
                 Collections.singletonList(transition),
                 Collections.singletonList(transition),
                 Collections.singletonList(transitionRule));
         ZoneOffset offsetA = zoneRulesA.getOffset(maxLocalDateTime);
         ZoneOffset offsetB = zoneRulesB.getOffset(maxLocalDateTime);
         assertEquals(offsetA, offsetB);
+    }
+
+    /**
+     * Tests whether empty "transitionList" is correctly interpreted.
+     * @bug 8239836
+     */
+    @Test(dataProvider="emptyTransitionList")
+    public void test_EmptyTransitionList(int days, int offset, int stdOffset, int savings, boolean isDST) {
+        LocalDateTime transitionDay = LocalDateTime.of(2020, 1, 1, 2, 0);
+        Instant testDay = transitionDay.plusDays(days).toInstant(ZoneOffset.UTC);
+        ZoneOffsetTransition trans = ZoneOffsetTransition.of(
+            transitionDay,
+            OFF_1,
+            OFF_2);
+        ZoneRules rules = ZoneRules.of(OFF_1, OFF_1,
+            Collections.singletonList(trans),
+            Collections.emptyList(), Collections.emptyList());
+
+        assertEquals(rules.getOffset(testDay), ZoneOffset.ofHours(offset));
+        assertEquals(rules.getStandardOffset(testDay), ZoneOffset.ofHours(stdOffset));
+        assertEquals(rules.getDaylightSavings(testDay), Duration.ofHours(savings));
+        assertEquals(rules.isDaylightSavings(testDay), isDST);
+    }
+
+    /**
+     * Tests whether isFixedOffset() is working correctly
+     * @bug 8239836
+     */
+    @Test(dataProvider="isFixedOffset")
+    public void test_IsFixedOffset(ZoneRules zr, boolean expected) {
+        assertEquals(zr.isFixedOffset(), expected);
     }
 }

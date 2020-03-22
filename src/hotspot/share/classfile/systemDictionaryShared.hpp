@@ -292,6 +292,8 @@ public:
                   bool from_is_array, bool from_is_object) NOT_CDS_RETURN_(false);
   static void check_verification_constraints(InstanceKlass* klass,
                                              TRAPS) NOT_CDS_RETURN;
+  static void set_class_has_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN;
+  static bool has_class_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN_(false);
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }

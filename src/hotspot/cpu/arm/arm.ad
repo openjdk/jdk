@@ -194,7 +194,7 @@ void emit_hi(CodeBuffer &cbuf, int val) {  }
 //=============================================================================
 const RegMask& MachConstantBaseNode::_out_RegMask = PTR_REG_mask();
 
-int Compile::ConstantTable::calculate_table_base_offset() const {
+int ConstantTable::calculate_table_base_offset() const {
   int offset = -(size() / 2);
   // flds, fldd: 8-bit  offset multiplied by 4: +/- 1024
   // ldr, ldrb : 12-bit offset:                 +/- 4096
@@ -211,7 +211,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
 
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
-  Compile::ConstantTable& constant_table = C->constant_table();
+  ConstantTable& constant_table = C->output()->constant_table();
   MacroAssembler _masm(&cbuf);
 
   Register r = as_Register(ra_->get_encode(this));
@@ -245,9 +245,9 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
     st->print_cr("NOP"); st->print("\t");
   }
 
-  size_t framesize = C->frame_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  int bangsize = C->bang_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
   bangsize -= 2*wordSize;
@@ -257,7 +257,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(bangsize)) {
+  if (C->output()->need_stack_bang(bangsize)) {
     st->print_cr("! stack bang (%d bytes)", bangsize); st->print("\t");
   }
   st->print_cr("PUSH   R_FP|R_LR_LR"); st->print("\t");
@@ -275,9 +275,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ nop();
   }
 
-  size_t framesize = C->frame_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  int bangsize = C->bang_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
   // Remove two words for return addr and fp,
   framesize -= 2*wordSize;
   bangsize -= 2*wordSize;
@@ -287,7 +287,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(bangsize)) {
+  if (C->output()->need_stack_bang(bangsize)) {
     __ arm_stack_overflow_check(bangsize, Rtemp);
   }
 
@@ -298,13 +298,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // offset from scratch buffer is not valid
   if (strcmp(cbuf.name(), "Compile::Fill_buffer") == 0) {
-    C->set_frame_complete( __ offset() );
+    C->output()->set_frame_complete( __ offset() );
   }
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
     // emitted before MachConstantBaseNode.
-    Compile::ConstantTable& constant_table = C->constant_table();
+    ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
 }
@@ -322,7 +322,7 @@ int MachPrologNode::reloc() const {
 void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   Compile* C = ra_->C;
 
-  size_t framesize = C->frame_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
   framesize -= 2*wordSize;
 
   if (framesize != 0) {
@@ -342,7 +342,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
 
-  size_t framesize = C->frame_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
   framesize -= 2*wordSize;
   if (framesize != 0) {
     __ add_slow(SP, SP, framesize);
@@ -827,7 +827,7 @@ void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
   // BoxLockNode is not a MachNode, so we can't just call MachNode::size(ra_)
   assert(ra_ == ra_->C->regalloc(), "sanity");
-  return ra_->C->scratch_emit_size(this);
+  return ra_->C->output()->scratch_emit_size(this);
 }
 
 //=============================================================================

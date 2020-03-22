@@ -1209,7 +1209,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             if (p != Proxy.NO_PROXY) {
                                 sel.connectFailed(uri, p.address(), ioex);
                                 if (!it.hasNext()) {
-                                    throw ioex;
+                                    if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                                        logger.finest("Retrying with proxy: " + p.toString());
+                                    }
+                                    http = getNewHttpClient(url, p, connectTimeout, false);
+                                    http.setReadTimeout(readTimeout);
+                                    break;
                                 }
                             } else {
                                 throw ioex;

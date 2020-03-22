@@ -28,11 +28,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.Set;
 import java.util.TreeSet;
 
+import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -98,35 +99,33 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
-        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.setStyle(HtmlStyle.contentContainer);
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        Content mainContent = new ContentBuilder();
         elements = new TreeSet<>(indexBuilder.asMap().keySet());
         elements.addAll(tagSearchIndexMap.keySet());
-        addLinksForIndexes(divTree);
+        addLinksForIndexes(mainContent);
         for (Character unicode : elements) {
             if (tagSearchIndexMap.get(unicode) == null) {
-                addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
+                addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
             } else if (indexBuilder.getMemberList(unicode) == null) {
-                addSearchContents(unicode, tagSearchIndexMap.get(unicode), divTree);
+                addSearchContents(unicode, tagSearchIndexMap.get(unicode), mainContent);
             } else {
                 addContents(unicode, indexBuilder.getMemberList(unicode),
-                            tagSearchIndexMap.get(unicode), divTree);
+                            tagSearchIndexMap.get(unicode), mainContent);
             }
         }
-        addLinksForIndexes(divTree);
+        addLinksForIndexes(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         body.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))
-                .addMainContent(divTree)
-                .setFooter(footer)
-                .toContent());
+                .addMainContent(mainContent)
+                .setFooter(footer));
         createSearchIndexFiles();
         printHtmlDocument(null, "index", body);
     }
@@ -144,7 +143,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
                                      new StringContent(unicode)));
             contentTree.add(Entity.NO_BREAK_SPACE);
         }
-        contentTree.add(new HtmlTree(HtmlTag.BR));
+        contentTree.add(new HtmlTree(TagName.BR));
         contentTree.add(links.createLink(DocPaths.ALLCLASSES_INDEX,
                                          contents.allClassesLabel));
         if (!configuration.packages.isEmpty()) {
@@ -152,7 +151,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(DocPaths.ALLPACKAGES_INDEX,
                                              contents.allPackagesLabel));
         }
-        if (!searchItems.get(SearchIndexItem.Category.SEARCH_TAGS).isEmpty()) {
+        if (searchItems.containsAnyOfCategories(Category.SYSTEM_PROPERTY)) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(DocPaths.SYSTEM_PROPERTIES, contents.systemPropertiesLabel));
         }

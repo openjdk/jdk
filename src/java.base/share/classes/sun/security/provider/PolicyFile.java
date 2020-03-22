@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ public class PolicyFile extends java.security.Policy {
      * initialize the Policy object.
      */
     private void init(URL url) {
-        // Properties are set once for each init(); ignore changes between
+        // Properties are set once for each init(); ignore changes
         // between diff invocations of initPolicyFile(policy, url, info).
         String numCacheStr =
           AccessController.doPrivileged(new PrivilegedAction<>() {
@@ -325,7 +325,6 @@ public class PolicyFile extends java.security.Policy {
         } else {
             numCaches = DEFAULT_CACHE_SIZE;
         }
-        // System.out.println("number caches=" + numCaches);
         PolicyInfo newInfo = new PolicyInfo(numCaches);
         initPolicyFile(newInfo, url);
         policyInfo = newInfo;

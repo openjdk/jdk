@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,26 @@ import java.util.*;
 import nsk.share.*;
 import nsk.share.jdi.HeapwalkingDebuggee;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /*
  *  Test class handle request for start/stop test threads(threads are included in special thread group)
  */
 public class referringObjects003a extends HeapwalkingDebuggee {
+
+    static AtomicBoolean shouldStop = new AtomicBoolean(false);
+
     class TestThread implements Runnable {
         public void run() {
-            wicket.waitFor();
+            while(!shouldStop.get()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // just wait for shouldStop
+                }
+            }
         }
     }
-
-    private Wicket wicket = new Wicket();
 
     private List<Thread> threads = new ArrayList<Thread>();
 
@@ -71,7 +80,7 @@ public class referringObjects003a extends HeapwalkingDebuggee {
     }
 
     public void stopThreads() {
-        wicket.unlockAll();
+        shouldStop.set(true);
 
         for (Thread testThread : threads) {
             try {

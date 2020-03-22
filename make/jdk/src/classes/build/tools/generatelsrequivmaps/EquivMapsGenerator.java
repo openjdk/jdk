@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,10 +215,7 @@ public class EquivMapsGenerator {
         + "    static final Map<String, String[]> multiEquivsMap;\n"
         + "    static final Map<String, String> regionVariantEquivMap;\n\n"
         + "    static {\n"
-        + "        singleEquivMap = new HashMap<>();\n"
-        + "        multiEquivsMap = new HashMap<>();\n"
-        + "        regionVariantEquivMap = new HashMap<>();\n\n"
-        + "        // This is an auto-generated file and should not be manually edited.\n";
+        + "        singleEquivMap = new HashMap<>(";
 
     private static final String footerText =
         "    }\n\n"
@@ -242,6 +239,12 @@ public class EquivMapsGenerator {
                 Paths.get(fileName))) {
             writer.write(getOpenJDKCopyright());
             writer.write(headerText
+                + (int)(sortedLanguageMap1.size() / 0.75f + 1) + ");\n"
+                + "        multiEquivsMap = new HashMap<>("
+                + (int)(sortedLanguageMap2.size() / 0.75f + 1) + ");\n"
+                + "        regionVariantEquivMap = new HashMap<>("
+                + (int)(sortedRegionVariantMap.size() / 0.75f + 1) + ");\n\n"
+                + "        // This is an auto-generated file and should not be manually edited.\n"
                 + "        //   LSR Revision: " + LSRrevisionDate);
             writer.newLine();
 

@@ -75,7 +75,7 @@ public class TestTranslatedException {
             while (original != null) {
                 if (Untranslatable.class.equals(original.getClass())) {
                     Assert.assertEquals("jdk.vm.ci.hotspot.TranslatedException", decoded.getClass().getName());
-                    Assert.assertEquals("[java.lang.ClassNotFoundException: jdk/vm/ci/hotspot/test/TestTranslatedException$Untranslatable]", decoded.getMessage());
+                    Assert.assertEquals("jdk.vm.ci.hotspot.TranslatedException[jdk.vm.ci.hotspot.test.TestTranslatedException$Untranslatable]: test exception", decoded.toString());
                     Assert.assertEquals("test exception", original.getMessage());
                 } else {
                     Assert.assertEquals(original.getClass().getName(), decoded.getClass().getName());

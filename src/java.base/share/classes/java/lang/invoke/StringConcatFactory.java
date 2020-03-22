@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,14 +536,14 @@ public final class StringConcatFactory {
      *   <li>The number of parameter slots in {@code concatType} is less than
      *       or equal to 200</li>
      *
-     *   <li>The parameter count in {@code concatType} equals to number of \1 tags
+     *   <li>The parameter count in {@code concatType} is equal to number of \1 tags
      *   in {@code recipe}</li>
      *
      *   <li>The return type in {@code concatType} is assignable
      *   from {@link java.lang.String}, and matches the return type of the
      *   returned {@link MethodHandle}</li>
      *
-     *   <li>The number of elements in {@code constants} equals to number of \2
+     *   <li>The number of elements in {@code constants} is equal to number of \2
      *   tags in {@code recipe}</li>
      * </ul>
      *

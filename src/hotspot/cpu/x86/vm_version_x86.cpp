@@ -562,7 +562,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::equal, L_wrapup);
     __ cmpl(rcx, 0x00080650);              // If it is Future Xeon Phi
     __ jcc(Assembler::equal, L_wrapup);
-    __ vzeroupper();
+    // vzeroupper() will use a pre-computed instruction sequence that we
+    // can't compute until after we've determined CPU capabilities. Use
+    // uncached variant here directly to be able to bootstrap correctly
+    __ vzeroupper_uncached();
 #   undef __
   }
 };
@@ -697,9 +700,9 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512VL;
     _features &= ~CPU_AVX512_VPOPCNTDQ;
     _features &= ~CPU_AVX512_VPCLMULQDQ;
-    _features &= ~CPU_VAES;
-    _features &= ~CPU_VNNI;
-    _features &= ~CPU_VBMI2;
+    _features &= ~CPU_AVX512_VAES;
+    _features &= ~CPU_AVX512_VNNI;
+    _features &= ~CPU_AVX512_VBMI2;
   }
 
   if (UseAVX < 2)
@@ -721,12 +724,20 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
+  if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
+    _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
+  } else {
+    _has_intel_jcc_erratum = IntelJccErratumMitigation;
+  }
 
-  char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  char buf[512];
+  int res = jio_snprintf(buf, sizeof(buf),
+              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d"
+              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s",
+
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
+
                (supports_cmov() ? ", cmov" : ""),
                (supports_cmpxchg8() ? ", cx8" : ""),
                (supports_fxsr() ? ", fxsr" : ""),
@@ -737,7 +748,9 @@ void VM_Version::get_processor_features() {
                (supports_ssse3()? ", ssse3": ""),
                (supports_sse4_1() ? ", sse4.1" : ""),
                (supports_sse4_2() ? ", sse4.2" : ""),
+
                (supports_popcnt() ? ", popcnt" : ""),
+               (supports_vzeroupper() ? ", vzeroupper" : ""),
                (supports_avx()    ? ", avx" : ""),
                (supports_avx2()   ? ", avx2" : ""),
                (supports_aes()    ? ", aes" : ""),
@@ -746,6 +759,7 @@ void VM_Version::get_processor_features() {
                (supports_rtm()    ? ", rtm" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
+
                (supports_lzcnt()   ? ", lzcnt": ""),
                (supports_sse4a()   ? ", sse4a": ""),
                (supports_ht() ? ", ht": ""),
@@ -755,12 +769,28 @@ void VM_Version::get_processor_features() {
                (supports_bmi1() ? ", bmi1" : ""),
                (supports_bmi2() ? ", bmi2" : ""),
                (supports_adx() ? ", adx" : ""),
-               (supports_evex() ? ", evex" : ""),
+               (supports_evex() ? ", avx512f" : ""),
+
+               (supports_avx512dq() ? ", avx512dq" : ""),
+               (supports_avx512pf() ? ", avx512pf" : ""),
+               (supports_avx512er() ? ", avx512er" : ""),
+               (supports_avx512cd() ? ", avx512cd" : ""),
+               (supports_avx512bw() ? ", avx512bw" : ""),
+               (supports_avx512vl() ? ", avx512vl" : ""),
+               (supports_avx512_vpopcntdq() ? ", avx512_vpopcntdq" : ""),
+               (supports_avx512_vpclmulqdq() ? ", avx512_vpclmulqdq" : ""),
+               (supports_avx512_vbmi2() ? ", avx512_vbmi2" : ""),
+               (supports_avx512_vaes() ? ", avx512_vaes" : ""),
+
+               (supports_avx512_vnni() ? ", avx512_vnni" : ""),
                (supports_sha() ? ", sha" : ""),
                (supports_fma() ? ", fma" : ""),
-               (supports_vbmi2() ? ", vbmi2" : ""),
-               (supports_vaes() ? ", vaes" : ""),
-               (supports_vnni() ? ", vnni" : ""));
+               (supports_clflush() ? ", clflush" : ""),
+               (supports_clflushopt() ? ", clflushopt" : ""),
+               (supports_clwb() ? ", clwb" : ""));
+
+  assert(res > 0, "not enough temporary space allocated"); // increase 'buf' size
+
   _features_string = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
@@ -1829,6 +1859,9 @@ void VM_Version::initialize() {
                                      g.generate_get_cpu_info());
 
   get_processor_features();
+
+  LP64_ONLY(Assembler::precompute_instructions();)
+
   if (cpu_family() > 4) { // it supports CPUID
     check_virtualizations();
   }

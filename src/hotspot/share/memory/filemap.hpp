@@ -95,6 +95,7 @@ public:
     _manifest = manifest;
   }
   bool check_non_existent() const;
+  void copy_from(SharedClassPathEntry* ent, ClassLoaderData* loader_data, TRAPS);
 };
 
 struct ArchiveHeapOopmapInfo {
@@ -335,6 +336,7 @@ private:
 
   // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
+  static SharedPathTable       _saved_shared_path_table;
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -356,9 +358,12 @@ public:
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
-  void restore_shared_path_table();
+  static SharedPathTable saved_shared_path_table() {
+    return _saved_shared_path_table;
+  }
+
   bool init_from_file(int fd);
-  static void metaspace_pointers_do(MetaspaceClosure* it);
+  static void metaspace_pointers_do(MetaspaceClosure* it, bool use_copy = true);
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
@@ -482,6 +487,7 @@ public:
   static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table();
+  static void copy_shared_path_table(ClassLoaderData* loader_data, Thread* THREAD);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,9 @@ public class TestSerializedForm extends JavadocTester {
                 "protected&nbsp;java.lang.Object&nbsp;readResolve()",
                 "protected&nbsp;java.lang.Object&nbsp;writeReplace()",
                 "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()",
-                "<h3>Serialization Overview</h3>\n<ul class=\"blockList\">\n"
-                + "<li class=\"blockList\">\n<div class=\"block\">"
-                + "<span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>\n"
+                "<h3>Serialization Overview</h3>\n<ul class=\"block-list\">\n"
+                + "<li class=\"block-list\">\n<div class=\"block\">"
+                + "<span class=\"deprecated-label\">Deprecated.</span>&nbsp;</div>\n"
                 + "<dl>\n<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
                 + "<dd><code>TestSerializedForm</code></dd>\n</dl>",
                 "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
@@ -88,13 +88,13 @@ public class TestSerializedForm extends JavadocTester {
 
         checkOutput("serialized-form.html", true,
                 "<h3>Serialized Fields</h3>\n" +
-                "<ul class=\"blockList\">\n" +
-                "<li class=\"blockList\">\n" +
+                "<ul class=\"block-list\">\n" +
+                "<li class=\"block-list\">\n" +
                 "<h4>longs</h4>\n" +
                 "<pre>Long[] longs</pre>\n" +
                 "<div class=\"block\">the longs</div>\n" +
                 "</li>\n" +
-                "<li class=\"blockList\">\n" +
+                "<li class=\"block-list\">\n" +
                 "<h4>name</h4>\n" +
                 "<pre>java.lang.String name</pre>\n" +
                 "<div class=\"block\">a test</div>");
@@ -132,13 +132,13 @@ public class TestSerializedForm extends JavadocTester {
 
         checkOutput("serialized-form.html", true,
                 "<h4>Serialized Fields</h4>\n" +
-                "<ul class=\"blockList\">\n" +
-                "<li class=\"blockList\">\n" +
+                "<ul class=\"block-list\">\n" +
+                "<li class=\"block-list\">\n" +
                 "<h5>longs</h5>\n" +
                 "<pre>Long[] longs</pre>\n" +
                 "<div class=\"block\">the longs</div>\n" +
                 "</li>\n" +
-                "<li class=\"blockList\">\n" +
+                "<li class=\"block-list\">\n" +
                 "<h5>name</h5>\n" +
                 "<pre>java.lang.String name</pre>\n" +
                 "<div class=\"block\">a test</div>");

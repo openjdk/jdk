@@ -53,18 +53,18 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg/PublicChild.html", true,
                 // Check return type in member summary.
                 "<code><a href=\"PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#returnTypeTest()\">"
+                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"#returnTypeTest()\">"
                 + "returnTypeTest</a></span>()</code>",
                 // Check return type in member detail.
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\"><a href=\"PublicChild.html\" title=\"class in pkg\">"
-                + "PublicChild</a></span>&nbsp;<span class=\"memberName\">returnTypeTest</span>()</div>",
-                "<th class=\"colConstructorName\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\"><a href=\"PublicChild.html\" title=\"class in pkg\">"
+                + "PublicChild</a></span>&nbsp;<span class=\"member-name\">returnTypeTest</span>()</div>",
+                "<th class=\"col-constructor-name\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#%3Cinit%3E()\">PublicChild</a></span>()</code></th>");
 
         checkOutput("pkg/PrivateParent.html", true,
-                "<td class=\"colFirst\"><code>private </code></td>\n"
-                + "<th class=\"colConstructorName\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                "<td class=\"col-first\"><code>private </code></td>\n"
+                + "<th class=\"col-constructor-name\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#%3Cinit%3E(int)\">PrivateParent</a></span>&#8203;(int&nbsp;i)</code>"
                 + "</th>");
 

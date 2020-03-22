@@ -187,7 +187,7 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
 // T_OBJECT, or T_CONFLICT.
 oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values,
                                                     int i, BasicType type, TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_null(vmSymbols::java_lang_LiveStackFrameInfo(), CHECK_NULL);
+  Klass* k = SystemDictionary::LiveStackFrameInfo_klass();
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   JavaValue result(T_OBJECT);

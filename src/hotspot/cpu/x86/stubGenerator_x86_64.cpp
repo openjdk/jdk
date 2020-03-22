@@ -4445,7 +4445,7 @@ void roundDeclast(XMMRegister xmm_reg) {
   }
 
 address generate_cipherBlockChaining_decryptVectorAESCrypt() {
-    assert(VM_Version::supports_vaes(), "need AES instructions and misaligned SSE support");
+    assert(VM_Version::supports_avx512_vaes(), "need AES instructions and misaligned SSE support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
     address start = __ pc();
@@ -5750,7 +5750,7 @@ address generate_avx_ghash_processBlocks() {
 
     // If vectorization is enabled, check if the number of iterations is at least 64
     // If not, then go to ShifTwo processing 2 iterations
-    if (VM_Version::supports_vbmi2()) {
+    if (VM_Version::supports_avx512_vbmi2()) {
       __ cmpptr(totalNumIter, (AVX3Threshold/64));
       __ jcc(Assembler::less, ShiftTwo);
 
@@ -5874,7 +5874,7 @@ address generate_avx_ghash_processBlocks() {
 
     // If vectorization is enabled, check if the number of iterations is at least 64
     // If not, then go to ShiftTwo shifting two numbers at a time
-    if (VM_Version::supports_vbmi2()) {
+    if (VM_Version::supports_avx512_vbmi2()) {
       __ cmpl(totalNumIter, (AVX3Threshold/64));
       __ jcc(Assembler::less, ShiftTwo);
 
@@ -6466,7 +6466,7 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
-      if (VM_Version::supports_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq() ) {
+      if (VM_Version::supports_avx512_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq() ) {
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptVectorAESCrypt();
         StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
         StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
@@ -6475,7 +6475,7 @@ address generate_avx_ghash_processBlocks() {
       }
     }
     if (UseAESCTRIntrinsics) {
-      if (VM_Version::supports_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
+      if (VM_Version::supports_avx512_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
         StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
         StubRoutines::_counterMode_AESCrypt = generate_counterMode_VectorAESCrypt();
       } else {
@@ -6556,7 +6556,7 @@ address generate_avx_ghash_processBlocks() {
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
     }
-    if (VM_Version::supports_vbmi2()) {
+    if (VM_Version::supports_avx512_vbmi2()) {
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
     }

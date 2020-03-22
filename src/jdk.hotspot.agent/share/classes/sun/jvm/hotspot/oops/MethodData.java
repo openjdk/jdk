@@ -36,7 +36,6 @@ import sun.jvm.hotspot.utilities.*;
 public class MethodData extends Metadata implements MethodDataInterface<Klass,Method> {
   static int TypeProfileWidth = 2;
   static int BciProfileWidth = 2;
-  static int MethodProfileWidth = 0;
   static int CompileThreshold;
 
   static int Reason_many;                 // indicates presence of several reasons
@@ -143,8 +142,6 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
         TypeProfileWidth = (int)flag.getIntx();
       } else if (flag.getName().equals("BciProfileWidth")) {
         BciProfileWidth = (int)flag.getIntx();
-      } else if (flag.getName().equals("MethodProfileWidth")) {
-        MethodProfileWidth = (int)flag.getIntx();
       } else if (flag.getName().equals("CompileThreshold")) {
         CompileThreshold = (int)flag.getIntx();
       }

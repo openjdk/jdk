@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,18 @@ import org.graalvm.compiler.nodeinfo.StructuralInput.Memory;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = Memory, cycles = CYCLES_0, size = SIZE_0)
-public final class MemoryAnchorNode extends FixedWithNextNode implements LIRLowerable, MemoryNode, Canonicalizable {
+public final class MemoryAnchorNode extends FixedWithNextNode implements LIRLowerable, MultiMemoryKill, Canonicalizable {
 
     public static final NodeClass<MemoryAnchorNode> TYPE = NodeClass.create(MemoryAnchorNode.class);
 
-    public MemoryAnchorNode() {
+    private final LocationIdentity[] locations;
+
+    public MemoryAnchorNode(LocationIdentity... locations) {
         super(TYPE, StampFactory.forVoid());
+        this.locations = locations == null ? new LocationIdentity[0] : locations;
     }
 
     @Override
@@ -56,6 +60,11 @@ public final class MemoryAnchorNode extends FixedWithNextNode implements LIRLowe
     @Override
     public Node canonical(CanonicalizerTool tool) {
         return tool.allUsagesAvailable() && hasNoUsages() ? null : this;
+    }
+
+    @Override
+    public LocationIdentity[] getKilledLocationIdentities() {
+        return locations;
     }
 
     @NodeIntrinsic

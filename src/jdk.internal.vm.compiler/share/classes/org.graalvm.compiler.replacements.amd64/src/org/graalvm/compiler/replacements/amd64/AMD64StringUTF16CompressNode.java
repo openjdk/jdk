@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValueNodeUtil;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -59,7 +59,7 @@ public final class AMD64StringUTF16CompressNode extends FixedWithNextNode
     @Input private ValueNode len;
     final JavaKind readKind;
 
-    @OptionalInput(Memory) private MemoryNode lla; // Last access location registered.
+    @OptionalInput(Memory) private MemoryKill lla; // Last access location registered.
 
     // java.lang.StringUTF16.compress([CI[BII)I
     //
@@ -95,12 +95,12 @@ public final class AMD64StringUTF16CompressNode extends FixedWithNextNode
     }
 
     @Override
-    public MemoryNode getLastLocationAccess() {
+    public MemoryKill getLastLocationAccess() {
         return lla;
     }
 
     @Override
-    public void setLastLocationAccess(MemoryNode newlla) {
+    public void setLastLocationAccess(MemoryKill newlla) {
         updateUsages(ValueNodeUtil.asNode(lla), ValueNodeUtil.asNode(newlla));
         lla = newlla;
     }

@@ -553,13 +553,6 @@ public:
     _delay_transform = delay;
   }
 
-  // Clone loop predicates. Defined in loopTransform.cpp.
-  Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
-  // Create a new if below new_entry for the predicate to be cloned
-  ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
-                                        Deoptimization::DeoptReason reason,
-                                        int opcode);
-
   void remove_speculative_types();
   void check_no_speculative_types() {
     _table.check_no_speculative_types();

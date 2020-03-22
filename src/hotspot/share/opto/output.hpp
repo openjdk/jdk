@@ -26,20 +26,24 @@
 #define SHARE_OPTO_OUTPUT_HPP
 
 #include "opto/ad.hpp"
-#include "opto/block.hpp"
-#include "opto/node.hpp"
+#include "opto/constantTable.hpp"
+#include "opto/phase.hpp"
+#include "code/debugInfo.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
+class AbstractCompiler;
 class Arena;
 class Bundle;
 class Block;
 class Block_Array;
+class ciMethod;
+class Compile;
+class MachNode;
+class MachSafePointNode;
 class Node;
-class Node_Array;
-class Node_List;
 class PhaseCFG;
-class PhaseChaitin;
-class Pipeline_Use_Element;
-class Pipeline_Use;
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
 #else
@@ -51,167 +55,157 @@ enum {
   initial_const_capacity =   4 * 1024
 };
 
-//------------------------------Scheduling----------------------------------
-// This class contains all the information necessary to implement instruction
-// scheduling and bundling.
-class Scheduling {
+class BufferSizingData {
+public:
+  int _stub;
+  int _code;
+  int _const;
+  int _reloc;
 
+  BufferSizingData() :
+    _stub(0),
+    _code(0),
+    _const(0),
+    _reloc(0)
+  { };
+};
+
+class PhaseOutput : public Phase {
 private:
-  // Arena to use
-  Arena *_arena;
+  // Instruction bits passed off to the VM
+  int                    _method_size;           // Size of nmethod code segment in bytes
+  CodeBuffer             _code_buffer;           // Where the code is assembled
+  int                    _first_block_size;      // Size of unvalidated entry point code / OSR poison code
+  ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
+  ImplicitExceptionTable _inc_table;             // Table of implicit null checks in native code
+  OopMapSet*             _oop_map_set;           // Table of oop maps (one for each safepoint location)
+  BufferBlob*            _scratch_buffer_blob;   // For temporary code buffers.
+  relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
+  int                    _scratch_const_size;    // For temporary code buffers.
+  bool                   _in_scratch_emit_size;  // true when in scratch_emit_size.
 
-  // Control-Flow Graph info
-  PhaseCFG *_cfg;
+  int                    _frame_slots;           // Size of total frame in stack slots
+  CodeOffsets            _code_offsets;          // Offsets into the code for various interesting entries
 
-  // Register Allocation info
-  PhaseRegAlloc *_regalloc;
+  uint                   _node_bundling_limit;
+  Bundle*                _node_bundling_base;    // Information for instruction bundling
 
-  // Number of nodes in the method
-  uint _node_bundling_limit;
+  // For deopt
+  int                    _orig_pc_slot;
+  int                    _orig_pc_slot_offset_in_bytes;
 
-  // List of scheduled nodes. Generated in reverse order
-  Node_List _scheduled;
-
-  // List of nodes currently available for choosing for scheduling
-  Node_List _available;
-
-  // For each instruction beginning a bundle, the number of following
-  // nodes to be bundled with it.
-  Bundle *_node_bundling_base;
-
-  // Mapping from register to Node
-  Node_List _reg_node;
-
-  // Free list for pinch nodes.
-  Node_List _pinch_free_list;
-
-  // Latency from the beginning of the containing basic block (base 1)
-  // for each node.
-  unsigned short *_node_latency;
-
-  // Number of uses of this node within the containing basic block.
-  short *_uses;
-
-  // Schedulable portion of current block.  Skips Region/Phi/CreateEx up
-  // front, branch+proj at end.  Also skips Catch/CProj (same as
-  // branch-at-end), plus just-prior exception-throwing call.
-  uint _bb_start, _bb_end;
-
-  // Latency from the end of the basic block as scheduled
-  unsigned short *_current_latency;
-
-  // Remember the next node
-  Node *_next_node;
-
-  // Use this for an unconditional branch delay slot
-  Node *_unconditional_delay_slot;
-
-  // Pointer to a Nop
-  MachNopNode *_nop;
-
-  // Length of the current bundle, in instructions
-  uint _bundle_instr_count;
-
-  // Current Cycle number, for computing latencies and bundling
-  uint _bundle_cycle_number;
-
-  // Bundle information
-  Pipeline_Use_Element _bundle_use_elements[resource_count];
-  Pipeline_Use         _bundle_use;
-
-  // Dump the available list
-  void dump_available() const;
+  ConstantTable          _constant_table;        // The constant table for this compilation unit.
 
 public:
-  Scheduling(Arena *arena, Compile &compile);
+  PhaseOutput();
+  ~PhaseOutput();
 
-  // Destructor
-  NOT_PRODUCT( ~Scheduling(); )
+  // Convert Nodes to instruction bits and pass off to the VM
+  void Output();
+  bool need_stack_bang(int frame_size_in_bytes) const;
+  bool need_register_stack_bang() const;
+  void compute_loop_first_inst_sizes();
 
-  // Step ahead "i" cycles
-  void step(uint i);
+  void install_code(ciMethod*         target,
+                    int               entry_bci,
+                    AbstractCompiler* compiler,
+                    bool              has_unsafe_access,
+                    bool              has_wide_vectors,
+                    RTMState          rtm_state);
 
-  // Step ahead 1 cycle, and clear the bundle state (for example,
-  // at a branch target)
-  void step_and_clear();
+  void install_stub(const char* stub_name,
+                    bool        caller_must_gc_arguments);
 
-  Bundle* node_bundling(const Node *n) {
-    assert(valid_bundle_info(n), "oob");
-    return (&_node_bundling_base[n->_idx]);
-  }
+  // Constant table
+  ConstantTable& constant_table() { return _constant_table; }
 
-  bool valid_bundle_info(const Node *n) const {
-    return (_node_bundling_limit > n->_idx);
-  }
+  // The architecture description provides short branch variants for some long
+  // branch instructions. Replace eligible long branches with short branches.
+  void shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes);
+  ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
+  void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
+  void FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
+                     GrowableArray<ScopeValue*> *array,
+                     GrowableArray<ScopeValue*> *objs );
 
-  bool starts_bundle(const Node *n) const {
-    return (_node_bundling_limit > n->_idx && _node_bundling_base[n->_idx].starts_bundle());
-  }
+  void Process_OopMap_Node(MachNode *mach, int current_offset);
 
-  // Do the scheduling
-  void DoScheduling();
+  // Initialize code buffer
+  void estimate_buffer_size(int& const_req);
+  CodeBuffer* init_buffer(BufferSizingData& buf_sizes);
 
-  // Compute the local latencies walking forward over the list of
-  // nodes for a basic block
-  void ComputeLocalLatenciesForward(const Block *bb);
+  // Write out basic block data to code buffer
+  void fill_buffer(CodeBuffer* cb, uint* blk_starts);
 
-  // Compute the register antidependencies within a basic block
-  void ComputeRegisterAntidependencies(Block *bb);
-  void verify_do_def( Node *n, OptoReg::Name def, const char *msg );
-  void verify_good_schedule( Block *b, const char *msg );
-  void anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is_def );
-  void anti_do_use( Block *b, Node *use, OptoReg::Name use_reg );
+  // Compute the information for the exception tables
+  void FillExceptionTables(uint cnt, uint *call_returns, uint *inct_starts, Label *blk_labels);
 
-  // Add a node to the current bundle
-  void AddNodeToBundle(Node *n, const Block *bb);
+  // Perform instruction scheduling and bundling over the sequence of
+  // instructions in backwards order.
+  void ScheduleAndBundle();
 
-  // Add a node to the list of available nodes
-  void AddNodeToAvailableList(Node *n);
+  void install();
 
-  // Compute the local use count for the nodes in a block, and compute
-  // the list of instructions with no uses in the block as available
-  void ComputeUseCount(const Block *bb);
+  // Instruction bits passed off to the VM
+  int               code_size()                 { return _method_size; }
+  CodeBuffer*       code_buffer()               { return &_code_buffer; }
+  int               first_block_size()          { return _first_block_size; }
+  void              set_frame_complete(int off) { if (!in_scratch_emit_size()) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); } }
+  ExceptionHandlerTable*  handler_table()       { return &_handler_table; }
+  ImplicitExceptionTable* inc_table()           { return &_inc_table; }
+  OopMapSet*        oop_map_set()               { return _oop_map_set; }
 
-  // Choose an instruction from the available list to add to the bundle
-  Node * ChooseNodeToBundle();
+  // Scratch buffer
+  BufferBlob*       scratch_buffer_blob()       { return _scratch_buffer_blob; }
+  void         init_scratch_buffer_blob(int const_size);
+  void        clear_scratch_buffer_blob();
+  void          set_scratch_buffer_blob(BufferBlob* b) { _scratch_buffer_blob = b; }
+  relocInfo*        scratch_locs_memory()       { return _scratch_locs_memory; }
+  void          set_scratch_locs_memory(relocInfo* b)  { _scratch_locs_memory = b; }
 
-  // See if this Node fits into the currently accumulating bundle
-  bool NodeFitsInBundle(Node *n);
+  // emit to scratch blob, report resulting size
+  uint              scratch_emit_size(const Node* n);
+  void       set_in_scratch_emit_size(bool x)   {        _in_scratch_emit_size = x; }
+  bool           in_scratch_emit_size() const   { return _in_scratch_emit_size;     }
 
-  // Decrement the use count for a node
- void DecrementUseCounts(Node *n, const Block *bb);
+  enum ScratchBufferBlob {
+    MAX_inst_size       = 2048,
+    MAX_locs_size       = 128, // number of relocInfo elements
+    MAX_const_size      = 128,
+    MAX_stubs_size      = 128
+  };
 
-  // Garbage collect pinch nodes for reuse by other blocks.
-  void garbage_collect_pinch_nodes();
-  // Clean up a pinch node for reuse (helper for above).
-  void cleanup_pinch( Node *pinch );
+  int               frame_slots() const         { return _frame_slots; }
+  int               frame_size_in_words() const; // frame_slots in units of the polymorphic 'words'
+  int               frame_size_in_bytes() const { return _frame_slots << LogBytesPerInt; }
 
-  // Information for statistics gathering
-#ifndef PRODUCT
-private:
-  // Gather information on size of nops relative to total
-  uint _branches, _unconditional_delays;
+  int               bang_size_in_bytes() const;
 
-  static uint _total_nop_size, _total_method_size;
-  static uint _total_branches, _total_unconditional_delays;
-  static uint _total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+1];
+  uint              node_bundling_limit();
+  Bundle*           node_bundling_base();
+  void          set_node_bundling_limit(uint n) { _node_bundling_limit = n; }
+  void          set_node_bundling_base(Bundle* b) { _node_bundling_base = b; }
 
-public:
-  static void print_statistics();
+  Bundle* node_bundling(const Node *n);
+  bool valid_bundle_info(const Node *n);
 
-  static void increment_instructions_per_bundle(uint i) {
-    _total_instructions_per_bundle[i]++;
-  }
+  bool starts_bundle(const Node *n) const;
 
-  static void increment_nop_size(uint s) {
-    _total_nop_size += s;
-  }
-
-  static void increment_method_size(uint s) {
-    _total_method_size += s;
-  }
+  // Dump formatted assembly
+#if defined(SUPPORT_OPTO_ASSEMBLY)
+  void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit);
+  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { dump_asm_on(tty, pcs, pc_limit); }
+#else
+  void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit) { return; }
+  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { return; }
 #endif
 
+  // Build OopMaps for each GC point
+  void BuildOopMaps();
+
+#ifndef PRODUCT
+  static void print_statistics();
+#endif
 };
 
 #endif // SHARE_OPTO_OUTPUT_HPP

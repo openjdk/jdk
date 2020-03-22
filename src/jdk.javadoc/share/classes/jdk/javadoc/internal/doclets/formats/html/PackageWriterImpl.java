@@ -37,10 +37,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -106,8 +105,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
@@ -118,10 +117,10 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     new StringContent(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
-        Content annotationContent = new HtmlTree(HtmlTag.P);
+        Content annotationContent = new HtmlTree(TagName.P);
         addAnnotationInfo(packageElement, annotationContent);
         div.add(annotationContent);
-        Content tHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, contents.packageLabel);
         tHeading.add(Entity.NO_BREAK_SPACE);
         Content packageHead = new StringContent(heading);
@@ -134,9 +133,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public Content getContentHeader() {
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.contentContainer);
-        return div;
+        return new ContentBuilder();
     }
 
     /**
@@ -148,7 +145,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         List<? extends DocTree> deprs = utils.getBlockTags(packageElement, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
-            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
             deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
@@ -164,7 +161,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public Content getSummaryHeader() {
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
@@ -237,7 +234,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 }
                 table.addRow(classLink, description);
             }
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
+            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
             summaryContentTree.add(li);
         }
     }
@@ -268,7 +265,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
     }
@@ -277,7 +274,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
         List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
-        contentTree.add(bodyContents.toContent());
+        contentTree.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 description, localStylesheets, contentTree);
     }

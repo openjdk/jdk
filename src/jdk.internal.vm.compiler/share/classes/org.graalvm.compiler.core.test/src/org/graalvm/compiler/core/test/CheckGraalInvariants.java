@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,13 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                 /*
                  * These options are aliases for Truffle runtime options whose usages are not on the
                  * class path used when running CheckGraalInvariants.
+                 */
+                return false;
+            }
+            if (declaringClass.getName().equals("org.graalvm.compiler.truffle.compiler.TruffleCompilerOptions")) {
+                /*
+                 * These options are deprecated and will be removed in GraalVM 20.2.0. The
+                 * TruffleIntrinsifyFrameAccess option has no replacement and is unused.
                  */
                 return false;
             }

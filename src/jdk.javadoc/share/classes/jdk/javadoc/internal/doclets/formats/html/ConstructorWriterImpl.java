@@ -35,7 +35,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
@@ -118,7 +118,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
         String erasureAnchor;
         Content constructorDocTree = new ContentBuilder();
-        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(constructor)));
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
             heading.setId(erasureAnchor);
@@ -218,7 +218,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addSummaryType(Element member, Content tdSummaryType) {
         if (foundNonPubConstructor) {
-            Content code = new HtmlTree(HtmlTag.CODE);
+            Content code = new HtmlTree(TagName.CODE);
             if (utils.isProtected(member)) {
                 code.add("protected ");
             } else if (utils.isPrivate(member)) {

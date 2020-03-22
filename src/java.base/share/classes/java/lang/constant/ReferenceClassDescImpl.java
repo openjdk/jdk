@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ final class ReferenceClassDescImpl implements ClassDesc {
      *
      * @param o the {@code ClassDesc} to compare to this
      *       {@code ClassDesc}
-     * @return {@code true} if the specified {@code ClassDesc} is
-     *      equals to this {@code ClassDesc}.
+     * @return {@code true} if the specified {@code ClassDesc}
+     *      is equal to this {@code ClassDesc}.
      */
     @Override
     public boolean equals(Object o) {

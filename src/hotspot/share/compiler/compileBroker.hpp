@@ -395,6 +395,9 @@ public:
     return _compiler2_objects[idx];
   }
 
+  static AbstractCompiler* compiler1() { return _compilers[0]; }
+  static AbstractCompiler* compiler2() { return _compilers[1]; }
+
   static bool can_remove(CompilerThread *ct, bool do_it);
 
   static CompileLog* get_log(CompilerThread* ct);

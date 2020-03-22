@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@ public class TestTagOutput extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/DeprecatedTag.html", true,
-                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span></div>",
-                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\">Do not use this.</div>\n"
+                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span></div>",
+                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\">Do not use this.</div>\n"
                 + "</div>");
 
         checkOutput("pkg1/DeprecatedTag.html", false,
-                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"deprecationComment\"></div>\n"
+                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
+                + "<div class=\"deprecation-comment\"></div>\n"
                 + "</div>");
     }
 }

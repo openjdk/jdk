@@ -41,10 +41,10 @@
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
-#include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -162,8 +162,6 @@ class ShenandoahInitTraversalCollectionTask : public AbstractGangTask {
 private:
   ShenandoahCSetRootScanner* _rp;
   ShenandoahHeap* _heap;
-  ShenandoahCsetCodeRootsIterator* _cset_coderoots;
-  ShenandoahStringDedupRoots       _dedup_roots;
 
 public:
   ShenandoahInitTraversalCollectionTask(ShenandoahCSetRootScanner* rp) :
@@ -257,15 +255,16 @@ public:
 
     // Step 1: Process GC roots.
     // For oops in code roots, they are marked, evacuated, enqueued for further traversal,
-    // and the references to the oops are updated during init pause. New nmethods are handled
-    // in similar way during nmethod-register process. Therefore, we don't need to rescan code
-    // roots here.
+    // and the references to the oops are updated during init pause. We only need to rescan
+    // on stack code roots, in case of class unloading is enabled. Otherwise, code roots are
+    // scanned during init traversal or degenerated GC will update them at the end.
     if (!_heap->is_degenerated_gc_in_progress()) {
       ShenandoahTraversalRootsClosure roots_cl(q, rp);
       ShenandoahTraversalSATBThreadsClosure tc(&satb_cl);
       if (unload_classes) {
         ShenandoahRemarkCLDClosure remark_cld_cl(&roots_cl);
-        _rp->strong_roots_do(worker_id, &roots_cl, &remark_cld_cl, NULL, &tc);
+        MarkingCodeBlobClosure code_cl(&roots_cl, CodeBlobToOopClosure::FixRelocations);
+        _rp->strong_roots_do(worker_id, &roots_cl, &remark_cld_cl, &code_cl, &tc);
       } else {
         CLDToOopClosure cld_cl(&roots_cl, ClassLoaderData::_claim_strong);
         _rp->roots_do(worker_id, &roots_cl, &cld_cl, NULL, &tc);
@@ -283,8 +282,7 @@ public:
     }
 
     {
-      ShenandoahWorkerTimings *worker_times = _heap->phase_timings()->worker_times();
-      ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::FinishQueues, worker_id);
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::FinishQueues, worker_id);
 
       // Step 3: Finally drain all outstanding work in queues.
       traversal_gc->main_loop(worker_id, _terminator, false);
@@ -317,6 +315,7 @@ void ShenandoahTraversalGC::prepare_regions() {
   ShenandoahMarkingContext* const ctx = _heap->marking_context();
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = _heap->get_region(i);
+    region->set_update_watermark(region->top());
     if (_heap->is_bitmap_slice_committed(region)) {
       if (_traversal_set.is_in(i)) {
         ctx->capture_top_at_mark_start(region);
@@ -605,8 +604,11 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     // that results the TLAB/GCLAB not usable. Retire them here.
     _heap->make_parsable(true);
 
-    _heap->parallel_cleaning(false);
+    // Do this fixup before the call to parallel_cleaning to ensure that all
+    // forwarded objects (including those that are no longer in the cset) are
+    // updated by the time we do weak root processing.
     fixup_roots();
+    _heap->parallel_cleaning(false);
 
     _heap->set_has_forwarded_objects(false);
 

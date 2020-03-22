@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,14 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "field.detail\">Field</a>&nbsp;|&nbsp;</li>",
                 "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
-                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
+                "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
                 + "</code></th>",
                 "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
                 "<section class=\"detail\" id=\"DEFAULT_NAME\">\n"
                 + "<h3>DEFAULT_NAME</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                + "<span class=\"returnType\">java.lang.String</span>&nbsp;"
-                + "<span class=\"memberName\">DEFAULT_NAME</span></div>\n");
+                + "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                + "<span class=\"return-type\">java.lang.String</span>&nbsp;"
+                + "<span class=\"member-name\">DEFAULT_NAME</span></div>\n");
 
         checkOutput("pkg/AnnotationType.html", true,
                 "<li>Summary:&nbsp;</li>\n"
@@ -74,18 +74,18 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                     "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
-                    "<ul class=\"blockList\">",
-                    "<li class=\"blockList\">",
+                    "<ul class=\"block-list\">",
+                    "<li class=\"block-list\">",
                     "<section class=\"details\" id=\"annotation.type.element.detail\">",
                     "<h2>Element Details</h2>",
                     "<!--   -->",
                     "</a>",
-                    "<ul class=\"blockList\">",
-                    "<li class=\"blockList\">",
+                    "<ul class=\"block-list\">",
+                    "<li class=\"block-list\">",
                     "<section class=\"detail\" id=\"value()\">",
                     "<h3>value</h3>\n",
-                    "<div class=\"memberSignature\"><span class=\"returnType\">int</span>"
-                    + "&nbsp;<span class=\"memberName\">value</span></div>");
+                    "<div class=\"member-signature\"><span class=\"return-type\">int</span>"
+                    + "&nbsp;<span class=\"member-name\">value</span></div>");
 
         checkOutput("pkg/AnnotationType.html", false,
                 "<HR>\n\n"

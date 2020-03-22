@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary DNSName parsing tests
- * @bug 8213952
+ * @bug 8213952 8186143
  * @modules java.base/sun.security.x509
  * @run testng DNSNameTest
  */
@@ -53,6 +53,23 @@ public class DNSNameTest {
         return data;
     }
 
+    @DataProvider(name = "goodSanNames")
+    public Object[][] goodSanNames() {
+        Object[][] data = {
+                {"abc.com"},
+                {"ABC.COM"},
+                {"a12.com"},
+                {"a1b2c3.com"},
+                {"1abc.com"},
+                {"123.com"},
+                {"abc.com-"}, // end with hyphen
+                {"a-b-c.com"}, // hyphens
+                {"*.domain.com"}, // wildcard in 1st level subdomain
+                {"*.com"},
+        };
+        return data;
+    }
+
     @DataProvider(name = "badNames")
     public Object[][] badNames() {
         Object[][] data = {
@@ -65,9 +82,33 @@ public class DNSNameTest {
                 {"a."}, // end with .
                 {""}, // empty
                 {"  "},  // space only
+                {"*.domain.com"}, // wildcard not allowed
+                {"a*.com"}, // only allow letter, digit, or hyphen
         };
         return data;
     }
+
+    @DataProvider(name = "badSanNames")
+    public Object[][] badSanNames() {
+        Object[][] data = {
+                {" 1abc.com"}, // begin with space
+                {"1abc.com "}, // end with space
+                {"1a bc.com "}, // no space allowed
+                {"-abc.com"}, // begin with hyphen
+                {"a..b"}, // ..
+                {".a"}, // begin with .
+                {"a."}, // end with .
+                {""}, // empty
+                {"  "},  // space only
+                {"*"}, //  wildcard only
+                {"*a.com"}, // partial wildcard disallowed
+                {"abc.*.com"}, // wildcard not allowed in 2nd level
+                {"*.*.domain.com"}, // double wildcard not allowed
+                {"a*.com"}, // only allow letter, digit, or hyphen
+        };
+        return data;
+    }
+
 
     @Test(dataProvider = "goodNames")
     public void testGoodDNSName(String dnsNameString) {
@@ -78,10 +119,30 @@ public class DNSNameTest {
         }
     }
 
+    @Test(dataProvider = "goodSanNames")
+    public void testGoodSanDNSName(String dnsNameString) {
+        try {
+            DNSName dn = new DNSName(dnsNameString, true);
+        } catch (IOException e) {
+            fail("Unexpected IOException");
+        }
+    }
+
     @Test(dataProvider = "badNames")
     public void testBadDNSName(String dnsNameString) {
         try {
             DNSName dn = new DNSName(dnsNameString);
+            fail("IOException expected");
+        } catch (IOException e) {
+            if (!e.getMessage().contains("DNSName"))
+                fail("Unexpeceted message: " + e);
+        }
+    }
+
+    @Test(dataProvider = "badSanNames")
+    public void testBadSanDNSName(String dnsNameString) {
+        try {
+            DNSName dn = new DNSName(dnsNameString, true);
             fail("IOException expected");
         } catch (IOException e) {
             if (!e.getMessage().contains("DNSName"))

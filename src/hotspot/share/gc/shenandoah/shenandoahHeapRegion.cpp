@@ -71,7 +71,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start
   _seqnum_last_alloc_mutator(0),
   _seqnum_last_alloc_gc(0),
   _live_data(0),
-  _critical_pins(0) {
+  _critical_pins(0),
+  _update_watermark(start) {
 
   ContiguousSpace::initialize(_reserved, true, committed);
 }
@@ -479,6 +480,7 @@ void ShenandoahHeapRegion::recycle() {
   reset_alloc_metadata();
 
   _heap->marking_context()->reset_top_at_mark_start(this);
+  set_update_watermark(bottom());
 
   make_empty();
 }

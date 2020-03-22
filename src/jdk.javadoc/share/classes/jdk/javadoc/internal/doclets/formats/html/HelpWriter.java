@@ -28,10 +28,9 @@ package jdk.javadoc.internal.doclets.formats.html;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -95,18 +94,17 @@ public class HelpWriter extends HtmlDocletWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder helpFileContent = new ContentBuilder();
         addHelpFileContents(helpFileContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         body.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(helpFileContent)
-                .setFooter(footer)
-                .toContent());
+                .setFooter(footer));
         printHtmlDocument(null, "help", body);
     }
 
@@ -120,7 +118,7 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     protected void addHelpFileContents(Content contentTree) {
         // Heading
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, false, HtmlStyle.title,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                 contents.getContent("doclet.help.main_heading"));
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         Content intro = HtmlTree.DIV(HtmlStyle.subTitle,
@@ -128,7 +126,7 @@ public class HelpWriter extends HtmlDocletWriter {
         div.add(intro);
         contentTree.add(div);
         HtmlTree htmlTree;
-        HtmlTree ul = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul = new HtmlTree(TagName.UL);
         ul.setStyle(HtmlStyle.blockList);
 
         // Overview
@@ -155,7 +153,7 @@ public class HelpWriter extends HtmlDocletWriter {
             Content moduleIntro = contents.getContent("doclet.help.module.intro");
             Content modulePara = HtmlTree.P(moduleIntro);
             htmlTree.add(modulePara);
-            HtmlTree ulModule = new HtmlTree(HtmlTag.UL);
+            HtmlTree ulModule = new HtmlTree(TagName.UL);
             ulModule.add(HtmlTree.LI(contents.packagesLabel));
             ulModule.add(HtmlTree.LI(contents.modulesLabel));
             ulModule.add(HtmlTree.LI(contents.servicesLabel));
@@ -170,7 +168,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content packageIntro = contents.getContent("doclet.help.package.intro");
         Content packagePara = HtmlTree.P(packageIntro);
         htmlTree.add(packagePara);
-        HtmlTree ulPackage = new HtmlTree(HtmlTag.UL);
+        HtmlTree ulPackage = new HtmlTree(TagName.UL);
         ulPackage.add(HtmlTree.LI(contents.interfaces));
         ulPackage.add(HtmlTree.LI(contents.classes));
         ulPackage.add(HtmlTree.LI(contents.enums));
@@ -187,7 +185,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content classIntro = contents.getContent("doclet.help.class_interface.intro");
         Content classPara = HtmlTree.P(classIntro);
         htmlTree.add(classPara);
-        HtmlTree ul1 = new HtmlTree(HtmlTag.UL);
+        HtmlTree ul1 = new HtmlTree(TagName.UL);
         ul1.add(HtmlTree.LI(contents.getContent("doclet.help.class_interface.inheritance_diagram")));
         ul1.add(HtmlTree.LI(contents.getContent("doclet.help.class_interface.subclasses")));
         ul1.add(HtmlTree.LI(contents.getContent("doclet.help.class_interface.subinterfaces")));
@@ -195,16 +193,16 @@ public class HelpWriter extends HtmlDocletWriter {
         ul1.add(HtmlTree.LI(contents.getContent("doclet.help.class_interface.declaration")));
         ul1.add(HtmlTree.LI(contents.getContent("doclet.help.class_interface.description")));
         htmlTree.add(ul1);
-        htmlTree.add(new HtmlTree(HtmlTag.BR));
-        HtmlTree ul2 = new HtmlTree(HtmlTag.UL);
+        htmlTree.add(new HtmlTree(TagName.BR));
+        HtmlTree ul2 = new HtmlTree(TagName.UL);
         ul2.add(HtmlTree.LI(contents.nestedClassSummary));
         ul2.add(HtmlTree.LI(contents.fieldSummaryLabel));
         ul2.add(HtmlTree.LI(contents.propertySummaryLabel));
         ul2.add(HtmlTree.LI(contents.constructorSummaryLabel));
         ul2.add(HtmlTree.LI(contents.methodSummary));
         htmlTree.add(ul2);
-        htmlTree.add(new HtmlTree(HtmlTag.BR));
-        HtmlTree ul3 = new HtmlTree(HtmlTag.UL);
+        htmlTree.add(new HtmlTree(TagName.BR));
+        HtmlTree ul3 = new HtmlTree(TagName.UL);
         ul3.add(HtmlTree.LI(contents.fieldDetailsLabel));
         ul3.add(HtmlTree.LI(contents.propertyDetailsLabel));
         ul3.add(HtmlTree.LI(contents.constructorDetailsLabel));
@@ -222,7 +220,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content aIntro = contents.getContent("doclet.help.annotation_type.intro");
         Content aPara = HtmlTree.P(aIntro);
         htmlTree.add(aPara);
-        HtmlTree aul = new HtmlTree(HtmlTag.UL);
+        HtmlTree aul = new HtmlTree(TagName.UL);
         aul.add(HtmlTree.LI(contents.getContent("doclet.help.annotation_type.declaration")));
         aul.add(HtmlTree.LI(contents.getContent("doclet.help.annotation_type.description")));
         aul.add(HtmlTree.LI(contents.annotateTypeRequiredMemberSummaryLabel));
@@ -237,7 +235,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content eIntro = contents.getContent("doclet.help.enum.intro");
         Content enumPara = HtmlTree.P(eIntro);
         htmlTree.add(enumPara);
-        HtmlTree eul = new HtmlTree(HtmlTag.UL);
+        HtmlTree eul = new HtmlTree(TagName.UL);
         eul.add(HtmlTree.LI(contents.getContent("doclet.help.enum.declaration")));
         eul.add(HtmlTree.LI(contents.getContent("doclet.help.enum.definition")));
         eul.add(HtmlTree.LI(contents.enumConstantSummary));
@@ -267,7 +265,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     HtmlTree.CODE(new StringContent("java.lang.Object")));
             Content treePara = HtmlTree.P(treeIntro);
             htmlTree.add(treePara);
-            HtmlTree tul = new HtmlTree(HtmlTag.UL);
+            HtmlTree tul = new HtmlTree(TagName.UL);
             tul.add(HtmlTree.LI(contents.getContent("doclet.help.tree.overview")));
             tul.add(HtmlTree.LI(contents.getContent("doclet.help.tree.package")));
             htmlTree.add(tul);
@@ -331,7 +329,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 contents.getContent("doclet.help.search.head"));
         htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, searchHead);
         Content searchIntro = HtmlTree.P(contents.getContent("doclet.help.search.intro"));
-        Content searchExamples = new HtmlTree(HtmlTag.UL);
+        Content searchExamples = new HtmlTree(TagName.UL);
         for (String[] example : SEARCH_EXAMPLES) {
             searchExamples.add(HtmlTree.LI(
                     contents.getContent("doclet.help.search.example",
@@ -346,11 +344,9 @@ public class HelpWriter extends HtmlDocletWriter {
         htmlTree.add(searchRefer);
         ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
 
-        Content divContent = HtmlTree.DIV(HtmlStyle.contentContainer, ul);
-        divContent.add(new HtmlTree(HtmlTag.HR));
-        Content footnote = HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
-                contents.getContent("doclet.help.footnote"));
-        divContent.add(footnote);
-        contentTree.add(divContent);
+        contentTree.add(ul);
+        contentTree.add(new HtmlTree(TagName.HR));
+        contentTree.add(HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
+                contents.getContent("doclet.help.footnote")));
     }
 }

@@ -312,11 +312,13 @@ STDMETHODIMP SAOutputCallbacks::Output(THIS_
     }
     strcpy(m_msgBuffer, msg);
   } else {
-    m_msgBuffer = (char*) realloc(m_msgBuffer, len + strlen(m_msgBuffer));
-    if (m_msgBuffer == 0) {
+    char* newBuffer = (char*)realloc(m_msgBuffer, len + strlen(m_msgBuffer));
+    if (newBuffer == nullptr) {
+      // old m_msgBuffer buffer is still valid
       fprintf(stderr, "out of memory debugger output!\n");
       return S_FALSE;
     }
+    m_msgBuffer = newBuffer;
     strcat(m_msgBuffer, msg);
   }
   return S_OK;

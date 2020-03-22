@@ -224,7 +224,6 @@ public:
   void heap_region_do(ShenandoahHeapRegion *r) {
     _ctx->capture_top_at_mark_start(r);
     r->clear_live_data();
-    r->set_concurrent_iteration_safe_limit(r->top());
   }
 };
 

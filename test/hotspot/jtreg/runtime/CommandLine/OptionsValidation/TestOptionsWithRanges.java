@@ -214,6 +214,12 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("CICompilerCount");
 
         /*
+         * Exclude JVMCI threads counts from testing similar to other threads counts.
+         */
+        excludeTestMaxRange("JVMCIThreads");
+        excludeTestMaxRange("JVMCIHostThreads");
+
+        /*
          * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
          */
         excludeTestMinRange("MallocMaxTestWords");

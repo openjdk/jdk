@@ -2014,10 +2014,8 @@ class BacktraceBuilder: public StackObj {
   typeArrayOop    _bcis;
   objArrayOop     _mirrors;
   typeArrayOop    _names; // Needed to insulate method name against redefinition.
-  // This is set to a java.lang.Boolean(true) if the top frame
-  // of the backtrace is omitted because it shall be hidden.
-  // Else it is null.
-  oop             _has_hidden_top_frame;
+  // True if the top frame of the backtrace is omitted because it shall be hidden.
+  bool            _has_hidden_top_frame;
   int             _index;
   NoSafepointVerifier _nsv;
 
@@ -2053,15 +2051,15 @@ class BacktraceBuilder: public StackObj {
     assert(names != NULL, "names array should be initialized in backtrace");
     return names;
   }
-  static oop get_has_hidden_top_frame(objArrayHandle chunk) {
+  static bool has_hidden_top_frame(objArrayHandle chunk) {
     oop hidden = chunk->obj_at(trace_hidden_offset);
-    return hidden;
+    return hidden != NULL;
   }
 
  public:
 
   // constructor for new backtrace
-  BacktraceBuilder(TRAPS): _head(NULL), _methods(NULL), _bcis(NULL), _mirrors(NULL), _names(NULL), _has_hidden_top_frame(NULL) {
+  BacktraceBuilder(TRAPS): _head(NULL), _methods(NULL), _bcis(NULL), _mirrors(NULL), _names(NULL), _has_hidden_top_frame(false) {
     expand(CHECK);
     _backtrace = Handle(THREAD, _head);
     _index = 0;
@@ -2072,7 +2070,7 @@ class BacktraceBuilder: public StackObj {
     _bcis = get_bcis(backtrace);
     _mirrors = get_mirrors(backtrace);
     _names = get_names(backtrace);
-    _has_hidden_top_frame = get_has_hidden_top_frame(backtrace);
+    _has_hidden_top_frame = has_hidden_top_frame(backtrace);
     assert(_methods->length() == _bcis->length() &&
            _methods->length() == _mirrors->length() &&
            _mirrors->length() == _names->length(),
@@ -2152,19 +2150,17 @@ class BacktraceBuilder: public StackObj {
   }
 
   void set_has_hidden_top_frame(TRAPS) {
-    if (_has_hidden_top_frame == NULL) {
+    if (!_has_hidden_top_frame) {
       // It would be nice to add java/lang/Boolean::TRUE here
       // to indicate that this backtrace has a hidden top frame.
       // But this code is used before TRUE is allocated.
-      // Therefor let's just use an arbitrary legal oop
-      // available right here. We only test for != null
-      // anyways. _methods is a short[].
+      // Therefore let's just use an arbitrary legal oop
+      // available right here. _methods is a short[].
       assert(_methods != NULL, "we need a legal oop");
-      _has_hidden_top_frame = _methods;
-      _head->obj_at_put(trace_hidden_offset, _has_hidden_top_frame);
+      _has_hidden_top_frame = true;
+      _head->obj_at_put(trace_hidden_offset, _methods);
     }
   }
-
 };
 
 struct BacktraceElement : public StackObj {

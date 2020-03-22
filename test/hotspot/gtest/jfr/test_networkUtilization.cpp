@@ -242,9 +242,11 @@ protected:
   }
 };
 
+static traceid id = 0;
+
 TEST_VM_F(JfrTestNetworkUtilization, RequestFunctionBasic) {
 
-  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", 1);
+  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", ++id);
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(0u, MockEventNetworkUtilization::committed.size());
 
@@ -261,9 +263,9 @@ TEST_VM_F(JfrTestNetworkUtilization, RequestFunctionBasic) {
 
 TEST_VM_F(JfrTestNetworkUtilization, RequestFunctionMultiple) {
 
-  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", 2);
-  MockNetworkInterface& eth1 = MockJfrOSInterface::add_interface("eth1", 3);
-  MockNetworkInterface& ppp0 = MockJfrOSInterface::add_interface("ppp0", 4);
+  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", ++id);
+  MockNetworkInterface& eth1 = MockJfrOSInterface::add_interface("eth1", ++id);
+  MockNetworkInterface& ppp0 = MockJfrOSInterface::add_interface("ppp0", ++id);
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(0u, MockEventNetworkUtilization::committed.size());
 
@@ -292,8 +294,8 @@ TEST_VM_F(JfrTestNetworkUtilization, RequestFunctionMultiple) {
 }
 
 TEST_VM_F(JfrTestNetworkUtilization, InterfaceRemoved) {
-  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", 5);
-  MockNetworkInterface& eth1 = MockJfrOSInterface::add_interface("eth1", 6);
+  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", ++id);
+  MockNetworkInterface& eth1 = MockJfrOSInterface::add_interface("eth1", ++id);
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(0u, MockEventNetworkUtilization::committed.size());
 
@@ -329,7 +331,7 @@ TEST_VM_F(JfrTestNetworkUtilization, InterfaceRemoved) {
 }
 
 TEST_VM_F(JfrTestNetworkUtilization, InterfaceReset) {
-  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", 7);
+  MockNetworkInterface& eth0 = MockJfrOSInterface::add_interface("eth0", ++id);
   JfrNetworkUtilization::send_events();
   ASSERT_EQ(0u, MockEventNetworkUtilization::committed.size());
 

@@ -153,6 +153,10 @@ bool JVMFlag::is_command_line() {
   return (_flags & ORIG_COMMAND_LINE) != 0;
 }
 
+bool JVMFlag::is_jimage_resource() {
+  return (get_origin() == JIMAGE_RESOURCE);
+}
+
 void JVMFlag::set_command_line() {
   _flags = Flags(_flags | ORIG_COMMAND_LINE);
 }
@@ -837,6 +841,12 @@ bool JVMFlagEx::is_ergo(JVMFlagsEnum flag) {
 
 bool JVMFlagEx::is_cmdline(JVMFlagsEnum flag) {
   return flag_from_enum(flag)->is_command_line();
+}
+
+bool JVMFlagEx::is_jimage_resource(JVMFlagsEnum flag) {
+  assert((size_t)flag < JVMFlag::numFlags, "bad command line flag index");
+  JVMFlag* f = &JVMFlag::flags[flag];
+  return f->is_jimage_resource();
 }
 
 void JVMFlagEx::setOnCmdLine(JVMFlagsEnum flag) {

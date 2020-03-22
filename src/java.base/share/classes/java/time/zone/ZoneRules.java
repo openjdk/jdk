@@ -470,7 +470,10 @@ public final class ZoneRules implements Serializable {
      * @return true if the time-zone is fixed and the offset never changes
      */
     public boolean isFixedOffset() {
-        return savingsInstantTransitions.length == 0;
+        return standardOffsets[0].equals(wallOffsets[0]) &&
+                standardTransitions.length == 0 &&
+                savingsInstantTransitions.length == 0 &&
+                lastRules.length == 0;
     }
 
     /**
@@ -486,7 +489,7 @@ public final class ZoneRules implements Serializable {
      */
     public ZoneOffset getOffset(Instant instant) {
         if (savingsInstantTransitions.length == 0) {
-            return standardOffsets[0];
+            return wallOffsets[0];
         }
         long epochSec = instant.getEpochSecond();
         // check if using last rules
@@ -572,7 +575,7 @@ public final class ZoneRules implements Serializable {
      * There are various ways to handle the conversion from a {@code LocalDateTime}.
      * One technique, using this method, would be:
      * <pre>
-     *  List&lt;ZoneOffset&gt; validOffsets = rules.getOffset(localDT);
+     *  List&lt;ZoneOffset&gt; validOffsets = rules.getValidOffsets(localDT);
      *  if (validOffsets.size() == 1) {
      *    // Normal case: only one valid offset
      *    zoneOffset = validOffsets.get(0);
@@ -640,8 +643,8 @@ public final class ZoneRules implements Serializable {
     }
 
     private Object getOffsetInfo(LocalDateTime dt) {
-        if (savingsInstantTransitions.length == 0) {
-            return standardOffsets[0];
+        if (savingsLocalTransitions.length == 0) {
+            return wallOffsets[0];
         }
         // check if using last rules
         if (lastRules.length > 0 &&
@@ -756,7 +759,7 @@ public final class ZoneRules implements Serializable {
      * @return the standard offset, not null
      */
     public ZoneOffset getStandardOffset(Instant instant) {
-        if (savingsInstantTransitions.length == 0) {
+        if (standardTransitions.length == 0) {
             return standardOffsets[0];
         }
         long epochSec = instant.getEpochSecond();
@@ -786,7 +789,7 @@ public final class ZoneRules implements Serializable {
      * @return the difference between the standard and actual offset, not null
      */
     public Duration getDaylightSavings(Instant instant) {
-        if (savingsInstantTransitions.length == 0) {
+        if (isFixedOffset()) {
             return Duration.ZERO;
         }
         ZoneOffset standardOffset = getStandardOffset(instant);

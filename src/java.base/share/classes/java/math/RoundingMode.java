@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,13 @@ package java.math;
  * ({@link BigDecimal#ROUND_UP}, {@link BigDecimal#ROUND_DOWN},
  * etc. ).
  *
+ * @apiNote
+ * Five of the rounding modes declared in this class correspond to
+ * rounding direction attributes defined in the <cite>IEEE Standard
+ * for Floating-Point Arithmetic</cite>, IEEE 754-2019. Where present,
+ * this correspondence will be noted in the documentation of the
+ * particular constant.
+ *
  * @see     BigDecimal
  * @see     MathContext
  * @author  Josh Bloch
@@ -130,6 +137,8 @@ public enum RoundingMode {
          * Rounding mode to round towards zero.  Never increments the digit
          * prior to a discarded fraction (i.e., truncates).  Note that this
          * rounding mode never increases the magnitude of the calculated value.
+         * This mode corresponds to the IEEE 754-2019 rounding
+         * attribute roundTowardZero.
          *
          *<p>Example:
          *<table class="striped">
@@ -159,6 +168,8 @@ public enum RoundingMode {
          * result is positive, behaves as for {@code RoundingMode.UP};
          * if negative, behaves as for {@code RoundingMode.DOWN}.  Note
          * that this rounding mode never decreases the calculated value.
+         * This mode corresponds to the IEEE 754-2019 rounding
+         * attribute roundTowardPositive.
          *
          *<p>Example:
          *<table class="striped">
@@ -188,6 +199,8 @@ public enum RoundingMode {
          * result is positive, behave as for {@code RoundingMode.DOWN};
          * if negative, behave as for {@code RoundingMode.UP}.  Note that
          * this rounding mode never increases the calculated value.
+         * This mode corresponds to the IEEE 754-2019 rounding
+         * attribute roundTowardNegative.
          *
          *<p>Example:
          *<table class="striped">
@@ -219,6 +232,8 @@ public enum RoundingMode {
          * fraction is &ge; 0.5; otherwise, behaves as for
          * {@code RoundingMode.DOWN}.  Note that this is the rounding
          * mode commonly taught at school.
+         * This mode corresponds to the IEEE 754-2019 rounding
+         * attribute roundTiesToAway.
          *
          *<p>Example:
          *<table class="striped">
@@ -286,6 +301,8 @@ public enum RoundingMode {
          * chiefly used in the USA.  This rounding mode is analogous to
          * the rounding policy used for {@code float} and {@code double}
          * arithmetic in Java.
+         * This mode corresponds to the IEEE 754-2019 rounding
+         * attribute roundTiesToEven.
          *
          *<p>Example:
          *<table class="striped">

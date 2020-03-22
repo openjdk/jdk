@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class TestOptionOrder extends JavadocTester {
                 // Instance in See Also
                 "<dd><a href=\"http://example.com/" + first + "/lib/LibClass.html",
                 // Instance in Field declaration
-                "<td class=\"colFirst\"><code><a href=\"http://example.com/" + first + "/lib/LibClass.html"
+                "<td class=\"col-first\"><code><a href=\"http://example.com/" + first + "/lib/LibClass.html"
                 );
     }
 

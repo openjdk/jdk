@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ $(eval $(call IncludeCustomExtension, common/SetupJavaCompilers.gmk))
 
 include JavaCompilation.gmk
 
-DISABLE_WARNINGS ?= -Xlint:all,-deprecation,-removal,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
-
 JDK_SOURCE_TARGET_FLAGS := -source $(JDK_SOURCE_TARGET_VERSION) \
     -target $(JDK_SOURCE_TARGET_VERSION)
 
@@ -48,7 +46,7 @@ $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
         $(JAVA_TOOL_FLAGS_SMALL) \
         $(BOOT_JDK_SOURCETARGET) \
         -XDignore.symbol.file=true -g \
-        -Xlint:all$(COMMA)-deprecation$(COMMA)-options -Werror, \
+        $(JAVAC_WARNINGS) -Xlint:-options, \
     DISABLE_SJAVAC := true, \
 ))
 
@@ -66,7 +64,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := $(BOOT_JDK_SOURCETARGET) -XDignore.symbol.file=true -XDstringConcat=inline \
-        $(DISABLE_WARNINGS) -Xlint:-options, \
+        $(JAVAC_WARNINGS) -Xlint:-options, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -80,16 +78,6 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-# The generate new bytecode javac setup uses the new compiler to compile for the
-# new jdk. This new bytecode might only be possible to run using the new jvm.
-$(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
-    JVM := $(JAVA_JAVAC), \
-    JAVAC := $(NEW_JAVAC), \
-    FLAGS := $(JDK_SOURCE_TARGET_FLAGS) \
-        -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS), \
-    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
-    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
-
 # After the jdk is built, we want to build demos using only the recently
 # generated jdk classes and nothing else, no jdk source, etc etc.
 # I.e. the rt.jar, but since rt.jar has not yet been generated
@@ -97,7 +85,8 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
 $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none $(DISABLE_WARNINGS), \
+    FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none \
+        $(JAVAC_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -108,7 +97,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_8_BYTECODE, \
         $(JAVA_TOOL_FLAGS_SMALL) \
         --release 8 \
         -XDignore.symbol.file=true -g \
-        -Xlint:all -Werror, \
+        $(JAVAC_WARNINGS), \
     DISABLE_SJAVAC := true, \
 ))
 

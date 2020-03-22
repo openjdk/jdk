@@ -176,15 +176,15 @@ public class TestLocaleOption extends TestRunner {
         if (Objects.equals(docLocale, ALLCAPS)) {
             checkContains(hw,
                     "<h2>METHOD SUMMARY</h2>",
-                    "<th class=\"colFirst\" scope=\"col\">MODIFIER AND TYPE</th>",
-                    "<th class=\"colSecond\" scope=\"col\">METHOD</th>",
-                    "<th class=\"colLast\" scope=\"col\">DESCRIPTION</th>");
+                    "<th class=\"col-first\" scope=\"col\">MODIFIER AND TYPE</th>",
+                    "<th class=\"col-second\" scope=\"col\">METHOD</th>",
+                    "<th class=\"col-last\" scope=\"col\">DESCRIPTION</th>");
         } else {
             checkContains(hw,
                     "<h2>Method Summary</h2>",
-                    "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>",
-                    "<th class=\"colSecond\" scope=\"col\">Method</th>",
-                    "<th class=\"colLast\" scope=\"col\">Description</th>");
+                    "<th class=\"col-first\" scope=\"col\">Modifier and Type</th>",
+                    "<th class=\"col-second\" scope=\"col\">Method</th>",
+                    "<th class=\"col-last\" scope=\"col\">Description</th>");
         }
     }
 

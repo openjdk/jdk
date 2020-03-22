@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8040211 8191404 8203872 8222980 8225435
+ * @bug 8040211 8191404 8203872 8222980 8225435 8241082
  * @summary Checks the IANA language subtag registry data update
- *          (LSR Revision: 2019-09-16) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2020-03-16) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main Bug8040211
  */

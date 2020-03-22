@@ -464,7 +464,6 @@ static void assert_flush_precondition(ConstBufferPtr cur, size_t used, bool nati
 
 static void assert_flush_regular_precondition(ConstBufferPtr cur, const u1* const cur_pos, size_t used, size_t req, const Thread* t) {
   assert(t != NULL, "invariant");
-  assert(t->jfr_thread_local()->shelved_buffer() == NULL, "invariant");
   assert(cur != NULL, "invariant");
   assert(!cur->lease(), "invariant");
   assert(cur_pos != NULL, "invariant");
@@ -513,7 +512,6 @@ BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size
       return cur;
     }
   }
-  assert(t->jfr_thread_local()->shelved_buffer() == NULL, "invariant");
   if (cur->free_size() >= req) {
     // simplest case, no switching of buffers
     if (used > 0) {
@@ -524,6 +522,7 @@ BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size
   }
   // Going for a "larger-than-regular" buffer.
   // Shelve the current buffer to make room for a temporary lease.
+  assert(t->jfr_thread_local()->shelved_buffer() == NULL, "invariant");
   t->jfr_thread_local()->shelve_buffer(cur);
   return provision_large(cur, cur_pos, used, req, native, t);
 }

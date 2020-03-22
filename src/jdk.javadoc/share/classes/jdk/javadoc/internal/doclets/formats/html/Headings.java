@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 
 /**
  * Aliases for HTML heading tags (H1..H6) for different kinds of pages.
@@ -39,19 +39,19 @@ class Headings {
     /**
      * Standard top-level heading for the page title for all pages.
      */
-    static final HtmlTag PAGE_TITLE_HEADING = HtmlTag.H1;
+    static final TagName PAGE_TITLE_HEADING = TagName.H1;
 
     /**
      * Standard second-level heading for sundry pages that do
      * not have their own page group.
      */
-    static final HtmlTag CONTENT_HEADING = HtmlTag.H2;
+    static final TagName CONTENT_HEADING = TagName.H2;
 
     /**
      * Headings for the page for a module declaration.
      */
     static class ModuleDeclaration {
-        static final HtmlTag SUMMARY_HEADING = HtmlTag.H2;
+        static final TagName SUMMARY_HEADING = TagName.H2;
     }
 
     /**
@@ -63,31 +63,31 @@ class Headings {
          * Heading for the different summary lists:
          * Field Summary, Constructor Summary, Method Summary, etc.
          */
-        static final HtmlTag SUMMARY_HEADING = HtmlTag.H2;
+        static final TagName SUMMARY_HEADING = TagName.H2;
 
         /**
          * Subheading within a summary for the inherited elements:
          * inherited methods, etc
          */
-        static final HtmlTag INHERITED_SUMMARY_HEADING = HtmlTag.H3;
+        static final TagName INHERITED_SUMMARY_HEADING = TagName.H3;
 
         /**
          * Heading for the different detail lists:
          * Field Details, Constructor Details, Method Details, etc.
          */
-        static final HtmlTag DETAILS_HEADING = HtmlTag.H2;
+        static final TagName DETAILS_HEADING = TagName.H2;
 
         /**
          * Subheading with a Details list for an individual element.
          */
-        static final HtmlTag MEMBER_HEADING = HtmlTag.H3;
+        static final TagName MEMBER_HEADING = TagName.H3;
     }
 
     /**
      * Headings for the Constants Summary page.
      */
     static class ConstantsSummary {
-        static final HtmlTag PACKAGE_HEADING = HtmlTag.H2;
+        static final TagName PACKAGE_HEADING = TagName.H2;
     }
 
     /**
@@ -97,29 +97,29 @@ class Headings {
         /**
          * Heading for the package name, preceding a list of types.
          */
-        static final HtmlTag PACKAGE_HEADING = HtmlTag.H2;
+        static final TagName PACKAGE_HEADING = TagName.H2;
 
         /**
          * Heading for a type name within a package.
          */
-        static final HtmlTag CLASS_HEADING = HtmlTag.H3;
+        static final TagName CLASS_HEADING = TagName.H3;
 
         /**
          * Subheading for info within a type.
          */
-        static final HtmlTag CLASS_SUBHEADING = HtmlTag.H4;
+        static final TagName CLASS_SUBHEADING = TagName.H4;
 
         /**
          * Heading for an individual member element within a type.
          */
-        static final HtmlTag MEMBER_HEADING = HtmlTag.H5;
+        static final TagName MEMBER_HEADING = TagName.H5;
     }
 
     /**
      * Headings for a type Use page.
      */
     static class TypeUse {
-        static final HtmlTag SUMMARY_HEADING = HtmlTag.H2;
+        static final TagName SUMMARY_HEADING = TagName.H2;
     }
 
     /**
@@ -127,8 +127,8 @@ class Headings {
      */
     static class IndexFrames {
         /** Heading for a list of module names in an index frame. */
-        static final HtmlTag MODULE_HEADING = HtmlTag.H2;
+        static final TagName MODULE_HEADING = TagName.H2;
         /** Heading for a list of package names in an index frame. */
-        static final HtmlTag PACKAGE_HEADING = HtmlTag.H2;
+        static final TagName PACKAGE_HEADING = TagName.H2;
     }
 }

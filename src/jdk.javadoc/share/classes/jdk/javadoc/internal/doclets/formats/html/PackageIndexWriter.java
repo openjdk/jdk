@@ -118,8 +118,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 }
             }
 
-            Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
-            main.add(div);
+            main.add(table);
 
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());

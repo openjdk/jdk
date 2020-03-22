@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,13 @@ public class LIRInstructionClass<T> extends LIRIntrospection<T> {
         LIRInstructionFieldsScanner ifs = new LIRInstructionFieldsScanner(calcOffset);
         ifs.scan(clazz);
 
-        uses = new Values(ifs.valueAnnotations.get(LIRInstruction.Use.class));
-        alives = new Values(ifs.valueAnnotations.get(LIRInstruction.Alive.class));
-        temps = new Values(ifs.valueAnnotations.get(LIRInstruction.Temp.class));
-        defs = new Values(ifs.valueAnnotations.get(LIRInstruction.Def.class));
+        uses = Values.create(ifs.valueAnnotations.get(LIRInstruction.Use.class));
+        alives = Values.create(ifs.valueAnnotations.get(LIRInstruction.Alive.class));
+        temps = Values.create(ifs.valueAnnotations.get(LIRInstruction.Temp.class));
+        defs = Values.create(ifs.valueAnnotations.get(LIRInstruction.Def.class));
 
-        states = new Fields(ifs.states);
-        data = new Fields(ifs.data);
+        states = Fields.create(ifs.states);
+        data = Fields.create(ifs.data);
 
         opcodeConstant = ifs.opcodeConstant;
         if (ifs.opcodeField == null) {

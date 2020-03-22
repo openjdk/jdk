@@ -811,29 +811,16 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 }
 
 void ShenandoahVerifier::verify_before_concmark() {
-  if (_heap->has_forwarded_objects()) {
     verify_at_safepoint(
-            "Before Mark",
-            _verify_forwarded_allow,     // may have forwarded references
-            _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-            _verify_cset_forwarded,      // allow forwarded references to cset
-            _verify_liveness_disable,    // no reliable liveness data
-            _verify_regions_notrash,     // no trash regions
-            _verify_gcstate_forwarded,   // there are forwarded objects
-            _verify_all_weak_roots
-    );
-  } else {
-    verify_at_safepoint(
-            "Before Mark",
-            _verify_forwarded_none,      // UR should have fixed up
-            _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-            _verify_cset_none,           // UR should have fixed this
-            _verify_liveness_disable,    // no reliable liveness data
-            _verify_regions_notrash,     // no trash regions
-            _verify_gcstate_stable,      // there are no forwarded objects
-            _verify_all_weak_roots
-    );
-  }
+          "Before Mark",
+          _verify_forwarded_none,      // UR should have fixed up
+          _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
+          _verify_cset_none,           // UR should have fixed this
+          _verify_liveness_disable,    // no reliable liveness data
+          _verify_regions_notrash,     // no trash regions
+          _verify_gcstate_stable,      // there are no forwarded objects
+          _verify_all_weak_roots
+  );
 }
 
 void ShenandoahVerifier::verify_after_concmark() {

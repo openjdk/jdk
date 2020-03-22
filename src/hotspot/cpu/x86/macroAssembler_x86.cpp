@@ -2724,17 +2724,6 @@ void MacroAssembler::divss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-#ifndef _LP64
-void MacroAssembler::empty_FPU_stack() {
-  if (VM_Version::supports_mmx()) {
-    emms();
-  } else {
-    for (int i = 8; i-- > 0; ) ffree(i);
-  }
-}
-#endif // !LP64
-
-
 void MacroAssembler::enter() {
   push(rbp);
   mov(rbp, rsp);
@@ -2753,7 +2742,7 @@ void MacroAssembler::fat_nop() {
   }
 }
 
-#if !defined(_LP64)
+#ifndef _LP64
 void MacroAssembler::fcmp(Register tmp) {
   fcmp(tmp, 1, true, true);
 }
@@ -2856,6 +2845,14 @@ void MacroAssembler::fremr(Register tmp) {
   fxch(1);
   fpop();
 }
+
+void MacroAssembler::empty_FPU_stack() {
+  if (VM_Version::supports_mmx()) {
+    emms();
+  } else {
+    for (int i = 8; i-- > 0; ) ffree(i);
+  }
+}
 #endif // !LP64
 
 void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
@@ -2868,39 +2865,51 @@ void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
 }
 
 void MacroAssembler::load_float(Address src) {
+#ifdef _LP64
+  movflt(xmm0, src);
+#else
   if (UseSSE >= 1) {
     movflt(xmm0, src);
   } else {
-    LP64_ONLY(ShouldNotReachHere());
-    NOT_LP64(fld_s(src));
+    fld_s(src);
   }
+#endif // LP64
 }
 
 void MacroAssembler::store_float(Address dst) {
+#ifdef _LP64
+  movflt(dst, xmm0);
+#else
   if (UseSSE >= 1) {
     movflt(dst, xmm0);
   } else {
-    LP64_ONLY(ShouldNotReachHere());
-    NOT_LP64(fstp_s(dst));
+    fstp_s(dst);
   }
+#endif // LP64
 }
 
 void MacroAssembler::load_double(Address src) {
+#ifdef _LP64
+  movdbl(xmm0, src);
+#else
   if (UseSSE >= 2) {
     movdbl(xmm0, src);
   } else {
-    LP64_ONLY(ShouldNotReachHere());
-    NOT_LP64(fld_d(src));
+    fld_d(src);
   }
+#endif // LP64
 }
 
 void MacroAssembler::store_double(Address dst) {
+#ifdef _LP64
+  movdbl(dst, xmm0);
+#else
   if (UseSSE >= 2) {
     movdbl(dst, xmm0);
   } else {
-    LP64_ONLY(ShouldNotReachHere());
-    NOT_LP64(fstp_d(dst));
+    fstp_d(dst);
   }
+#endif // LP64
 }
 
 // dst = c = a * b + c

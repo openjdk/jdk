@@ -218,11 +218,12 @@ static char* nextToken(__ctx_args *pctx) {
         } else if (pctx->state == IN_COMMENT) {
             while (ch != '\n' && ch != '\r') {
                 nextc++;
-                if (nextc > eob) {
+                if (nextc >= eob) {
                     return NULL;
                 }
                 ch = *nextc;
             }
+            anchor = nextc + 1;
             pctx->state = FIND_NEXT;
             continue;
         }
@@ -258,6 +259,7 @@ static char* nextToken(__ctx_args *pctx) {
                     continue;
                 }
                 pctx->state = IN_COMMENT;
+                anchor = nextc + 1;
                 break;
             case '\\':
                 if (pctx->state != IN_QUOTE) {
@@ -293,9 +295,12 @@ static char* nextToken(__ctx_args *pctx) {
     }
 
     assert(nextc == eob);
-    if (anchor != nextc) {
-        // not yet return until end of stream, we have part of a token.
-        JLI_List_addSubstring(pctx->parts, anchor, nextc - anchor);
+    // Only need partial token, not comment or whitespaces
+    if (pctx->state == IN_TOKEN || pctx->state == IN_QUOTE) {
+        if (anchor < nextc) {
+            // not yet return until end of stream, we have part of a token.
+            JLI_List_addSubstring(pctx->parts, anchor, nextc - anchor);
+        }
     }
     return NULL;
 }

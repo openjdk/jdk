@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@ import org.junit.Test;
 import org.graalvm.compiler.jtt.JTTTest;
 
 /**
+ * Strange optimisation in for loop with cyclic integer condition.
+ *
  * @test
  * @bug 6753639
- * @summary Strange optimisation in for loop with cyclic integer condition
- *
  * @run main/othervm -Xbatch Test6753639
  */
 // @formatter:off

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,24 +128,24 @@ public class TestModuleServices extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("moduleServiceProvider/module-summary.html", true,
-                "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" "
+                "<tr class=\"alt-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" "
                 + "title=\"interface in pkgService\">Service</a></th>\n"
-                + "<td class=\"colLast\">\n"
+                + "<td class=\"col-last\">\n"
                 + "<div class=\"block\">Provides a service whose name is ServiceProvider.</div>\n"
                 + "</td>\n"
                 + "</tr>");
         checkOutput("moduleServiceUser/module-summary.html", true,
-                "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
-                + "<td class=\"colLast\">\n"
+                "<tr class=\"alt-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
+                + "<td class=\"col-last\">\n"
                 + "<div class=\"block\">If no other provider is found, a default internal implementation will be used.</div>\n"
                 + "</td>\n"
                 + "</tr>");
         checkOutput("moduleServiceUserNoDescription/module-summary.html", true,
-                "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
-                + "<td class=\"colLast\">\n"
+                "<tr class=\"alt-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
+                + "<td class=\"col-last\">\n"
                 + "<div class=\"block\">A service Interface for service providers.</div>\n"
                 + "</td>\n"
                 + "</tr>");
@@ -197,22 +197,22 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"usesSummary\">\n<table>\n" +
-                "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<div class=\"uses-summary\">\n<table>\n" +
+                "<caption><span>Uses</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
-                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
-                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
+                "<th class=\"col-last\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
                 "</thead>\n" +
                 "<tbody>\n" +
-                "<tr class=\"altColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">&nbsp;</td>\n" +
+                "<tr class=\"alt-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
+                "<td class=\"col-last\">&nbsp;</td>\n" +
                 "</tr>\n" +
-                "<tr class=\"rowColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/B.html\" title=\"class in p1\">B</a></th>\n" +
-                "<td class=\"colLast\">&nbsp;</td>\n" +
+                "<tr class=\"row-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p1/B.html\" title=\"class in p1\">B</a></th>\n" +
+                "<td class=\"col-last\">&nbsp;</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>\n");
@@ -240,18 +240,18 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"usesSummary\">\n<table>\n" +
-                "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<div class=\"uses-summary\">\n<table>\n" +
+                "<caption><span>Uses</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
-                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
-                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
+                "<th class=\"col-last\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
                 "</thead>\n" +
                 "<tbody>\n" +
-                "<tr class=\"altColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">&nbsp;</td>\n" +
+                "<tr class=\"alt-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
+                "<td class=\"col-last\">&nbsp;</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>\n");
@@ -309,22 +309,22 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"providesSummary\">\n<table>\n" +
-                "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<div class=\"provides-summary\">\n<table>\n" +
+                "<caption><span>Provides</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
-                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
-                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
+                "<th class=\"col-last\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
                 "</thead>\n" +
                 "<tbody>\n" +
-                "<tr class=\"altColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">&nbsp;<br>(<span class=\"implementationLabel\">Implementation(s):</span>&nbsp;<a href=\"p1/B.html\" title=\"class in p1\">B</a>)</td>\n" +
+                "<tr class=\"alt-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
+                "<td class=\"col-last\">&nbsp;<br>(<span class=\"implementation-label\">Implementation(s):</span>&nbsp;<a href=\"p1/B.html\" title=\"class in p1\">B</a>)</td>\n" +
                 "</tr>\n" +
-                "<tr class=\"rowColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p2/A.html\" title=\"interface in p2\">A</a></th>\n" +
-                "<td class=\"colLast\">&nbsp;<br>(<span class=\"implementationLabel\">Implementation(s):</span>&nbsp;<a href=\"p2/B.html\" title=\"class in p2\">B</a>)</td>\n" +
+                "<tr class=\"row-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p2/A.html\" title=\"interface in p2\">A</a></th>\n" +
+                "<td class=\"col-last\">&nbsp;<br>(<span class=\"implementation-label\">Implementation(s):</span>&nbsp;<a href=\"p2/B.html\" title=\"class in p2\">B</a>)</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n");
 
@@ -355,18 +355,18 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"providesSummary\">\n<table>\n" +
-                "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<div class=\"provides-summary\">\n<table>\n" +
+                "<caption><span>Provides</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
-                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
-                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
+                "<th class=\"col-last\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
                 "</thead>\n" +
                 "<tbody>\n" +
-                "<tr class=\"altColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">\n" +
+                "<tr class=\"alt-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
+                "<td class=\"col-last\">\n" +
                 "<div class=\"block\">abc</div>\n</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
@@ -400,34 +400,34 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"providesSummary\">\n<table>\n" +
-                "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<div class=\"provides-summary\">\n<table>\n" +
+                "<caption><span>Provides</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
-                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
-                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
+                "<th class=\"col-last\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
                 "</thead>\n" +
                 "<tbody>\n" +
-                "<tr class=\"altColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">\n" +
+                "<tr class=\"alt-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
+                "<td class=\"col-last\">\n" +
                 "<div class=\"block\">abc</div>\n</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>",
-                "<div class=\"usesSummary\">\n<table>\n" +
-                "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<div class=\"uses-summary\">\n<table>\n" +
+                "<caption><span>Uses</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
-                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
-                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
+                "<th class=\"col-last\" scope=\"col\">Description</th>\n" +
                 "</tr>\n" +
                 "</thead>\n" +
                 "<tbody>\n" +
-                "<tr class=\"altColor\">\n" +
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"p2/B.html\" title=\"class in p2\">B</a></th>\n" +
-                "<td class=\"colLast\">\n" +
+                "<tr class=\"alt-color\">\n" +
+                "<th class=\"col-first\" scope=\"row\"><a href=\"p2/B.html\" title=\"class in p2\">B</a></th>\n" +
+                "<td class=\"col-last\">\n" +
                 "<div class=\"block\">def</div>\n</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +

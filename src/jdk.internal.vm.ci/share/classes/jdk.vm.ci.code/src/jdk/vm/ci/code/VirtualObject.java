@@ -241,17 +241,6 @@ public final class VirtualObject implements JavaValue {
     }
 
     /**
-     * Sets the value of the box flag.
-     *
-     * @param isAutoBox a flag that tells the runtime that the object may be a boxed primitive and
-     *            that it possibly needs to be obtained for the box cache instead of creating a new
-     *            instance.
-     */
-    public void setIsAutoBox(boolean isAutoBox) {
-        this.isAutoBox = isAutoBox;
-    }
-
-    /**
      * Overwrites the current set of values with a new one.
      *
      * @param values an array containing all the values to be stored into the object when it is

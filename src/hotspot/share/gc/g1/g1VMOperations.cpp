@@ -27,6 +27,8 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1VMOperations.hpp"
+#include "gc/shared/concurrentGCBreakpoints.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -47,6 +49,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
   _target_pause_time_ms(target_pause_time_ms),
   _transient_failure(false),
   _cycle_already_in_progress(false),
+  _whitebox_attached(false),
   _terminating(false),
   _gc_succeeded(false)
 {}
@@ -82,6 +85,13 @@ void VM_G1TryInitiateConcMark::doit() {
     // there is already a concurrent marking cycle in progress.  Set flag
     // to notify the caller and return immediately.
     _cycle_already_in_progress = true;
+  } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
+             ConcurrentGCBreakpoints::is_controlled()) {
+    // WhiteBox wants to be in control of concurrent cycles, so don't try to
+    // start one.  This check is after the force_initial_mark_xxx so that a
+    // request will be remembered for a later partial collection, even though
+    // we've rejected this request.
+    _whitebox_attached = true;
   } else if (g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
     _gc_succeeded = true;
   } else {

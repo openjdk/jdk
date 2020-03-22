@@ -88,6 +88,7 @@ class JVMFlagEx : JVMFlag {
   static bool is_default(JVMFlagsEnum flag);
   static bool is_ergo(JVMFlagsEnum flag);
   static bool is_cmdline(JVMFlagsEnum flag);
+  static bool is_jimage_resource(JVMFlagsEnum flag);
 
   static void setOnCmdLine(JVMFlagsEnum flag);
 
@@ -132,6 +133,7 @@ ALL_FLAGS(FLAG_MEMBER_SET_DEVELOP,
 #define FLAG_IS_DEFAULT(name)         (JVMFlagEx::is_default(FLAG_MEMBER_ENUM(name)))
 #define FLAG_IS_ERGO(name)            (JVMFlagEx::is_ergo(FLAG_MEMBER_ENUM(name)))
 #define FLAG_IS_CMDLINE(name)         (JVMFlagEx::is_cmdline(FLAG_MEMBER_ENUM(name)))
+#define FLAG_IS_JIMAGE_RESOURCE(name) (JVMFlagEx::is_jimage_resource(FLAG_MEMBER_ENUM(name)))
 
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 

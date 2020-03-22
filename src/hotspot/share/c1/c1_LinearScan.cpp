@@ -1092,7 +1092,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   // this operand is allowed to be on the stack in some cases
   BasicType opr_type = opr->type_register();
   if (opr_type == T_FLOAT || opr_type == T_DOUBLE) {
-    if ((UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2 S390_ONLY(|| true)) {
+    if (IA32_ONLY( (UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2 ) NOT_IA32( true )) {
       // SSE float instruction (T_DOUBLE only supported with SSE2)
       switch (op->code()) {
         case lir_cmp:
@@ -1154,7 +1154,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
         break;
     }
   }
-#endif // X86 S390
+#endif // X86 || S390
 
   // all other operands require a register
   return mustHaveRegister;
@@ -1291,7 +1291,7 @@ void LinearScan::build_intervals() {
   if (has_fpu_registers()) {
 #ifdef X86
     if (UseSSE < 2) {
-#endif
+#endif // X86
       for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
         LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
         assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
@@ -1300,6 +1300,9 @@ void LinearScan::build_intervals() {
       }
 #ifdef X86
     }
+#endif // X86
+
+#ifdef X86
     if (UseSSE > 0) {
       int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
       for (i = 0; i < num_caller_save_xmm_regs; i ++) {
@@ -1309,7 +1312,7 @@ void LinearScan::build_intervals() {
         caller_save_registers[num_caller_save_registers++] = reg_num(opr);
       }
     }
-#endif
+#endif // X86
   }
   assert(num_caller_save_registers <= LinearScan::nof_regs, "out of bounds");
 
@@ -2147,12 +2150,12 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
           if (UseAVX < 3) {
             last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
           }
-#endif
+#endif // LP64
           assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
           assert(interval->assigned_regHi() == any_reg, "must not have hi register");
           return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
         }
-#endif
+#endif // X86
 
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
@@ -2167,12 +2170,12 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
           if (UseAVX < 3) {
             last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
           }
-#endif
+#endif // LP64
           assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
           assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
           return LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
         }
-#endif
+#endif // X86
 
 #ifdef SPARC
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");

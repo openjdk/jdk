@@ -46,16 +46,15 @@ static JavaThread* next_java_thread(JavaThreadIteratorWithHandle& iter) {
 }
 
 static NonJavaThread* next_non_java_thread(NonJavaThread::Iterator& iter) {
-  NonJavaThread* next = NULL;
   while (!iter.end()) {
-    next = iter.current();
+    NonJavaThread* next = iter.current();
     iter.step();
     assert(next != NULL, "invariant");
-    if (!thread_inclusion_predicate(next)) {
-      continue;
+    if (thread_inclusion_predicate(next)) {
+      return next;
     }
   }
-  return next;
+  return NULL;
 }
 
 JfrJavaThreadIteratorAdapter::JfrJavaThreadIteratorAdapter() : _iter(), _next(next_java_thread(_iter)) {}

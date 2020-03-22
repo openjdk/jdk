@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1069,50 +1069,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // less do it intentionally.
         return (localCerts == null ? null :
             (java.security.cert.Certificate[])localCerts.clone());
-    }
-
-    /**
-     * Return the cert chain presented by the peer in the
-     * javax.security.cert format.
-     * Note: This method can be used only when using certificate-based
-     * cipher suites; using it with non-certificate-based cipher suites
-     * will throw an SSLPeerUnverifiedException.
-     *
-     * @return array of peer X.509 certs, with the peer's own cert
-     *  first in the chain, and with the "root" CA last.
-     *
-     * @deprecated This method returns the deprecated
-     *  {@code javax.security.cert.X509Certificate} type.
-     *  Use {@code getPeerCertificates()} instead.
-     */
-    @Override
-    @SuppressWarnings("removal")
-    @Deprecated(since="9", forRemoval=true)
-    public javax.security.cert.X509Certificate[] getPeerCertificateChain()
-            throws SSLPeerUnverifiedException {
-        //
-        // clone to preserve integrity of session ... caller can't
-        // change record of peer identity even by accident, much
-        // less do it intentionally.
-        //
-        if (peerCerts == null) {
-            throw new SSLPeerUnverifiedException("peer not authenticated");
-        }
-        javax.security.cert.X509Certificate[] certs;
-        certs = new javax.security.cert.X509Certificate[peerCerts.length];
-        for (int i = 0; i < peerCerts.length; i++) {
-            byte[] der = null;
-            try {
-                der = peerCerts[i].getEncoded();
-                certs[i] = javax.security.cert.X509Certificate.getInstance(der);
-            } catch (CertificateEncodingException e) {
-                throw new SSLPeerUnverifiedException(e.getMessage());
-            } catch (javax.security.cert.CertificateException e) {
-                throw new SSLPeerUnverifiedException(e.getMessage());
-            }
-        }
-
-        return certs;
     }
 
     /**

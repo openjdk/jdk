@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,13 @@ class InstanceMirrorKlass: public InstanceKlass {
  public:
   InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
-  // Casting from Klass*
   static InstanceMirrorKlass* cast(Klass* k) {
-    assert(InstanceKlass::cast(k)->is_mirror_instance_klass(),
-           "cast to InstanceMirrorKlass");
-    return static_cast<InstanceMirrorKlass*>(k);
+    return const_cast<InstanceMirrorKlass*>(cast(const_cast<const Klass*>(k)));
+  }
+
+  static const InstanceMirrorKlass* cast(const Klass* k) {
+    assert(InstanceKlass::cast(k)->is_mirror_instance_klass(), "cast to InstanceMirrorKlass");
+    return static_cast<const InstanceMirrorKlass*>(k);
   }
 
   // Returns the size of the instance including the extra static fields.

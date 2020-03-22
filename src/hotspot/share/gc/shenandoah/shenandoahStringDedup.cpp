@@ -29,9 +29,9 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahStrDedupQueue.hpp"
-#include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/thread.hpp"
 
@@ -78,14 +78,13 @@ void ShenandoahStringDedup::parallel_oops_do(BoolObjectClosure* is_alive, OopClo
 
   StringDedupUnlinkOrOopsDoClosure sd_cl(is_alive, cl);
   if (ShenandoahGCPhase::is_root_work_phase()) {
-    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
     {
-      ShenandoahWorkerTimingsTracker x(worker_times, ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
+      ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
       StringDedupQueue::unlink_or_oops_do(&sd_cl);
     }
 
     {
-      ShenandoahWorkerTimingsTracker x(worker_times, ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
+      ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
       StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
     }
   } else {

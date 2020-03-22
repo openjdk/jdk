@@ -30,15 +30,15 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
-import jdk.test.lib.Platform;
 
 /**
  * @test
  * @bug 8042397
  * @summary Unit test for jmap utility test heap configuration reader
  *
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
  * @modules java.management
  *          jdk.hotspot.agent/sun.jvm.hotspot
@@ -120,6 +120,7 @@ public class JMapHeapConfigTest {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Starting JMapHeapConfigTest");
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
         if (!LingeredApp.isLastModifiedWorking()) {
             // Exact behaviour of the test depends to operating system and the test nature,

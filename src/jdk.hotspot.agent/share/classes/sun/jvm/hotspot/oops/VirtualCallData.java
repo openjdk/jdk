@@ -45,9 +45,6 @@ public class VirtualCallData<K,M> extends ReceiverTypeData<K,M> {
     // At this point we could add more profile state, e.g., for arguments.
     // But for now it's the same size as the base record type.
     int cellCount = ReceiverTypeData.staticCellCount();
-    if (INCLUDE_JVMCI == 1) {
-      cellCount += MethodData.MethodProfileWidth * receiverTypeRowCellCount;
-    }
     return cellCount;
   }
 

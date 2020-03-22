@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,25 +89,22 @@ public class Locks {
 
     private static void assertThreadState(Thread t, Thread.State expectedState) {
         long tid = t.getId();
-        if (expectedState == Thread.State.BLOCKED
-                && TM.getThreadInfo(tid).getThreadState() != Thread.State.BLOCKED) {
-            int retryCount = 0;
-            printStackTrace(t);
-            while (TM.getThreadInfo(tid).getThreadState() != Thread.State.BLOCKED) {
-                if (retryCount++ > 500) {
-                    printStackTrace(t);
-                    throw new RuntimeException("Thread " + t.getName() + " is at "
-                            + TM.getThreadInfo(tid).getThreadState() + " state but is expected to "
-                            + "be in Thread.State = " + expectedState);
-                }
-                goSleep(100);
+        Thread.State actualState = TM.getThreadInfo(tid).getThreadState();
+        if (!actualState.equals(expectedState)) {
+            if (expectedState.equals(Thread.State.BLOCKED)) {
+                int retryCount = 0;
+                printStackTrace(t);
+                do {
+                    goSleep(100);
+                    actualState = TM.getThreadInfo(tid).getThreadState();
+                } while (!actualState.equals(expectedState) && retryCount++ <= 500);
             }
-        }
-        if (!TM.getThreadInfo(tid).getThreadState().equals(expectedState)) {
-            printStackTrace(t);
-            throw new RuntimeException("Thread " + t.getName() + " is at "
-                    + TM.getThreadInfo(tid).getThreadState() + " state but is expected to "
-                    + "be in Thread.State = " + expectedState);
+            if (!actualState.equals(expectedState)) {
+                printStackTrace(t);
+                throw new RuntimeException("Thread " + t.getName() + " is at "
+                        + actualState + " state but is expected to "
+                        + "be in Thread.State = " + expectedState);
+            }
         }
     }
 
@@ -164,6 +161,7 @@ public class Locks {
         public LockAThread(Phaser p) {
             super("LockAThread");
             this.p = p;
+            setDaemon(true);
         }
         @Override
         public void run() {
@@ -187,6 +185,7 @@ public class Locks {
         public LockBThread(Phaser p) {
             super("LockBThread");
             this.p = p;
+            setDaemon(true);
         }
         @Override
         public void run() {
@@ -237,42 +236,40 @@ public class Locks {
         public WaitingThread(Phaser p) {
             super("WaitingThread");
             this.p = p;
+            setDaemon(true);
         }
+
         @Override
         public void run() {
-            synchronized(OBJC) {
-                log("WaitingThread about to wait on OBJC");
-                try {
+            try {
+                synchronized (OBJC) {
+                    log("WaitingThread about to wait on OBJC");
                     // Signal checker thread, about to wait on OBJC.
                     waiting = false;
                     p.arriveAndAwaitAdvance(); // Phase 1 (waiting)
                     waiting = true;
                     OBJC.doWait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e); // Do not continue test
-                }
 
-                // block until CheckerThread finishes checking
-                log("WaitingThread about to block on ready");
-                // signal checker thread that it is about acquire
-                // object ready.
-                p.arriveAndAwaitAdvance(); // Phase 2 (waiting)
-                synchronized(ready) {
-                    dummyCounter++;
+                    // block until CheckerThread finishes checking
+                    log("WaitingThread about to block on ready");
+                    // signal checker thread that it is about acquire
+                    // object ready.
+                    p.arriveAndAwaitAdvance(); // Phase 2 (waiting)
+                    synchronized (ready) {
+                        dummyCounter++;
+                    }
                 }
-            }
-            synchronized(OBJC) {
-                try {
+                synchronized (OBJC) {
                     // signal checker thread, about to wait on OBJC
                     waiting = false;
                     p.arriveAndAwaitAdvance(); // Phase 3 (waiting)
                     waiting = true;
                     OBJC.doWait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
                 }
+                log("WaitingThread about to exit waiting on OBJC 2");
+            } catch (InterruptedException e) {
+                // test failed and this thread was interrupted
             }
-            log("WaitingThread about to exit waiting on OBJC 2");
         }
 
         public void waitForWaiting() {
@@ -294,37 +291,49 @@ public class Locks {
             }
         }
     }
+
     static class CheckerThread extends Thread {
+        private Exception result = null;
+
         public CheckerThread() {
             super("CheckerThread");
+            setDaemon(true);
         }
 
         @Override
         public void run() {
-            synchronized(ready) {
-                // wait until WaitingThread about to wait for OBJC
-                waiter.waitForWaiting(); // Phase 1 (waiting)
-                assertThreadState(waiter, Thread.State.WAITING);
-                checkBlockedObject(waiter, OBJC, null);
+            try {
+                synchronized (ready) {
+                    // wait until WaitingThread about to wait for OBJC
+                    waiter.waitForWaiting(); // Phase 1 (waiting)
+                    assertThreadState(waiter, Thread.State.WAITING);
+                    checkBlockedObject(waiter, OBJC, null);
+                    synchronized (OBJC) {
+                        OBJC.doNotify();
+                    }
+                    // wait for waiter thread to about to enter
+                    // synchronized object ready.
+                    waiter.waitForBlocked(); // Phase 2 (waiting)
+                    assertThreadState(waiter, Thread.State.BLOCKED);
+                    checkBlockedObject(waiter, ready, this);
+                }
 
-                synchronized(OBJC) {
+                // wait for signal from waiting thread that it is about
+                // wait for OBJC.
+                waiter.waitForWaiting(); // Phase 3 (waiting)
+                synchronized (OBJC) {
+                    assertThreadState(waiter, Thread.State.WAITING);
+                    checkBlockedObject(waiter, OBJC, Thread.currentThread());
                     OBJC.doNotify();
                 }
-                // wait for waiter thread to about to enter
-                // synchronized object ready.
-                waiter.waitForBlocked(); // Phase 2 (waiting)
-                assertThreadState(waiter, Thread.State.BLOCKED);
-                checkBlockedObject(waiter, ready, this);
+            } catch (Exception e) {
+                waiter.interrupt();
+                result = e;
             }
+        }
 
-            // wait for signal from waiting thread that it is about
-            // wait for OBJC.
-            waiter.waitForWaiting(); // Phase 3 (waiting)
-            synchronized(OBJC) {
-                assertThreadState(waiter, Thread.State.WAITING);
-                checkBlockedObject(waiter, OBJC, Thread.currentThread());
-                OBJC.doNotify();
-            }
+        Exception result() {
+            return result;
         }
     }
 
@@ -368,15 +377,16 @@ public class Locks {
             // Test Object.wait() case
             waiter = new WaitingThread(p);
             waiter.start();
-
             checker = new CheckerThread();
             checker.start();
-
             try {
                 waiter.join();
                 checker.join();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+            if (checker.result() != null) {
+                throw checker.result();
             }
         } finally { // log all the messages to STDOUT
             System.out.println(LOGGER.toString());

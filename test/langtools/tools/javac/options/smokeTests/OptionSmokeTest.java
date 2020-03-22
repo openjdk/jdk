@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
  */
 
 import java.util.Locale;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -200,14 +203,20 @@ public class OptionSmokeTest extends TestRunner {
     public void unmatchedQuoteInEnvVar(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class Dummy {}");
-        String log = new JavacTask(tb, Task.Mode.EXEC)
+        List<String> log = new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("JDK_JAVAC_OPTIONS",
                         String.format("--add-exports jdk.compiler%scom.sun.tools.javac.jvm=\"ALL-UNNAMED", fileSeparator))
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(Task.OutputKind.STDERR);
-        Assert.check(log.startsWith("error: unmatched quote in environment variable JDK_JAVAC_OPTIONS"));
+                .getOutputLines(Task.OutputKind.STDERR);
+        log = log.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
+        List<String> expected = List.of(
+                "error: unmatched quote in environment variable JDK_JAVAC_OPTIONS",
+                "Usage: javac <options> <source files>",
+                "use --help for a list of possible options"
+        );
+        tb.checkEqual(log, expected);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ import java.io.IOException;
  *               result.add(entry);
  *           }
  *       } catch (DirectoryIteratorException ex) {
- *           // I/O error encounted during the iteration, the cause is an IOException
+ *           // I/O error encountered during the iteration, the cause is an IOException
  *           throw ex.getCause();
  *       }
  *       return result;

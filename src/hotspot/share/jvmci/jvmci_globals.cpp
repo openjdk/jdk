@@ -92,6 +92,11 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
       jio_fprintf(defaultStream::error_stream(), "-XX:+BootstrapJVMCI is not compatible with -XX:+UseJVMCINativeLibrary\n");
       return false;
     }
+    if (BootstrapJVMCI && (TieredStopAtLevel < CompLevel_full_optimization)) {
+      jio_fprintf(defaultStream::error_stream(),
+          "-XX:+BootstrapJVMCI is not compatible with -XX:TieredStopAtLevel=%d\n", TieredStopAtLevel);
+      return false;
+    }
   }
 
   if (!EnableJVMCI) {
@@ -108,7 +113,6 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCICountersExcludeCompiler, EnableJVMCI)
   CHECK_NOT_SET(JVMCIUseFastLocking,          EnableJVMCI)
   CHECK_NOT_SET(JVMCINMethodSizeLimit,        EnableJVMCI)
-  CHECK_NOT_SET(MethodProfileWidth,           EnableJVMCI)
   CHECK_NOT_SET(JVMCIPrintProperties,         EnableJVMCI)
   CHECK_NOT_SET(UseJVMCINativeLibrary,        EnableJVMCI)
   CHECK_NOT_SET(JVMCILibPath,                 EnableJVMCI)

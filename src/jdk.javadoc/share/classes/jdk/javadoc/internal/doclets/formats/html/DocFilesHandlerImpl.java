@@ -28,14 +28,11 @@ package jdk.javadoc.internal.doclets.formats.html;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.StartElementTree;
-import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -56,7 +53,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 
 public class DocFilesHandlerImpl implements DocFilesHandler {
 
@@ -187,7 +184,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(title);
         PackageElement pkg = dfElement.getPackageElement();
-        this.navBar = new Navigation(element, configuration, PageMode.DOCFILE, docletWriter.path);
+        this.navBar = new Navigation(element, configuration, PageMode.DOC_FILE, docletWriter.path);
         Content headerContent = new ContentBuilder();
         docletWriter.addTop(headerContent);
         Content mdleLinkContent = docletWriter.getModuleLink(utils.elementUtils.getModuleOf(pkg),
@@ -196,7 +193,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
         navBar.setNavLinkPackage(pkgLinkContent);
         navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
 
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content pageContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
@@ -204,13 +201,12 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
 
         navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
         Content footer = HtmlTree.FOOTER();
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         docletWriter.addBottom(footer);
         htmlContent.add(new BodyContents()
                 .setHeader(headerContent)
-                .addMainContent(HtmlTree.DIV(HtmlStyle.contentContainer, pageContent))
-                .setFooter(footer)
-                .toContent());
+                .addMainContent(pageContent)
+                .setFooter(footer));
         docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, Collections.emptyList(), htmlContent);
     }
 
@@ -269,37 +265,8 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     }
 
     private String getWindowTitle(HtmlDocletWriter docletWriter, Element element) {
-        List<? extends DocTree> preamble = configuration.utils.getPreamble(element);
-        StringBuilder sb = new StringBuilder();
-        boolean titleFound = false;
-        loop:
-        for (DocTree dt : preamble) {
-            switch (dt.getKind()) {
-                case START_ELEMENT:
-                    StartElementTree nodeStart = (StartElementTree)dt;
-                    if (Utils.toLowerCase(nodeStart.getName().toString()).equals("title")) {
-                        titleFound = true;
-                    }
-                    break;
-
-                case END_ELEMENT:
-                    EndElementTree nodeEnd = (EndElementTree)dt;
-                    if (Utils.toLowerCase(nodeEnd.getName().toString()).equals("title")) {
-                        break loop;
-                    }
-                    break;
-
-                case TEXT:
-                    TextTree nodeText = (TextTree)dt;
-                    if (titleFound)
-                        sb.append(nodeText.getBody());
-                    break;
-
-                default:
-                    // do nothing
-            }
-        }
-        return docletWriter.getWindowTitle(sb.toString().trim());
+        String t = configuration.utils.getHTMLTitle(element);
+        return docletWriter.getWindowTitle(t);
     }
 
     private static class DocFileWriter extends HtmlDocletWriter {

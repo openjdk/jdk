@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,6 +987,12 @@ public class JmodTask {
                             recordHashes(in, jos, moduleHashes);
                             jos.closeEntry();
                         } else {
+                            // Setting "compressedSize" to "-1" prevents an error
+                            // in ZipOutputStream.closeEntry() if the newly
+                            // deflated entry will have another size than the
+                            // original compressed entry. See:
+                            // ZipOutputStream.putNextEntry()/closeEntry()
+                            e.setCompressedSize(-1);
                             jos.putNextEntry(e);
                             jos.write(in.readAllBytes());
                             jos.closeEntry();

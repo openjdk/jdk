@@ -469,6 +469,10 @@ extern volatile jint vm_created;
 
 JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
   JVMWrapper("JVM_BeforeHalt");
+  // Link all classes for dynamic CDS dumping before vm exit.
+  if (DynamicDumpSharedSpaces) {
+    MetaspaceShared::link_and_cleanup_shared_classes(THREAD);
+  }
   EventShutdown event;
   if (event.should_commit()) {
     event.set_reason("Shutdown requested from Java");

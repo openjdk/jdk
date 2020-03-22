@@ -329,6 +329,32 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         directoryStream.start(startNanos);
     }
 
+    /**
+     * Start asynchronous processing of actions.
+     * <p>
+     * Actions are performed in a single separate thread.
+     * <p>
+     * To stop the stream, use the {@code #close()} method.
+     * <p>
+     * The following example prints the CPU usage for ten seconds. When
+     * the current thread leaves the try-with-resources block the
+     * stream is stopped/closed.
+     * <pre>
+     * <code>
+     * try (var stream = new RecordingStream()) {
+     *   stream.enable("jdk.CPULoad").withPeriod(Duration.ofSeconds(1));
+     *   stream.onEvent("jdk.CPULoad", event -> {
+     *     System.out.println(event);
+     *   });
+     *   stream.startAsync();
+     *   Thread.sleep(10_000);
+     * }
+     * </code>
+     * </pre>
+     *
+     * @throws IllegalStateException if the stream is already started or closed
+     *
+     */
     @Override
     public void startAsync() {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);

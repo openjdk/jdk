@@ -73,6 +73,8 @@ public final class JstatdTest {
     private boolean withExternalRegistry = false;
     private boolean useShortCommandSyntax = false;
 
+    private volatile static boolean portInUse;
+
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
@@ -91,20 +93,10 @@ public final class JstatdTest {
 
     private Long waitOnTool(ProcessThread thread) throws Throwable {
         long pid = thread.getPid();
-
-        Throwable t = thread.getUncaught();
-        if (t != null) {
-            if (t.getMessage().contains(
-                    "java.rmi.server.ExportException: Port already in use")) {
-                System.out.println("Port already in use. Trying to restart with a new one...");
-                Thread.sleep(100);
-                return null;
-            } else {
-                // Something unexpected has happened
-                throw new Throwable(t);
-            }
+        if (portInUse) {
+            System.out.println("Port already in use. Trying to restart with a new one...");
+            return null;
         }
-
         System.out.println(thread.getName() + " pid: " + pid);
         return pid;
     }
@@ -291,6 +283,7 @@ public final class JstatdTest {
     }
 
     private ProcessThread tryToSetupJstatdProcess() throws Throwable {
+        portInUse = false;
         ProcessThread jstatdThread = new ProcessThread("Jstatd-Thread",
                 JstatdTest::isJstadReady, getJstatdCmd());
         try {
@@ -313,6 +306,10 @@ public final class JstatdTest {
     }
 
     private static boolean isJstadReady(String line) {
+        if (line.contains("Port already in use")) {
+            portInUse = true;
+            return true;
+        }
         return line.startsWith("jstatd started (bound to ");
     }
 

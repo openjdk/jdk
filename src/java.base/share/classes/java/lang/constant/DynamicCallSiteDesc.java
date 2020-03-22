@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,8 +249,8 @@ public class DynamicCallSiteDesc {
      *
      * @param o the {@code DynamicCallSiteDesc} to compare to this
      *       {@code DynamicCallSiteDesc}
-     * @return {@code true} if the specified {@code DynamicCallSiteDesc} is
-     *      equals to this {@code DynamicCallSiteDesc}.
+     * @return {@code true} if the specified {@code DynamicCallSiteDesc}
+     *      is equal to this {@code DynamicCallSiteDesc}.
      */
     @Override
     public final boolean equals(Object o) {

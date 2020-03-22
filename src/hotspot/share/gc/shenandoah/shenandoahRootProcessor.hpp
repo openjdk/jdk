@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 
 class ShenandoahSerialRoot {
@@ -221,9 +222,9 @@ class ShenandoahRootProcessor : public StackObj {
 private:
   ShenandoahHeap* const               _heap;
   const ShenandoahPhaseTimings::Phase _phase;
+  const ShenandoahGCWorkerPhase       _worker_phase;
 public:
   ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootProcessor();
 
   ShenandoahHeap* heap() const { return _heap; }
 };
@@ -287,11 +288,11 @@ private:
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator>  _code_roots;
-  bool                                                      _include_concurrent_roots;
-  bool                                                      _include_concurrent_code_roots;
+  bool                                                      _stw_roots_processing;
+  bool                                                      _stw_class_unloading;
 public:
   ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase,
-                          bool include_concurrent_roots, bool _include_concurrent_code_roots);
+                          bool stw_roots_processing, bool stw_class_unloading);
 
   void roots_do(uint worker_id, OopClosure* oops);
 };

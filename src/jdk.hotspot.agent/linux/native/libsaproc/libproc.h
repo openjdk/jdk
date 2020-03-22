@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ typedef int bool;
 #endif
 
 struct ps_prochandle;
+struct lib_info;
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,6 +99,9 @@ uintptr_t get_lib_base(struct ps_prochandle* ph, int index);
 
 // returns true if given library is found in lib list
 bool find_lib(struct ps_prochandle* ph, const char *lib_name);
+
+// returns lib which contains pc
+struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc);
 
 // symbol lookup
 uintptr_t lookup_symbol(struct ps_prochandle* ph,  const char* object_name,

@@ -45,7 +45,7 @@ public class BadAttributeValueExpException extends Exception   {
 
     /**
      * @serial A string representation of the attribute that originated this exception.
-     * for example, the string value can be the return of {@code attribute.toString()}
+     * For example, the string value can be the return of {@code attribute.toString()}.
      */
     @SuppressWarnings("serial") // See handling in constructor and readObject
     private String val;
@@ -68,6 +68,16 @@ public class BadAttributeValueExpException extends Exception   {
         return "BadAttributeValueException: " + val;
     }
 
+    /**
+     * Restores the fields of a BadAttributeValueExpException from the stream.
+     * If the 'val' field in the stream does not contain a string
+     * it is replaced with an implementation specific string representation
+     * of the value in the stream.
+     *
+     * @param ois an ObjectInput Stream
+     * @throws IOException thrown if an error occurs
+     * @throws ClassNotFoundException if a class can not be found
+     */
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gf = ois.readFields();
         Object valObj = gf.get("val", null);

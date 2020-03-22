@@ -795,7 +795,7 @@ static int emit_call_reloc(MacroAssembler &_masm, intptr_t entry_point, Relocati
 //=============================================================================
 
 const RegMask& MachConstantBaseNode::_out_RegMask = _Z_PTR_REG_mask;
-int Compile::ConstantTable::calculate_table_base_offset() const {
+int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
@@ -840,15 +840,15 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("\t");
   }
 
-  long framesize = C->frame_size_in_bytes();
-  int bangsize   = C->bang_size_in_bytes();
+  long framesize = C->output()->frame_size_in_bytes();
+  int bangsize   = C->output()->bang_size_in_bytes();
 
   // Calls to C2R adapters often do not accept exceptional returns.
   // We require that their callers must bang for them. But be
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
     st->print_cr("# stack bang"); st->print("\t");
   }
   st->print_cr("push_frame %d", (int)-framesize);
@@ -862,8 +862,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ verify_thread();
 
-  size_t framesize = C->frame_size_in_bytes();
-  size_t bangsize  = C->bang_size_in_bytes();
+  size_t framesize = C->output()->frame_size_in_bytes();
+  size_t bangsize  = C->output()->bang_size_in_bytes();
 
   assert(framesize % wordSize == 0, "must preserve wordSize alignment");
 
@@ -889,7 +889,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
     __ generate_stack_overflow_check(bangsize);
   }
 
@@ -903,7 +903,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
     // emitted before MachConstantBaseNode.
-    Compile::ConstantTable& constant_table = C->constant_table();
+    ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
 }
@@ -940,7 +940,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   bool need_polling = do_polling() && C->is_method_compilation();
 
   // Pop frame, restore return_pc, and all stuff needed by interpreter.
-  int frame_size_in_bytes = Assembler::align((C->frame_slots() << LogBytesPerInt), frame::alignment_in_bytes);
+  int frame_size_in_bytes = Assembler::align((C->output()->frame_slots() << LogBytesPerInt), frame::alignment_in_bytes);
   __ pop_frame_restore_retPC(frame_size_in_bytes);
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
@@ -1257,7 +1257,7 @@ void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ra_) const {
   MacroAssembler _masm(&cbuf);
 
   int rem_space = 0;
-  if (!(ra_->C->in_scratch_emit_size())) {
+  if (!(ra_->C->output()->in_scratch_emit_size())) {
     rem_space = cbuf.insts()->remaining();
     if (rem_space <= _count*2 + 8) {
       tty->print("NopNode: _count = %3.3d, remaining space before = %d", _count, rem_space);
@@ -1268,7 +1268,7 @@ void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ra_) const {
     __ z_nop();
   }
 
-  if (!(ra_->C->in_scratch_emit_size())) {
+  if (!(ra_->C->output()->in_scratch_emit_size())) {
     if (rem_space <= _count*2 + 8) {
       int rem_space2 = cbuf.insts()->remaining();
       tty->print_cr(", after = %d", rem_space2);

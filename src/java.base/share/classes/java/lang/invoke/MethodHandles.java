@@ -740,11 +740,11 @@ public class MethodHandles {
      * The table below shows the access modes of a {@code Lookup} produced by
      * any of the following factory or transformation methods:
      * <ul>
-     * <li>{@link #lookup() MethodHandles.lookup()}</li>
-     * <li>{@link #publicLookup() MethodHandles.publicLookup()}</li>
-     * <li>{@link #privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn}</li>
-     * <li>{@link Lookup#in}</li>
-     * <li>{@link Lookup#dropLookupMode(int)}</li>
+     * <li>{@link #lookup() MethodHandles::lookup}</li>
+     * <li>{@link #publicLookup() MethodHandles::publicLookup}</li>
+     * <li>{@link #privateLookupIn(Class, Lookup) MethodHandles::privateLookupIn}</li>
+     * <li>{@link Lookup#in Lookup::in}</li>
+     * <li>{@link Lookup#dropLookupMode(int) Lookup::dropLookupMode}</li>
      * </ul>
      *
      * <table class="striped">
@@ -1524,14 +1524,22 @@ public class MethodHandles {
          * Creates a lookup on the same lookup class which this lookup object
          * finds members, but with a lookup mode that has lost the given lookup mode.
          * The lookup mode to drop is one of {@link #PUBLIC PUBLIC}, {@link #MODULE
-         * MODULE}, {@link #PACKAGE PACKAGE}, {@link #PROTECTED PROTECTED} or {@link #PRIVATE PRIVATE}.
-         * {@link #PROTECTED PROTECTED} is always
-         * dropped and so the resulting lookup mode will never have this access capability.
-         * When dropping {@code PACKAGE} then the resulting lookup will not have {@code PACKAGE}
-         * or {@code PRIVATE} access. When dropping {@code MODULE} then the resulting lookup will
-         * not have {@code MODULE}, {@code PACKAGE}, or {@code PRIVATE} access. If {@code PUBLIC}
-         * is dropped then the resulting lookup has no access. If {@code UNCONDITIONAL}
-         * is dropped then the resulting lookup has no access.
+         * MODULE}, {@link #PACKAGE PACKAGE}, {@link #PROTECTED PROTECTED},
+         * {@link #PRIVATE PRIVATE}, or {@link #UNCONDITIONAL UNCONDITIONAL}.
+         *
+         * <p> If this lookup is a {@linkplain MethodHandles#publicLookup() public lookup},
+         * this lookup has {@code UNCONDITIONAL} mode set and it has no other mode set.
+         * When dropping {@code UNCONDITIONAL} on a public lookup then the resulting
+         * lookup has no access.
+         *
+         * <p> If this lookup is not a public lookup, then the following applies
+         * regardless of its {@linkplain #lookupModes() lookup modes}.
+         * {@link #PROTECTED PROTECTED} is always dropped and so the resulting lookup
+         * mode will never have this access capability. When dropping {@code PACKAGE}
+         * then the resulting lookup will not have {@code PACKAGE} or {@code PRIVATE}
+         * access. When dropping {@code MODULE} then the resulting lookup will not
+         * have {@code MODULE}, {@code PACKAGE}, or {@code PRIVATE} access.
+         * When dropping {@code PUBLIC} then the resulting lookup has no access.
          *
          * @apiNote
          * A lookup with {@code PACKAGE} but not {@code PRIVATE} mode can safely

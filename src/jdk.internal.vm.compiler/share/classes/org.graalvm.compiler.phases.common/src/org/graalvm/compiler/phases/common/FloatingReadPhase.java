@@ -65,7 +65,6 @@ import org.graalvm.compiler.nodes.memory.MemoryAnchorNode;
 import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.MemoryMap;
 import org.graalvm.compiler.nodes.memory.MemoryMapNode;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.memory.ReadNode;
@@ -85,7 +84,7 @@ public class FloatingReadPhase extends Phase {
 
     public static class MemoryMapImpl implements MemoryMap {
 
-        private final EconomicMap<LocationIdentity, MemoryNode> lastMemorySnapshot;
+        private final EconomicMap<LocationIdentity, MemoryKill> lastMemorySnapshot;
 
         public MemoryMapImpl(MemoryMapImpl memoryMap) {
             lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT, memoryMap.lastMemorySnapshot);
@@ -101,8 +100,8 @@ public class FloatingReadPhase extends Phase {
         }
 
         @Override
-        public MemoryNode getLastLocationAccess(LocationIdentity locationIdentity) {
-            MemoryNode lastLocationAccess;
+        public MemoryKill getLastLocationAccess(LocationIdentity locationIdentity) {
+            MemoryKill lastLocationAccess;
             if (locationIdentity.isImmutable()) {
                 return null;
             } else {
@@ -120,7 +119,7 @@ public class FloatingReadPhase extends Phase {
             return lastMemorySnapshot.getKeys();
         }
 
-        public EconomicMap<LocationIdentity, MemoryNode> getMap() {
+        public EconomicMap<LocationIdentity, MemoryKill> getMap() {
             return lastMemorySnapshot;
         }
     }
@@ -253,9 +252,9 @@ public class FloatingReadPhase extends Phase {
         for (LocationIdentity key : keys) {
             int mergedStatesCount = 0;
             boolean isPhi = false;
-            MemoryNode merged = null;
+            MemoryKill merged = null;
             for (MemoryMap state : states) {
-                MemoryNode last = state.getLastLocationAccess(key);
+                MemoryKill last = state.getLastLocationAccess(key);
                 if (isPhi) {
                     // Fortify: Suppress Null Deference false positive (`isPhi == true` implies
                     // `merged != null`)
@@ -352,7 +351,7 @@ public class FloatingReadPhase extends Phase {
                 if (node instanceof MemoryAccess) {
                     MemoryAccess access = (MemoryAccess) node;
                     if (access.getLastLocationAccess() == anchor) {
-                        MemoryNode lastLocationAccess = state.getLastLocationAccess(access.getLocationIdentity());
+                        MemoryKill lastLocationAccess = state.getLastLocationAccess(access.getLocationIdentity());
                         assert lastLocationAccess != null;
                         access.setLastLocationAccess(lastLocationAccess);
                     }
@@ -367,7 +366,7 @@ public class FloatingReadPhase extends Phase {
         private static void processAccess(MemoryAccess access, MemoryMapImpl state) {
             LocationIdentity locationIdentity = access.getLocationIdentity();
             if (!locationIdentity.equals(LocationIdentity.any())) {
-                MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
+                MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 access.setLastLocationAccess(lastLocationAccess);
             }
         }
@@ -397,7 +396,7 @@ public class FloatingReadPhase extends Phase {
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
             if (accessNode.canFloat()) {
                 assert accessNode.getNullCheck() == false;
-                MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
+                MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();
                     assert floatingNode.getLastLocationAccess() == lastLocationAccess;

@@ -29,10 +29,8 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -77,28 +75,26 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
     protected void buildAllPackagesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Packages");
         Content headerContent = new ContentBuilder();
-        Navigation navBar = new Navigation(null, configuration, PageMode.ALLPACKAGES, path);
+        Navigation navBar = new Navigation(null, configuration, PageMode.ALL_PACKAGES, path);
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.allPackagesContainer);
-        addPackages(div);
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        Content mainContent = new ContentBuilder();
+        addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
-        Content pHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
         Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         bodyTree.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(headerDiv)
-                .addMainContent(div)
-                .setFooter(footer)
-                .toContent());
+                .addMainContent(mainContent)
+                .setFooter(footer));
         printHtmlDocument(null, "package index", bodyTree);
     }
 
@@ -120,6 +116,6 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
                 table.addRow(pkg, packageLinkContent, summaryContent);
             }
         }
-        content.add(table.toContent());
+        content.add(table);
     }
 }

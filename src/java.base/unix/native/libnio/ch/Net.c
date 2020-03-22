@@ -265,6 +265,24 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         }
     }
 #endif
+
+#ifdef __APPLE__
+    /**
+     * Attempt to set SO_SNDBUF to a minimum size to allow sending large datagrams
+     * (net.inet.udp.maxdgram defaults to 9216).
+     */
+    if (type == SOCK_DGRAM) {
+        int size;
+        socklen_t arglen = sizeof(size);
+        if (getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &size, &arglen) == 0) {
+            int minSize = (domain == AF_INET6) ? 65527  : 65507;
+            if (size < minSize) {
+                setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &minSize, sizeof(minSize));
+            }
+        }
+    }
+#endif
+
     return fd;
 }
 

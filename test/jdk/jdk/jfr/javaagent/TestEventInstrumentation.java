@@ -48,6 +48,7 @@ import jdk.test.lib.Asserts;
  * @summary Verify that a subclass of the JFR Event class
  *          can be successfully instrumented.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          jdk.jartool/sun.tools.jar

@@ -262,6 +262,30 @@ public class DeployParams {
             }
         }
 
+        // Validate resource dir
+        String resources = (String)bundlerArguments.get(
+                Arguments.CLIOptions.RESOURCE_DIR.getId());
+        if (resources != null) {
+            if (!(new File(resources)).exists()) {
+                throw new PackagerException(
+                    "message.resource-dir-does-not-exist",
+                    Arguments.CLIOptions.RESOURCE_DIR.getId(), resources);
+            }
+        }
+
+        // Validate predefined runtime dir
+        String runtime = (String)bundlerArguments.get(
+                Arguments.CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId());
+        if (runtime != null) {
+            if (!(new File(runtime)).exists()) {
+                throw new PackagerException(
+                    "message.runtime-image-dir-does-not-exist",
+                    Arguments.CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId(),
+                    runtime);
+            }
+        }
+
+
         // Validate license file if set
         String license = (String)bundlerArguments.get(
                 Arguments.CLIOptions.LICENSE_FILE.getId());

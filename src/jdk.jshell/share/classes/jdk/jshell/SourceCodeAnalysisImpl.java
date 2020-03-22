@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -309,11 +310,53 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 Predicate<Element> smartFilter;
                 Iterable<TypeMirror> targetTypes = findTargetType(at, tp);
                 if (targetTypes != null) {
-                    smartTypeFilter = el -> {
-                        TypeMirror resultOf = resultTypeOf(el);
-                        return Util.stream(targetTypes)
-                                .anyMatch(targetType -> at.getTypes().isAssignable(resultOf, targetType));
-                    };
+                    if (tp.getLeaf().getKind() == Kind.MEMBER_REFERENCE) {
+                        Types types = at.getTypes();
+                        smartTypeFilter = t -> {
+                            if (t.getKind() != ElementKind.METHOD) {
+                                return false;
+                            }
+                            ExecutableElement ee = (ExecutableElement) t;
+                            for (TypeMirror type : targetTypes) {
+                                if (type.getKind() != TypeKind.DECLARED)
+                                    continue;
+                                DeclaredType d = (DeclaredType) type;
+                                List<? extends Element> enclosed =
+                                        ((TypeElement) d.asElement()).getEnclosedElements();
+                                for (ExecutableElement m : ElementFilter.methodsIn(enclosed)) {
+                                    boolean matches = true;
+                                    if (!m.getModifiers().contains(Modifier.ABSTRACT)) {
+                                        continue;
+                                    }
+                                    if (m.getParameters().size() != ee.getParameters().size()) {
+                                        continue;
+                                    }
+                                    ExecutableType mInst = (ExecutableType) types.asMemberOf(d, m);
+                                    List<? extends TypeMirror> expectedParams = mInst.getParameterTypes();
+                                    if (mInst.getReturnType().getKind() != TypeKind.VOID &&
+                                        !types.isSubtype(ee.getReturnType(), mInst.getReturnType())) {
+                                        continue;
+                                    }
+                                    for (int i = 0; i < m.getParameters().size(); i++) {
+                                        if (!types.isSubtype(expectedParams.get(i),
+                                                             ee.getParameters().get(i).asType())) {
+                                            matches = false;
+                                        }
+                                    }
+                                    if (matches) {
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        };
+                    } else {
+                        smartTypeFilter = el -> {
+                            TypeMirror resultOf = resultTypeOf(el);
+                            return Util.stream(targetTypes)
+                                    .anyMatch(targetType -> at.getTypes().isAssignable(resultOf, targetType));
+                        };
+                    }
 
                     smartFilter = IS_CLASS.negate()
                                           .and(IS_INTERFACE.negate())
@@ -324,19 +367,31 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     smartTypeFilter = TRUE;
                 }
                 switch (tp.getLeaf().getKind()) {
-                    case MEMBER_SELECT: {
-                        MemberSelectTree mst = (MemberSelectTree)tp.getLeaf();
-                        if (mst.getIdentifier().contentEquals("*"))
+                    case MEMBER_REFERENCE, MEMBER_SELECT: {
+                        javax.lang.model.element.Name identifier;
+                        ExpressionTree expression;
+                        Function<Boolean, String> paren;
+                        if (tp.getLeaf().getKind() == Kind.MEMBER_SELECT) {
+                            MemberSelectTree mst = (MemberSelectTree)tp.getLeaf();
+                            identifier = mst.getIdentifier();
+                            expression = mst.getExpression();
+                            paren = DEFAULT_PAREN;
+                        } else {
+                            MemberReferenceTree mst = (MemberReferenceTree)tp.getLeaf();
+                            identifier = mst.getName();
+                            expression = mst.getQualifierExpression();
+                            paren = NO_PAREN;
+                        }
+                        if (identifier.contentEquals("*"))
                             break;
-                        TreePath exprPath = new TreePath(tp, mst.getExpression());
+                        TreePath exprPath = new TreePath(tp, expression);
                         TypeMirror site = at.trees().getTypeMirror(exprPath);
                         boolean staticOnly = isStaticContext(at, exprPath);
                         ImportTree it = findImport(tp);
                         boolean isImport = it != null;
 
-                        List<? extends Element> members = membersOf(at, site, staticOnly && !isImport);
+                        List<? extends Element> members = membersOf(at, site, staticOnly && !isImport && tp.getLeaf().getKind() == Kind.MEMBER_SELECT);
                         Predicate<Element> filter = accessibility;
-                        Function<Boolean, String> paren = DEFAULT_PAREN;
 
                         if (isNewClass(tp)) { // new xxx.|
                             Predicate<Element> constructorFilter = accessibility.and(IS_CONSTRUCTOR)

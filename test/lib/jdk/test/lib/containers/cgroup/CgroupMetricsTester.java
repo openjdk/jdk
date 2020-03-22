@@ -25,6 +25,7 @@ package jdk.test.lib.containers.cgroup;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -41,9 +42,9 @@ interface CgroupMetricsTester {
     public void testMemoryUsage() throws Exception;
     public void testMisc();
 
-    public static long convertStringToLong(String strval, long overflowRetval) {
-        long retval = 0;
-        if (strval == null) return 0L;
+    public static long convertStringToLong(String strval, long initialVal, long overflowRetval) {
+        long retval = initialVal;
+        if (strval == null) return retval;
 
         try {
             retval = Long.parseLong(strval);
@@ -93,7 +94,7 @@ interface CgroupMetricsTester {
 
     public static Integer[] convertCpuSetsToArray(String cpusstr) {
         if (cpusstr == null || EMPTY_STR.equals(cpusstr)) {
-            return new Integer[0];
+            return null;
         }
         // Parse range string in the format 1,2-6,7
         Integer[] cpuSets = Stream.of(cpusstr.split(",")).flatMap(a -> {
@@ -106,6 +107,21 @@ interface CgroupMetricsTester {
             }
         }).toArray(Integer[]::new);
         return cpuSets;
+    }
+
+    public static Integer[] boxedArrayOrNull(int[] primitiveArray) {
+        if (primitiveArray == null) {
+            return null;
+        }
+        return Arrays.stream(primitiveArray).boxed().toArray(Integer[]::new);
+    }
+
+    public static Integer[] sortAllowNull(Integer[] array) {
+        if (array == null) {
+            return null;
+        }
+        Arrays.sort(array);
+        return array;
     }
 
 }

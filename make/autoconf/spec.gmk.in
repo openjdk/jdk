@@ -656,7 +656,7 @@ BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
 
-# Interim langtools and rmic modules and arguments
+# Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
@@ -674,15 +674,6 @@ INTERIM_LANGTOOLS_ARGS := \
     #
 JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main
 JAVADOC_MAIN_CLASS = -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
-
-INTERIM_RMIC_BASE_MODULES := jdk.rmic
-INTERIM_RMIC_MODULES := $(addsuffix .interim, $(INTERIM_RMIC_BASE_MODULES))
-    #
-# Use = to delay expansion of PathList since it's not available in this file.
-INTERIM_RMIC_ARGS = --limit-modules java.base,jdk.compiler,jdk.javadoc \
-    --module-path $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/interim_rmic_modules \
-        $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules) \
-    #
 
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
 # Use = assignment to be able to override in bootcycle-spec.gmk

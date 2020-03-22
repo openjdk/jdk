@@ -36,6 +36,10 @@ template <typename T> static void test_is_power_of_2() {
   EXPECT_FALSE(is_power_of_2(T(0)));
   EXPECT_FALSE(is_power_of_2(~T(0)));
 
+  if (IsSigned<T>::value) {
+    EXPECT_FALSE(is_power_of_2(std::numeric_limits<T>::min()));
+  }
+
   // Test true
   for (T i = max_pow2<T>(); i > 0; i = (i >> 1)) {
     EXPECT_TRUE(is_power_of_2(i)) << "value = " << T(i);
@@ -64,6 +68,25 @@ TEST(power_of_2, is_power_of_2) {
 
   test_is_power_of_2<jint>();
   test_is_power_of_2<jlong>();
+}
+
+TEST(power_of_2, exact_log2) {
+  {
+    uintptr_t j = 1;
+#ifdef _LP64
+    for (int i = 0; i < 64; i++, j <<= 1) {
+#else
+    for (int i = 0; i < 32; i++, j <<= 1) {
+#endif
+      EXPECT_EQ(i, exact_log2(j));
+    }
+  }
+  {
+    julong j = 1;
+    for (int i = 0; i < 64; i++, j <<= 1) {
+      EXPECT_EQ(i, exact_log2_long(j));
+    }
+  }
 }
 
 template <typename T> void round_up_power_of_2() {

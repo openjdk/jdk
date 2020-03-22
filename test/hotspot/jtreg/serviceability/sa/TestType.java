@@ -33,7 +33,7 @@ import jtreg.SkippedException;
  * @test
  * @summary Test the 'type' command of jhsdb clhsdb.
  * @bug 8190307
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @library /test/lib
  * @build jdk.test.lib.apps.*
  * @run main/othervm TestType

@@ -680,8 +680,8 @@ void HeapRegionManager::rebuild_free_list(WorkGang* workers) {
   uint const num_workers = clamp(max_length(), 1u, workers->active_workers());
   G1RebuildFreeListTask task(this, num_workers);
 
-  log_debug(gc, ergo)("Running %s using %u workers for rebuilding free list of %u (%u) regions",
-                      task.name(), num_workers, num_free_regions(), max_length());
+  log_debug(gc, ergo)("Running %s using %u workers for rebuilding free list of regions",
+                      task.name(), num_workers);
   workers->run_task(&task, num_workers);
 
   // Link the partial free lists together.

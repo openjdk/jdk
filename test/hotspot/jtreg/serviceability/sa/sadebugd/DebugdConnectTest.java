@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8209790
  * @summary Checks ability for connecting to debug server (jstack, jmap, jinfo, jsnap)
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -36,6 +36,7 @@
 import java.io.IOException;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -52,7 +53,7 @@ public class DebugdConnectTest {
             jhsdbLauncher.addToolArg("localhost");
         }
 
-        Process jhsdb = (new ProcessBuilder(jhsdbLauncher.getCommand())).start();
+        Process jhsdb = (SATestUtils.createProcessBuilder(jhsdbLauncher)).start();
         OutputAnalyzer out = new OutputAnalyzer(jhsdb);
 
         jhsdb.waitFor();
@@ -110,6 +111,7 @@ public class DebugdConnectTest {
     }
 
     public static void main(String[] args) throws Exception {
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 
         try {

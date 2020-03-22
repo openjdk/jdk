@@ -61,7 +61,6 @@ ifeq ($(INCLUDE_GRAAL), true)
           $(LIB_OUTPUTDIR)/hamcrest-core-1.3.jar
 
       TEST_JAVAC_FLAGS := \
-          -Xlint:none \
           -processorpath $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar \
           --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
           --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
@@ -114,6 +113,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           EXCLUDE_FILES := org/graalvm/compiler/core/test/VerifyDebugUsageTest.java, \
           BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
           CLASSPATH := $(TEST_COMPILE_CP), \
+          DISABLED_WARNINGS := processing, \
           ADD_JAVAC_FLAGS := $(TEST_JAVAC_FLAGS), \
           COPY := .input, \
       ))
@@ -131,6 +131,7 @@ ifeq ($(INCLUDE_GRAAL), true)
               $(TEST_COMPILE_CP) \
               $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests \
               , \
+          DISABLED_WARNINGS := processing, \
           ADD_JAVAC_FLAGS := \
               $(TEST_JAVAC_FLAGS) \
               -XDstringConcat=inline \
@@ -155,6 +156,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           SRC := $(TEST_DIR)/com.oracle.mxtool.junit, \
           BIN := $(COMPILE_OUTPUTDIR)/com.oracle.mxtool.junit, \
           JAR := $(COMPILE_OUTPUTDIR)/com.oracle.mxtool.junit.jar, \
+          DISABLED_WARNINGS := processing, \
           CLASSPATH := $(LIB_OUTPUTDIR)/junit-4.12.jar, \
       ))
 

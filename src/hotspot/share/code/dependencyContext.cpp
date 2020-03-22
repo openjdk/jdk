@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,6 +244,7 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
     }
   }
 }
+#endif //PRODUCT
 
 bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
   for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
@@ -257,8 +258,6 @@ bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
   }
   return false;
 }
-
-#endif //PRODUCT
 
 int nmethodBucket::decrement() {
   return Atomic::sub(&_count, 1);

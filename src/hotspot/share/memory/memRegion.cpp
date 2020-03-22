@@ -102,10 +102,20 @@ MemRegion MemRegion::minus(const MemRegion mr2) const {
   return MemRegion();
 }
 
-MemRegion* MemRegion::create_array(uint length, MEMFLAGS flags) {
+MemRegion* MemRegion::create_array(size_t length, MEMFLAGS flags) {
   MemRegion* result = NEW_C_HEAP_ARRAY(MemRegion, length, flags);
-  for (uint i = 0; i < length; i++) {
+  for (size_t i = 0; i < length; i++) {
     ::new (&result[i]) MemRegion();
   }
   return result;
+}
+
+void MemRegion::destroy_array(MemRegion* array, size_t length) {
+  if (array == NULL) {
+    return;
+  }
+  for (size_t i = 0; i < length; i++) {
+    array[i].~MemRegion();
+  }
+  FREE_C_HEAP_ARRAY(MemRegion, array);
 }

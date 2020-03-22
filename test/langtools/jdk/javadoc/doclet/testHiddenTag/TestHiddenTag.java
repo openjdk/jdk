@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TestHiddenTag extends JavadocTester {
                 "<a id=\"inVisibleMethod()\">");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
-                "<pre>public static class <span class=\"typeNameLabel\">" +
+                "<pre>public static class <span class=\"type-name-label\">" +
                 "A.VisibleInnerExtendsInvisibleInner</span>\n" +
                 "extends <a href=\"A.html\" title=\"class in pkg1\">A</a></pre>",
                 "<code><a href=\"A.html#visibleField\">visibleField</a></code>",

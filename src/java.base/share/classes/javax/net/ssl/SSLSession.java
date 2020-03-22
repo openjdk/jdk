@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,13 +270,19 @@ public interface SSLSession {
      * releases. New applications should use
      * {@link #getPeerCertificates} instead.</em></p>
      *
+     * @implSpec
+     *     This default implementation throws UnsupportedOperationException.
+     *
      * @return an ordered array of peer X.509 certificates,
      *          with the peer's own certificate first followed by any
      *          certificate authorities.  (The certificates are in
      *          the original JSSE certificate
      *          {@link javax.security.cert.X509Certificate} format.)
-     * @exception SSLPeerUnverifiedException if the peer's identity
-     *          has not been verified
+     * @throws SSLPeerUnverifiedException if the peer's identity
+     *         has not been verified.
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     *
      * @see #getPeerPrincipal()
      * @deprecated The {@link #getPeerCertificates()} method that returns an
      *               array of {@code java.security.cert.Certificate} should
@@ -284,15 +290,19 @@ public interface SSLSession {
      */
     @SuppressWarnings("removal")
     @Deprecated(since="9", forRemoval=true)
-    public javax.security.cert.X509Certificate [] getPeerCertificateChain()
-            throws SSLPeerUnverifiedException;
+    public default javax.security.cert.X509Certificate[]
+            getPeerCertificateChain() throws SSLPeerUnverifiedException {
+        throw new UnsupportedOperationException(
+             "This method is deprecated and marked for removal. Use the " +
+             "getPeerCertificates() method instead.");
+    }
 
     /**
      * Returns the identity of the peer which was established as part of
      * defining the session.
      *
      * @return the peer's principal. Returns an X500Principal of the
-     * end-entity certiticate for X509-based cipher suites, and
+     * end-entity certificate for X509-based cipher suites, and
      * KerberosPrincipal for Kerberos cipher suites.
      *
      * @throws SSLPeerUnverifiedException if the peer's identity has not

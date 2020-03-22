@@ -3025,9 +3025,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * this one but with any trailing zeros removed from the
      * representation.  For example, stripping the trailing zeros from
      * the {@code BigDecimal} value {@code 600.0}, which has
-     * [{@code BigInteger}, {@code scale}] components equals to
+     * [{@code BigInteger}, {@code scale}] components equal to
      * [6000, 1], yields {@code 6E2} with [{@code BigInteger},
-     * {@code scale}] components equals to [6, -2].  If
+     * {@code scale}] components equal to [6, -2].  If
      * this BigDecimal is numerically equal to zero, then
      * {@code BigDecimal.ZERO} is returned.
      *

@@ -75,7 +75,7 @@ public class ModuleGraph implements Taglet {
         }
         return "<dt>Module Graph:</dt>"
             + "<dd>"
-            + "<a class=moduleGraph href=\"" + imageFile + "\">"
+            + "<a class=\"module-graph\" href=\"" + imageFile + "\">"
             + getImage(moduleName, imageFile, thumbnailHeight, false)
             + hoverImage
             + "</a>"

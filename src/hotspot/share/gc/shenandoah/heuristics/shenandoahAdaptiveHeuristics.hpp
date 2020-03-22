@@ -30,11 +30,6 @@
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
-private:
-  TruncatedSeq* _cycle_gap_history;
-  TruncatedSeq* _conc_mark_duration_history;
-  TruncatedSeq* _conc_uprefs_duration_history;
-
 public:
   ShenandoahAdaptiveHeuristics();
 
@@ -46,11 +41,7 @@ public:
 
   void record_cycle_start();
 
-  virtual void record_phase_time(ShenandoahPhaseTimings::Phase phase, double secs);
-
   virtual bool should_start_gc() const;
-
-  virtual bool should_start_update_refs();
 
   virtual const char* name();
 

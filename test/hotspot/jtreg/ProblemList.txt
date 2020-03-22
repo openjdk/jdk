@@ -71,8 +71,6 @@ compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64
 compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64
 compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
-compiler/jsr292/ContinuousCallSiteTargetChange.java 8234146 solaris-sparcv9
-
 compiler/c2/Test8004741.java 8235801 generic-all
 
 #############################################################################
@@ -117,7 +115,7 @@ serviceability/sa/ClhsdbPmap.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintAll.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintAs.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintStatics.java 8193639 solaris-all
-serviceability/sa/ClhsdbPstack.java 8193639 solaris-all
+serviceability/sa/ClhsdbPstack.java 8193639,8240956 solaris-all,linux-all
 serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8193639 solaris-all
 serviceability/sa/ClhsdbScanOops.java 8193639,8235220,8230731 solaris-all,linux-x64,macosx-x64,windows-x64
 serviceability/sa/ClhsdbSource.java 8193639 solaris-all
@@ -133,7 +131,7 @@ serviceability/sa/TestClhsdbJstackLock.java 8193639 solaris-all
 serviceability/sa/TestCpoolForInvokeDynamic.java 8193639 solaris-all
 serviceability/sa/TestDefaultMethods.java 8193639 solaris-all
 serviceability/sa/TestG1HeapRegion.java 8193639 solaris-all
-serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639 solaris-all
+serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639,8241158 solaris-all,macosx-x64
 serviceability/sa/TestHeapDumpForLargeArray.java 8193639 solaris-all
 serviceability/sa/TestInstanceKlassSize.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestInstanceKlassSizeForInterface.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
@@ -142,7 +140,7 @@ serviceability/sa/TestJhsdbJstackLock.java 8193639 solaris-all
 serviceability/sa/TestJmapCore.java 8193639 solaris-all
 serviceability/sa/TestJmapCoreMetaspace.java 8193639 solaris-all
 serviceability/sa/TestPrintMdo.java 8193639 solaris-all
-serviceability/sa/TestRevPtrsForInvokeDynamic.java 8191270 generic-all
+serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 serviceability/sa/TestType.java 8193639 solaris-all
 serviceability/sa/TestUniverse.java#id0 8193639 solaris-all
 

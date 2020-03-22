@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,7 @@ public abstract class SPARCAssembler extends Assembler {
     public enum Annul {
         ANNUL(1),
         NOT_ANNUL(0);
+
         public final int flag;
 
         Annul(int flag) {
@@ -557,6 +558,7 @@ public abstract class SPARCAssembler extends Assembler {
     public enum BranchPredict {
         PREDICT_TAKEN(1),
         PREDICT_NOT_TAKEN(0);
+
         public final int flag;
 
         BranchPredict(int flag) {

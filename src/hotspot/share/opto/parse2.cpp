@@ -1645,7 +1645,7 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
     // Add predicates at bci of if dominating the loop so traps can be
     // recorded on the if's profile data
     int bc_depth = repush_if_args();
-    add_predicate();
+    add_empty_predicates();
     dec_sp(bc_depth);
     path->set_has_predicates();
   }

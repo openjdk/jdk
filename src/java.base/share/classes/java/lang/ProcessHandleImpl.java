@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @param pids an allocated long array to receive the pids
      * @param ppids an allocated long array to receive the parent pids; may be null
      * @param starttimes an allocated long array to receive the child start times; may be null
-     * @return if greater than or equals to zero is the number of pids in the array;
+     * @return if greater than or equal to zero is the number of pids in the array;
      *      if greater than the length of the arrays, the arrays are too small
      */
     private static native int getProcessPids0(long pid, long[] pids,

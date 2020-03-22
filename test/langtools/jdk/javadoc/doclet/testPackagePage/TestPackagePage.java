@@ -84,21 +84,21 @@ public class TestPackagePage extends JavadocTester {
         checkOutput("help-doc.html", true,
             "<li>Package</li>");
         checkOutput("allclasses-index.html", true,
-                "<div class=\"typeSummary\">\n<table>\n"
-                + "<caption><span>Class Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<div class=\"type-summary\">\n<table>\n"
+                + "<caption><span>Class Summary</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "<th class=\"col-first\" scope=\"col\">Class</th>\n"
+                + "<th class=\"col-last\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
                 + "</thead>\n");
         checkOutput("allpackages-index.html", true,
-                "<div class=\"packagesSummary\">\n<table>\n"
-                + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<div class=\"packages-summary\">\n<table>\n"
+                + "<caption><span>Package Summary</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "<th class=\"col-first\" scope=\"col\">Package</th>\n"
+                + "<th class=\"col-last\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
                 + "</thead>\n");
         checkOutput("type-search-index.js", true,
@@ -107,7 +107,7 @@ public class TestPackagePage extends JavadocTester {
                 "{\"l\":\"All Packages\",\"u\":\"allpackages-index.html\"}");
         checkOutput("index-all.html", true,
                 "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>"
-                + "<span class=\"verticalSeparator\">|</span>"
+                + "<span class=\"vertical-separator\">|</span>"
                 + "<a href=\"allpackages-index.html\">All&nbsp;Packages</a>");
     }
 }

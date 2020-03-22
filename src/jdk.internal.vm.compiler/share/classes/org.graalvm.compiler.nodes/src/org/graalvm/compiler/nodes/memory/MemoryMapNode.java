@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,13 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = {Extension, Memory}, cycles = CYCLES_0, size = SIZE_0)
-public final class MemoryMapNode extends FloatingNode implements MemoryMap, MemoryNode, LIRLowerable {
+public final class MemoryMapNode extends FloatingNode implements MemoryMap, SingleMemoryKill, LIRLowerable {
 
     public static final NodeClass<MemoryMapNode> TYPE = NodeClass.create(MemoryMapNode.class);
     protected final List<LocationIdentity> locationIdentities;
     @Input(Memory) NodeInputList<ValueNode> nodes;
 
-    private boolean checkOrder(EconomicMap<LocationIdentity, MemoryNode> mmap) {
+    private boolean checkOrder(EconomicMap<LocationIdentity, MemoryKill> mmap) {
         for (int i = 0; i < locationIdentities.size(); i++) {
             LocationIdentity locationIdentity = locationIdentities.get(i);
             ValueNode n = nodes.get(i);
@@ -64,13 +64,13 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
         return true;
     }
 
-    public MemoryMapNode(EconomicMap<LocationIdentity, MemoryNode> mmap) {
+    public MemoryMapNode(EconomicMap<LocationIdentity, MemoryKill> mmap) {
         super(TYPE, StampFactory.forVoid());
         int size = mmap.size();
         locationIdentities = new ArrayList<>(size);
         nodes = new NodeInputList<>(this, size);
         int index = 0;
-        MapCursor<LocationIdentity, MemoryNode> cursor = mmap.getEntries();
+        MapCursor<LocationIdentity, MemoryKill> cursor = mmap.getEntries();
         while (cursor.advance()) {
             locationIdentities.add(cursor.getKey());
             nodes.initialize(index, (ValueNode) cursor.getValue());
@@ -92,7 +92,7 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
     }
 
     @Override
-    public MemoryNode getLastLocationAccess(LocationIdentity locationIdentity) {
+    public MemoryKill getLastLocationAccess(LocationIdentity locationIdentity) {
         if (locationIdentity.isImmutable()) {
             return null;
         } else {
@@ -101,7 +101,7 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
                 index = locationIdentities.indexOf(any());
             }
             assert index != -1;
-            return (MemoryNode) nodes.get(index);
+            return (MemoryKill) nodes.get(index);
         }
     }
 
@@ -110,10 +110,10 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
         return locationIdentities;
     }
 
-    public EconomicMap<LocationIdentity, MemoryNode> toMap() {
-        EconomicMap<LocationIdentity, MemoryNode> res = EconomicMap.create(Equivalence.DEFAULT, locationIdentities.size());
+    public EconomicMap<LocationIdentity, MemoryKill> toMap() {
+        EconomicMap<LocationIdentity, MemoryKill> res = EconomicMap.create(Equivalence.DEFAULT, locationIdentities.size());
         for (int i = 0; i < nodes.size(); i++) {
-            res.put(locationIdentities.get(i), (MemoryNode) nodes.get(i));
+            res.put(locationIdentities.get(i), (MemoryKill) nodes.get(i));
         }
         return res;
     }
@@ -121,5 +121,10 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         // nothing to do...
+    }
+
+    @Override
+    public LocationIdentity getKilledLocationIdentity() {
+        return LocationIdentity.any();
     }
 }

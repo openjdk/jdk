@@ -35,10 +35,9 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -87,9 +86,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         navBar.setNavLinkModule(linkContent);
         navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
 
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(annotationType);
@@ -110,7 +109,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_HEADER, annotationType);
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, new StringContent(header));
         heading.add(getTypeParameterLinks(linkInfo));
         div.add(heading);
@@ -129,7 +128,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public void addFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.addMainContent(MarkerComments.END_OF_CLASS_DATA)
                     .setFooter(htmlTree);
@@ -140,7 +139,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         String description = getDescription("declaration", annotationType);
         PackageElement pkg = utils.containingPackage(this.annotationType);
         List<DocPath> localStylesheets = getLocalStylesheets(pkg);
-        contentTree.add(bodyContents.toContent());
+        contentTree.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(annotationType),
                 description, localStylesheets, contentTree);
     }
@@ -157,9 +156,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
 
     @Override
     public void addAnnotationTypeSignature(String modifiers, Content annotationInfoTree) {
-        Content hr = new HtmlTree(HtmlTag.HR);
+        Content hr = new HtmlTree(TagName.HR);
         annotationInfoTree.add(hr);
-        Content pre = new HtmlTree(HtmlTag.PRE);
+        Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(annotationType, pre);
         pre.add(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,

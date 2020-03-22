@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,11 +169,15 @@ class CharPredicates {
 
     /////////////////////////////////////////////////////////////////////////////
 
-    private static CharPredicate getPosixPredicate(String name) {
+    private static CharPredicate getPosixPredicate(String name, boolean caseIns) {
         switch (name) {
             case "ALPHA": return ALPHABETIC();
-            case "LOWER": return LOWERCASE();
-            case "UPPER": return UPPERCASE();
+            case "LOWER": return caseIns
+                                ? LOWERCASE().union(UPPERCASE(), TITLECASE())
+                                : LOWERCASE();
+            case "UPPER": return caseIns
+                                ? UPPERCASE().union(LOWERCASE(), TITLECASE())
+                                : UPPERCASE();
             case "SPACE": return WHITE_SPACE();
             case "PUNCT": return PUNCTUATION();
             case "XDIGIT": return HEX_DIGIT();
@@ -187,40 +191,46 @@ class CharPredicates {
         }
     }
 
-    private static CharPredicate getUnicodePredicate(String name) {
+    private static CharPredicate getUnicodePredicate(String name, boolean caseIns) {
         switch (name) {
             case "ALPHABETIC": return ALPHABETIC();
             case "ASSIGNED": return ASSIGNED();
             case "CONTROL": return CONTROL();
-            case "HEXDIGIT": return HEX_DIGIT();
-            case "IDEOGRAPHIC": return IDEOGRAPHIC();
-            case "JOINCONTROL": return JOIN_CONTROL();
-            case "LETTER": return LETTER();
-            case "LOWERCASE": return LOWERCASE();
-            case "NONCHARACTERCODEPOINT": return NONCHARACTER_CODE_POINT();
-            case "TITLECASE": return TITLECASE();
-            case "PUNCTUATION": return PUNCTUATION();
-            case "UPPERCASE": return UPPERCASE();
-            case "WHITESPACE": return WHITE_SPACE();
-            case "WORD": return WORD();
-            case "WHITE_SPACE": return WHITE_SPACE();
+            case "HEXDIGIT":
             case "HEX_DIGIT": return HEX_DIGIT();
-            case "NONCHARACTER_CODE_POINT": return NONCHARACTER_CODE_POINT();
+            case "IDEOGRAPHIC": return IDEOGRAPHIC();
+            case "JOINCONTROL":
             case "JOIN_CONTROL": return JOIN_CONTROL();
+            case "LETTER": return LETTER();
+            case "LOWERCASE": return caseIns
+                                    ? LOWERCASE().union(UPPERCASE(), TITLECASE())
+                                    : LOWERCASE();
+            case "NONCHARACTERCODEPOINT":
+            case "NONCHARACTER_CODE_POINT": return NONCHARACTER_CODE_POINT();
+            case "TITLECASE": return caseIns
+                                    ? TITLECASE().union(LOWERCASE(), UPPERCASE())
+                                    : TITLECASE();
+            case "PUNCTUATION": return PUNCTUATION();
+            case "UPPERCASE": return caseIns
+                                    ? UPPERCASE().union(LOWERCASE(), TITLECASE())
+                                    : UPPERCASE();
+            case "WHITESPACE":
+            case "WHITE_SPACE": return WHITE_SPACE();
+            case "WORD": return WORD();
             default: return null;
         }
     }
 
-    public static CharPredicate forUnicodeProperty(String propName) {
+    public static CharPredicate forUnicodeProperty(String propName, boolean caseIns) {
         propName = propName.toUpperCase(Locale.ROOT);
-        CharPredicate p = getUnicodePredicate(propName);
+        CharPredicate p = getUnicodePredicate(propName, caseIns);
         if (p != null)
             return p;
-        return getPosixPredicate(propName);
+        return getPosixPredicate(propName, caseIns);
     }
 
-    public static CharPredicate forPOSIXName(String propName) {
-        return getPosixPredicate(propName.toUpperCase(Locale.ENGLISH));
+    public static CharPredicate forPOSIXName(String propName, boolean caseIns) {
+        return getPosixPredicate(propName.toUpperCase(Locale.ENGLISH), caseIns);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -254,14 +264,23 @@ class CharPredicates {
 
     // unicode categories, aliases, properties, java methods ...
 
-    static CharPredicate forProperty(String name) {
+    static CharPredicate forProperty(String name, boolean caseIns) {
         // Unicode character property aliases, defined in
         // http://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt
         switch (name) {
             case "Cn": return category(1<<Character.UNASSIGNED);
-            case "Lu": return category(1<<Character.UPPERCASE_LETTER);
-            case "Ll": return category(1<<Character.LOWERCASE_LETTER);
-            case "Lt": return category(1<<Character.TITLECASE_LETTER);
+            case "Lu": return category(caseIns ? (1<<Character.LOWERCASE_LETTER) |
+                                                 (1<<Character.UPPERCASE_LETTER) |
+                                                 (1<<Character.TITLECASE_LETTER)
+                                               : (1<<Character.UPPERCASE_LETTER));
+            case "Ll": return category(caseIns ? (1<<Character.LOWERCASE_LETTER) |
+                                                 (1<<Character.UPPERCASE_LETTER) |
+                                                 (1<<Character.TITLECASE_LETTER)
+                                               : (1<<Character.LOWERCASE_LETTER));
+            case "Lt": return category(caseIns ? (1<<Character.LOWERCASE_LETTER) |
+                                                 (1<<Character.UPPERCASE_LETTER) |
+                                                 (1<<Character.TITLECASE_LETTER)
+                                               : (1<<Character.TITLECASE_LETTER));
             case "Lm": return category(1<<Character.MODIFIER_LETTER);
             case "Lo": return category(1<<Character.OTHER_LETTER);
             case "Mn": return category(1<<Character.NON_SPACING_MARK);
@@ -331,39 +350,50 @@ class CharPredicates {
             case "all": return Pattern.ALL();
             // Posix regular expression character classes, defined in
             // http://www.unix.org/onlinepubs/009695399/basedefs/xbd_chap09.html
-            case "ASCII": return range(0x00, 0x7F);   // ASCII
-            case "Alnum": return ctype(ASCII.ALNUM);  // Alphanumeric characters
-            case "Alpha": return ctype(ASCII.ALPHA);  // Alphabetic characters
-            case "Blank": return ctype(ASCII.BLANK);  // Space and tab characters
-            case "Cntrl": return ctype(ASCII.CNTRL);  // Control characters
-            case "Digit": return range('0', '9');     // Numeric characters
-            case "Graph": return ctype(ASCII.GRAPH);  // printable and visible
-            case "Lower": return range('a', 'z');     // Lower-case alphabetic
-            case "Print": return range(0x20, 0x7E);   // Printable characters
-            case "Punct": return ctype(ASCII.PUNCT);  // Punctuation characters
-            case "Space": return ctype(ASCII.SPACE);  // Space characters
-            case "Upper": return range('A', 'Z');     // Upper-case alphabetic
+            case "ASCII": return range(0x00, 0x7F);    // ASCII
+            case "Alnum": return ctype(ASCII.ALNUM);   // Alphanumeric characters
+            case "Alpha": return ctype(ASCII.ALPHA);   // Alphabetic characters
+            case "Blank": return ctype(ASCII.BLANK);   // Space and tab characters
+            case "Cntrl": return ctype(ASCII.CNTRL);   // Control characters
+            case "Digit": return range('0', '9');      // Numeric characters
+            case "Graph": return ctype(ASCII.GRAPH);   // printable and visible
+            case "Lower": return caseIns ? ctype(ASCII.ALPHA)
+                                    : range('a', 'z'); // Lower-case alphabetic
+            case "Print": return range(0x20, 0x7E);    // Printable characters
+            case "Punct": return ctype(ASCII.PUNCT);   // Punctuation characters
+            case "Space": return ctype(ASCII.SPACE);   // Space characters
+            case "Upper": return caseIns ? ctype(ASCII.ALPHA)
+                                    : range('A', 'Z'); // Upper-case alphabetic
             case "XDigit": return ctype(ASCII.XDIGIT); // hexadecimal digits
 
             // Java character properties, defined by methods in Character.java
-            case "javaLowerCase": return java.lang.Character::isLowerCase;
-            case "javaUpperCase": return  Character::isUpperCase;
-            case "javaAlphabetic": return java.lang.Character::isAlphabetic;
-            case "javaIdeographic": return java.lang.Character::isIdeographic;
-            case "javaTitleCase": return java.lang.Character::isTitleCase;
-            case "javaDigit": return java.lang.Character::isDigit;
-            case "javaDefined": return java.lang.Character::isDefined;
-            case "javaLetter": return java.lang.Character::isLetter;
-            case "javaLetterOrDigit": return java.lang.Character::isLetterOrDigit;
-            case "javaJavaIdentifierStart": return java.lang.Character::isJavaIdentifierStart;
-            case "javaJavaIdentifierPart": return java.lang.Character::isJavaIdentifierPart;
-            case "javaUnicodeIdentifierStart": return java.lang.Character::isUnicodeIdentifierStart;
-            case "javaUnicodeIdentifierPart": return java.lang.Character::isUnicodeIdentifierPart;
-            case "javaIdentifierIgnorable": return java.lang.Character::isIdentifierIgnorable;
-            case "javaSpaceChar": return java.lang.Character::isSpaceChar;
-            case "javaWhitespace": return java.lang.Character::isWhitespace;
-            case "javaISOControl": return java.lang.Character::isISOControl;
-            case "javaMirrored": return java.lang.Character::isMirrored;
+            case "javaLowerCase": return caseIns ? c -> Character.isLowerCase(c) ||
+                                                        Character.isUpperCase(c) ||
+                                                        Character.isTitleCase(c)
+                                                 : Character::isLowerCase;
+            case "javaUpperCase": return caseIns ? c -> Character.isUpperCase(c) ||
+                                                        Character.isLowerCase(c) ||
+                                                        Character.isTitleCase(c)
+                                                 : Character::isUpperCase;
+            case "javaAlphabetic": return Character::isAlphabetic;
+            case "javaIdeographic": return Character::isIdeographic;
+            case "javaTitleCase": return caseIns ? c -> Character.isTitleCase(c) ||
+                                                        Character.isLowerCase(c) ||
+                                                        Character.isUpperCase(c)
+                                                 : Character::isTitleCase;
+            case "javaDigit": return Character::isDigit;
+            case "javaDefined": return Character::isDefined;
+            case "javaLetter": return Character::isLetter;
+            case "javaLetterOrDigit": return Character::isLetterOrDigit;
+            case "javaJavaIdentifierStart": return Character::isJavaIdentifierStart;
+            case "javaJavaIdentifierPart": return Character::isJavaIdentifierPart;
+            case "javaUnicodeIdentifierStart": return Character::isUnicodeIdentifierStart;
+            case "javaUnicodeIdentifierPart": return Character::isUnicodeIdentifierPart;
+            case "javaIdentifierIgnorable": return Character::isIdentifierIgnorable;
+            case "javaSpaceChar": return Character::isSpaceChar;
+            case "javaWhitespace": return Character::isWhitespace;
+            case "javaISOControl": return Character::isISOControl;
+            case "javaMirrored": return Character::isMirrored;
             default: return null;
         }
     }

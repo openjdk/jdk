@@ -68,36 +68,32 @@ public class ClhsdbFindPC {
             // the 'jstack -v' command
             cmds = new ArrayList<String>();
 
-            // Output could be null if the test was skipped due to
-            // attach permission issues.
-            if (output != null) {
-                String cmdStr = null;
-                String[] parts = output.split("LingeredAppWithTrivialMain.main");
-                String[] tokens = parts[1].split(" ");
-                for (String token : tokens) {
-                    if (token.contains("pc")) {
-                        String[] address = token.split("=");
-                        // address[1] represents the address of the Method
-                        cmdStr = "findpc " + address[1].replace(",","");
-                        cmds.add(cmdStr);
-                        break;
-                    }
+            String cmdStr = null;
+            String[] parts = output.split("LingeredAppWithTrivialMain.main");
+            String[] tokens = parts[1].split(" ");
+            for (String token : tokens) {
+                if (token.contains("pc")) {
+                    String[] address = token.split("=");
+                    // address[1] represents the address of the Method
+                    cmdStr = "findpc " + address[1].replace(",","");
+                    cmds.add(cmdStr);
+                    break;
                 }
+            }
 
-                Map<String, List<String>> expStrMap = new HashMap<>();
-                if (withXcomp) {
-                    expStrMap.put(cmdStr, List.of(
+            Map<String, List<String>> expStrMap = new HashMap<>();
+            if (withXcomp) {
+                expStrMap.put(cmdStr, List.of(
                             "In code in NMethod for LingeredAppWithTrivialMain.main",
                             "content:",
                             "oops:",
                             "frame size:"));
-                } else {
-                    expStrMap.put(cmdStr, List.of(
+            } else {
+                expStrMap.put(cmdStr, List.of(
                             "In interpreter codelet"));
-                }
-
-                test.run(theApp.getPid(), cmds, expStrMap, null);
             }
+
+            test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {

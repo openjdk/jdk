@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,17 @@
 /*
  * @test
  * @summary A few edge cases where there's no class to be included in the dynamic archive.
- * @requires vm.cds
+ * @requires vm.cds & !vm.graal.enabled
+ * @comment The test assumes that when "java -version" is executed, only a very limited number
+ *          of classes are loaded, and all of those are loaded from the default shared archive.
+ *
+ *          However, when graal is used as the JIT, many extra classes are loaded during VM start-up.
+ *          Some of those are loaded dynamically from jrt:/. Some classes are also defined by
+ *          LambdaMetafactory. This causes complexity that cannot be easily handled by this test.
+ *
+ *          The VM code covered by this test can be sufficiently tested with C1/C2. So there's no need
+ *          to bend over backwards to run this test with graal.
+ *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build StrConcatApp
  * @run driver ClassFileInstaller -jar strConcatApp.jar StrConcatApp
@@ -62,7 +72,11 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
     }
 
     private static void checkWarning(OutputAnalyzer output) throws Exception {
-        if (output.getStdout().contains("jrt:/") || output.getStdout().contains("unsafe anonymous")) {
+        if (output.firstMatch("bytes: [0-9]+ checksum: [0-9a-f]+") != null) {
+            // Patterns like this indicate that a class was not loaded from CDS archive:
+            // [info ][class,load] jdk.internal.module.DefaultRoots$$Lambda$1/0x00007f80c4512048 source: jdk.internal.module.DefaultRoots
+            // [debug][class,load]  klass: 0x0000000800b77cf8 super: 0x0000000800007450 interfaces: 0x0000000800162538
+            //                      loader: [loader data: 0x00007f80f416a5b0 of 'bootstrap'] bytes: 403 checksum: 753e58aa
             System.out.println("test skipped: this platform uses non-archived classes when running -version");
         } else {
             output.shouldContain(warningMessage);

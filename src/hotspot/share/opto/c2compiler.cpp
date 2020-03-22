@@ -108,7 +108,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, Dir
 
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, directive);
+    Compile C(env, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
@@ -652,7 +652,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
 
 int C2Compiler::initial_code_buffer_size(int const_size) {
   // See Compile::init_scratch_buffer_blob
-  int locs_size = sizeof(relocInfo) * Compile::MAX_locs_size;
+  int locs_size = sizeof(relocInfo) * PhaseOutput::MAX_locs_size;
   int slop = 2 * CodeSection::end_slop(); // space between sections
-  return Compile::MAX_inst_size + Compile::MAX_stubs_size + const_size + slop + locs_size;
+  return PhaseOutput::MAX_inst_size + PhaseOutput::MAX_stubs_size + const_size + slop + locs_size;
 }

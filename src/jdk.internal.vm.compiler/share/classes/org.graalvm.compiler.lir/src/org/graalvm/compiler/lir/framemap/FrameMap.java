@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,11 @@ public abstract class FrameMap {
     }
 
     /**
-     * Gets the frame size of the compiled frame, not including the size of the
-     * {@link Architecture#getReturnAddressSize() return address slot}.
+     * Gets the allocated space in the compiled frame, not including any ABI required storage like
+     * the {@link Architecture#getReturnAddressSize() return address slot} or a saved frame pointer.
+     * {@link #totalFrameSize} includes all storage that is part of the frame.
      *
-     * @return The size of the frame (in bytes).
+     * @return The size of the allocated frame space (in bytes).
      */
     public int frameSize() {
         assert frameSize != -1 : "frame size not computed yet";
@@ -148,8 +149,8 @@ public abstract class FrameMap {
     }
 
     /**
-     * Gets the total frame size of the compiled frame, including the size of the
-     * {@link Architecture#getReturnAddressSize() return address slot}.
+     * Gets the total frame size of the compiled frame, including any ABI required storage like the
+     * {@link Architecture#getReturnAddressSize() return address slot} or a saved frame pointer.
      *
      * @return The total size of the frame (in bytes).
      */

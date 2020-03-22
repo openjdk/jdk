@@ -39,237 +39,34 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
   CgroupV1Controller* cpuset = NULL;
   CgroupV1Controller* cpu = NULL;
   CgroupV1Controller* cpuacct = NULL;
-  FILE *mntinfo = NULL;
-  FILE *cgroups = NULL;
-  FILE *cgroup = NULL;
-  char buf[MAXPATHLEN+1];
-  char tmproot[MAXPATHLEN+1];
-  char tmpmount[MAXPATHLEN+1];
-  char *p;
-  bool is_cgroupsV2;
-  // true iff all controllers, memory, cpu, cpuset, cpuacct are enabled
-  // at the kernel level.
-  bool all_controllers_enabled;
-
   CgroupInfo cg_infos[CG_INFO_LENGTH];
-  int cpuset_idx  = 0;
-  int cpu_idx     = 1;
-  int cpuacct_idx = 2;
-  int memory_idx  = 3;
+  u1 cg_type_flags = INVALID_CGROUPS_GENERIC;
+  const char* proc_cgroups = "/proc/cgroups";
+  const char* proc_self_cgroup = "/proc/self/cgroup";
+  const char* proc_self_mountinfo = "/proc/self/mountinfo";
 
-  /*
-   * Read /proc/cgroups so as to be able to distinguish cgroups v2 vs cgroups v1.
-   *
-   * For cgroups v1 unified hierarchy, cpu, cpuacct, cpuset, memory controllers
-   * must have non-zero for the hierarchy ID field.
-   */
-  cgroups = fopen("/proc/cgroups", "r");
-  if (cgroups == NULL) {
-      log_debug(os, container)("Can't open /proc/cgroups, %s",
-                               os::strerror(errno));
-      return NULL;
-  }
+  bool valid_cgroup = determine_type(cg_infos, proc_cgroups, proc_self_cgroup, proc_self_mountinfo, &cg_type_flags);
 
-  while ((p = fgets(buf, MAXPATHLEN, cgroups)) != NULL) {
-    char name[MAXPATHLEN+1];
-    int  hierarchy_id;
-    int  enabled;
-
-    // Format of /proc/cgroups documented via man 7 cgroups
-    if (sscanf(p, "%s %d %*d %d", name, &hierarchy_id, &enabled) != 3) {
-      continue;
-    }
-    if (strcmp(name, "memory") == 0) {
-      cg_infos[memory_idx]._name = os::strdup(name);
-      cg_infos[memory_idx]._hierarchy_id = hierarchy_id;
-      cg_infos[memory_idx]._enabled = (enabled == 1);
-    } else if (strcmp(name, "cpuset") == 0) {
-      cg_infos[cpuset_idx]._name = os::strdup(name);
-      cg_infos[cpuset_idx]._hierarchy_id = hierarchy_id;
-      cg_infos[cpuset_idx]._enabled = (enabled == 1);
-    } else if (strcmp(name, "cpu") == 0) {
-      cg_infos[cpu_idx]._name = os::strdup(name);
-      cg_infos[cpu_idx]._hierarchy_id = hierarchy_id;
-      cg_infos[cpu_idx]._enabled = (enabled == 1);
-    } else if (strcmp(name, "cpuacct") == 0) {
-      cg_infos[cpuacct_idx]._name = os::strdup(name);
-      cg_infos[cpuacct_idx]._hierarchy_id = hierarchy_id;
-      cg_infos[cpuacct_idx]._enabled = (enabled == 1);
-    }
-  }
-  fclose(cgroups);
-
-  is_cgroupsV2 = true;
-  all_controllers_enabled = true;
-  for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
-    all_controllers_enabled = all_controllers_enabled && cg_infos[i]._enabled;
-  }
-
-  if (!all_controllers_enabled) {
-    // one or more controllers disabled, disable container support
-    log_debug(os, container)("One or more required controllers disabled at kernel level.");
+  if (!valid_cgroup) {
+    // Could not detect cgroup type
     return NULL;
   }
+  assert(is_valid_cgroup(&cg_type_flags), "Expected valid cgroup type");
 
-  /*
-   * Read /proc/self/cgroup and determine:
-   *  - the cgroup path for cgroups v2 or
-   *  - on a cgroups v1 system, collect info for mapping
-   *    the host mount point to the local one via /proc/self/mountinfo below.
-   */
-  cgroup = fopen("/proc/self/cgroup", "r");
-  if (cgroup == NULL) {
-    log_debug(os, container)("Can't open /proc/self/cgroup, %s",
-                             os::strerror(errno));
-    return NULL;
-  }
-
-  while ((p = fgets(buf, MAXPATHLEN, cgroup)) != NULL) {
-    char *controllers;
-    char *token;
-    char *hierarchy_id_str;
-    int  hierarchy_id;
-    char *cgroup_path;
-
-    hierarchy_id_str = strsep(&p, ":");
-    hierarchy_id = atoi(hierarchy_id_str);
-    /* Get controllers and base */
-    controllers = strsep(&p, ":");
-    cgroup_path = strsep(&p, "\n");
-
-    if (controllers == NULL) {
-      continue;
-    }
-
-    while (!is_cgroupsV2 && (token = strsep(&controllers, ",")) != NULL) {
-      if (strcmp(token, "memory") == 0) {
-        assert(hierarchy_id == cg_infos[memory_idx]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
-        cg_infos[memory_idx]._cgroup_path = os::strdup(cgroup_path);
-      } else if (strcmp(token, "cpuset") == 0) {
-        assert(hierarchy_id == cg_infos[cpuset_idx]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
-        cg_infos[cpuset_idx]._cgroup_path = os::strdup(cgroup_path);
-      } else if (strcmp(token, "cpu") == 0) {
-        assert(hierarchy_id == cg_infos[cpu_idx]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
-        cg_infos[cpu_idx]._cgroup_path = os::strdup(cgroup_path);
-      } else if (strcmp(token, "cpuacct") == 0) {
-        assert(hierarchy_id == cg_infos[cpuacct_idx]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
-        cg_infos[cpuacct_idx]._cgroup_path = os::strdup(cgroup_path);
-      }
-    }
-    if (is_cgroupsV2) {
-      for (int i = 0; i < CG_INFO_LENGTH; i++) {
-        cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
-      }
-    }
-  }
-  fclose(cgroup);
-
-  if (is_cgroupsV2) {
-    // Find the cgroup2 mount point by reading /proc/self/mountinfo
-    mntinfo = fopen("/proc/self/mountinfo", "r");
-    if (mntinfo == NULL) {
-        log_debug(os, container)("Can't open /proc/self/mountinfo, %s",
-                                 os::strerror(errno));
-        return NULL;
-    }
-
-    char cgroupv2_mount[MAXPATHLEN+1];
-    char fstype[MAXPATHLEN+1];
-    bool mount_point_found = false;
-    while ((p = fgets(buf, MAXPATHLEN, mntinfo)) != NULL) {
-      char *tmp_mount_point = cgroupv2_mount;
-      char *tmp_fs_type = fstype;
-
-      // mountinfo format is documented at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
-      if (sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s cgroup2 %*s", tmp_mount_point, tmp_fs_type) == 2) {
-        // we likely have an early match return, be sure we have cgroup2 as fstype
-        if (strcmp("cgroup2", tmp_fs_type) == 0) {
-          mount_point_found = true;
-          break;
-        }
-      }
-    }
-    fclose(mntinfo);
-    if (!mount_point_found) {
-      log_trace(os, container)("Mount point for cgroupv2 not found in /proc/self/mountinfo");
-      return NULL;
-    }
+  if (is_cgroup_v2(&cg_type_flags)) {
     // Cgroups v2 case, we have all the info we need.
     // Construct the subsystem, free resources and return
     // Note: any index in cg_infos will do as the path is the same for
     //       all controllers.
-    CgroupController* unified = new CgroupV2Controller(cgroupv2_mount, cg_infos[memory_idx]._cgroup_path);
-    for (int i = 0; i < CG_INFO_LENGTH; i++) {
-      os::free(cg_infos[i]._name);
-      os::free(cg_infos[i]._cgroup_path);
-    }
+    CgroupController* unified = new CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path, cg_infos[MEMORY_IDX]._cgroup_path);
     log_debug(os, container)("Detected cgroups v2 unified hierarchy");
+    cleanup(cg_infos);
     return new CgroupV2Subsystem(unified);
   }
 
-  // What follows is cgroups v1
-  log_debug(os, container)("Detected cgroups hybrid or legacy hierarchy, using cgroups v1 controllers");
-
   /*
-   * Find the cgroup mount point for memory and cpuset
-   * by reading /proc/self/mountinfo
+   * Cgroup v1 case:
    *
-   * Example for docker:
-   * 219 214 0:29 /docker/7208cebd00fa5f2e342b1094f7bed87fa25661471a4637118e65f1c995be8a34 /sys/fs/cgroup/memory ro,nosuid,nodev,noexec,relatime - cgroup cgroup rw,memory
-   *
-   * Example for host:
-   * 34 28 0:29 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,memory
-   */
-  mntinfo = fopen("/proc/self/mountinfo", "r");
-  if (mntinfo == NULL) {
-      log_debug(os, container)("Can't open /proc/self/mountinfo, %s",
-                               os::strerror(errno));
-      return NULL;
-  }
-
-  while ((p = fgets(buf, MAXPATHLEN, mntinfo)) != NULL) {
-    char tmpcgroups[MAXPATHLEN+1];
-    char *cptr = tmpcgroups;
-    char *token;
-
-    // mountinfo format is documented at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
-    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- cgroup %*s %s", tmproot, tmpmount, tmpcgroups) != 3) {
-      continue;
-    }
-    while ((token = strsep(&cptr, ",")) != NULL) {
-      if (strcmp(token, "memory") == 0) {
-        memory = new CgroupV1MemoryController(tmproot, tmpmount);
-      } else if (strcmp(token, "cpuset") == 0) {
-        cpuset = new CgroupV1Controller(tmproot, tmpmount);
-      } else if (strcmp(token, "cpu") == 0) {
-        cpu = new CgroupV1Controller(tmproot, tmpmount);
-      } else if (strcmp(token, "cpuacct") == 0) {
-        cpuacct= new CgroupV1Controller(tmproot, tmpmount);
-      }
-    }
-  }
-
-  fclose(mntinfo);
-
-  if (memory == NULL) {
-    log_debug(os, container)("Required cgroup v1 memory subsystem not found");
-    return NULL;
-  }
-  if (cpuset == NULL) {
-    log_debug(os, container)("Required cgroup v1 cpuset subsystem not found");
-    return NULL;
-  }
-  if (cpu == NULL) {
-    log_debug(os, container)("Required cgroup v1 cpu subsystem not found");
-    return NULL;
-  }
-  if (cpuacct == NULL) {
-    log_debug(os, container)("Required cgroup v1 cpuacct subsystem not found");
-    return NULL;
-  }
-
-  /*
    * Use info gathered previously from /proc/self/cgroup
    * and map host mount point to
    * local one via /proc/self/mountinfo content above
@@ -293,19 +90,300 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
    * /sys/fs/cgroup/memory/user.slice
    *
    */
+  assert(is_cgroup_v1(&cg_type_flags), "Cgroup v1 expected");
   for (int i = 0; i < CG_INFO_LENGTH; i++) {
     CgroupInfo info = cg_infos[i];
     if (strcmp(info._name, "memory") == 0) {
+      memory = new CgroupV1MemoryController(info._root_mount_path, info._mount_path);
       memory->set_subsystem_path(info._cgroup_path);
     } else if (strcmp(info._name, "cpuset") == 0) {
+      cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path);
       cpuset->set_subsystem_path(info._cgroup_path);
     } else if (strcmp(info._name, "cpu") == 0) {
+      cpu = new CgroupV1Controller(info._root_mount_path, info._mount_path);
       cpu->set_subsystem_path(info._cgroup_path);
     } else if (strcmp(info._name, "cpuacct") == 0) {
+      cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path);
       cpuacct->set_subsystem_path(info._cgroup_path);
     }
   }
+  cleanup(cg_infos);
   return new CgroupV1Subsystem(cpuset, cpu, cpuacct, memory);
+}
+
+bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
+                                            const char* proc_cgroups,
+                                            const char* proc_self_cgroup,
+                                            const char* proc_self_mountinfo,
+                                            u1* flags) {
+  FILE *mntinfo = NULL;
+  FILE *cgroups = NULL;
+  FILE *cgroup = NULL;
+  char buf[MAXPATHLEN+1];
+  char *p;
+  bool is_cgroupsV2;
+  // true iff all controllers, memory, cpu, cpuset, cpuacct are enabled
+  // at the kernel level.
+  bool all_controllers_enabled;
+
+  /*
+   * Read /proc/cgroups so as to be able to distinguish cgroups v2 vs cgroups v1.
+   *
+   * For cgroups v1 hierarchy (hybrid or legacy), cpu, cpuacct, cpuset, memory controllers
+   * must have non-zero for the hierarchy ID field and relevant controllers mounted.
+   * Conversely, for cgroups v2 (unified hierarchy), cpu, cpuacct, cpuset, memory
+   * controllers must have hierarchy ID 0 and the unified controller mounted.
+   */
+  cgroups = fopen(proc_cgroups, "r");
+  if (cgroups == NULL) {
+      log_debug(os, container)("Can't open %s, %s",
+                               proc_cgroups, os::strerror(errno));
+      *flags = INVALID_CGROUPS_GENERIC;
+      return false;
+  }
+
+  while ((p = fgets(buf, MAXPATHLEN, cgroups)) != NULL) {
+    char name[MAXPATHLEN+1];
+    int  hierarchy_id;
+    int  enabled;
+
+    // Format of /proc/cgroups documented via man 7 cgroups
+    if (sscanf(p, "%s %d %*d %d", name, &hierarchy_id, &enabled) != 3) {
+      continue;
+    }
+    if (strcmp(name, "memory") == 0) {
+      cg_infos[MEMORY_IDX]._name = os::strdup(name);
+      cg_infos[MEMORY_IDX]._hierarchy_id = hierarchy_id;
+      cg_infos[MEMORY_IDX]._enabled = (enabled == 1);
+    } else if (strcmp(name, "cpuset") == 0) {
+      cg_infos[CPUSET_IDX]._name = os::strdup(name);
+      cg_infos[CPUSET_IDX]._hierarchy_id = hierarchy_id;
+      cg_infos[CPUSET_IDX]._enabled = (enabled == 1);
+    } else if (strcmp(name, "cpu") == 0) {
+      cg_infos[CPU_IDX]._name = os::strdup(name);
+      cg_infos[CPU_IDX]._hierarchy_id = hierarchy_id;
+      cg_infos[CPU_IDX]._enabled = (enabled == 1);
+    } else if (strcmp(name, "cpuacct") == 0) {
+      cg_infos[CPUACCT_IDX]._name = os::strdup(name);
+      cg_infos[CPUACCT_IDX]._hierarchy_id = hierarchy_id;
+      cg_infos[CPUACCT_IDX]._enabled = (enabled == 1);
+    }
+  }
+  fclose(cgroups);
+
+  is_cgroupsV2 = true;
+  all_controllers_enabled = true;
+  for (int i = 0; i < CG_INFO_LENGTH; i++) {
+    is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
+    all_controllers_enabled = all_controllers_enabled && cg_infos[i]._enabled;
+  }
+
+  if (!all_controllers_enabled) {
+    // one or more controllers disabled, disable container support
+    log_debug(os, container)("One or more required controllers disabled at kernel level.");
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_GENERIC;
+    return false;
+  }
+
+  /*
+   * Read /proc/self/cgroup and determine:
+   *  - the cgroup path for cgroups v2 or
+   *  - on a cgroups v1 system, collect info for mapping
+   *    the host mount point to the local one via /proc/self/mountinfo below.
+   */
+  cgroup = fopen(proc_self_cgroup, "r");
+  if (cgroup == NULL) {
+    log_debug(os, container)("Can't open %s, %s",
+                             proc_self_cgroup, os::strerror(errno));
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_GENERIC;
+    return false;
+  }
+
+  while ((p = fgets(buf, MAXPATHLEN, cgroup)) != NULL) {
+    char *controllers;
+    char *token;
+    char *hierarchy_id_str;
+    int  hierarchy_id;
+    char *cgroup_path;
+
+    hierarchy_id_str = strsep(&p, ":");
+    hierarchy_id = atoi(hierarchy_id_str);
+    /* Get controllers and base */
+    controllers = strsep(&p, ":");
+    cgroup_path = strsep(&p, "\n");
+
+    if (controllers == NULL) {
+      continue;
+    }
+
+    while (!is_cgroupsV2 && (token = strsep(&controllers, ",")) != NULL) {
+      if (strcmp(token, "memory") == 0) {
+        assert(hierarchy_id == cg_infos[MEMORY_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
+        cg_infos[MEMORY_IDX]._cgroup_path = os::strdup(cgroup_path);
+      } else if (strcmp(token, "cpuset") == 0) {
+        assert(hierarchy_id == cg_infos[CPUSET_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
+        cg_infos[CPUSET_IDX]._cgroup_path = os::strdup(cgroup_path);
+      } else if (strcmp(token, "cpu") == 0) {
+        assert(hierarchy_id == cg_infos[CPU_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
+        cg_infos[CPU_IDX]._cgroup_path = os::strdup(cgroup_path);
+      } else if (strcmp(token, "cpuacct") == 0) {
+        assert(hierarchy_id == cg_infos[CPUACCT_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch");
+        cg_infos[CPUACCT_IDX]._cgroup_path = os::strdup(cgroup_path);
+      }
+    }
+    if (is_cgroupsV2) {
+      for (int i = 0; i < CG_INFO_LENGTH; i++) {
+        cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
+      }
+    }
+  }
+  fclose(cgroup);
+
+  // Find various mount points by reading /proc/self/mountinfo
+  // mountinfo format is documented at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+  mntinfo = fopen(proc_self_mountinfo, "r");
+  if (mntinfo == NULL) {
+      log_debug(os, container)("Can't open %s, %s",
+                               proc_self_mountinfo, os::strerror(errno));
+      cleanup(cg_infos);
+      *flags = INVALID_CGROUPS_GENERIC;
+      return false;
+  }
+
+  bool cgroupv2_mount_point_found = false;
+  bool any_cgroup_mounts_found = false;
+  while ((p = fgets(buf, MAXPATHLEN, mntinfo)) != NULL) {
+    char tmp_mount_point[MAXPATHLEN+1];
+    char tmp_fs_type[MAXPATHLEN+1];
+    char tmproot[MAXPATHLEN+1];
+    char tmpmount[MAXPATHLEN+1];
+    char tmpcgroups[MAXPATHLEN+1];
+    char *cptr = tmpcgroups;
+    char *token;
+
+    // Cgroup v2 relevant info. We only look for the _mount_path iff is_cgroupsV2 so
+    // as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
+    // block in the hybrid case.
+    //
+    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s cgroup2 %*s", tmp_mount_point, tmp_fs_type) == 2) {
+      // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
+      if (!cgroupv2_mount_point_found && strcmp("cgroup2", tmp_fs_type) == 0) {
+        cgroupv2_mount_point_found = true;
+        any_cgroup_mounts_found = true;
+        for (int i = 0; i < CG_INFO_LENGTH; i++) {
+          assert(cg_infos[i]._mount_path == NULL, "_mount_path memory stomping");
+          cg_infos[i]._mount_path = os::strdup(tmp_mount_point);
+        }
+      }
+    }
+
+    /* Cgroup v1 relevant info
+     *
+     * Find the cgroup mount point for memory, cpuset, cpu, cpuacct
+     *
+     * Example for docker:
+     * 219 214 0:29 /docker/7208cebd00fa5f2e342b1094f7bed87fa25661471a4637118e65f1c995be8a34 /sys/fs/cgroup/memory ro,nosuid,nodev,noexec,relatime - cgroup cgroup rw,memory
+     *
+     * Example for host:
+     * 34 28 0:29 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,memory
+     */
+    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s cgroup %s", tmproot, tmpmount, tmp_fs_type, tmpcgroups) == 4) {
+      if (strcmp("cgroup", tmp_fs_type) != 0) {
+        // Skip cgroup2 fs lines on hybrid or unified hierarchy.
+        continue;
+      }
+      any_cgroup_mounts_found = true;
+      while ((token = strsep(&cptr, ",")) != NULL) {
+        if (strcmp(token, "memory") == 0) {
+          assert(cg_infos[MEMORY_IDX]._mount_path == NULL, "stomping of _mount_path");
+          cg_infos[MEMORY_IDX]._mount_path = os::strdup(tmpmount);
+          cg_infos[MEMORY_IDX]._root_mount_path = os::strdup(tmproot);
+          cg_infos[MEMORY_IDX]._data_complete = true;
+        } else if (strcmp(token, "cpuset") == 0) {
+          assert(cg_infos[CPUSET_IDX]._mount_path == NULL, "stomping of _mount_path");
+          cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+          cg_infos[CPUSET_IDX]._root_mount_path = os::strdup(tmproot);
+          cg_infos[CPUSET_IDX]._data_complete = true;
+        } else if (strcmp(token, "cpu") == 0) {
+          assert(cg_infos[CPU_IDX]._mount_path == NULL, "stomping of _mount_path");
+          cg_infos[CPU_IDX]._mount_path = os::strdup(tmpmount);
+          cg_infos[CPU_IDX]._root_mount_path = os::strdup(tmproot);
+          cg_infos[CPU_IDX]._data_complete = true;
+        } else if (strcmp(token, "cpuacct") == 0) {
+          assert(cg_infos[CPUACCT_IDX]._mount_path == NULL, "stomping of _mount_path");
+          cg_infos[CPUACCT_IDX]._mount_path = os::strdup(tmpmount);
+          cg_infos[CPUACCT_IDX]._root_mount_path = os::strdup(tmproot);
+          cg_infos[CPUACCT_IDX]._data_complete = true;
+        }
+      }
+    }
+  }
+  fclose(mntinfo);
+
+  // Neither cgroup2 nor cgroup filesystems mounted via /proc/self/mountinfo
+  // No point in continuing.
+  if (!any_cgroup_mounts_found) {
+    log_trace(os, container)("No cgroup controllers mounted.");
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_NO_MOUNT;
+    return false;
+  }
+
+  if (is_cgroupsV2) {
+    if (!cgroupv2_mount_point_found) {
+      log_trace(os, container)("Mount point for cgroupv2 not found in /proc/self/mountinfo");
+      cleanup(cg_infos);
+      *flags = INVALID_CGROUPS_V2;
+      return false;
+    }
+    // Cgroups v2 case, we have all the info we need.
+    *flags = CGROUPS_V2;
+    return true;
+  }
+
+  // What follows is cgroups v1
+  log_debug(os, container)("Detected cgroups hybrid or legacy hierarchy, using cgroups v1 controllers");
+
+  if (!cg_infos[MEMORY_IDX]._data_complete) {
+    log_debug(os, container)("Required cgroup v1 memory subsystem not found");
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_V1;
+    return false;
+  }
+  if (!cg_infos[CPUSET_IDX]._data_complete) {
+    log_debug(os, container)("Required cgroup v1 cpuset subsystem not found");
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_V1;
+    return false;
+  }
+  if (!cg_infos[CPU_IDX]._data_complete) {
+    log_debug(os, container)("Required cgroup v1 cpu subsystem not found");
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_V1;
+    return false;
+  }
+  if (!cg_infos[CPUACCT_IDX]._data_complete) {
+    log_debug(os, container)("Required cgroup v1 cpuacct subsystem not found");
+    cleanup(cg_infos);
+    *flags = INVALID_CGROUPS_V1;
+    return false;
+  }
+  // Cgroups v1 case, we have all the info we need.
+  *flags = CGROUPS_V1;
+  return true;
+
+};
+
+void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
+  assert(cg_infos != NULL, "Invariant");
+  for (int i = 0; i < CG_INFO_LENGTH; i++) {
+    os::free(cg_infos[i]._name);
+    os::free(cg_infos[i]._cgroup_path);
+    os::free(cg_infos[i]._root_mount_path);
+    os::free(cg_infos[i]._mount_path);
+  }
 }
 
 /* active_processor_count

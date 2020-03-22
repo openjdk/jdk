@@ -62,8 +62,8 @@ CardTable::CardTable(MemRegion whole_heap, bool conc_scan) :
 }
 
 CardTable::~CardTable() {
-  FREE_C_HEAP_ARRAY(MemRegion, _covered);
-  FREE_C_HEAP_ARRAY(MemRegion, _committed);
+  MemRegion::destroy_array(_covered, _max_covered_regions);
+  MemRegion::destroy_array(_committed, _max_covered_regions);
 }
 
 void CardTable::initialize() {

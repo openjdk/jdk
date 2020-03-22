@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class TestIndentation extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/Indent.html", true,
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"typeParameters\">&lt;T&gt;</span>&nbsp;"
-                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">m</span>"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"type-parameters\">&lt;T&gt;</span>&nbsp;"
+                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">m</span>"
                 + "&#8203;(<span class=\"arguments\">T&nbsp;t1,\n"
                 + "T&nbsp;t2)</span>\n"
                 + "           throws <span class=\"exceptions\">java.lang.Exception</span></div>");

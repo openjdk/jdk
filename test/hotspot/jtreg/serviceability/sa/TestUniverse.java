@@ -34,7 +34,7 @@ import sun.hotspot.gc.GC;
 /**
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
- * @requires vm.hasSAandCanAttach
+ * @requires vm.hasSA
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.lib.apps.*

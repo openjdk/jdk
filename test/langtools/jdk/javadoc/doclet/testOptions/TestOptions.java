@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/package-summary.html", true,
-                "<div class=\"aboutLanguage\">Test header</div>",
-                "<div class=\"aboutLanguage\">Test footer</div>");
+                "<div class=\"about-language\">Test header</div>",
+                "<div class=\"about-language\">Test footer</div>");
     }
 
     @Test
@@ -194,69 +194,69 @@ public class TestOptions extends JavadocTester {
                 + "AnnotationTypeField</a></pre>",
                 "<section class=\"detail\" id=\"DEFAULT_NAME\">\n"
                 + "<h3>DEFAULT_NAME</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">"
+                + "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                + "<span class=\"return-type\">java.lang.String</span>&nbsp;<span class=\"member-name\">"
                 + "<a href=\"../src-html/linksource/AnnotationTypeField.html#line.32\">DEFAULT_NAME</a></span></div>",
                 "<section class=\"detail\" id=\"name()\">\n"
                 + "<h3>name</h3>\n"
-                + "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String</span>&nbsp;"
-                + "<span class=\"memberName\"><a href=\"../src-html/linksource/AnnotationTypeField.html#line.34\">"
+                + "<div class=\"member-signature\"><span class=\"return-type\">java.lang.String</span>&nbsp;"
+                + "<span class=\"member-name\"><a href=\"../src-html/linksource/AnnotationTypeField.html#line.34\">"
                 + "name</a></span></div>");
 
         checkOutput("src-html/linksource/AnnotationTypeField.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">031</span><span id=\"line.31\">"
+                "<span class=\"source-line-no\">031</span><span id=\"line.31\">"
                 + "@Documented public @interface AnnotationTypeField {</span>");
 
         checkOutput("linksource/Properties.html", true,
                 "<pre>public class <a href=\"../src-html/linksource/Properties.html#line.29\">"
                 + "Properties</a>",
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\">java.lang.Object</span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\">java.lang.Object</span>&nbsp;<span class=\"member-name\">"
                 + "<a href=\"../src-html/linksource/Properties.html#line.31\">someProperty</a></span></div>");
 
         checkOutput("src-html/linksource/Properties.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">031</span><span id=\"line.31\">    "
+                "<span class=\"source-line-no\">031</span><span id=\"line.31\">    "
                 + "public Object someProperty() {</span>");
 
         checkOutput("linksource/SomeClass.html", true,
                 "<pre>public class <a href=\"../src-html/linksource/SomeClass.html#line.29\">"
                 + "SomeClass</a>\nextends java.lang.Object</pre>",
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">"
                 + "<a href=\"../src-html/linksource/SomeClass.html#line.31\">field</a></span></div>",
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"memberName\"><a href=\"../src-html/linksource/SomeClass.html#line.33\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"member-name\"><a href=\"../src-html/linksource/SomeClass.html#line.33\">"
                 + "SomeClass</a></span>()</div>",
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">"
                 + "<a href=\"../src-html/linksource/SomeClass.html#line.36\">method</a></span>()</div>");
 
         checkOutput("src-html/linksource/SomeClass.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">029</span><span id=\"line.29\">"
+                "<span class=\"source-line-no\">029</span><span id=\"line.29\">"
                 + "public class SomeClass {</span>",
-                "<span class=\"sourceLineNo\">031</span><span id=\"line.31\">    "
+                "<span class=\"source-line-no\">031</span><span id=\"line.31\">    "
                 + "public int field;</span>",
-                "<span class=\"sourceLineNo\">033</span><span id=\"line.33\">    "
+                "<span class=\"source-line-no\">033</span><span id=\"line.33\">    "
                 + "public SomeClass() {</span>",
-                "<span class=\"sourceLineNo\">036</span><span id=\"line.36\">    "
+                "<span class=\"source-line-no\">036</span><span id=\"line.36\">    "
                 + "public int method() {</span>");
 
         checkOutput("linksource/SomeEnum.html", true,
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public static final</span>&nbsp;"
-                + "<span class=\"returnType\"><a href=\"SomeEnum.html\" title=\"enum in linksource\">"
-                + "SomeEnum</a></span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public static final</span>&nbsp;"
+                + "<span class=\"return-type\"><a href=\"SomeEnum.html\" title=\"enum in linksource\">"
+                + "SomeEnum</a></span>&nbsp;<span class=\"member-name\">"
                 + "<a href=\"../src-html/linksource/SomeEnum.html#line.29\">VALUE1</a></span></div>",
-                "<div class=\"memberSignature\"><span class=\"modifiers\">public static final</span>&nbsp;"
-                + "<span class=\"returnType\"><a href=\"SomeEnum.html\" title=\"enum in linksource\">"
-                + "SomeEnum</a></span>&nbsp;<span class=\"memberName\">"
+                "<div class=\"member-signature\"><span class=\"modifiers\">public static final</span>&nbsp;"
+                + "<span class=\"return-type\"><a href=\"SomeEnum.html\" title=\"enum in linksource\">"
+                + "SomeEnum</a></span>&nbsp;<span class=\"member-name\">"
                 + "<a href=\"../src-html/linksource/SomeEnum.html#line.30\">VALUE2</a></span></div>");
 
         checkOutput("src-html/linksource/SomeEnum.html", true,
-                "<span class=\"sourceLineNo\">029</span><span id=\"line.29\">    VALUE1,</span>",
-                "<span class=\"sourceLineNo\">030</span><span id=\"line.30\">    VALUE2</span>");
+                "<span class=\"source-line-no\">029</span><span id=\"line.29\">    VALUE1,</span>",
+                "<span class=\"source-line-no\">030</span><span id=\"line.30\">    VALUE2</span>");
     }
 
     @Test

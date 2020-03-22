@@ -26,7 +26,7 @@
  * @bug 6579789
  * @summary Internal error "c1_LinearScan.cpp:1429 Error: assert(false,"")" in debuggee with fastdebug VM
  *
- * @run main/othervm -Xcomp -XX:UseSSE=0
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:UseSSE=0
  *      -XX:CompileCommand=compileonly,compiler.c1.Test6579789::bug
  *      compiler.c1.Test6579789
  */

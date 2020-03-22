@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,21 +265,27 @@ public final class TypeAnnotationParser {
             int startIndex = 0;
             AnnotatedType[] res = new AnnotatedType[bounds.length];
 
-            // Adjust bounds index
+            // According to JVMS 4.3.4, the first bound of a parameterized type is
+            // taken to be Object, if no explicit class bound is specified. As a
+            // consequence, the first interface's bound is always 1. To account for
+            // a potential mismatch between the indices of the bounds array that only
+            // contains explicit bounds and the actual bound's index, the startIndex
+            // is set to 1 if no explicit class type bound was set.
             //
-            // Figure out if the type annotations for this bound starts with 0
-            // or 1. The spec says within a bound the 0:th type annotation will
-            // always be on an bound of a Class type (not Interface type). So
-            // if the programmer starts with an Interface type for the first
-            // (and following) bound(s) the implicit Object bound is considered
-            // the first (that is 0:th) bound and type annotations start on
-            // index 1.
+            // This is achieved by examining the first element of the bound to be a
+            // class or an interface, if such a bound exists. Since a bound can itself
+            // be a parameterized type, the bound's raw type must be investigated,
+            // if applicable.
             if (bounds.length > 0) {
                 Type b0 = bounds[0];
-                if (!(b0 instanceof Class<?>)) {
-                    startIndex = 1;
-                } else {
-                    Class<?> c = (Class<?>)b0;
+                if (b0 instanceof Class<?>) {
+                    Class<?> c = (Class<?>) b0;
+                    if (c.isInterface()) {
+                        startIndex = 1;
+                    }
+                } else if (b0 instanceof ParameterizedType) {
+                    ParameterizedType p = (ParameterizedType) b0;
+                    Class<?> c = (Class<?>) p.getRawType();
                     if (c.isInterface()) {
                         startIndex = 1;
                     }

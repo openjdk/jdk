@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,15 @@ public class TestModifierEx extends JavadocTester {
                 "-package", "pkg1");
         checkExit(Exit.OK);
         checkOutput("pkg1/Abstract.html", true,
-                "<pre>public abstract class <span class=\"typeNameLabel\">Abstract</span>");
+                "<pre>public abstract class <span class=\"type-name-label\">Abstract</span>");
         checkOutput("pkg1/Interface.html", true,
-                "<pre>interface <span class=\"typeNameLabel\">Interface</span></pre>");
+                "<pre>interface <span class=\"type-name-label\">Interface</span></pre>");
         checkOutput("pkg1/Interface.Kind.html", true,
-                "<pre>public static interface <span class=\"typeNameLabel\">Interface.Kind</span></pre>");
+                "<pre>public static interface <span class=\"type-name-label\">Interface.Kind</span></pre>");
         checkOutput("pkg1/Enum.html", true,
-                "<pre>public enum <span class=\"typeNameLabel\">Enum</span>");
+                "<pre>public enum <span class=\"type-name-label\">Enum</span>");
         checkOutput("pkg1/Klass.StaticEnum.html", true,
-                "<pre>public static enum <span class=\"typeNameLabel\">Klass.StaticEnum</span>");
+                "<pre>public static enum <span class=\"type-name-label\">Klass.StaticEnum</span>");
     }
 
 }

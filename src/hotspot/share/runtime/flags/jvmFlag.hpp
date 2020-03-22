@@ -187,6 +187,7 @@ public:
 
   bool is_default();
   bool is_ergonomic();
+  bool is_jimage_resource();
   bool is_command_line();
   void set_command_line();
 

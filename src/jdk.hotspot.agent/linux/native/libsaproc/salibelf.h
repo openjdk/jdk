@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,11 @@
 #include "elfmacros.h"
 #include "libproc_impl.h"
 
+struct elf_section {
+  ELF_SHDR   *c_shdr;
+  void       *c_data;
+};
+
 // read ELF file header.
 int read_elf_header(int fd, ELF_EHDR* ehdr);
 
@@ -49,4 +54,10 @@ void* read_section_data(int fd, ELF_EHDR* ehdr, ELF_SHDR* shdr);
 
 // find the base address at which the library wants to load itself
 uintptr_t find_base_address(int fd, ELF_EHDR* ehdr);
+
+// Find an ELF section.
+struct elf_section *find_section_by_name(char *name,
+                                         int fd,
+                                         ELF_EHDR *ehdr,
+                                         struct elf_section *scn_cache);
 #endif /* _SALIBELF_H_ */

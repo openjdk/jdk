@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import nsk.share.test.ExecutionController;
 import nsk.share.TestBug;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *  Helper to assist in running threads.
@@ -45,7 +46,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
     private List<Runnable> runnables = new ArrayList<Runnable>();
     private List<ManagedThread> threads = new ArrayList<ManagedThread>();
     private Wicket wicket = new Wicket();
-    private Wicket finished;
+    private AtomicInteger finished;
     private boolean started = false;
     private boolean successful = true;
 
@@ -61,31 +62,49 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
         this.log = log;
     }
 
-    private class ManagedThread extends Thread {
+    private static class ManagedThreadFactory {
+
+        private RunParams params;
+
+        static ManagedThreadFactory createFactory(RunParams params) {
+            return new ManagedThreadFactory(params);
+        }
+
+        private ManagedThreadFactory(RunParams params) {
+            this.params = params;
+        }
+
+        public Thread newThread(Runnable runnable, String name, int num) {
+            return new Thread(runnable, name);
+        }
+    }
+
+    private class ManagedThread implements Runnable {
 
         private Stresser stresser;
         private Throwable exception;
         private Runnable test;
         private boolean shouldWait;
+        private Thread thread;
 
-        public ManagedThread(Runnable test) {
-            super(test.toString());
+
+        public ManagedThread(ManagedThreadFactory threadFactory, Runnable test, int num) {
             this.test = test;
             this.shouldWait = true;
-            this.stresser = new Stresser(this.getName(), runParams.getStressOptions());
+            this.thread = threadFactory.newThread(this, test.toString(), num);
+            this.stresser = new Stresser(thread.getName(), runParams.getStressOptions());
         }
 
+        @Override
         public void run() {
             wicket.waitFor();
             try {
                 stresser.start(runParams.getIterations());
-                while (!this.isInterrupted() && stresser.iteration()) {
+                while (!this.thread.isInterrupted() && stresser.iteration()) {
                     test.run();
                     Thread.yield();
                 }
-                waitForOtherThreads();
             } catch (OutOfMemoryError oom) {
-                waitForOtherThreads();
                 if (test instanceof OOMStress) {
                     // Test stressing OOM, not a failure.
                     log.info("Caught OutOfMemoryError in OOM stress test, omitting exception.");
@@ -93,9 +112,9 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
                     failWithException(oom);
                 }
             } catch (Throwable t) {
-                waitForOtherThreads();
                 failWithException(t);
             } finally {
+                waitForOtherThreads();
                 stresser.finish();
             }
         }
@@ -103,8 +122,13 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
         private void waitForOtherThreads() {
             if (shouldWait) {
                 shouldWait = false;
-                finished.unlock();
-                finished.waitFor();
+                finished.decrementAndGet();
+                while (finished.get() != 0) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ie) {
+                    }
+                }
             } else {
                 throw new TestBug("Waiting a second time is not premitted");
             }
@@ -121,7 +145,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
             stresser.forceFinish();
             if (runParams.isInterruptThreads()) {
                 log.debug("Interrupting: " + this);
-                this.interrupt();
+                this.thread.interrupt();
             }
         }
 
@@ -151,7 +175,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
     }
 
     public Thread getThread(int index) {
-        return threads.get(index);
+        return threads.get(index).thread;
     }
 
     private int getCount() {
@@ -163,9 +187,10 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
 
     private void create() {
         int threadCount = runnables.size();
-        finished = new Wicket(threadCount);
+        finished = new AtomicInteger(threadCount);
+        ManagedThreadFactory factory = ManagedThreadFactory.createFactory(runParams);
         for (int i = 0; i < threadCount; ++i) {
-            threads.add(new ManagedThread(get(i)));
+            threads.add(new ManagedThread(factory, get(i), i));
         }
     }
 
@@ -179,7 +204,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
         create();
         prepare();
         for (int i = 0; i < threads.size(); ++i) {
-            Thread t = (Thread) threads.get(i);
+            Thread t = threads.get(i).thread;
             log.debug("Starting " + t);
             t.start();
         }
@@ -203,7 +228,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
      */
     public void join() throws InterruptedException {
         for (int i = 0; i < threads.size(); ++i) {
-            Thread t = (Thread) threads.get(i);
+            Thread t = threads.get(i).thread;
             //log.debug("Joining " + t);
             t.join();
         }
@@ -231,7 +256,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
     private ManagedThread findManagedThread(Thread t) {
         for (int i = 0; i < threads.size(); i++) {
             ManagedThread mt = threads.get(i);
-            if (mt == t) {
+            if (mt.thread == t) {
                 return mt;
             }
         }

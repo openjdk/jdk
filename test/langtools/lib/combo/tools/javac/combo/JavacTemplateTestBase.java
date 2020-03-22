@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -204,8 +206,20 @@ public abstract class JavacTemplateTestBase {
     protected void assertCompileFailed(String key) {
         if (!diags.errorsFound())
             fail("Expected failed compilation: " + key);
-        if (!diags.containsErrorKey(key))
+        if (!diags.containsErrorKey(key)) {
             fail(String.format("Expected compilation error with %s, found %s", key, diags.keys()));
+        }
+    }
+
+    protected void assertCompileFailed(String key, Consumer<Diagnostic<?>> diagConsumer) {
+        if (!diags.errorsFound())
+            fail("Expected failed compilation: " + key);
+        if (!diags.containsErrorKey(key)) {
+            fail(String.format("Expected compilation error with %s, found %s", key, diags.keys()));
+        } else {
+            // for additional checks
+            diagConsumer.accept(diags.getDiagWithKey(key));
+        }
     }
 
     /** Assert that a previous call to compile() failed with a specific error key */

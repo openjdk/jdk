@@ -1297,7 +1297,7 @@ static inline jlong replicate_immF(float con) {
 //=============================================================================
 
 const RegMask& MachConstantBaseNode::_out_RegMask = BITS64_CONSTANT_TABLE_BASE_mask();
-int Compile::ConstantTable::calculate_table_base_offset() const {
+int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
@@ -1338,10 +1338,10 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 #ifndef PRODUCT
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
-  const long framesize = C->frame_slots() << LogBytesPerInt;
+  const long framesize = C->output()->frame_slots() << LogBytesPerInt;
 
   st->print("PROLOG\n\t");
-  if (C->need_stack_bang(framesize)) {
+  if (C->output()->need_stack_bang(framesize)) {
     st->print("stack_overflow_check\n\t");
   }
 
@@ -1381,7 +1381,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  const long framesize = C->frame_size_in_bytes();
+  const long framesize = C->output()->frame_size_in_bytes();
   assert(framesize % (2 * wordSize) == 0, "must preserve 2*wordSize alignment");
 
   const bool method_is_frameless      = false /* TODO: PPC port C->is_frameless_method()*/;
@@ -1426,9 +1426,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
 
-  int bangsize = C->bang_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
   assert(bangsize >= framesize || bangsize <= 0, "stack bang size incorrect");
-  if (C->need_stack_bang(bangsize) && UseStackBanging) {
+  if (C->output()->need_stack_bang(bangsize) && UseStackBanging) {
     // Unfortunately we cannot use the function provided in
     // assembler.cpp as we have to emulate the pipes. So I had to
     // insert the code of generate_stack_overflow_check(), see
@@ -1482,7 +1482,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       bang_offset += page_size;
     }
     // R11 trashed
-  } // C->need_stack_bang(framesize) && UseStackBanging
+  } // C->output()->need_stack_bang(framesize) && UseStackBanging
 
   unsigned int bytes = (unsigned int)framesize;
   long offset = Assembler::align_addr(bytes, frame::alignment_in_bytes);
@@ -1537,7 +1537,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ___(std) std(return_pc, _abi(lr), callers_sp);
   }
 
-  C->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 #undef ___
 #undef ___stop
@@ -1573,7 +1573,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  const long framesize = ((long)C->frame_slots()) << LogBytesPerInt;
+  const long framesize = ((long)C->output()->frame_slots()) << LogBytesPerInt;
   assert(framesize >= 0, "negative frame-size?");
 
   const bool method_needs_polling = do_polling() && C->is_method_compilation();
@@ -2786,7 +2786,7 @@ encode %{
 
     MacroAssembler _masm(&cbuf);
 
-    if (!ra_->C->in_scratch_emit_size()) {
+    if (!ra_->C->output()->in_scratch_emit_size()) {
       address const_toc_addr;
       // Create a non-oop constant, no relocation needed.
       // If it is an IC, it has a virtual_call_Relocation.
@@ -3053,7 +3053,7 @@ encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addis);
 
     MacroAssembler _masm(&cbuf);
-    if (!ra_->C->in_scratch_emit_size()) {
+    if (!ra_->C->output()->in_scratch_emit_size()) {
       intptr_t val = $src$$constant;
       relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
       address const_toc_addr;
@@ -3791,7 +3791,7 @@ encode %{
 
     MacroAssembler _masm(&cbuf);
 
-    if (!ra_->C->in_scratch_emit_size()) {
+    if (!ra_->C->output()->in_scratch_emit_size()) {
       // Create a call trampoline stub for the given method.
       const address entry_point = !($meth$$method) ? 0 : (address)$meth$$method;
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
@@ -6285,7 +6285,7 @@ instruct loadConL_lo(iRegLdst dst, immL src, iRegLdst base) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_ld);
-    int offset = ra_->C->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
+    int offset = ra_->C->output()->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
     __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6570,7 +6570,7 @@ instruct loadConP_lo(iRegPdst dst, immP_NM src, iRegLdst base) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_ld);
-    int offset = ra_->C->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
+    int offset = ra_->C->output()->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
     __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
   %}
   ins_pipe(pipe_class_memory);

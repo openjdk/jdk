@@ -104,7 +104,8 @@ void at_exit_handler(void) {
   // else test has already failed
 }
 
-jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM *vm, void *reserved) {
   printf("JNI_OnLoad: registering atexit handler\n");
   jvm = vm;
   atexit(at_exit_handler);

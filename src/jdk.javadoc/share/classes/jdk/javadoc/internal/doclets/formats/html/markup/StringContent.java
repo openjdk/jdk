@@ -61,25 +61,15 @@ public class StringContent extends Content {
     }
 
     /**
-     * This method is not supported by the class.
-     *
-     * @param content content that needs to be added
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public void add(Content content) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Adds content for the StringContent object.  The method escapes
      * HTML characters for the string content that is added.
      *
      * @param strContent string content to be added
      */
     @Override
-    public void add(CharSequence strContent) {
+    public StringContent add(CharSequence strContent) {
         Entity.escapeHtmlChars(strContent, stringContent);
+        return this;
     }
 
     @Override

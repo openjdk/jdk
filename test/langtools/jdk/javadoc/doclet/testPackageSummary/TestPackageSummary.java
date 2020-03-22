@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,25 +50,25 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 "<tbody>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"C0.html\" title=\"class in pkg\">C0</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "<tr class=\"alt-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"C0.html\" title=\"class in pkg\">C0</a></th>\n"
+                + "<td class=\"col-last\">&nbsp;</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"rowColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"C1.html\" title=\"class in pkg\">C1</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "<tr class=\"row-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"C1.html\" title=\"class in pkg\">C1</a></th>\n"
+                + "<td class=\"col-last\">&nbsp;</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"C2.html\" title=\"class in pkg\">C2</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "<tr class=\"alt-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"C2.html\" title=\"class in pkg\">C2</a></th>\n"
+                + "<td class=\"col-last\">&nbsp;</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"rowColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"C3.html\" title=\"class in pkg\">C3</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "<tr class=\"row-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"C3.html\" title=\"class in pkg\">C3</a></th>\n"
+                + "<td class=\"col-last\">&nbsp;</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"C4.html\" title=\"class in pkg\">C4</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "<tr class=\"alt-color\">\n"
+                + "<th class=\"col-first\" scope=\"row\"><a href=\"C4.html\" title=\"class in pkg\">C4</a></th>\n"
+                + "<td class=\"col-last\">&nbsp;</td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
         );

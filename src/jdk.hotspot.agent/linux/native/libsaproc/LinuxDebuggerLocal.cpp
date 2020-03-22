@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, NTT DATA.
+ * Copyright (c) 2019, 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -615,4 +615,16 @@ JNIEXPORT jstring JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal
   }
 
   return result;
+}
+
+/*
+ * Class:     sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal
+ * Method:    findLibPtrByAddress0
+ * Signature: (J)J
+ */
+extern "C"
+JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_findLibPtrByAddress0
+  (JNIEnv *env, jobject this_obj, jlong pc) {
+  struct ps_prochandle* ph = get_proc_handle(env, this_obj);
+  return reinterpret_cast<jlong>(find_lib_by_address(ph, pc));
 }

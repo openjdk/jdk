@@ -45,7 +45,7 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET, \
     STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS AOT_MODULES, \
 ))
 
@@ -1266,12 +1266,44 @@ ifeq ($(TEST_OPTS_JCOV), true)
   TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \
       jcov-gen-report
 
+  ifneq ($(TEST_OPTS_JCOV_DIFF_CHANGESET), )
+
+    JCOV_SOURCE_DIFF := $(JCOV_OUTPUT_DIR)/source_diff
+    JCOV_DIFF_COVERAGE_REPORT := $(JCOV_OUTPUT_DIR)/diff_coverage_report
+
+    ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
+      DIFF_COMMAND := $(HG) -R $(TOPDIR) diff -r $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
+    else ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
+      DIFF_COMMAND := $(GIT) -C $(TOPDIR) diff $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
+    else
+      $(info Error: Must be either hg or git source tree for diff coverage.)
+      $(error Neither hg nor git source tree.)
+    endif
+
+    jcov-gen-diffcoverage: jcov-stop-grabber
+	$(call LogWarn, Generating diff coverage with changeset $(TEST_OPTS_JCOV_DIFF_CHANGESET) ... )
+	$(DIFF_COMMAND)
+	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar \
+	  DiffCoverage -replaceDiff "src/.*/classes/:" -all \
+	    $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
+	    $(JCOV_DIFF_COVERAGE_REPORT)
+
+    TARGETS += jcov-gen-diffcoverage
+
+  endif
+
   # Hook this into the framework at appropriate places
   pre-run-test: jcov-start-grabber
 
   post-run-test: jcov-gen-report
 
-  jcov-gen-report: run-all-tests
+  ifneq ($(TEST_OPTS_JCOV_DIFF_CHANGESET), )
+
+    post-run-test: jcov-gen-diffcoverage
+
+  endif
+
+  jcov-stop-grabber: run-all-tests
 
 endif
 

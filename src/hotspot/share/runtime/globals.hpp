@@ -214,10 +214,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Maximum number of pages to include in the page scan procedure")  \
           range(0, max_uintx)                                               \
                                                                             \
-  product(intx, UseSSE, 99,                                                 \
-          "Highest supported SSE instructions set on x86/x64")              \
-          range(0, 99)                                                      \
-                                                                            \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions are used when available")       \
                                                                             \

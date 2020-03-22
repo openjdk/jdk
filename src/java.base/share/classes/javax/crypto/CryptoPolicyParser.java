@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ import java.lang.reflect.*;
  * <pre>{@code
  *   permission <crypto permission class name>[, <algorithm name>
  *              [[, <exemption mechanism name>][, <maxKeySize>
- *              [, <AlgrithomParameterSpec class name>, <parameters
- *              for constructing an AlgrithomParameterSpec object>]]]];
+ *              [, <AlgorithmParameterSpec class name>, <parameters
+ *              for constructing an AlgorithmParameterSpec object>]]]];
  * }</pre>
  *
  * @author Sharon Liu

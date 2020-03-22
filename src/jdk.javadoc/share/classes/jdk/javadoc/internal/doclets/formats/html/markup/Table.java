@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,8 +43,7 @@ import javax.lang.model.element.Element;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * A builder for HTML tables, such as the summary tables for various
- * types of element.
+ * An HTML table, such as the summary tables for various kinds of element.
  *
  * <p>The table should be used in three phases:
  * <ol>
@@ -58,7 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Table {
+public class Table extends Content {
     private final HtmlStyle tableStyle;
     private Content caption;
     private Map<String, Predicate<Element>> tabMap;
@@ -105,7 +106,7 @@ public class Table {
      */
     public Table setCaption(Content captionContent) {
         if (captionContent instanceof HtmlTree
-                && ((HtmlTree) captionContent).htmlTag == HtmlTag.CAPTION) {
+                && ((HtmlTree) captionContent).tagName == TagName.CAPTION) {
             caption = captionContent;
         } else {
             caption = getCaption(captionContent);
@@ -207,7 +208,7 @@ public class Table {
      *
      * @param evenRowStyle  the style to use for even-numbered rows
      * @param oddRowStyle   the style to use for odd-numbered rows
-     * @return
+     * @return this object
      */
     public Table setStripedStyles(HtmlStyle evenRowStyle, HtmlStyle oddRowStyle) {
         stripedStyles = Arrays.asList(evenRowStyle, oddRowStyle);
@@ -288,7 +289,7 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      * This method should not be used when the table has tabs: use a method
@@ -301,7 +302,7 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td> cell}.
      * This method should not be used when the table has tabs: use a method
@@ -314,14 +315,14 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      *
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
-     * {@link #add(String,Predicate) added}.
+     * {@link #addTab(String,Predicate) added}.
      *
      * @param element the element
      * @param contents the contents for the row
@@ -333,14 +334,14 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      *
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
-     * {@link #add(String,Predicate) added}.
+     * {@link #addTab(String,Predicate) added}.
      *
      * @param element the element
      * @param contents the contents for the row
@@ -352,11 +353,11 @@ public class Table {
             throw new NullPointerException();
         }
 
-        HtmlTree row = new HtmlTree(HtmlTag.TR);
+        HtmlTree row = new HtmlTree(TagName.TR);
 
         if (stripedStyles != null) {
             int rowIndex = bodyRows.size();
-            row.put(HtmlAttr.CLASS, stripedStyles.get(rowIndex % 2).name());
+            row.setStyle(stripedStyles.get(rowIndex % 2));
         }
         int colIndex = 0;
         for (Content c : contents) {
@@ -399,18 +400,23 @@ public class Table {
         return bodyRows.isEmpty();
     }
 
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        return toContent().write(out, atNewline);
+    }
+
     /**
      * Returns the HTML for the table.
      *
      * @return the HTML
      */
-    public Content toContent() {
-        HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
+    private Content toContent() {
+        HtmlTree mainDiv = new HtmlTree(TagName.DIV);
         mainDiv.setStyle(tableStyle);
         if (id != null) {
             mainDiv.setId(id);
         }
-        HtmlTree table = new HtmlTree(HtmlTag.TABLE);
+        HtmlTree table = new HtmlTree(TagName.TABLE);
         if (tabMap == null || tabs.size() == 1) {
             if (tabMap == null) {
                 table.add(caption);
@@ -421,7 +427,7 @@ public class Table {
             table.add(getTableBody());
             mainDiv.add(table);
         } else {
-            HtmlTree tablist = new HtmlTree(HtmlTag.DIV)
+            HtmlTree tablist = new HtmlTree(TagName.DIV)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
@@ -437,8 +443,8 @@ public class Table {
                     tablist.add(tab);
                 }
             }
-            HtmlTree tabpanel = new HtmlTree(HtmlTag.DIV)
-                    .put(HtmlAttr.ID, tableStyle + "_tabpanel")
+            HtmlTree tabpanel = new HtmlTree(TagName.DIV)
+                    .put(HtmlAttr.ID, tableStyle.cssName() + "_tabpanel")
                     .put(HtmlAttr.ROLE, "tabpanel");
             table.add(getTableBody());
             tabpanel.add(table);
@@ -449,10 +455,10 @@ public class Table {
     }
 
     private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
-        HtmlTree tab = new HtmlTree(HtmlTag.BUTTON)
+        HtmlTree tab = new HtmlTree(TagName.BUTTON)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
-                .put(HtmlAttr.ARIA_CONTROLS, tableStyle + "_tabpanel")
+                .put(HtmlAttr.ARIA_CONTROLS, tableStyle.cssName() + "_tabpanel")
                 .put(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
                 .put(HtmlAttr.ONKEYDOWN, "switchTab(event)")
                 .put(HtmlAttr.ID, tabId)
@@ -463,10 +469,10 @@ public class Table {
 
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
-        Content thead = new HtmlTree(HtmlTag.THEAD);
-        thead.add(header.toContent());
+        Content thead = new HtmlTree(TagName.THEAD);
+        thead.add(header);
         tableContent.add(thead);
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
+        Content tbody = new HtmlTree(TagName.TBODY);
         bodyRows.forEach(tbody::add);
         tableContent.add(tbody);
         return tableContent;
@@ -537,14 +543,14 @@ public class Table {
 
     private void appendStyleInfo(StringBuilder sb, HtmlStyle... styles) {
         for (HtmlStyle style : styles) {
-            sb.append("var ").append(style).append(" = \"").append(style).append("\";\n");
+            sb.append("var ").append(style.name()).append(" = \"").append(style.cssName()).append("\";\n");
         }
 
     }
 
     private HtmlTree getCaption(Content title) {
-        return new HtmlTree(HtmlTag.CAPTION,
-                HtmlTree.SPAN(title),
-                HtmlTree.SPAN(tabEnd, Entity.NO_BREAK_SPACE));
+        return new HtmlTree(TagName.CAPTION)
+                .add(HtmlTree.SPAN(title))
+                .add(HtmlTree.SPAN(tabEnd, Entity.NO_BREAK_SPACE));
     }
 }

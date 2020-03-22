@@ -171,12 +171,14 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
     m4_undefine([FEATURE_SHELL])
   ])
 
-  # Warn if the user has both enabled and disabled a feature
-  # If this happens, disable will override enable.
+  # Check if the user has both enabled and disabled a feature
   UTIL_GET_MATCHING_VALUES(enabled_and_disabled, $JVM_FEATURES_ENABLED, \
       $JVM_FEATURES_DISABLED)
   if test "x$enabled_and_disabled" != x; then
-    AC_MSG_WARN([Disabling of these features will override enabling: '$enabled_and_disabled'])
+    AC_MSG_NOTICE([These feature are both enabled and disabled: '$enabled_and_disabled'])
+    AC_MSG_NOTICE([This can happen if you mix --with-jvm-features and --enable-jvm-feature-*])
+    AC_MSG_NOTICE([The recommendation is to only use --enable-jvm-feature-*])
+    AC_MSG_ERROR([Cannot continue])
   fi
 
   # Clean up lists and announce results to user

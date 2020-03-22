@@ -103,6 +103,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \
+  product(intx, UseSSE, 99,                                                 \
+          "Highest supported SSE instructions set on x86/x64")              \
+          range(0, 99)                                                      \
+                                                                            \
   product(intx, UseAVX, 3,                                                  \
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 99)                                                      \
@@ -210,5 +214,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "Minimum array size in bytes to use AVX512 intrinsics"         \
              "for copy, inflate and fill. When this value is set as zero"   \
              "compare operations can also use AVX512 intrinsics.")          \
-          range(0, max_jint)
+             range(0, max_jint)                                             \
+                                                                            \
+  diagnostic(bool, IntelJccErratumMitigation, true,                         \
+             "Turn off JVM mitigations related to Intel micro code "        \
+             "mitigations for the Intel JCC erratum")
+
 #endif // CPU_X86_GLOBALS_X86_HPP

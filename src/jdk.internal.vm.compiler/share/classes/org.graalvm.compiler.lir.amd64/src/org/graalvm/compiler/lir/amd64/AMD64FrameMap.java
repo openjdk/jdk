@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@ package org.graalvm.compiler.lir.amd64;
 
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 
 import jdk.vm.ci.amd64.AMD64Kind;
@@ -48,9 +48,12 @@ import jdk.vm.ci.code.StackSlot;
  *   frame    :     ...                        :    | positive
  *            | incoming overflow argument 0   |    | offsets
  *   ---------+--------------------------------+---------------------
- *            | return address                 |    |            ^
- *   current  +--------------------------------+    |            |    -----
- *   frame    |                                |    |            |      ^
+ *   current  | return address                 |    |            ^
+ *   frame    +--------------------------------+    |            |
+ *            | preserved rbp                  |    |            |
+ *            | (iff {@link #useStandardFrameProlog})   |    |            |
+ *            +--------------------------------+    |            |    -----
+ *            |                                |    |            |      ^
  *            : callee save area               :    |            |      |
  *            |                                |    |            |      |
  *            +--------------------------------+    |            |      |

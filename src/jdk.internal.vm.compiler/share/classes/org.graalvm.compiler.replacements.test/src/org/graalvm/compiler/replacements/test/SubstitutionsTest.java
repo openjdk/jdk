@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,10 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -57,7 +59,7 @@ import jdk.vm.ci.meta.JavaKind;
 public class SubstitutionsTest extends ReplacementsTest {
 
     @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
-    static class TestMemory extends FixedWithNextNode implements MemoryNode {
+    static class TestMemory extends FixedWithNextNode implements SingleMemoryKill {
         private static final NodeClass<TestMemory> TYPE = NodeClass.create(TestMemory.class);
 
         protected TestMemory() {
@@ -66,17 +68,22 @@ public class SubstitutionsTest extends ReplacementsTest {
 
         @NodeIntrinsic
         public static native Memory memory();
+
+        @Override
+        public LocationIdentity getKilledLocationIdentity() {
+            return LocationIdentity.any();
+        }
     }
 
     @NodeInfo(allowedUsageTypes = {Guard}, cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     static class TestGuard extends FloatingNode implements GuardingNode {
         private static final NodeClass<TestGuard> TYPE = NodeClass.create(TestGuard.class);
 
-        @Input(Memory) MemoryNode memory;
+        @Input(Memory) MemoryKill memory;
 
         protected TestGuard(ValueNode memory) {
             super(TYPE, StampFactory.forVoid());
-            this.memory = (MemoryNode) memory;
+            this.memory = (MemoryKill) memory;
         }
 
         @NodeIntrinsic

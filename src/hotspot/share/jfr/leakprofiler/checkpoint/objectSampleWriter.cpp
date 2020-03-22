@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,22 +298,20 @@ static traceid get_field_info_id(const Edge& edge) {
   if (edge.is_root()) {
     return 0;
   }
-
   assert(!EdgeUtils::is_array_element(edge), "invariant");
-  const Symbol* const field_name_symbol = EdgeUtils::field_name_symbol(edge);
+  jshort field_modifiers;
+  const Symbol* const field_name_symbol = EdgeUtils::field_name(edge, &field_modifiers);
   if (field_name_symbol == NULL) {
     return 0;
   }
-
   if (field_infos == NULL) {
     field_infos = new FieldTable();
   }
   assert(field_infos != NULL, "invariant");
-
   ObjectSampleFieldInfo* const osfi = new ObjectSampleFieldInfo();
   assert(osfi != NULL, "invariant");
   osfi->_field_name_symbol = field_name_symbol;
-  osfi->_field_modifiers = EdgeUtils::field_modifiers(edge);
+  osfi->_field_modifiers = field_modifiers;
   return field_infos->store(osfi);
 }
 
@@ -527,7 +525,7 @@ static void add_old_object_sample_info(const StoredEdge* current, traceid id) {
   assert(oosi != NULL, "invariant");
   oosi->_id = id;
   oosi->_data._object = current->pointee();
-  oosi->_data._reference_id = current->parent() == NULL ? (traceid)0 : id;
+  oosi->_data._reference_id = current->parent() == NULL ? 0 : id;
   sample_infos->store(oosi);
 }
 
@@ -542,8 +540,8 @@ static void add_reference_info(const StoredEdge* current, traceid id, traceid pa
   assert(ri != NULL, "invariant");
 
   ri->_id = id;
-  ri->_data._array_info_id =  !current->is_skip_edge() ? get_array_info_id(*current, id) : 0;
-  ri->_data._field_info_id = ri->_data._array_info_id == 0 && !current->is_skip_edge() ? get_field_info_id(*current) : (traceid)0;
+  ri->_data._array_info_id =  current->is_skip_edge() ? 0 : get_array_info_id(*current, id);
+  ri->_data._field_info_id = ri->_data._array_info_id != 0 || current->is_skip_edge() ? 0 : get_field_info_id(*current);
   ri->_data._old_object_sample_id = parent_id;
   ri->_data._skip = current->skip_length();
   ref_infos->store(ri);
@@ -567,11 +565,11 @@ void ObjectSampleWriter::write(const StoredEdge* edge) {
   const StoredEdge* const parent = edge->parent();
   if (parent != NULL) {
     add_reference_info(edge, id, _store->get_id(parent));
-  } else {
-    if (is_gc_root(edge)) {
-      assert(edge->gc_root_id() == id, "invariant");
-      add_gc_root_info(edge, id);
-    }
+    return;
+  }
+  if (is_gc_root(edge)) {
+    assert(edge->gc_root_id() == id, "invariant");
+    add_gc_root_info(edge, id);
   }
 }
 

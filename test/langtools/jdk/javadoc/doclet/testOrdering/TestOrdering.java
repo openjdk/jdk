@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,14 +516,14 @@ public class TestOrdering extends JavadocTester {
 
             checkOrder("pkg5/AnnoFieldTest.html",
                     "<h2>Field Details</h2>",
-                    "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">one</span></div>",
-                    "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">two</span></div>",
-                    "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">three</span></div>",
-                    "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">four</span></div>");
+                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">one</span></div>",
+                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">two</span></div>",
+                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">three</span></div>",
+                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">four</span></div>");
 
             checkOrder("pkg5/AnnoOptionalTest.html",
                     "<h2>Optional Element Summary</h2>",

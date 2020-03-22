@@ -45,7 +45,6 @@ import sun.hotspot.WhiteBox;
  *          java.management
  * @requires vm.gc != "Epsilon"
  * @requires vm.gc != "Z"
- * @requires vm.gc != "Shenandoah"
  *
  * @compile TestMetaSpaceLog.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

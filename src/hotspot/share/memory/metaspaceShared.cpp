@@ -1375,7 +1375,7 @@ public:
         it->push(_global_klass_objects->adr_at(i));
       }
     }
-    FileMapInfo::metaspace_pointers_do(it);
+    FileMapInfo::metaspace_pointers_do(it, false);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     SymbolTable::metaspace_pointers_do(it);
@@ -1702,27 +1702,22 @@ class LinkSharedClassesClosure : public KlassClosure {
   void do_klass(Klass* k) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      // Link the class to cause the bytecodes to be rewritten and the
-      // cpcache to be created. Class verification is done according
-      // to -Xverify setting.
-      _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
-      guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+      // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
+      bool do_linking = DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
+      if (do_linking) {
+        // Link the class to cause the bytecodes to be rewritten and the
+        // cpcache to be created. Class verification is done according
+        // to -Xverify setting.
+        _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
+        guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
 
-      ik->constants()->resolve_class_constants(THREAD);
-    }
-  }
-};
-
-class CheckSharedClassesClosure : public KlassClosure {
-  bool    _made_progress;
- public:
-  CheckSharedClassesClosure() : _made_progress(false) {}
-
-  void reset()               { _made_progress = false; }
-  bool made_progress() const { return _made_progress; }
-  void do_klass(Klass* k) {
-    if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
-      _made_progress = true;
+        if (DumpSharedSpaces) {
+          // The following function is used to resolve all Strings in the statically
+          // dumped classes to archive all the Strings. The archive heap is not supported
+          // for the dynamic archive.
+          ik->constants()->resolve_class_constants(THREAD);
+        }
+      }
     }
   }
 };
@@ -1736,18 +1731,6 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
     ClassLoaderDataGraph::unlocked_loaded_classes_do(&link_closure);
     guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
   } while (link_closure.made_progress());
-
-  if (_has_error_classes) {
-    // Mark all classes whose super class or interfaces failed verification.
-    CheckSharedClassesClosure check_closure;
-    do {
-      // Not completely sure if we need to do this iteratively. Anyway,
-      // we should come here only if there are unverifiable classes, which
-      // shouldn't happen in normal cases. So better safe than sorry.
-      check_closure.reset();
-      ClassLoaderDataGraph::unlocked_loaded_classes_do(&check_closure);
-    } while (check_closure.made_progress());
-  }
 }
 
 void MetaspaceShared::prepare_for_dumping() {
@@ -1874,10 +1857,11 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
 
 // Returns true if the class's status has changed
 bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
-  assert(DumpSharedSpaces, "should only be called during dumping");
-  if (ik->init_state() < InstanceKlass::linked) {
+  Arguments::assert_is_dumping_archive();
+  if (ik->init_state() < InstanceKlass::linked &&
+      !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
-    if (ik->loader_type() == 0 && ik->class_loader() == NULL) {
+    if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {
       // The verification decision is based on BytecodeVerificationRemote
       // for non-system classes. Since we are using the NULL classloader
       // to load non-system classes for customized class loaders during dumping,
@@ -1893,7 +1877,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
       log_warning(cds)("Preload Warning: Verification failed for %s",
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
-      ik->set_in_error_state();
+      SystemDictionaryShared::set_class_has_failed_verification(ik);
       _has_error_classes = true;
     }
     BytecodeVerificationLocal = saved;

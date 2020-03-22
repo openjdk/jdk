@@ -29,6 +29,7 @@
 #include "opto/compile.hpp"
 #include "opto/machnode.hpp"
 #include "opto/node.hpp"
+#include "opto/output.hpp"
 #include "opto/regalloc.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -126,7 +127,7 @@ IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler& masm, int jcc
     return;
   }
 
-  if (Compile::current()->in_scratch_emit_size()) {
+  if (Compile::current()->output()->in_scratch_emit_size()) {
     // When we measure the size of this 32 byte alignment, we apply a conservative guess.
     __ nop(jcc_size);
   } else if (IntelJccErratum::is_crossing_or_ending_at_32_byte_boundary(_start_pc, _start_pc + jcc_size)) {
@@ -141,7 +142,7 @@ IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler& masm, int jcc
 
 IntelJccErratumAlignment::~IntelJccErratumAlignment() {
   if (!VM_Version::has_intel_jcc_erratum() ||
-      Compile::current()->in_scratch_emit_size()) {
+      Compile::current()->output()->in_scratch_emit_size()) {
     return;
   }
 

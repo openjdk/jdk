@@ -184,13 +184,16 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Record actual allocation size
     req.set_actual_size(size);
 
-    if (req.is_gc_alloc() && _heap->is_concurrent_traversal_in_progress()) {
-      // Traversal needs to traverse through GC allocs. Adjust TAMS to the new top
-      // so that these allocations appear below TAMS, and thus get traversed.
-      // See top of shenandoahTraversal.cpp for an explanation.
-      _heap->marking_context()->capture_top_at_mark_start(r);
-      _heap->traversal_gc()->traversal_set()->add_region_check_for_duplicates(r);
-      OrderAccess::fence();
+    if (req.is_gc_alloc()) {
+      r->set_update_watermark(r->top());
+      if (_heap->is_concurrent_traversal_in_progress()) {
+        // Traversal needs to traverse through GC allocs. Adjust TAMS to the new top
+        // so that these allocations appear below TAMS, and thus get traversed.
+        // See top of shenandoahTraversal.cpp for an explanation.
+        _heap->marking_context()->capture_top_at_mark_start(r);
+        _heap->traversal_gc()->traversal_set()->add_region_check_for_duplicates(r);
+        OrderAccess::fence();
+      }
     }
   }
 
