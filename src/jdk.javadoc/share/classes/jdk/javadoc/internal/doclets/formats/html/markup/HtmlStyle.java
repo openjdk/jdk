@@ -129,7 +129,6 @@ public enum HtmlStyle {
     serializedClassDetails,
     servicesSummary,
     skipNav,
-    source,
     sourceContainer,
     sourceLineNo,
     subNav,
@@ -148,7 +147,115 @@ public enum HtmlStyle {
     typeSummary,
     useSummary,
     usesSummary,
-    verticalSeparator;
+    verticalSeparator,
+
+    // The following constants are used for the class of the {@code <body>} element
+    // for the corresponding pages.
+
+    /**
+     * The class of the {@code body} element for the "All Classes" index page.
+     */
+    allClassesIndexPage,
+
+    /**
+     * The class of the {@code body} element for the "All Packages" index page.
+     */
+    allPackagesIndexPage,
+
+    /**
+     * The class of the {@code body} element for a class-declaration page.
+     */
+    classDeclarationPage,
+
+    /**
+     * The class of the {@code body} element for a class-use page.
+     */
+    classUsePage,
+
+    /**
+     * The class of the {@code body} element for the constants-summary page.
+     */
+    constantsSummaryPage,
+
+    /**
+     * The class of the {@code body} element for the page listing any deprecated items.
+     */
+    deprecatedListPage,
+
+    /**
+     * The class of the {@code body} element for a "doc-file" page..
+     */
+    docFilePage,
+
+    /**
+     * The class of the {@code body} element for the "help" page.
+     */
+    helpPage,
+
+    /**
+     * The class of the {@code body} element for the top-level redirect page.
+     */
+    indexRedirectPage,
+
+    /**
+     * The class of the {@code body} element for a module-declaration page.
+     */
+    moduleDeclarationPage,
+
+    /**
+     * The class of the {@code body} element for the module-index page.
+     */
+    moduleIndexPage,
+
+    /**
+     * The class of the {@code body} element for a package-declaration page.
+     */
+    packageDeclarationPage,
+
+    /**
+     * The class of the {@code body} element for the package-index page.
+     */
+    packageIndexPage,
+
+    /**
+     * The class of the {@code body} element for the page for the package hierarchy.
+     */
+    packageTreePage,
+
+    /**
+     * The class of the {@code body} element for a package-use page.
+     */
+    packageUsePage,
+
+    /**
+     * The class of the {@code body} element for the serialized-forms page.
+     */
+    serializedFormPage,
+
+    /**
+     * The class of the {@code body} element for the full single index page.
+     */
+    singleIndexPage,
+
+    /**
+     * The class of the {@code body} element for a page with the source code for a class.
+     */
+    sourcePage,
+
+    /**
+     * The class of the {@code body} element for a page in a "split index".
+     */
+    splitIndexPage,
+
+    /**
+     * The class of the {@code body} element for the system-properties page.
+     */
+    systemPropertiesPage,
+
+    /**
+     * The class of the {@code body} element for the page for the class hierarchy.
+     */
+    treePage;
 
     private final String cssName;
 
