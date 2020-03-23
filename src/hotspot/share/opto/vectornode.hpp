@@ -145,6 +145,15 @@ class ReductionNode : public Node {
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
+
+  virtual const Type* bottom_type() const {
+    BasicType vbt = in(2)->bottom_type()->is_vect()->element_basic_type();
+    return Type::get_const_basic_type(vbt);
+  }
+
+  virtual uint ideal_reg() const {
+    return bottom_type()->ideal_reg();
+  }
 };
 
 //------------------------------AddReductionVINode--------------------------------------
@@ -613,6 +622,30 @@ class XorVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------AndReductionVNode--------------------------------------
+// Vector and int, long as a reduction
+class AndReductionVNode : public ReductionNode {
+public:
+  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------OrReductionVNode--------------------------------------
+// Vector or int, long as a reduction
+class OrReductionVNode : public ReductionNode {
+public:
+  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------XorReductionVNode--------------------------------------
+// Vector xor int, long as a reduction
+class XorReductionVNode : public ReductionNode {
+public:
+  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------MinVNode--------------------------------------
 // Vector min
 class MinVNode : public VectorNode {
@@ -635,26 +668,6 @@ class MinReductionVNode : public ReductionNode {
 public:
   MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const {
-    BasicType bt = in(1)->bottom_type()->basic_type();
-    if (bt == T_FLOAT) {
-      return Type::FLOAT;
-    } else if (bt == T_DOUBLE) {
-      return Type::DOUBLE;
-    }
-    assert(false, "unsupported basic type");
-    return NULL;
-  }
-  virtual uint ideal_reg() const {
-    BasicType bt = in(1)->bottom_type()->basic_type();
-    if (bt == T_FLOAT) {
-      return Op_RegF;
-    } else if (bt == T_DOUBLE) {
-      return Op_RegD;
-    }
-    assert(false, "unsupported basic type");
-    return 0;
-  }
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
@@ -663,26 +676,6 @@ class MaxReductionVNode : public ReductionNode {
 public:
   MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const {
-    BasicType bt = in(1)->bottom_type()->basic_type();
-    if (bt == T_FLOAT) {
-      return Type::FLOAT;
-    } else {
-      return Type::DOUBLE;
-    }
-    assert(false, "unsupported basic type");
-    return NULL;
-  }
-  virtual uint ideal_reg() const {
-    BasicType bt = in(1)->bottom_type()->basic_type();
-    if (bt == T_FLOAT) {
-      return Op_RegF;
-    } else {
-      return Op_RegD;
-    }
-    assert(false, "unsupported basic type");
-    return 0;
-  }
 };
 
 //================================= M E M O R Y ===============================

@@ -40,10 +40,10 @@ mkdir -p $BUILD_DIR $JAR_DIR
 cd $JAR_DIR
 rm -f *
 
-wget http://central.maven.org/maven2/org/apache/commons/commons-math3/$COMMONS_MATH3_VERSION/commons-math3-$COMMONS_MATH3_VERSION.jar
-wget http://central.maven.org/maven2/net/sf/jopt-simple/jopt-simple/$JOPT_SIMPLE_VERSION/jopt-simple-$JOPT_SIMPLE_VERSION.jar
-wget http://central.maven.org/maven2/org/openjdk/jmh/jmh-core/$JMH_VERSION/jmh-core-$JMH_VERSION.jar
-wget http://central.maven.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/$JMH_VERSION/jmh-generator-annprocess-$JMH_VERSION.jar
+wget https://repo.maven.apache.org/maven2/org/apache/commons/commons-math3/$COMMONS_MATH3_VERSION/commons-math3-$COMMONS_MATH3_VERSION.jar
+wget https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/$JOPT_SIMPLE_VERSION/jopt-simple-$JOPT_SIMPLE_VERSION.jar
+wget https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-core/$JMH_VERSION/jmh-core-$JMH_VERSION.jar
+wget https://repo.maven.apache.org/maven2/org/openjdk/jmh/jmh-generator-annprocess/$JMH_VERSION/jmh-generator-annprocess-$JMH_VERSION.jar
 
 tar -cvzf ../$BUNDLE_NAME *
 

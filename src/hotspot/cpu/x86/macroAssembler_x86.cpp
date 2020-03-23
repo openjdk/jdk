@@ -4161,7 +4161,245 @@ void MacroAssembler::vshiftq(int opcode, XMMRegister dst, XMMRegister nds, XMMRe
     vpsrlq(dst, nds, src, vector_len);
   }
 }
+
+// Reductions for vectors of ints, longs, floats, and doubles.
+
+void MacroAssembler::reduce_operation_128(int opcode, XMMRegister dst, XMMRegister src) {
+  int vector_len = Assembler::AVX_128bit;
+
+  switch (opcode) {
+    case Op_AndReductionV:  pand(dst, src); break;
+    case Op_OrReductionV:   por (dst, src); break;
+    case Op_XorReductionV:  pxor(dst, src); break;
+
+    case Op_AddReductionVF: addss(dst, src); break;
+    case Op_AddReductionVD: addsd(dst, src); break;
+    case Op_AddReductionVI: paddd(dst, src); break;
+    case Op_AddReductionVL: paddq(dst, src); break;
+
+    case Op_MulReductionVF: mulss(dst, src); break;
+    case Op_MulReductionVD: mulsd(dst, src); break;
+    case Op_MulReductionVI: pmulld(dst, src); break;
+    case Op_MulReductionVL: vpmullq(dst, dst, src, vector_len); break;
+
+    default: assert(false, "wrong opcode");
+  }
+}
+
+void MacroAssembler::reduce_operation_256(int opcode, XMMRegister dst,  XMMRegister src1, XMMRegister src2) {
+  int vector_len = Assembler::AVX_256bit;
+
+  switch (opcode) {
+    case Op_AndReductionV:  vpand(dst, src1, src2, vector_len); break;
+    case Op_OrReductionV:   vpor (dst, src1, src2, vector_len); break;
+    case Op_XorReductionV:  vpxor(dst, src1, src2, vector_len); break;
+
+    case Op_AddReductionVI: vpaddd(dst, src1, src2, vector_len); break;
+    case Op_AddReductionVL: vpaddq(dst, src1, src2, vector_len); break;
+
+    case Op_MulReductionVI: vpmulld(dst, src1, src2, vector_len); break;
+    case Op_MulReductionVL: vpmullq(dst, src1, src2, vector_len); break;
+
+    default: assert(false, "wrong opcode");
+  }
+}
+
+void MacroAssembler::reduce_fp(int opcode, int vlen,
+                               XMMRegister dst, XMMRegister src,
+                               XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (opcode) {
+    case Op_AddReductionVF:
+    case Op_MulReductionVF:
+      reduceF(opcode, vlen, dst, src, vtmp1, vtmp2);
+      break;
+
+    case Op_AddReductionVD:
+    case Op_MulReductionVD:
+      reduceD(opcode, vlen, dst, src, vtmp1, vtmp2);
+      break;
+
+    default: assert(false, "wrong opcode");
+  }
+}
+
+void MacroAssembler::reduceI(int opcode, int vlen,
+                             Register dst, Register src1, XMMRegister src2,
+                             XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (vlen) {
+    case  2: reduce2I (opcode, dst, src1, src2, vtmp1, vtmp2); break;
+    case  4: reduce4I (opcode, dst, src1, src2, vtmp1, vtmp2); break;
+    case  8: reduce8I (opcode, dst, src1, src2, vtmp1, vtmp2); break;
+    case 16: reduce16I(opcode, dst, src1, src2, vtmp1, vtmp2); break;
+
+    default: assert(false, "wrong vector length");
+  }
+}
+
+#ifdef _LP64
+void MacroAssembler::reduceL(int opcode, int vlen,
+                             Register dst, Register src1, XMMRegister src2,
+                             XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (vlen) {
+    case 2: reduce2L(opcode, dst, src1, src2, vtmp1, vtmp2); break;
+    case 4: reduce4L(opcode, dst, src1, src2, vtmp1, vtmp2); break;
+    case 8: reduce8L(opcode, dst, src1, src2, vtmp1, vtmp2); break;
+
+    default: assert(false, "wrong vector length");
+  }
+}
+#endif // _LP64
+
+void MacroAssembler::reduceF(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (vlen) {
+    case 2:
+      assert(vtmp2 == xnoreg, "");
+      reduce2F(opcode, dst, src, vtmp1);
+      break;
+    case 4:
+      assert(vtmp2 == xnoreg, "");
+      reduce4F(opcode, dst, src, vtmp1);
+      break;
+    case 8:
+      reduce8F(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    case 16:
+      reduce16F(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    default: assert(false, "wrong vector length");
+  }
+}
+
+void MacroAssembler::reduceD(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (vlen) {
+    case 2:
+      assert(vtmp2 == xnoreg, "");
+      reduce2D(opcode, dst, src, vtmp1);
+      break;
+    case 4:
+      reduce4D(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    case 8:
+      reduce8D(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    default: assert(false, "wrong vector length");
+  }
+}
+
+void MacroAssembler::reduce2I(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  if (opcode == Op_AddReductionVI) {
+    if (vtmp1 != src2) {
+      movdqu(vtmp1, src2);
+    }
+    phaddd(vtmp1, vtmp1);
+  } else {
+    pshufd(vtmp1, src2, 0x1);
+    reduce_operation_128(opcode, vtmp1, src2);
+  }
+  movdl(vtmp2, src1);
+  reduce_operation_128(opcode, vtmp1, vtmp2);
+  movdl(dst, vtmp1);
+}
+
+void MacroAssembler::reduce4I(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  if (opcode == Op_AddReductionVI) {
+    if (vtmp1 != src2) {
+      movdqu(vtmp1, src2);
+    }
+    phaddd(vtmp1, src2);
+    reduce2I(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+  } else {
+    pshufd(vtmp2, src2, 0xE);
+    reduce_operation_128(opcode, vtmp2, src2);
+    reduce2I(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
+  }
+}
+
+void MacroAssembler::reduce8I(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  if (opcode == Op_AddReductionVI) {
+    vphaddd(vtmp1, src2, src2, Assembler::AVX_256bit);
+    vextracti128_high(vtmp2, vtmp1);
+    vpaddd(vtmp1, vtmp1, vtmp2, Assembler::AVX_128bit);
+    reduce2I(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+  } else {
+    vextracti128_high(vtmp1, src2);
+    reduce_operation_128(opcode, vtmp1, src2);
+    reduce4I(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+  }
+}
+
+void MacroAssembler::reduce16I(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  vextracti64x4_high(vtmp2, src2);
+  reduce_operation_256(opcode, vtmp2, vtmp2, src2);
+  reduce8I(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
+}
+
+#ifdef _LP64
+void MacroAssembler::reduce2L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  pshufd(vtmp2, src2, 0xE);
+  reduce_operation_128(opcode, vtmp2, src2);
+  movdq(vtmp1, src1);
+  reduce_operation_128(opcode, vtmp1, vtmp2);
+  movdq(dst, vtmp1);
+}
+
+void MacroAssembler::reduce4L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  vextracti128_high(vtmp1, src2);
+  reduce_operation_128(opcode, vtmp1, src2);
+  reduce2L(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+}
+
+void MacroAssembler::reduce8L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  vextracti64x4_high(vtmp2, src2);
+  reduce_operation_256(opcode, vtmp2, vtmp2, src2);
+  reduce4L(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
+}
+#endif // _LP64
+
+void MacroAssembler::reduce2F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
+  reduce_operation_128(opcode, dst, src);
+  pshufd(vtmp, src, 0x1);
+  reduce_operation_128(opcode, dst, vtmp);
+}
+
+void MacroAssembler::reduce4F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
+  reduce2F(opcode, dst, src, vtmp);
+  pshufd(vtmp, src, 0x2);
+  reduce_operation_128(opcode, dst, vtmp);
+  pshufd(vtmp, src, 0x3);
+  reduce_operation_128(opcode, dst, vtmp);
+}
+
+void MacroAssembler::reduce8F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  reduce4F(opcode, dst, src, vtmp2);
+  vextractf128_high(vtmp2, src);
+  reduce4F(opcode, dst, vtmp2, vtmp1);
+}
+
+void MacroAssembler::reduce16F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  reduce8F(opcode, dst, src, vtmp1, vtmp2);
+  vextracti64x4_high(vtmp1, src);
+  reduce8F(opcode, dst, vtmp1, vtmp1, vtmp2);
+}
+
+void MacroAssembler::reduce2D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
+  reduce_operation_128(opcode, dst, src);
+  pshufd(vtmp, src, 0xE);
+  reduce_operation_128(opcode, dst, vtmp);
+}
+
+void MacroAssembler::reduce4D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  reduce2D(opcode, dst, src, vtmp2);
+  vextractf128_high(vtmp2, src);
+  reduce2D(opcode, dst, vtmp2, vtmp1);
+}
+
+void MacroAssembler::reduce8D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  reduce4D(opcode, dst, src, vtmp1, vtmp2);
+  vextracti64x4_high(vtmp1, src);
+  reduce4D(opcode, dst, vtmp1, vtmp1, vtmp2);
+}
 #endif
+
 //-------------------------------------------------------------------------------------------
 
 void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {

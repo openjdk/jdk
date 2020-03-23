@@ -1820,8 +1820,11 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(URShiftVINode, VectorNode)                              \
   declare_c2_type(URShiftVLNode, VectorNode)                              \
   declare_c2_type(AndVNode, VectorNode)                                   \
+  declare_c2_type(AndReductionVNode, ReductionNode)                       \
   declare_c2_type(OrVNode, VectorNode)                                    \
+  declare_c2_type(OrReductionVNode, ReductionNode)                        \
   declare_c2_type(XorVNode, VectorNode)                                   \
+  declare_c2_type(XorReductionVNode, ReductionNode)                       \
   declare_c2_type(MaxVNode, VectorNode)                                   \
   declare_c2_type(MinVNode, VectorNode)                                   \
   declare_c2_type(MaxReductionVNode, ReductionNode)                       \

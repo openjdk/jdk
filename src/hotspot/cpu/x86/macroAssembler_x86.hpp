@@ -1649,8 +1649,48 @@ public:
   void vshiftw(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vshiftq(int opcode, XMMRegister dst, XMMRegister src);
   void vshiftq(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  // Reductions for vectors of ints, longs, floats, and doubles.
+
+  // dst = src1 + reduce(op, src2) using vtmp as temps
+  void reduceI(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+#ifdef _LP64
+  void reduceL(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+#endif // _LP64
+
+  // dst = reduce(op, src2) using vtmp as temps
+  void reduce_fp(int opcode, int vlen,
+                 XMMRegister dst, XMMRegister src,
+                 XMMRegister vtmp1, XMMRegister vtmp2 = xnoreg);
+ private:
+  void reduceF(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduceD(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+
+  void reduce2I (int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce4I (int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce8I (int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce16I(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+
+#ifdef _LP64
+  void reduce2L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce4L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce8L(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+#endif // _LP64
+
+  void reduce2F (int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
+  void reduce4F (int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
+  void reduce8F (int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce16F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+
+  void reduce2D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
+  void reduce4D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+  void reduce8D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+
+  void reduce_operation_128(int opcode, XMMRegister dst, XMMRegister src);
+  void reduce_operation_256(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 #endif
 
+ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
 
