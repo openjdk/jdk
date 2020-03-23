@@ -28,104 +28,19 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 
-/*
- * Internal fragmentation metric: describes how fragmented the heap regions are.
- *
- * It is derived as:
- *
- *               sum(used[i]^2, i=0..k)
- *   IF = 1 - ------------------------------
- *              C * sum(used[i], i=0..k)
- *
- * ...where k is the number of regions in computation, C is the region capacity, and
- * used[i] is the used space in the region.
- *
- * The non-linearity causes IF to be lower for the cases where the same total heap
- * used is densely packed. For example:
- *   a) Heap is completely full  => IF = 0
- *   b) Heap is half full, first 50% regions are completely full => IF = 0
- *   c) Heap is half full, each region is 50% full => IF = 1/2
- *   d) Heap is quarter full, first 50% regions are completely full => IF = 0
- *   e) Heap is quarter full, each region is 25% full => IF = 3/4
- *   f) Heap has the small object per each region => IF =~ 1
- */
-double ShenandoahMetrics::internal_fragmentation() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  double squared = 0;
-  double linear = 0;
-  int count = 0;
-  for (size_t c = 0; c < heap->num_regions(); c++) {
-    ShenandoahHeapRegion* r = heap->get_region(c);
-    size_t used = r->used();
-    squared += used * used;
-    linear += used;
-    count++;
-  }
-
-  if (count > 0) {
-    double s = squared / (ShenandoahHeapRegion::region_size_bytes() * linear);
-    return 1 - s;
-  } else {
-    return 0;
-  }
-}
-
-/*
- * External fragmentation metric: describes how fragmented the heap is.
- *
- * It is derived as:
- *
- *   EF = 1 - largest_contiguous_free / total_free
- *
- * For example:
- *   a) Heap is completely empty => EF = 0
- *   b) Heap is completely full => EF = 1
- *   c) Heap is first-half full => EF = 1/2
- *   d) Heap is half full, full and empty regions interleave => EF =~ 1
- */
-double ShenandoahMetrics::external_fragmentation() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  size_t last_idx = 0;
-  size_t max_contig = 0;
-  size_t empty_contig = 0;
-
-  size_t free = 0;
-  for (size_t c = 0; c < heap->num_regions(); c++) {
-    ShenandoahHeapRegion* r = heap->get_region(c);
-
-    if (r->is_empty() && (last_idx + 1 == c)) {
-      empty_contig++;
-    } else {
-      empty_contig = 0;
-    }
-
-    free += r->free();
-    max_contig = MAX2(max_contig, empty_contig);
-    last_idx = c;
-  }
-
-  if (free > 0) {
-    return 1 - (1.0 * max_contig * ShenandoahHeapRegion::region_size_bytes() / free);
-  } else {
-    return 1;
-  }
-}
-
 ShenandoahMetricsSnapshot::ShenandoahMetricsSnapshot() {
   _heap = ShenandoahHeap::heap();
 }
 
 void ShenandoahMetricsSnapshot::snap_before() {
   _used_before = _heap->used();
-  _if_before = ShenandoahMetrics::internal_fragmentation();
-  _ef_before = ShenandoahMetrics::external_fragmentation();
+  _if_before = _heap->free_set()->internal_fragmentation();
+  _ef_before = _heap->free_set()->external_fragmentation();
 }
 void ShenandoahMetricsSnapshot::snap_after() {
   _used_after = _heap->used();
-  _if_after = ShenandoahMetrics::internal_fragmentation();
-  _ef_after = ShenandoahMetrics::external_fragmentation();
+  _if_after = _heap->free_set()->internal_fragmentation();
+  _ef_after = _heap->free_set()->external_fragmentation();
 }
 
 bool ShenandoahMetricsSnapshot::is_good_progress() {

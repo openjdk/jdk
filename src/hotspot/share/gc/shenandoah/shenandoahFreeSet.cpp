@@ -476,6 +476,7 @@ void ShenandoahFreeSet::log_status() {
 
       size_t total_used = 0;
       size_t total_free = 0;
+      size_t total_free_ext = 0;
 
       for (size_t idx = _mutator_leftmost; idx <= _mutator_rightmost; idx++) {
         if (is_mutator_free(idx)) {
@@ -484,8 +485,13 @@ void ShenandoahFreeSet::log_status() {
 
           max = MAX2(max, free);
 
-          if (r->is_empty() && (last_idx + 1 == idx)) {
-            empty_contig++;
+          if (r->is_empty()) {
+            total_free_ext += free;
+            if (last_idx + 1 == idx) {
+              empty_contig++;
+            } else {
+              empty_contig = 1;
+            }
           } else {
             empty_contig = 0;
           }
@@ -509,8 +515,8 @@ void ShenandoahFreeSet::log_status() {
       );
 
       size_t frag_ext;
-      if (free > 0) {
-        frag_ext = 100 - (100 * max_humongous / free);
+      if (total_free_ext > 0) {
+        frag_ext = 100 - (100 * max_humongous / total_free_ext);
       } else {
         frag_ext = 0;
       }
@@ -600,6 +606,96 @@ void ShenandoahFreeSet::print_on(outputStream* out) const {
     if (is_collector_free(index)) {
       _heap->get_region(index)->print_on(out);
     }
+  }
+}
+
+/*
+ * Internal fragmentation metric: describes how fragmented the heap regions are.
+ *
+ * It is derived as:
+ *
+ *               sum(used[i]^2, i=0..k)
+ *   IF = 1 - ------------------------------
+ *              C * sum(used[i], i=0..k)
+ *
+ * ...where k is the number of regions in computation, C is the region capacity, and
+ * used[i] is the used space in the region.
+ *
+ * The non-linearity causes IF to be lower for the cases where the same total heap
+ * used is densely packed. For example:
+ *   a) Heap is completely full  => IF = 0
+ *   b) Heap is half full, first 50% regions are completely full => IF = 0
+ *   c) Heap is half full, each region is 50% full => IF = 1/2
+ *   d) Heap is quarter full, first 50% regions are completely full => IF = 0
+ *   e) Heap is quarter full, each region is 25% full => IF = 3/4
+ *   f) Heap has one small object per each region => IF =~ 1
+ */
+double ShenandoahFreeSet::internal_fragmentation() {
+  double squared = 0;
+  double linear = 0;
+  int count = 0;
+
+  for (size_t index = _mutator_leftmost; index <= _mutator_rightmost; index++) {
+    if (is_mutator_free(index)) {
+      ShenandoahHeapRegion* r = _heap->get_region(index);
+      size_t used = r->used();
+      squared += used * used;
+      linear += used;
+      count++;
+    }
+  }
+
+  if (count > 0) {
+    double s = squared / (ShenandoahHeapRegion::region_size_bytes() * linear);
+    return 1 - s;
+  } else {
+    return 0;
+  }
+}
+
+/*
+ * External fragmentation metric: describes how fragmented the heap is.
+ *
+ * It is derived as:
+ *
+ *   EF = 1 - largest_contiguous_free / total_free
+ *
+ * For example:
+ *   a) Heap is completely empty => EF = 0
+ *   b) Heap is completely full => EF = 0
+ *   c) Heap is first-half full => EF = 1/2
+ *   d) Heap is half full, full and empty regions interleave => EF =~ 1
+ */
+double ShenandoahFreeSet::external_fragmentation() {
+  size_t last_idx = 0;
+  size_t max_contig = 0;
+  size_t empty_contig = 0;
+
+  size_t free = 0;
+
+  for (size_t index = _mutator_leftmost; index <= _mutator_rightmost; index++) {
+    if (is_mutator_free(index)) {
+      ShenandoahHeapRegion* r = _heap->get_region(index);
+      if (r->is_empty()) {
+        free += ShenandoahHeapRegion::region_size_bytes();
+        if (last_idx + 1 == index) {
+          empty_contig++;
+        } else {
+          empty_contig = 1;
+        }
+      } else {
+        empty_contig = 0;
+      }
+
+      max_contig = MAX2(max_contig, empty_contig);
+      last_idx = index;
+    }
+  }
+
+  if (free > 0) {
+    return 1 - (1.0 * max_contig * ShenandoahHeapRegion::region_size_bytes() / free);
+  } else {
+    return 0;
   }
 }
 

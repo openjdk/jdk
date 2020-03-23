@@ -92,6 +92,9 @@ public:
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
   size_t unsafe_peek_free() const;
 
+  double internal_fragmentation();
+  double external_fragmentation();
+
   void print_on(outputStream* out) const;
 };
 
