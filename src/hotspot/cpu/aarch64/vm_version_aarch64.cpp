@@ -425,6 +425,11 @@ void VM_Version::get_processor_features() {
   }
 
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    FLAG_SET_DEFAULT(UsePopCountInstruction, true);
+  }
+
+  if (!UsePopCountInstruction) {
+    warning("UsePopCountInstruction is always enabled on this CPU");
     UsePopCountInstruction = true;
   }
 
