@@ -35,9 +35,6 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics() : ShenandoahHeu
   // Do not shortcut evacuation
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold, 100);
 
-  // Aggressive runs with max speed for allocation, to capture races against mutator
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahPacing);
-
   // Aggressive evacuates everything, so it needs as much evac space as it can get
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahEvacReserveOverflow);
 
