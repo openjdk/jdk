@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,16 @@
  * questions.
  */
 
-#include "awt.h"
 #include <shlwapi.h>
 #include <shellapi.h>
 #include <memory.h>
 
 #include "awt_DataTransferer.h"
-#include "awt_Toolkit.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDropTargetContextPeer.h"
 #include "awt_Container.h"
-#include "alloc.h"
 #include "awt_ole.h"
+#include "awt_Toolkit.h"
 #include "awt_DnDDT.h"
 #include "awt_DnDDS.h"
 
