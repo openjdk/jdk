@@ -24,9 +24,11 @@
 
 #include "precompiled.hpp"
 #include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
@@ -131,10 +133,19 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (addr != NULL) {
     intptr_t con = 0;
     Node* obj = AddPNode::Ideal_base_and_offset(addr, phase, con);
-    if (con == oopDesc::klass_offset_in_bytes() && obj != NULL && phase->type(obj)->isa_oopptr()) {
+    if (con == oopDesc::klass_offset_in_bytes() && obj != NULL) {
+      assert(phase->type(obj)->isa_oopptr(), "only for oop input");
       set_req(ObjOrSubKlass, obj);
       return this;
     }
+  }
+
+  // AllocateNode might have more accurate klass input
+  Node* allocated_klass = AllocateNode::Ideal_klass(obj_or_subklass, phase);
+  if (allocated_klass != NULL) {
+    assert(phase->type(obj_or_subklass)->isa_oopptr(), "only for oop input");
+    set_req(ObjOrSubKlass, allocated_klass);
+    return this;
   }
 
   // Verify that optimizing the subtype check to a simple code pattern
@@ -152,8 +163,19 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       subklass = obj_or_subklass;
     }
     Node* res = new CmpPNode(subklass, superklass);
-    const Type* t = phase->type(phase->transform(res));
-    assert((Value(phase) == t) || (t != TypeInt::CC_GT && t != TypeInt::CC_EQ), "missing Value() optimization");
+    Node* cmp = phase->transform(res);
+    const Type* t = phase->type(cmp);
+    if (!((Value(phase) == t) || (t != TypeInt::CC_GT && t != TypeInt::CC_EQ))) {
+      Value(phase)->dump(); tty->cr();
+      t->dump(); tty->cr();
+      obj_or_subklass->dump();
+      subklass->dump();
+      superklass->dump();
+      cmp->dump();
+      tty->print_cr("==============================");
+      phase->C->root()->dump(9999);
+      fatal("missing Value() optimization");
+    }
     if (phase->is_IterGVN()) {
       phase->is_IterGVN()->_worklist.push(res);
     }
@@ -188,8 +210,20 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *nkls = phase->transform(LoadKlassNode::make(*phase, NULL, kmem, p2, phase->type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL));
 
     Node* res = new CmpPNode(superklass, nkls);
-    const Type* t = phase->type(phase->transform(res));
-    assert((Value(phase) == t) || (t != TypeInt::CC_GT && t != TypeInt::CC_EQ), "missing Value() optimization");
+    Node* cmp = phase->transform(res);
+    const Type* t = phase->type(cmp);
+    if (!((Value(phase) == t) || (t != TypeInt::CC_GT && t != TypeInt::CC_EQ))) {
+      Value(phase)->dump(); tty->cr();
+      t->dump(); tty->cr();
+      obj_or_subklass->dump();
+      subklass->dump();
+      superklass->dump();
+      nkls->dump();
+      cmp->dump();
+      tty->print_cr("==============================");
+      phase->C->root()->dump(9999);
+      fatal("missing Value() optimization");
+    }
     if (phase->is_IterGVN()) {
       phase->is_IterGVN()->_worklist.push(res);
     }
