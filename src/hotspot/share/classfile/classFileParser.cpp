@@ -5877,16 +5877,16 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anon
   ResourceMark rm(THREAD);
   assert(strrchr(_class_name->as_C_string(), JVM_SIGNATURE_SLASH) == NULL,
          "Unsafe anonymous class should not be in a package");
-  const char* host_pkg_name =
-    ClassLoader::package_from_name(unsafe_anonymous_host->name()->as_C_string(), NULL);
+  TempNewSymbol host_pkg_name =
+    ClassLoader::package_from_class_name(unsafe_anonymous_host->name());
 
   if (host_pkg_name != NULL) {
-    int host_pkg_len = (int)strlen(host_pkg_name);
+    int host_pkg_len = host_pkg_name->utf8_length();
     int class_name_len = _class_name->utf8_length();
     int symbol_len = host_pkg_len + 1 + class_name_len;
     char* new_anon_name = NEW_RESOURCE_ARRAY(char, symbol_len + 1);
-    int n = os::snprintf(new_anon_name, symbol_len + 1, "%s/%.*s",
-                         host_pkg_name, class_name_len, _class_name->base());
+    int n = os::snprintf(new_anon_name, symbol_len + 1, "%.*s/%.*s",
+                         host_pkg_len, host_pkg_name->base(), class_name_len, _class_name->base());
     assert(n == symbol_len, "Unexpected number of characters in string");
 
     // Decrement old _class_name to avoid leaking.

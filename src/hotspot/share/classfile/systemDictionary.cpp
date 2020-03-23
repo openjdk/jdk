@@ -1197,23 +1197,21 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     return true;
   }
   // Get the pkg_entry from the classloader
-  TempNewSymbol pkg_name = NULL;
   PackageEntry* pkg_entry = NULL;
   ModuleEntry* mod_entry = NULL;
-  pkg_name = InstanceKlass::package_from_name(class_name, CHECK_false);
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
   if (pkg_name != NULL) {
     if (loader_data != NULL) {
       pkg_entry = loader_data->packages()->lookup_only(pkg_name);
+      if (pkg_entry != NULL) {
+        mod_entry = pkg_entry->module();
+        // If the archived class is from a module that has been patched at runtime,
+        // the class cannot be loaded from the archive.
+        if (mod_entry != NULL && mod_entry->is_patched()) {
+          return false;
+        }
+      }
     }
-    if (pkg_entry != NULL) {
-      mod_entry = pkg_entry->module();
-    }
-  }
-
-  // If the archived class is from a module that has been patched at runtime,
-  // the class cannot be loaded from the archive.
-  if (mod_entry != NULL && mod_entry->is_patched()) {
-    return false;
   }
 
   if (class_loader.is_null()) {
@@ -1357,8 +1355,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
     int path_index = ik->shared_classpath_index();
-    ResourceMark rm(THREAD);
-    ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
+    ClassLoader::add_package(ik, path_index, THREAD);
   }
 
   if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
@@ -1430,7 +1427,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
     ClassLoaderData *loader_data = class_loader_data(class_loader);
 
     // Find the package in the boot loader's package entry table.
-    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_NULL);
+    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
     if (pkg_name != NULL) {
       pkg_entry = loader_data->packages()->lookup_only(pkg_name);
     }

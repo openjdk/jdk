@@ -443,9 +443,9 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
 Handle SystemDictionaryShared::get_package_name(Symbol* class_name, TRAPS) {
   ResourceMark rm(THREAD);
   Handle pkgname_string;
-  char* pkgname = (char*) ClassLoader::package_from_name((const char*) class_name->as_C_string());
-  if (pkgname != NULL) { // Package prefix found
-    StringUtils::replace_no_expand(pkgname, "/", ".");
+  Symbol* pkg = ClassLoader::package_from_class_name(class_name);
+  if (pkg != NULL) { // Package prefix found
+    const char* pkgname = pkg->as_klass_external_name();
     pkgname_string = java_lang_String::create_from_str(pkgname,
                                                        CHECK_(pkgname_string));
   }
@@ -602,7 +602,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       ClassLoaderData *loader_data =
                 ClassLoaderData::class_loader_data(class_loader());
       PackageEntryTable* pkgEntryTable = loader_data->packages();
-      TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_(pd));
+      TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
       if (pkg_name != NULL) {
         PackageEntry* pkg_entry = pkgEntryTable->lookup_only(pkg_name);
         if (pkg_entry != NULL) {

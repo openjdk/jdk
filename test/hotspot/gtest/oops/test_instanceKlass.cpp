@@ -22,18 +22,10 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "unittest.hpp"
-
-// Tests InstanceKlass::package_from_name()
-TEST_VM(InstanceKlass, null_symbol) {
-  ResourceMark rm;
-  TempNewSymbol package_sym = InstanceKlass::package_from_name(NULL, NULL);
-  ASSERT_TRUE(package_sym == NULL) << "Wrong package for NULL symbol";
-}
 
 // Tests for InstanceKlass::is_class_loader_instance_klass() function
 TEST_VM(InstanceKlass, class_loader_class) {

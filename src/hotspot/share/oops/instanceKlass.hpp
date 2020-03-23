@@ -1209,7 +1209,6 @@ public:
 
   // Naming
   const char* signature_name() const;
-  static Symbol* package_from_name(const Symbol* name, TRAPS);
 
   // Oop fields (and metadata) iterators
   //
