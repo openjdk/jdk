@@ -616,6 +616,11 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 
 
 # jdk_net
 
+java/net/InetAddress/CheckJNI.java                              8241336 macosx-all
+java/net/Socket/LinkLocal.java                                  8241336 macosx-all
+java/net/MulticastSocket/SetOutgoingIf.java                     8241336 macosx-all
+java/net/MulticastSocket/Promiscuous.java                       8241336 macosx-all
+
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
 
@@ -633,6 +638,9 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 # jdk_nio
 
 java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
+
+java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java 8241336 macosx-all
+java/nio/channels/DatagramChannel/AdaptorMulticasting.java       8241336 macosx-all
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
