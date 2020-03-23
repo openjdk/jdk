@@ -1096,6 +1096,10 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     warn_excluded(k, "In error state");
     return true;
   }
+  if (k->has_been_redefined()) {
+    warn_excluded(k, "Has been redefined");
+    return true;
+  }
   if (k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
     // agent during dump time).
