@@ -368,7 +368,7 @@ jint ShenandoahHeap::initialize() {
   }
 
   _traversal_gc = strcmp(ShenandoahGCMode, "traversal") == 0 ?
-                  new ShenandoahTraversalGC(this, _num_regions) :
+                  new ShenandoahTraversalGC(this) :
                   NULL;
 
   _control_thread = new ShenandoahControlThread();

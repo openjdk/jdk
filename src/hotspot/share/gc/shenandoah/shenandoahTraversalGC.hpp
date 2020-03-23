@@ -39,7 +39,7 @@ private:
   ShenandoahHeapRegionSet _traversal_set;
 
 public:
-  ShenandoahTraversalGC(ShenandoahHeap* heap, size_t num_regions);
+  ShenandoahTraversalGC(ShenandoahHeap* heap);
   ~ShenandoahTraversalGC();
 
   ShenandoahHeapRegionSet* traversal_set() { return &_traversal_set; }

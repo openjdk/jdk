@@ -291,7 +291,7 @@ public:
   }
 };
 
-ShenandoahTraversalGC::ShenandoahTraversalGC(ShenandoahHeap* heap, size_t num_regions) :
+ShenandoahTraversalGC::ShenandoahTraversalGC(ShenandoahHeap* heap) :
   _heap(heap),
   _task_queues(new ShenandoahObjToScanQueueSet(heap->max_workers())),
   _traversal_set(ShenandoahHeapRegionSet()) {
