@@ -75,6 +75,10 @@ CFLAGS_VM_VERSION := \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
     #
 
+ifneq ($(HOTSPOT_BUILD_TIME), )
+  CFLAGS_VM_VERSION += -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"'
+endif
+
 ################################################################################
 # Disabled warnings
 

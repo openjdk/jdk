@@ -36,13 +36,15 @@ fi
 # Diff exceptions
 
 if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
-  ACCEPTED_BIN_DIFF="
-      ./lib/server/libjvm.so
-      ./hotspot/gtest/server/libjvm.so
-      "
-  STRIP_BEFORE_COMPARE="
-      ./hotspot/gtest/server/libjvm.so
-      "
+  if [ "$HOTSPOT_BUILD_TIME" = "" -o "$USE_PRECOMPILED_HEADER" = "true" ]; then
+    ACCEPTED_BIN_DIFF="
+        ./lib/server/libjvm.so
+        ./hotspot/gtest/server/libjvm.so
+        "
+    STRIP_BEFORE_COMPARE="
+        ./hotspot/gtest/server/libjvm.so
+        "
+   fi
 elif [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
   SKIP_BIN_DIFF="true"
   SKIP_FULLDUMP_DIFF="true"

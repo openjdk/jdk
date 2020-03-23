@@ -95,6 +95,9 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
   fi
 fi
 
+export HOTSPOT_BUILD_TIME="@HOTSPOT_BUILD_TIME@"
+export USE_PRECOMPILED_HEADER="@USE_PRECOMPILED_HEADER@"
+
 # Now locate the main script and run it.
 REAL_COMPARE_SCRIPT="$TOPDIR/make/scripts/compare.sh"
 if [ ! -e "$REAL_COMPARE_SCRIPT" ]; then
