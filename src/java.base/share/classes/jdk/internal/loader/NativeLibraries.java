@@ -24,6 +24,7 @@
  */
 package jdk.internal.loader;
 
+import jdk.internal.misc.VM;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.StaticProperty;
 
@@ -34,6 +35,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,24 +54,73 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class NativeLibraries {
 
-    private final Map<String, NativeLibrary> libraries = new ConcurrentHashMap<>();
+    private final Map<String, NativeLibraryImpl> libraries = new ConcurrentHashMap<>();
     private final ClassLoader loader;
-    private final Class<?> caller;      // may be null.  If not null, this is used as
-                                        // fromClass as a fast-path.  See loadLibrary(String name).
+    // caller, if non-null, is the fromClass parameter for NativeLibraries::loadLibrary
+    // unless specified
+    private final Class<?> caller;      // may be null
     private final boolean searchJavaLibraryPath;
+    // loading JNI native libraries
+    private final boolean isJNI;
 
-    public NativeLibraries(ClassLoader loader) {
+    /**
+     * Creates a NativeLibraries instance for loading JNI native libraries
+     * via for System::loadLibrary use.
+     *
+     * 1. Support of auto-unloading.  The loaded native libraries are unloaded
+     *    when the class loader is reclaimed.
+     * 2. Support of linking of native method.  See JNI spec.
+     * 3. Restriction on a native library that can only be loaded by one class loader.
+     *    Each class loader manages its own set of native libraries.
+     *    The same JNI native library cannot be loaded into more than one class loader.
+     *
+     * This static factory method is intended only for System::loadLibrary use.
+     *
+     * @see <a href="${docroot}/specs/jni/invocation.html##library-and-version-management">
+     *     JNI Specification: Library and Version Management</a>
+     */
+    public static NativeLibraries jniNativeLibraries(ClassLoader loader) {
+        return new NativeLibraries(loader);
+    }
+
+    /**
+     * Creates a raw NativeLibraries instance that has the following properties:
+     * 1. Native libraries loaded in this raw NativeLibraries instance are
+     *    not JNI native libraries.  Hence JNI_OnLoad and JNI_OnUnload will
+     *    be ignored.  No support for linking of native method.
+     * 2. Native libraries not auto-unloaded.  They may be explicitly unloaded
+     *    via NativeLibraries::unload.
+     * 3. No relationship with class loaders.
+     *
+     * This static factory method is restricted for JDK trusted class use.
+     */
+    public static NativeLibraries rawNativeLibraries(Class<?> trustedCaller,
+                                                     boolean searchJavaLibraryPath) {
+        return new NativeLibraries(trustedCaller, searchJavaLibraryPath);
+    }
+
+    private NativeLibraries(ClassLoader loader) {
         // for null loader, default the caller to this class and
         // do not search java.library.path
-        this(loader, loader != null ? null : NativeLibraries.class, loader != null ? true : false);
-    }
-    public NativeLibraries(ClassLoader loader, Class<?> caller, boolean searchJavaLibraryPath) {
-        if (caller != null && caller.getClassLoader() != loader) {
-            throw new IllegalArgumentException(caller.getName() + " must be defined by " + loader);
-        }
         this.loader = loader;
+        this.caller = loader != null ? null : NativeLibraries.class;
+        this.searchJavaLibraryPath = loader != null ? true : false;
+        this.isJNI = true;
+    }
+
+    /*
+     * Constructs a NativeLibraries instance of no relationship with class loaders
+     * and disabled auto unloading.
+     */
+    private NativeLibraries(Class<?> caller, boolean searchJavaLibraryPath) {
+        Objects.requireNonNull(caller);
+        if (!VM.isSystemDomainLoader(caller.getClassLoader())) {
+            throw new IllegalArgumentException("must be JDK trusted class");
+        }
+        this.loader = caller.getClassLoader();
         this.caller = caller;
         this.searchJavaLibraryPath = searchJavaLibraryPath;
+        this.isJNI = false;
     }
 
     /*
@@ -169,11 +220,26 @@ public final class NativeLibraries {
                 }
             }
 
-            NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin);
+            NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin, isJNI);
             // load the native library
             nativeLibraryContext.push(lib);
             try {
-                if (!lib.open()) return null;
+                if (!lib.open()) {
+                    return null;    // fail to open the native library
+                }
+                // auto unloading is only supported for JNI native libraries
+                // loaded by custom class loaders that can be unloaded.
+                // built-in class loaders are never unloaded.
+                boolean autoUnload = isJNI && !VM.isSystemDomainLoader(loader)
+                        && loader != ClassLoaders.appClassLoader();
+                if (autoUnload) {
+                    // register the loaded native library for auto unloading
+                    // when the class loader is reclaimed, all native libraries
+                    // loaded that class loader will be unloaded.
+                    // The entries in the libraries map are not removed since
+                    // the entire map will be reclaimed altogether.
+                    CleanerFactory.cleaner().register(loader, lib.unloader());
+                }
             } finally {
                 nativeLibraryContext.pop();
             }
@@ -218,6 +284,26 @@ public final class NativeLibraries {
         return lib;
     }
 
+    /**
+     * Unloads the given native library
+     *
+     * @param lib native library
+     */
+    public void unload(NativeLibrary lib) {
+        if (isJNI) {
+            throw new UnsupportedOperationException("explicit unloading cannot be used with auto unloading");
+        }
+        Objects.requireNonNull(lib);
+        synchronized (loadedLibraryNames) {
+            NativeLibraryImpl nl = libraries.remove(lib.name());
+            if (nl != lib) {
+                throw new IllegalArgumentException(lib.name() + " not loaded by this NativeLibraries instance");
+            }
+            // unload the native library and also remove from the global name registry
+            nl.unloader().run();
+        }
+    }
+
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
         for (String path : paths) {
             File libfile = new File(path, System.mapLibraryName(name));
@@ -255,16 +341,21 @@ public final class NativeLibraries {
         final String name;
         // Indicates if the native library is linked into the VM
         final boolean isBuiltin;
+        // Indicate if this is JNI native library
+        final boolean isJNI;
 
         // opaque handle to native library, used in native code.
         long handle;
         // the version of JNI environment the native library requires.
         int jniVersion;
 
-        NativeLibraryImpl(Class<?> fromClass, String name, boolean isBuiltin) {
+        NativeLibraryImpl(Class<?> fromClass, String name, boolean isBuiltin, boolean isJNI) {
+            assert !isBuiltin || isJNI : "a builtin native library must be JNI library";
+
             this.fromClass = fromClass;
             this.name = name;
             this.isBuiltin = isBuiltin;
+            this.isJNI = isJNI;
         }
 
         @Override
@@ -277,26 +368,19 @@ public final class NativeLibraries {
             return findEntry0(this, name);
         }
 
+        Runnable unloader() {
+            return new Unloader(name, handle, isBuiltin, isJNI);
+        }
+
         /*
-         * Loads the native library and registers for cleanup when its
-         * associated class loader is unloaded
+         * Loads the named native library
          */
         boolean open() {
             if (handle != 0) {
                 throw new InternalError("Native library " + name + " has been loaded");
             }
 
-            if (!load(this, name, isBuiltin)) return false;
-
-            // register the class loader for cleanup when unloaded
-            // builtin class loaders are never unloaded
-            ClassLoader loader = fromClass != null ? fromClass.getClassLoader() : null;
-            if (loader != null &&
-                    loader != ClassLoaders.platformClassLoader() &&
-                    loader != ClassLoaders.appClassLoader()) {
-                CleanerFactory.cleaner().register(loader, new Unloader(name, handle, isBuiltin));
-            }
-            return true;
+            return load(this, name, isBuiltin, isJNI);
         }
     }
 
@@ -308,13 +392,15 @@ public final class NativeLibraries {
         // This represents the context when a native library is unloaded
         // and getFromClass() will return null,
         static final NativeLibraryImpl UNLOADER =
-                new NativeLibraryImpl(null, "dummy", false);
+                new NativeLibraryImpl(null, "dummy", false, false);
 
         final String name;
         final long handle;
         final boolean isBuiltin;
+        final boolean isJNI;
 
-        Unloader(String name, long handle, boolean isBuiltin) {
+        Unloader(String name, long handle, boolean isBuiltin, boolean isJNI) {
+            assert !isBuiltin || isJNI : "a builtin native library must be JNI library";
             if (handle == 0) {
                 throw new IllegalArgumentException(
                         "Invalid handle for native library " + name);
@@ -323,18 +409,21 @@ public final class NativeLibraries {
             this.name = name;
             this.handle = handle;
             this.isBuiltin = isBuiltin;
+            this.isJNI = isJNI;
         }
 
         @Override
         public void run() {
-            synchronized (NativeLibraries.loadedLibraryNames) {
+            synchronized (loadedLibraryNames) {
                 /* remove the native library name */
-                NativeLibraries.loadedLibraryNames.remove(name);
-                NativeLibraries.nativeLibraryContext.push(UNLOADER);
+                if (!loadedLibraryNames.remove(name)) {
+                    throw new IllegalStateException(name + " has already been unloaded");
+                }
+                nativeLibraryContext.push(UNLOADER);
                 try {
-                    unload(name, isBuiltin, handle);
+                    unload(name, isBuiltin, isJNI, handle);
                 } finally {
-                    NativeLibraries.nativeLibraryContext.pop();
+                    nativeLibraryContext.pop();
                 }
             }
         }
@@ -371,8 +460,8 @@ public final class NativeLibraries {
 
     // JNI FindClass expects the caller class if invoked from JNI_OnLoad
     // and JNI_OnUnload is NativeLibrary class
-    private static native boolean load(NativeLibraryImpl impl, String name, boolean isBuiltin);
-    private static native void unload(String name, boolean isBuiltin, long handle);
+    private static native boolean load(NativeLibraryImpl impl, String name, boolean isBuiltin, boolean isJNI);
+    private static native void unload(String name, boolean isBuiltin, boolean isJNI, long handle);
     private static native String findBuiltinLib(String name);
     private static native long findEntry0(NativeLibraryImpl lib, String name);
 }

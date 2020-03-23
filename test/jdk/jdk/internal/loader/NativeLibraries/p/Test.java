@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,34 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package p;
 
-package jdk.internal.loader;
-
-/**
- * NativeLibrary represents a loaded native library instance.
- */
-public interface NativeLibrary {
-    String name();
-
-    /**
-     * Finds the address of the entry of the given name.  Returns 0
-     * if not found.
-     *
-     * @param name the name of the symbol to be found
-     */
-    long find(String name);
+public class Test implements Runnable {
+    private final Runnable r;
+    public Test(Runnable r) {
+        this.r = r;
+    }
 
     /**
-     * Finds the address of the entry of the given name.
-     *
-     * @param name the name of the symbol to be found
-     * @throws NoSuchMethodException if the named entry is not found.
+     * Tests if the native library is loaded.
      */
-    default long lookup(String name) throws NoSuchMethodException {
-        long addr = find(name);
-        if (0 == addr) {
-            throw new NoSuchMethodException("Cannot find symbol " + name + " in library " + name());
-        }
-        return addr;
+    public void run() {
+        r.run();
     }
 }

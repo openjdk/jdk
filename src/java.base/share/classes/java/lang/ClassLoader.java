@@ -2374,7 +2374,7 @@ public abstract class ClassLoader {
         return null;
     }
 
-    private final NativeLibraries libraries = new NativeLibraries(this);
+    private final NativeLibraries libraries = NativeLibraries.jniNativeLibraries(this);
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
     static NativeLibrary loadLibrary(Class<?> fromClass, File file) {
