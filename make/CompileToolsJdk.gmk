@@ -43,7 +43,7 @@ BUILD_TOOLS_SRC_DIRS += \
     $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes \
     #
 
-$(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
+$(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(BUILD_TOOLS_SRC_DIRS), \
     EXCLUDES := \
@@ -53,7 +53,6 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
         build/tools/jigsaw \
         build/tools/depend \
         , \
-    DISABLED_WARNINGS := unchecked rawtypes deprecation cast, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
     ADD_JAVAC_FLAGS := \
         --add-exports java.desktop/sun.awt=ALL-UNNAMED \

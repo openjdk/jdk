@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,12 +87,12 @@ public class GenerateBreakIteratorData {
         ResourceBundle rules, info;
 
         info = (ResourceBundle) Class.forName(
-            localizedBundleName("sun.text.resources", "BreakIteratorInfo")).newInstance();
+            localizedBundleName("sun.text.resources", "BreakIteratorInfo")).getDeclaredConstructor().newInstance();
 
         classNames = info.getStringArray("BreakIteratorClasses");
 
         rules = (ResourceBundle) Class.forName(
-            localizedBundleName("sun.text.resources", "BreakIteratorRules")).newInstance();
+            localizedBundleName("sun.text.resources", "BreakIteratorRules")).getDeclaredConstructor().newInstance();
 
         if (info.containsKey("CharacterData")) {
             generateDataFile(info.getString("CharacterData"),

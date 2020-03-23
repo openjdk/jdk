@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class TzdbZoneRulesProvider {
     }
 
     public Set<String> getZoneIds() {
-        return new TreeSet(regionIds);
+        return new TreeSet<String>(regionIds);
     }
 
     public Map<String, String> getAliasMap() {
@@ -100,6 +100,7 @@ class TzdbZoneRulesProvider {
             return (ZoneRules)obj;
         }
         try {
+            @SuppressWarnings("unchecked")
             ZoneRules zrules = buildRules(zoneId, (List<ZoneLine>)obj);
             zones.put(zoneId, zrules);
             return zrules;

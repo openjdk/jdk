@@ -191,6 +191,7 @@ class Bundle {
         String[] cldrBundles = getCLDRPath().split(",");
 
         // myMap contains resources for id.
+        @SuppressWarnings("unchecked")
         Map<String, Object> myMap = new HashMap<>();
         int index;
         for (index = 0; index < cldrBundles.length; index++) {
@@ -230,10 +231,12 @@ class Bundle {
         }
 
         for (String k : COMPACT_NUMBER_PATTERN_KEYS) {
+            @SuppressWarnings("unchecked")
             List<String> patterns = (List<String>) myMap.remove(k);
             if (patterns != null) {
                 // Convert the map value from List<String> to String[], replacing any missing
                 // entry from the parents map, if any.
+                @SuppressWarnings("unchecked")
                 final List<String> pList = (List<String>)parentsMap.get(k);
                 int size = patterns.size();
                 int psize = pList != null ? pList.size() : 0;

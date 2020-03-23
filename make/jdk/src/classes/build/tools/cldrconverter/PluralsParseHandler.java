@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * plurals.xml
  */
 
-class PluralsParseHandler extends AbstractLDMLHandler<Object> {
+class PluralsParseHandler extends AbstractLDMLHandler<Map<String, String>> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
@@ -82,13 +82,13 @@ class PluralsParseHandler extends AbstractLDMLHandler<Object> {
         switch (qName) {
             case "pluralRule":
                 assert !(currentContainer instanceof Entry);
-                Entry entry = (Entry)currentContainer;
+                Entry<?> entry = (Entry<?>)currentContainer;
                 final String count = entry.getKey();
                 final String rule = (String)entry.getValue();
                 String locales = ((KeyContainer)(currentContainer.getParent())).getKey();
                 Arrays.stream(locales.split("\\s"))
                         .forEach(loc -> {
-                            Map<String, String> rules = (Map<String, String>)get(loc);
+                            Map<String, String> rules = get(loc);
                             if (rules == null) {
                                 rules = new HashMap<>();
                                 put(loc, rules);
