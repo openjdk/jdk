@@ -2644,41 +2644,6 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
               bool create_phi = true;
               if (_phase->is_dominator(new_ctrl, u)) {
                 create_phi = false;
-              } else if (!_phase->C->has_irreducible_loop()) {
-                IdealLoopTree* loop = _phase->get_loop(ctrl);
-                bool do_check = true;
-                IdealLoopTree* l = loop;
-                create_phi = false;
-                while (l != _phase->ltree_root()) {
-                  Node* head = l->_head;
-                  if (head->in(0) == NULL) {
-                    head = _phase->get_ctrl(head);
-                  }
-                  if (_phase->is_dominator(head, u) && _phase->is_dominator(_phase->idom(u), head)) {
-                    create_phi = true;
-                    do_check = false;
-                    break;
-                  }
-                  l = l->_parent;
-                }
-
-                if (do_check) {
-                  assert(!create_phi, "");
-                  IdealLoopTree* u_loop = _phase->get_loop(u);
-                  if (u_loop != _phase->ltree_root() && u_loop->is_member(loop)) {
-                    Node* c = ctrl;
-                    while (!_phase->is_dominator(c, u_loop->tail())) {
-                      c = _phase->idom(c);
-                    }
-                    if (!_phase->is_dominator(c, u)) {
-                      do_check = false;
-                    }
-                  }
-                }
-
-                if (do_check && _phase->is_dominator(_phase->idom(u), new_ctrl)) {
-                  create_phi = true;
-                }
               }
               if (create_phi) {
                 Node* phi = new PhiNode(u, Type::MEMORY, _phase->C->get_adr_type(_alias));
