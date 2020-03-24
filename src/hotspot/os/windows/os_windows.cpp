@@ -3176,8 +3176,8 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
-                                 bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* addr,
+                                    bool exec) {
   assert(UseLargePages, "only for large pages");
 
   if (!is_aligned(bytes, os::large_page_size()) || alignment > os::large_page_size()) {
@@ -3214,17 +3214,14 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
     char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);
-    if (res != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, CALLER_PC);
-    }
 
     return res;
   }
 }
 
-bool os::release_memory_special(char* base, size_t bytes) {
+bool os::pd_release_memory_special(char* base, size_t bytes) {
   assert(base != NULL, "Sanity check");
-  return release_memory(base, bytes);
+  return pd_release_memory(base, bytes);
 }
 
 void os::print_statistics() {
