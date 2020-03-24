@@ -451,6 +451,7 @@
   declare_constant(CodeInstaller::OSR_ENTRY)                              \
   declare_constant(CodeInstaller::EXCEPTION_HANDLER_ENTRY)                \
   declare_constant(CodeInstaller::DEOPT_HANDLER_ENTRY)                    \
+  declare_constant(CodeInstaller::FRAME_COMPLETE)                         \
   declare_constant(CodeInstaller::INVOKEINTERFACE)                        \
   declare_constant(CodeInstaller::INVOKEVIRTUAL)                          \
   declare_constant(CodeInstaller::INVOKESTATIC)                           \
