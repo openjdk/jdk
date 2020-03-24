@@ -991,7 +991,7 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions:");
   st->print_cr("EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HC=humongous continuation, CS=collection set, T=trash, P=pinned");
   st->print_cr("BTE=bottom/top/end, U=used, T=TLAB allocs, G=GCLAB allocs, S=shared allocs, L=live data");
-  st->print_cr("R=root, CP=critical pins, TAMS=top-at-mark-start (previous, next)");
+  st->print_cr("R=root, CP=critical pins, TAMS=top-at-mark-start, UWM=update watermark");
   st->print_cr("SN=alloc sequence number");
 
   for (size_t i = 0; i < num_regions(); i++) {
