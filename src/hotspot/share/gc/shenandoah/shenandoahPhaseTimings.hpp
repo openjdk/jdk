@@ -77,6 +77,7 @@ class outputStream;
   f(purge,                                          "  System Purge")                  \
   f(purge_class_unload,                             "    Unload Classes")              \
   f(purge_par,                                      "    Parallel Cleanup")            \
+  SHENANDOAH_GC_PAR_PHASE_DO(purge_par_roots,       "      PC: ", f)                   \
   f(purge_cldg,                                     "    CLDG")                        \
   f(complete_liveness,                              "  Complete Liveness")             \
   f(retire_tlabs,                                   "  Retire TLABs")                  \
@@ -135,6 +136,7 @@ class outputStream;
   f(full_gc_purge,                                  "    System Purge")                \
   f(full_gc_purge_class_unload,                     "      Unload Classes")            \
   f(full_gc_purge_par,                              "    Parallel Cleanup")            \
+  SHENANDOAH_GC_PAR_PHASE_DO(full_gc_purge_roots,   "      PC: ", f)                   \
   f(full_gc_purge_cldg,                             "    CLDG")                        \
   f(full_gc_calculate_addresses,                    "  Calculate Addresses")           \
   f(full_gc_calculate_addresses_regular,            "    Regular Objects")             \
