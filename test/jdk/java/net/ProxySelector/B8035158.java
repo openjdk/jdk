@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8035158 8145732 8144300
+ * @bug 8035158 8145732 8144300 8241138
  * @run main/othervm B8035158
  */
 
@@ -155,6 +155,12 @@ public class B8035158 {
                 false));
         t.add(new TestCase("*google.*", "http://google.co.uk",
                 false));
+        t.add(new TestCase("*", "http://google.co.uk",false));
+        t.add(new TestCase("localhost|*", "http://google.co.uk",false));
+        t.add(new TestCase("*|oracle.com", "http://google.co.uk",false));
+        t.add(new TestCase("*|oracle.com|*", "http://google.co.uk",false));
+        t.add(new TestCase("*|*", "http://google.co.uk",false));
+
 
         t.add(new TestCase("*oracle.com", "http://my.oracle.com", false));
         t.add(new TestCase("google.com|bing.com|yahoo.com", "http://127.0.0.1", false));
