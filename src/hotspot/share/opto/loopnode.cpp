@@ -38,6 +38,7 @@
 #include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
@@ -1589,7 +1590,13 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     } else {
       sub = igvn->transform(new SubINode(iv_phi, limit));
     }
-    Node* min = igvn->transform(new MinINode(sub, igvn->intcon(scaled_iters)));
+    // sub is positive and can be larger than the max signed int
+    // value. Use an unsigned min.
+    Node* const_iters = igvn->intcon(scaled_iters);
+    Node* cmp = igvn->transform(new CmpUNode(sub, const_iters));
+    Node* bol = igvn->transform(new BoolNode(cmp, BoolTest::lt));
+    Node* min = igvn->transform(new CMoveINode(bol, const_iters, sub, TypeInt::make(0, scaled_iters, Type::WidenMin)));
+
     Node* new_limit = NULL;
     if (stride > 0) {
       new_limit = igvn->transform(new AddINode(min, iv_phi));
