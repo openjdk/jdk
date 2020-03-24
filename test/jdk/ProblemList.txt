@@ -820,7 +820,7 @@ javax/swing/JPopupMenu/4966112/bug4966112.java 8064915 macosx-all
 javax/swing/JSpinner/8223788/JSpinnerButtonFocusTest.java 8238085 macosx-all
 javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
 javax/swing/MultiUIDefaults/4300666/bug4300666.java 7105119 macosx-all
-javax/swing/UIDefaults/8146330/UIDefaultKeySizeTest.java 8241228 linux-all,solaris-all
+javax/swing/UIDefaults/8146330/UIDefaultKeySizeTest.java 8241228 aix-all,linux-all,solaris-all
 javax/swing/UITest/UITest.java 8198392 generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
 javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
