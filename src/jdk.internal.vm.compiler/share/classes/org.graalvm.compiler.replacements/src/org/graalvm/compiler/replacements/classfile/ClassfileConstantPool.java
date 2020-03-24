@@ -45,12 +45,15 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 
-class ClassfileConstantPool implements ConstantPool {
+class ClassfileConstantPool implements ConstantPool, ConstantPoolPatch {
 
     final ClassfileConstant[] entries;
     final ClassfileBytecodeProvider context;
 
     public static class Bytecodes {
+        public static final int LDC = 18; // 0x12
+        public static final int LDC_W = 19; // 0x13
+        public static final int LDC2_W = 20; // 0x14
         public static final int GETSTATIC = 178; // 0xB2
         public static final int PUTSTATIC = 179; // 0xB3
         public static final int GETFIELD = 180; // 0xB4
@@ -60,6 +63,12 @@ class ClassfileConstantPool implements ConstantPool {
         public static final int INVOKESTATIC = 184; // 0xB8
         public static final int INVOKEINTERFACE = 185; // 0xB9
         public static final int INVOKEDYNAMIC = 186; // 0xBA
+        public static final int NEW = 187; // 0xBB
+        public static final int NEWARRAY = 188; // 0xBC
+        public static final int ANEWARRAY = 189; // 0xBD
+        public static final int CHECKCAST = 192; // 0xC0
+        public static final int INSTANCEOF = 193; // 0xC1
+        public static final int MULTIANEWARRAY = 197; // 0xC5
     }
 
     ClassfileConstantPool(DataInputStream stream, ClassfileBytecodeProvider context) throws IOException {
@@ -158,6 +167,35 @@ class ClassfileConstantPool implements ConstantPool {
     @Override
     public JavaType lookupType(int index, int opcode) {
         return get(ClassRef.class, index).resolve(this);
+    }
+
+    @Override
+    public JavaType lookupReferencedType(int index, int opcode) {
+        switch (opcode) {
+            case Bytecodes.CHECKCAST:
+            case Bytecodes.INSTANCEOF:
+            case Bytecodes.NEW:
+            case Bytecodes.ANEWARRAY:
+            case Bytecodes.MULTIANEWARRAY:
+            case Bytecodes.LDC:
+            case Bytecodes.LDC_W:
+            case Bytecodes.LDC2_W:
+                return get(ClassRef.class, index).resolve(this);
+            case Bytecodes.GETSTATIC:
+            case Bytecodes.PUTSTATIC:
+            case Bytecodes.GETFIELD:
+            case Bytecodes.PUTFIELD:
+                FieldRef f = get(FieldRef.class, index);
+                return get(ClassRef.class, f.classIndex).resolve(this);
+            case Bytecodes.INVOKEVIRTUAL:
+            case Bytecodes.INVOKESPECIAL:
+            case Bytecodes.INVOKESTATIC:
+            case Bytecodes.INVOKEINTERFACE:
+                ExecutableRef e = get(ExecutableRef.class, index);
+                return get(ClassRef.class, e.classIndex).resolve(this);
+            default:
+                throw GraalError.shouldNotReachHere("Unexpected opcode: " + opcode);
+        }
     }
 
     @Override
