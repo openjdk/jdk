@@ -253,10 +253,7 @@ private:
   size_t _gclab_allocs;
   size_t _shared_allocs;
 
-  uint64_t _seqnum_first_alloc_mutator;
-  uint64_t _seqnum_first_alloc_gc;
   uint64_t _seqnum_last_alloc_mutator;
-  uint64_t _seqnum_last_alloc_gc;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
@@ -404,31 +401,12 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
 
-  uint64_t seqnum_first_alloc() const {
-    if (_seqnum_first_alloc_mutator == 0) return _seqnum_first_alloc_gc;
-    if (_seqnum_first_alloc_gc == 0)      return _seqnum_first_alloc_mutator;
-    return MIN2(_seqnum_first_alloc_mutator, _seqnum_first_alloc_gc);
-  }
-
-  uint64_t seqnum_last_alloc() const {
-    return MAX2(_seqnum_last_alloc_mutator, _seqnum_last_alloc_gc);
-  }
-
-  uint64_t seqnum_first_alloc_mutator() const {
-    return _seqnum_first_alloc_mutator;
-  }
-
   uint64_t seqnum_last_alloc_mutator()  const {
+    assert(_heap->is_traversal_mode(), "Sanity");
     return _seqnum_last_alloc_mutator;
   }
 
-  uint64_t seqnum_first_alloc_gc() const {
-    return _seqnum_first_alloc_gc;
-  }
-
-  uint64_t seqnum_last_alloc_gc()  const {
-    return _seqnum_last_alloc_gc;
-  }
+  void update_seqnum_last_alloc_mutator();
 
   HeapWord* get_update_watermark() const {
     // Updates to the update-watermark only happen at safepoints or, when pushing

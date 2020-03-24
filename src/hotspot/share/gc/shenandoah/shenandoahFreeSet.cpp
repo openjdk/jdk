@@ -179,6 +179,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Allocation successful, bump stats:
     if (req.is_mutator_alloc()) {
       increase_used(size * HeapWordSize);
+      if (_heap->is_traversal_mode()) {
+        r->update_seqnum_last_alloc_mutator();
+      }
     }
 
     // Record actual allocation size
