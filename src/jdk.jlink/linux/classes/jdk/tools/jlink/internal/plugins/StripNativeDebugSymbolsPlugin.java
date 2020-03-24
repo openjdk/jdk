@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc.
+ * Copyright (c) 2019, 2020, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.FileVisitResult;
@@ -313,7 +314,10 @@ public final class StripNativeDebugSymbolsPlugin implements Plugin {
                 Path resourceFileBinary = tempDir.resolve(relativeFileName);
                 String relativeDbgFileName = relativeFileName + "." + debugExt;
 
-                Files.write(resourceFileBinary, resource.contentBytes());
+                try (InputStream in = resource.content()) {
+                    Files.copy(in, resourceFileBinary);
+                }
+
                 Path resourceFileDebugSymbols;
                 if (includeDebug) {
                     resourceFileDebugSymbols = tempDir.resolve(Paths.get(relativeDbgFileName));
