@@ -61,6 +61,10 @@ public:
   static int localHotSpotVMIntConstants_count();
   static int localHotSpotVMLongConstants_count();
   static int localHotSpotVMAddresses_count();
+
+  // This is used to run any checking code necessary for validation of
+  // the data structure (debug build only)
+  static void init() NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_JVMCI_VMSTRUCTS_JVMCI_HPP
