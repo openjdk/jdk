@@ -702,6 +702,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VPCLMULQDQ;
     _features &= ~CPU_AVX512_VAES;
     _features &= ~CPU_AVX512_VNNI;
+    _features &= ~CPU_AVX512_VBMI;
     _features &= ~CPU_AVX512_VBMI2;
   }
 
@@ -733,7 +734,7 @@ void VM_Version::get_processor_features() {
   char buf[512];
   int res = jio_snprintf(buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d"
-              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s",
+              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s",
 
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
@@ -779,9 +780,10 @@ void VM_Version::get_processor_features() {
                (supports_avx512vl() ? ", avx512vl" : ""),
                (supports_avx512_vpopcntdq() ? ", avx512_vpopcntdq" : ""),
                (supports_avx512_vpclmulqdq() ? ", avx512_vpclmulqdq" : ""),
+               (supports_avx512_vbmi() ? ", avx512_vbmi" : ""),
                (supports_avx512_vbmi2() ? ", avx512_vbmi2" : ""),
-               (supports_avx512_vaes() ? ", avx512_vaes" : ""),
 
+               (supports_avx512_vaes() ? ", avx512_vaes" : ""),
                (supports_avx512_vnni() ? ", avx512_vnni" : ""),
                (supports_sha() ? ", sha" : ""),
                (supports_fma() ? ", fma" : ""),

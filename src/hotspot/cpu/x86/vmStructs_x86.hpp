@@ -75,6 +75,15 @@
   declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
   declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)           \
   declare_preprocessor_constant("VM_Version::CPU_FMA", CPU_FMA)           \
-  declare_preprocessor_constant("VM_Version::CPU_VZEROUPPER", CPU_VZEROUPPER)
+  declare_preprocessor_constant("VM_Version::CPU_VZEROUPPER", CPU_VZEROUPPER) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512_VPOPCNTDQ", CPU_AVX512_VPOPCNTDQ) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512_VPCLMULQDQ", CPU_AVX512_VPCLMULQDQ) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512_VAES", CPU_AVX512_VAES) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512_VNNI", CPU_AVX512_VNNI) \
+  declare_preprocessor_constant("VM_Version::CPU_FLUSH", CPU_FLUSH) \
+  declare_preprocessor_constant("VM_Version::CPU_FLUSHOPT", CPU_FLUSHOPT) \
+  declare_preprocessor_constant("VM_Version::CPU_CLWB", CPU_CLWB) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512_VBMI2", CPU_AVX512_VBMI2) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512_VBMI", CPU_AVX512_VBMI)
 
 #endif // CPU_X86_VMSTRUCTS_X86_HPP

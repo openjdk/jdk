@@ -334,22 +334,22 @@ protected:
     // Keeping sign bit 31 unassigned.
   };
 
-#define CPU_AVX512BW ((uint64_t)UCONST64(0x100000000)) // enums are limited to 31 bit
-#define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
-#define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
-#define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
-#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))        // Vzeroupper instruction
-#define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000))  // Vector popcount
-#define CPU_AVX512_VPCLMULQDQ ((uint64_t)UCONST64(0x4000000000)) // Vector carryless multiplication
-#define CPU_AVX512_VAES ((uint64_t)UCONST64(0x8000000000))       // Vector AES instructions
-#define CPU_AVX512_VNNI ((uint64_t)UCONST64(0x10000000000))      // Vector Neural Network Instructions
-#define CPU_AVX512_VBMI2 ((uint64_t)UCONST64(0x100000000000))    // VBMI2 shift left double instructions
+#define CPU_AVX512BW          ((uint64_t)UCONST64(   0x100000000)) // enums are limited to 31 bit
+#define CPU_AVX512VL          ((uint64_t)UCONST64(   0x200000000)) // EVEX instructions with smaller vector length
+#define CPU_SHA               ((uint64_t)UCONST64(   0x400000000)) // SHA instructions
+#define CPU_FMA               ((uint64_t)UCONST64(   0x800000000)) // FMA instructions
+#define CPU_VZEROUPPER        ((uint64_t)UCONST64(  0x1000000000)) // Vzeroupper instruction
+#define CPU_AVX512_VPOPCNTDQ  ((uint64_t)UCONST64(  0x2000000000)) // Vector popcount
+#define CPU_AVX512_VPCLMULQDQ ((uint64_t)UCONST64(  0x4000000000)) // Vector carryless multiplication
+#define CPU_AVX512_VAES       ((uint64_t)UCONST64(  0x8000000000)) // Vector AES instructions
+#define CPU_AVX512_VNNI       ((uint64_t)UCONST64( 0x10000000000)) // Vector Neural Network Instructions
+#define CPU_FLUSH             ((uint64_t)UCONST64( 0x20000000000)) // flush instruction
+#define CPU_FLUSHOPT          ((uint64_t)UCONST64( 0x40000000000)) // flushopt instruction
+#define CPU_CLWB              ((uint64_t)UCONST64( 0x80000000000)) // clwb instruction
+#define CPU_AVX512_VBMI2      ((uint64_t)UCONST64(0x100000000000)) // VBMI2 shift left double instructions
+#define CPU_AVX512_VBMI       ((uint64_t)UCONST64(0x200000000000)) // Vector BMI instructions
 
-#define CPU_FLUSH ((uint64_t)UCONST64(0x20000000000))  // flush instruction
-#define CPU_FLUSHOPT ((uint64_t)UCONST64(0x40000000000)) // flushopt instruction
-#define CPU_CLWB ((uint64_t)UCONST64(0x80000000000))   // clwb instruction
-
-// NB! When adding new CPU feature detection consider updating feature string in VM_Version::get_processor_features().
+// NB! When adding new CPU feature detection consider updating vmStructs_x86.hpp, vmStructs_jvmci.hpp, and VM_Version::get_processor_features().
 
 enum Extended_Family {
     // AMD
@@ -574,6 +574,8 @@ enum Extended_Family {
           result |= CPU_AVX512_VAES;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vnni != 0)
           result |= CPU_AVX512_VNNI;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi != 0)
+          result |= CPU_AVX512_VBMI;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
           result |= CPU_AVX512_VBMI2;
       }
@@ -867,6 +869,7 @@ public:
   static bool supports_avx512_vpclmulqdq() { return (_features & CPU_AVX512_VPCLMULQDQ) != 0; }
   static bool supports_avx512_vaes()       { return (_features & CPU_AVX512_VAES) != 0; }
   static bool supports_avx512_vnni()       { return (_features & CPU_AVX512_VNNI) != 0; }
+  static bool supports_avx512_vbmi()       { return (_features & CPU_AVX512_VBMI) != 0; }
   static bool supports_avx512_vbmi2()      { return (_features & CPU_AVX512_VBMI2) != 0; }
 
   // Intel features
