@@ -166,6 +166,7 @@ private:
 #endif
 
   const Type *meet_helper(const Type *t, bool include_speculative) const;
+  void check_symmetrical(const Type *t, const Type *mt) const;
 
 protected:
   // Each class of type is also identified by its base.

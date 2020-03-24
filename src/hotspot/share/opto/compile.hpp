@@ -1179,6 +1179,9 @@ class Compile : public Phase {
   bool select_24_bit_instr() const { return _select_24_bit_instr; }
   bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
 #endif // IA32
+#ifdef ASSERT
+  bool _type_verify_symmetry;
+#endif
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP
