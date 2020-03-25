@@ -257,17 +257,17 @@ ul.sub-nav-list li {
 /*
  * Styles for headings.
  */
-body.class-declaration .summary h2,
-body.class-declaration .details h2,
-body.class-use h2,
-body.module-declaration .block-list h2 {
+body.class-declaration-page .summary h2,
+body.class-declaration-page  .details h2,
+body.class-use-page  h2,
+body.module-declaration-page  .block-list h2 {
     font-style: italic;
     padding:0;
     margin:15px 0;
 }
-body.class-declaration .summary h3,
-body.class-declaration .details h3,
-body.class-declaration .summary .inherited-list h2 {
+body.class-declaration-page  .summary h3,
+body.class-declaration-page  .details h3,
+body.class-declaration-page  .summary .inherited-list h2 {
     background-color:#dee3e9;
     border:1px solid #d0d9e0;
     margin:0 0 6px -8px;
@@ -672,13 +672,13 @@ ul.ui-autocomplete  li {
 section.description {
     line-height: 1.4;
 }
-.summary section[class$="Summary"], .details section[class$="Details"],
+.summary section[class$="-summary"], .details section[class$="-details"],
 .class-uses .detail, .serialized-class-details {
     padding: 0px 20px 5px 10px;
     border: 1px solid #ededed;
     background-color: #f8f8f8;
 }
-.inherited-list, section[class$="Details"] .detail {
+.inherited-list, section[class$="-details"] .detail {
     padding:0 0 5px 8px;
     background-color:#ffffff;
     border:none;
