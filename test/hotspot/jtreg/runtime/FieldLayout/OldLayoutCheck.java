@@ -47,6 +47,7 @@ import java.util.Comparator;
 import jdk.internal.misc.Unsafe;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 
 public class OldLayoutCheck {
 
@@ -55,6 +56,11 @@ public class OldLayoutCheck {
         public int i;
     }
 
+    // 32-bit VMs: @0:  8 byte header,  @8: long field, @16:  int field
+    // 64-bit VMs: @0: 12 byte header, @12:  int field, @16: long field
+    static final long INT_OFFSET  = Platform.is64bit() ? 12L : 16L;
+    static final long LONG_OFFSET = Platform.is64bit() ? 16L :  8L;
+
     static public void main(String[] args) {
         Unsafe unsafe = Unsafe.getUnsafe();
         Class c = LIClass.class;
@@ -62,9 +68,9 @@ public class OldLayoutCheck {
         for (int i = 0; i < fields.length; i++) {
             long offset = unsafe.objectFieldOffset(fields[i]);
             if (fields[i].getType() == int.class) {
-                Asserts.assertEquals(offset, 12L, "Misplaced int field");
+                Asserts.assertEquals(offset, INT_OFFSET, "Misplaced int field");
             } else if (fields[i].getType() == long.class) {
-                Asserts.assertEquals(offset, 16L, "Misplaced long field");
+                Asserts.assertEquals(offset, LONG_OFFSET, "Misplaced long field");
             } else {
                 Asserts.fail("Unexpected field type");
             }
