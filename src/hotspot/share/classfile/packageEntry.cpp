@@ -89,7 +89,7 @@ void PackageEntry::set_export_walk_required(ClassLoaderData* m_loader_data) {
 
 // Set the package's exported states based on the value of the ModuleEntry.
 void PackageEntry::set_exported(ModuleEntry* m) {
-  MutexLocker m1(Module_lock);
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   if (is_unqual_exported()) {
     // An exception could be thrown, but choose to simply ignore.
     // Illegal to convert an unqualified exported package to be qualifiedly exported
@@ -109,12 +109,8 @@ void PackageEntry::set_exported(ModuleEntry* m) {
 // Set the package as exported to all unnamed modules unless the package is
 // already unqualifiedly exported.
 void PackageEntry::set_is_exported_allUnnamed() {
-  if (module()->is_open()) {
-    // No-op for open modules since all packages are unqualifiedly exported
-    return;
-  }
-
-  MutexLocker m1(Module_lock);
+  assert(!module()->is_open(), "should have been checked already");
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   if (!is_unqual_exported()) {
    _export_flags = PKG_EXP_ALLUNNAMED;
   }
@@ -129,7 +125,6 @@ void PackageEntry::purge_qualified_exports() {
   if (_must_walk_exports &&
       _qualified_exports != NULL &&
       !_qualified_exports->is_empty()) {
-    ModuleEntry* pkg_module = module();
 
     // This package's _must_walk_exports flag will be reset based
     // on the remaining live modules on the exports list.

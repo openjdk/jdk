@@ -107,11 +107,6 @@ public:
   // java/lang/ClassLoader.
   static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
 
-  // If package is defined by loader, return the
-  // java.lang.Module object for the module in which the package is defined.
-  // Returns NULL if package is invalid or not defined by loader.
-  static jobject get_module(Symbol* package_name, Handle h_loader, TRAPS);
-
   // Marks the specified package as exported to all unnamed modules.
   // If either module or package is null then NullPointerException is thrown.
   // If module or package is bad, or module is unnamed, or package is not in

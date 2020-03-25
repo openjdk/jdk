@@ -143,7 +143,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
-  if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
+  if (class_loader.is_null()) return ClassLoaderData::the_null_class_loader_data();
   return ClassLoaderDataGraph::find_or_create(class_loader);
 }
 

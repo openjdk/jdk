@@ -87,13 +87,6 @@ public class AccessCheckAllUnnamed {
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAllUnnamed(m2x, "p3");
-            throw new RuntimeException("Failed to get the expected IAE for package in other module");
-        } catch(IllegalArgumentException e) {
-            // Expected
-        }
-
-        try {
             ModuleHelper.AddModuleExportsToAllUnnamed(m2x, "p4");
             throw new RuntimeException("Failed to get the expected IAE for package not in module");
         } catch(IllegalArgumentException e) {
