@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class Utils {
 
     /* ***** Properties ***** */
     public static final String PROP_PORT = "test.port";
+    public static final String PROP_CERTS = "test.certs";
     public static final String PROP_PROTOCOL = "test.protocol";
     public static final String PROP_CIPHER_SUITE = "test.cipher.suite";
     public static final String PROP_CLIENT_AUTH = "test.client.auth";
@@ -67,6 +68,11 @@ public class Utils {
             = "test.negative.case.on.server";
     public static final String PROP_NEGATIVE_CASE_ON_CLIENT
             = "test.negative.case.on.client";
+
+    public static final boolean DEBUG = Boolean.getBoolean("debug");
+    public static final String SECURITY_PROPERTIES_FILE = System.getProperty(
+            "test.security.properties",
+            System.getProperty("test.src") + "/java.security");
 
     public static final int TIMEOUT = 10000;
     public static final char[] PASSWORD = "testpass".toCharArray();
@@ -147,13 +153,20 @@ public class Utils {
         return bytes;
     }
 
-    public static String join(String delimiter, String... values) {
+    @SuppressWarnings("unchecked")
+    public static <T> String join(String delimiter, T... values) {
         StringBuilder result = new StringBuilder();
         if (values != null && values.length > 0) {
             for (int i = 0; i < values.length - 1; i++) {
-                result.append(values[i]).append(delimiter);
+                if (values[i] != null && !values[i].toString().isEmpty()) {
+                    result.append(values[i]).append(delimiter);
+                }
             }
-            result.append(values[values.length - 1]);
+
+            if (values[values.length - 1] != null
+                    && !values[values.length - 1].toString().isEmpty()) {
+                result.append(values[values.length - 1]);
+            }
         }
         return result.toString();
     }

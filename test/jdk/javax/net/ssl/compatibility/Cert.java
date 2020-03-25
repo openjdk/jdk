@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,6 +387,14 @@ public enum Cert {
         this.keyAlgorithm = keyAlgorithm;
         this.certMaterials = certMaterials;
         this.privKeyMaterials = privKeyMaterials;
+    }
+
+    public static Cert[] getCerts(String... certNames) {
+        Cert[] certs = new Cert[certNames.length];
+        for(int i = 0; i < certNames.length; i++) {
+            certs[i] = Cert.valueOf(certNames[i]);
+        }
+        return certs;
     }
 
     // Two certificates (mainCert and exampleCert) are selected to respect the

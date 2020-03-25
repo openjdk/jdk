@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class UseCase {
             = Boolean.getBoolean("fullCipherSuites");
 
     public static final Protocol[] PROTOCOLS = new Protocol[] {
+            Protocol.SSLV3,
             Protocol.TLSV1,
             Protocol.TLSV1_1,
             Protocol.TLSV1_2,
@@ -148,7 +149,7 @@ public class UseCase {
     public final ServerName serverName;
     public final AppProtocol appProtocol;
 
-    public final boolean negativeCase;
+    public final boolean protocolSupportsCipherSuite;
 
     public UseCase(
             Protocol protocol,
@@ -162,7 +163,7 @@ public class UseCase {
         this.serverName = serverName;
         this.appProtocol = appProtocol;
 
-        negativeCase = !cipherSuite.supportedByProtocol(protocol);
+        protocolSupportsCipherSuite = cipherSuite.supportedByProtocol(protocol);
     }
 
     @Override

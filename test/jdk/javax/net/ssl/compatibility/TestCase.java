@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,14 @@ public class TestCase {
     public final JdkInfo clientJdk;
     public final UseCase useCase;
 
+    public final boolean protocolSupportsCipherSuite;
+
+    public final boolean serverEnablesProtocol;
+    public final boolean serverEnablesCipherSuite;
+
+    public final boolean clientSupportsProtocol;
+    public final boolean clientSupportsCipherSuite;
+
     public final boolean negativeCaseOnServer;
     public final boolean negativeCaseOnClient;
 
@@ -40,10 +48,20 @@ public class TestCase {
         this.clientJdk = clientJdk;
         this.useCase = useCase;
 
-        negativeCaseOnServer = useCase.negativeCase
-                || !serverJdk.supportsCipherSuite(useCase.cipherSuite);
-        negativeCaseOnClient = useCase.negativeCase
-                || !clientJdk.supportsCipherSuite(useCase.cipherSuite);
+        serverEnablesProtocol = serverJdk.enablesProtocol(useCase.protocol);
+        serverEnablesCipherSuite = serverJdk.enablesCipherSuite(useCase.cipherSuite);
+
+        clientSupportsProtocol = clientJdk.supportsProtocol(useCase.protocol);
+        clientSupportsCipherSuite = clientJdk.supportsCipherSuite(useCase.cipherSuite);
+
+        protocolSupportsCipherSuite = useCase.protocolSupportsCipherSuite;
+
+        negativeCaseOnServer = !protocolSupportsCipherSuite
+                || !serverEnablesProtocol
+                || !serverEnablesCipherSuite;
+        negativeCaseOnClient = !protocolSupportsCipherSuite
+                || !clientSupportsProtocol
+                || !clientSupportsCipherSuite;
     }
 
     public Status getStatus() {
@@ -52,6 +70,45 @@ public class TestCase {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public boolean isNegative() {
+        return negativeCaseOnServer || negativeCaseOnClient;
+    }
+
+    public boolean isFailed() {
+        return status == Status.FAIL || status == Status.UNEXPECTED_SUCCESS;
+    }
+
+    public String negativeCaseReason() {
+        return Utils.join(". ",
+                !protocolSupportsCipherSuite
+                        ? "Protocol doesn't support cipher suite"
+                        : "",
+                !serverEnablesProtocol
+                        ? "Server doesn't enable protocol"
+                        : "",
+                !serverEnablesCipherSuite
+                        ? "Server doesn't enable cipher suite"
+                        : "",
+                !clientSupportsProtocol
+                        ? "Client doesn't support protocol"
+                        : "",
+                !clientSupportsCipherSuite
+                        ? "Client doesn't support cipher suite"
+                        : "");
+    }
+
+    public String reason() {
+        if (status == Status.SUCCESS) {
+            return "";
+        }
+
+        if (status == Status.EXPECTED_FAIL && isNegative()) {
+            return negativeCaseReason();
+        }
+
+        return "Refer to log at case hyperlink for details...";
     }
 
     @Override
