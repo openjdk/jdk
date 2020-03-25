@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,106 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.swing;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.DefaultKeyboardFocusManager;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Callable;
 
 import javax.accessibility.AccessibleContext;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.filechooser.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.table.*;
-import javax.swing.text.*;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractListModel;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultCellEditor;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.LookAndFeel;
+import javax.swing.RowSorter;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.RowSorterEvent;
+import javax.swing.event.RowSorterListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.plaf.basic.BasicDirectoryModel;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.text.Position;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
-import sun.awt.shell.*;
+import sun.awt.shell.ShellFolder;
+import sun.awt.shell.ShellFolderColumnInfo;
 
 /**
  * <b>WARNING:</b> This class is an implementation detail and is only
@@ -694,8 +769,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     @SuppressWarnings("serial") // JDK-implementation class
     class DetailsTableModel extends AbstractTableModel implements ListDataListener {
-        JFileChooser chooser;
-        BasicDirectoryModel directoryModel;
+        private final JFileChooser chooser;
+        private final BasicDirectoryModel directoryModel;
 
         ShellFolderColumnInfo[] columns;
         int[] columnMap;
@@ -806,7 +881,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                             JOptionPane.showMessageDialog(chooser, MessageFormat.format(renameErrorFileExistsText,
                                     oldFileName), renameErrorTitleText, JOptionPane.ERROR_MESSAGE);
                         } else {
-                            if (FilePane.this.getModel().renameFile(f, f2)) {
+                            if (directoryModel.renameFile(f, f2)) {
                                 if (fsv.isParent(chooser.getCurrentDirectory(), f2)) {
                                     // The setSelectedFile method produces a new setValueAt invocation while the JTable
                                     // is editing. Postpone file selection to be sure that edit mode of the JTable
@@ -849,7 +924,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             int i0 = e.getIndex0();
             int i1 = e.getIndex1();
             if (i0 == i1) {
-                File file = (File)getModel().getElementAt(i0);
+                File file = (File)directoryModel.getElementAt(i0);
                 if (file.equals(newFolderFile)) {
                     new DelayedSelectionUpdater(file);
                     newFolderFile = null;

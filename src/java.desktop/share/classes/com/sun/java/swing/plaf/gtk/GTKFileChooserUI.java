@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,83 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.java.swing.plaf.gtk;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
+import java.awt.AWTKeyStroke;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.Vector;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.filechooser.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.accessibility.AccessibleContext;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractListModel;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
+import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.filechooser.FileView;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicDirectoryModel;
-import javax.swing.table.*;
-import javax.accessibility.*;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 
-import sun.swing.SwingUtilities2;
-
-import sun.swing.plaf.synth.*;
-import sun.swing.FilePane;
 import sun.awt.shell.ShellFolder;
+import sun.swing.FilePane;
+import sun.swing.SwingUtilities2;
+import sun.swing.plaf.synth.SynthFileChooserUI;
 
 /**
  * GTK FileChooserUI.
@@ -914,21 +967,18 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class GTKDirectoryModel extends BasicDirectoryModel {
-        FileSystemView fsv;
-        private Comparator<File> fileComparator = new Comparator<File>() {
-            public int compare(File o, File o1) {
-                return fsv.getSystemDisplayName(o).compareTo(fsv.getSystemDisplayName(o1));
-            }
-        };
-
-        public GTKDirectoryModel() {
+    private final class GTKDirectoryModel extends BasicDirectoryModel {
+        private GTKDirectoryModel() {
             super(getFileChooser());
         }
 
         protected void sort(Vector<? extends File> v) {
-            fsv = getFileChooser().getFileSystemView();
-            Collections.sort(v, fileComparator);
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            if (fsv == null) {
+                super.sort(v);
+            } else {
+                v.sort(Comparator.comparing(fsv::getSystemDisplayName));
+            }
         }
     }
 
