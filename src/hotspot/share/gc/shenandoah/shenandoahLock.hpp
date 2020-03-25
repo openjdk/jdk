@@ -62,23 +62,14 @@ public:
     Thread::SpinRelease(&_state);
   }
 
+  bool owned_by_self() {
 #ifdef ASSERT
-  void assert_owned_by_current_thread() {
-    assert(_state == locked, "must be locked");
-    assert(_owner == Thread::current(), "must be owned by current thread");
-  }
-
-  void assert_not_owned_by_current_thread() {
-    assert(_owner != Thread::current(), "must be not owned by current thread");
-  }
-
-  void assert_owned_by_current_thread_or_safepoint() {
-    Thread* thr = Thread::current();
-    assert((_state == locked && _owner == thr) ||
-           (SafepointSynchronize::is_at_safepoint() && thr->is_VM_thread()),
-           "must own heap lock or by VM thread at safepoint");
-  }
+    return _state == locked && _owner == Thread::current();
+#else
+    ShouldNotReachHere();
+    return false;
 #endif
+  }
 };
 
 class ShenandoahLocker : public StackObj {

@@ -31,8 +31,7 @@
 #include "runtime/atomic.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest::Type type) {
-  _heap->assert_heaplock_or_safepoint();
-
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
 
   HeapWord* obj = top();

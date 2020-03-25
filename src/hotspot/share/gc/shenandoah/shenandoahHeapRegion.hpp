@@ -420,7 +420,7 @@ public:
   }
 
   void set_update_watermark(HeapWord* w) {
-    _heap->assert_heaplock_or_safepoint();
+    shenandoah_assert_heaplocked_or_safepoint();
     assert(bottom() <= w && w <= top(), "within bounds");
     _update_watermark = w;
   }

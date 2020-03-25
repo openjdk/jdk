@@ -376,3 +376,40 @@ void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const
   ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
   report_vm_error(file, line, msg.buffer());
 }
+
+void ShenandoahAsserts::assert_heaplocked(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_not_heaplocked(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (!heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must not be owned by current thread");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
+  report_vm_error(file, line, msg.buffer());
+}

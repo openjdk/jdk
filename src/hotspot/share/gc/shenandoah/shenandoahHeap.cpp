@@ -610,12 +610,12 @@ size_t ShenandoahHeap::committed() const {
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
-  assert_heaplock_or_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   _committed += bytes;
 }
 
 void ShenandoahHeap::decrease_committed(size_t bytes) {
-  assert_heaplock_or_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   _committed -= bytes;
 }
 
@@ -2521,20 +2521,6 @@ void ShenandoahHeap::op_final_updaterefs() {
   }
 }
 
-#ifdef ASSERT
-void ShenandoahHeap::assert_heaplock_owned_by_current_thread() {
-  _lock.assert_owned_by_current_thread();
-}
-
-void ShenandoahHeap::assert_heaplock_not_owned_by_current_thread() {
-  _lock.assert_not_owned_by_current_thread();
-}
-
-void ShenandoahHeap::assert_heaplock_or_safepoint() {
-  _lock.assert_owned_by_current_thread_or_safepoint();
-}
-#endif
-
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
   print_on(st);
   print_heap_regions_on(st);
@@ -2556,7 +2542,7 @@ bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool ski
 }
 
 bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
 
   // Bitmaps in special regions do not need commits
   if (_bitmap_region_special) {
@@ -2580,7 +2566,7 @@ bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
 }
 
 bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
 
   // Bitmaps in special regions do not need uncommits
   if (_bitmap_region_special) {

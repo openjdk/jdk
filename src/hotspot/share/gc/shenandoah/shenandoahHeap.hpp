@@ -129,10 +129,6 @@ public:
     return &_lock;
   }
 
-  void assert_heaplock_owned_by_current_thread()     NOT_DEBUG_RETURN;
-  void assert_heaplock_not_owned_by_current_thread() NOT_DEBUG_RETURN;
-  void assert_heaplock_or_safepoint()                NOT_DEBUG_RETURN;
-
 // ---------- Initialization, termination, identification, printing routines
 //
 public:
