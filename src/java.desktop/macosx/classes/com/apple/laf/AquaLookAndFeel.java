@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,43 @@
 
 package com.apple.laf;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.KeyboardFocusManager;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
-import javax.swing.*;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JRootPane;
+import javax.swing.PopupFactory;
+import javax.swing.SwingConstants;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.DimensionUIResource;
+import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicLookAndFeel;
+
+import apple.laf.JRSUIControl;
+import apple.laf.JRSUIUtils;
+import sun.swing.SwingAccessor;
+import sun.swing.SwingUtilities2;
+
 import static javax.swing.UIDefaults.LazyValue;
-import sun.swing.*;
-import apple.laf.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaLookAndFeel extends BasicLookAndFeel {
-    static final String sOldPropertyPrefix = "com.apple.macos."; // old prefix for things like 'useScreenMenuBar'
     static final String sPropertyPrefix = "apple.laf."; // new prefix for things like 'useScreenMenuBar'
 
     // for lazy initalizers. Following the pattern from metal.

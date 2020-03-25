@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,15 @@
 
 package com.apple.laf;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.MenuBar;
 import java.security.AccessController;
 
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuBarUI;
 
@@ -145,17 +150,7 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     public static boolean getScreenMenuBarProperty() {
         // Do not allow AWT to set the screen menu bar if it's embedded in another UI toolkit
         if (LWCToolkit.isEmbedded()) return false;
-        if (AccessController.doPrivileged(
-                new GetBooleanAction(AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar"))) {
-            return true;
-        }
-        if (AccessController.doPrivileged(
-                new GetBooleanAction(AquaLookAndFeel.sOldPropertyPrefix + "useScreenMenuBar"))) {
-                System.err.println(AquaLookAndFeel.sOldPropertyPrefix +
-                        "useScreenMenuBar has been deprecated. Please switch to " +
-                        AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar");
-                return true;
-        }
-        return false;
+        return AccessController.doPrivileged(new GetBooleanAction(
+                AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar"));
     }
 }
