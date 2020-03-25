@@ -463,6 +463,14 @@ abstract class ECDSASignature extends SignatureSpi {
         if (sigOpt.isPresent()) {
             sig = sigOpt.get();
         } else {
+            if (SunEC.isNativeDisabled()) {
+                NamedCurve nc = CurveDB.lookup(privateKey.getParams());
+                throw new SignatureException(
+                        new InvalidAlgorithmParameterException(
+                                "Legacy SunEC curve disabled:  " +
+                                        (nc != null ? nc.toString()
+                                                : "unknown")));
+            }
             sig = signDigestNative(privateKey, digest, random);
         }
 
@@ -491,6 +499,15 @@ abstract class ECDSASignature extends SignatureSpi {
         if (verifyOpt.isPresent()) {
             return verifyOpt.get();
         } else {
+            if (SunEC.isNativeDisabled()) {
+                NamedCurve nc = CurveDB.lookup(publicKey.getParams());
+                throw new SignatureException(
+                        new InvalidAlgorithmParameterException(
+                                "Legacy SunEC curve disabled:  " +
+                                        (nc != null ? nc.toString()
+                                                : "unknown")));
+            }
+
             byte[] w;
             ECParameterSpec params = publicKey.getParams();
             // DER OID

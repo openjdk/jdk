@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,17 @@
 
 package sun.security.ec;
 
-import java.util.*;
-import java.security.*;
+import java.security.AccessController;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.security.ProviderException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Pattern;
 import sun.security.util.CurveDB;
 import sun.security.util.NamedCurve;
@@ -53,20 +62,34 @@ public final class SunEC extends Provider {
 
     private static final long serialVersionUID = -2279741672933606418L;
 
-    // flag indicating whether the full EC implementation is present
-    // (when native library is absent then fewer EC algorithms are available)
-    private static boolean useFullImplementation = true;
+    // This flag is true if the native library is disabled or not loaded.
+    private static boolean disableNative = true;
+
     static {
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sunec"); // check for native library
-                    return null;
-                }
-            });
-        } catch (UnsatisfiedLinkError e) {
-            useFullImplementation = false;
+        String s = sun.security.action.GetPropertyAction.privilegedGetProperty(
+                "jdk.sunec.disableNative");
+        if (s != null && s.equalsIgnoreCase("false")) {
+            disableNative = false;
         }
+
+        // If native is enabled, verify the library is available.
+        if (!disableNative) {
+            try {
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() {
+                        System.loadLibrary("sunec"); // check for native library
+                        return null;
+                    }
+                });
+            } catch (UnsatisfiedLinkError e) {
+                disableNative = true;
+            }
+        }
+    }
+
+    // Check if native library support is disabled.
+    static boolean isNativeDisabled() {
+        return SunEC.disableNative;
     }
 
     private static class ProviderService extends Provider.Service {
@@ -165,13 +188,13 @@ public final class SunEC extends Provider {
             "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                putEntries(useFullImplementation);
+                putEntries();
                 return null;
             }
         });
     }
 
-    void putEntries(boolean useFullImplementation) {
+    void putEntries() {
         HashMap<String, String> ATTRS = new HashMap<>(3);
         ATTRS.put("ImplementedIn", "Software");
         String ecKeyClasses = "java.security.interfaces.ECPublicKey" +
@@ -194,8 +217,16 @@ public final class SunEC extends Provider {
         StringBuilder names = new StringBuilder();
         Pattern nameSplitPattern = Pattern.compile(CurveDB.SPLIT_PATTERN);
 
-        Collection<? extends NamedCurve> supportedCurves =
-            CurveDB.getSupportedCurves();
+        Collection<? extends NamedCurve> supportedCurves;
+        if (SunEC.isNativeDisabled()) {
+            supportedCurves = Collections.unmodifiableList(List.of(
+                    CurveDB.lookup("secp256r1"),
+                    CurveDB.lookup("secp384r1"),
+                    CurveDB.lookup("secp521r1")));
+        } else {
+            supportedCurves = CurveDB.getSupportedCurves();
+        }
+
         for (NamedCurve namedCurve : supportedCurves) {
             if (!firstCurve) {
                 names.append("|");
@@ -224,14 +255,6 @@ public final class SunEC extends Provider {
             apAttrs));
 
         putXDHEntries();
-
-        /*
-         * Register the algorithms below only when the full ECC implementation
-         * is available
-         */
-        if (!useFullImplementation) {
-            return;
-        }
 
         /*
          * Signature engines

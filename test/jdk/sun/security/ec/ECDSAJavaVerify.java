@@ -100,7 +100,8 @@ public class ECDSAJavaVerify {
                 = launchingConnector.defaultArguments();
         arguments.get("main").setValue(ECDSAJavaVerify.class.getName());
         arguments.get("options").setValue(
-                "-cp " + System.getProperty("test.classes"));
+                "-cp " + System.getProperty("test.classes") +
+                " -Djdk.sunec.disableNative=false");
         VirtualMachine vm = launchingConnector.launch(arguments);
 
         MethodEntryRequest req = vm.eventRequestManager()

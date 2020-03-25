@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  *          this test file was covered before with JDK-4936763.
  * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true KeyAgreementTest
  *          DiffieHellman DH SunJCE
+ * @run main/othervm -Djdk.sunec.disableNative=false KeyAgreementTest
+ *     ECDHNative EC SunEC
  * @run main KeyAgreementTest ECDH EC SunEC
  * @run main KeyAgreementTest XDH XDH SunEC
  */
@@ -52,7 +54,12 @@ public class KeyAgreementTest {
         String kaAlgo = args[0];
         String kpgAlgo = args[1];
         String provider = args[2];
+        System.out.println("Testing " + kaAlgo);
         AlgoSpec aSpec = AlgoSpec.valueOf(AlgoSpec.class, kaAlgo);
+        // Switch kaAlgo to ECDH as it is used for algorithm names
+        if (kaAlgo.equals("ECDHNative")) {
+            kaAlgo = "ECDH";
+        }
         List<AlgorithmParameterSpec> specs = aSpec.getAlgorithmParameterSpecs();
         for (AlgorithmParameterSpec spec : specs) {
             testKeyAgreement(provider, kaAlgo, kpgAlgo, spec);
@@ -69,7 +76,7 @@ public class KeyAgreementTest {
         // "java.base/share/classes/sun/security/util/CurveDB.java"
         // and
         // "jdk.crypto.ec/share/native/libsunec/impl/ecdecode.c"
-        ECDH(
+        ECDHNative(
                 // SEC2 prime curves
                 "secp112r1", "secp112r2", "secp128r1", "secp128r2", "secp160k1",
                 "secp160r1", "secp192k1", "secp192r1", "secp224k1", "secp224r1",
@@ -87,6 +94,7 @@ public class KeyAgreementTest {
                 "X9.62 c2tnb239v1", "X9.62 c2tnb239v2", "X9.62 c2tnb239v3",
                 "X9.62 c2tnb359v1", "X9.62 c2tnb431r1"
         ),
+        ECDH("secp256r1", "secp384r1", "secp521r1"),
         XDH("X25519", "X448", "x25519"),
         // There is no curve for DiffieHellman
         DiffieHellman(new String[]{});
@@ -97,6 +105,7 @@ public class KeyAgreementTest {
             // Generate AlgorithmParameterSpec for each KeyExchangeAlgorithm
             for (String crv : curves) {
                 switch (this.name()) {
+                    case "ECDHNative":
                     case "ECDH":
                         specs.add(new ECGenParameterSpec(crv));
                         break;
@@ -126,6 +135,13 @@ public class KeyAgreementTest {
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgo, provider);
         kpg.initialize(spec);
+        if (spec instanceof ECGenParameterSpec) {
+            System.out.println("Testing curve: " +
+                    ((ECGenParameterSpec)spec).getName());
+        } else if (spec instanceof NamedParameterSpec) {
+                System.out.println("Testing curve: " +
+                        ((NamedParameterSpec)spec).getName());
+        }
         KeyPair kp1 = kpg.generateKeyPair();
         KeyPair kp2 = kpg.generateKeyPair();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.*;
 import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
@@ -121,14 +120,29 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
     private static void ensureCurveIsSupported(ECParameterSpec ecSpec)
         throws InvalidAlgorithmParameterException {
 
+        // Check if ecSpec is a valid curve
         AlgorithmParameters ecParams = ECUtil.getECParameters(null);
-        byte[] encodedParams;
         try {
             ecParams.init(ecSpec);
-            encodedParams = ecParams.getEncoded();
         } catch (InvalidParameterSpecException ex) {
             throw new InvalidAlgorithmParameterException(
                 "Unsupported curve: " + ecSpec.toString());
+        }
+
+        // Check if the java implementation supports this curve
+        if (ECOperations.forParameters(ecSpec).isPresent()) {
+            return;
+        }
+
+        // Check if the native library supported this curve, if available
+        if (SunEC.isNativeDisabled()) {
+            throw new InvalidAlgorithmParameterException(
+                "Unsupported curve: " + ecSpec.toString());
+        }
+
+        byte[] encodedParams;
+        try {
+            encodedParams = ecParams.getEncoded();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -151,6 +165,14 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
             if (kp.isPresent()) {
                 return kp.get();
             }
+        } catch (Exception ex) {
+            throw new ProviderException(ex);
+        }
+        if (SunEC.isNativeDisabled()) {
+            throw new ProviderException("Legacy SunEC curve disabled:  " +
+                    params.toString());
+        }
+        try {
             return generateKeyPairNative(random);
         } catch (Exception ex) {
             throw new ProviderException(ex);

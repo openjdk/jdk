@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@
  * @run main KeySizeTest DiffieHellman SunJCE DiffieHellman 4096
  * @run main KeySizeTest DiffieHellman SunJCE DiffieHellman 6144
  * @run main KeySizeTest DiffieHellman SunJCE DiffieHellman 8192
- * @run main KeySizeTest ECDH SunEC EC 128
- * @run main KeySizeTest ECDH SunEC EC 192
- * @run main KeySizeTest ECDH SunEC EC 256
+ * @run main/othervm -Djdk.sunec.disableNative=false KeySizeTest ECDH SunEC EC 128
+ * @run main/othervm -Djdk.sunec.disableNative=false KeySizeTest ECDH SunEC EC 192
+ * @run main/othervm KeySizeTest ECDH SunEC EC 256
  * @run main KeySizeTest XDH SunEC XDH 255
  * @run main KeySizeTest XDH SunEC XDH 448
  */
