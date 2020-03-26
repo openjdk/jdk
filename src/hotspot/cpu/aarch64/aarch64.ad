@@ -16966,7 +16966,7 @@ instruct vmuladdS2I(vecX dst, vecX src1, vecX src2, vecX tmp) %{
   predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
   match(Set dst (MulAddVS2VI src1 src2));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
+  effect(TEMP_DEF dst, TEMP tmp);
   format %{ "smullv  $tmp, $src1, $src2\t# vector (4H)\n\t"
             "smullv  $dst, $src1, $src2\t# vector (8H)\n\t"
             "addpv   $dst, $tmp, $dst\t# vector (4S)\n\t" %}
