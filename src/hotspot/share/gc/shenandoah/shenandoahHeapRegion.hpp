@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPacer.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "utilities/sizes.hpp"
 
 class VMStructs;
@@ -224,9 +225,9 @@ private:
   // Global allocation counter, increased for each allocation under Shenandoah heap lock.
   // Padded to avoid false sharing with the read-only fields above.
   struct PaddedAllocSeqNum {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(uint64_t));
+    shenandoah_padding(0);
     uint64_t value;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+    shenandoah_padding(1);
 
     PaddedAllocSeqNum() {
       // start with 1, reserve 0 for uninitialized value
@@ -265,7 +266,7 @@ private:
   HeapWord* _update_watermark;
 
   // Claim some space at the end to protect next region
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(0);
 
 public:
   ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start, size_t size_words, size_t index, bool committed);

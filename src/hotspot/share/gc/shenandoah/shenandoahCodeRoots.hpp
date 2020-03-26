@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -40,10 +41,10 @@ class ShenandoahParallelCodeHeapIterator {
   friend class CodeCache;
 private:
   CodeHeap*     _heap;
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int));
+  shenandoah_padding(0);
   volatile int  _claimed_idx;
   volatile bool _finished;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 public:
   ShenandoahParallelCodeHeapIterator(CodeHeap* heap);
   void parallel_blobs_do(CodeBlobClosure* f);

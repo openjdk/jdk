@@ -54,6 +54,7 @@
 #include "gc/shenandoah/shenandoahNormalMode.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -1321,9 +1322,9 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahHeapRegionClosure* const _blk;
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
+  shenandoah_padding(0);
   volatile size_t _index;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
 public:
   ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk) :

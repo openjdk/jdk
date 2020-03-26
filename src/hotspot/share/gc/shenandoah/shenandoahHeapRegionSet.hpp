@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegionSet;
@@ -37,9 +38,9 @@ private:
   const ShenandoahHeapRegionSet* _set;
   ShenandoahHeap* const _heap;
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile jint));
+  shenandoah_padding(0);
   volatile jint _current_index;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   // No implicit copying: iterators should be passed by reference to capture the state
   NONCOPYABLE(ShenandoahHeapRegionSetIterator);

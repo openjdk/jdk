@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHEVACOOMHANDLER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHEVACOOMHANDLER_HPP
 
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -81,9 +82,9 @@ class ShenandoahEvacOOMHandler {
 private:
   static const jint OOM_MARKER_MASK;
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile jint));
+  shenandoah_padding(0);
   volatile jint _threads_in_evac;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   void wait_for_no_evac_threads();
 
