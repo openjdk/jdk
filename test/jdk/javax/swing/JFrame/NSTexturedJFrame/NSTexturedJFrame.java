@@ -23,6 +23,7 @@
 
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
@@ -78,9 +79,16 @@ public final class NSTexturedJFrame {
     private static void testImages(BufferedImage img1, BufferedImage img2,
                                    boolean shouldbeDifferent) {
         boolean different = false;
+        int tol = 5;
         for (int x = 0; x < img1.getWidth(); ++x) {
             for (int y = 0; y < img1.getHeight(); ++y) {
-                if (img1.getRGB(x, y) != img2.getRGB(x, y)) {
+                Color c1 = new Color(img1.getRGB(x, y));
+                Color c2 = new Color(img2.getRGB(x, y));
+
+                if ((Math.abs(c1.getRed() - c2.getRed()) > tol) &&
+                    (Math.abs(c1.getBlue() - c2.getBlue()) > tol) &&
+                    (Math.abs(c1.getGreen() - c2.getGreen()) > tol )) {
+
                     different = true;
                 }
             }
