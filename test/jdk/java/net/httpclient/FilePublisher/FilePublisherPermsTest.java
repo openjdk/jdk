@@ -37,9 +37,9 @@
  * @library /test/lib ../http2/server
  * @compile ../HttpServerAdapters.java
  * @build jdk.test.lib.net.SimpleSSLContext SecureZipFSProvider
- * @run testng/othervm/policy=FilePublisherPermsTest1.policy FilePublisherPermsTest
- * @run testng/othervm/policy=FilePublisherPermsTest2.policy FilePublisherPermsTest
- * @run testng/othervm/policy=FilePublisherPermsTest3.policy FilePublisherPermsTest
+ * @run testng/othervm/java.security.policy=FilePublisherPermsTest1.policy FilePublisherPermsTest
+ * @run testng/othervm/java.security.policy=FilePublisherPermsTest2.policy FilePublisherPermsTest
+ * @run testng/othervm/java.security.policy=FilePublisherPermsTest3.policy FilePublisherPermsTest
  */
 
 import com.sun.net.httpserver.HttpServer;
