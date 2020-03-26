@@ -121,6 +121,11 @@ public final class Utils {
     private static volatile Random RANDOM_GENERATOR;
 
     /**
+     * Maximum number of attempts to get free socket
+     */
+    private static final int MAX_SOCKET_TRIES = 10;
+
+    /**
      * Contains the seed value used for {@link java.util.Random} creation.
      */
     public static final long SEED = Long.getLong(SEED_PROPERTY_NAME, new Random().nextLong());
@@ -313,6 +318,37 @@ public final class Utils {
                 new ServerSocket(0, 5, InetAddress.getLoopbackAddress());) {
             return serverSocket.getLocalPort();
         }
+    }
+
+    /**
+     * Returns the free unreserved port on the local host.
+     *
+     * @param reservedPorts reserved ports
+     * @return The port number or -1 if failed to find a free port
+     */
+    public static int findUnreservedFreePort(int... reservedPorts) {
+        int numTries = 0;
+        while (numTries++ < MAX_SOCKET_TRIES) {
+            int port = -1;
+            try {
+                port = getFreePort();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (port > 0 && !isReserved(port, reservedPorts)) {
+                return port;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isReserved(int port, int[] reservedPorts) {
+        for (int p : reservedPorts) {
+            if (p == port) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

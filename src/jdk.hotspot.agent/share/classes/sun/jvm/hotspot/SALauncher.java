@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import sun.jvm.hotspot.debugger.DebuggerException;
 import sun.jvm.hotspot.tools.JStack;
 import sun.jvm.hotspot.tools.JMap;
 import sun.jvm.hotspot.tools.JInfo;
@@ -94,6 +95,15 @@ public class SALauncher {
         // [options] <pid> [server-id]
         // [options] <executable> <core> [server-id]
         System.out.println("    --serverid <id>         A unique identifier for this debug server.");
+        System.out.println("    --rmiport <port>        Sets the port number to which the RMI connector is bound." +
+                " If not specified a random available port is used.");
+        System.out.println("    --registryport <port>   Sets the RMI registry port." +
+                " This option overrides the system property 'sun.jvm.hotspot.rmi.port'. If not specified," +
+                " the system property is used. If the system property is not set, the default port 1099 is used.");
+        System.out.println("    --hostname <hostname>   Sets the hostname the RMI connector is bound. The value could" +
+                " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
+                " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +
+                " property is not set, a system hostname is used.");
         return commonHelp("debugd");
     }
 
@@ -342,7 +352,7 @@ public class SALauncher {
         JSnap.main(buildAttachArgs(newArgMap, false));
     }
 
-    private static void runDEBUGD(String[] oldArgs) {
+    private static void runDEBUGD(String[] args) {
         // By default SA agent classes prefer Windows process debugger
         // to windbg debugger. SA expects special properties to be set
         // to choose other debuggers. We will set those here before
@@ -350,21 +360,88 @@ public class SALauncher {
         System.setProperty("sun.jvm.hotspot.debugger.useWindbgDebugger", "true");
 
         Map<String, String> longOptsMap = Map.of("exe=", "exe",
-                                                 "core=", "core",
-                                                 "pid=", "pid",
-                                                 "serverid=", "serverid");
-        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
-        var serverid = newArgMap.remove("serverid");
-        List<String> newArgArray = new ArrayList<>();
-        newArgArray.addAll(Arrays.asList(buildAttachArgs(newArgMap, false)));
+                "core=", "core",
+                "pid=", "pid",
+                "serverid=", "serverid",
+                "rmiport=", "rmiport",
+                "registryport=", "registryport",
+                "hostname=", "hostname");
 
-        // `serverid` must be located at the tail.
-        if (serverid != null) {
-            newArgArray.add(serverid);
+        Map<String, String> argMap = parseOptions(args, longOptsMap);
+
+        // Run the basic check for the options. If the check fails
+        // SAGetoptException will be thrown
+        buildAttachArgs(new HashMap<>(argMap), false);
+
+        String serverID = argMap.get("serverid");
+        String rmiPortString = argMap.get("rmiport");
+        String registryPort = argMap.get("registryport");
+        String host = argMap.get("hostname");
+        String javaExecutableName = argMap.get("exe");
+        String coreFileName = argMap.get("core");
+        String pidString = argMap.get("pid");
+
+        // Set RMI registry port, if specified
+        if (registryPort != null) {
+            try {
+                Integer.parseInt(registryPort);
+            } catch (NumberFormatException ex) {
+                throw new SAGetoptException("Invalid registry port: " + registryPort);
+            }
+            System.setProperty("sun.jvm.hotspot.rmi.port", registryPort);
         }
 
-        // delegate to the actual SA debug server.
-        DebugServer.main(newArgArray.toArray(new String[0]));
+        // Set RMI connector hostname, if specified
+        if (host != null && !host.trim().isEmpty()) {
+            System.setProperty("java.rmi.server.hostname", host);
+        }
+
+        // Set RMI connector port, if specified
+        int rmiPort = 0;
+        if (rmiPortString != null) {
+            try {
+                rmiPort = Integer.parseInt(rmiPortString);
+            } catch (NumberFormatException ex) {
+                throw new SAGetoptException("Invalid RMI connector port: " + rmiPortString);
+            }
+        }
+
+        final HotSpotAgent agent = new HotSpotAgent();
+
+        if (pidString != null) {
+            int pid = 0;
+            try {
+                pid = Integer.parseInt(pidString);
+            } catch (NumberFormatException ex) {
+                throw new SAGetoptException("Invalid pid: " + pidString);
+            }
+            System.err.println("Attaching to process ID " + pid + " and starting RMI services," +
+                    " please wait...");
+            try {
+                agent.startServer(pid, serverID, rmiPort);
+            } catch (DebuggerException e) {
+                System.err.print("Error attaching to process or starting server: ");
+                e.printStackTrace();
+                System.exit(1);
+            } catch (NumberFormatException ex) {
+                throw new SAGetoptException("Invalid pid: " + pid);
+            }
+        } else if (javaExecutableName != null) {
+            System.err.println("Attaching to core " + coreFileName +
+                    " from executable " + javaExecutableName + " and starting RMI services, please wait...");
+            try {
+                agent.startServer(javaExecutableName, coreFileName, serverID, rmiPort);
+            } catch (DebuggerException e) {
+                System.err.print("Error attaching to core file or starting server: ");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        // shutdown hook to clean-up the server in case of forced exit.
+        Runtime.getRuntime().addShutdownHook(new java.lang.Thread(agent::shutdownServer));
+        System.err.println("Debugger attached and RMI services started." + ((rmiPortString != null) ?
+                (" RMI connector is bound to port " + rmiPort + ".") : ""));
+
     }
 
     // Key: tool name, Value: launcher method

@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8163805 8224252
- * @summary Checks that the jshdb debugd utility sucessfully starts
+ * @bug 8163805 8224252 8196751
+ * @summary Checks that the jshdb debugd utility successfully starts
  *          and tries to attach to a running process
  * @requires vm.hasSA
  * @requires os.family != "windows"
@@ -39,13 +39,20 @@ import java.util.concurrent.TimeUnit;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.SA.SATestUtils;
-import static jdk.test.lib.process.ProcessTools.startProcess;
+import jdk.test.lib.Utils;
 
+import static jdk.test.lib.process.ProcessTools.startProcess;
 import jtreg.SkippedException;
 
 public class SADebugDTest {
 
     private static final String GOLDEN = "Debugger attached";
+    private static final String RMI_CONNECTOR_IS_BOUND = "RMI connector is bound to port ";
+    private static final String ADDRESS_ALREADY_IN_USE = "Address already in use";
+
+    private static final int REGISTRY_DEFAULT_PORT = 1099;
+    private static volatile boolean testResult = false;
+    private static volatile boolean portInUse = false;
 
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
@@ -61,31 +68,84 @@ public class SADebugDTest {
             // are not required.
             throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
         }
+        runTests();
+    }
 
+    private static void runTests() throws Exception {
+        boolean[] boolArray = {true, false};
+        for (boolean useRmiPort : boolArray) {
+            for (boolean useRegistryPort : boolArray) {
+                for (boolean useHostname : boolArray) {
+                    testWithPid(useRmiPort, useRegistryPort, useHostname);
+                }
+            }
+        }
+    }
+
+
+    private static void testWithPid(final boolean useRmiPort, final boolean useRegistryPort, final boolean useHostName) throws Exception {
         LingeredApp app = null;
 
         try {
             app = LingeredApp.startApp();
             System.out.println("Started LingeredApp with pid " + app.getPid());
 
-            JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-            jhsdbLauncher.addToolArg("debugd");
-            jhsdbLauncher.addToolArg("--pid");
-            jhsdbLauncher.addToolArg(Long.toString(app.getPid()));
-            ProcessBuilder pb = SATestUtils.createProcessBuilder(jhsdbLauncher);
+            do {
+                testResult = false;
+                portInUse = false;
+                JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+                jhsdbLauncher.addToolArg("debugd");
+                jhsdbLauncher.addToolArg("--pid");
+                jhsdbLauncher.addToolArg(Long.toString(app.getPid()));
 
-            // The startProcess will block untl the 'golden' string appears in either process' stdout or stderr
-            // In case of timeout startProcess kills the debugd process
-            Process debugd = startProcess("debugd", pb, null, l -> l.contains(GOLDEN), 20, TimeUnit.SECONDS);
+                int registryPort = REGISTRY_DEFAULT_PORT;
+                if (useRegistryPort) {
+                    registryPort = Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT);
+                    jhsdbLauncher.addToolArg("--registryport");
+                    jhsdbLauncher.addToolArg(Integer.toString(registryPort));
+                }
 
-            // If we are here, this means we have received the golden line and the test has passed
-            // The debugd remains running, we have to kill it
-            debugd.destroy();
-            debugd.waitFor();
+                int rmiPort = -1;
+                if (useRmiPort) {
+                    rmiPort = Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT, registryPort);
+                    jhsdbLauncher.addToolArg("--rmiport");
+                    jhsdbLauncher.addToolArg(Integer.toString(rmiPort));
+                }
+                if (useHostName) {
+                    jhsdbLauncher.addToolArg("--hostname");
+                    jhsdbLauncher.addToolArg("testhost");
+                }
+                ProcessBuilder pb = SATestUtils.createProcessBuilder(jhsdbLauncher);
+
+                final int finalRmiPort = rmiPort;
+
+                // The startProcess will block until the 'golden' string appears in either process' stdout or stderr
+                // In case of timeout startProcess kills the debugd process
+                Process debugd = startProcess("debugd", pb, null,
+                        l -> {
+                            if (!useRmiPort && l.contains(GOLDEN)) {
+                                testResult = true;
+                            } else if (useRmiPort && l.contains(RMI_CONNECTOR_IS_BOUND + finalRmiPort)) {
+                                testResult = true;
+                            } else if (l.contains(ADDRESS_ALREADY_IN_USE)) {
+                                portInUse = true;
+                            }
+                            return (l.contains(GOLDEN) || portInUse);
+                        }, 20, TimeUnit.SECONDS);
+
+                // If we are here, this means we have received the golden line and the test has passed
+                // The debugd remains running, we have to kill it
+                debugd.destroy();
+                debugd.waitFor();
+
+                if (!testResult) {
+                    throw new RuntimeException("Expected message \"" +
+                            RMI_CONNECTOR_IS_BOUND + rmiPort + "\" is not found in the output.");
+                }
+
+            } while (portInUse); // Repeat the test if the port is already in use
         } finally {
             LingeredApp.stopApp(app);
         }
-
     }
-
 }
