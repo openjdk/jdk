@@ -1127,16 +1127,16 @@ void ShenandoahHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 HeapWord* ShenandoahHeap::block_start(const void* addr) const {
-  Space* sp = heap_region_containing(addr);
-  if (sp != NULL) {
-    return sp->block_start(addr);
+  ShenandoahHeapRegion* r = heap_region_containing(addr);
+  if (r != NULL) {
+    return r->block_start(addr);
   }
   return NULL;
 }
 
 bool ShenandoahHeap::block_is_obj(const HeapWord* addr) const {
-  Space* sp = heap_region_containing(addr);
-  return sp->block_is_obj(addr);
+  ShenandoahHeapRegion* r = heap_region_containing(addr);
+  return r->block_is_obj(addr);
 }
 
 bool ShenandoahHeap::print_location(outputStream* st, void* addr) const {

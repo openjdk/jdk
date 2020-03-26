@@ -60,9 +60,12 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start
   _heap(heap),
   _reserved(MemRegion(start, size_words)),
   _region_number(index),
+  _bottom(start),
+  _end(start + size_words),
   _new_top(NULL),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
+  _top(start),
   _tlab_allocs(0),
   _gclab_allocs(0),
   _shared_allocs(0),
@@ -71,7 +74,11 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start
   _critical_pins(0),
   _update_watermark(start) {
 
-  ContiguousSpace::initialize(_reserved, true, committed);
+  assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
+         "invalid space boundaries");
+  if (ZapUnusedHeapArea && committed) {
+    SpaceMangler::mangle_region(_reserved);
+  }
 }
 
 size_t ShenandoahHeapRegion::region_number() const {
@@ -469,10 +476,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 }
 
 void ShenandoahHeapRegion::recycle() {
-  ContiguousSpace::clear(false);
-  if (ZapUnusedHeapArea) {
-    ContiguousSpace::mangle_unused_area_complete();
-  }
+  set_top(bottom());
   clear_live_data();
 
   reset_alloc_metadata();
@@ -481,9 +485,13 @@ void ShenandoahHeapRegion::recycle() {
   set_update_watermark(bottom());
 
   make_empty();
+
+  if (ZapUnusedHeapArea) {
+    SpaceMangler::mangle_region(_reserved);
+  }
 }
 
-HeapWord* ShenandoahHeapRegion::block_start_const(const void* p) const {
+HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
          "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(bottom()), p2i(end()));
@@ -498,6 +506,18 @@ HeapWord* ShenandoahHeapRegion::block_start_const(const void* p) const {
     }
     shenandoah_assert_correct(NULL, oop(last));
     return last;
+  }
+}
+
+size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
+  assert(MemRegion(bottom(), end()).contains(p),
+         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(bottom()), p2i(end()));
+  if (p < top()) {
+    return oop(p)->size();
+  } else {
+    assert(p == top(), "just checking");
+    return pointer_delta(end(), (HeapWord*) p);
   }
 }
 
