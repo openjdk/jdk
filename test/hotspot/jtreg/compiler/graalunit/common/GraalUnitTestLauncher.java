@@ -183,6 +183,7 @@ public class GraalUnitTestLauncher {
 
         String testPrefix = null;
         String excludeFileName = null;
+        ArrayList<String> testJavaFlags = new ArrayList<String>();
 
         int i=0;
         String arg, val;
@@ -198,6 +199,10 @@ public class GraalUnitTestLauncher {
                 case "-exclude":
                     excludeFileName = val;
                     break;
+
+                case "-vmargs":
+                   testJavaFlags.addAll(Arrays.asList(val.split("(?i):space:")));
+                   break;
 
                 default:
                     System.out.println("WARN: illegal option " + arg);
@@ -234,9 +239,8 @@ public class GraalUnitTestLauncher {
         javaFlags.addAll(getModuleExports("jdk.internal.vm.compiler", "ALL-UNNAMED"));
         javaFlags.addAll(getModuleExports("jdk.internal.vm.ci", "ALL-UNNAMED,jdk.internal.vm.compiler"));
 
-        // add opens, see JDK-8236211
-        javaFlags.add("--add-opens");
-        javaFlags.add("jdk.internal.vm.compiler/org.graalvm.graphio=ALL-UNNAMED");
+        // add test specific flags
+        javaFlags.addAll(testJavaFlags);
 
         // add VM flags
         javaFlags.add("-XX:+UnlockExperimentalVMOptions");
