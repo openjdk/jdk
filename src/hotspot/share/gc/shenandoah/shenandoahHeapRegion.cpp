@@ -55,13 +55,11 @@ size_t ShenandoahHeapRegion::MaxTLABSizeWords = 0;
 
 ShenandoahHeapRegion::PaddedAllocSeqNum ShenandoahHeapRegion::_alloc_seq_num;
 
-ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start,
-                                           size_t size_words, size_t index, bool committed) :
+ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start, size_t index, bool committed) :
   _heap(heap),
-  _reserved(MemRegion(start, size_words)),
   _region_number(index),
   _bottom(start),
-  _end(start + size_words),
+  _end(start + RegionSizeWords),
   _new_top(NULL),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
@@ -77,7 +75,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
   if (ZapUnusedHeapArea && committed) {
-    SpaceMangler::mangle_region(_reserved);
+    SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
 }
 
@@ -487,7 +485,7 @@ void ShenandoahHeapRegion::recycle() {
   make_empty();
 
   if (ZapUnusedHeapArea) {
-    SpaceMangler::mangle_region(_reserved);
+    SpaceMangler::mangle_region(MemRegion(bottom(), end()));
   }
 }
 
@@ -676,7 +674,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 }
 
 void ShenandoahHeapRegion::do_commit() {
-  if (!_heap->is_heap_region_special() && !os::commit_memory((char *) _reserved.start(), _reserved.byte_size(), false)) {
+  if (!_heap->is_heap_region_special() && !os::commit_memory((char *) bottom(), RegionSizeBytes, false)) {
     report_java_out_of_memory("Unable to commit region");
   }
   if (!_heap->commit_bitmap_slice(this)) {
@@ -686,7 +684,7 @@ void ShenandoahHeapRegion::do_commit() {
 }
 
 void ShenandoahHeapRegion::do_uncommit() {
-  if (!_heap->is_heap_region_special() && !os::uncommit_memory((char *) _reserved.start(), _reserved.byte_size())) {
+  if (!_heap->is_heap_region_special() && !os::uncommit_memory((char *) bottom(), RegionSizeBytes)) {
     report_java_out_of_memory("Unable to uncommit region");
   }
   if (!_heap->uncommit_bitmap_slice(this)) {

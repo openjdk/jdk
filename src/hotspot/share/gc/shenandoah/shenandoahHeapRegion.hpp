@@ -239,7 +239,6 @@ private:
 
   // Never updated fields
   ShenandoahHeap* const _heap;
-  MemRegion const _reserved;
   size_t const _region_number;
   HeapWord* const _bottom;
   HeapWord* const _end;
@@ -269,7 +268,7 @@ private:
   shenandoah_padding(0);
 
 public:
-  ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start, size_t size_words, size_t index, bool committed);
+  ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start, size_t index, bool committed);
 
   static const size_t MIN_NUM_REGIONS = 10;
 
