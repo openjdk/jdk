@@ -353,19 +353,11 @@ bool G1CMRootMemRegions::wait_until_scan_finished() {
   return true;
 }
 
-// Returns the maximum number of workers to be used in a concurrent
-// phase based on the number of GC workers being used in a STW
-// phase.
-static uint scale_concurrent_worker_threads(uint num_gc_workers) {
-  return MAX2((num_gc_workers + 2) / 4, 1U);
-}
-
 G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
                                    G1RegionToSpaceMapper* prev_bitmap_storage,
                                    G1RegionToSpaceMapper* next_bitmap_storage) :
   // _cm_thread set inside the constructor
   _g1h(g1h),
-  _completed_initialization(false),
 
   _mark_bitmap_1(),
   _mark_bitmap_2(),
@@ -416,6 +408,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_regions(), mtGC)),
   _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_regions(), mtGC))
 {
+  assert(CGC_lock != NULL, "CGC_lock must be initialized");
+
   _mark_bitmap_1.initialize(g1h->reserved_region(), prev_bitmap_storage);
   _mark_bitmap_2.initialize(g1h->reserved_region(), next_bitmap_storage);
 
@@ -423,22 +417,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _cm_thread = new G1ConcurrentMarkThread(this);
   if (_cm_thread->osthread() == NULL) {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
-  }
-
-  assert(CGC_lock != NULL, "CGC_lock must be initialized");
-
-  if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
-    // Calculate the number of concurrent worker threads by scaling
-    // the number of parallel GC threads.
-    uint marking_thread_num = scale_concurrent_worker_threads(ParallelGCThreads);
-    FLAG_SET_ERGO(ConcGCThreads, marking_thread_num);
-  }
-
-  assert(ConcGCThreads > 0, "ConcGCThreads have been set.");
-  if (ConcGCThreads > ParallelGCThreads) {
-    log_warning(gc)("More ConcGCThreads (%u) than ParallelGCThreads (%u).",
-                    ConcGCThreads, ParallelGCThreads);
-    return;
   }
 
   log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
@@ -449,40 +427,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, false, true);
   _concurrent_workers->initialize_workers();
-
-  if (FLAG_IS_DEFAULT(MarkStackSize)) {
-    size_t mark_stack_size =
-      MIN2(MarkStackSizeMax,
-          MAX2(MarkStackSize, (size_t) (_max_concurrent_workers * TASKQUEUE_SIZE)));
-    // Verify that the calculated value for MarkStackSize is in range.
-    // It would be nice to use the private utility routine from Arguments.
-    if (!(mark_stack_size >= 1 && mark_stack_size <= MarkStackSizeMax)) {
-      log_warning(gc)("Invalid value calculated for MarkStackSize (" SIZE_FORMAT "): "
-                      "must be between 1 and " SIZE_FORMAT,
-                      mark_stack_size, MarkStackSizeMax);
-      return;
-    }
-    FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
-  } else {
-    // Verify MarkStackSize is in range.
-    if (FLAG_IS_CMDLINE(MarkStackSize)) {
-      if (FLAG_IS_DEFAULT(MarkStackSizeMax)) {
-        if (!(MarkStackSize >= 1 && MarkStackSize <= MarkStackSizeMax)) {
-          log_warning(gc)("Invalid value specified for MarkStackSize (" SIZE_FORMAT "): "
-                          "must be between 1 and " SIZE_FORMAT,
-                          MarkStackSize, MarkStackSizeMax);
-          return;
-        }
-      } else if (FLAG_IS_CMDLINE(MarkStackSizeMax)) {
-        if (!(MarkStackSize >= 1 && MarkStackSize <= MarkStackSizeMax)) {
-          log_warning(gc)("Invalid value specified for MarkStackSize (" SIZE_FORMAT ")"
-                          " or for MarkStackSizeMax (" SIZE_FORMAT ")",
-                          MarkStackSize, MarkStackSizeMax);
-          return;
-        }
-      }
-    }
-  }
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
@@ -505,7 +449,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   }
 
   reset_at_marking_complete();
-  _completed_initialization = true;
 }
 
 void G1ConcurrentMark::reset() {

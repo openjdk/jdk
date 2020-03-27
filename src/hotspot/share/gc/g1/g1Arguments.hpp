@@ -36,6 +36,7 @@ class G1Arguments : public GCArguments {
 private:
   static size_t MaxMemoryForYoung;
 
+  static void initialize_mark_stack_size();
   static void initialize_verification_types();
   static void parse_verification_type(const char* type);
 
