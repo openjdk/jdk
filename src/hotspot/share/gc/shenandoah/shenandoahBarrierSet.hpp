@@ -95,7 +95,6 @@ public:
   template <DecoratorSet decorators>
   inline void keep_alive_if_weak(oop value);
   inline void keep_alive_if_weak(DecoratorSet decorators, oop value);
-  inline void keep_alive_barrier(oop value);
 
   inline void enqueue(oop obj);
 

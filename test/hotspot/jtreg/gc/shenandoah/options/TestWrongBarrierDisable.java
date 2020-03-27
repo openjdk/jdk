@@ -43,7 +43,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
                 "ShenandoahSATBBarrier",
-                "ShenandoahKeepAliveBarrier",
         };
 
         String[] traversal = {

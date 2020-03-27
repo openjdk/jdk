@@ -32,7 +32,6 @@
 void ShenandoahTraversalMode::initialize_flags() const {
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
-  FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
   FLAG_SET_DEFAULT(ShenandoahAllowMixedAllocs,       false);
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);

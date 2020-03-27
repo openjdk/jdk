@@ -100,7 +100,7 @@ bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decora
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
-  if (!ShenandoahKeepAliveBarrier) return false;
+  if (!ShenandoahSATBBarrier) return false;
   // Only needed for references
   if (!is_reference_type(type)) return false;
 

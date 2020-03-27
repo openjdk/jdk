@@ -339,9 +339,6 @@
   diagnostic(bool, ShenandoahSATBBarrier, true,                             \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
-  diagnostic(bool, ShenandoahKeepAliveBarrier, true,                        \
-          "Turn on/off keep alive barriers in Shenandoah")                  \
-                                                                            \
   diagnostic(bool, ShenandoahStoreValEnqueueBarrier, false,                 \
           "Turn on/off enqueuing of oops for storeval barriers")            \
                                                                             \
