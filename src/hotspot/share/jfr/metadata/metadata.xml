@@ -988,8 +988,14 @@
     <Field type="uint" name="newRatio" label="New Ratio" description="The size of the young generation relative to the tenured generation" />
   </Event>
 
-  <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZPage Allocation" description="Allocation of a ZPage" thread="true" stackTrace="false" experimental="true">
-     <Field type="ulong" contentType="bytes" name="pageSize" label="Page Size" />
+  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true" experimental="true">
+    <Field type="ZPageTypeType" name="type" label="Type" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size" />
+  </Event>
+
+  <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true" experimental="true">
+     <Field type="ZPageTypeType" name="type" label="Type" />
+     <Field type="ulong" contentType="bytes" name="size" label="Size" />
      <Field type="ulong" contentType="bytes" name="usedAfter" label="Used After" />
      <Field type="ulong" contentType="bytes" name="freeAfter" label="Free After" />
      <Field type="ulong" contentType="bytes" name="inCacheAfter" label="In Cache After" />
@@ -997,20 +1003,47 @@
      <Field type="boolean" name="noReserve" label="No Reserve" />
   </Event>
 
-  <Event name="ZThreadPhase" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Phase" thread="true" experimental="true">
-    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
-    <Field type="string" name="name" label="Name" />
+  <Event name="ZPageCacheFlush" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Cache Flush" description="Flushing of ZPages" thread="true" stackTrace="true" experimental="true">
+     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed Size" />
+     <Field type="boolean" name="forAllocation" label="For Allocation" />
   </Event>
 
-  <Event name="ZStatisticsCounter" category="Java Virtual Machine, GC, Detailed" label="Z Statistics Counter" thread="true" experimental="true" >
+  <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true" experimental="true">
+    <Field type="ulong" contentType="bytes" name="total" label="Total" />
+    <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" contentType="bytes" name="compactingFrom" label="Compacting From" />
+    <Field type="ulong" contentType="bytes" name="compactingTo" label="Compacting To" />
+  </Event>
+
+  <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true" experimental="true">
+    <Field type="ZPageTypeType" name="type" label="Type" />
+    <Field type="ulong" name="pages" label="Pages" />
+    <Field type="ulong" contentType="bytes" name="total" label="Total" />
+    <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" contentType="bytes" name="compactingFrom" label="Compacting From" />
+    <Field type="ulong" contentType="bytes" name="compactingTo" label="Compacting To" />
+  </Event>
+
+  <Event name="ZStatisticsCounter" category="Java Virtual Machine, GC, Detailed" label="ZGC Statistics Counter" thread="true" experimental="true" >
     <Field type="ZStatisticsCounterType" name="id" label="Id" />
     <Field type="ulong" name="increment" label="Increment" />
     <Field type="ulong" name="value" label="Value" />
   </Event>
 
-  <Event name="ZStatisticsSampler" category="Java Virtual Machine, GC, Detailed" label="Z Statistics Sampler" thread="true" experimental="true">
+  <Event name="ZStatisticsSampler" category="Java Virtual Machine, GC, Detailed" label="ZGC Statistics Sampler" thread="true" experimental="true">
     <Field type="ZStatisticsSamplerType" name="id" label="Id" />
     <Field type="ulong" name="value" label="Value" />
+  </Event>
+
+  <Event name="ZThreadPhase" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Phase" thread="true" experimental="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true" experimental="true">
+    <Field type="ulong" contentType="bytes" name="capacityBefore" label="Capacity Before" />
+    <Field type="ulong" contentType="bytes" name="capacityAfter" label="Capacity After" />
+    <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
   </Event>
 
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
@@ -1061,6 +1094,10 @@
 
   <Type name="CompilerType" label="Compiler Type">
     <Field type="string" name="compiler" label="Compiler" />
+  </Type>
+
+  <Type name="ZPageTypeType" label="Z Page Type">
+    <Field type="string" name="type" label="Type" />
   </Type>
 
   <Type name="ZStatisticsCounterType" label="Z Statistics Counter">
@@ -1254,7 +1291,7 @@
   <Relation name="SweepId"/>
   <Relation name="FlushId"/>
   <Relation name="ClassRedefinitionId"/>
-  
+
   <XmlType name="Package" parameterType="const PackageEntry*" fieldType="const PackageEntry*"/>
   <XmlType name="Class" javaType="java.lang.Class" parameterType="const Klass*" fieldType="const Klass*"/>
   <XmlType name="Module"  parameterType="const ModuleEntry*" fieldType="const ModuleEntry*"/>

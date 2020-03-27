@@ -1153,7 +1153,9 @@ void ZStatRelocation::print(const char* name, const ZRelocationSetSelectorGroupS
 
 void ZStatRelocation::print() {
   print("Small", _stats.small());
-  print("Medium", _stats.medium());
+  if (ZPageSizeMedium != 0) {
+    print("Medium", _stats.medium());
+  }
   print("Large", _stats.large());
 
   log_info(gc, reloc)("Relocation: %s", _success ? "Successful" : "Incomplete");

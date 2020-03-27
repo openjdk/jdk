@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZTRACER_HPP
 
 #include "gc/shared/gcTrace.hpp"
-#include "gc/z/zAllocationFlags.hpp"
 
 class ZStatCounter;
 class ZStatPhase;
@@ -40,7 +39,6 @@ private:
   void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
   void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
   void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  void send_page_alloc(size_t size, size_t used, size_t free, size_t cache, ZAllocationFlags flags);
 
 public:
   static ZTracer* tracer();
@@ -49,7 +47,6 @@ public:
   void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
   void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
   void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  void report_page_alloc(size_t size, size_t used, size_t free, size_t cache, ZAllocationFlags flags);
 };
 
 class ZTraceThreadPhase : public StackObj {
