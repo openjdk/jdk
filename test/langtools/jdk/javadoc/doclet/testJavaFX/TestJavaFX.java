@@ -58,7 +58,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<a href=\"#setRate(double)\"><code>setRate(double)</code></a></dd>",
                 "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">setRate</span>&#8203;"
-                + "(<span class=\"arguments\">double&nbsp;value)</span></div>\n"
+                + "(<span class=\"parameters\">double&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl class=\"notes\">\n"
                 + "<dt>Property description:</dt>",
@@ -103,7 +103,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<h3>setPaused</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">setPaused</span>&#8203;"
-                + "(<span class=\"arguments\">boolean&nbsp;value)</span></div>\n"
+                + "(<span class=\"parameters\">boolean&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property paused.</div>\n"
                 + "<dl class=\"notes\">\n"
                 + "<dt>Property description:</dt>\n"
@@ -132,7 +132,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<h3>setRate</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">setRate</span>&#8203;"
-                + "(<span class=\"arguments\">double&nbsp;value)</span></div>\n"
+                + "(<span class=\"parameters\">double&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl class=\"notes\">\n"
                 + "<dt>Property description:</dt>\n"

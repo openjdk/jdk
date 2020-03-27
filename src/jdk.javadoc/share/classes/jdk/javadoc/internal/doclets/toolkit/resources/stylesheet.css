@@ -531,7 +531,7 @@ div.member-signature span.annotations {
     white-space: pre-wrap;
 }
 div.member-signature span.type-parameters-long,
-div.member-signature span.arguments,
+div.member-signature span.parameters,
 div.member-signature span.exceptions {
     display: inline-block;
     vertical-align: top;

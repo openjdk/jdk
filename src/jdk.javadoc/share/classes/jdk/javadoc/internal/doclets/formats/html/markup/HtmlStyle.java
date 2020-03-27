@@ -48,8 +48,6 @@ public enum HtmlStyle {
     aboutLanguage,
     activeTableTab,
     altColor,
-    annotations,
-    arguments,
     block,
     blockList,
     bottomNav,
@@ -68,18 +66,13 @@ public enum HtmlStyle {
     deprecatedSummary,
     deprecationBlock,
     deprecationComment,
-    description,
     descfrmTypeLabel,
     details,
     detail,
     emphasizedPhrase,
-    exceptions,
     externalLink,
     fieldDetails,
     fieldSummary,
-    flexBox,
-    flexHeader,
-    flexContent,
     header,
     helpSection,
     hierarchy,
@@ -91,28 +84,21 @@ public enum HtmlStyle {
     interfaceName,
     legalCopy,
     memberDetails,
-    memberName,
     memberNameLabel,
     memberNameLink,
-    memberSignature,
     memberSummary,
     methodDetails,
     methodSummary,
-    modifiers,
-    moduleDescription,
     moduleLabelInPackage,
     moduleLabelInType,
-    moduleTags,
     modulesSummary,
     nameValue,
     navBarCell1Rev,
     navList,
     navListSearch,
     nestedClassSummary,
-    notes,
     overviewSummary,
     packages,
-    packageDescription,
     packageHierarchyLabel,
     packageLabelInType,
     packagesSummary,
@@ -121,7 +107,6 @@ public enum HtmlStyle {
     propertySummary,
     providesSummary,
     requiresSummary,
-    returnType,
     rowColor,
     searchTagLink,
     searchTagResult,
@@ -142,13 +127,133 @@ public enum HtmlStyle {
     topNav,
     typeNameLabel,
     typeNameLink,
-    typeParameters,
-    typeParametersLong,
     typeSummary,
     useSummary,
     usesSummary,
     verticalSeparator,
 
+    //<editor-fold desc="documentation comments">
+    // The following constants are used for the components used to present the content
+    // generated from documentation comments.
+
+    /**
+     * The class of the element used to present the documentation comment for a type or member
+     * element.
+     * The content of the block tags will be in a nested element with class {@link #notes}.
+     */
+    description,
+
+    /**
+     * The class of the element used to present the documentation comment for a module element,
+     * excluding block tags.
+     * The content of the block tags will be in a sibling element with class {@link #moduleTags}.
+     */
+    moduleDescription,
+
+    /**
+     * The class of the {@code dl} element used to present the block tags in the documentation
+     * comment for a module element.
+     * Additional (derived) information, such as implementation or inheritance details, may
+     * also appear in this element.
+     */
+    moduleTags,
+
+    /**
+     * The class of the element used to present the documentation comment for package element.
+     * The content of the block tags will be in a nested element with class {@link #notes}.
+     */
+    packageDescription,
+
+    /**
+     * The class of the {@code dl} element used to present the block tags in the documentation
+     * comment for a package, type or member element.
+     * Additional (derived) information, such as implementation or inheritance details, may
+     * also appear in this element.
+     */
+    notes,
+    //</editor-fold>
+
+    //<editor-fold desc="flex layout">
+    // The following constants are used for the components of the top-level structures for "flex" layout.
+
+    /**
+     * The class of the top-level {@code div} element used to arrange for "flex" layout in
+     * a browser window. The element should contain two child elements: one with class
+     * {@link #flexHeader flex-header} and one with class {@link #flexContent flex-content}.
+     */
+    flexBox,
+
+    /**
+     * The class of the {@code header} element within a {@link #flexBox flex-box} container.
+     * The element is always displayed at the top of the viewport.
+     */
+    flexHeader,
+
+    /**
+     * The class of the {@code div} element within a {@link #flexBox flex-box} container
+     * This element appears below the header and can be scrolled if too big for the available height.
+     */
+    flexContent,
+    //</editor-fold>
+
+    //<editor-fold desc="member signature">
+    // The following constants are used for the components of a signature of an element
+
+    /**
+     * The class of a {@code span} element for the signature of an element.
+     * The signature will contain a member name and, depending on the kind of element,
+     * it can contain any of the following:
+     * annotations, type parameters, modifiers, return type, parameters, and exceptions.
+     */
+    memberSignature,
+
+    /**
+     * The class of a {@code span} element for any annotations in the signature of an element.
+     */
+    annotations,
+
+    /**
+     * The class of a {@code span} element for any exceptions in a signature of an executable element.
+     */
+    exceptions,
+
+    /**
+     * The class of a {@code span} for the member name in the signature of an element.
+     */
+    memberName,
+
+    /**
+     * The class of a {@code span} for any modifiers in the signature of an element.
+     */
+    modifiers,
+
+    /**
+     * The class of a {@code span} for any parameters in the signature of an executable element.
+     */
+    parameters,
+
+    /**
+     * The class of a {@code span} for the return type in the signature of an method element.
+     */
+    returnType,
+
+    /**
+     * The class of a {@code span} for type parameters in the signature of an element,
+     * used when the type parameters should reasonably be displayed inline.
+     */
+    typeParameters,
+
+    /**
+     * The class of a {@code span} for type parameters in the signature of an element,
+     * used when the type parameters are too long to be displayed inline.
+     * @implNote
+     * The threshold for choosing between {@code typeParameters} and {@code typeParametersLong}
+     * is 50 characters.
+     */
+    typeParametersLong,
+    //</editor-fold>
+
+    //<editor-fold desc="page styles for <body> elements">
     // The following constants are used for the class of the {@code <body>} element
     // for the corresponding pages.
 
@@ -256,6 +361,7 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the page for the class hierarchy.
      */
     treePage;
+    //</editor-fold>
 
     private final String cssName;
 

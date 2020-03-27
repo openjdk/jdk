@@ -436,7 +436,7 @@ public class TestRecordTypes extends JavadocTester {
                         + "<span class=\"modifiers\">private final</span>&nbsp;<span class=\"return-type\">int</span>"
                         + "&nbsp;<span class=\"member-name\">i</span></div>",
                 "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;<span class=\"member-name\">R</span>"
-                        + "&#8203;(<span class=\"arguments\">"
+                        + "&#8203;(<span class=\"parameters\">"
                         + pAnno
                         + "int&nbsp;i)</span></div>",
                 "<div class=\"member-signature\">"

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8214126
+ * @bug      8214126 8241470
  * @summary  Method signatures not formatted correctly in browser
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -55,7 +55,7 @@ public class TestMethodSignature extends JavadocTester {
 
                 "<div class=\"member-signature\"><span class=\"modifiers\">public static</span>"
                 + "&nbsp;<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">"
-                + "simpleMethod</span>&#8203;(<span class=\"arguments\">int&nbsp;i,\n"
+                + "simpleMethod</span>&#8203;(<span class=\"parameters\">int&nbsp;i,\n"
                 + "java.lang.String&nbsp;s,\nboolean&nbsp;b)</span></div>",
 
                 "<div class=\"member-signature\"><span class=\"annotations\">@Generated"
@@ -63,7 +63,7 @@ public class TestMethodSignature extends JavadocTester {
                 + "           comments=\"some comment about the method below\")\n"
                 + "</span><span class=\"modifiers\">public static</span>&nbsp;<span "
                 + "class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">annotatedMethod"
-                + "</span>&#8203;(<span class=\"arguments\">int&nbsp;i,\n"
+                + "</span>&#8203;(<span class=\"parameters\">int&nbsp;i,\n"
                 + "java.lang.String&nbsp;s,\nboolean&nbsp;b)</span></div>",
 
                 "<div class=\"member-signature\"><span class=\"modifiers\">public static</span>"
@@ -79,7 +79,7 @@ public class TestMethodSignature extends JavadocTester {
                 + "title=\"class in pkg\">C.With8Types</a>&lt;T1,&#8203;T2,&#8203;T3,"
                 + "&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#8203;T8&gt;</span>&nbsp;"
                 + "<span class=\"member-name\">bigGenericMethod</span>&#8203;("
-                + "<span class=\"arguments\"><a href=\"C.F0.html\" "
+                + "<span class=\"parameters\"><a href=\"C.F0.html\" "
                 + "title=\"interface in pkg\">C.F0</a>&lt;? extends T1&gt;&nbsp;t1,\n"
                 + "<a href=\"C.F0.html\" title=\"interface in pkg\">"
                 + "C.F0</a>&lt;? extends T2&gt;&nbsp;t2,\n"
@@ -117,7 +117,7 @@ public class TestMethodSignature extends JavadocTester {
                 + "title=\"class in pkg\">C.With8Types</a>&lt;T1,&#8203;T2,&#8203;T3,"
                 + "&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#8203;T8&gt;</span>&nbsp;"
                 + "<span class=\"member-name\">bigGenericAnnotatedMethod</span>&#8203;("
-                + "<span class=\"arguments\"><a href=\"C.F0.html\" "
+                + "<span class=\"parameters\"><a href=\"C.F0.html\" "
                 + "title=\"interface in pkg\">C.F0</a>&lt;? extends T1&gt;&nbsp;t1,\n"
                 + "<a href=\"C.F0.html\" title=\"interface in pkg\">"
                 + "C.F0</a>&lt;? extends T2&gt;&nbsp;t2,\n"

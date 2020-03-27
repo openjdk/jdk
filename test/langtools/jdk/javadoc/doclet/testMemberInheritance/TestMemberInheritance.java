@@ -125,7 +125,7 @@ public class TestMemberInheritance extends JavadocTester {
                 + "<div class=\"member-signature\"><span class=\"modifiers\">protected abstract</span>"
                 + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
                 + "<span class=\"member-name\">parentMethod</span>&#8203;"
-                + "(<span class=\"arguments\">java.lang.String&nbsp;t)</span>\n"
+                + "(<span class=\"parameters\">java.lang.String&nbsp;t)</span>\n"
                 + "                                          "
                 + "throws <span class=\"exceptions\">java.lang.IllegalArgumentException,\n"
                 + "java.lang.InterruptedException,\n"
@@ -158,7 +158,7 @@ public class TestMemberInheritance extends JavadocTester {
                 + "<h3 id=\"method(java.lang.Object)\">method</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>"
                 + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
-                + "<span class=\"member-name\">method</span>&#8203;(<span class=\"arguments\">"
+                + "<span class=\"member-name\">method</span>&#8203;(<span class=\"parameters\">"
                 + "java.lang.String&nbsp;t)</span></div>\n"
                 + "</section>");
     }

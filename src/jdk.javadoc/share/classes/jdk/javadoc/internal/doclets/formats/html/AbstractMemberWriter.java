@@ -686,7 +686,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
                 parameters.add(")");
                 htmltree.add(Entity.ZERO_WIDTH_SPACE);
                 htmltree.add("(");
-                htmltree.add(HtmlTree.SPAN(HtmlStyle.arguments, parameters));
+                htmltree.add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 
             // Exceptions
