@@ -75,7 +75,6 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
 
   char *augmentation_string = reinterpret_cast<char *>(_buf);
   bool has_ehdata = (strcmp("eh", augmentation_string) == 0);
-  bool fde_encoded = (strchr(augmentation_string, 'R') != NULL);
   _buf += strlen(augmentation_string) + 1; // includes '\0'
   if (has_ehdata) {
     _buf += sizeof(void *); // Skip EH data
@@ -85,8 +84,16 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   _data_factor = static_cast<int>(read_leb(true));
   _return_address_reg = static_cast<enum DWARF_Register>(*_buf++);
 
-  if (fde_encoded) {
-    uintptr_t augmentation_length = read_leb(false);
+  if (strpbrk(augmentation_string, "LP") != NULL) {
+    // Language personality routine (P) and Language Specific Data Area (LSDA:L)
+    // are not supported because we need compliant Unwind Library Interface,
+    // but we want to unwind without it.
+    //
+    //   Unwind Library Interface (SysV ABI AMD64 6.2)
+    //     https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
+    return false;
+  } else if (strchr(augmentation_string, 'R') != NULL) {
+    read_leb(false); // augmentation length
     _encoding = *_buf++;
   }
 
@@ -285,7 +292,8 @@ unsigned int DwarfParser::get_pc_range() {
 bool DwarfParser::process_dwarf(const uintptr_t pc) {
   // https://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-PDA/LSB-PDA/ehframechpt.html
   _buf = _lib->eh_frame.data;
-  while (true) {
+  unsigned char *end = _lib->eh_frame.data + _lib->eh_frame.size;
+  while (_buf <= end) {
     uint64_t length = get_entry_length();
     if (length == 0L) {
       return false;
@@ -310,12 +318,12 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
 
         // Process FDE
         parse_dwarf_instructions(pc_begin, pc, next_entry);
-        break;
+        return true;
       }
     }
 
     _buf = next_entry;
   }
 
-  return true;
+  return false;
 }

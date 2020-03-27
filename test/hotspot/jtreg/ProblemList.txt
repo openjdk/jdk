@@ -115,7 +115,7 @@ serviceability/sa/ClhsdbPmap.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintAll.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintAs.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintStatics.java 8193639 solaris-all
-serviceability/sa/ClhsdbPstack.java 8193639,8240956 solaris-all,linux-all
+serviceability/sa/ClhsdbPstack.java 8193639 solaris-all
 serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8193639 solaris-all
 serviceability/sa/ClhsdbScanOops.java 8193639,8235220,8230731 solaris-all,linux-x64,macosx-x64,windows-x64
 serviceability/sa/ClhsdbSource.java 8193639 solaris-all
