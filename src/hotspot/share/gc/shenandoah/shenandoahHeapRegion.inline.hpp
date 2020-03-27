@@ -75,7 +75,7 @@ inline void ShenandoahHeapRegion::increase_live_data_alloc_words(size_t s) {
 inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
   if (ShenandoahPacing) {
-    _heap->pacer()->report_mark(s);
+    ShenandoahHeap::heap()->pacer()->report_mark(s);
   }
 }
 
@@ -87,6 +87,11 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
   assert(live_bytes <= used_bytes,
          "can't have more live data than used: " SIZE_FORMAT ", " SIZE_FORMAT, live_bytes, used_bytes);
 #endif
+}
+
+inline uint64_t ShenandoahHeapRegion::seqnum_last_alloc_mutator() const {
+  assert(ShenandoahHeap::heap()->is_traversal_mode(), "Sanity");
+  return _seqnum_last_alloc_mutator;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

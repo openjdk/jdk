@@ -290,7 +290,7 @@ jint ShenandoahHeap::initialize() {
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
-      ShenandoahHeapRegion* r = new ShenandoahHeapRegion(this, start, i, is_committed);
+      ShenandoahHeapRegion* r = new ShenandoahHeapRegion(start, i, is_committed);
 
       _marking_context->initialize_top_at_mark_start(r);
       _regions[i] = r;
