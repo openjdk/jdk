@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ class JfrTypeManager : public AllStatic {
   static void write_threads(JfrCheckpointWriter& writer);
   static void create_thread_blob(Thread* t);
   static void write_thread_checkpoint(Thread* t);
-  static bool has_new_static_type();
   static void write_static_types(JfrCheckpointWriter& writer);
 };
 

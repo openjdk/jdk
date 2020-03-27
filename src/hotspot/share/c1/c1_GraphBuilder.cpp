@@ -35,8 +35,8 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "interpreter/bytecode.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -4331,30 +4331,6 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
   }
 }
 
-static void post_inlining_event(EventCompilerInlining* event,
-                                int compile_id,
-                                const char* msg,
-                                bool success,
-                                int bci,
-                                ciMethod* caller,
-                                ciMethod* callee) {
-  assert(caller != NULL, "invariant");
-  assert(callee != NULL, "invariant");
-  assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
-  JfrStructCalleeMethod callee_struct;
-  callee_struct.set_type(callee->holder()->name()->as_utf8());
-  callee_struct.set_name(callee->name()->as_utf8());
-  callee_struct.set_descriptor(callee->signature()->as_symbol()->as_utf8());
-  event->set_compileId(compile_id);
-  event->set_message(msg);
-  event->set_succeeded(success);
-  event->set_bci(bci);
-  event->set_caller(caller->get_Method());
-  event->set_callee(callee_struct);
-  event->commit();
-}
-
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
   CompileLog* log = compilation()->log();
   if (log != NULL) {
@@ -4367,7 +4343,7 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
   EventCompilerInlining event;
   if (event.should_commit()) {
-    post_inlining_event(&event, compilation()->env()->task()->compile_id(), msg, success, bci(), method(), callee);
+    CompilerEvent::InlineEvent::post(event, compilation()->env()->task()->compile_id(), method()->get_Method(), callee, success, msg, bci());
   }
 
   CompileTask::print_inlining_ul(callee, scope()->level(), bci(), msg);

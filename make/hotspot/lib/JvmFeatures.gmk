@@ -173,6 +173,7 @@ endif
 ifneq ($(call check-jvm-feature, jfr), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_JFR=0
   JVM_EXCLUDE_PATTERNS += jfr
+  JVM_EXCLUDE_FILES += compilerEvent.cpp
 endif
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @bug 8157032
  * @key jfr
  * @summary verify that jfr can not be used when JVM is executed only with java.base
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver jdk.jfr.jvm.TestJfrJavaBase

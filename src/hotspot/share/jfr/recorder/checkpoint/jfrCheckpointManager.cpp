@@ -54,6 +54,22 @@ typedef JfrCheckpointManager::Buffer* BufferPtr;
 
 static JfrCheckpointManager* _instance = NULL;
 
+static volatile bool constant_pending = false;
+
+static bool is_constant_pending() {
+  if (Atomic::load_acquire(&constant_pending)) {
+    Atomic::release_store(&constant_pending, false); // reset
+    return true;
+  }
+  return false;
+}
+
+static void set_constant_pending() {
+  if (!Atomic::load_acquire(&constant_pending)) {
+    Atomic::release_store(&constant_pending, true);
+  }
+}
+
 JfrCheckpointManager& JfrCheckpointManager::instance() {
   return *_instance;
 }
@@ -215,6 +231,7 @@ BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t request
   if (0 == requested) {
     // indicates a lease is being returned
     release(old, thread);
+    set_constant_pending();
     return NULL;
   }
   // migration of in-flight information
@@ -361,16 +378,6 @@ size_t JfrCheckpointManager::write_epoch_transition_mspace() {
   return write_mspace<ExclusiveOp, CompositeOperation>(_epoch_transition_mspace, _chunkwriter);
 }
 
-typedef MutexedWriteOp<WriteOperation> FlushOperation;
-
-size_t JfrCheckpointManager::flush() {
-  WriteOperation wo(_chunkwriter);
-  FlushOperation fo(wo);
-  assert(_free_list_mspace->is_full_empty(), "invariant");
-  process_free_list(fo, _free_list_mspace);
-  return wo.processed();
-}
-
 typedef DiscardOp<DefaultDiscarder<JfrBuffer> > DiscardOperation;
 size_t JfrCheckpointManager::clear() {
   clear_type_set();
@@ -392,10 +399,6 @@ static JfrBuffer* get_epoch_transition_buffer(JfrCheckpointMspace* mspace, Threa
   buffer->set_lease();
   DEBUG_ONLY(assert_free_lease(buffer);)
   return buffer;
-}
-
-bool JfrCheckpointManager::is_static_type_set_required() {
-  return JfrTypeManager::has_new_static_type();
 }
 
 size_t JfrCheckpointManager::write_static_type_set() {
@@ -472,25 +475,24 @@ void JfrCheckpointManager::write_type_set_for_unloaded_classes() {
   }
 }
 
-bool JfrCheckpointManager::is_type_set_required() {
-  return JfrTraceIdEpoch::has_changed_tag_state();
-}
+typedef MutexedWriteOp<WriteOperation> FlushOperation;
 
 size_t JfrCheckpointManager::flush_type_set() {
   size_t elements = 0;
-  {
+  if (JfrTraceIdEpoch::has_changed_tag_state()) {
     JfrCheckpointWriter writer(Thread::current());
     // can safepoint here
     MutexLocker cld_lock(ClassLoaderDataGraph_lock);
     MutexLocker module_lock(Module_lock);
     elements = JfrTypeSet::serialize(&writer, NULL, false, true);
   }
-  flush();
+  if (is_constant_pending()) {
+    WriteOperation wo(_chunkwriter);
+    FlushOperation fo(wo);
+    assert(_free_list_mspace->is_full_empty(), "invariant");
+    process_free_list(fo, _free_list_mspace);
+  }
   return elements;
-}
-
-void JfrCheckpointManager::flush_static_type_set() {
-  flush();
 }
 
 void JfrCheckpointManager::create_thread_blob(Thread* t) {
