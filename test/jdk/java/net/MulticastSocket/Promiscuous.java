@@ -32,7 +32,11 @@
 
 import java.io.IOException;
 import static java.lang.System.out;
+
+import java.io.UncheckedIOException;
 import java.net.*;
+
+import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
 
 public class Promiscuous {
@@ -69,8 +73,9 @@ public class Promiscuous {
             }
         } catch (SocketTimeoutException e) {
             if (datagramExpected)
-                throw new RuntimeException("Expected message not received, "
-                                            + e.getMessage());
+                throw new RuntimeException(mc.getLocalSocketAddress()
+                        + ": Expected message not received, "
+                        + e.getMessage());
             else
                 out.printf("Message not received, as expected\n");
         }
@@ -90,6 +95,10 @@ public class Promiscuous {
         UUID = "<" + s1 + s2 + ">";
     }
 
+    static SocketAddress toSocketAddress(InetAddress group) {
+        return new InetSocketAddress(group, 0);
+    }
+
     static void test(InetAddress group1, InetAddress group2)
         throws IOException
     {
@@ -107,10 +116,21 @@ public class Promiscuous {
             p.setAddress(group1);
             p.setPort(port);
 
-            mc1.joinGroup(group1);
-            out.printf("mc1 joined the MC group: %s\n", group1);
-            mc2.joinGroup(group2);
-            out.printf("mc2 joined the MC group: %s\n", group2);
+            // join groups on all network interfaces
+            NetworkConfiguration.probe()
+                    .multicastInterfaces(false)
+                    .forEach((nic) -> {
+                try {
+                    mc1.joinGroup(toSocketAddress(group1), nic);
+                    out.printf("mc1 joined the MC group on %s: %s\n",
+                            nic.getDisplayName(), group1);
+                    mc2.joinGroup(toSocketAddress(group2), nic);
+                    out.printf("mc2 joined the MC group on %s: %s\n",
+                            nic.getDisplayName(), group2);
+                } catch (IOException io) {
+                    throw new UncheckedIOException(io);
+                }
+            });
 
             out.printf("Sending datagram to: %s/%d\n", group1, port);
             ds.send(p);
@@ -132,8 +152,21 @@ public class Promiscuous {
             receive(mc2, true, nextId);
             receive(mc1, false, 0);
 
-            mc1.leaveGroup(group1);
-            mc2.leaveGroup(group2);
+            // leave groups on all network interfaces
+            NetworkConfiguration.probe()
+                    .multicastInterfaces(false)
+                    .forEach((nic) -> {
+                try {
+                    mc1.leaveGroup(toSocketAddress(group1), nic);
+                    out.printf("mc1 left the MC group on %s: %s\n",
+                            nic.getDisplayName(), group1);
+                    mc2.leaveGroup(toSocketAddress(group2), nic);
+                    out.printf("mc2 left the MC group on %s: %s\n",
+                            nic.getDisplayName(), group2);
+                } catch (IOException io) {
+                    throw new UncheckedIOException(io);
+                }
+            });
         }
     }
 
@@ -155,8 +188,8 @@ public class Promiscuous {
         }
 
         // multicast groups used for the test
-        InetAddress ip4Group1 = InetAddress.getByName("224.0.0.120");
-        InetAddress ip4Group2 = InetAddress.getByName("224.0.0.121");
+        InetAddress ip4Group1 = InetAddress.getByName("224.1.1.120");
+        InetAddress ip4Group2 = InetAddress.getByName("224.1.1.121");
 
         test(ip4Group1, ip4Group2);
     }

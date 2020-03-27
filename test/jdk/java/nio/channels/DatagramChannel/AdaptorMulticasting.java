@@ -43,6 +43,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.SocketOption;
 import java.nio.channels.DatagramChannel;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import static java.net.StandardSocketOptions.*;
@@ -427,7 +428,9 @@ public class AdaptorMulticasting {
         assertTrue(s.getOption(IP_MULTICAST_IF) != null);
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
-        byte[] message = "hello".getBytes("UTF-8");
+        long nano = System.nanoTime();
+        String text = nano + ": hello";
+        byte[] message = text.getBytes("UTF-8");
 
         // send datagram to multicast group
         DatagramPacket p = new DatagramPacket(message, message.length);
@@ -437,10 +440,18 @@ public class AdaptorMulticasting {
         // datagram should not be received
         s.setSoTimeout(500);
         p = new DatagramPacket(new byte[1024], 100);
-        try {
-            s.receive(p);
-            assertTrue(false);
-        } catch (SocketTimeoutException expected) { }
+        while (true) {
+            try {
+                s.receive(p);
+                if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
+                    throw new RuntimeException("message shouldn't have been received");
+                } else {
+                    System.out.println("Received unexpected message from " + p.getSocketAddress());
+                }
+            } catch (SocketTimeoutException expected) {
+                break;
+            }
+        }
     }
 
 

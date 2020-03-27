@@ -24,15 +24,27 @@
 /*
  * @test
  * @bug 4742177
+ * @library /test/lib
  * @summary Re-test IPv6 (and specifically MulticastSocket) with latest Linux & USAGI code
  */
+import java.io.IOException;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.NetworkConfiguration;
 
 
-public class SetOutgoingIf {
-    private static int PORT = 9001;
+public class SetOutgoingIf implements AutoCloseable {
     private static String osname;
+    private final MulticastSocket SOCKET;
+    private final int PORT;
+    private SetOutgoingIf() {
+        try {
+            SOCKET = new MulticastSocket();
+            PORT = SOCKET.getLocalPort();
+        } catch (IOException io) {
+            throw new ExceptionInInitializerError(io);
+        }
+    }
 
     static boolean isWindows() {
         if (osname == null)
@@ -45,20 +57,24 @@ public class SetOutgoingIf {
     }
 
     private static boolean hasIPv6() throws Exception {
-        List<NetworkInterface> nics = Collections.list(
-                                        NetworkInterface.getNetworkInterfaces());
-        for (NetworkInterface nic : nics) {
-            List<InetAddress> addrs = Collections.list(nic.getInetAddresses());
-            for (InetAddress addr : addrs) {
-                if (addr instanceof Inet6Address)
-                    return true;
-            }
-        }
-
-        return false;
+        return NetworkConfiguration.probe()
+                .ip6Addresses()
+                .findAny()
+                .isPresent();
     }
 
     public static void main(String[] args) throws Exception {
+        try (var test = new SetOutgoingIf()) {
+            test.run();
+        }
+    }
+
+    @Override
+    public void close() {
+        SOCKET.close();
+    }
+
+    public void run() throws Exception {
         if (isWindows()) {
             System.out.println("The test only run on non-Windows OS. Bye.");
             return;
@@ -99,10 +115,13 @@ public class SetOutgoingIf {
                 System.out.println("Ignore NetworkInterface nic == " + nic);
             }
         }
+        Collections.reverse(netIfs);
         if (netIfs.size() <= 1) {
             System.out.println("Need 2 or more network interfaces to run. Bye.");
             return;
         }
+
+        System.out.println("Using PORT: " + PORT);
 
         // We will send packets to one ipv4, and one ipv6
         // multicast group using each network interface :-
@@ -177,12 +196,8 @@ public class SetOutgoingIf {
     }
 
     private static boolean isTestExcludedInterface(NetworkInterface nif) {
-        if (isMacOS() && nif.getName().contains("awdl"))
-            return true;
-        String dName = nif.getDisplayName();
-        if (isWindows() && dName != null && dName.contains("Teredo"))
-            return true;
-        return false;
+       return !NetworkConfiguration.isTestable(nif)
+               || isMacOS() && nif.getName().startsWith("utun");
     }
 
     private static boolean debug = true;
@@ -281,4 +296,3 @@ class NetIf {
         this.groups = groups;
     }
 }
-
