@@ -69,7 +69,7 @@ cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
       debugMonitorExit(classTrackLock);
       return;
     }
-    *(char**)bagAdd(deletedSignatures) = (char*)tag;
+    *(char**)bagAdd(deletedSignatures) = (char*)jlong_to_ptr(tag);
 
     debugMonitorExit(classTrackLock);
 }
@@ -117,7 +117,7 @@ classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"signature");
     }
-    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(env, klass, (jlong)signature);
+    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(env, klass, ptr_to_jlong(signature));
     if (error != JVMTI_ERROR_NONE) {
         jvmtiDeallocate(signature);
         EXIT_ERROR(error,"SetTag");
