@@ -766,11 +766,6 @@ private:
 
   void emit_operand(XMMRegister reg, Address adr);
 
-  void emit_operand(MMXRegister reg, Address adr);
-
-  // workaround gcc (3.2.1-7) bug
-  void emit_operand(Address adr, MMXRegister reg);
-
   // Immediate-to-memory forms
   void emit_arith_operand(int op1, Register rm, Address adr, int32_t imm32);
 
@@ -1168,7 +1163,6 @@ private:
   void divss(XMMRegister dst, Address src);
   void divss(XMMRegister dst, XMMRegister src);
 
-  void emms();
 
 #ifndef _LP64
  private:
@@ -1178,6 +1172,8 @@ private:
   void emit_farith(int b1, int b2, int i);
 
  public:
+  void emms();
+
   void fabs();
 
   void fadd(int i);
@@ -1543,12 +1539,7 @@ private:
   void movq(Register dst, Register src);
   void movq(Register dst, Address src);
   void movq(Address  dst, Register src);
-#endif
 
-  void movq(Address     dst, MMXRegister src );
-  void movq(MMXRegister dst, Address src );
-
-#ifdef _LP64
   // These dummies prevent using movq from converting a zero (like NULL) into Register
   // by giving the compiler two choices it can't resolve
 

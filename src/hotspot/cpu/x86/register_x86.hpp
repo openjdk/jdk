@@ -130,17 +130,10 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg, (-1));
 class XMMRegisterImpl;
 typedef XMMRegisterImpl* XMMRegister;
 
-// Use MMXRegister as shortcut
-class MMXRegisterImpl;
-typedef MMXRegisterImpl* MMXRegister;
-
 inline XMMRegister as_XMMRegister(int encoding) {
   return (XMMRegister)(intptr_t)encoding;
 }
 
-inline MMXRegister as_MMXRegister(int encoding) {
-  return (MMXRegister)(intptr_t)encoding;
-}
 
 // The implementation of XMM registers for the IA32 architecture
 class XMMRegisterImpl: public AbstractRegisterImpl {
@@ -211,17 +204,6 @@ CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm31,    (31));
 // Only used by the 32bit stubGenerator. These can't be described by vmreg and hence
 // can't be described in oopMaps and therefore can't be used by the compilers (at least
 // were deopt might wan't to see them).
-
-// The MMX registers, for P3 and up chips
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mnoreg , (-1));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx0 , ( 0));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx1 , ( 1));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx2 , ( 2));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx3 , ( 3));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx4 , ( 4));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx5 , ( 5));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx6 , ( 6));
-CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx7 , ( 7));
 
 // Use XMMRegister as shortcut
 class KRegisterImpl;

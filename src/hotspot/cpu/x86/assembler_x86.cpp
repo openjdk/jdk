@@ -1163,19 +1163,6 @@ void Assembler::emit_operand(XMMRegister reg, Address adr) {
     }
 }
 
-// MMX operations
-void Assembler::emit_operand(MMXRegister reg, Address adr) {
-  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
-  emit_operand((Register)reg, adr._base, adr._index, adr._scale, adr._disp, adr._rspec);
-}
-
-// work around gcc (3.2.1-7a) bug
-void Assembler::emit_operand(Address adr, MMXRegister reg) {
-  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
-  emit_operand((Register)reg, adr._base, adr._index, adr._scale, adr._disp, adr._rspec);
-}
-
-
 // Now the Assembler instructions (identical for 32/64 bits)
 
 void Assembler::adcl(Address dst, int32_t imm32) {
@@ -2003,11 +1990,6 @@ void Assembler::divss(XMMRegister dst, XMMRegister src) {
   emit_int16(0x5E, (0xC0 | encode));
 }
 
-void Assembler::emms() {
-  NOT_LP64(assert(VM_Version::supports_mmx(), ""));
-  emit_int16(0x0F, 0x77);
-}
-
 void Assembler::hlt() {
   emit_int8((unsigned char)0xF4);
 }
@@ -2768,24 +2750,6 @@ void Assembler::movlpd(XMMRegister dst, Address src) {
   attributes.set_rex_vex_w_reverted();
   simd_prefix(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x12);
-  emit_operand(dst, src);
-}
-
-void Assembler::movq( MMXRegister dst, Address src ) {
-  assert( VM_Version::supports_mmx(), "" );
-  emit_int16(0x0F, 0x6F);
-  emit_operand(dst, src);
-}
-
-void Assembler::movq( Address dst, MMXRegister src ) {
-  assert( VM_Version::supports_mmx(), "" );
-  emit_int16(0x0F, 0x7F);
-  // workaround gcc (3.2.1-7a) bug
-  // In that version of gcc with only an emit_operand(MMX, Address)
-  // gcc will tail jump and try and reverse the parameters completely
-  // obliterating dst in the process. By having a version available
-  // that doesn't need to swap the args at the tail jump the bug is
-  // avoided.
   emit_operand(dst, src);
 }
 
@@ -6860,6 +6824,11 @@ void Assembler::vzeroupper_uncached() {
 
 #ifndef _LP64
 // 32bit only pieces of the assembler
+
+void Assembler::emms() {
+  NOT_LP64(assert(VM_Version::supports_mmx(), ""));
+  emit_int16(0x0F, 0x77);
+}
 
 void Assembler::vzeroupper() {
   vzeroupper_uncached();

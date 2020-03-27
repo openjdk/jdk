@@ -734,7 +734,7 @@ void VM_Version::get_processor_features() {
   char buf[512];
   int res = jio_snprintf(buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d"
-              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s",
+              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s",
 
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
@@ -758,10 +758,9 @@ void VM_Version::get_processor_features() {
                (supports_clmul()  ? ", clmul" : ""),
                (supports_erms()   ? ", erms" : ""),
                (supports_rtm()    ? ", rtm" : ""),
-               (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
-
                (supports_lzcnt()   ? ", lzcnt": ""),
+
                (supports_sse4a()   ? ", sse4a": ""),
                (supports_ht() ? ", ht": ""),
                (supports_tsc() ? ", tsc": ""),
@@ -771,8 +770,8 @@ void VM_Version::get_processor_features() {
                (supports_bmi2() ? ", bmi2" : ""),
                (supports_adx() ? ", adx" : ""),
                (supports_evex() ? ", avx512f" : ""),
-
                (supports_avx512dq() ? ", avx512dq" : ""),
+
                (supports_avx512pf() ? ", avx512pf" : ""),
                (supports_avx512er() ? ", avx512er" : ""),
                (supports_avx512cd() ? ", avx512cd" : ""),
@@ -782,8 +781,8 @@ void VM_Version::get_processor_features() {
                (supports_avx512_vpclmulqdq() ? ", avx512_vpclmulqdq" : ""),
                (supports_avx512_vbmi() ? ", avx512_vbmi" : ""),
                (supports_avx512_vbmi2() ? ", avx512_vbmi2" : ""),
-
                (supports_avx512_vaes() ? ", avx512_vaes" : ""),
+
                (supports_avx512_vnni() ? ", avx512_vnni" : ""),
                (supports_sha() ? ", sha" : ""),
                (supports_fma() ? ", fma" : ""),

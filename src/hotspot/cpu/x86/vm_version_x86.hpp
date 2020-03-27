@@ -905,7 +905,6 @@ public:
 
   // AMD features
   static bool supports_3dnow_prefetch()    { return (_features & CPU_3DNOW_PREFETCH) != 0; }
-  static bool supports_mmx_ext()  { return is_amd_family() && _cpuid_info.ext_cpuid1_edx.bits.mmx_amd != 0; }
   static bool supports_lzcnt()    { return (_features & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_features & CPU_SSE4A) != 0; }
 
