@@ -132,9 +132,11 @@ public:
 
 // ---------- Initialization, termination, identification, printing routines
 //
+private:
+  static ShenandoahHeap* _heap;
+
 public:
   static ShenandoahHeap* heap();
-  static ShenandoahHeap* heap_no_check();
 
   const char* name()          const { return "Shenandoah"; }
   ShenandoahHeap::Name kind() const { return CollectedHeap::Shenandoah; }

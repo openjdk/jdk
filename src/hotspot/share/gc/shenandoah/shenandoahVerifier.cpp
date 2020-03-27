@@ -982,7 +982,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
 
       if (!heap->marking_context()->is_marked(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,

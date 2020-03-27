@@ -82,6 +82,8 @@
 #include "services/mallocTracker.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+ShenandoahHeap* ShenandoahHeap::_heap = NULL;
+
 #ifdef ASSERT
 template <class T>
 void ShenandoahAssertToSpaceClosure::do_oop_work(T* p) {
@@ -461,6 +463,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _liveness_cache(NULL),
   _collection_set(NULL)
 {
+  _heap = this;
+
   log_info(gc, init)("GC threads: " UINT32_FORMAT " parallel, " UINT32_FORMAT " concurrent", ParallelGCThreads, ConcGCThreads);
   log_info(gc, init)("Reference processing: %s", ParallelRefProcEnabled ? "parallel" : "serial");
 
@@ -775,18 +779,6 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
     *actual_size = 0;
   }
   return res;
-}
-
-ShenandoahHeap* ShenandoahHeap::heap() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "Unitialized access to ShenandoahHeap::heap()");
-  assert(heap->kind() == CollectedHeap::Shenandoah, "not a shenandoah heap");
-  return (ShenandoahHeap*) heap;
-}
-
-ShenandoahHeap* ShenandoahHeap::heap_no_check() {
-  CollectedHeap* heap = Universe::heap();
-  return (ShenandoahHeap*) heap;
 }
 
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {

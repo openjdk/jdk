@@ -169,7 +169,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
 }
 
 void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (!heap->is_in(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_heap failed",
@@ -179,7 +179,7 @@ void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *
 }
 
 void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
@@ -247,7 +247,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
   if (!r->is_active()) {
     print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_correct_region failed",
@@ -300,7 +300,7 @@ void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const 
 void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->marking_context()->is_marked(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked failed",
                   "Object should be marked",
@@ -311,7 +311,7 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->in_collection_set(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_in_cset failed",
                   "Object should be in collection set",
@@ -322,7 +322,7 @@ void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* 
 void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->in_collection_set(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_not_in_cset failed",
                   "Object should not be in collection set",
@@ -331,7 +331,7 @@ void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const ch
 }
 
 void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->in_collection_set_loc(interior_loc)) {
     print_failure(_safe_unknown, NULL, interior_loc, NULL, "Shenandoah assert_not_in_cset_loc failed",
                   "Interior location should not be in collection set",

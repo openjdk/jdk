@@ -48,6 +48,10 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+inline ShenandoahHeap* ShenandoahHeap::heap() {
+  assert(_heap != NULL, "Heap is not initialized yet");
+  return _heap;
+}
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   size_t new_index = Atomic::add(&_index, (size_t) 1);
