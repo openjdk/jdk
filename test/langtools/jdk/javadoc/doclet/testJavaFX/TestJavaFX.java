@@ -78,8 +78,6 @@ public class TestJavaFX extends JavadocTester {
                 "<dt>Default value:</dt>",
                 "<dt>Since:</dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
-                "<p>Sets the value of the property <code>Property</code>",
-                "<p>Gets the value of the property <code>Property</code>",
                 "<dt>Property description:</dt>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#setTestMethodProperty()\">"

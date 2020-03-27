@@ -67,8 +67,6 @@ class DocCommentGenerator {
         SERIAL("@serial", ""),
         SERIALDATA("@serialData", "The types and order of data could be here."),
         SERIALFIELD("@serialField", "\n        Serial field in special array"),
-        FX_PROPSETTER("@propertySetter", "Set the property"),
-        FX_PROPGETTER("@propertyGetter", "Get the property"),
         FX_PROPDESC("@propertyDescription", ""),
         FX_DEFVALUE("@defaultValue", ""),
         FX_TREATASPRIVATE("@treatAsPrivate", "");
@@ -384,10 +382,7 @@ class DocCommentGenerator {
 
         if (isFxStyle) {
             // @propertySetter/Getter + Description
-            if ("void".equals(retType.toString())) {
-                buildComment += Tag.FX_PROPSETTER + "\n";
-            } else {
-                buildComment += Tag.FX_PROPGETTER + "\n";
+            if (!"void".equals(retType.toString())) {
                 buildComment += Tag.FX_DEFVALUE.value(defValue(retType.toString()))
                                 + "\n";
             }
