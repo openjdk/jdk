@@ -841,52 +841,6 @@ class MacroAssembler: public Assembler {
                                              Register cnt_reg,
                                              Register tmp1_reg, Register tmp2_reg);
 
-  //-------------------------------------------
-  // Special String Intrinsics Implementation.
-  //-------------------------------------------
-  // Intrinsics for CompactStrings
-  //   Restores: src, dst
-  //   Uses:     cnt
-  //   Kills:    tmp, Z_R0, Z_R1.
-  //   Early clobber: result.
-  //   Boolean precise controls accuracy of result value.
-#ifdef COMPILER2
-  unsigned int string_compress(Register result, Register src, Register dst, Register cnt,
-                               Register tmp,    bool precise);
-
-  // Inflate byte[] to char[].
-  unsigned int string_inflate_trot(Register src, Register dst, Register cnt, Register tmp);
-
-  // Inflate byte[] to char[].
-  //   Restores: src, dst
-  //   Uses:     cnt
-  //   Kills:    tmp, Z_R0, Z_R1.
-  unsigned int string_inflate(Register src, Register dst, Register cnt, Register tmp);
-
-  // Inflate byte[] to char[], length known at compile time.
-  //   Restores: src, dst
-  //   Kills:    tmp, Z_R0, Z_R1.
-  // Note:
-  //   len is signed int. Counts # characters, not bytes.
-  unsigned int string_inflate_const(Register src, Register dst, Register tmp, int len);
-
-  // Kills src.
-  unsigned int has_negatives(Register result, Register src, Register cnt,
-                             Register odd_reg, Register even_reg, Register tmp);
-
-  unsigned int string_compare(Register str1, Register str2, Register cnt1, Register cnt2,
-                              Register odd_reg, Register even_reg, Register result, int ae);
-
-  unsigned int array_equals(bool is_array_equ, Register ary1, Register ary2, Register limit,
-                            Register odd_reg, Register even_reg, Register result, bool is_byte);
-
-  unsigned int string_indexof(Register result, Register haystack, Register haycnt,
-                              Register needle, Register needlecnt, int needlecntval,
-                              Register odd_reg, Register even_reg, int ae);
-
-  unsigned int string_indexof_char(Register result, Register haystack, Register haycnt,
-                                   Register needle, jchar needleChar, Register odd_reg, Register even_reg, bool is_byte);
-#endif
 
   // Emit an oop const to the constant pool and set a relocation info
   // with address current_pc. Return the TOC offset of the constant.

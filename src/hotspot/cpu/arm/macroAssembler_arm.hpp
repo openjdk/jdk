@@ -1068,11 +1068,6 @@ public:
                                Register temp_reg2,
                                Label& L_no_such_interface);
 
-  // Compare char[] arrays aligned to 4 bytes.
-  void char_arrays_equals(Register ary1, Register ary2,
-                          Register limit, Register result,
-                          Register chr1, Register chr2, Label& Ldone);
-
 
   void floating_cmp(Register dst);
 
@@ -1089,11 +1084,6 @@ public:
   }
 
   void restore_default_fp_mode();
-
-#ifdef COMPILER2
-  void fast_lock(Register obj, Register box, Register scratch, Register scratch2, Register scratch3 = noreg);
-  void fast_unlock(Register obj, Register box, Register scratch, Register scratch2);
-#endif
 
   void safepoint_poll(Register tmp1, Label& slow_path);
   void get_polling_page(Register dest);

@@ -137,7 +137,7 @@ bool SafePointNode::needs_polling_address_input() {
 
 // emit an interrupt that is caught by the debugger (for debugging compiler)
 void emit_break(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ breakpoint();
 }
 
@@ -157,7 +157,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 
 
 void emit_nop(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ nop();
 }
 
@@ -165,7 +165,7 @@ void emit_nop(CodeBuffer &cbuf) {
 void emit_call_reloc(CodeBuffer &cbuf, const MachCallNode *n, MachOper *m, RelocationHolder const& rspec) {
   int ret_addr_offset0 = n->as_MachCall()->ret_addr_offset();
   int call_site_offset = cbuf.insts()->mark_off();
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ set_inst_mark(); // needed in emit_to_interp_stub() to locate the call
   address target = (address)m->method();
   assert(n->as_MachCall()->entry_point() == target, "sanity");
@@ -212,7 +212,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
   ConstantTable& constant_table = C->output()->constant_table();
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
@@ -269,7 +269,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   for (int i = 0; i < OptoPrologueNops; i++) {
     __ nop();
@@ -339,7 +339,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
 
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
 
   size_t framesize = C->output()->frame_size_in_bytes();
@@ -429,7 +429,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Bailout only for real instruction emit.
   // This requires a single comment change in shared code. ( see output.cpp "Normal" instruction case )
 
-  MacroAssembler _masm(cbuf);
+  C2_MacroAssembler _masm(cbuf);
 
   // --------------------------------------
   // Check for mem-mem move.  Load into unused float registers and fall into
@@ -790,7 +790,7 @@ void MachNopNode::format( PhaseRegAlloc *, outputStream *st ) const {
 #endif
 
 void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   for(int i = 0; i < _count; i += 1) {
     __ nop();
   }
@@ -811,7 +811,7 @@ void BoxLockNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
 
 void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
   Register dst = reg_to_register_object(reg);
@@ -847,7 +847,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Register iCache  = reg_to_register_object(Matcher::inline_cache_reg_encode());
   assert(iCache == Ricklass, "should be");
   Register receiver = R0;
@@ -866,7 +866,7 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 // Emit exception handler code.
 int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
   if (base == NULL) {
@@ -889,7 +889,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
 int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   // Can't use any of the current frame's registers as we may have deopted
   // at a poll and everything can be live.
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
   if (base == NULL) {
@@ -1280,7 +1280,7 @@ encode %{
     // preserve mark
     address mark = cbuf.insts()->mark();
     debug_only(int off0 = cbuf.insts_size());
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     int ret_addr_offset = as_MachCall()->ret_addr_offset();
     __ adr(LR, mark + ret_addr_offset);
     __ str(LR, Address(Rthread, JavaThread::last_Java_pc_offset()));
@@ -1294,7 +1294,7 @@ encode %{
     // preserve mark
     address mark = cbuf.insts()->mark();
     debug_only(int off0 = cbuf.insts_size());
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     // FP is preserved across all calls, even compiled calls.
     // Use it to preserve SP in places where the callee might change the SP.
     __ mov(Rmh_SP_save, SP);
@@ -1305,12 +1305,12 @@ encode %{
   %}
 
   enc_class restore_SP %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(SP, Rmh_SP_save);
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register R8_ic_reg = reg_to_register_object(Matcher::inline_cache_reg_encode());
     assert(R8_ic_reg == Ricklass, "should be");
     __ set_inst_mark();
@@ -1338,7 +1338,7 @@ encode %{
         val |= (val << bit_width);
       }
     }
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     if (val == -1) {
       __ mvn($tmp$$Register, 0);
@@ -1355,7 +1355,7 @@ encode %{
     // Replicate float con 2 times and pack into vector (8 bytes) in regD.
     float fval = $src$$constant;
     int val = *((int*)&fval);
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     if (val == -1) {
       __ mvn($tmp$$Register, 0);
@@ -1370,7 +1370,7 @@ encode %{
 
   enc_class enc_String_Compare(R0RegP str1, R1RegP str2, R2RegI cnt1, R3RegI cnt2, iRegI result, iRegI tmp1, iRegI tmp2) %{
     Label Ldone, Lloop;
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register   str1_reg = $str1$$Register;
     Register   str2_reg = $str2$$Register;
@@ -1462,7 +1462,7 @@ encode %{
 
   enc_class enc_String_Equals(R0RegP str1, R1RegP str2, R2RegI cnt, iRegI result, iRegI tmp1, iRegI tmp2) %{
     Label Lchar, Lchar_loop, Ldone, Lequal;
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register   str1_reg = $str1$$Register;
     Register   str2_reg = $str2$$Register;
@@ -1524,7 +1524,7 @@ encode %{
 
   enc_class enc_Array_Equals(R0RegP ary1, R1RegP ary2, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI result) %{
     Label Ldone, Lloop, Lequal;
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register   ary1_reg = $ary1$$Register;
     Register   ary2_reg = $ary2$$Register;

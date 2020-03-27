@@ -664,13 +664,13 @@ bool SafePointNode::needs_polling_address_input() {
 }
 
 void emit_nop(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ z_nop();
 }
 
 // Emit an interrupt that is caught by the debugger (for debugging compiler).
 void emit_break(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ z_illtrap();
 }
 
@@ -735,7 +735,7 @@ static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
 
 // Check effective address (at runtime) for required alignment.
 static inline void z_assert_aligned(CodeBuffer &cbuf, int disp, Register index, Register base, int alignment) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   __ z_lay(Z_R0, disp, index, base);
   __ z_nill(Z_R0, alignment-1);
@@ -743,7 +743,7 @@ static inline void z_assert_aligned(CodeBuffer &cbuf, int disp, Register index, 
   __ z_illtrap();
 }
 
-int emit_call_reloc(MacroAssembler &_masm, intptr_t entry_point, relocInfo::relocType rtype,
+int emit_call_reloc(C2_MacroAssembler &_masm, intptr_t entry_point, relocInfo::relocType rtype,
                     PhaseRegAlloc* ra_, bool is_native_call = false) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
   address old_mark = __ inst_mark();
@@ -774,7 +774,7 @@ int emit_call_reloc(MacroAssembler &_masm, intptr_t entry_point, relocInfo::relo
   return (ret_off - start_off);
 }
 
-static int emit_call_reloc(MacroAssembler &_masm, intptr_t entry_point, RelocationHolder const& rspec) {
+static int emit_call_reloc(C2_MacroAssembler &_masm, intptr_t entry_point, RelocationHolder const& rspec) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
   address old_mark = __ inst_mark();
   unsigned int start_off = __ offset();
@@ -807,7 +807,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
 // Even with PC-relative TOC addressing, we still need this node.
 // Float loads/stores do not support PC-relative addresses.
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Register Rtoc = as_Register(ra_->get_encode(this));
   __ load_toc(Rtoc);
 }
@@ -858,7 +858,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   __ verify_thread();
 
@@ -932,7 +932,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 #endif
 
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
   __ verify_thread();
 
@@ -1034,7 +1034,7 @@ static unsigned int z_ld_st_helper(CodeBuffer *cbuf, const char *op_str, unsigne
 
 static unsigned int z_mvc_helper(CodeBuffer *cbuf, int len, int dst_off, int src_off, bool do_print, outputStream *os) {
   if (cbuf) {
-    MacroAssembler _masm(cbuf);
+    C2_MacroAssembler _masm(cbuf);
     __ z_mvc(dst_off, len-1, Z_SP, src_off, Z_SP);
   }
 
@@ -1108,7 +1108,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   // Check for integer reg-reg copy.
   if (src_lo_rc == rc_int && dst_lo_rc == rc_int) {
     if (cbuf) {
-      MacroAssembler _masm(cbuf);
+      C2_MacroAssembler _masm(cbuf);
       Register Rsrc = as_Register(Matcher::_regEncode[src_lo]);
       Register Rdst = as_Register(Matcher::_regEncode[dst_lo]);
       __ z_lgr(Rdst, Rsrc);
@@ -1155,7 +1155,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   // Check for float reg-reg copy.
   if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
     if (cbuf) {
-      MacroAssembler _masm(cbuf);
+      C2_MacroAssembler _masm(cbuf);
       FloatRegister Rsrc = as_FloatRegister(Matcher::_regEncode[src_lo]);
       FloatRegister Rdst = as_FloatRegister(Matcher::_regEncode[dst_lo]);
       __ z_ldr(Rdst, Rsrc);
@@ -1254,7 +1254,7 @@ void MachNopNode::format(PhaseRegAlloc *, outputStream *os) const {
 #endif
 
 void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int rem_space = 0;
   if (!(ra_->C->output()->in_scratch_emit_size())) {
@@ -1294,7 +1294,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 
 // Take care of the size function, if you make changes here!
 void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
@@ -1360,7 +1360,7 @@ void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 #endif
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   const int ic_miss_offset = 2;
 
   // Inline_cache contains a klass.
@@ -1455,7 +1455,7 @@ source %{
 //   aware of the exception.
 int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   Register temp_reg = Z_R1;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
   if (base == NULL) {
@@ -1476,7 +1476,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
 
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   address        base = __ start_a_stub(size_deopt_handler());
 
   if (base == NULL) {
@@ -1841,13 +1841,13 @@ void Compile::reshape_address(AddPNode* addp) {
 // needs for encoding need to be specified.
 encode %{
   enc_class enc_unimplemented %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ unimplemented("Unimplemented mach node encoding in AD file.", 13);
   %}
 
   enc_class enc_untested %{
 #ifdef ASSERT
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ untested("Untested mach node encoding in AD file.");
 #endif
   %}
@@ -2033,7 +2033,7 @@ encode %{
                   Assembler::reg(Ridx, 12, 48) |
                   Assembler::regz(reg_to_register_object($mem$$base), 16, 48));
     } else {
-        MacroAssembler _masm(&cbuf);
+        C2_MacroAssembler _masm(&cbuf);
         __ load_const_optimized(Z_R1_scratch, $mem$$disp);
         if (Ridx != Z_R0) { __ z_agr(Z_R1_scratch, Ridx); }
         z_emit_inst(cbuf, $secondary |
@@ -2045,7 +2045,7 @@ encode %{
   %}
 
   enc_class z_enc_brul(Label lbl) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2058,7 +2058,7 @@ encode %{
   %}
 
   enc_class z_enc_bru(Label lbl) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2071,7 +2071,7 @@ encode %{
   %}
 
   enc_class z_enc_branch_con_far(cmpOp cmp, Label lbl) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2084,7 +2084,7 @@ encode %{
   %}
 
   enc_class z_enc_branch_con_short(cmpOp cmp, Label lbl) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2097,7 +2097,7 @@ encode %{
   %}
 
   enc_class z_enc_cmpb_regreg(iRegI src1, iRegI src2, Label lbl, cmpOpT cmp) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2121,7 +2121,7 @@ encode %{
   %}
 
   enc_class z_enc_cmpb_regregFar(iRegI src1, iRegI src2, Label lbl, cmpOpT cmp) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2147,7 +2147,7 @@ encode %{
   %}
 
   enc_class z_enc_cmpb_regimm(iRegI src1, immI8 src2, Label lbl, cmpOpT cmp) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2172,7 +2172,7 @@ encode %{
   %}
 
   enc_class z_enc_cmpb_regimmFar(iRegI src1, immI8 src2, Label lbl, cmpOpT cmp) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
     // 'p' is `NULL' when this encoding class is used only to
@@ -2199,7 +2199,7 @@ encode %{
 
   // Call from Java to runtime.
   enc_class z_enc_java_to_runtime_call(method meth) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     // Save return pc before call to the place where we need it, since
     // callee doesn't.
@@ -2227,7 +2227,7 @@ encode %{
   enc_class z_enc_java_static_call(method meth) %{
     // Call to fixup routine. Fixup routine uses ScopeDesc info to determine
     // whom we intended to call.
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     int ret_offset = 0;
 
     if (!_method) {
@@ -2256,7 +2256,7 @@ encode %{
 
   // Java dynamic call
   enc_class z_enc_java_dynamic_call(method meth) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     unsigned int start_off = __ offset();
 
     int vtable_index = this->_vtable_index;
@@ -2311,7 +2311,7 @@ encode %{
   %}
 
   enc_class z_enc_cmov_reg(cmpOp cmp, iRegI dst, iRegI src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdst = reg_to_register_object($dst$$reg);
     Register Rsrc = reg_to_register_object($src$$reg);
 
@@ -2332,7 +2332,7 @@ encode %{
   %}
 
   enc_class z_enc_cmov_imm(cmpOp cmp, iRegI dst, immI16 src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdst = reg_to_register_object($dst$$reg);
     int      Csrc = $src$$constant;
     Assembler::branch_condition cc = (Assembler::branch_condition)$cmp$$cmpcode;
@@ -2349,7 +2349,7 @@ encode %{
   %}
 
   enc_class z_enc_cctobool(iRegI res) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rres = reg_to_register_object($res$$reg);
 
     if (VM_Version::has_LoadStoreConditional()) {
@@ -2366,7 +2366,7 @@ encode %{
   %}
 
   enc_class z_enc_casI(iRegI compare_value, iRegI exchange_value, iRegP addr_ptr) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rcomp = reg_to_register_object($compare_value$$reg);
     Register Rnew  = reg_to_register_object($exchange_value$$reg);
     Register Raddr = reg_to_register_object($addr_ptr$$reg);
@@ -2375,7 +2375,7 @@ encode %{
   %}
 
   enc_class z_enc_casL(iRegL compare_value, iRegL exchange_value, iRegP addr_ptr) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rcomp = reg_to_register_object($compare_value$$reg);
     Register Rnew  = reg_to_register_object($exchange_value$$reg);
     Register Raddr = reg_to_register_object($addr_ptr$$reg);
@@ -2384,7 +2384,7 @@ encode %{
   %}
 
   enc_class z_enc_SwapI(memoryRSY mem, iRegI dst, iRegI tmp) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdst = reg_to_register_object($dst$$reg);
     Register Rtmp = reg_to_register_object($tmp$$reg);
     guarantee(Rdst != Rtmp, "Fix match rule to use TEMP_DEF");
@@ -2400,7 +2400,7 @@ encode %{
   %}
 
   enc_class z_enc_SwapL(memoryRSY mem, iRegL dst, iRegL tmp) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdst = reg_to_register_object($dst$$reg);
     Register Rtmp = reg_to_register_object($tmp$$reg);
     guarantee(Rdst != Rtmp, "Fix match rule to use TEMP_DEF");

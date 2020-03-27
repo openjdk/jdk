@@ -1177,7 +1177,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
   if (base == NULL) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1195,7 +1195,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
   if (base == NULL) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1716,7 +1716,7 @@ static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo
          (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi,
          "no non-adjacent vector moves" );
   if (cbuf) {
-    MacroAssembler _masm(cbuf);
+    C2_MacroAssembler _masm(cbuf);
     int offset = __ offset();
     switch (ireg) {
     case Op_VecS: // copy whole register
@@ -1782,7 +1782,7 @@ int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
   // into scratch buffer is used to get size in 64-bit VM.
   LP64_ONLY( assert(!do_size, "this method calculates size only for 32-bit VM"); )
   if (cbuf) {
-    MacroAssembler _masm(cbuf);
+    C2_MacroAssembler _masm(cbuf);
     int offset = __ offset();
     if (is_load) {
       switch (ireg) {
@@ -1985,7 +1985,7 @@ static inline jlong replicate8_imm(int con, int width) {
 #endif
 
   void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ nop(_count);
   }
 
@@ -2000,7 +2000,7 @@ static inline jlong replicate8_imm(int con, int width) {
 #endif
 
   void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc* ra_) const {
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ int3();
   }
 
@@ -2016,7 +2016,7 @@ encode %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      MacroAssembler _masm(&cbuf);
+      C2_MacroAssembler _masm(&cbuf);
       Label L;
       __ cmpptr(Address(rsp, framesize), (int32_t)0xbadb100d);
       __ jccb(Assembler::equal, L);
