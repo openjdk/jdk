@@ -139,8 +139,8 @@ import sun.reflect.misc.ReflectUtil;
  * </pre></blockquote>
  *
  * <p> It is also possible to get the {@code Class} object for a named
- * type (or for void) using a class literal.  See Section 15.8.2 of
- * <cite>The Java&trade; Language Specification</cite>.
+ * type (or for void) using a class literal.  See Section {@jls
+ * 15.8.2} of <cite>The Java&trade; Language Specification</cite>.
  * For example:
  *
  * <blockquote>
@@ -376,14 +376,17 @@ public final class Class<T> implements java.io.Serializable,
      *
      * Note that this method throws errors related to loading, linking
      * or initializing as specified in Sections {@jls 12.2}, {@jls
-     * 12.3}, and {@jls 12.4} of <em>The Java Language
-     * Specification</em>.
+     * 12.3}, and {@jls 12.4} of <cite>The Java&trade; Language
+     * Specification</cite>.
      * Note that this method does not check whether the requested class
      * is accessible to its caller.
      *
      * @param name       fully qualified name of the desired class
-     * @param initialize if {@code true} the class will be initialized (which implies linking).
-     *                   See Section {@jls 12.4} of <em>The Java Language Specification</em>.
+
+     * @param initialize if {@code true} the class will be initialized
+     *                   (which implies linking). See Section {@jls
+     *                   12.4} of <cite>The Java&trade; Language
+     *                   Specification</cite>.
      * @param loader     class loader from which the class must be loaded
      * @return           class object representing the desired class
      *
@@ -660,8 +663,8 @@ public final class Class<T> implements java.io.Serializable,
      * <p> Specifically, this method tests whether the type represented by the
      * specified {@code Class} parameter can be converted to the type
      * represented by this {@code Class} object via an identity conversion
-     * or via a widening reference conversion. See <em>The Java Language
-     * Specification</em>, sections {@jls 5.1.1} and {@jls 5.1.4},
+     * or via a widening reference conversion. See <cite>The Java&trade; Language
+     * Specification</cite>, sections {@jls 5.1.1} and {@jls 5.1.4},
      * for details.
      *
      * @param     cls the {@code Class} object to be checked
@@ -745,7 +748,7 @@ public final class Class<T> implements java.io.Serializable,
      * Returns {@code true} if this class is a synthetic class;
      * returns {@code false} otherwise.
      * @return {@code true} if and only if this class is a synthetic class as
-     *         defined by the Java Language Specification.
+     *         defined by <cite>The Java&trade; Language Specification</cite>.
      * @jls 13.1 The Form of a Binary
      * @since 1.5
      */
@@ -758,10 +761,10 @@ public final class Class<T> implements java.io.Serializable,
      * primitive type, or void) represented by this {@code Class} object,
      * as a {@code String}.
      *
-     * <p> If this class object represents a reference type that is not an
-     * array type then the binary name of the class is returned, as specified
-     * by
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <p> If this class object represents a reference type that is
+     * not an array type then the binary name of the class is
+     * returned, as specified by <cite>The Java&trade; Language
+     * Specification</cite>.
      *
      * <p> If this class object represents a primitive type or void, then the
      * name returned is a {@code String} equal to the Java language
@@ -896,8 +899,8 @@ public final class Class<T> implements java.io.Serializable,
      *     the type variables declared by this generic declaration
      * @throws java.lang.reflect.GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
-     *     the format specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     the format specified in section {@jvms 4.7.9} of
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>,
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
@@ -945,7 +948,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @throws java.lang.reflect.GenericSignatureFormatError if the generic
      *     class signature does not conform to the format specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     section {@jvms 4.7.9} of <cite>The Java&trade; Virtual
+     *     Machine Specification</cite>
      * @throws TypeNotPresentException if the generic superclass
      *     refers to a non-existent type declaration
      * @throws java.lang.reflect.MalformedParameterizedTypeException if the
@@ -1142,9 +1146,9 @@ public final class Class<T> implements java.io.Serializable,
      * returned in that order.
      *
      * @throws java.lang.reflect.GenericSignatureFormatError
-     *     if the generic class signature does not conform to the format
-     *     specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     if the generic class signature does not conform to the
+     *     format specified in section {@jvms 4.7.9} of <cite>The
+     *     Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if any of the generic
      *     superinterfaces refers to a non-existent type declaration
      * @throws java.lang.reflect.MalformedParameterizedTypeException
@@ -1201,8 +1205,8 @@ public final class Class<T> implements java.io.Serializable,
      * {@code false}. The values of its other modifiers are not determined
      * by this specification.
      *
-     * <p> The modifier encodings are defined in <em>The Java Virtual Machine
-     * Specification</em>, table 4.1.
+     * <p> The modifier encodings are defined in section {@jvms 4.1}
+     * of <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
@@ -1610,11 +1614,11 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns the canonical name of the underlying class as
-     * defined by the Java Language Specification.  Returns null if
-     * the underlying class does not have a canonical name (i.e., if
-     * it is a local or anonymous class or an array whose component
-     * type does not have a canonical name).
+     * Returns the canonical name of the underlying class as defined
+     * by <cite>The Java&trade; Language Specification</cite>, section
+     * {@jls 6.7}.  Returns null if the underlying class does not have
+     * a canonical name (i.e., if it is a local or anonymous class or
+     * an array whose component type does not have a canonical name).
      * @return the canonical name of the underlying class if it exists, and
      * {@code null} otherwise.
      * @since 1.5
@@ -1928,7 +1932,8 @@ public final class Class<T> implements java.io.Serializable,
      * class has no public constructors, or if the class is an array class, or
      * if the class reflects a primitive type or void.
      *
-     * Note that while this method returns an array of {@code
+     * @apiNote
+     * While this method returns an array of {@code
      * Constructor<T>} objects (that is an array of constructors from
      * this class), the return type of this method is {@code
      * Constructor<?>[]} and <em>not</em> {@code Constructor<T>[]} as
@@ -2401,7 +2406,8 @@ public final class Class<T> implements java.io.Serializable,
      * object represents an interface, a primitive type, an array class, or
      * void.
      *
-     * <p> See <em>The Java Language Specification</em>, section {@jls 8.2}.
+     * <p> See <cite>The Java&trade; Language Specification</cite>,
+     * section {@jls 8.2}.
      *
      * @return  the array of {@code Constructor} objects representing all the
      *          declared constructors of this class
@@ -3538,9 +3544,10 @@ public final class Class<T> implements java.io.Serializable,
      * otherwise, if this class is not a system class (i.e., it has a
      * class loader) its class loader's default assertion status is returned;
      * otherwise, the system class default assertion status is returned.
-     * <p>
+     *
+     * @apiNote
      * Few programmers will have any need for this method; it is provided
-     * for the benefit of the JRE itself.  (It allows a class to determine at
+     * for the benefit of the JDK itself.  (It allows a class to determine at
      * the time that it is initialized whether assertions should be enabled.)
      * Note that this method is not guaranteed to return the actual
      * assertion status that was (or will be) associated with the specified
@@ -4025,10 +4032,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @apiNote A {@code class} file of version 55.0 or greater may record the
      * host of the nest to which it belongs by using the {@code NestHost}
-     * attribute (JVMS 4.7.28). Alternatively, a {@code class} file of
+     * attribute (JVMS {@jvms 4.7.28}). Alternatively, a {@code class} file of
      * version 55.0 or greater may act as a nest host by enumerating the nest's
      * other members with the
-     * {@code NestMembers} attribute (JVMS 4.7.29).
+     * {@code NestMembers} attribute (JVMS {@jvms 4.7.29}).
      * A {@code class} file of version 54.0 or lower does not use these
      * attributes.
      *
