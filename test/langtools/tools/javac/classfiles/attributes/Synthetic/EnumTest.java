@@ -41,6 +41,7 @@
 @ExpectedClass(className = "EnumTest",
         expectedMethods = {"values()", "valueOf(java.lang.String)", "<clinit>()", "<init>(java.lang.String, int)"},
         expectedFields = {"A", "B"},
+        expectedNumberOfSyntheticMethods = 1,
         expectedNumberOfSyntheticFields = 1)
 public enum EnumTest {
     A, B
