@@ -44,11 +44,13 @@ abstract class KrbKdcRep {
                       ) throws KrbApErrException {
 
         // cname change in AS-REP is allowed only if the client
-        // sent CANONICALIZE and the server supports RFC 6806 - Section 11
-        // FAST scheme (ENC-PA-REP flag).
+        // sent CANONICALIZE or an NT-ENTERPRISE cname in the request, and the
+        // server supports RFC 6806 - Section 11 FAST scheme (ENC-PA-REP flag).
         if (isAsReq && !req.reqBody.cname.equals(rep.cname) &&
-                (!req.reqBody.kdcOptions.get(KDCOptions.CANONICALIZE) ||
-                 !rep.encKDCRepPart.flags.get(Krb5.TKT_OPTS_ENC_PA_REP))) {
+                ((!req.reqBody.kdcOptions.get(KDCOptions.CANONICALIZE) &&
+                req.reqBody.cname.getNameType() !=
+                PrincipalName.KRB_NT_ENTERPRISE) ||
+                !rep.encKDCRepPart.flags.get(Krb5.TKT_OPTS_ENC_PA_REP))) {
             rep.encKDCRepPart.key.destroy();
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
@@ -138,14 +140,16 @@ abstract class KrbKdcRep {
         }
 
         // RFC 6806 - Section 11 mechanism check
-        if (rep.encKDCRepPart.flags.get(Krb5.TKT_OPTS_ENC_PA_REP) &&
-                req.reqBody.kdcOptions.get(KDCOptions.CANONICALIZE)) {
+        // The availability of the ENC-PA-REP flag in the KDC response is
+        // mandatory on some cases (see Krb5.TKT_OPTS_ENC_PA_REP check above).
+        if (rep.encKDCRepPart.flags.get(Krb5.TKT_OPTS_ENC_PA_REP)) {
             boolean reqPaReqEncPaRep = false;
             boolean repPaReqEncPaRepValid = false;
 
-            // PA_REQ_ENC_PA_REP only required for AS requests
             for (PAData pa : req.pAData) {
                 if (pa.getType() == Krb5.PA_REQ_ENC_PA_REP) {
+                    // The KDC supports RFC 6806 and ENC-PA-REP was sent in
+                    // the request (AS-REQ). A valid checksum is now required.
                     reqPaReqEncPaRep = true;
                     break;
                 }

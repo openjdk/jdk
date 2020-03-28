@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc.
+ * Copyright (c) 2019, 2020, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,19 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
 
 import org.ietf.jgss.GSSName;
 
 import sun.security.jgss.GSSUtil;
+import sun.security.krb5.Config;
 import sun.security.krb5.PrincipalName;
 
 public class ReferralsTest {
     private static final boolean DEBUG = true;
     private static final String krbConfigName = "krb5-localkdc.conf";
+    private static final String krbConfigNameNoCanonicalize =
+            "krb5-localkdc-nocanonicalize.conf";
     private static final String realmKDC1 = "RABBIT.HOLE";
     private static final String realmKDC2 = "DEV.RABBIT.HOLE";
     private static final char[] password = "123qwe@Z".toCharArray();
@@ -100,6 +104,7 @@ public class ReferralsTest {
             testDelegation();
             testImpersonation();
             testDelegationWithReferrals();
+            testNoCanonicalize();
         } finally {
             cleanup();
         }
@@ -139,14 +144,20 @@ public class ReferralsTest {
         kdc2.setOption(KDC.Option.ALLOW_S4U2PROXY, mapKDC2);
 
         KDC.saveConfig(krbConfigName, kdc1, kdc2,
-                    "forwardable=true");
+                "forwardable=true", "canonicalize=true");
+        KDC.saveConfig(krbConfigNameNoCanonicalize, kdc1, kdc2,
+                "forwardable=true");
         System.setProperty("java.security.krb5.conf", krbConfigName);
     }
 
     private static void cleanup() {
-        File f = new File(krbConfigName);
-        if (f.exists()) {
-            f.delete();
+        String[] configFiles = new String[]{krbConfigName,
+                krbConfigNameNoCanonicalize};
+        for (String configFile : configFiles) {
+            File f = new File(configFile);
+            if (f.exists()) {
+                f.delete();
+            }
         }
     }
 
@@ -323,6 +334,25 @@ public class ReferralsTest {
         if (!contextInitiatorName.toString().equals(userKDC1Name) ||
                 !contextAcceptorName.toString().equals(backendServiceName)) {
             throw new Exception("Unexpected initiator or acceptor names");
+        }
+    }
+
+    /*
+     * The client tries to get a TGT (AS protocol) as in testSubjectCredentials
+     * but without the canonicalize setting in krb5.conf. The KDC
+     * must not return a referral but a failure because the client
+     * is not in the local database.
+     */
+    private static void testNoCanonicalize() throws Exception {
+        System.setProperty("java.security.krb5.conf",
+                krbConfigNameNoCanonicalize);
+        Config.refresh();
+        try {
+            Context.fromUserPass(new Subject(),
+                    clientKDC1Name, password, false);
+            throw new Exception("should not succeed");
+        } catch (LoginException e) {
+            // expected
         }
     }
 }
