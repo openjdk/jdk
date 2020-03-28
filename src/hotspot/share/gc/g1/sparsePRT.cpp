@@ -30,7 +30,6 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/mutexLocker.hpp"
 
 // Check that the size of the SparsePRTEntry is evenly divisible by the maximum
 // member type to avoid SIGBUS when accessing them.
@@ -87,17 +86,15 @@ void SparsePRTEntry::copy_cards(SparsePRTEntry* e) const {
 float RSHashTable::TableOccupancyFactor = 0.5f;
 
 RSHashTable::RSHashTable(size_t capacity) :
-  _num_entries(0),
+  _num_entries((capacity * TableOccupancyFactor) + 1),
   _capacity(capacity),
-  _capacity_mask(capacity-1),
+  _capacity_mask(capacity - 1),
   _occupied_entries(0),
-  _entries(NULL),
+  _entries((SparsePRTEntry*)NEW_C_HEAP_ARRAY(char, _num_entries * SparsePRTEntry::size(), mtGC)),
   _buckets(NEW_C_HEAP_ARRAY(int, capacity, mtGC)),
   _free_region(0),
   _free_list(NullEntry)
 {
-  _num_entries = (capacity * TableOccupancyFactor) + 1;
-  _entries = (SparsePRTEntry*)NEW_C_HEAP_ARRAY(char, _num_entries * SparsePRTEntry::size(), mtGC);
   clear();
 }
 
@@ -206,61 +203,6 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
   SparsePRTEntry* e2 = entry_for_region_ind_create(e->r_ind());
   e->copy_cards(e2);
   assert(e2->num_valid_cards() > 0, "Postcondition.");
-}
-
-CardIdx_t RSHashTableIter::find_first_card_in_list() {
-  while (_bl_ind != RSHashTable::NullEntry) {
-    SparsePRTEntry* sparse_entry = _rsht->entry(_bl_ind);
-    if (sparse_entry->num_valid_cards() > 0) {
-      return sparse_entry->card(0);
-    } else {
-      _bl_ind = sparse_entry->next_index();
-    }
-  }
-  // Otherwise, none found:
-  return NoCardFound;
-}
-
-size_t RSHashTableIter::compute_card_ind(CardIdx_t ci) {
-  return (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion) + ci;
-}
-
-bool RSHashTableIter::has_next(size_t& card_index) {
-  _card_ind++;
-  if (_bl_ind >= 0) {
-    SparsePRTEntry* e = _rsht->entry(_bl_ind);
-    if (_card_ind < e->num_valid_cards()) {
-      CardIdx_t ci = e->card(_card_ind);
-      card_index = compute_card_ind(ci);
-      return true;
-    }
-  }
-
-  // Otherwise, must find the next valid entry.
-  _card_ind = 0;
-
-  if (_bl_ind != RSHashTable::NullEntry) {
-      _bl_ind = _rsht->entry(_bl_ind)->next_index();
-      CardIdx_t ci = find_first_card_in_list();
-      if (ci != NoCardFound) {
-        card_index = compute_card_ind(ci);
-        return true;
-      }
-  }
-  // If we didn't return above, must go to the next non-null table index.
-  _tbl_ind++;
-  while ((size_t)_tbl_ind < _rsht->capacity()) {
-    _bl_ind = _rsht->_buckets[_tbl_ind];
-    CardIdx_t ci = find_first_card_in_list();
-    if (ci != NoCardFound) {
-      card_index = compute_card_ind(ci);
-      return true;
-    }
-    // Otherwise, try next entry.
-    _tbl_ind++;
-  }
-  // Otherwise, there were no entry.
-  return false;
 }
 
 bool RSHashTableBucketIter::has_next(SparsePRTEntry*& entry) {
