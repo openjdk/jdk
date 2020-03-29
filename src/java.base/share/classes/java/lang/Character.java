@@ -390,7 +390,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     public static final byte DIRECTIONALITY_RIGHT_TO_LEFT = 1;
 
     /**
-    * Strong bidirectional character type "AL" in the Unicode specification.
+     * Strong bidirectional character type "AL" in the Unicode specification.
      * @since 1.4
      */
     public static final byte DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC = 2;
@@ -3181,7 +3181,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
                              "MAYAN NUMERALS",
                              "MAYANNUMERALS");
 
-       /**
+        /**
          * Constant for the "Indic Siyaq Numbers" Unicode
          * character block.
          * @since 12
@@ -4773,7 +4773,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
          */
         WARANG_CITI,
 
-         /**
+        /**
          * Unicode script "Ahom".
          * @since 9
          */
@@ -8589,7 +8589,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * values is a valid
      * <a href="http://www.unicode.org/glossary/#surrogate_pair">
      * Unicode surrogate pair</a>.
-
+     *
      * <p>This method is equivalent to the expression:
      * <blockquote><pre>{@code
      * isHighSurrogate(high) && isLowSurrogate(low)
@@ -10966,7 +10966,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Compares two {@code Character} objects numerically.
      *
      * @param   anotherCharacter   the {@code Character} to be compared.
-
      * @return  the value {@code 0} if the argument {@code Character}
      *          is equal to this {@code Character}; a value less than
      *          {@code 0} if this {@code Character} is numerically less

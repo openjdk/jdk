@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1151,25 +1151,25 @@ class InvokerBytecodeGenerator {
     }
 
     /**
-      * Emit bytecode for the guardWithCatch idiom.
-      *
-      * The pattern looks like (Cf. MethodHandleImpl.makeGuardWithCatch):
-      * <blockquote><pre>{@code
-      *  guardWithCatch=Lambda(a0:L,a1:L,a2:L,a3:L,a4:L,a5:L,a6:L,a7:L)=>{
-      *    t8:L=MethodHandle.invokeBasic(a4:L,a6:L,a7:L);
-      *    t9:L=MethodHandleImpl.guardWithCatch(a1:L,a2:L,a3:L,t8:L);
-      *   t10:I=MethodHandle.invokeBasic(a5:L,t9:L);t10:I}
-      * }</pre></blockquote>
-      *
-      * It is compiled into bytecode equivalent of the following code:
-      * <blockquote><pre>{@code
-      *  try {
-      *      return a1.invokeBasic(a6, a7);
-      *  } catch (Throwable e) {
-      *      if (!a2.isInstance(e)) throw e;
-      *      return a3.invokeBasic(ex, a6, a7);
-      *  }}</pre></blockquote>
-      */
+     * Emit bytecode for the guardWithCatch idiom.
+     *
+     * The pattern looks like (Cf. MethodHandleImpl.makeGuardWithCatch):
+     * <blockquote><pre>{@code
+     *  guardWithCatch=Lambda(a0:L,a1:L,a2:L,a3:L,a4:L,a5:L,a6:L,a7:L)=>{
+     *    t8:L=MethodHandle.invokeBasic(a4:L,a6:L,a7:L);
+     *    t9:L=MethodHandleImpl.guardWithCatch(a1:L,a2:L,a3:L,t8:L);
+     *   t10:I=MethodHandle.invokeBasic(a5:L,t9:L);t10:I}
+     * }</pre></blockquote>
+     *
+     * It is compiled into bytecode equivalent of the following code:
+     * <blockquote><pre>{@code
+     *  try {
+     *      return a1.invokeBasic(a6, a7);
+     *  } catch (Throwable e) {
+     *      if (!a2.isInstance(e)) throw e;
+     *      return a3.invokeBasic(ex, a6, a7);
+     *  }}</pre></blockquote>
+     */
     private Name emitGuardWithCatch(int pos) {
         Name args    = lambdaForm.names[pos];
         Name invoker = lambdaForm.names[pos+1];

@@ -729,7 +729,6 @@
  * timing of binding to the data, since the data could change between the time
  * the spliterator is created and the time the stream pipeline is executed.
  * Ideally, a spliterator for a stream would report a characteristic of
-
  * {@code IMMUTABLE} or {@code CONCURRENT}; if not it should be
  * <a href="../Spliterator.html#binding"><em>late-binding</em></a>. If a source
  * cannot directly supply a recommended spliterator, it may indirectly supply

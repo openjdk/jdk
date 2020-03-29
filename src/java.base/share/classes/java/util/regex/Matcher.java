@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,21 +356,21 @@ public final class Matcher implements MatchResult {
     }
 
     /**
-      * Changes the {@code Pattern} that this {@code Matcher} uses to
-      * find matches with.
-      *
-      * <p> This method causes this matcher to lose information
-      * about the groups of the last match that occurred. The
-      * matcher's position in the input is maintained and its
-      * last append position is unaffected.</p>
-      *
-      * @param  newPattern
-      *         The new pattern used by this matcher
-      * @return  This matcher
-      * @throws  IllegalArgumentException
-      *          If newPattern is {@code null}
-      * @since 1.5
-      */
+     * Changes the {@code Pattern} that this {@code Matcher} uses to
+     * find matches with.
+     *
+     * <p> This method causes this matcher to lose information
+     * about the groups of the last match that occurred. The
+     * matcher's position in the input is maintained and its
+     * last append position is unaffected.</p>
+     *
+     * @param  newPattern
+     *         The new pattern used by this matcher
+     * @return  This matcher
+     * @throws  IllegalArgumentException
+     *          If newPattern is {@code null}
+     * @since 1.5
+     */
     public Matcher usePattern(Pattern newPattern) {
         if (newPattern == null)
             throw new IllegalArgumentException("Pattern cannot be null");

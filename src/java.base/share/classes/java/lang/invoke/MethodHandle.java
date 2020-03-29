@@ -1073,36 +1073,37 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
                 throw newIllegalArgumentException("array length is not legal for long[] or double[]", arrayLength);
         }
     }
+
     /**
-      * Adapts this method handle to be {@linkplain #asVarargsCollector variable arity}
-      * if the boolean flag is true, else {@linkplain #asFixedArity fixed arity}.
-      * If the method handle is already of the proper arity mode, it is returned
-      * unchanged.
-      * @apiNote
-      * <p>This method is sometimes useful when adapting a method handle that
-      * may be variable arity, to ensure that the resulting adapter is also
-      * variable arity if and only if the original handle was.  For example,
-      * this code changes the first argument of a handle {@code mh} to {@code int} without
-      * disturbing its variable arity property:
-      * {@code mh.asType(mh.type().changeParameterType(0,int.class))
-      *     .withVarargs(mh.isVarargsCollector())}
-      * <p>
-      * This call is approximately equivalent to the following code:
-      * <blockquote><pre>{@code
-      * if (makeVarargs == isVarargsCollector())
-      *   return this;
-      * else if (makeVarargs)
-      *   return asVarargsCollector(type().lastParameterType());
-      * else
-      *   return asFixedArity();
-      * }</pre></blockquote>
-      * @param makeVarargs true if the return method handle should have variable arity behavior
-      * @return a method handle of the same type, with possibly adjusted variable arity behavior
-      * @throws IllegalArgumentException if {@code makeVarargs} is true and
-      *         this method handle does not have a trailing array parameter
-      * @since 9
-      * @see #asVarargsCollector
-      * @see #asFixedArity
+     * Adapts this method handle to be {@linkplain #asVarargsCollector variable arity}
+     * if the boolean flag is true, else {@linkplain #asFixedArity fixed arity}.
+     * If the method handle is already of the proper arity mode, it is returned
+     * unchanged.
+     * @apiNote
+     * <p>This method is sometimes useful when adapting a method handle that
+     * may be variable arity, to ensure that the resulting adapter is also
+     * variable arity if and only if the original handle was.  For example,
+     * this code changes the first argument of a handle {@code mh} to {@code int} without
+     * disturbing its variable arity property:
+     * {@code mh.asType(mh.type().changeParameterType(0,int.class))
+     *     .withVarargs(mh.isVarargsCollector())}
+     * <p>
+     * This call is approximately equivalent to the following code:
+     * <blockquote><pre>{@code
+     * if (makeVarargs == isVarargsCollector())
+     *   return this;
+     * else if (makeVarargs)
+     *   return asVarargsCollector(type().lastParameterType());
+     * else
+     *   return asFixedArity();
+     * }</pre></blockquote>
+     * @param makeVarargs true if the return method handle should have variable arity behavior
+     * @return a method handle of the same type, with possibly adjusted variable arity behavior
+     * @throws IllegalArgumentException if {@code makeVarargs} is true and
+     *         this method handle does not have a trailing array parameter
+     * @since 9
+     * @see #asVarargsCollector
+     * @see #asFixedArity
      */
     public MethodHandle withVarargs(boolean makeVarargs) {
         assert(!isVarargsCollector());  // subclass responsibility

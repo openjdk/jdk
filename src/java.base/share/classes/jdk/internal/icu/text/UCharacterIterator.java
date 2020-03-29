@@ -95,7 +95,7 @@ public abstract class UCharacterIterator
         return new ReplaceableUCharacterIterator(source);
     }
 
-   /**
+    /**
      * Returns a <code>UCharacterIterator</code> object given a
      * CharacterIterator.
      * @param source a valid CharacterIterator object.

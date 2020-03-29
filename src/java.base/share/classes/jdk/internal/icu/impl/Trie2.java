@@ -327,17 +327,17 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
     //--------------------------------------------------------------------------------
 
      /**
-     * Trie2 data structure in serialized form:
-     *
-     * UTrie2Header header;
-     * uint16_t index[header.index2Length];
-     * uint16_t data[header.shiftedDataLength<<2];  -- or uint32_t data[...]
-     *
-     * For Java, this is read from the stream into an instance of UTrie2Header.
-     * (The C version just places a struct over the raw serialized data.)
-     *
-     * @internal
-     */
+      * Trie2 data structure in serialized form:
+      *
+      * UTrie2Header header;
+      * uint16_t index[header.index2Length];
+      * uint16_t data[header.shiftedDataLength<<2];  -- or uint32_t data[...]
+      *
+      * For Java, this is read from the stream into an instance of UTrie2Header.
+      * (The C version just places a struct over the raw serialized data.)
+      *
+      * @internal
+      */
     static class UTrie2Header {
         /** "Tri2" in big-endian US-ASCII (0x54726932) */
         int signature;

@@ -462,7 +462,7 @@ public final class String
      *
      * @param  length
      *         The number of bytes to decode
-
+     *
      * @param  charsetName
      *         The name of a supported {@linkplain java.nio.charset.Charset
      *         charset}
@@ -2300,10 +2300,10 @@ public final class String
      */
     public String[] split(String regex, int limit) {
         /* fastpath if the regex is a
-         (1)one-char String and this character is not one of the
-            RegEx's meta characters ".$|()[{^?*+\\", or
-         (2)two-char String and the first char is the backslash and
-            the second is not the ascii digit or ascii letter.
+         * (1) one-char String and this character is not one of the
+         *     RegEx's meta characters ".$|()[{^?*+\\", or
+         * (2) two-char String and the first char is the backslash and
+         *     the second is not the ascii digit or ascii letter.
          */
         char ch = 0;
         if (((regex.length() == 1 &&

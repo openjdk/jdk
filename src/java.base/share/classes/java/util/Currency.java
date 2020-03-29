@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,7 +564,7 @@ public final class Currency implements Serializable {
      * -1 is returned.
      *
      * @return the default number of fraction digits used with this currency
-    */
+     */
     public int getDefaultFractionDigits() {
         return defaultFractionDigits;
     }
@@ -939,7 +939,7 @@ public final class Currency implements Serializable {
      * - oldCurrencyNumericCode: numeric code for old currencies
      * - newCurrencyNumericCode: numeric code for new currencies, 0 for countries
      *   that are not changing currencies
-    */
+     */
     private static class SpecialCaseEntry {
 
         final private long cutOverTime;

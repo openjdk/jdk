@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2991,7 +2991,7 @@ public abstract class Parser {
     private Reader utf16(InputStream is)
             throws Exception {
         if (mChIdx != 0) {
-            //The bom method has read ONE byte into the buffer.
+            // The bom method has read ONE byte into the buffer.
             byte b0 = (byte)mChars[0];
             if (b0 == 0x00 || b0 == 0x3C) {
                 int b1 = is.read();
@@ -3008,9 +3008,9 @@ public abstract class Parser {
                     mChars[mChIdx++] = (char)(b2);
                     return new ReaderUTF16(is, 'l');
                 } else {
-                    /**not every InputStream supports reset, so we have to remember
+                    /* not every InputStream supports reset, so we have to remember
                      * the state for further parsing
-                    **/
+                     */
                     mChars[0] = (char)(b0);
                     mChars[mChIdx++] = (char)(b1);
                     mChars[mChIdx++] = (char)(b2);

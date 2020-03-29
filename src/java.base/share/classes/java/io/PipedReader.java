@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class PipedReader extends Reader {
      * to the piped writer {@code src} and uses the specified
      * pipe size for the pipe's buffer. Data written to {@code src}
      * will then be  available as input from this stream.
-
+     *
      * @param      src       the stream to connect to.
      * @param      pipeSize  the size of the pipe's buffer.
      * @throws     IOException  if an I/O error occurs.

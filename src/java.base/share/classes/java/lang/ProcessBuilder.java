@@ -1217,9 +1217,9 @@ public final class ProcessBuilder
      * String directory = "/home/duke/src";
      * ProcessBuilder[] builders = {
      *              new ProcessBuilder("find", directory, "-type", "f"),
-                    new ProcessBuilder("xargs", "grep", "-h", "^import "),
-                    new ProcessBuilder("awk", "{print $2;}"),
-                    new ProcessBuilder("sort", "-u")};
+     *              new ProcessBuilder("xargs", "grep", "-h", "^import "),
+     *              new ProcessBuilder("awk", "{print $2;}"),
+     *              new ProcessBuilder("sort", "-u")};
      * List<Process> processes = ProcessBuilder.startPipeline(
      *         Arrays.asList(builders));
      * Process last = processes.get(processes.size()-1);

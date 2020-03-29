@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,7 +403,7 @@ public interface Comparator<T> {
      * Accepts a function that extracts a sort key from a type {@code T}, and
      * returns a {@code Comparator<T>} that compares by that sort key using
      * the specified {@link Comparator}.
-      *
+     *
      * <p>The returned comparator is serializable if the specified function
      * and comparator are both serializable.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ public class Preconditions {
      * perform unsigned comparisons of the index and length when it is known the
      * length is a non-negative value (such as that of an array length or from
      * the upper bound of a loop)
-    */
+     */
     @HotSpotIntrinsicCandidate
     public static <X extends RuntimeException>
     int checkIndex(int index, int length,

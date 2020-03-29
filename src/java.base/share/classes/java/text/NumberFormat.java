@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,7 +313,7 @@ public abstract class NumberFormat extends Format  {
         return parse(source, pos);
     }
 
-   /**
+    /**
      * Specialization of format.
      *
      * @param number the double number to format
@@ -338,7 +338,7 @@ public abstract class NumberFormat extends Format  {
      */
     String fastFormat(double number) { return null; }
 
-   /**
+    /**
      * Specialization of format.
      *
      * @param number the long number to format
@@ -352,7 +352,7 @@ public abstract class NumberFormat extends Format  {
                       DontCareFieldPosition.INSTANCE).toString();
     }
 
-   /**
+    /**
      * Specialization of format.
      *
      * @param number     the double number to format
@@ -375,7 +375,7 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
-   /**
+    /**
      * Specialization of format.
      *
      * @param number     the long number to format
@@ -398,7 +398,7 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
-   /**
+    /**
      * Returns a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
      * If IntegerOnly is set, will stop at a decimal

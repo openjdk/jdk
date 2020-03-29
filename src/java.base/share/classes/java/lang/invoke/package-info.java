@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,6 @@
  * call site or constant, the JVM must choose one bootstrap method result and install it visibly to
  * all threads.  Any other bootstrap method calls are allowed to complete, but their
  * results are ignored.
-
  * <p style="font-size:smaller;">
  * <em>Discussion:</em>
  * These rules do not enable the JVM to share call sites,

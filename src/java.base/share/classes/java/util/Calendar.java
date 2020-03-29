@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ import sun.util.spi.CalendarProvider;
  * the calendar fields are normalized. For example, a lenient
  * {@code GregorianCalendar} interprets {@code MONTH == JANUARY},
  * {@code DAY_OF_MONTH == 32} as February 1.
-
+ *
  * <p>When a {@code Calendar} is in non-lenient mode, it throws an
  * exception if there is any inconsistency in its calendar fields. For
  * example, a {@code GregorianCalendar} always produces

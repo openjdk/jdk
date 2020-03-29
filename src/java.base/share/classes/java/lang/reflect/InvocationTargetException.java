@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class InvocationTargetException extends ReflectiveOperationException {
     @java.io.Serial
     private static final long serialVersionUID = 4085088731926701167L;
 
-     /**
+    /**
      * This field holds the target if the
      * InvocationTargetException(Throwable target) constructor was
      * used to instantiate the object

@@ -76,10 +76,10 @@ public final class StringPrepDataReader implements ICUBinary.Authenticate {
                         char[] mappingTable)
                         throws IOException{
 
-        //Read the bytes that make up the idnaTrie
+        // Read the bytes that make up the idnaTrie
         dataInputStream.read(idnaBytes);
 
-        //Read the extra data
+        // Read the extra data
         for(int i=0;i<mappingTable.length;i++){
             mappingTable[i]=dataInputStream.readChar();
         }
@@ -94,9 +94,9 @@ public final class StringPrepDataReader implements ICUBinary.Authenticate {
                && version[2] == DATA_FORMAT_VERSION[2]
                && version[3] == DATA_FORMAT_VERSION[3];
     }
-    public int[] readIndexes(int length)throws IOException{
+    public int[] readIndexes(int length) throws IOException{
         int[] indexes = new int[length];
-        //Read the indexes
+        // Read the indexes
         for (int i = 0; i <length ; i++) {
              indexes[i] = dataInputStream.readInt();
         }
@@ -110,15 +110,15 @@ public final class StringPrepDataReader implements ICUBinary.Authenticate {
 
 
     /**
-    * ICU data file input stream
-    */
+     * ICU data file input stream
+     */
     private DataInputStream dataInputStream;
     private byte[] unicodeVersion;
     /**
-    * File format version that this class understands.
-    * No guarantees are made if a older version is used
-    * see store.c of gennorm for more information and values
-    */
+     * File format version that this class understands.
+     * No guarantees are made if a older version is used
+     * see store.c of gennorm for more information and values
+     */
     ///* dataFormat="SPRP" 0x53, 0x50, 0x52, 0x50  */
     private static final byte DATA_FORMAT_ID[] = {(byte)0x53, (byte)0x50,
                                                     (byte)0x52, (byte)0x50};

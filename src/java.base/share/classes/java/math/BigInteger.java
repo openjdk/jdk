@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4595,13 +4595,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-    * Returns the index of the int that contains the first nonzero int in the
-    * little-endian binary representation of the magnitude (int 0 is the
-    * least significant). If the magnitude is zero, return value is undefined.
-    *
-    * <p>Note: never used for a BigInteger with a magnitude of zero.
-    * @see #getInt.
-    */
+     * Returns the index of the int that contains the first nonzero int in the
+     * little-endian binary representation of the magnitude (int 0 is the
+     * least significant). If the magnitude is zero, return value is undefined.
+     *
+     * <p>Note: never used for a BigInteger with a magnitude of zero.
+     * @see #getInt.
+     */
     private int firstNonzeroIntNum() {
         int fn = firstNonzeroIntNumPlusTwo - 2;
         if (fn == -2) { // firstNonzeroIntNum not initialized yet

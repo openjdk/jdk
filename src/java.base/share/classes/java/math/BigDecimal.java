@@ -4323,7 +4323,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return asInt;
     }
 
-   /**
+    /**
      * Returns the compact value for given {@code BigInteger}, or
      * INFLATED if too big. Relies on internal representation of
      * {@code BigInteger}.

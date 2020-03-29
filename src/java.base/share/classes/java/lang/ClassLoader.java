@@ -734,7 +734,6 @@ public abstract class ClassLoader {
      *         The module name; or {@code null} to find the class in the
      *         {@linkplain #getUnnamedModule() unnamed module} for this
      *         class loader
-
      * @param  name
      *         The <a href="#binary-name">binary name</a> of the class
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,10 +365,10 @@ public abstract class DateFormat extends Format {
                                         FieldPosition fieldPosition);
 
     /**
-      * Formats a {@link Date} into a date-time string.
-      *
-      * @param date the time value to be formatted into a date-time string.
-      * @return the formatted date-time string.
+     * Formats a {@link Date} into a date-time string.
+     *
+     * @param date the time value to be formatted into a date-time string.
+     * @return the formatted date-time string.
      */
     public final String format(Date date)
     {

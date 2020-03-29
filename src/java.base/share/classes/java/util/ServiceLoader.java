@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ import jdk.internal.reflect.Reflection;
  * module does not export the package containing the service provider. There is
  * no support for a module specifying, in a <i>provides</i> directive, a service
  * provider in another module.
-
+ *
  * <p> A service provider that is developed in a module has no control over when
  * it is instantiated, since that occurs at the behest of the application, but it
  * does have control over how it is instantiated:
