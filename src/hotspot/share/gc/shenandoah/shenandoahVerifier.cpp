@@ -124,7 +124,7 @@ private:
         check(ShenandoahAsserts::_safe_unknown, obj, (obj_addr + obj->size()) <= obj_reg->top(),
                "Object end should be within the region");
       } else {
-        size_t humongous_start = obj_reg->region_number();
+        size_t humongous_start = obj_reg->index();
         size_t humongous_end = humongous_start + (obj->size() >> ShenandoahHeapRegion::region_size_words_shift());
         for (size_t idx = humongous_start + 1; idx < humongous_end; idx++) {
           check(ShenandoahAsserts::_safe_unknown, obj, _heap->get_region(idx)->is_humongous_continuation(),
@@ -142,7 +142,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(&_ld[obj_reg->region_number()], (uint) obj->size());
+          Atomic::add(&_ld[obj_reg->index()], (uint) obj->size());
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -751,12 +751,12 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = Atomic::load_acquire(&ld[r->humongous_start_region()->region_number()]);
+        juint start_live = Atomic::load_acquire(&ld[r->humongous_start_region()->index()]);
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = Atomic::load_acquire(&ld[r->region_number()]);
+        verf_live = Atomic::load_acquire(&ld[r->index()]);
       }
 
       size_t reg_live = r->get_live_data_words();

@@ -83,7 +83,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(!is_in(r), "Already in collection set");
-  _cset_map[r->region_number()] = 1;
+  _cset_map[r->index()] = 1;
   _region_count ++;
   _garbage += r->garbage();
   _live_data += r->get_live_data_bytes();
@@ -103,7 +103,7 @@ void ShenandoahCollectionSet::remove_region(ShenandoahHeapRegion* r) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(is_in(r), "Not in collection set");
-  _cset_map[r->region_number()] = 0;
+  _cset_map[r->index()] = 0;
   _region_count --;
 }
 

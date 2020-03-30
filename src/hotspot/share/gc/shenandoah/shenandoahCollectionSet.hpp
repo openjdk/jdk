@@ -80,7 +80,7 @@ public:
   }
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
-  inline bool is_in(size_t region_number)    const;
+  inline bool is_in(size_t region_idx)       const;
   inline bool is_in(oop obj)                 const;
   inline bool is_in_loc(void* loc)           const;
 

@@ -132,8 +132,8 @@ public:
   virtual void work(uint worker_id) {
     ShenandoahHeapRegion* r = _regions.next();
     while (r != NULL) {
-      size_t start = r->region_number()       * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
-      size_t end   = (r->region_number() + 1) * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
+      size_t start = r->index()       * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
+      size_t end   = (r->index() + 1) * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
       assert (end <= _bitmap_size, "end is sane: " SIZE_FORMAT " < " SIZE_FORMAT, end, _bitmap_size);
 
       os::pretouch_memory(_bitmap_base + start, _bitmap_base + end, _page_size);
@@ -952,7 +952,7 @@ private:
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != NULL) {
-      assert(r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->region_number());
+      assert(r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
       if (ShenandoahPacing) {
@@ -996,7 +996,7 @@ void ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   oop humongous_obj = oop(start->bottom());
   size_t size = humongous_obj->size();
   size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-  size_t index = start->region_number() + required_regions - 1;
+  size_t index = start->index() + required_regions - 1;
 
   assert(!start->has_live(), "liveness must be zero");
 
@@ -1360,9 +1360,9 @@ public:
       r->clear_live_data();
       _ctx->capture_top_at_mark_start(r);
     } else {
-      assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->region_number());
+      assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should already have correct TAMS", r->region_number());
+             "Region " SIZE_FORMAT " should already have correct TAMS", r->index());
     }
   }
 
@@ -1438,9 +1438,9 @@ public:
         r->increase_live_data_alloc_words(pointer_delta(top, tams));
       }
     } else {
-      assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->region_number());
+      assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should have correct TAMS", r->region_number());
+             "Region " SIZE_FORMAT " should have correct TAMS", r->index());
     }
   }
 
@@ -2512,13 +2512,13 @@ void ShenandoahHeap::print_extended_on(outputStream *st) const {
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {
-  size_t slice = r->region_number() / _bitmap_regions_per_slice;
+  size_t slice = r->index() / _bitmap_regions_per_slice;
 
   size_t regions_from = _bitmap_regions_per_slice * slice;
   size_t regions_to   = MIN2(num_regions(), _bitmap_regions_per_slice * (slice + 1));
   for (size_t g = regions_from; g < regions_to; g++) {
     assert (g / _bitmap_regions_per_slice == slice, "same slice");
-    if (skip_self && g == r->region_number()) continue;
+    if (skip_self && g == r->index()) continue;
     if (get_region(g)->is_committed()) {
       return true;
     }
@@ -2541,7 +2541,7 @@ bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
   }
 
   // Commit the bitmap slice:
-  size_t slice = r->region_number() / _bitmap_regions_per_slice;
+  size_t slice = r->index() / _bitmap_regions_per_slice;
   size_t off = _bitmap_bytes_per_slice * slice;
   size_t len = _bitmap_bytes_per_slice;
   if (!os::commit_memory((char*)_bitmap_region.start() + off, len, false)) {
@@ -2565,7 +2565,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   }
 
   // Uncommit the bitmap slice:
-  size_t slice = r->region_number() / _bitmap_regions_per_slice;
+  size_t slice = r->index() / _bitmap_regions_per_slice;
   size_t off = _bitmap_bytes_per_slice * slice;
   size_t len = _bitmap_bytes_per_slice;
   if (!os::uncommit_memory((char*)_bitmap_region.start() + off, len)) {

@@ -238,7 +238,7 @@ private:
   static PaddedAllocSeqNum _alloc_seq_num;
 
   // Never updated fields
-  size_t const _region_number;
+  size_t const _index;
   HeapWord* const _bottom;
   HeapWord* const _end;
 
@@ -353,8 +353,8 @@ public:
     return _alloc_seq_num.value - 1;
   }
 
-  inline size_t region_number() const {
-    return _region_number;
+  inline size_t index() const {
+    return _index;
   }
 
   // Allocation (return NULL if full)

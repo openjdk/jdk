@@ -414,7 +414,7 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
     ShenandoahHeapRegion *r = heap->get_region(c - 1);
     if (r->is_humongous_continuation() || (r->new_top() == r->bottom())) {
       // To-region candidate: record this, and continue scan
-      to_begin = r->region_number();
+      to_begin = r->index();
       continue;
     }
 
@@ -426,7 +426,7 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
 
       size_t start = to_end - num_regions;
 
-      if (start >= to_begin && start != r->region_number()) {
+      if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
         _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark_raw());
         old_obj->forward_to(oop(heap->get_region(start)->bottom()));
@@ -436,8 +436,8 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
     }
 
     // Failed to fit. Scan starting from current region.
-    to_begin = r->region_number();
-    to_end = r->region_number();
+    to_begin = r->index();
+    to_end = r->index();
   }
 }
 
@@ -457,7 +457,7 @@ public:
     if (r->is_empty_uncommitted()) {
       r->make_committed_bypass();
     }
-    assert (r->is_committed(), "only committed regions in heap now, see region " SIZE_FORMAT, r->region_number());
+    assert (r->is_committed(), "only committed regions in heap now, see region " SIZE_FORMAT, r->index());
 
     // Record current region occupancy: this communicates empty regions are free
     // to the rest of Full GC code.
@@ -480,16 +480,16 @@ public:
       oop humongous_obj = oop(r->bottom());
       if (!_ctx->is_marked(humongous_obj)) {
         assert(!r->has_live(),
-               "Region " SIZE_FORMAT " is not marked, should not have live", r->region_number());
+               "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
         _heap->trash_humongous_region_at(r);
       } else {
         assert(r->has_live(),
-               "Region " SIZE_FORMAT " should have live", r->region_number());
+               "Region " SIZE_FORMAT " should have live", r->index());
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
       assert(r->humongous_start_region()->has_live(),
-             "Region " SIZE_FORMAT " should have live", r->region_number());
+             "Region " SIZE_FORMAT " should have live", r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();
@@ -624,10 +624,10 @@ void ShenandoahMarkCompact::distribute_slices(ShenandoahHeapRegionSet** worker_s
     ShenandoahHeapRegionSetIterator it(worker_slices[wid]);
     ShenandoahHeapRegion* r = it.next();
     while (r != NULL) {
-      size_t num = r->region_number();
-      assert(ShenandoahPrepareForCompactionTask::is_candidate_region(r), "Sanity: " SIZE_FORMAT, num);
-      assert(!map.at(num), "No region distributed twice: " SIZE_FORMAT, num);
-      map.at_put(num, true);
+      size_t idx = r->index();
+      assert(ShenandoahPrepareForCompactionTask::is_candidate_region(r), "Sanity: " SIZE_FORMAT, idx);
+      assert(!map.at(idx), "No region distributed twice: " SIZE_FORMAT, idx);
+      map.at_put(idx, true);
       r = it.next();
     }
   }
@@ -904,12 +904,12 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
       size_t words_size = old_obj->size();
       size_t num_regions = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
-      size_t old_start = r->region_number();
+      size_t old_start = r->index();
       size_t old_end   = old_start + num_regions - 1;
       size_t new_start = heap->heap_region_index_containing(old_obj->forwardee());
       size_t new_end   = new_start + num_regions - 1;
       assert(old_start != new_start, "must be real move");
-      assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->region_number());
+      assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->index());
 
       Copy::aligned_conjoint_words(heap->get_region(old_start)->bottom(),
                                    heap->get_region(new_start)->bottom(),

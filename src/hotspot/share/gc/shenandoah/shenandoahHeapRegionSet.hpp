@@ -84,7 +84,7 @@ public:
   bool is_empty() const { return _region_count == 0; }
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
-  inline bool is_in(size_t region_number)    const;
+  inline bool is_in(size_t region_idx)       const;
   inline bool is_in(oop p)                   const;
 
   void print_on(outputStream* out) const;

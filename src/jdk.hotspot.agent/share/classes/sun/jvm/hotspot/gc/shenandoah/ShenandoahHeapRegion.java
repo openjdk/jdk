@@ -57,7 +57,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
 
     private static CIntegerField RegionSizeBytesField;
     private static Field         RegionStateField;
-    private static CIntegerField RegionNumberField;
+    private static CIntegerField RegionIndexField;
     private static CIntegerField RegionSizeBytesShiftField;
 
     private static AddressField BottomField;
@@ -78,7 +78,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         Type type = db.lookupType("ShenandoahHeapRegion");
         RegionSizeBytesField = type.getCIntegerField("RegionSizeBytes");
         RegionStateField = type.getField("_state");
-        RegionNumberField = type.getCIntegerField("_region_number");
+        RegionIndexField = type.getCIntegerField("_index");
         BottomField = type.getAddressField("_bottom");
         TopField = type.getAddressField("_top");
         EndField = type.getAddressField("_end");
@@ -127,14 +127,14 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
 
     @Override
     public int hashCode() {
-        return (int)regionNumber();
+        return (int)index();
     }
 
     @Override
     public boolean equals(Object other) {
         if (other instanceof ShenandoahHeapRegion) {
             ShenandoahHeapRegion otherRegion = (ShenandoahHeapRegion)other;
-            return otherRegion.regionNumber() == regionNumber();
+            return otherRegion.index() == index();
         }
         return false;
     }
@@ -170,7 +170,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
     }
 
     private void handleHumongousRegion(List<MemRegion> res) {
-        long index = regionNumber();
+        long index = index();
         Address topAddr = top();
         ShenandoahHeapRegion region = heap.getRegion(++ index);
         while (region.regionState() == HumongousCont) {
@@ -217,8 +217,8 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         }
     }
 
-    public long regionNumber() {
-        return RegionNumberField.getValue(addr);
+    public long index() {
+        return RegionIndexField.getValue(addr);
     }
 
     private boolean hasForwardee(Address rawPtr) {

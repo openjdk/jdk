@@ -53,7 +53,7 @@ bool ShenandoahMarkingContext::is_bitmap_clear_range(HeapWord* start, HeapWord* 
 }
 
 void ShenandoahMarkingContext::initialize_top_at_mark_start(ShenandoahHeapRegion* r) {
-  size_t idx = r->region_number();
+  size_t idx = r->index();
   HeapWord *bottom = r->bottom();
   _top_at_mark_starts_base[idx] = bottom;
   _top_bitmaps[idx] = bottom;
@@ -61,13 +61,13 @@ void ShenandoahMarkingContext::initialize_top_at_mark_start(ShenandoahHeapRegion
 
 void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
   HeapWord* bottom = r->bottom();
-  HeapWord* top_bitmap = _top_bitmaps[r->region_number()];
+  HeapWord* top_bitmap = _top_bitmaps[r->index()];
   if (top_bitmap > bottom) {
     _mark_bit_map.clear_range_large(MemRegion(bottom, top_bitmap));
-    _top_bitmaps[r->region_number()] = bottom;
+    _top_bitmaps[r->index()] = bottom;
   }
   assert(is_bitmap_clear_range(bottom, r->end()),
-         "Region " SIZE_FORMAT " should have no marks in bitmap", r->region_number());
+         "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
 }
 
 bool ShenandoahMarkingContext::is_complete() {

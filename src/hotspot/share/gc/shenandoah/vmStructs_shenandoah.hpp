@@ -37,7 +37,7 @@
   static_field(ShenandoahHeapRegion, RegionSizeBytes,              size_t)                            \
   static_field(ShenandoahHeapRegion, RegionSizeBytesShift,         size_t)                            \
   nonstatic_field(ShenandoahHeapRegion, _state,                    ShenandoahHeapRegion::RegionState) \
-  nonstatic_field(ShenandoahHeapRegion, _region_number,            size_t const)                      \
+  nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                      \
   nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                   \
   nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                         \
   nonstatic_field(ShenandoahHeapRegion, _end,                      HeapWord* const)                   \
