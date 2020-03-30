@@ -1124,16 +1124,41 @@ public final class StrictMath {
      * If the argument is not negative, the argument is returned.
      * If the argument is negative, the negation of the argument is returned.
      *
-     * <p>Note that if the argument is equal to the value of
-     * {@link Integer#MIN_VALUE}, the most negative representable
-     * {@code int} value, the result is that same value, which is
-     * negative.
+     * <p>Note that if the argument is equal to the value of {@link
+     * Integer#MIN_VALUE}, the most negative representable {@code int}
+     * value, the result is that same value, which is negative. In
+     * contrast, the {@link StrictMath#absExact(int)} method throws an
+     * {@code ArithmeticException} for this value.
      *
      * @param   a   the  argument whose absolute value is to be determined.
      * @return  the absolute value of the argument.
+     * @see Math#absExact(int)
      */
     public static int abs(int a) {
         return Math.abs(a);
+    }
+
+    /**
+     * Returns the mathematical absolute value of an {@code int} value
+     * if it is exactly representable as an {@code int}, throwing
+     * {@code ArithmeticException} if the result overflows the
+     * positive {@code int} range.
+     *
+     * <p>Since the range of two's complement integers is asymmetric
+     * with one additional negative value (JLS {@jls 4.2.1}), the
+     * mathematical absolute value of {@link Integer#MIN_VALUE}
+     * overflows the positive {@code int} range, so an exception is
+     * thrown for that argument.
+     *
+     * @param  a  the argument whose absolute value is to be determined
+     * @return the absolute value of the argument, unless overflow occurs
+     * @throws ArithmeticException if the argument is {@link Integer#MIN_VALUE}
+     * @see Math#abs(int)
+     * @see Math#absExact(int)
+     * @since 15
+     */
+    public static int absExact(int a) {
+        return Math.absExact(a);
     }
 
     /**
@@ -1141,16 +1166,41 @@ public final class StrictMath {
      * If the argument is not negative, the argument is returned.
      * If the argument is negative, the negation of the argument is returned.
      *
-     * <p>Note that if the argument is equal to the value of
-     * {@link Long#MIN_VALUE}, the most negative representable
-     * {@code long} value, the result is that same value, which
-     * is negative.
+     * <p>Note that if the argument is equal to the value of {@link
+     * Long#MIN_VALUE}, the most negative representable {@code long}
+     * value, the result is that same value, which is negative. In
+     * contrast, the {@link StrictMath#absExact(long)} method throws
+     * an {@code ArithmeticException} for this value.
      *
      * @param   a   the  argument whose absolute value is to be determined.
      * @return  the absolute value of the argument.
+     * @see Math#absExact(long)
      */
     public static long abs(long a) {
         return Math.abs(a);
+    }
+
+    /**
+     * Returns the mathematical absolute value of an {@code long} value
+     * if it is exactly representable as an {@code long}, throwing
+     * {@code ArithmeticException} if the result overflows the
+     * positive {@code long} range.
+     *
+     * <p>Since the range of two's complement integers is asymmetric
+     * with one additional negative value (JLS {@jls 4.2.1}), the
+     * mathematical absolute value of {@link Long#MIN_VALUE} overflows
+     * the positive {@code long} range, so an exception is thrown for
+     * that argument.
+     *
+     * @param  a  the argument whose absolute value is to be determined
+     * @return the absolute value of the argument, unless overflow occurs
+     * @throws ArithmeticException if the argument is {@link Long#MIN_VALUE}
+     * @see Math#abs(long)
+     * @see Math#absExact(long)
+     * @since 15
+     */
+    public static long absExact(long a) {
+        return Math.absExact(a);
     }
 
     /**
