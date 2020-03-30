@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @test
  * @key headful
- * @bug 8150176 8151773 8150176
+ * @bug 8150176 8151773 8150176 8241791
  * @summary Check if correct resolution variant is used for tray icon.
  * @run main/manual/othervm -Dsun.java2d.uiScale=2 MultiResolutionTrayIconTest
  */
@@ -73,7 +73,11 @@ public class MultiResolutionTrayIconTest {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 mainFrame = new JFrame("TrayIcon Test");
-                boolean trayIsSupported = SystemTray.isSupported();
+                if (!SystemTray.isSupported()) {
+                    System.out.println("system tray is not supported");
+                    latch.countDown();
+                    return;
+                }
                 tray = SystemTray.getSystemTray();
                 Dimension d = tray.getTrayIconSize();
                 icon = new TrayIcon(createIcon(d.width, d.height));
@@ -98,16 +102,9 @@ public class MultiResolutionTrayIconTest {
                 mainControlPanel.add(instructionText, gbc);
                 startButton = new JButton("Start");
                 startButton.setActionCommand("Start");
-                if (trayIsSupported) {
-
-                    startButton.addActionListener((ActionEvent e) -> {
-                        doTest();
-                    });
-                } else {
-                    startButton.setEnabled(false);
-                    System.out.println("system tray is not supported");
-                    latch.countDown();
-                }
+                startButton.addActionListener((ActionEvent e) -> {
+                    doTest();
+                });
                 gbc.gridx = 0;
                 gbc.gridy = 0;
                 resultButtonPanel.add(startButton, gbc);
@@ -195,4 +192,3 @@ public class MultiResolutionTrayIconTest {
         }
     }
 }
-
