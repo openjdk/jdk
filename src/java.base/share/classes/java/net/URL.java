@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,7 @@ public final class URL implements java.io.Serializable {
      * @param      file       the file on the host
      * @param      handler    the stream handler for the URL.
      * @throws     MalformedURLException  if an unknown protocol or the port
-                        is a negative number other than -1
+     *                    is a negative number other than -1
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
@@ -781,7 +781,7 @@ public final class URL implements java.io.Serializable {
      *
      * @param protocol the name of the protocol to use
      * @param host the name of the host
-       @param port the port number on the host
+     * @param port the port number on the host
      * @param file the file on the host
      * @param ref the internal reference in the URL
      */

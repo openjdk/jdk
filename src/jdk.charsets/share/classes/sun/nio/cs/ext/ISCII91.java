@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,11 +489,11 @@ public class ISCII91 extends Charset implements HistoricallyNamedCharset
             return CoderResult.UNDERFLOW;
         }
 
-        /*Rules:
-         * 1)ATR,EXT,following character to be replaced with '\ufffd'
-         * 2)Halant + Halant => '\u094d' (Virama) + '\u200c'(ZWNJ)
-         * 3)Halant + Nukta => '\u094d' (Virama) + '\u200d'(ZWJ)
-        */
+        /* Rules:
+         * 1) ATR,EXT,following character to be replaced with '\ufffd'
+         * 2) Halant + Halant => '\u094d' (Virama) + '\u200c'(ZWNJ)
+         * 3) Halant + Nukta => '\u094d' (Virama) + '\u200d'(ZWJ)
+         */
         private CoderResult decodeArrayLoop(ByteBuffer src,
                                              CharBuffer dst)
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
         jarFileURLConnection.setIfModifiedSince(ifmodifiedsince);
     }
 
-   /**
+    /**
      * Sets the default value of the <code>useCaches</code> field to the
      * specified value.
      *
@@ -361,7 +361,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
         jarFileURLConnection.setDefaultUseCaches(defaultusecaches);
     }
 
-   /**
+    /**
      * Returns the default value of a <code>URLConnection</code>'s
      * <code>useCaches</code> flag.
      * <p>

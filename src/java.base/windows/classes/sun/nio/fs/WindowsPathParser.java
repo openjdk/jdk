@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ class WindowsPathParser {
     /**
      * Remove redundant slashes from the rest of the path, forcing all slashes
      * into the preferred slash.
-    */
+     */
     private static String normalize(StringBuilder sb, String path, int off) {
         int len = path.length();
         off = nextNonSlash(path, off, len);

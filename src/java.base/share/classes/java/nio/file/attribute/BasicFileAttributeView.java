@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.io.IOException;
  * attributes common to many file systems. The basic set of file attributes
  * consist of <em>mandatory</em> and <em>optional</em> file attributes as
  * defined by the {@link BasicFileAttributes} interface.
-
+ *
  * <p> The file attributes are retrieved from the file system as a <em>bulk
  * operation</em> by invoking the {@link #readAttributes() readAttributes} method.
  * This class also defines the {@link #setTimes setTimes} method to update the

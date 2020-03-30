@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class SolarisEventPort
 
     @Override
     void shutdownHandlerTasks() {
-       /*
+        /*
          * If no tasks are running then just release resources; otherwise
          * write to the one end of the socketpair to wakeup any polling threads..
          */

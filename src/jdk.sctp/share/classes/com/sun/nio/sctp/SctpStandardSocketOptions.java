@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,11 +190,11 @@ public class SctpStandardSocketOptions {
      * the association parameter is not required and this option can be
      * set or queried directly.
      */
-     public static final SctpSocketOption<SocketAddress> SCTP_PRIMARY_ADDR =
-             new SctpStdSocketOption<SocketAddress>
-             ("SCTP_PRIMARY_ADDR", SocketAddress.class);
+    public static final SctpSocketOption<SocketAddress> SCTP_PRIMARY_ADDR =
+            new SctpStdSocketOption<SocketAddress>
+            ("SCTP_PRIMARY_ADDR", SocketAddress.class);
 
-     /**
+    /**
      * Requests that the peer mark the enclosed address as the association
      * primary.
      *

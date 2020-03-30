@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ import static sun.nio.cs.CharsetMapping.*;
  *    Non-kanji area at 0x7921-0x7c7e.
  *
  * Compared to JIS_X_0208 mapping, this MS932 based mapping has
-
+ *
  * (a)different mappings for 7 JIS codepoints
  *        0x213d <-> U2015
  *        0x2141 <-> UFF5E
