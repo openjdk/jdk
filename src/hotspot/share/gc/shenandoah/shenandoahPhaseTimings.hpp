@@ -82,7 +82,6 @@ class outputStream;
   f(complete_liveness,                              "  Complete Liveness")             \
   f(retire_tlabs,                                   "  Retire TLABs")                  \
   f(sync_pinned,                                    "  Sync Pinned")                   \
-  f(trash_cset,                                     "  Trash CSet")                    \
   f(prepare_evac,                                   "  Prepare Evacuation")            \
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_GC_PAR_PHASE_DO(evac_,                 "    E: ", f)                      \

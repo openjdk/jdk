@@ -1489,12 +1489,6 @@ void ShenandoahHeap::op_final_mark() {
       sync_pinned_region_status();
     }
 
-    // Trash the collection set left over from previous cycle, if any.
-    {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::trash_cset);
-      trash_cset_regions();
-    }
-
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::prepare_evac);
 
