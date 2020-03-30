@@ -353,7 +353,9 @@ public:
     return _alloc_seq_num.value - 1;
   }
 
-  size_t region_number() const;
+  inline size_t region_number() const {
+    return _region_number;
+  }
 
   // Allocation (return NULL if full)
   inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest::Type type);

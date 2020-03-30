@@ -77,10 +77,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   }
 }
 
-size_t ShenandoahHeapRegion::region_number() const {
-  return _region_number;
-}
-
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
   ResourceMark rm;
   stringStream ss;
