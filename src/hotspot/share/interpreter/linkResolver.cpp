@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -986,10 +986,10 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
     // (2) by the <clinit> method (in case of a static field)
     //     or by the <init> method (in case of an instance field).
     if (is_put && fd.access_flags().is_final()) {
-      ResourceMark rm(THREAD);
-      stringStream ss;
 
       if (sel_klass != current_klass) {
+        ResourceMark rm(THREAD);
+        stringStream ss;
         ss.print("Update to %s final field %s.%s attempted from a different class (%s) than the field's declaring class",
                  is_static ? "static" : "non-static", resolved_klass->external_name(), fd.name()->as_C_string(),
                 current_klass->external_name());
@@ -1007,6 +1007,8 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
                                                      !m->is_object_initializer());
 
         if (is_initialized_static_final_update || is_initialized_instance_final_update) {
+          ResourceMark rm(THREAD);
+          stringStream ss;
           ss.print("Update to %s final field %s.%s attempted from a different method (%s) than the initializer method %s ",
                    is_static ? "static" : "non-static", resolved_klass->external_name(), fd.name()->as_C_string(),
                    m->name()->as_C_string(),
