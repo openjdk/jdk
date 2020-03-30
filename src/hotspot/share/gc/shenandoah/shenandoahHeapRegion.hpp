@@ -254,7 +254,6 @@ private:
 
   size_t _tlab_allocs;
   size_t _gclab_allocs;
-  size_t _shared_allocs;
 
   uint64_t _seqnum_last_alloc_mutator;
 

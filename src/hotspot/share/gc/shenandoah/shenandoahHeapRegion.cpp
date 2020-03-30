@@ -65,7 +65,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _top(start),
   _tlab_allocs(0),
   _gclab_allocs(0),
-  _shared_allocs(0),
   _seqnum_last_alloc_mutator(0),
   _live_data(0),
   _critical_pins(0),
@@ -315,7 +314,6 @@ void ShenandoahHeapRegion::clear_live_data() {
 void ShenandoahHeapRegion::reset_alloc_metadata() {
   _tlab_allocs = 0;
   _gclab_allocs = 0;
-  _shared_allocs = 0;
   _seqnum_last_alloc_mutator = 0;
 }
 
@@ -323,7 +321,6 @@ void ShenandoahHeapRegion::reset_alloc_metadata_to_shared() {
   if (used() > 0) {
     _tlab_allocs = 0;
     _gclab_allocs = 0;
-    _shared_allocs = used() >> LogHeapWordSize;
     if (ShenandoahHeap::heap()->is_traversal_mode()) {
       update_seqnum_last_alloc_mutator();
     }
@@ -339,7 +336,7 @@ void ShenandoahHeapRegion::update_seqnum_last_alloc_mutator() {
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return _shared_allocs * HeapWordSize;
+  return used() - (_tlab_allocs + _gclab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {

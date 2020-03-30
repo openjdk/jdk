@@ -55,7 +55,7 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
     case ShenandoahAllocRequest::_alloc_shared_gc:
-      _shared_allocs += size;
+      // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
       _tlab_allocs += size;
