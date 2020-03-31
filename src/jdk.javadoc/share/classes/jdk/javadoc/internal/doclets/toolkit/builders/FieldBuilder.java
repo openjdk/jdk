@@ -120,7 +120,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
         }
         if (!fields.isEmpty()) {
             Content fieldDetailsTreeHeader = writer.getFieldDetailsTreeHeader(memberDetailsTree);
-            Content fieldDetailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
@@ -131,10 +131,10 @@ public class FieldBuilder extends AbstractMemberBuilder {
                 buildFieldComments(fieldDocTree);
                 buildTagInfo(fieldDocTree);
 
-                fieldDetailsTree.add(writer.getFieldDoc(fieldDocTree));
+                memberList.add(writer.getMemberListItem(fieldDocTree));
             }
             memberDetailsTree.add(
-                    writer.getFieldDetails(fieldDetailsTreeHeader, fieldDetailsTree));
+                    writer.getFieldDetails(fieldDetailsTreeHeader, memberList));
         }
     }
 
@@ -158,7 +158,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the field.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param fieldDocTree the content tree to which the documentation will be added
      */

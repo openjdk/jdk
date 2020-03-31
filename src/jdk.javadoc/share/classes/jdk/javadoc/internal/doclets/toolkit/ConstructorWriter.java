@@ -37,7 +37,7 @@ import javax.lang.model.element.TypeElement;
  *  deletion without notice.</b>
  */
 
-public interface ConstructorWriter {
+public interface ConstructorWriter extends MemberWriter {
 
     /**
      * Get the constructor details tree header.
@@ -95,14 +95,6 @@ public interface ConstructorWriter {
      * @return content tree for the constructor details
      */
     Content getConstructorDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
-
-    /**
-     * Get the constructor documentation.
-     *
-     * @param constructorDocTree the content tree representing constructor documentation
-     * @return content tree for the constructor documentation
-     */
-    Content getConstructorDoc(Content constructorDocTree);
 
     /**
      * Let the writer know whether a non public constructor was found.

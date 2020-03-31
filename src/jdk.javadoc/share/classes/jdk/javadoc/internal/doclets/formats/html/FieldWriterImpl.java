@@ -128,11 +128,6 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public Content getFieldDoc(Content fieldTree) {
-        return getMemberTree(fieldTree);
-    }
-
-    @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.fieldSummaryLabel);

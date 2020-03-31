@@ -234,8 +234,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 }
                 table.addRow(classLink, description);
             }
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            summaryContentTree.add(li);
+            summaryContentTree.add(HtmlTree.LI(table));
         }
     }
 

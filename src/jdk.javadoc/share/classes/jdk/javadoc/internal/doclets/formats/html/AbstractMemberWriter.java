@@ -51,6 +51,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.MemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
@@ -70,7 +71,7 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class AbstractMemberWriter implements MemberSummaryWriter {
+public abstract class AbstractMemberWriter implements MemberSummaryWriter, MemberWriter {
 
     protected final HtmlConfiguration configuration;
     protected final HtmlOptions options;
@@ -465,6 +466,16 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     @Override
     public Content getMemberTree(Content memberTree) {
         return writer.getMemberTree(memberTree);
+    }
+
+    @Override
+    public Content getMemberList() {
+        return writer.getMemberList();
+    }
+
+    @Override
+    public Content getMemberListItem(Content memberTree) {
+        return writer.getMemberListItem(memberTree);
     }
 
     /**

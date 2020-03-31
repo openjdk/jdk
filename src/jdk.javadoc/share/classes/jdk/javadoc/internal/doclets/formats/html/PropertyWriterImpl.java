@@ -140,11 +140,6 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public Content getPropertyDoc(Content propertyDocTree) {
-        return getMemberTree(propertyDocTree);
-    }
-
-    @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.propertySummaryLabel);

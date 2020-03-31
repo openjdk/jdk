@@ -401,9 +401,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 }
                 table.addRow(link, desc);
             }
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
-            contentTree.add(ul);
+            // note: singleton list
+            contentTree.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
         }
     }
 

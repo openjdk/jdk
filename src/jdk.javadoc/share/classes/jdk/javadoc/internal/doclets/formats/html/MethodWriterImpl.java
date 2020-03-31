@@ -177,11 +177,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    public Content getMethodDoc(Content methodDocTree) {
-        return getMemberTree(methodDocTree);
-    }
-
-    @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.methodSummary);

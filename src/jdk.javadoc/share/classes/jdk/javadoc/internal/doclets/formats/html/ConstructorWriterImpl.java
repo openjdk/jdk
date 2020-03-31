@@ -158,11 +158,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setId(SectionName.CONSTRUCTOR_DETAIL.getName()));
     }
 
-    @Override
-    public Content getConstructorDoc(Content constructorDocTree) {
-        return getMemberTree(constructorDocTree);
-    }
-
     /**
      * Let the writer know whether a non public constructor was found.
      *

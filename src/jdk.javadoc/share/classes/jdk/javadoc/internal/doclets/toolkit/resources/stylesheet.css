@@ -258,16 +258,16 @@ ul.sub-nav-list li {
  * Styles for headings.
  */
 body.class-declaration-page .summary h2,
-body.class-declaration-page  .details h2,
+body.class-declaration-page .details h2,
 body.class-use-page  h2,
 body.module-declaration-page  .block-list h2 {
     font-style: italic;
     padding:0;
     margin:15px 0;
 }
-body.class-declaration-page  .summary h3,
-body.class-declaration-page  .details h3,
-body.class-declaration-page  .summary .inherited-list h2 {
+body.class-declaration-page .summary h3,
+body.class-declaration-page .details h3,
+body.class-declaration-page .summary .inherited-list h2 {
     background-color:#dee3e9;
     border:1px solid #d0d9e0;
     margin:0 0 6px -8px;
@@ -321,11 +321,11 @@ div.inheritance {
 div.inheritance div.inheritance {
     margin-left:2em;
 }
-ul.block-list {
+ul.block-list, ul.member-list {
     margin:10px 0 10px 0;
     padding:0;
 }
-ul.block-list li.block-list {
+ul.block-list > li, ul.member-list > li {
     list-style:none;
     margin-bottom:15px;
     line-height:1.4;

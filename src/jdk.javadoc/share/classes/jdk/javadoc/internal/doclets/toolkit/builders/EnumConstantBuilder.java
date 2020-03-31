@@ -119,22 +119,22 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         if (hasMembersToDocument()) {
             Content enumConstantsDetailsTreeHeader = writer.getEnumConstantsDetailsTreeHeader(typeElement,
                     memberDetailsTree);
-            Content enumConstantsDetailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
                 Content enumConstantsTree = writer.getEnumConstantsTreeHeader(currentElement,
-                        enumConstantsDetailsTree);
+                        memberList);
 
                 buildSignature(enumConstantsTree);
                 buildDeprecationInfo(enumConstantsTree);
                 buildEnumConstantComments(enumConstantsTree);
                 buildTagInfo(enumConstantsTree);
 
-                enumConstantsDetailsTree.add(writer.getEnumConstants(enumConstantsTree));
+                memberList.add(writer.getMemberListItem(enumConstantsTree));
             }
             memberDetailsTree.add(
-                    writer.getEnumConstantsDetails(enumConstantsDetailsTreeHeader, enumConstantsDetailsTree));
+                    writer.getEnumConstantsDetails(enumConstantsDetailsTreeHeader, memberList));
         }
     }
 
@@ -158,7 +158,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the enum constant.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param enumConstantsTree the content tree to which the documentation will be added
      */

@@ -231,7 +231,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public void addPackageSerializedTree(Content serializedSummariesTree,
                                          Content packageSerializedTree)
     {
-        serializedSummariesTree.add(HtmlTree.LI(HtmlStyle.blockList, packageSerializedTree));
+        serializedSummariesTree.add(HtmlTree.LI(packageSerializedTree));
     }
 
     /**

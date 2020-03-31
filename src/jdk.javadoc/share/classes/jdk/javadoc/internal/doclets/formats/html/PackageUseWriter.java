@@ -220,7 +220,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 table.addRow(typeContent, summary);
             }
             section.add(table);
-            ul.add(HtmlTree.LI(HtmlStyle.blockList, section));
+            ul.add(HtmlTree.LI(section));
         }
         Content li = HtmlTree.SECTION(HtmlStyle.packageUses, ul);
         contentTree.add(li);

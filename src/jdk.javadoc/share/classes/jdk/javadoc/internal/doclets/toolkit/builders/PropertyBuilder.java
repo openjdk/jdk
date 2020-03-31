@@ -120,7 +120,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
         }
         if (hasMembersToDocument()) {
             Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(memberDetailsTree);
-            Content propertyDetailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -130,10 +130,10 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                 buildPropertyComments(propertyDocTree);
                 buildTagInfo(propertyDocTree);
 
-                propertyDetailsTree.add(writer.getPropertyDoc(propertyDocTree));
+                memberList.add(writer.getMemberListItem(propertyDocTree));
             }
             memberDetailsTree.add(
-                    writer.getPropertyDetails(propertyDetailsTreeHeader, propertyDetailsTree));
+                    writer.getPropertyDetails(propertyDetailsTreeHeader, memberList));
         }
     }
 
@@ -157,7 +157,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the property.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param propertyDocTree the content tree to which the documentation will be added
      */

@@ -137,7 +137,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         if (hasMembersToDocument()) {
             writer.addAnnotationDetailsMarker(memberDetailsTree);
             Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader();
-            Content detailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element member : members) {
                 currentMember = member;
@@ -145,9 +145,9 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
                 buildAnnotationTypeMemberChildren(annotationDocTree);
 
-                detailsTree.add(writer.getAnnotationDoc(annotationDocTree));
+                memberList.add(writer.getMemberListItem(annotationDocTree));
             }
-            memberDetailsTree.add(writer.getAnnotationDetails(annotationDetailsTreeHeader, detailsTree));
+            memberDetailsTree.add(writer.getAnnotationDetails(annotationDetailsTreeHeader, memberList));
         }
     }
 
@@ -178,7 +178,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the member.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param annotationDocTree the content tree to which the documentation will be added
      */

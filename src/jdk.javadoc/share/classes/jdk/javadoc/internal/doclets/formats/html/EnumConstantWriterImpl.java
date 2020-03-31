@@ -128,11 +128,6 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public Content getEnumConstants(Content enumConstantsTree) {
-        return getMemberTree(enumConstantsTree);
-    }
-
-    @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.enumConstantSummary);

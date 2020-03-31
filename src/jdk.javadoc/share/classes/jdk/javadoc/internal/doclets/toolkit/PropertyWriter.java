@@ -37,7 +37,7 @@ import javax.lang.model.element.TypeElement;
  *  deletion without notice.</b>
  */
 
-public interface PropertyWriter {
+public interface PropertyWriter extends MemberWriter {
 
     /**
      * Get the property details tree header.
@@ -95,14 +95,6 @@ public interface PropertyWriter {
      * @return content tree for the property details
      */
     Content getPropertyDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
-
-    /**
-     * Get the property documentation.
-     *
-     * @param propertyDocTree the content tree representing property documentation
-     * @return content tree for the property documentation
-     */
-    Content getPropertyDoc(Content propertyDocTree);
 
     /**
      * Gets the member header tree.

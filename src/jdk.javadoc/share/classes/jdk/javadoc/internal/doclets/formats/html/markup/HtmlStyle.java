@@ -85,6 +85,7 @@ public enum HtmlStyle {
     interfaceName,
     legalCopy,
     memberDetails,
+    memberList,
     memberNameLabel,
     memberNameLink,
     memberSummary,

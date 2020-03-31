@@ -316,7 +316,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
             htmlTree.add(heading);
             addClassUse(pkg, htmlTree);
-            ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
+            ul.add(HtmlTree.LI(htmlTree));
         }
         Content li = HtmlTree.SECTION(HtmlStyle.classUses, ul);
         contentTree.add(li);

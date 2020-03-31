@@ -118,7 +118,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
         }
         if (hasMembersToDocument()) {
             Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(memberDetailsTree);
-            Content methodDetailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
@@ -129,9 +129,9 @@ public class MethodBuilder extends AbstractMemberBuilder {
                 buildMethodComments(methodDocTree);
                 buildTagInfo(methodDocTree);
 
-                methodDetailsTree.add(writer.getMethodDoc(methodDocTree));
+                memberList.add(writer.getMemberListItem(methodDocTree));
             }
-            memberDetailsTree.add(writer.getMethodDetails(methodDetailsTreeHeader, methodDetailsTree));
+            memberDetailsTree.add(writer.getMethodDetails(methodDetailsTreeHeader, memberList));
         }
     }
 
@@ -155,7 +155,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the method.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param methodDocTree the content tree to which the documentation will be added
      */

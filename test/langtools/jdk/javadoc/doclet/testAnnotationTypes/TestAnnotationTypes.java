@@ -74,14 +74,14 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                     "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
-                    "<ul class=\"block-list\">",
-                    "<li class=\"block-list\">",
+                    "<ul class=\"member-list\">",
+                    "<li>",
                     "<section class=\"details\" id=\"annotation.type.element.detail\">",
                     "<h2>Element Details</h2>",
                     "<!--   -->",
                     "</a>",
-                    "<ul class=\"block-list\">",
-                    "<li class=\"block-list\">",
+                    "<ul class=\"member-list\">",
+                    "<li>",
                     "<section class=\"detail\" id=\"value()\">",
                     "<h3>value</h3>\n",
                     "<div class=\"member-signature\"><span class=\"return-type\">int</span>"

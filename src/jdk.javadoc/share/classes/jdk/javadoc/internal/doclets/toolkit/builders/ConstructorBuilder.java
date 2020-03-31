@@ -119,7 +119,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * Build the constructor documentation.
      *
      * @param memberDetailsTree the content tree to which the documentation will be added
-     * @throws DocletException is there is a problem while building the documentation
+     * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildConstructorDoc(Content memberDetailsTree) throws DocletException {
         if (writer == null) {
@@ -127,7 +127,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         }
         if (hasMembersToDocument()) {
             Content constructorDetailsTreeHeader = writer.getConstructorDetailsTreeHeader(memberDetailsTree);
-            Content constructorDetailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
@@ -138,10 +138,10 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                 buildConstructorComments(constructorDocTree);
                 buildTagInfo(constructorDocTree);
 
-                constructorDetailsTree.add(writer.getConstructorDoc(constructorDocTree));
+                memberList.add(writer.getMemberListItem(constructorDocTree));
             }
             memberDetailsTree.add(
-                    writer.getConstructorDetails(constructorDetailsTreeHeader, constructorDetailsTree));
+                    writer.getConstructorDetails(constructorDetailsTreeHeader, memberList));
         }
     }
 
@@ -165,7 +165,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the constructor.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param constructorDocTree the content tree to which the documentation will be added
      */

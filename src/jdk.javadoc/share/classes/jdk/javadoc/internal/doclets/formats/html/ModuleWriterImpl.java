@@ -514,7 +514,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 addModulesList(indirectModules, amrTable);
                 section.add(amrTable);
             }
-            summaryContentTree.add(HtmlTree.LI(HtmlStyle.blockList, section));
+            summaryContentTree.add(HtmlTree.LI(section));
         }
     }
 
@@ -560,7 +560,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 addIndirectPackages(aopTable, indirectOpenPackages);
                 section.add(aopTable);
             }
-            summaryContentTree.add(HtmlTree.LI(HtmlStyle.blockList, section));
+            summaryContentTree.add(HtmlTree.LI(section));
         }
     }
 
@@ -735,7 +735,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     section.add(table);
                 }
             }
-            summaryContentTree.add(HtmlTree.LI(HtmlStyle.blockList, section));
+            summaryContentTree.add(HtmlTree.LI(section));
         }
     }
 

@@ -141,11 +141,6 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public Content getAnnotationDoc(Content annotationDocTree) {
-        return getMemberTree(annotationDocTree);
-    }
-
-    @Override
     public void addSummaryLabel(Content memberTree) {
         HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.fieldSummaryLabel);

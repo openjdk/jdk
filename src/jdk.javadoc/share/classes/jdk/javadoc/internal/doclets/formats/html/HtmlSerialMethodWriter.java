@@ -94,7 +94,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
         Content section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
         section.add(serializableMethodContent);
-        return HtmlTree.LI(HtmlStyle.blockList, section);
+        return HtmlTree.LI(section);
     }
 
     /**

@@ -149,7 +149,7 @@ public class TestUseOption extends JavadocTester {
                 + "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
         );
         checkOutput("class-use/UsedInC.html", true,
-                "<li class=\"block-list\">\n"
+                "<li>\n"
                 + "<section class=\"detail\" id=\"unnamed.package\">\n"
         );
         checkOutput("package-use.html", true,
