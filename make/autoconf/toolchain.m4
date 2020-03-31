@@ -1092,15 +1092,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
       AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg is not a valid jtreg home])
     fi
 
-    JTREGEXE="$JT_HOME/bin/jtreg"
-    if test ! -x "$JTREGEXE"; then
-      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not contain valid jtreg executable])
-    fi
-
     AC_MSG_CHECKING([for jtreg test harness])
     AC_MSG_RESULT([$JT_HOME])
   else
-    # Try to locate jtreg
+    # Try to locate jtreg using the JT_HOME environment variable
     if test "x$JT_HOME" != x; then
       # JT_HOME set in environment, use it
       if test ! -d "$JT_HOME"; then
@@ -1110,11 +1105,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
         if test ! -e "$JT_HOME/lib/jtreg.jar"; then
           AC_MSG_WARN([Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME])
           JT_HOME=
-        elif test ! -x "$JT_HOME/bin/jtreg"; then
-          AC_MSG_WARN([Ignoring JT_HOME which does not contain valid jtreg executable: $JT_HOME])
-          JT_HOME=
         else
-          JTREGEXE="$JT_HOME/bin/jtreg"
           AC_MSG_NOTICE([Located jtreg using JT_HOME from environment])
         fi
       fi
@@ -1130,7 +1121,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
         if test ! -e "$JT_HOME/lib/jtreg.jar"; then
           AC_MSG_WARN([Ignoring jtreg from path since a valid jtreg home cannot be found])
           JT_HOME=
-          JTREGEXE=
         else
           AC_MSG_NOTICE([Located jtreg using jtreg executable in path])
         fi
@@ -1149,10 +1139,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
     fi
   fi
 
-  UTIL_FIXUP_EXECUTABLE(JTREGEXE)
   UTIL_FIXUP_PATH(JT_HOME)
   AC_SUBST(JT_HOME)
-  AC_SUBST(JTREGEXE)
 ])
 
 # Setup the JIB dependency resolver

@@ -885,6 +885,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             make_args: testOnlyMake,
             environment: {
                 "BOOT_JDK": common.boot_jdk_home,
+                "JT_HOME": input.get("jtreg", "home_path"),
                 "JDK_IMAGE_DIR": input.get(testedProfileJdk, "home_path"),
                 "TEST_IMAGE_DIR": input.get(testedProfileTest, "home_path")
             },
@@ -1063,7 +1064,8 @@ var getJibProfilesDependencies = function (input, common) {
             checksum_file: "MD5_VALUES",
             file: "bundles/jtreg_bin-5.0.zip",
             environment_name: "JT_HOME",
-            environment_path: input.get("jtreg", "install_path") + "/jtreg/bin"
+            environment_path: input.get("jtreg", "home_path") + "/bin",
+            configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
         },
 
         jmh: {

@@ -107,7 +107,8 @@ endif
 test:
 	$(RM) -r $(RUN_DIR)
 	$(MKDIR) -p $(RUN_DIR)
-	$(CD) $(FH_BASEDIR)/test && JT_JAVA=$(BOOT_JDK) $(JTREGEXE) \
+	$(CD) $(FH_BASEDIR)/test && $(JAVA) -Dprogram=jtreg \
+	    -jar $(JT_HOME)/lib/jtreg.jar \
 	    -jdk:$(BOOT_JDK) \
 	    $(JTREG_TEST_OPTS) \
 	    -timeout:0.1 -va -retain:all \
