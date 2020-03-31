@@ -98,13 +98,8 @@ address os::current_stack_pointer() {
   void *esp;
   __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
   return (address) ((char*)esp + sizeof(long)*2);
-#elif defined(__clang__)
-  void* esp;
-  __asm__ __volatile__ ("mov %%" SPELL_REG_SP ", %0":"=r"(esp):);
-  return (address) esp;
 #else
-  register void *esp __asm__ (SPELL_REG_SP);
-  return (address) esp;
+  return (address)__builtin_frame_address(0);
 #endif
 }
 
