@@ -36,7 +36,7 @@
 class VMStructs;
 class ShenandoahHeapRegionStateConstant;
 
-class ShenandoahHeapRegion : public CHeapObj<mtGC> {
+class ShenandoahHeapRegion {
   friend class VMStructs;
   friend class ShenandoahHeapRegionStateConstant;
 private:
@@ -261,9 +261,6 @@ private:
   volatile size_t _critical_pins;
 
   HeapWord* _update_watermark;
-
-  // Claim some space at the end to protect next region
-  shenandoah_padding(0);
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);

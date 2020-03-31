@@ -181,6 +181,7 @@ jint ShenandoahHeap::initialize() {
 
   size_t heap_page_size   = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
   size_t bitmap_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
+  size_t region_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
 
   //
   // Reserve and commit memory for heap
@@ -279,6 +280,15 @@ jint ShenandoahHeap::initialize() {
   //
   // Create regions and region sets
   //
+  size_t region_align = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
+  size_t region_storage_size = align_up(region_align * _num_regions, region_page_size);
+
+  ReservedSpace region_storage(region_storage_size, region_page_size);
+  MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
+  if (!region_storage.special()) {
+    os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
+                              "Cannot commit region memory");
+  }
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _free_set = new ShenandoahFreeSet(this, _num_regions);
@@ -290,7 +300,10 @@ jint ShenandoahHeap::initialize() {
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
-      ShenandoahHeapRegion* r = new ShenandoahHeapRegion(start, i, is_committed);
+      void* loc = region_storage.base() + i * region_align;
+
+      ShenandoahHeapRegion* r = new (loc) ShenandoahHeapRegion(start, i, is_committed);
+      assert(is_aligned(r, SHENANDOAH_CACHE_LINE_SIZE), "Sanity");
 
       _marking_context->initialize_top_at_mark_start(r);
       _regions[i] = r;

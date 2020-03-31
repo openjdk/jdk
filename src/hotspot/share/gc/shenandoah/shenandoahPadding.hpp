@@ -30,7 +30,9 @@
 // versions here. Shared code provides DEFAULT_CACHE_LINE_SIZE, which is
 // inconveniently large by default.
 
+#define SHENANDOAH_CACHE_LINE_SIZE 64
+
 #define shenandoah_padding(id) \
-  DEFINE_PAD_MINUS_SIZE(id, 64, 0)
+  DEFINE_PAD_MINUS_SIZE(id, SHENANDOAH_CACHE_LINE_SIZE, 0)
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_INLINE_HPP
