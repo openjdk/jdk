@@ -562,7 +562,7 @@ h1.hidden {
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link {
     font-weight:bold;
 }
-.deprecation-comment, .emphasized-phrase, .interface-name {
+.deprecation-comment, .help-footnote, .interface-name {
     font-style:italic;
 }
 .deprecation-block {
@@ -685,6 +685,9 @@ section.description {
 }
 .vertical-separator {
     padding: 0 5px;
+}
+ul.help-section-list {
+    margin: 0;
 }
 /*
  * Indicator icon for external links.
