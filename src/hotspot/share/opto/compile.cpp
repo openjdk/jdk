@@ -4224,3 +4224,20 @@ void CloneMap::dump(node_idx_t key) const {
     ni.dump();
   }
 }
+
+// Move Allocate nodes to the start of the list
+void Compile::sort_macro_nodes() {
+  int count = macro_count();
+  int allocates = 0;
+  for (int i = 0; i < count; i++) {
+    Node* n = macro_node(i);
+    if (n->is_Allocate()) {
+      if (i != allocates) {
+        Node* tmp = macro_node(allocates);
+        _macro_nodes->at_put(allocates, n);
+        _macro_nodes->at_put(i, tmp);
+      }
+      allocates++;
+    }
+  }
+}
