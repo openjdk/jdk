@@ -71,8 +71,8 @@ public abstract class AbstractPosixTerminal extends AbstractTerminal {
         }
     }
 
-    public void close() throws IOException {
-        super.close();
+    protected void doClose() throws IOException {
+        super.doClose();
         pty.setAttr(originalAttributes);
         pty.close();
     }

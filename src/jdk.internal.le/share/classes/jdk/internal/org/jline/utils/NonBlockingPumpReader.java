@@ -11,15 +11,25 @@ package jdk.internal.org.jline.utils;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.Writer;
-import java.nio.CharBuffer;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class NonBlockingPumpReader extends NonBlockingReader {
 
     private static final int DEFAULT_BUFFER_SIZE = 4096;
 
-    // Read and write buffer are backed by the same array
-    private final CharBuffer readBuffer;
-    private final CharBuffer writeBuffer;
+    private final char[] buffer;
+    private int read;
+    private int write;
+    private int count;
+
+    /** Main lock guarding all access */
+    final ReentrantLock lock;
+    /** Condition for waiting takes */
+    private final Condition notEmpty;
+    /** Condition for waiting puts */
+    private final Condition notFull;
 
     private final Writer writer;
 
@@ -30,111 +40,151 @@ public class NonBlockingPumpReader extends NonBlockingReader {
     }
 
     public NonBlockingPumpReader(int bufferSize) {
-        char[] buf = new char[bufferSize];
-        this.readBuffer = CharBuffer.wrap(buf);
-        this.writeBuffer = CharBuffer.wrap(buf);
+        this.buffer = new char[bufferSize];
         this.writer = new NbpWriter();
-        // There are no bytes available to read after initialization
-        readBuffer.limit(0);
+        this.lock = new ReentrantLock();
+        this.notEmpty = lock.newCondition();
+        this.notFull = lock.newCondition();
     }
 
     public Writer getWriter() {
         return this.writer;
     }
 
-    private int wait(CharBuffer buffer, long timeout) throws InterruptedIOException {
-        boolean isInfinite = (timeout <= 0L);
-        long end = 0;
-        if (!isInfinite) {
-            end = System.currentTimeMillis() + timeout;
-        }
-        while (!closed && !buffer.hasRemaining() && (isInfinite || timeout > 0L)) {
-            // Wake up waiting readers/writers
-            notifyAll();
-            try {
-                wait(timeout);
-            } catch (InterruptedException e) {
-                throw new InterruptedIOException();
-            }
-            if (!isInfinite) {
-                timeout = end - System.currentTimeMillis();
-            }
-        }
-        return closed
-                ? EOF
-                : buffer.hasRemaining()
-                    ? 0
-                    : READ_EXPIRED;
+    @Override
+    public boolean ready() {
+        return available() > 0;
     }
 
-    private static boolean rewind(CharBuffer buffer, CharBuffer other) {
-        // Extend limit of other buffer if there is additional input/output available
-        if (buffer.position() > other.position()) {
-            other.limit(buffer.position());
+    public int available() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return count;
+        } finally {
+            lock.unlock();
         }
-        // If we have reached the end of the buffer, rewind and set the new limit
-        if (buffer.position() == buffer.capacity()) {
-            buffer.rewind();
-            buffer.limit(other.position());
-            return true;
+    }
+
+    @Override
+    protected int read(long timeout, boolean isPeek) throws IOException {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            // Blocks until more input is available or the reader is closed.
+            if (!closed && count == 0) {
+                try {
+                    notEmpty.await(timeout, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    throw (IOException) new InterruptedIOException().initCause(e);
+                }
+            }
+            if (closed) {
+                return EOF;
+            } else if (count == 0) {
+                return READ_EXPIRED;
+            } else {
+                if (isPeek) {
+                    return buffer[read];
+                } else {
+                    int res = buffer[read];
+                    if (++read == buffer.length) {
+                        read = 0;
+                    }
+                    --count;
+                    notFull.signal();
+                    return res;
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public int readBuffered(char[] b) throws IOException {
+        if (b == null) {
+            throw new NullPointerException();
+        } else if (b.length == 0) {
+            return 0;
         } else {
-            return false;
-        }
-    }
-
-    @Override
-    public synchronized boolean ready() {
-        return readBuffer.hasRemaining();
-    }
-
-    public synchronized int available() {
-        int count = readBuffer.remaining();
-        if (writeBuffer.position() < readBuffer.position()) {
-            count += writeBuffer.position();
-        }
-        return count;
-    }
-
-    @Override
-    protected synchronized int read(long timeout, boolean isPeek) throws IOException {
-        // Blocks until more input is available or the reader is closed.
-        int res = wait(readBuffer, timeout);
-        if (res >= 0) {
-            res = isPeek ? readBuffer.get(readBuffer.position()) : readBuffer.get();
-        }
-        rewind(readBuffer, writeBuffer);
-        return res;
-    }
-
-    synchronized void write(char[] cbuf, int off, int len) throws IOException {
-        while (len > 0) {
-            // Blocks until there is new space available for buffering or the
-            // reader is closed.
-            if (wait(writeBuffer, 0L) == EOF) {
-                throw new ClosedException();
+            final ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                if (!closed && count == 0) {
+                    try {
+                        notEmpty.await();
+                    } catch (InterruptedException e) {
+                        throw (IOException) new InterruptedIOException().initCause(e);
+                    }
+                }
+                if (closed) {
+                    return EOF;
+                } else if (count == 0) {
+                    return READ_EXPIRED;
+                } else {
+                    int r = Math.min(b.length, count);
+                    for (int i = 0; i < r; i++) {
+                        b[i] = buffer[read++];
+                        if (read == buffer.length) {
+                            read = 0;
+                        }
+                    }
+                    count -= r;
+                    notFull.signal();
+                    return r;
+                }
+            } finally {
+                lock.unlock();
             }
-            // Copy as much characters as we can
-            int count = Math.min(len, writeBuffer.remaining());
-            writeBuffer.put(cbuf, off, count);
-            off += count;
-            len -= count;
-            // Update buffer states and rewind if necessary
-            rewind(writeBuffer, readBuffer);
         }
     }
 
-    synchronized void flush() {
-        // Avoid waking up readers when there is nothing to read
-        if (readBuffer.hasRemaining()) {
-            // Notify readers
-            notifyAll();
+    void write(char[] cbuf, int off, int len) throws IOException {
+        if (len > 0) {
+            final ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                while (len > 0) {
+                    // Blocks until there is new space available for buffering or the
+                    // reader is closed.
+                    if (!closed && count == buffer.length) {
+                        try {
+                            notFull.await();
+                        } catch (InterruptedException e) {
+                            throw (IOException) new InterruptedIOException().initCause(e);
+                        }
+                    }
+                    if (closed) {
+                        throw new IOException("Closed");
+                    }
+                    while (len > 0 && count < buffer.length) {
+                        buffer[write++] = cbuf[off++];
+                        count++;
+                        len--;
+                        if (write == buffer.length) {
+                            write = 0;
+                        }
+                    }
+                    notEmpty.signal();
+                }
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
     @Override
-    public synchronized void close() throws IOException {
-        this.closed = true;
-        notifyAll();
+    public void close() throws IOException {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            this.closed = true;
+            this.notEmpty.signalAll();
+            this.notFull.signalAll();
+        } finally {
+            lock.unlock();
+        }
     }
 
     private class NbpWriter extends Writer {
@@ -146,7 +196,6 @@ public class NonBlockingPumpReader extends NonBlockingReader {
 
         @Override
         public void flush() throws IOException {
-            NonBlockingPumpReader.this.flush();
         }
 
         @Override

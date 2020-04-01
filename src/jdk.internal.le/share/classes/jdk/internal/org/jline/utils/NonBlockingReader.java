@@ -85,6 +85,8 @@ public abstract class NonBlockingReader extends Reader {
         return 1;
     }
 
+    public abstract int readBuffered(char[] b) throws IOException;
+
     public int available() {
         return 0;
     }

@@ -8,13 +8,11 @@
  */
 package jdk.internal.org.jline.reader;
 
-import java.util.regex.Pattern;
+import java.io.IOException;
+import java.util.List;
 
-import jdk.internal.org.jline.utils.AttributedString;
-
-public interface Highlighter {
-
-    AttributedString highlight(LineReader reader, String buffer);
-    public void setErrorPattern(Pattern errorPattern);
-    public void setErrorIndex(int errorIndex);
+public interface Editor {
+    public void open(List<String> files) throws IOException;
+    public void run() throws IOException;
+    public void setRestricted(boolean restricted);
 }

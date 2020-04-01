@@ -19,9 +19,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import jdk.internal.org.jline.terminal.impl.AbstractPosixTerminal;
+import jdk.internal.org.jline.terminal.impl.AbstractTerminal;
 import jdk.internal.org.jline.terminal.impl.DumbTerminal;
 import jdk.internal.org.jline.terminal.impl.ExecPty;
 import jdk.internal.org.jline.terminal.impl.ExternalTerminal;
@@ -84,6 +86,8 @@ public final class TerminalBuilder {
     public static TerminalBuilder builder() {
         return new TerminalBuilder();
     }
+
+    private static final AtomicReference<Terminal> SYSTEM_TERMINAL = new AtomicReference<>();
 
     private String name;
     private InputStream in;
@@ -318,6 +322,7 @@ public final class TerminalBuilder {
                 Log.warn("Attributes and size fields are ignored when creating a system terminal");
             }
             IllegalStateException exception = new IllegalStateException("Unable to create a system terminal");
+            Terminal terminal = null;
             if (OSUtils.IS_WINDOWS) {
                 boolean cygwinTerm = "cygwin".equals(System.getenv("TERM"));
                 boolean ansiPassThrough = OSUtils.IS_CONEMU;
@@ -332,7 +337,7 @@ public final class TerminalBuilder {
                         if ("xterm".equals(type) && this.type == null && System.getProperty(PROP_TYPE) == null) {
                             type = "xterm-256color";
                         }
-                        return new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
+                        terminal = new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
                     } catch (IOException e) {
                         // Ignore if not a tty
                         Log.debug("Error creating EXEC based terminal: ", e.getMessage(), e);
@@ -341,7 +346,7 @@ public final class TerminalBuilder {
                 }
                 if (jna) {
                     try {
-                        return load(JnaSupport.class).winSysTerminal(name, type, ansiPassThrough, encoding, codepage, nativeSignals, signalHandler, paused, inputStreamWrapper);
+                        terminal = load(JnaSupport.class).winSysTerminal(name, type, ansiPassThrough, encoding, codepage, nativeSignals, signalHandler, paused, inputStreamWrapper);
                     } catch (Throwable t) {
                         Log.debug("Error creating JNA based terminal: ", t.getMessage(), t);
                         exception.addSuppressed(t);
@@ -349,7 +354,7 @@ public final class TerminalBuilder {
                 }
                 if (jansi) {
                     try {
-                        return load(JansiSupport.class).winSysTerminal(name, type, ansiPassThrough, encoding, codepage, nativeSignals, signalHandler, paused);
+                        terminal = load(JansiSupport.class).winSysTerminal(name, type, ansiPassThrough, encoding, codepage, nativeSignals, signalHandler, paused);
                     } catch (Throwable t) {
                         Log.debug("Error creating JANSI based terminal: ", t.getMessage(), t);
                         exception.addSuppressed(t);
@@ -359,7 +364,7 @@ public final class TerminalBuilder {
                 if (jna) {
                     try {
                         Pty pty = load(JnaSupport.class).current();
-                        return new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
+                        terminal = new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
                     } catch (Throwable t) {
                         // ignore
                         Log.debug("Error creating JNA based terminal: ", t.getMessage(), t);
@@ -369,7 +374,7 @@ public final class TerminalBuilder {
                 if (jansi) {
                     try {
                         Pty pty = load(JansiSupport.class).current();
-                        return new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
+                        terminal = new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
                     } catch (Throwable t) {
                         Log.debug("Error creating JANSI based terminal: ", t.getMessage(), t);
                         exception.addSuppressed(t);
@@ -378,7 +383,7 @@ public final class TerminalBuilder {
                 if (exec) {
                     try {
                         Pty pty = ExecPty.current();
-                        return new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
+                        terminal = new PosixSysTerminal(name, type, pty, inputStreamWrapper.apply(pty.getSlaveInput()), pty.getSlaveOutput(), encoding, nativeSignals, signalHandler);
                     } catch (Throwable t) {
                         // Ignore if not a tty
                         Log.debug("Error creating EXEC based terminal: ", t.getMessage(), t);
@@ -386,7 +391,24 @@ public final class TerminalBuilder {
                     }
                 }
             }
-            if (dumb == null || dumb) {
+            if (terminal instanceof AbstractTerminal) {
+                AbstractTerminal t = (AbstractTerminal) terminal;
+                if (SYSTEM_TERMINAL.compareAndSet(null, t)) {
+                    t.setOnClose(new Runnable() {
+                        @Override
+                        public void run() {
+                            SYSTEM_TERMINAL.compareAndSet(t, null);
+                        }
+                    });
+                } else {
+                    exception.addSuppressed(new IllegalStateException("A system terminal is already running. " +
+                            "Make sure to use the created system Terminal on the LineReaderBuilder if you're using one " +
+                            "or that previously created system Terminals have been correctly closed."));
+                    terminal.close();
+                    terminal = null;
+                }
+            }
+            if (terminal == null && (dumb == null || dumb)) {
                 // forced colored dumb terminal
                 boolean color = getBoolean(PROP_DUMB_COLOR, false);
                 // detect emacs using the env variable
@@ -405,13 +427,15 @@ public final class TerminalBuilder {
                         Log.warn("Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)");
                     }
                 }
-                return new DumbTerminal(name, color ? Terminal.TYPE_DUMB_COLOR : Terminal.TYPE_DUMB,
+                terminal = new DumbTerminal(name, color ? Terminal.TYPE_DUMB_COLOR : Terminal.TYPE_DUMB,
                         new FileInputStream(FileDescriptor.in),
                         new FileOutputStream(FileDescriptor.out),
                         encoding, signalHandler);
-            } else {
+            }
+            if (terminal == null) {
                 throw exception;
             }
+            return terminal;
         } else {
             if (jna) {
                 try {
@@ -429,14 +453,7 @@ public final class TerminalBuilder {
                     Log.debug("Error creating JANSI based terminal: ", t.getMessage(), t);
                 }
             }
-            Terminal terminal = new ExternalTerminal(name, type, in, out, encoding, signalHandler, paused);
-            if (attributes != null) {
-                terminal.setAttributes(attributes);
-            }
-            if (size != null) {
-                terminal.setSize(size);
-            }
-            return terminal;
+            return new ExternalTerminal(name, type, in, out, encoding, signalHandler, paused, attributes, size);
         }
     }
 

@@ -344,7 +344,11 @@ public class DefaultHistory implements History {
     }
 
     public String get(final int index) {
-        return items.get(index - offset).line();
+        int idx = index - offset;
+        if (idx >= items.size() || idx < 0) {
+            throw new IllegalArgumentException("IndexOutOfBounds: Index:" + idx +", Size:" + items.size());
+        }
+        return items.get(idx).line();
     }
 
     @Override
@@ -434,6 +438,10 @@ public class DefaultHistory implements History {
     @Override
     public Spliterator<Entry> spliterator() {
         return items.spliterator();
+    }
+
+    public void resetIndex() {
+        index = index > items.size() ? items.size() : index;
     }
 
     protected static class EntryImpl implements Entry {

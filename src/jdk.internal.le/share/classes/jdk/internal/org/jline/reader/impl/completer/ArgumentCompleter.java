@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2019, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -34,6 +34,7 @@ public class ArgumentCompleter implements Completer
     private final List<Completer> completers = new ArrayList<>();
 
     private boolean strict = true;
+    private boolean strictCommand = true;
 
     /**
      * Create a new completer.
@@ -64,6 +65,15 @@ public class ArgumentCompleter implements Completer
         this.strict = strict;
     }
 
+    /**
+     * If true, a completion at argument index N will only succeed
+     * if all the completions from 1-(N-1) also succeed.
+     *
+     * @param strictCommand the strictCommand flag
+     */
+    public void setStrictCommand(final boolean strictCommand) {
+        this.strictCommand = strictCommand;
+    }
     /**
      * Returns whether a completion at argument index N will success
      * if all the completions from arguments 0-(N-1) also succeed.
@@ -104,8 +114,12 @@ public class ArgumentCompleter implements Completer
         }
 
         // ensure that all the previous completers are successful before allowing this completer to pass (only if strict).
-        for (int i = 0; isStrict() && (i < line.wordIndex()); i++) {
-            Completer sub = completers.get(i >= completers.size() ? (completers.size() - 1) : i);
+        for (int i = strictCommand ? 0 : 1; isStrict() && (i < line.wordIndex()); i++) {
+            int idx = i >= completers.size() ? (completers.size() - 1) : i;
+            if (idx == 0 && !strictCommand) {
+                continue;
+            }
+            Completer sub = completers.get(idx);
             List<? extends CharSequence> args = line.words();
             String arg = (args == null || i >= args.size()) ? "" : args.get(i).toString();
 

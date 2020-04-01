@@ -87,12 +87,12 @@ public class PosixSysTerminal extends AbstractPosixTerminal {
     }
 
     @Override
-    public void close() throws IOException {
+    protected void doClose() throws IOException {
         ShutdownHooks.remove(closer);
         for (Map.Entry<Signal, Object> entry : nativeHandlers.entrySet()) {
             Signals.unregister(entry.getKey().name(), entry.getValue());
         }
-        super.close();
+        super.doClose();
         // Do not call reader.close()
         reader.shutdown();
     }

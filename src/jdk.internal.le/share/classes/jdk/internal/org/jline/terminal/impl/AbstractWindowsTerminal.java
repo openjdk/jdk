@@ -214,10 +214,12 @@ public abstract class AbstractWindowsTerminal extends AbstractTerminal {
         throw new UnsupportedOperationException("Can not resize windows terminal");
     }
 
-    public void close() throws IOException {
-        super.close();
+    protected void doClose() throws IOException {
+        super.doClose();
         closing = true;
-        pump.interrupt();
+        if (pump != null) {
+            pump.interrupt();
+        }
         ShutdownHooks.remove(closer);
         for (Map.Entry<Signal, Object> entry : nativeHandlers.entrySet()) {
             Signals.unregister(entry.getKey().name(), entry.getValue());

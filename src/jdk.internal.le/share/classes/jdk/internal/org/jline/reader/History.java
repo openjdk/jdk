@@ -45,6 +45,8 @@ public interface History extends Iterable<History.Entry>
     /**
      * Write history to the file. If incremental only the events that are new since the last incremental operation to
      * the file are added.
+     * @param  file        History file
+     * @param  incremental If true incremental write operation is performed.
      * @throws IOException if a problem occurs
      */
     void write(Path file, boolean incremental) throws IOException;
@@ -52,12 +54,16 @@ public interface History extends Iterable<History.Entry>
     /**
      * Append history to the file. If incremental only the events that are new since the last incremental operation to
      * the file are added.
+     * @param  file        History file
+     * @param  incremental If true incremental append operation is performed.
      * @throws IOException if a problem occurs
      */
     void append(Path file, boolean incremental) throws IOException;
 
     /**
      * Read history from the file. If incremental only the events that are not contained within the internal list are added.
+     * @param  file        History file
+     * @param  incremental If true incremental read operation is performed.
      * @throws IOException if a problem occurs
      */
     void read(Path file, boolean incremental) throws IOException;
@@ -133,6 +139,11 @@ public interface History extends Iterable<History.Entry>
             public Entry next() {
                 return it.previous();
             }
+            @Override
+            public void remove() {
+                it.remove();
+                resetIndex();
+            }
         };
     }
 
@@ -191,4 +202,9 @@ public interface History extends Iterable<History.Entry>
      * all of the other iterator.
      */
     void moveToEnd();
+
+    /**
+     * Reset index after remove
+     */
+    void resetIndex();
 }
