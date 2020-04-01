@@ -1700,9 +1700,7 @@ void JavaThread::initialize() {
   _popframe_preserved_args_size = 0;
   _frames_to_pop_failed_realloc = 0;
 
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    SafepointMechanism::initialize_header(this);
-  }
+  SafepointMechanism::initialize_header(this);
 
   _class_to_be_initialized = NULL;
 

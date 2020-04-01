@@ -69,6 +69,4 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define SUPPORT_RESERVED_STACK_AREA
 #endif
 
-#define THREAD_LOCAL_POLL
-
 #endif // CPU_X86_GLOBALDEFINITIONS_X86_HPP

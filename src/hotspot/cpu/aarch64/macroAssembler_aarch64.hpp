@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1217,9 +1217,9 @@ public:
     }
   }
 
-  address read_polling_page(Register r, address page, relocInfo::relocType rtype);
   address read_polling_page(Register r, relocInfo::relocType rtype);
-  void get_polling_page(Register dest, address page, relocInfo::relocType rtype);
+  void get_polling_page(Register dest, relocInfo::relocType rtype);
+  address fetch_and_read_polling_page(Register r, relocInfo::relocType rtype);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);

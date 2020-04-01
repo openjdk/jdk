@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1281,9 +1281,6 @@ Node *SafePointNode::peek_monitor_obj() const {
 
 // Do we Match on this edge index or not?  Match no edges
 uint SafePointNode::match_edge(uint idx) const {
-  if( !needs_polling_address_input() )
-    return 0;
-
   return (TypeFunc::Parms == idx);
 }
 

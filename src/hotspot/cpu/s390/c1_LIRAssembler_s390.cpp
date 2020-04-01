@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1214,12 +1214,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
          (result->is_single_fpu() && result->as_float_reg() == Z_F0) ||
          (result->is_double_fpu() && result->as_double_reg() == Z_F0), "convention");
 
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
-  } else {
-    AddressLiteral pp(os::get_polling_page());
-    __ load_const_optimized(Z_R1_scratch, pp);
-  }
+  __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
 
   // Pop the frame before the safepoint code.
   __ pop_frame_restore_retPC(initial_frame_size_in_bytes());
@@ -1238,12 +1233,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   const Register poll_addr = tmp->as_register_lo();
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    __ z_lg(poll_addr, Address(Z_thread, Thread::polling_page_offset()));
-  } else {
-    AddressLiteral pp(os::get_polling_page());
-    __ load_const_optimized(poll_addr, pp);
-  }
+  __ z_lg(poll_addr, Address(Z_thread, Thread::polling_page_offset()));
   guarantee(info != NULL, "Shouldn't be NULL");
   add_debug_info_for_branch(info);
   int offset = __ offset();

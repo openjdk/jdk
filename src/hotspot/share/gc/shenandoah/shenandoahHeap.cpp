@@ -393,9 +393,7 @@ jint ShenandoahHeap::initialize() {
                      byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity())
   );
 
-  log_info(gc, init)("Safepointing mechanism: %s",
-                     SafepointMechanism::uses_thread_local_poll() ? "thread-local poll" :
-                     (SafepointMechanism::uses_global_page_poll() ? "global-page poll" : "unknown"));
+  log_info(gc, init)("Safepointing mechanism: thread-local poll");
 
   return JNI_OK;
 }

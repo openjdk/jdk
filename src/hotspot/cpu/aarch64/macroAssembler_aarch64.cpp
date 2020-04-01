@@ -291,16 +291,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ldr(rscratch1, Address(rthread, Thread::polling_page_offset()));
-    tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
-  } else {
-    unsigned long offset;
-    adrp(rscratch1, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
-    ldrw(rscratch1, Address(rscratch1, offset));
-    assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
-    cbnz(rscratch1, slow_path);
-  }
+  ldr(rscratch1, Address(rthread, Thread::polling_page_offset()));
+  tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
 }
 
 // Just like safepoint_poll, but use an acquiring load for thread-
@@ -316,13 +308,9 @@ void MacroAssembler::safepoint_poll(Label& slow_path) {
 // racing the code which wakes up from a safepoint.
 //
 void MacroAssembler::safepoint_poll_acquire(Label& slow_path) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    lea(rscratch1, Address(rthread, Thread::polling_page_offset()));
-    ldar(rscratch1, rscratch1);
-    tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
-  } else {
-    safepoint_poll(slow_path);
-  }
+  lea(rscratch1, Address(rthread, Thread::polling_page_offset()));
+  ldar(rscratch1, rscratch1);
+  tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
@@ -4305,22 +4293,15 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   }
 }
 
-
 // Move the address of the polling page into dest.
-void MacroAssembler::get_polling_page(Register dest, address page, relocInfo::relocType rtype) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ldr(dest, Address(rthread, Thread::polling_page_offset()));
-  } else {
-    unsigned long off;
-    adrp(dest, Address(page, rtype), off);
-    assert(off == 0, "polling page must be page aligned");
-  }
+void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
+  ldr(dest, Address(rthread, Thread::polling_page_offset()));
 }
 
 // Move the address of the polling page into r, then read the polling
 // page.
-address MacroAssembler::read_polling_page(Register r, address page, relocInfo::relocType rtype) {
-  get_polling_page(r, page, rtype);
+address MacroAssembler::fetch_and_read_polling_page(Register r, relocInfo::relocType rtype) {
+  get_polling_page(r, rtype);
   return read_polling_page(r, rtype);
 }
 

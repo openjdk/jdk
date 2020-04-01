@@ -7732,15 +7732,6 @@ bool Assembler::reachable(AddressLiteral adr) {
   return is_simm32(disp);
 }
 
-// Check if the polling page is not reachable from the code cache using rip-relative
-// addressing.
-bool Assembler::is_polling_page_far() {
-  intptr_t addr = (intptr_t)os::get_polling_page();
-  return ForceUnreachable ||
-         !is_simm32(addr - (intptr_t)CodeCache::low_bound()) ||
-         !is_simm32(addr - (intptr_t)CodeCache::high_bound());
-}
-
 void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,
                             int format) {

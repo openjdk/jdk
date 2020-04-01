@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ void SafepointMechanism::pd_initialize() {
 
   // Allocate one protected page
   char* map_address = (char*)MAP_FAILED;
-  const size_t map_size = 2 * os::vm_page_size();
+  const size_t page_size = os::vm_page_size();
+  const size_t map_size = 2 * page_size;
   const int prot  = PROT_READ;
   const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
@@ -94,13 +95,15 @@ void SafepointMechanism::pd_initialize() {
   guarantee(map_address != (char*)MAP_FAILED && map_address != NULL,
             "SafepointMechanism::pd_initialize: failed to allocate polling page");
   log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(map_address));
-  os::set_polling_page((address)(map_address));
+  _polling_page = (address)(map_address);
 
   // Register polling page with NMT.
   MemTracker::record_virtual_memory_reserve_and_commit(map_address, map_size, CALLER_PC, mtSafepoint);
 
   // Use same page for thread local handshakes without SIGTRAP
-  os::make_polling_page_unreadable();
+  if (!os::guard_memory((char*)_polling_page, page_size)) {
+    fatal("Could not protect polling page");
+  }
   intptr_t bad_page_val  = reinterpret_cast<intptr_t>(map_address),
            good_page_val = bad_page_val + os::vm_page_size();
   _poll_armed_value    = reinterpret_cast<void*>(bad_page_val  + poll_bit());

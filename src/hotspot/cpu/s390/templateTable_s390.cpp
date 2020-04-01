@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2379,7 +2379,7 @@ void TemplateTable::_return(TosState state) {
     __ bind(skip_register_finalizer);
   }
 
-  if (SafepointMechanism::uses_thread_local_poll() && _desc->bytecode() != Bytecodes::_return_register_finalizer) {
+  if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
     const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());

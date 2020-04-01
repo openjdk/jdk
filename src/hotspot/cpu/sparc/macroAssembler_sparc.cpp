@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,18 +236,10 @@ void MacroAssembler::breakpoint_trap() {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool a, Register thread_reg, Register temp_reg) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ldx(Address(thread_reg, Thread::polling_page_offset()), temp_reg, 0);
-    // Armed page has poll bit set.
-    and3(temp_reg, SafepointMechanism::poll_bit(), temp_reg);
-    br_notnull(temp_reg, a, Assembler::pn, slow_path);
-  } else {
-    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
-
-    load_contents(sync_state, temp_reg);
-    cmp(temp_reg, SafepointSynchronize::_not_synchronized);
-    br(Assembler::notEqual, a, Assembler::pn, slow_path);
-  }
+  ldx(Address(thread_reg, Thread::polling_page_offset()), temp_reg, 0);
+  // Armed page has poll bit set.
+  and3(temp_reg, SafepointMechanism::poll_bit(), temp_reg);
+  br_notnull(temp_reg, a, Assembler::pn, slow_path);
 }
 
 void MacroAssembler::enter() {

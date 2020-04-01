@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -92,7 +92,7 @@ class NativeInstruction {
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?
     // The current arguments of the instruction are not checked!
-    if (SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY) {
+    if (USE_POLL_BIT_ONLY) {
       int encoding = SafepointMechanism::poll_bit();
       return MacroAssembler::is_tdi(long_at(0), Assembler::traptoGreaterThanUnsigned | Assembler::traptoEqual,
                                     -1, encoding);

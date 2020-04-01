@@ -56,6 +56,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -2531,7 +2532,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // the rest are checked explicitly now.
         CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != NULL) {
-          if (os::is_poll_address(addr)) {
+          if (SafepointMechanism::is_poll_address(addr)) {
             address stub = SharedRuntime::get_poll_stub(pc);
             return Handle_Exception(exceptionInfo, stub);
           }
@@ -4113,24 +4114,6 @@ jint os::init_2(void) {
   }
 
   return JNI_OK;
-}
-
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  DWORD old_status;
-  if (!VirtualProtect((char *)_polling_page, os::vm_page_size(),
-                      PAGE_NOACCESS, &old_status)) {
-    fatal("Could not disable polling page");
-  }
-}
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  DWORD old_status;
-  if (!VirtualProtect((char *)_polling_page, os::vm_page_size(),
-                      PAGE_READONLY, &old_status)) {
-    fatal("Could not enable polling page");
-  }
 }
 
 // combine the high and low DWORD into a ULONGLONG

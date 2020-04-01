@@ -45,6 +45,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
@@ -372,7 +373,7 @@ inline static bool checkOverflow(sigcontext* uc,
 }
 
 inline static bool checkPollingPage(address pc, address fault, address* stub) {
-  if (os::is_poll_address(fault)) {
+  if (SafepointMechanism::is_poll_address(fault)) {
     *stub = SharedRuntime::get_poll_stub(pc);
     return true;
   }

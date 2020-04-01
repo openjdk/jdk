@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -654,8 +654,7 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
   // _in_rms array of RegMasks.
   if( idx < TypeFunc::Parms ) return _in_rms[idx];
 
-  if (SafePointNode::needs_polling_address_input() &&
-      idx == TypeFunc::Parms &&
+  if (idx == TypeFunc::Parms &&
       ideal_Opcode() == Op_SafePoint) {
     return MachNode::in_RegMask(idx);
   }

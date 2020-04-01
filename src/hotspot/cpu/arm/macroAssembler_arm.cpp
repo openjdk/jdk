@@ -1920,23 +1920,13 @@ void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
 }
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ldr_u32(tmp1, Address(Rthread, Thread::polling_page_offset()));
-    tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
-    b(slow_path, eq);
-  } else {
-    ldr_global_s32(tmp1, SafepointSynchronize::address_of_state());
-    cmp(tmp1, SafepointSynchronize::_not_synchronized);
-    b(slow_path, ne);
-  }
+  ldr_u32(tmp1, Address(Rthread, Thread::polling_page_offset()));
+  tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
+  b(slow_path, eq);
 }
 
 void MacroAssembler::get_polling_page(Register dest) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ldr(dest, Address(Rthread, Thread::polling_page_offset()));
-  } else {
-    mov_address(dest, os::get_polling_page());
-  }
+  ldr(dest, Address(Rthread, Thread::polling_page_offset()));
 }
 
 void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype) {

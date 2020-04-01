@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2019 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1589,11 +1589,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (method_needs_polling) {
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      __ ld(polling_page, in_bytes(JavaThread::polling_page_offset()), R16_thread);
-    } else {
-      __ load_const_optimized(polling_page, (long)(address) os::get_polling_page());
-    }
+    __ ld(polling_page, in_bytes(JavaThread::polling_page_offset()), R16_thread);
   }
 
   if (!method_is_frameless) {
@@ -1627,14 +1623,6 @@ int MachEpilogNode::reloc() const {
 
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
-}
-
-// This method seems to be obsolete. It is declared in machnode.hpp
-// and defined in all *.ad files, but it is never called. Should we
-// get rid of it?
-int MachEpilogNode::safepoint_offset() const {
-  assert(do_polling(), "no return for this epilog node");
-  return 0;
 }
 
 #if 0 // TODO: PPC port

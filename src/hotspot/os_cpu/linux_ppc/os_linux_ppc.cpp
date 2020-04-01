@@ -410,7 +410,7 @@ JVM_handle_linux_signal(int sig,
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
 
-      else if (sig == ((SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY) ? SIGTRAP : SIGSEGV) &&
+      else if ((sig == USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV) &&
                // A linux-ppc64 kernel before 2.6.6 doesn't set si_addr on some segfaults
                // in 64bit mode (cf. http://www.kernel.org/pub/linux/kernel/v2.6/ChangeLog-2.6.6),
                // especially when we try to read from the safepoint polling page. So the check
@@ -422,7 +422,7 @@ JVM_handle_linux_signal(int sig,
                cb->is_compiled()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
-                        (SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY) ? "SIGTRAP" : "SIGSEGV");
+                        USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
         }
         stub = SharedRuntime::get_poll_stub(pc);
       }

@@ -2807,7 +2807,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ bind(noException);
 
   Label no_adjust, bail;
-  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+  if (!cause_return) {
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ ldr(rscratch1, Address(rfp, wordSize));
     __ cmp(r20, rscratch1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2684,16 +2684,10 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
-    // Armed page has poll_bit set.
-    z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
-    z_brnaz(slow_path);
-  } else {
-    load_const_optimized(temp_reg, SafepointSynchronize::address_of_state());
-    z_cli(/*SafepointSynchronize::sz_state()*/4-1, temp_reg, SafepointSynchronize::_not_synchronized);
-    z_brne(slow_path);
-  }
+  const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+  // Armed page has poll_bit set.
+  z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
+  z_brnaz(slow_path);
 }
 
 // Don't rely on register locking, always use Z_R1 as scratch register instead.

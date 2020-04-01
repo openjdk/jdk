@@ -5271,20 +5271,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  if (!guard_memory((char*)_polling_page, Linux::page_size())) {
-    fatal("Could not disable polling page");
-  }
-}
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  if (!linux_mprotect((char *)_polling_page, Linux::page_size(), PROT_READ)) {
-    fatal("Could not enable polling page");
-  }
-}
-
 // older glibc versions don't have this macro (which expands to
 // an optimized bit-counting function) so we have to roll our own
 #ifndef CPU_COUNT

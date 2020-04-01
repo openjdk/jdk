@@ -1696,7 +1696,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
   if (do_polling() && C->is_method_compilation()) {
     st->print("# touch polling page\n\t");
-    st->print("mov  rscratch1, #0x%lx\n\t", p2i(os::get_polling_page()));
+    st->print("ldr rscratch1, [rthread],#polling_page_offset\n\t");
     st->print("ldr zr, [rscratch1]");
   }
 }
@@ -1714,7 +1714,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    __ read_polling_page(rscratch1, os::get_polling_page(), relocInfo::poll_return_type);
+    __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
   }
 }
 
@@ -1730,14 +1730,6 @@ int MachEpilogNode::reloc() const {
 
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
-}
-
-// This method seems to be obsolete. It is declared in machnode.hpp
-// and defined in all *.ad files, but it is never called. Should we
-// get rid of it?
-int MachEpilogNode::safepoint_offset() const {
-  assert(do_polling(), "no return for this epilog node");
-  return 4;
 }
 
 //=============================================================================
@@ -3177,15 +3169,6 @@ encode %{
     __ mov(dst_reg, (u_int64_t)1);
   %}
 
-  enc_class aarch64_enc_mov_poll_page(iRegP dst, immPollPage src) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address page = (address)$src$$constant;
-    Register dst_reg = as_Register($dst$$reg);
-    unsigned long off;
-    __ adrp(dst_reg, Address(page, relocInfo::poll_type), off);
-    assert(off == 0, "assumed offset == 0");
-  %}
-
   enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
     C2_MacroAssembler _masm(&cbuf);
     __ load_byte_map_base($dst$$Register);
@@ -4371,17 +4354,6 @@ operand immP0()
 operand immP_1()
 %{
   predicate(n->get_ptr() == 1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Polling Page Pointer Immediate
-operand immPollPage()
-%{
-  predicate((address)n->get_ptr() == os::get_polling_page());
   match(ConP);
 
   op_cost(0);
@@ -7181,20 +7153,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mov  $dst, $con\t# NULL ptr" %}
 
   ins_encode(aarch64_enc_mov_p1(dst, con));
-
-  ins_pipe(ialu_imm);
-%}
-
-// Load Poll Page Constant
-
-instruct loadConPollPage(iRegPNoSp dst, immPollPage con)
-%{
-  match(Set dst con);
-
-  ins_cost(INSN_COST);
-  format %{ "adr  $dst, $con\t# Poll Page Ptr" %}
-
-  ins_encode(aarch64_enc_mov_poll_page(dst, con));
 
   ins_pipe(ialu_imm);
 %}

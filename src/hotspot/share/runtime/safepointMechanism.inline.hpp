@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,11 @@ bool SafepointMechanism::local_poll(Thread* thread) {
 }
 
 bool SafepointMechanism::should_block(Thread* thread) {
-  if (uses_thread_local_poll()) {
-    return local_poll(thread);
-  } else {
-    return global_poll();
-  }
+  return local_poll(thread);
 }
 
 void SafepointMechanism::block_if_requested(JavaThread *thread) {
-  if (uses_thread_local_poll() && !local_poll_armed(thread)) {
+  if (!local_poll_armed(thread)) {
     return;
   }
   block_if_requested_slow(thread);

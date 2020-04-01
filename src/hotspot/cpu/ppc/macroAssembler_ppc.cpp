@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1294,7 +1294,7 @@ bool MacroAssembler::is_load_from_polling_page(int instruction, void* ucontext,
   if (polling_address_ptr != NULL) {
     *polling_address_ptr = addr;
   }
-  return os::is_poll_address(addr);
+  return SafepointMechanism::is_poll_address(addr);
 #else
   // Not on Linux, ucontext must be NULL.
   ShouldNotReachHere();
@@ -3037,14 +3037,9 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
-    // Armed page has poll_bit set.
-    andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
-  } else {
-    lwz(temp_reg, (RegisterOrConstant)(intptr_t)SafepointSynchronize::address_of_state());
-    cmpwi(CCR0, temp_reg, SafepointSynchronize::_not_synchronized);
-  }
+  ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
+  // Armed page has poll_bit set.
+  andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
   bne(CCR0, slow_path);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* tab
   AddressLiteral tbl(table);
   Label dispatch;
 
-  if (SafepointMechanism::uses_thread_local_poll() && generate_poll) {
+  if (generate_poll) {
     AddressLiteral sfpt_tbl(Interpreter::safept_table(state));
     Label no_safepoint;
 

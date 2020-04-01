@@ -46,6 +46,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
@@ -364,7 +365,7 @@ JVM_handle_linux_signal(int sig,
           tty->print_cr("trap: zombie_not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
-      } else if (sig == SIGSEGV && os::is_poll_address((address)info->si_addr)) {
+      } else if (sig == SIGSEGV && SafepointMechanism::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
       } else if (sig == SIGBUS /* && info->si_code == BUS_OBJERR */) {
         // BugId 4454115: A read from a MappedByteBuffer can fault

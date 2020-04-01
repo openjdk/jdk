@@ -375,12 +375,12 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         goto run_stub;
       }
 
-      else if ((SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY)
+      else if (USE_POLL_BIT_ONLY
                ? (sig == SIGTRAP && ((NativeInstruction*)pc)->is_safepoint_poll())
-               : (sig == SIGSEGV && os::is_poll_address(addr))) {
+               : (sig == SIGSEGV && SafepointMechanism::is_poll_address(addr))) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
-                        (SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY) ? "SIGTRAP" : "SIGSEGV");
+                        USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
         }
         stub = SharedRuntime::get_poll_stub(pc);
         goto run_stub;

@@ -367,13 +367,6 @@ const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
 }
 
-int MachEpilogNode::safepoint_offset() const {
-  assert( do_polling(), "no return for this epilog node");
-  //  return MacroAssembler::size_of_sethi(os::get_polling_page());
-  Unimplemented();
-  return 0;
-}
-
 //=============================================================================
 
 // Figure out which register class each belongs in: rc_int, rc_float, rc_stack
@@ -2021,15 +2014,6 @@ operand immP0() %{
   interface(CONST_INTER);
 %}
 
-operand immP_poll() %{
-  predicate(n->get_ptr() != 0 && n->get_ptr() == (intptr_t)os::get_polling_page());
-  match(ConP);
-
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immN()
 %{
@@ -3096,12 +3080,6 @@ pipe_class loadConL( iRegL dst, immL src ) %{
 pipe_class loadConP( iRegP dst, immP src ) %{
     instruction_count(0); multiple_bundles;
     fixed_latency(6);
-%}
-
-// Polling Address
-pipe_class loadConP_poll( iRegP dst, immP_poll src ) %{
-    dst   : E(write);
-    IALU  : R;
 %}
 
 // Long Constant small
@@ -4285,16 +4263,6 @@ instruct loadConP(iRegP dst, immP src) %{
   ins_pipe(loadConP);
 %}
 
-
-instruct loadConP_poll(iRegP dst, immP_poll src) %{
-  match(Set dst src);
-  ins_cost(DEFAULT_COST);
-  format %{ "MOV_SLOW    $dst,$src\t!ptr" %}
-  ins_encode %{
-      __ mov_slow($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(loadConP_poll);
-%}
 
 instruct loadConL(iRegL dst, immL src) %{
   match(Set dst src);

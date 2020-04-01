@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,33 +218,6 @@ class VM_HandshakeAllThreads: public VM_Handshake {
   VMOp_Type type() const { return VMOp_HandshakeAllThreads; }
 };
 
-class VM_HandshakeFallbackOperation : public VM_Operation {
-  HandshakeClosure* _handshake_cl;
-  Thread* _target_thread;
-  bool _all_threads;
-  bool _executed;
-public:
-  VM_HandshakeFallbackOperation(HandshakeClosure* cl) :
-      _handshake_cl(cl), _target_thread(NULL), _all_threads(true), _executed(false) {}
-  VM_HandshakeFallbackOperation(HandshakeClosure* cl, Thread* target) :
-      _handshake_cl(cl), _target_thread(target), _all_threads(false), _executed(false) {}
-
-  void doit() {
-    log_trace(handshake)("VMThread executing VM_HandshakeFallbackOperation, operation: %s", name());
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-      if (_all_threads || t == _target_thread) {
-        if (t == _target_thread) {
-          _executed = true;
-        }
-        _handshake_cl->do_thread(t);
-      }
-    }
-  }
-
-  VMOp_Type type() const { return VMOp_HandshakeFallback; }
-  bool executed() const { return _executed; }
-};
-
 void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
   jlong start_time_ns = 0;
   if (log_is_enabled(Debug, handshake, task)) {
@@ -270,27 +243,16 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* thread_cl) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    HandshakeThreadsOperation cto(thread_cl);
-    VM_HandshakeAllThreads handshake(&cto);
-    VMThread::execute(&handshake);
-  } else {
-    VM_HandshakeFallbackOperation op(thread_cl);
-    VMThread::execute(&op);
-  }
+  HandshakeThreadsOperation cto(thread_cl);
+  VM_HandshakeAllThreads handshake(&cto);
+  VMThread::execute(&handshake);
 }
 
 bool Handshake::execute(HandshakeClosure* thread_cl, JavaThread* target) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    HandshakeThreadsOperation cto(thread_cl);
-    VM_HandshakeOneThread handshake(&cto, target);
-    VMThread::execute(&handshake);
-    return handshake.executed();
-  } else {
-    VM_HandshakeFallbackOperation op(thread_cl, target);
-    VMThread::execute(&op);
-    return op.executed();
-  }
+  HandshakeThreadsOperation cto(thread_cl);
+  VM_HandshakeOneThread handshake(&cto, target);
+  VMThread::execute(&handshake);
+  return handshake.executed();
 }
 
 HandshakeState::HandshakeState() : _operation(NULL), _semaphore(1), _thread_in_process_handshake(false) {

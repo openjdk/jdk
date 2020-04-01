@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1206,11 +1206,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   Compile* C = ra_->C;
 
   if(do_polling() && ra_->C->is_method_compilation()) {
-    if (SafepointMechanism::uses_global_page_poll()) {
-      st->print("SETHI  #PollAddr,L0\t! Load Polling address\n\t");
-    } else {
-      st->print("LDX    [R_G2 + #poll_offset],L0\t! Load local polling address\n\t");
-    }
+    st->print("LDX    [R_G2 + #poll_offset],L0\t! Load local polling address\n\t");
     st->print("LDX    [L0],G0\t!Poll for Safepointing\n\t");
   }
 
@@ -1237,12 +1233,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // If this does safepoint polling, then do it here
   if(do_polling() && ra_->C->is_method_compilation()) {
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      __ ld_ptr(Address(G2_thread, Thread::polling_page_offset()), L0);
-    } else {
-      AddressLiteral polling_page(os::get_polling_page());
-      __ sethi(polling_page, L0);
-    }
+    __ ld_ptr(Address(G2_thread, Thread::polling_page_offset()), L0);
     __ relocate(relocInfo::poll_return_type);
     __ ld_ptr(L0, 0, G0);
   }
@@ -1271,12 +1262,6 @@ int MachEpilogNode::reloc() const {
 
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
-}
-
-int MachEpilogNode::safepoint_offset() const {
-  assert(SafepointMechanism::uses_global_page_poll(), "sanity");
-  assert( do_polling(), "no return for this epilog node");
-  return MacroAssembler::insts_for_sethi(os::get_polling_page()) * BytesPerInstWord;
 }
 
 //=============================================================================
@@ -3375,15 +3360,6 @@ operand immP0() %{
   interface(CONST_INTER);
 %}
 
-operand immP_poll() %{
-  predicate(n->get_ptr() != 0 && n->get_ptr() == (intptr_t)os::get_polling_page());
-  match(ConP);
-
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immN()
 %{
@@ -4488,12 +4464,6 @@ pipe_class loadConL( iRegL dst, immL src ) %{
 
 // Pointer Constant
 pipe_class loadConP( iRegP dst, immP src ) %{
-    instruction_count(0); multiple_bundles;
-    fixed_latency(6);
-%}
-
-// Polling Address
-pipe_class loadConP_poll( iRegP dst, immP_poll src ) %{
     instruction_count(0); multiple_bundles;
     fixed_latency(6);
 %}
@@ -5881,17 +5851,6 @@ instruct loadConP0(iRegP dst, immP0 src) %{
     __ clr($dst$$Register);
   %}
   ins_pipe(ialu_imm);
-%}
-
-instruct loadConP_poll(iRegP dst, immP_poll src) %{
-  match(Set dst src);
-  ins_cost(DEFAULT_COST);
-  format %{ "SET    $src,$dst\t!ptr" %}
-  ins_encode %{
-    AddressLiteral polling_page(os::get_polling_page());
-    __ sethi(polling_page, reg_to_register_object($dst$$reg));
-  %}
-  ins_pipe(loadConP_poll);
 %}
 
 instruct loadConN0(iRegN dst, immN0 src) %{

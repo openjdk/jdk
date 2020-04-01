@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2019 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -949,12 +949,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
-    } else {
-      AddressLiteral pp(os::get_polling_page());
-      __ load_const_optimized(Z_R1_scratch, pp);
-    }
+    __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
     // We need to mark the code position where the load from the safepoint
     // polling page was emitted as relocInfo::poll_return_type here.
     __ relocate(relocInfo::poll_return_type);
@@ -974,11 +969,6 @@ int MachEpilogNode::reloc() const {
 
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
-}
-
-int MachEpilogNode::safepoint_offset() const {
-  assert(do_polling(), "no return for this epilog node");
-  return 0;
 }
 
 //=============================================================================

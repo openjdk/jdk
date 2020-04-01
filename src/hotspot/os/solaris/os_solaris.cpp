@@ -4007,22 +4007,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  Events::log(NULL, "Protecting polling page " INTPTR_FORMAT " with PROT_NONE", p2i(_polling_page));
-  if (mprotect((char *)_polling_page, page_size, PROT_NONE) != 0) {
-    fatal("Could not disable polling page");
-  }
-}
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  Events::log(NULL, "Protecting polling page " INTPTR_FORMAT " with PROT_READ", p2i(_polling_page));
-  if (mprotect((char *)_polling_page, page_size, PROT_READ) != 0) {
-    fatal("Could not enable polling page");
-  }
-}
-
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;

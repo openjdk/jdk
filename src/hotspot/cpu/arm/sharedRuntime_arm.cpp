@@ -1802,15 +1802,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ reset_last_Java_frame(Rtemp); // Rtemp free since scratched by far call
 
   if (!cause_return) {
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      // If our stashed return pc was modified by the runtime we avoid touching it
-      __ ldr(R3_tmp, Address(Rthread, JavaThread::saved_exception_pc_offset()));
-      __ ldr(R2_tmp, Address(SP, RegisterSaver::LR_offset * wordSize));
-      __ cmp(R2_tmp, R3_tmp);
-      // Adjust return pc forward to step over the safepoint poll instruction
-      __ add(R2_tmp, R2_tmp, 4, eq);
-      __ str(R2_tmp, Address(SP, RegisterSaver::LR_offset * wordSize), eq);
-    }
+    // If our stashed return pc was modified by the runtime we avoid touching it
+    __ ldr(R3_tmp, Address(Rthread, JavaThread::saved_exception_pc_offset()));
+    __ ldr(R2_tmp, Address(SP, RegisterSaver::LR_offset * wordSize));
+    __ cmp(R2_tmp, R3_tmp);
+    // Adjust return pc forward to step over the safepoint poll instruction
+    __ add(R2_tmp, R2_tmp, 4, eq);
+    __ str(R2_tmp, Address(SP, RegisterSaver::LR_offset * wordSize), eq);
 
     // Check for pending exception
     __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));

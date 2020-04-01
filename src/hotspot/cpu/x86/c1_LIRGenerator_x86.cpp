@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
 
 
 LIR_Opr LIRGenerator::safepoint_poll_register() {
-  NOT_LP64( if (SafepointMechanism::uses_thread_local_poll()) { return new_register(T_ADDRESS); } )
+  NOT_LP64( return new_register(T_ADDRESS); )
   return LIR_OprFact::illegalOpr;
 }
 

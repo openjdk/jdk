@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,6 @@
 #ifdef _LP64
 #define SUPPORTS_NATIVE_CX8
 #endif
-
-#define THREAD_LOCAL_POLL
 
 #include <ffi.h>
 

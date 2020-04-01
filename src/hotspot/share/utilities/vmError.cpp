@@ -39,6 +39,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -918,7 +919,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose && Universe::is_fully_initialized()) {
        Universe::heap()->print_on_error(st);
        st->cr();
-       st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
+       st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
        st->cr();
      }
 
@@ -1120,7 +1121,7 @@ void VMError::print_vm_info(outputStream* st) {
     MutexLocker hl(Heap_lock);
     Universe::heap()->print_on_error(st);
     st->cr();
-    st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
+    st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
     st->cr();
   }
 

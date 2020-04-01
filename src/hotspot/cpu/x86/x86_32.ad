@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -312,12 +312,6 @@ static int sizeof_FFree_Float_Stack_All = -1;
 int MachCallRuntimeNode::ret_addr_offset() {
   assert(sizeof_FFree_Float_Stack_All != -1, "must have been emitted already");
   return sizeof_FFree_Float_Stack_All + 5 + pre_call_resets_size();
-}
-
-// Indicate if the safepoint node needs the polling page as an input.
-// Since x86 does have absolute addressing, it doesn't.
-bool SafePointNode::needs_polling_address_input() {
-  return SafepointMechanism::uses_thread_local_poll();
 }
 
 //
@@ -706,19 +700,12 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      Register pollReg = as_Register(EBX_enc);
-      MacroAssembler masm(&cbuf);
-      masm.get_thread(pollReg);
-      masm.movl(pollReg, Address(pollReg, in_bytes(Thread::polling_page_offset())));
-      masm.relocate(relocInfo::poll_return_type);
-      masm.testl(rax, Address(pollReg, 0));
-    } else {
-      cbuf.relocate(cbuf.insts_end(), relocInfo::poll_return_type, 0);
-      emit_opcode(cbuf,0x85);
-      emit_rm(cbuf, 0x0, EAX_enc, 0x5); // EAX
-      emit_d32(cbuf, (intptr_t)os::get_polling_page());
-    }
+    Register pollReg = as_Register(EBX_enc);
+    MacroAssembler masm(&cbuf);
+    masm.get_thread(pollReg);
+    masm.movl(pollReg, Address(pollReg, in_bytes(Thread::polling_page_offset())));
+    masm.relocate(relocInfo::poll_return_type);
+    masm.testl(rax, Address(pollReg, 0));
   }
 }
 
@@ -734,8 +721,6 @@ int MachEpilogNode::reloc() const {
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
 }
-
-int MachEpilogNode::safepoint_offset() const { return 0; }
 
 //=============================================================================
 
@@ -3148,18 +3133,6 @@ encode %{
     encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
   %}
 
-  // Safepoint Poll.  This polls the safepoint page, and causes an
-  // exception if it is not readable. Unfortunately, it kills the condition code
-  // in the process
-  // We current use TESTL [spp],EDI
-  // A better choice might be TESTB [spp + pagesize() - CacheLineSize()],0
-
-  enc_class Safepoint_Poll() %{
-    cbuf.relocate(cbuf.insts_mark(), relocInfo::poll_type, 0);
-    emit_opcode(cbuf,0x85);
-    emit_rm (cbuf, 0x0, 0x7, 0x5);
-    emit_d32(cbuf, (intptr_t)os::get_polling_page());
-  %}
 %}
 
 
@@ -13441,28 +13414,7 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
 
 // ============================================================================
 // Safepoint Instruction
-instruct safePoint_poll(eFlagsReg cr) %{
-  predicate(SafepointMechanism::uses_global_page_poll());
-  match(SafePoint);
-  effect(KILL cr);
-
-  // TODO-FIXME: we currently poll at offset 0 of the safepoint polling page.
-  // On SPARC that might be acceptable as we can generate the address with
-  // just a sethi, saving an or.  By polling at offset 0 we can end up
-  // putting additional pressure on the index-0 in the D$.  Because of
-  // alignment (just like the situation at hand) the lower indices tend
-  // to see more traffic.  It'd be better to change the polling address
-  // to offset 0 of the last $line in the polling page.
-
-  format %{ "TSTL   #polladdr,EAX\t! Safepoint: poll for GC" %}
-  ins_cost(125);
-  size(6) ;
-  ins_encode( Safepoint_Poll() );
-  ins_pipe( ialu_reg_mem );
-%}
-
 instruct safePoint_poll_tls(eFlagsReg cr, eRegP_no_EBP poll) %{
-  predicate(SafepointMechanism::uses_thread_local_poll());
   match(SafePoint poll);
   effect(KILL cr, USE poll);
 

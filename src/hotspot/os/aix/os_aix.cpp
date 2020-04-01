@@ -3590,21 +3590,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  if (!guard_memory((char*)_polling_page, Aix::page_size())) {
-    fatal("Could not disable polling page");
-  }
-};
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  // Changed according to os_linux.cpp.
-  if (!checked_mprotect((char *)_polling_page, Aix::page_size(), PROT_READ)) {
-    fatal("Could not enable polling page at " PTR_FORMAT, _polling_page);
-  }
-};
-
 int os::active_processor_count() {
   // User has overridden the number of active processors
   if (ActiveProcessorCount > 0) {

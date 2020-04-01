@@ -46,6 +46,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
@@ -445,7 +446,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
       // a fault inside compiled code, the interpreter, or a stub
 
       // Support Safepoint Polling
-      if (sig == SIGSEGV && os::is_poll_address((address)info->si_addr)) {
+      if (sig == SIGSEGV && SafepointMechanism::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
       }
 
