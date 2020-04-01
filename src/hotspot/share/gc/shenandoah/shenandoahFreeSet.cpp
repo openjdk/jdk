@@ -510,20 +510,20 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
       size_t free = capacity() - used();
 
-      ls.print("Free: " SIZE_FORMAT "%s (" SIZE_FORMAT " regions), Max regular: " SIZE_FORMAT "%s, Max humongous: " SIZE_FORMAT "%s, ",
+      ls.print("Free: " SIZE_FORMAT "%s, Max: " SIZE_FORMAT "%s regular, " SIZE_FORMAT "%s humongous, ",
                byte_size_in_proper_unit(total_free),    proper_unit_for_byte_size(total_free),
-               mutator_count(),
                byte_size_in_proper_unit(max),           proper_unit_for_byte_size(max),
                byte_size_in_proper_unit(max_humongous), proper_unit_for_byte_size(max_humongous)
       );
 
+      ls.print("Frag: ");
       size_t frag_ext;
       if (total_free_ext > 0) {
         frag_ext = 100 - (100 * max_humongous / total_free_ext);
       } else {
         frag_ext = 0;
       }
-      ls.print("External frag: " SIZE_FORMAT "%%, ", frag_ext);
+      ls.print(SIZE_FORMAT "%% external, ", frag_ext);
 
       size_t frag_int;
       if (mutator_count() > 0) {
@@ -531,8 +531,7 @@ void ShenandoahFreeSet::log_status() {
       } else {
         frag_int = 0;
       }
-      ls.print("Internal frag: " SIZE_FORMAT "%%", frag_int);
-      ls.cr();
+      ls.print(SIZE_FORMAT "%% internal; ", frag_int);
     }
 
     {
@@ -548,9 +547,8 @@ void ShenandoahFreeSet::log_status() {
         }
       }
 
-      ls.print_cr("Evacuation Reserve: " SIZE_FORMAT "%s (" SIZE_FORMAT " regions), Max regular: " SIZE_FORMAT "%s",
+      ls.print_cr("Reserve: " SIZE_FORMAT "%s, Max: " SIZE_FORMAT "%s",
                   byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
-                  collector_count(),
                   byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max));
     }
   }
