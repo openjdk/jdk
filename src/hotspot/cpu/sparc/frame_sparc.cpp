@@ -550,9 +550,10 @@ frame frame::sender(RegisterMap* map) const {
 
 
 void frame::patch_pc(Thread* thread, address pc) {
+  assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   vmassert(_deopt_state != unknown, "frame is unpatchable");
-  if(thread == Thread::current()) {
-   StubRoutines::Sparc::flush_callers_register_windows_func()();
+  if (thread == Thread::current()) {
+    StubRoutines::Sparc::flush_callers_register_windows_func()();
   }
   if (TracePcPatching) {
     // QQQ this assert is invalid (or too strong anyway) sice _pc could
@@ -561,9 +562,7 @@ void frame::patch_pc(Thread* thread, address pc) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
                   p2i(O7_addr()), p2i(_pc), p2i(pc));
   }
-  _cb = CodeCache::find_blob(pc);
   *O7_addr() = pc - pc_return_offset;
-  _cb = CodeCache::find_blob(_pc);
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     assert(original_pc == _pc, "expected original to be stored before patching");
