@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,15 @@ serviceability/sa/ClhsdbAttach.java                     8216181   generic-all
 serviceability/sa/ClhsdbCDSCore.java                    8216181   generic-all
 serviceability/sa/ClhsdbCDSJstackPrintAll.java          8216181   generic-all
 serviceability/sa/ClhsdbField.java                      8216181   generic-all
-serviceability/sa/ClhsdbFindPC.java                     8216181   generic-all
+serviceability/sa/ClhsdbFindPC.java#id0                 8216181   generic-all
+serviceability/sa/ClhsdbFindPC.java#id1                 8216181   generic-all
 serviceability/sa/ClhsdbFlags.java                      8216181   generic-all
 serviceability/sa/ClhsdbInspect.java                    8216181   generic-all
 serviceability/sa/ClhsdbJdis.java                       8216181   generic-all
 serviceability/sa/ClhsdbJhisto.java                     8216181   generic-all
-serviceability/sa/ClhsdbJstack.java                     8216181   generic-all
+serviceability/sa/ClhsdbJstack.java#id0                 8216181   generic-all
+serviceability/sa/ClhsdbJstack.java#id1                 8216181   generic-all
+serviceability/sa/ClhsdbJstackXcompStress.java          8216181   generic-all
 serviceability/sa/ClhsdbLongConstant.java               8216181   generic-all
 serviceability/sa/ClhsdbPmap.java                       8216181   generic-all
 serviceability/sa/ClhsdbPrintAll.java                   8216181   generic-all
@@ -45,7 +48,8 @@ serviceability/sa/ClhsdbPrintAs.java                    8216181   generic-all
 serviceability/sa/ClhsdbPrintStatics.java               8216181   generic-all
 serviceability/sa/ClhsdbPstack.java                     8216181   generic-all
 serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8216181   generic-all
-serviceability/sa/ClhsdbScanOops.java                   8216181   generic-all
+serviceability/sa/ClhsdbScanOops.java#id0               8216181   generic-all
+serviceability/sa/ClhsdbScanOops.java#id1               8216181   generic-all
 serviceability/sa/ClhsdbSource.java                     8216181   generic-all
 serviceability/sa/ClhsdbThread.java                     8216181   generic-all
 serviceability/sa/ClhsdbVmStructsDump.java              8216181   generic-all

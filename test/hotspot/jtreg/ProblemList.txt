@@ -103,7 +103,8 @@ serviceability/sa/ClhsdbCDSCore.java 8193639 solaris-all
 serviceability/sa/ClhsdbCDSJstackPrintAll.java 8193639 solaris-all
 serviceability/sa/CDSJMapClstats.java 8193639 solaris-all
 serviceability/sa/ClhsdbField.java 8193639 solaris-all
-serviceability/sa/ClhsdbFindPC.java 8193639 solaris-all
+serviceability/sa/ClhsdbFindPC.java#id0 8193639 solaris-all
+serviceability/sa/ClhsdbFindPC.java#id1 8193639 solaris-all
 serviceability/sa/ClhsdbFlags.java 8193639 solaris-all
 serviceability/sa/ClhsdbInspect.java 8193639 solaris-all
 serviceability/sa/ClhsdbJdis.java 8193639 solaris-all
@@ -117,7 +118,8 @@ serviceability/sa/ClhsdbPrintAs.java 8193639 solaris-all
 serviceability/sa/ClhsdbPrintStatics.java 8193639 solaris-all
 serviceability/sa/ClhsdbPstack.java 8193639 solaris-all
 serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8193639 solaris-all
-serviceability/sa/ClhsdbScanOops.java 8193639,8235220,8230731 solaris-all,linux-x64,macosx-x64,windows-x64
+serviceability/sa/ClhsdbScanOops.java#id0 8193639,8235220,8230731 solaris-all,linux-x64,macosx-x64,windows-x64
+serviceability/sa/ClhsdbScanOops.java#id1 8193639,8235220,8230731 solaris-all,linux-x64,macosx-x64,windows-x64
 serviceability/sa/ClhsdbSource.java 8193639 solaris-all
 serviceability/sa/ClhsdbThread.java 8193639 solaris-all
 serviceability/sa/ClhsdbVmStructsDump.java 8193639 solaris-all
@@ -125,7 +127,7 @@ serviceability/sa/ClhsdbWhere.java 8193639 solaris-all
 serviceability/sa/DeadlockDetectionTest.java 8193639 solaris-all
 serviceability/sa/JhsdbThreadInfoTest.java 8193639 solaris-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8193639 solaris-all
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64 
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
 serviceability/sa/TestClassDump.java 8193639 solaris-all
 serviceability/sa/TestClhsdbJstackLock.java 8193639 solaris-all
 serviceability/sa/TestCpoolForInvokeDynamic.java 8193639 solaris-all

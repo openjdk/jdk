@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +48,10 @@ public class ClhsdbFlags {
         LingeredApp theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            String[] vmArgs = Utils.appendTestJavaOpts(
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:-MaxFDLimit");
-            theApp = LingeredApp.startApp(vmArgs);
+            theApp = LingeredApp.startApp(
+                    "-XX:+UnlockExperimentalVMOptions",
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:-MaxFDLimit");
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             List<String> cmds = List.of(
@@ -111,7 +109,8 @@ public class ClhsdbFlags {
                 "-XX:OnError='echo error'",        // ccstrlist
                 "-XX:CompileThresholdScaling=1.0", // double
                 "-XX:ErrorLogTimeout=120");        // uint64_t
-            theApp = LingeredApp.startApp(vmArgs);
+            theApp = new LingeredApp();
+            LingeredApp.startAppExactJvmOpts(theApp, vmArgs);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             List<String> cmds = List.of("flags");

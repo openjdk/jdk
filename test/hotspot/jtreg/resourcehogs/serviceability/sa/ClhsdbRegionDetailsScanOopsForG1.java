@@ -25,6 +25,7 @@
  * @test
  * @bug 8175312
  * @summary Test clhsdb 'g1regiondetails' and 'scanoops' commands for G1GC
+ * @requires vm.gc.G1
  * @requires vm.hasSA & (vm.bits == "64" & os.maxMemory > 8g)
  * @library /test/lib /test/hotspot/jtreg/serviceability/sa
  * @run main/othervm/timeout=2400 ClhsdbRegionDetailsScanOopsForG1
