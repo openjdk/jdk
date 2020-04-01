@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,25 +42,25 @@ public class NameTests {
 
         String[] rdnStr = new String[] {"one=voilet"};
 
-        ArrayList rdnList = new ArrayList();
+        ArrayList<Rdn> rdnList = new ArrayList<>();
 
         for (int i = 0; i < rdnStr.length; i++) {
             rdnList.add(i, new Rdn(rdnStr[i]));
         }
         LdapName dn = new LdapName(rdnList);
 
-        Collection rdns = dn.getRdns();
+        Collection<Rdn> rdns = dn.getRdns();
         System.out.println("size is :" + dn.size());
         System.out.println("isEmpty :" + dn.isEmpty());
         System.out.println("************Printing as Rdns*********");
-        Iterator iter = rdns.iterator();
+        Iterator<Rdn> iter = rdns.iterator();
         while (iter.hasNext()) {
             System.out.println(iter.next());
         }
 
         System.out.println();
         System.out.println("************Printing the Enumeration*********");
-        Enumeration dnEnum = dn.getAll();
+        Enumeration<String> dnEnum = dn.getAll();
         while (dnEnum.hasMoreElements()) {
             System.out.println(dnEnum.nextElement());
         }
@@ -70,7 +70,7 @@ public class NameTests {
         LdapName nameSuffix = new LdapName("two=Indigo");
         System.out.println("addAll():" + dn.addAll(nameSuffix));
 
-        ArrayList list = new ArrayList();
+        ArrayList<Rdn> list = new ArrayList<>();
         list.add(new Rdn("five=Yellow"));
         System.out.println("Rdn- addAll():" + dn.addAll(list));
 
@@ -79,7 +79,7 @@ public class NameTests {
         System.out.println("addAll at pos = 2");
         System.out.println("addAll():" + dn.addAll(2, nameSuffix));
 
-        list = new ArrayList();
+        list = new ArrayList<>();
         list.add(new Rdn("four=Green"));
         System.out.println();
         System.out.println("addAll at pos = 3");
@@ -146,12 +146,12 @@ public class NameTests {
                         rdnStr[0] + "): " + dn.startsWith(
                                         new CompositeName(rdnStr[0])));
 
-        java.util.List prefixList = (dn.getRdns()).subList(0, size /2);
+        List<Rdn> prefixList = (dn.getRdns()).subList(0, size /2);
         System.out.println("Rdn - startsWith(" + prefixList + "):" +
                                 dn.startsWith(prefixList));
 
         System.out.println("Rdn - startsWith() - empty RDN list:" +
-                                dn.startsWith(new ArrayList()));
+                                dn.startsWith(new ArrayList<>()));
 
         System.out.println();
         System.out.println("endsWith(" + rdnStr[0] + "):" +
@@ -167,7 +167,7 @@ public class NameTests {
                                 dn.endsWith(prefixList));
 
         System.out.println("Rdn - endsWith() empty RDN list:" +
-                                dn.endsWith(new ArrayList()));
+                                dn.endsWith(new ArrayList<>()));
 
         // test clone
         System.out.println();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.lang.reflect.Modifier;
 public class CheckAccess {
     public static final void main(String[] args) throws Exception {
         try {
-            Class clazz = Class.forName("com.sun.jndi.dns.DnsContext");
+            Class<?> clazz = Class.forName("com.sun.jndi.dns.DnsContext");
             Field field = clazz.getField("debug");
             if (Modifier.isPublic(field.getModifiers())) {
                 throw new Exception(

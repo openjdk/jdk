@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import javax.naming.Binding;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.InitialDirContext;
@@ -52,7 +53,7 @@ public class ListBindingsLeafNotFound extends ListTestBase {
     @Override
     public void runTest() throws Exception {
         setContext(new InitialDirContext(env()));
-        NamingEnumeration enumObj = context().listBindings(getKey());
+        NamingEnumeration<Binding> enumObj = context().listBindings(getKey());
 
         DNSTestUtils.debug("Enum is: " + enumObj);
         throw new RuntimeException("Failed: expecting NameNotFoundException");

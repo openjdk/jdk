@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class LdapNameConstruction {
         /**
          * LdapName creation tests
          */
-        List rdns = new ArrayList();
+        List<Rdn> rdns = new ArrayList<>();
         rdns.add(new Rdn("o=Food"));
         rdns.add(new Rdn("ou=Fruits"));
         rdns.add(rdn3);
@@ -82,7 +82,7 @@ public class LdapNameConstruction {
         }
         System.out.println("ldapname1 and ldapname2 are equal");
 
-        LdapName name = new LdapName(new ArrayList());
+        LdapName name = new LdapName(new ArrayList<>());
         System.out.println("Empty ldapname:" + name);
     }
 }

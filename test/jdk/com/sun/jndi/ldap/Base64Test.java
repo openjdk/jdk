@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class Base64Test {
      * in an LDAP directory.
      */
     private static void storeObjectInLDAP() {
-        Hashtable env = new Hashtable();
+        Hashtable<Object, Object> env = new Hashtable<>();
         env.put(Context.REFERRAL, "follow"); // omit an LDAP control
         env.put("java.naming.ldap.version", "3"); // omit LDAP bind operation
         env.put("com.sun.jndi.ldap.trace.ber", System.err); // dump protocol

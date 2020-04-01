@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 
-class DeadServerTimeoutSSLTest implements Callable {
+class DeadServerTimeoutSSLTest implements Callable<Boolean> {
 
-    Hashtable env;
+    Hashtable<Object, Object> env;
     DeadSSLServer server;
     boolean passed = false;
     private int HANGING_TEST_TIMEOUT = 20_000;
 
-    public DeadServerTimeoutSSLTest(Hashtable env) throws IOException {
+    public DeadServerTimeoutSSLTest(Hashtable<Object, Object> env) throws IOException {
         this.server = new DeadSSLServer();
         this.env = env;
     }
@@ -106,7 +106,7 @@ class DeadServerTimeoutSSLTest implements Callable {
 
     public Boolean call() {
         InitialContext ctx = null;
-        ScheduledFuture killer = null;
+        ScheduledFuture<?> killer = null;
         long start = System.nanoTime();
 
         try {
@@ -174,8 +174,8 @@ class DeadSSLServer extends Thread {
 
 public class DeadSSLLdapTimeoutTest {
 
-    static Hashtable createEnv() {
-        Hashtable env = new Hashtable(11);
+    static Hashtable<Object, Object> createEnv() {
+        Hashtable<Object, Object> env = new Hashtable<>(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
             "com.sun.jndi.ldap.LdapCtxFactory");
         return env;
@@ -194,7 +194,7 @@ public class DeadSSLLdapTimeoutTest {
         // this should exit with a SocketTimeoutException as the root cause
         // it should also use the connect timeout instead of the read timeout
         System.out.println("Running connect timeout test with 10ms connect timeout, 3000ms read timeout & SSL");
-        Hashtable sslenv = createEnv();
+        Hashtable<Object, Object> sslenv = createEnv();
         sslenv.put("com.sun.jndi.ldap.connect.timeout", "10");
         sslenv.put("com.sun.jndi.ldap.read.timeout", "3000");
         sslenv.put(Context.SECURITY_PROTOCOL, "ssl");

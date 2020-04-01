@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 import java.net.ServerSocket;
 import java.util.Hashtable;
 
@@ -99,7 +100,7 @@ public class AddNewEntry {
             SearchControls constraints = new SearchControls();
             constraints.setSearchScope(SearchControls.OBJECT_SCOPE);
 
-            NamingEnumeration results = ctx
+            NamingEnumeration<SearchResult> results = ctx
                     .search(entryDN, "(objectclass=*)", constraints);
 
             int found = LDAPTestUtils.checkResult(results, expect);

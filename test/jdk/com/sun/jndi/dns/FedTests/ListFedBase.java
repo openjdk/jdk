@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ abstract class ListFedBase extends DNSTestBase {
      * @param expectedCount given expected count
      * @throws NamingException
      */
-    public void verifyNamingEnumeration(NamingEnumeration enumObj,
+    public void verifyNamingEnumeration(NamingEnumeration<Binding> enumObj,
             int expectedCount) throws NamingException {
         DNSTestUtils.debug("Enum is: " + enumObj);
 
@@ -54,7 +54,7 @@ abstract class ListFedBase extends DNSTestBase {
         Binding res;
 
         while (enumObj.hasMore()) {
-            res = (Binding) enumObj.next();
+            res = enumObj.next();
             DNSTestUtils.debug(res);
             ++count;
         }
