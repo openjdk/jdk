@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,18 @@
  * summary:
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Choice;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Robot;
+import java.awt.Window;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
 import test.java.awt.regtesthelpers.AbstractTest;
-import test.java.awt.regtesthelpers.Sysout;
 import test.java.awt.regtesthelpers.Util;
 
 public class UnfocusableToplevel {
@@ -69,6 +77,8 @@ public class UnfocusableToplevel {
         // disturb the environment. So creating tempFrameToHoldFocus frame,
         // to consume key press events.
         Frame tempFrameToHoldFocus = new Frame();
+        tempFrameToHoldFocus.setSize(300, 300);
+        tempFrameToHoldFocus.setLocationRelativeTo(null);
         tempFrameToHoldFocus.setVisible(true);
         Util.waitForIdle(robot);
 
@@ -93,7 +103,7 @@ public class UnfocusableToplevel {
                     traceEvent("stateChanged", ie);
                 }
             });
-
+        w.setLocationRelativeTo(null);
         w.setVisible(true);
 
         Util.waitForIdle(robot);
