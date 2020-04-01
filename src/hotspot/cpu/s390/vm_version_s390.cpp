@@ -253,41 +253,48 @@ void VM_Version::initialize() {
 
 
 void VM_Version::set_features_string() {
-
+  // A note on the _features_string format:
+  //   There are jtreg tests checking the _features_string for various properties.
+  //   For some strange reason, these tests require the string to contain
+  //   only _lowercase_ characters. Keep that in mind when being surprised
+  //   about the unusual notation of features - and when adding new ones.
+  //   Features may have one comma at the end.
+  //   Furthermore, use one, and only one, separator space between features.
+  //   Multiple spaces are considered separate tokens, messing up everything.
   unsigned int ambiguity = 0;
   _model_string = z_name[0];
   if (is_z13()) {
-    _features_string = "System z G7-z13  (LDISP_fast, ExtImm, PCrel Load/Store, CmpB, Cond Load/Store, Interlocked Update, TxM, VectorInstr)";
+    _features_string = "system-z, g7-z13, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr";
     _model_string = z_name[7];
     ambiguity++;
   }
   if (is_ec12()) {
-    _features_string = "System z G6-EC12 (LDISP_fast, ExtImm, PCrel Load/Store, CmpB, Cond Load/Store, Interlocked Update, TxM)";
+    _features_string = "system-z, g6-ec12, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm";
     _model_string = z_name[6];
     ambiguity++;
   }
   if (is_z196()) {
-    _features_string = "System z G5-z196 (LDISP_fast, ExtImm, PCrel Load/Store, CmpB, Cond Load/Store, Interlocked Update)";
+    _features_string = "system-z, g5-z196, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update";
     _model_string = z_name[5];
     ambiguity++;
   }
   if (is_z10()) {
-    _features_string = "System z G4-z10  (LDISP_fast, ExtImm, PCrel Load/Store, CmpB)";
+    _features_string = "system-z, g4-z10, ldisp_fast, extimm, pcrel_load/store, cmpb";
     _model_string = z_name[4];
     ambiguity++;
   }
   if (is_z9()) {
-    _features_string = "System z G3-z9   (LDISP_fast, ExtImm), out-of-support as of 2016-04-01";
+    _features_string = "system-z, g3-z9, ldisp_fast, extimm, out-of-support as of 2016-04-01";
     _model_string = z_name[3];
     ambiguity++;
   }
   if (is_z990()) {
-    _features_string = "System z G2-z990 (LDISP_fast), out-of-support as of 2014-07-01";
+    _features_string = "system-z, g2-z990, ldisp_fast, out-of-support as of 2014-07-01";
     _model_string = z_name[2];
     ambiguity++;
   }
   if (is_z900()) {
-    _features_string = "System z G1-z900 (LDISP), out-of-support as of 2014-07-01";
+    _features_string = "system-z, g1-z900, ldisp, out-of-support as of 2014-07-01";
     _model_string = z_name[1];
     ambiguity++;
   }
@@ -302,25 +309,24 @@ void VM_Version::set_features_string() {
 
   if (has_Crypto_AES()) {
     char buf[256];
-    assert(strlen(_features_string) + 4 + 3*4 + 1 < sizeof(buf), "increase buffer size");
-    jio_snprintf(buf, sizeof(buf), "%s aes%s%s%s", // String 'aes' must be surrounded by spaces so that jtreg tests recognize it.
+    assert(strlen(_features_string) + 3*8 < sizeof(buf), "increase buffer size");
+    jio_snprintf(buf, sizeof(buf), "%s%s%s%s",
                  _features_string,
-                 has_Crypto_AES128() ? " 128" : "",
-                 has_Crypto_AES192() ? " 192" : "",
-                 has_Crypto_AES256() ? " 256" : "");
+                 has_Crypto_AES128() ? ", aes128" : "",
+                 has_Crypto_AES192() ? ", aes192" : "",
+                 has_Crypto_AES256() ? ", aes256" : "");
     _features_string = os::strdup(buf);
   }
 
   if (has_Crypto_SHA()) {
     char buf[256];
-    assert(strlen(_features_string) + 4 + 2 + 2*4 + 6 + 1 < sizeof(buf), "increase buffer size");
-    // String 'sha1' etc must be surrounded by spaces so that jtreg tests recognize it.
-    jio_snprintf(buf, sizeof(buf), "%s %s%s%s%s",
+    assert(strlen(_features_string) + 6 + 2*8 + 7 < sizeof(buf), "increase buffer size");
+    jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s",
                  _features_string,
-                 has_Crypto_SHA1()   ? " sha1"   : "",
-                 has_Crypto_SHA256() ? " sha256" : "",
-                 has_Crypto_SHA512() ? " sha512" : "",
-                 has_Crypto_GHASH()  ? " ghash"  : "");
+                 has_Crypto_SHA1()   ? ", sha1"   : "",
+                 has_Crypto_SHA256() ? ", sha256" : "",
+                 has_Crypto_SHA512() ? ", sha512" : "",
+                 has_Crypto_GHASH()  ? ", ghash"  : "");
     if (has_Crypto_AES()) { os::free((void *)_features_string); }
     _features_string = os::strdup(buf);
   }
