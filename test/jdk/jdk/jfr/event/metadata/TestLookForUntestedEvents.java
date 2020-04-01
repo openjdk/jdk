@@ -70,7 +70,7 @@ public class TestLookForUntestedEvents {
             "MetaspaceChunkFreeListSummary", "G1HeapSummary", "ParallelOldGarbageCollection",
             "OldGarbageCollection", "G1GarbageCollection", "GCPhasePause",
             "GCPhasePauseLevel1", "GCPhasePauseLevel2", "GCPhasePauseLevel3",
-            "GCPhasePauseLevel4", "GCPhaseConcurrent")
+            "GCPhasePauseLevel4")
     );
 
     // This is a "known failure list" for this test.

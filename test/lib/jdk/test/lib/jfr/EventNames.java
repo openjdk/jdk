@@ -141,6 +141,7 @@ public class EventNames {
     public final static String AllocationRequiringGC = PREFIX + "AllocationRequiringGC";
     public final static String GCPhaseParallel = PREFIX + "GCPhaseParallel";
     public final static String GCPhaseConcurrent = PREFIX + "GCPhaseConcurrent";
+    public final static String GCPhaseConcurrentLevel1 = PREFIX + "GCPhaseConcurrentLevel1";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";
