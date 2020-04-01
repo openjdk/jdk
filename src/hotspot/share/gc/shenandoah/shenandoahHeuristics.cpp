@@ -179,23 +179,33 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
           byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
           byte_size_in_proper_unit(total_garbage),     proper_unit_for_byte_size(total_garbage));
 
-  size_t immediate_percent = total_garbage == 0 ? 0 : (immediate_garbage * 100 / total_garbage);
+  size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
     collection_set->update_region_status();
-
-    size_t cset_percent = total_garbage == 0 ? 0 : (collection_set->garbage() * 100 / total_garbage);
-    log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%% of total), " SIZE_FORMAT "%s CSet, " SIZE_FORMAT " CSet regions",
-                       byte_size_in_proper_unit(collection_set->garbage()),   proper_unit_for_byte_size(collection_set->garbage()),
-                       cset_percent,
-                       byte_size_in_proper_unit(collection_set->live_data()), proper_unit_for_byte_size(collection_set->live_data()),
-                       collection_set->count());
   }
 
-  log_info(gc, ergo)("Immediate Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%% of total), " SIZE_FORMAT " regions",
-                     byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
-                     immediate_percent, immediate_regions);
+  size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);
+
+  size_t collectable_garbage = collection_set->garbage() + immediate_garbage;
+  size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
+
+  log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), "
+                     "Immediate: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), "
+                     "CSet: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%)",
+
+                     byte_size_in_proper_unit(collectable_garbage),
+                     proper_unit_for_byte_size(collectable_garbage),
+                     collectable_garbage_percent,
+
+                     byte_size_in_proper_unit(immediate_garbage),
+                     proper_unit_for_byte_size(immediate_garbage),
+                     immediate_percent,
+
+                     byte_size_in_proper_unit(collection_set->garbage()),
+                     proper_unit_for_byte_size(collection_set->garbage()),
+                     cset_percent);
 }
 
 void ShenandoahHeuristics::record_gc_start() {
