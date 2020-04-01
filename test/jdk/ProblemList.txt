@@ -114,6 +114,7 @@
 
 # jdk_awt
 
+java/awt/Desktop/OpenByUNCPathNameTest/OpenByUNCPathNameTest.java 8239827 windows-all
 java/awt/event/MouseEvent/MouseClickTest/MouseClickTest.java 8168389 windows-all,macosx-all
 java/awt/event/KeyEvent/SwallowKeyEvents/SwallowKeyEvents.java 8224055 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowBlockingTest.java 8168408 windows-all,macosx-all
@@ -141,7 +142,7 @@ java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.jav
 java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest.java 7152980 macosx-all
 java/awt/Focus/ShowFrameCheckForegroundTest/ShowFrameCheckForegroundTest.java 8028701 macosx-all,linux-all
 java/awt/Focus/SimpleWindowActivationTest/SimpleWindowActivationTest.java 8159599 macosx-all
-java/awt/Focus/TypeAhead/TestFocusFreeze.java 8198622 macosx-all
+java/awt/Focus/TypeAhead/TestFocusFreeze.java 8198622,6447537 macosx-all,windows-all,linux-all
 java/awt/Focus/ToFrontFocusTest/ToFrontFocus.java 7156130 linux-all
 java/awt/Focus/WrongKeyTypedConsumedTest/WrongKeyTypedConsumedTest.java 8169096 macosx-all
 java/awt/event/KeyEvent/CorrectTime/CorrectTime.java 6626492 generic-all
@@ -266,6 +267,7 @@ java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
+sun/awt/shell/FileSystemViewMemoryLeak.java 8241806 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
@@ -541,7 +543,7 @@ java/awt/Window/WindowOwnedByEmbeddedFrameTest/WindowOwnedByEmbeddedFrameTest.ja
 java/awt/Mouse/MouseComboBoxTest/MouseComboBoxTest.java 8233564 macosx-all
 java/awt/Modal/NullModalityDialogTest/NullModalityDialogTest.java 8233565 macosx-all
 java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.java 8233566 macosx-all
-java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogTest/EnqueueWithDialogTest.java 8233566 macosx-all
+java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogTest/EnqueueWithDialogTest.java 8233566,6447537 macosx-all,windows-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all
 java/awt/Focus/FocusSubRequestTest/FocusSubRequestTest.java 8233567 macosx-all
 java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java 8233568 macosx-all
