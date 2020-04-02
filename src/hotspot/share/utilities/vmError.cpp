@@ -80,8 +80,8 @@ void* VMError::get_segfault_address() {
 // List of environment variables that should be reported in error log file.
 const char *env_list[] = {
   // All platforms
-  "JAVA_HOME", "JRE_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
-  "JAVA_COMPILER", "PATH", "USERNAME",
+  "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
+  "PATH", "USERNAME",
 
   // Env variables that are defined on Solaris/Linux/BSD
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
@@ -91,8 +91,8 @@ const char *env_list[] = {
   // defined on AIX
   "LIBPATH", "LDR_PRELOAD", "LDR_PRELOAD64",
 
-  // defined on Linux
-  "LD_ASSUME_KERNEL", "_JAVA_SR_SIGNUM",
+  // defined on Linux/AIX/BSD
+  "_JAVA_SR_SIGNUM",
 
   // defined on Darwin
   "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH",
