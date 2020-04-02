@@ -2566,9 +2566,7 @@ Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
     // Check accessibility, emulating ConstantPool::verify_constant_pool_resolve.
     Klass* sel_klass = java_lang_Class::as_Klass(mirror());
     if (sel_klass != NULL) {
-      bool fold_type_to_class = true;
-      LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
-                                              fold_type_to_class, CHECK_NH);
+      LinkResolver::check_klass_accessibility(accessing_klass, sel_klass, CHECK_NH);
     }
   }
   return mirror;
@@ -2633,9 +2631,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       Klass* sel_klass = java_lang_Class::as_Klass(mirror);
       mirror = NULL;  // safety
       // Emulate ConstantPool::verify_constant_pool_resolve.
-      bool fold_type_to_class = true;
-      LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
-                                              fold_type_to_class, CHECK_(empty));
+      LinkResolver::check_klass_accessibility(accessing_klass, sel_klass, CHECK_(empty));
     }
   }
   assert(arg == npts, "");

@@ -269,16 +269,7 @@ class LinkResolver: AllStatic {
                                       const constantPoolHandle& pool, int index, TRAPS);
  public:
   // constant pool resolving
-  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
-                                        bool fold_type_to_class, TRAPS);
-  // The optional 'fold_type_to_class' means that a derived type (array)
-  // is first converted to the class it is derived from (element type).
-  // If this element type is not a class, then the check passes quietly.
-  // This is usually what is needed, but a few existing uses might break
-  // if this flag were always turned on.  FIXME: See if it can be, always.
-  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass, TRAPS) {
-    return check_klass_accessability(ref_klass, sel_klass, false, THREAD);
-  }
+  static void check_klass_accessibility(Klass* ref_klass, Klass* sel_klass, TRAPS);
 
   // static resolving calls (will not run any Java code);
   // used only from Bytecode_invoke::static_target

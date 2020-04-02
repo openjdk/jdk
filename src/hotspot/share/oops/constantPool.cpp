@@ -687,8 +687,7 @@ void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_c
     return;  // short cut, typeArray klass is always accessible
   }
   Klass* holder = this_cp->pool_holder();
-  bool fold_type_to_class = true;
-  LinkResolver::check_klass_accessability(holder, k, fold_type_to_class, CHECK);
+  LinkResolver::check_klass_accessibility(holder, k, CHECK);
 }
 
 
