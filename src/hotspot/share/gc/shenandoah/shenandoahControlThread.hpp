@@ -115,7 +115,7 @@ public:
 
   // Handle allocation failure from normal allocation.
   // Blocks until memory is available.
-  void handle_alloc_failure(size_t words);
+  void handle_alloc_failure(ShenandoahAllocRequest& req);
 
   // Handle allocation failure from evacuation path.
   // Optionally blocks while collector is handling the failure.

@@ -506,15 +506,16 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   }
 }
 
-void ShenandoahControlThread::handle_alloc_failure(size_t words) {
+void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(current()->is_Java_thread(), "expect Java thread here");
 
   if (try_set_alloc_failure_gc()) {
     // Only report the first allocation failure
-    log_info(gc)("Failed to allocate " SIZE_FORMAT "%s",
-                 byte_size_in_proper_unit(words * HeapWordSize), proper_unit_for_byte_size(words * HeapWordSize));
+    log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
+                 req.type_string(),
+                 byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
 
     // Now that alloc failure GC is scheduled, we can abort everything else
     heap->cancel_gc(GCCause::_allocation_failure);

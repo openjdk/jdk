@@ -821,13 +821,13 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
     while (result == NULL && _progress_last_gc.is_set()) {
       tries++;
-      control_thread()->handle_alloc_failure(req.size());
+      control_thread()->handle_alloc_failure(req);
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
     while (result == NULL && tries <= ShenandoahFullGCThreshold) {
       tries++;
-      control_thread()->handle_alloc_failure(req.size());
+      control_thread()->handle_alloc_failure(req);
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
