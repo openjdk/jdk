@@ -49,7 +49,6 @@ import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.Charset;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -585,28 +584,10 @@ public final class System {
     public static native int identityHashCode(Object x);
 
     /**
-     * System properties. The following properties are guaranteed to be defined:
-     * <dl>
-     * <dt>java.version         <dd>Java version number
-     * <dt>java.version.date    <dd>Java version date
-     * <dt>java.vendor          <dd>Java vendor specific string
-     * <dt>java.vendor.url      <dd>Java vendor URL
-     * <dt>java.vendor.version  <dd>Java vendor version
-     * <dt>java.home            <dd>Java installation directory
-     * <dt>java.class.version   <dd>Java class version number
-     * <dt>java.class.path      <dd>Java classpath
-     * <dt>os.name              <dd>Operating System Name
-     * <dt>os.arch              <dd>Operating System Architecture
-     * <dt>os.version           <dd>Operating System Version
-     * <dt>file.separator       <dd>File separator ("/" on Unix)
-     * <dt>path.separator       <dd>Path separator (":" on Unix)
-     * <dt>line.separator       <dd>Line separator ("\n" on Unix)
-     * <dt>user.name            <dd>User account name
-     * <dt>user.home            <dd>User home directory
-     * <dt>user.dir             <dd>User's current working directory
-     * </dl>
+     * System properties.
+     *
+     * See {@linkplain #getProperties getProperties} for details.
      */
-
     private static Properties props;
 
     /**
