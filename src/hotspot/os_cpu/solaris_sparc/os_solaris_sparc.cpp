@@ -121,12 +121,12 @@ bool os::Solaris::valid_ucontext(Thread* thread, const ucontext_t* valid, const 
   }
 
   if (thread->is_Java_thread()) {
-    if (!thread->is_in_full_stack((address)suspect)) {
+    if (!thread->is_in_full_stack_checked((address)suspect)) {
       DEBUG_ONLY(tty->print_cr("valid_ucontext: uc_link not in thread stack");)
       return false;
     }
     address _sp   = (address)((intptr_t)suspect->uc_mcontext.gregs[REG_SP] + STACK_BIAS);
-    if (!thread->is_in_full_stack(_sp) ||
+    if (!thread->is_in_full_stack_checked(_sp) ||
         !frame::is_valid_stack_pointer(((JavaThread*)thread)->base_of_stack_pointer(), (intptr_t*)_sp)) {
       DEBUG_ONLY(tty->print_cr("valid_ucontext: stackpointer not in thread stack");)
       return false;

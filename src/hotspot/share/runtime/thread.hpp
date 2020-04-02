@@ -711,8 +711,16 @@ class Thread: public ThreadShadow {
 
   // Check if address is in the stack mapped to this thread. Used mainly in
   // error reporting (so has to include guard zone) and frame printing.
-  bool is_in_full_stack(address adr) const {
+  // Expects _stack_base to be initialized - checked with assert.
+  bool is_in_full_stack_checked(address adr) const {
     return is_in_stack_range_incl(adr, stack_end());
+  }
+
+  // Like is_in_full_stack_checked but without the assertions as this
+  // may be called in a thread before _stack_base is initialized.
+  bool is_in_full_stack(address adr) const {
+    address stack_end = _stack_base - _stack_size;
+    return _stack_base > adr && adr >= stack_end;
   }
 
   // Check if address is in the live stack of this thread (not just for locks).
@@ -748,7 +756,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != NULL,"Sanity check failed for %s", name()); return _stack_base; }
+  address stack_base() const           { assert(_stack_base != NULL,"Sanity check"); return _stack_base; }
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }

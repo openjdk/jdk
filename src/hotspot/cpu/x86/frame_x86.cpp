@@ -70,7 +70,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // an fp must be within the stack and above (but not equal) sp
   // second evaluation on fp+ is added to handle situation where fp is -1
   bool fp_safe = thread->is_in_stack_range_excl(fp, sp) &&
-                 thread->is_in_full_stack(fp + (return_addr_offset * sizeof(void*)));
+                 thread->is_in_full_stack_checked(fp + (return_addr_offset * sizeof(void*)));
 
   // We know sp/unextended_sp are safe only fp is questionable here
 
@@ -132,7 +132,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       sender_sp = _unextended_sp + _cb->frame_size();
       // Is sender_sp safe?
-      if (!thread->is_in_full_stack((address)sender_sp)) {
+      if (!thread->is_in_full_stack_checked((address)sender_sp)) {
         return false;
       }
       sender_unextended_sp = sender_sp;

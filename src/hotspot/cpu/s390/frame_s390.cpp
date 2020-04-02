@@ -66,7 +66,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   }
 
   // Unextended sp must be within the stack
-  if (!thread->is_in_full_stack(unextended_sp)) {
+  if (!thread->is_in_full_stack_checked(unextended_sp)) {
     return false;
   }
 

@@ -113,7 +113,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       sender_sp = _unextended_sp + _cb->frame_size();
       // Is sender_sp safe?
-      if (!thread->is_in_full_stack((address)sender_sp)) {
+      if (!thread->is_in_full_stack_checked((address)sender_sp)) {
         return false;
       }
       // With our calling conventions, the return_address should
