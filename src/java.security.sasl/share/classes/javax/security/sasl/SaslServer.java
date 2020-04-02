@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package javax.security.sasl;
 
 /**
  * Performs SASL authentication as a server.
- *<p>
+ * <p>
  * A server such an LDAP server gets an instance of this
  * class in order to perform authentication defined by a specific SASL
  * mechanism. Invoking methods on the {@code SaslServer} instance
@@ -35,19 +35,19 @@ package javax.security.sasl;
  * mechanism implemented by the {@code SaslServer}.
  * As the authentication proceeds, the instance
  * encapsulates the state of a SASL server's authentication exchange.
- *<p>
+ * <p>
  * Here's an example of how an LDAP server might use a {@code SaslServer}.
  * It first gets an instance of a {@code SaslServer} for the SASL mechanism
  * requested by the client:
- *<blockquote><pre>
+ * <blockquote><pre>
  * SaslServer ss = Sasl.createSaslServer(mechanism,
  *     "ldap", myFQDN, props, callbackHandler);
- *</pre></blockquote>
+ * </pre></blockquote>
  * It can then proceed to use the server for authentication.
  * For example, suppose the LDAP server received an LDAP BIND request
  * containing the name of the SASL mechanism and an (optional) initial
  * response. It then might use the server as follows:
- *<blockquote><pre>{@code
+ * <blockquote><pre>{@code
  * while (!ss.isComplete()) {
  *     try {
  *         byte[] challenge = ss.evaluateResponse(response);
@@ -55,27 +55,27 @@ package javax.security.sasl;
  *             status = ldap.sendBindResponse(mechanism, challenge, SUCCESS);
  *         } else {
  *             status = ldap.sendBindResponse(mechanism, challenge,
-                   SASL_BIND_IN_PROGRESS);
+ *                 SASL_BIND_IN_PROGRESS);
  *             response = ldap.readBindRequest();
  *         }
  *     } catch (SaslException e) {
- *          status = ldap.sendErrorResponse(e);
- *          break;
+ *         status = ldap.sendErrorResponse(e);
+ *         break;
  *     }
  * }
  * if (ss.isComplete() && status == SUCCESS) {
- *    String qop = (String) sc.getNegotiatedProperty(Sasl.QOP);
- *    if (qop != null
- *        && (qop.equalsIgnoreCase("auth-int")
- *            || qop.equalsIgnoreCase("auth-conf"))) {
+ *     String qop = (String) sc.getNegotiatedProperty(Sasl.QOP);
+ *     if (qop != null
+ *         && (qop.equalsIgnoreCase("auth-int")
+ *             || qop.equalsIgnoreCase("auth-conf"))) {
  *
- *      // Use SaslServer.wrap() and SaslServer.unwrap() for future
- *      // communication with client
- *      ldap.in = new SecureInputStream(ss, ldap.in);
- *      ldap.out = new SecureOutputStream(ss, ldap.out);
- *    }
+ *         // Use SaslServer.wrap() and SaslServer.unwrap() for future
+ *         // communication with client
+ *         ldap.in = new SecureInputStream(ss, ldap.in);
+ *         ldap.out = new SecureOutputStream(ss, ldap.out);
+ *     }
  * }
- *}</pre></blockquote>
+ * }</pre></blockquote>
  *
  * @since 1.5
  *
@@ -121,12 +121,12 @@ public abstract interface SaslServer {
         throws SaslException;
 
     /**
-      * Determines whether the authentication exchange has completed.
-      * This method is typically called after each invocation of
-      * {@code evaluateResponse()} to determine whether the
-      * authentication has completed successfully or should be continued.
-      * @return true if the authentication exchange has completed; false otherwise.
-      */
+     * Determines whether the authentication exchange has completed.
+     * This method is typically called after each invocation of
+     * {@code evaluateResponse()} to determine whether the
+     * authentication has completed successfully or should be continued.
+     * @return true if the authentication exchange has completed; false otherwise.
+     */
     public abstract boolean isComplete();
 
     /**
@@ -145,7 +145,7 @@ public abstract interface SaslServer {
      * the authentication exchange has negotiated integrity and/or privacy
      * as the quality of protection; otherwise,
      * an {@code IllegalStateException} is thrown.
-     *<p>
+     * <p>
      * {@code incoming} is the contents of the SASL buffer as defined in RFC 2222
      * without the leading four octet field that represents the length.
      * {@code offset} and {@code len} specify the portion of {@code incoming}
@@ -171,7 +171,7 @@ public abstract interface SaslServer {
      * completed (i.e., when {@code isComplete()} returns true) and only if
      * the authentication exchange has negotiated integrity and/or privacy
      * as the quality of protection; otherwise, a {@code SaslException} is thrown.
-     *<p>
+     * <p>
      * The result of this method
      * will make up the contents of the SASL buffer as defined in RFC 2222
      * without the leading four octet field that represents the length.

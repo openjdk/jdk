@@ -312,7 +312,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *     < 1 byte >
      * < 4 bytes > maximumPacketSize
      * < 4 bytes > negotiatedMaxFragSize
-    */
+     */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
         int i = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@ import javax.security.sasl.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
-  * Implements the EXTERNAL SASL client mechanism.
-  * (<A HREF="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</A>).
-  * The EXTERNAL mechanism returns the optional authorization ID as
-  * the initial response. It processes no challenges.
-  *
-  * @author Rosanna Lee
-  */
+ * Implements the EXTERNAL SASL client mechanism.
+ * (<A HREF="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</A>).
+ * The EXTERNAL mechanism returns the optional authorization ID as
+ * the initial response. It processes no challenges.
+ *
+ * @author Rosanna Lee
+ */
 final class ExternalClient implements SaslClient {
     private byte[] username;
     private boolean completed = false;
@@ -103,10 +103,10 @@ final class ExternalClient implements SaslClient {
     }
 
     /**
-      * Unwraps the incoming buffer.
-      *
-      * @throws SaslException Not applicable to this mechanism.
-      */
+     * Unwraps the incoming buffer.
+     *
+     * @throws SaslException Not applicable to this mechanism.
+     */
     public byte[] unwrap(byte[] incoming, int offset, int len)
         throws SaslException {
         if (completed) {
@@ -118,10 +118,10 @@ final class ExternalClient implements SaslClient {
     }
 
     /**
-      * Wraps the outgoing buffer.
-      *
-      * @throws SaslException Not applicable to this mechanism.
-      */
+     * Wraps the outgoing buffer.
+     *
+     * @throws SaslException Not applicable to this mechanism.
+     */
     public byte[] wrap(byte[] outgoing, int offset, int len)
         throws SaslException {
         if (completed) {

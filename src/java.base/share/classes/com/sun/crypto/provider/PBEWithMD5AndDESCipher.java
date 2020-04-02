@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public final class PBEWithMD5AndDESCipher extends CipherSpi {
         }
     }
 
-     /**
+    /**
      * Sets the padding mechanism of this cipher. This algorithm only uses
      * PKCS #5 padding.
      *

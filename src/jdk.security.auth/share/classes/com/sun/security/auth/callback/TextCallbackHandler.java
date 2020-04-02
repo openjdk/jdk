@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.io.IOException;
 import sun.security.util.ConsoleCallbackHandler;
 
 /**
- * <p>
  * Prompts and reads from the command line for answers to authentication
  * questions.
  * This can be used by a JAAS application to instantiate a
@@ -50,11 +49,10 @@ public class TextCallbackHandler implements CallbackHandler {
     private final CallbackHandler consoleHandler;
 
     /**
-     * <p>Creates a callback handler that prompts and reads from the
+     * Creates a callback handler that prompts and reads from the
      * command line for answers to authentication questions.
      * This can be used by JAAS applications to instantiate a
      * CallbackHandler.
-
      */
     public TextCallbackHandler() {
         this.consoleHandler = new ConsoleCallbackHandler();

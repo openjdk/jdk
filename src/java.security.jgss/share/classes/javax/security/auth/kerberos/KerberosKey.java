@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,28 +88,28 @@ public class KerberosKey implements SecretKey {
 
     private static final long serialVersionUID = -4625402278148246993L;
 
-   /**
+    /**
      * The principal that this secret key belongs to.
      *
      * @serial
      */
     private KerberosPrincipal principal;
 
-   /**
+    /**
      * the version number of this secret key
      *
      * @serial
      */
     private final int versionNum;
 
-   /**
-    * {@code KeyImpl} is serialized by writing out the ASN.1 encoded bytes
-    * of the encryption key.
-    *
-    * @serial
-    */
-
+    /**
+     * {@code KeyImpl} is serialized by writing out the ASN.1 encoded bytes
+     * of the encryption key.
+     *
+     * @serial
+     */
     private KeyImpl key;
+
     private transient boolean destroyed = false;
 
     /**

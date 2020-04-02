@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package javax.security.sasl;
 
 /**
  * Performs SASL authentication as a client.
- *<p>
+ * <p>
  * A protocol library such as one for LDAP gets an instance of this
  * class in order to perform authentication defined by a specific SASL
  * mechanism. Invoking methods on the {@code SaslClient} instance
@@ -35,16 +35,16 @@ package javax.security.sasl;
  * mechanism implemented by the {@code SaslClient}.
  * As the authentication proceeds, the instance
  * encapsulates the state of a SASL client's authentication exchange.
- *<p>
+ * <p>
  * Here's an example of how an LDAP library might use a {@code SaslClient}.
  * It first gets an instance of a {@code SaslClient}:
- *<blockquote><pre>{@code
+ * <blockquote><pre>{@code
  * SaslClient sc = Sasl.createSaslClient(mechanisms,
  *     authorizationId, protocol, serverName, props, callbackHandler);
- *}</pre></blockquote>
+ * }</pre></blockquote>
  * It can then proceed to use the client for authentication.
  * For example, an LDAP library might use the client as follows:
- *<blockquote><pre>{@code
+ * <blockquote><pre>{@code
  * // Get initial response and send to server
  * byte[] response = (sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) :
  *     null);
@@ -74,7 +74,7 @@ package javax.security.sasl;
  *      ldap.out = new SecureOutputStream(sc, ldap.out);
  *    }
  * }
- *}</pre></blockquote>
+ * }</pre></blockquote>
  *
  * If the mechanism has an initial response, the library invokes
  * {@code evaluateChallenge()} with an empty
@@ -135,14 +135,14 @@ public abstract interface SaslClient {
         throws SaslException;
 
     /**
-      * Determines whether the authentication exchange has completed.
-      * This method may be called at any time, but typically, it
-      * will not be called until the caller has received indication
-      * from the server
-      * (in a protocol-specific manner) that the exchange has completed.
-      *
-      * @return true if the authentication exchange has completed; false otherwise.
-      */
+     * Determines whether the authentication exchange has completed.
+     * This method may be called at any time, but typically, it
+     * will not be called until the caller has received indication
+     * from the server
+     * (in a protocol-specific manner) that the exchange has completed.
+     *
+     * @return true if the authentication exchange has completed; false otherwise.
+     */
     public abstract boolean isComplete();
 
     /**
@@ -152,7 +152,7 @@ public abstract interface SaslClient {
      * the authentication exchange has negotiated integrity and/or privacy
      * as the quality of protection; otherwise, an
      * {@code IllegalStateException} is thrown.
-     *<p>
+     * <p>
      * {@code incoming} is the contents of the SASL buffer as defined in RFC 2222
      * without the leading four octet field that represents the length.
      * {@code offset} and {@code len} specify the portion of {@code incoming}
@@ -179,7 +179,7 @@ public abstract interface SaslClient {
      * the authentication exchange has negotiated integrity and/or privacy
      * as the quality of protection; otherwise, an
      * {@code IllegalStateException} is thrown.
-     *<p>
+     * <p>
      * The result of this method will make up the contents of the SASL buffer
      * as defined in RFC 2222 without the leading four octet field that
      * represents the length.
@@ -215,7 +215,6 @@ public abstract interface SaslClient {
      * @exception IllegalStateException if this authentication exchange
      * has not completed
      */
-
     public abstract Object getNegotiatedProperty(String propName);
 
      /**

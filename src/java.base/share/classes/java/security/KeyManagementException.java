@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,14 +58,14 @@ public class KeyManagementException extends KeyException {
         super();
     }
 
-     /**
+    /**
      * Constructs a KeyManagementException with the specified detail
      * message. A detail message is a String that describes this
      * particular exception.
      *
      * @param msg the detail message.
      */
-   public KeyManagementException(String msg) {
+    public KeyManagementException(String msg) {
         super(msg);
     }
 

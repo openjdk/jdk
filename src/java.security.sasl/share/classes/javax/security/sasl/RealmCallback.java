@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@ package javax.security.sasl;
 import javax.security.auth.callback.TextInputCallback;
 
 /**
-  * This callback is used by {@code SaslClient} and {@code SaslServer}
-  * to retrieve realm information.
-  *
-  * @since 1.5
-  *
-  * @author Rosanna Lee
-  * @author Rob Weltman
-  */
+ * This callback is used by {@code SaslClient} and {@code SaslServer}
+ * to retrieve realm information.
+ *
+ * @since 1.5
+ *
+ * @author Rosanna Lee
+ * @author Rob Weltman
+ */
 public class RealmCallback extends TextInputCallback {
 
     /**

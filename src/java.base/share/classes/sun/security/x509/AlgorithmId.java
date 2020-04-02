@@ -971,7 +971,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     /**
      * Extracts the encryption algorithm name from a signature
      * algorithm name.
-      */
+     */
     public static String getEncAlgFromSigAlg(String signatureAlgorithm) {
         signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
         int with = signatureAlgorithm.indexOf("WITH");
@@ -993,7 +993,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     /**
      * Extracts the digest algorithm name from a signature
      * algorithm name.
-      */
+     */
     public static String getDigAlgFromSigAlg(String signatureAlgorithm) {
         signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
         int with = signatureAlgorithm.indexOf("WITH");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import sun.security.action.GetPropertyAction;
  * - SHA-224withDSA/SHA-256withDSA are the signature schemes
  *   described in FIPS 186-3. The associated object identifiers are
  *   "OID.2.16.840.1.101.3.4.3.1", and "OID.2.16.840.1.101.3.4.3.2".
-
+ *
  * - DSA is the key generation scheme as described in FIPS 186.
  *   Aliases for DSA include the OID strings "OID.1.3.14.3.2.12"
  *   and "OID.1.2.840.10040.4.1".

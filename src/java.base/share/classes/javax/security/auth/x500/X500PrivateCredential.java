@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,6 @@ public final class X500PrivateCredential implements Destroyable {
      * in this object have been cleared.
      *
      * @return true if X509Certificate and the PrivateKey are null
-
      */
     public boolean isDestroyed() {
         return cert == null && key == null && alias==null;

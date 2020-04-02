@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -774,7 +774,7 @@ public class PKCS11 {
      * @param outLen buffer size for the encrypted data
      * @return the length of encrypted data for this update
      *         (PKCS#11 param: CK_BYTE_PTR pEncryptedPart,
-                             CK_ULONG_PTR pulEncryptedPartLen)
+     *                         CK_ULONG_PTR pulEncryptedPartLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
      * @postconditions
@@ -797,7 +797,7 @@ public class PKCS11 {
      * @param outLen buffer size for the encrypted data
      * @return the length of the last part of the encrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pLastEncryptedPart,
-                             CK_ULONG_PTR pulLastEncryptedPartLen)
+     *                         CK_ULONG_PTR pulLastEncryptedPartLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
      * @postconditions

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,6 @@ public class HostAddress implements Cloneable {
      * Gets the InetAddress of this HostAddress.
      * @return the IP address for this specified host.
      * @exception UnknownHostException if no IP address for the host could be found.
-     *
      */
     public InetAddress getInetAddress() throws UnknownHostException {
         // the type of internet addresses is 2.
@@ -172,7 +171,6 @@ public class HostAddress implements Cloneable {
      *                       Distributions of Unix.
      * @param new_address network address.
      * @exception KrbApErrException if address type and address length do not match defined value.
-     *
      */
     public HostAddress(int new_addrType, byte[] new_address)
         throws KrbApErrException, UnknownHostException {
@@ -228,7 +226,6 @@ public class HostAddress implements Cloneable {
      * @param encoding a single DER-encoded value.
      * @exception Asn1Exception if an error occurs while decoding an ASN1 encoded data.
      * @exception IOException if an I/O error occurs while reading encoded data.
-     *
      */
     public HostAddress(DerValue encoding) throws Asn1Exception, IOException {
         DerValue der = encoding.getData().getDerValue();
@@ -248,13 +245,11 @@ public class HostAddress implements Cloneable {
     }
 
     /**
-         * Encodes a HostAddress object.
-         * @return a byte array of encoded HostAddress object.
-         * @exception Asn1Exception if an error occurs while decoding an ASN1 encoded data.
-         * @exception IOException if an I/O error occurs while reading encoded data.
-         *
-         */
-
+     * Encodes a HostAddress object.
+     * @return a byte array of encoded HostAddress object.
+     * @exception Asn1Exception if an error occurs while decoding an ASN1 encoded data.
+     * @exception IOException if an I/O error occurs while reading encoded data.
+     */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
         DerOutputStream bytes = new DerOutputStream();
         DerOutputStream temp = new DerOutputStream();
@@ -271,7 +266,7 @@ public class HostAddress implements Cloneable {
     /**
      * Parses (unmarshal) a host address from a DER input stream.  This form
      * parsing might be used when expanding a value which is part of
-         * a constructed sequence and uses explicitly tagged type.
+     * a constructed sequence and uses explicitly tagged type.
      *
      * @exception Asn1Exception on error.
      * @exception IOException if an I/O error occurs while reading encoded data.
@@ -279,7 +274,6 @@ public class HostAddress implements Cloneable {
      * @param explicitTag tag number.
      * @param optional indicates if this data field is optional
      * @return an instance of HostAddress.
-     *
      */
     public static HostAddress parse(DerInputStream data, byte explicitTag,
                                     boolean optional)

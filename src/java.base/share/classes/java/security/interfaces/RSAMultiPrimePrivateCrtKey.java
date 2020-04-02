@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ public interface RSAMultiPrimePrivateCrtKey extends RSAPrivateKey {
      * The type fingerprint that is set to indicate
      * serialization compatibility with a previous
      * version of the type.
-    *
-    * @deprecated A {@code serialVersionUID} field in an interface is
-    * ineffectual. Do not use; no replacement.
+     *
+     * @deprecated A {@code serialVersionUID} field in an interface is
+     * ineffectual. Do not use; no replacement.
      */
     @Deprecated
     @SuppressWarnings("serial")

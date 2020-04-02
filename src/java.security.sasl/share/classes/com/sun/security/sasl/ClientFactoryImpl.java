@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,15 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
-  * Client factory for EXTERNAL, CRAM-MD5, PLAIN.
-  *
-  * Requires the following callbacks to be satisfied by callback handler
-  * when using CRAM-MD5 or PLAIN.
-  * - NameCallback (to get username)
-  * - PasswordCallback (to get password)
-  *
-  * @author Rosanna Lee
-  */
+ * Client factory for EXTERNAL, CRAM-MD5, PLAIN.
+ *
+ * Requires the following callbacks to be satisfied by callback handler
+ * when using CRAM-MD5 or PLAIN.
+ * - NameCallback (to get username)
+ * - PasswordCallback (to get password)
+ *
+ * @author Rosanna Lee
+ */
 final public class ClientFactoryImpl implements SaslClientFactory {
     private static final String[] myMechs = {
         "EXTERNAL",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,16 @@ import java.util.logging.Level;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
-  * Implements the CRAM-MD5 SASL client-side mechanism.
-  * (<A HREF="http://www.ietf.org/rfc/rfc2195.txt">RFC 2195</A>).
-  * CRAM-MD5 has no initial response. It receives bytes from
-  * the server as a challenge, which it hashes by using MD5 and the password.
-  * It concatenates the authentication ID with this result and returns it
-  * as the response to the challenge. At that point, the exchange is complete.
-  *
-  * @author Vincent Ryan
-  * @author Rosanna Lee
-  */
+ * Implements the CRAM-MD5 SASL client-side mechanism.
+ * (<A HREF="http://www.ietf.org/rfc/rfc2195.txt">RFC 2195</A>).
+ * CRAM-MD5 has no initial response. It receives bytes from
+ * the server as a challenge, which it hashes by using MD5 and the password.
+ * It concatenates the authentication ID with this result and returns it
+ * as the response to the challenge. At that point, the exchange is complete.
+ *
+ * @author Vincent Ryan
+ * @author Rosanna Lee
+ */
 final class CramMD5Client extends CramMD5Base implements SaslClient {
     private String username;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
         return (iv == null? null:iv.clone());
     }
 
-   /**
+    /**
      * Tests for equality between the specified object and this
      * object. Two RC5ParameterSpec objects are considered equal if their
      * version numbers, number of rounds, word sizes, and IVs are equal.

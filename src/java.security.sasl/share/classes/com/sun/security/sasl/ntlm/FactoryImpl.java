@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,11 @@ import com.sun.security.sasl.util.PolicyUtils;
 
 
 /**
-  * Client and server factory for NTLM SASL client/server mechanisms.
-  * See NTLMClient and NTLMServer for input requirements.
-  *
-  * @since 1.7
-  */
+ * Client and server factory for NTLM SASL client/server mechanisms.
+ * See NTLMClient and NTLMServer for input requirements.
+ *
+ * @since 1.7
+ */
 
 public final class FactoryImpl implements SaslClientFactory,
 SaslServerFactory{
@@ -49,8 +49,8 @@ SaslServerFactory{
     };
 
     /**
-      * Empty constructor.
-      */
+     * Empty constructor.
+     */
     public FactoryImpl() {
     }
 
@@ -114,11 +114,11 @@ SaslServerFactory{
     }
 
     /**
-      * Returns the authentication mechanisms that this factory can produce.
-      *
-      * @return String[] {"NTLM"} if policies in env match those of this
-      * factory.
-      */
+     * Returns the authentication mechanisms that this factory can produce.
+     *
+     * @return String[] {"NTLM"} if policies in env match those of this
+     * factory.
+     */
     public String[] getMechanismNames(Map<String,?> env) {
         return PolicyUtils.filterMechs(myMechs, mechPolicies, env);
     }
