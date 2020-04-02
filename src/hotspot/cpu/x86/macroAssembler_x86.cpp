@@ -3757,6 +3757,14 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   BLOCK_COMMENT("} verify_oop");
 }
 
+void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
+  if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
+    vpternlogd(dst, 0xFF, dst, dst, vector_len);
+  } else {
+    assert(UseAVX > 0, "");
+    vpcmpeqb(dst, dst, dst, vector_len);
+  }
+}
 
 RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
                                                       Register tmp,

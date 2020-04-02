@@ -186,6 +186,9 @@
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
                                                                             \
+  diagnostic(bool, UseVectorMacroLogic, true,                               \
+          "Use ternary macro logic instructions")                           \
+                                                                            \
   product(intx,  LoopUnrollMin, 4,                                          \
           "Minimum number of unroll loop bodies before checking progress"   \
           "of rounds of unroll,optimize,..")                                \

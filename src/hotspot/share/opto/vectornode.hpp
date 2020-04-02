@@ -51,6 +51,14 @@ class VectorNode : public TypeNode {
     init_req(3, n3);
   }
 
+  VectorNode(Node *n0, Node* n1, Node* n2, Node* n3, const TypeVect* vt) : TypeNode(vt, 5) {
+    init_class_id(Class_Vector);
+    init_req(1, n0);
+    init_req(2, n1);
+    init_req(3, n2);
+    init_req(4, n3);
+  }
+
   const TypeVect* vect_type() const { return type()->is_vect(); }
   uint length() const { return vect_type()->length(); } // Vector length
   uint length_in_bytes() const { return vect_type()->length_in_bytes(); }
@@ -72,6 +80,9 @@ class VectorNode : public TypeNode {
   static bool is_muladds2i(Node* n);
   static bool is_roundopD(Node * n);
   static bool is_invariant_vector(Node* n);
+  static bool is_all_ones_vector(Node* n);
+  static bool is_vector_bitwise_not_pattern(Node* n);
+
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
 
@@ -980,6 +991,19 @@ public:
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual const Type *Value(PhaseGVN *phase) const { return TypeInt::INT; }
+};
+
+//------------------------------MacroLogicVNode-------------------------------
+// Vector logical operations packing node.
+class MacroLogicVNode : public VectorNode {
+private:
+  MacroLogicVNode(Node* in1, Node* in2, Node* in3, Node* fn, const TypeVect* vt)
+  : VectorNode(in1, in2, in3, fn, vt) {}
+
+public:
+  virtual int Opcode() const;
+
+  static MacroLogicVNode* make(PhaseGVN& igvn, Node* in1, Node* in2, Node* in3, uint truth_table, const TypeVect* vt);
 };
 
 #endif // SHARE_OPTO_VECTORNODE_HPP

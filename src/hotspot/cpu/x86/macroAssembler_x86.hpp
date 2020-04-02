@@ -1721,6 +1721,8 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 #endif // _LP64
+
+  void vallones(XMMRegister dst, int vector_len);
 };
 
 /**

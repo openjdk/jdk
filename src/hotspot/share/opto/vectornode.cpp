@@ -518,6 +518,39 @@ bool VectorNode::is_vector_shift_count(int opc) {
   }
 }
 
+static bool is_con_M1(Node* n) {
+  if (n->is_Con()) {
+    const Type* t = n->bottom_type();
+    if (t->isa_int() && t->is_int()->get_con() == -1) {
+      return true;
+    }
+    if (t->isa_long() && t->is_long()->get_con() == -1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool VectorNode::is_all_ones_vector(Node* n) {
+  switch (n->Opcode()) {
+  case Op_ReplicateB:
+  case Op_ReplicateS:
+  case Op_ReplicateI:
+  case Op_ReplicateL:
+    return is_con_M1(n->in(1));
+  default:
+    return false;
+  }
+}
+
+bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
+  if (n->Opcode() == Op_XorV) {
+    return is_all_ones_vector(n->in(1)) ||
+           is_all_ones_vector(n->in(2));
+  }
+  return false;
+}
+
 // Return initial Pack node. Additional operands added with add_opd() calls.
 PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
@@ -739,4 +772,14 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc != opc && Matcher::match_rule_supported(vopc);
   }
   return false;
+}
+
+MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* v1, Node* v2, Node* v3,
+                                      uint truth_table, const TypeVect* vt) {
+  assert(truth_table <= 0xFF, "invalid");
+  assert(v1->bottom_type() == vt, "mismatch");
+  assert(v2->bottom_type() == vt, "mismatch");
+  assert(v3->bottom_type() == vt, "mismatch");
+  Node* fn = gvn.intcon(truth_table);
+  return new MacroLogicVNode(v1, v2, v3, fn, vt);
 }
