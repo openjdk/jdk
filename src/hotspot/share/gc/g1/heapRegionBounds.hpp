@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ private:
   static const size_t MAX_REGION_SIZE = 32 * 1024 * 1024;
 
   // The automatic region size calculation will try to have around this
-  // many regions in the heap (based on the min heap size).
+  // many regions in the heap.
   static const size_t TARGET_REGION_NUMBER = 2048;
 
 public:

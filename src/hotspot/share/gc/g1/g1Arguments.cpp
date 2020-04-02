@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,7 +50,7 @@ void G1Arguments::initialize_alignments() {
   // There is a circular dependency here. We base the region size on the heap
   // size, but the heap size should be aligned with the region size. To get
   // around this we use the unaligned values for the heap.
-  HeapRegion::setup_heap_region_size(InitialHeapSize, MaxHeapSize);
+  HeapRegion::setup_heap_region_size(MaxHeapSize);
   HeapRegionRemSet::setup_remset_size();
 
   SpaceAlignment = HeapRegion::GrainBytes;
