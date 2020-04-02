@@ -81,7 +81,9 @@ public class TestLookForUntestedEvents {
 
     // Experimental events
     private static final Set<String> experimentalEvents = new HashSet<>(
-      Arrays.asList("Flush")
+        Arrays.asList(
+            "Flush", "ZAllocationStall", "ZPageAllocation", "ZPageCacheFlush",
+            "ZRelocationSet", "ZRelocationSetGroup", "ZUncommit")
     );
 
 
