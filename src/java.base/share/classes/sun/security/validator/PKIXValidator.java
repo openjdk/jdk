@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ import java.security.cert.*;
 
 import javax.security.auth.x500.X500Principal;
 import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.provider.certpath.PKIXExtendedParameters;
+import sun.security.util.SecurityProperties;
 
 /**
  * Validator implementation built on the PKIX CertPath API. This
@@ -62,14 +62,14 @@ public final class PKIXValidator extends Validator {
             .privilegedGetProperty("com.sun.net.ssl.checkRevocation");
 
     /**
-     * System property that if set (or set to "true"), allows trust anchor
-     * certificates to be used if they do not have the proper CA extensions.
-     * Set to false if prop is not set, or set to any other value.
+     * System or security property that if set (or set to "true"), allows trust
+     * anchor certificates to be used if they do not have the proper CA
+     * extensions. Set to false if prop is not set, or set to any other value.
      */
     private static final boolean ALLOW_NON_CA_ANCHOR = allowNonCaAnchor();
     private static boolean allowNonCaAnchor() {
-        String prop = GetPropertyAction
-            .privilegedGetProperty("jdk.security.allowNonCaAnchor");
+        String prop = SecurityProperties
+                .privilegedGetOverridable("jdk.security.allowNonCaAnchor");
         return prop != null && (prop.isEmpty() || prop.equalsIgnoreCase("true"));
     }
 

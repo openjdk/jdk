@@ -1301,3 +1301,16 @@ jdk.io.permissionsUseCanonicalPath=false
 # security property value defined here.
 #
 #jdk.security.krb5.default.initiate.credential=always-impersonate
+
+#
+# Trust Anchor Certificates - CA Basic Constraint check
+#
+# X.509 v3 certificates used as Trust Anchors (to validate signed code or TLS
+# connections) must have the cA Basic Constraint field set to 'true'. Also, if
+# they include a Key Usage extension, the keyCertSign bit must be set. These
+# checks, enabled by default, can be disabled for backward-compatibility
+# purposes with the jdk.security.allowNonCaAnchor System and Security
+# properties. In the case that both properties are simultaneously set, the
+# System value prevails. The default value of the property is "false".
+#
+#jdk.security.allowNonCaAnchor=true
