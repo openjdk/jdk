@@ -100,9 +100,10 @@ void ShenandoahTraversalHeuristics::choose_collection_set(ShenandoahCollectionSe
 
   size_t capacity    = heap->max_capacity();
   size_t actual_free = heap->free_set()->available();
-  size_t free_target = capacity / 100 * ShenandoahMinFreeThreshold;
-  size_t min_garbage = free_target > actual_free ? (free_target - actual_free) : 0;
+
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
+  size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
+  size_t min_garbage = free_target > actual_free ? (free_target - actual_free) : 0;
 
   log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " SIZE_FORMAT "%s, Actual Free: "
                      SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s, Min Garbage: " SIZE_FORMAT "%s",
