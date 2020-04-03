@@ -102,6 +102,7 @@ serviceability/sa/ClhsdbAttach.java 8193639 solaris-all
 serviceability/sa/ClhsdbCDSCore.java 8193639 solaris-all
 serviceability/sa/ClhsdbCDSJstackPrintAll.java 8193639 solaris-all
 serviceability/sa/CDSJMapClstats.java 8193639 solaris-all
+serviceability/sa/ClhsdbDumpheap.java 8193639 solaris-all
 serviceability/sa/ClhsdbField.java 8193639 solaris-all
 serviceability/sa/ClhsdbFindPC.java#id0 8193639 solaris-all
 serviceability/sa/ClhsdbFindPC.java#id1 8193639 solaris-all

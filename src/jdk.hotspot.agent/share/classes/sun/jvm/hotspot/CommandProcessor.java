@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ import sun.jvm.hotspot.runtime.JavaVFrame;
 import sun.jvm.hotspot.runtime.Threads;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.tools.ObjectHistogram;
+import sun.jvm.hotspot.tools.JMap;
 import sun.jvm.hotspot.tools.PMap;
 import sun.jvm.hotspot.tools.PStack;
 import sun.jvm.hotspot.tools.StackTrace;
@@ -1699,6 +1700,29 @@ public class CommandProcessor {
                     usage();
                 } else {
                     Assert.ASSERTS_ENABLED = Boolean.valueOf(t.nextToken()).booleanValue();
+                }
+            }
+        },
+        new Command("dumpheap", "dumpheap [filename]", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() > 1) {
+                    usage();
+                } else {
+                    JMap jmap = new JMap();
+                    String filename;
+                    if (t.countTokens() == 1) {
+                        filename = t.nextToken();
+                    } else {
+                        filename = "heap.bin";;
+                    }
+                    try {
+                        jmap.writeHeapHprofBin(filename);
+                    } catch (Exception e) {
+                        err.println("Error: " + e);
+                        if (verboseExceptions) {
+                            e.printStackTrace(err);
+                        }
+                    }
                 }
             }
         },

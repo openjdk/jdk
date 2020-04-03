@@ -28,6 +28,7 @@
 #############################################################################
 
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8220624   generic-all
+serviceability/sa/ClhsdbDumpheap.java                         8220624   generic-all
 serviceability/sa/CDSJMapClstats.java                         8220624   generic-all
 serviceability/sa/ClhsdbCDSJstackPrintAll.java                8220624   generic-all
 serviceability/sa/ClhsdbFindPC.java#id0                       8220624   generic-all
