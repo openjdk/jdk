@@ -17992,6 +17992,44 @@ instruct vround2D_reg(vecX dst, vecX src, immI rmode) %{
   ins_pipe(vdop_fp128);
 %}
 
+instruct vpopcount4I(vecX dst, vecX src) %{
+  predicate(UsePopCountInstruction && n->as_Vector()->length() == 4);
+  match(Set dst (PopCountVI src));
+  format %{
+    "cnt     $dst, $src\t# vector (16B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (16B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (8H)"
+  %}
+  ins_encode %{
+     __ cnt(as_FloatRegister($dst$$reg), __ T16B,
+            as_FloatRegister($src$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
+               as_FloatRegister($dst$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
+               as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vpopcount2I(vecD dst, vecD src) %{
+  predicate(UsePopCountInstruction && n->as_Vector()->length() == 2);
+  match(Set dst (PopCountVI src));
+  format %{
+    "cnt     $dst, $src\t# vector (8B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (8B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (4H)"
+  %}
+  ins_encode %{
+     __ cnt(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
+               as_FloatRegister($dst$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
+               as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 //----------PEEPHOLE RULES-----------------------------------------------------
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.

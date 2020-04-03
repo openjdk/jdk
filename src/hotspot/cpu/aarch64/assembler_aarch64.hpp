@@ -2269,8 +2269,9 @@ public:
 #define INSN(NAME, opc, opc2, accepted) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
-    if (accepted < 2) guarantee(T != T2S && T != T2D, "incorrect arrangement");         \
-    if (accepted == 0) guarantee(T == T8B || T == T16B, "incorrect arrangement");       \
+    if (accepted < 3) guarantee(T != T2D, "incorrect arrangement");                     \
+    if (accepted < 2) guarantee(T != T2S, "incorrect arrangement");                     \
+    if (accepted < 1) guarantee(T == T8B || T == T16B, "incorrect arrangement");        \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
     f((int)T >> 1, 23, 22), f(opc2, 21, 10);                                            \
@@ -2278,12 +2279,13 @@ public:
   }
 
   INSN(absr,   0, 0b100000101110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
-  INSN(negr,   1, 0b100000101110, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(negr,   1, 0b100000101110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(notr,   1, 0b100000010110, 0); // accepted arrangements: T8B, T16B
   INSN(addv,   0, 0b110001101110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
   INSN(cls,    0, 0b100000010010, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
   INSN(clz,    1, 0b100000010010, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
   INSN(cnt,    0, 0b100000010110, 0); // accepted arrangements: T8B, T16B
+  INSN(uaddlp, 1, 0b100000001010, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(uaddlv, 1, 0b110000001110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
 
 #undef INSN
