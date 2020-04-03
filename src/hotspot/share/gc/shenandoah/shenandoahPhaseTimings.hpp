@@ -82,7 +82,8 @@ class outputStream;
   f(complete_liveness,                              "  Complete Liveness")             \
   f(retire_tlabs,                                   "  Retire TLABs")                  \
   f(sync_pinned,                                    "  Sync Pinned")                   \
-  f(prepare_evac,                                   "  Prepare Evacuation")            \
+  f(choose_cset,                                    "  Choose Collection Set")         \
+  f(final_rebuild_freeset,                          "  Rebuild Free Set")              \
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_GC_PAR_PHASE_DO(evac_,                 "    E: ", f)                      \
                                                                                        \
@@ -97,7 +98,8 @@ class outputStream;
   f(final_update_refs_roots,                        "  Update Roots")                  \
   SHENANDOAH_GC_PAR_PHASE_DO(final_update_,         "    UR: ", f)                     \
   f(final_update_refs_sync_pinned,                  "  Sync Pinned")                   \
-  f(final_update_refs_trash_cset,                   "  Trash CSet")                    \
+  f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
+  f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
                                                                                        \
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \

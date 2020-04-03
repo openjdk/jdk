@@ -1501,14 +1501,15 @@ void ShenandoahHeap::op_final_mark() {
     }
 
     {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::prepare_evac);
-
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
       ShenandoahHeapLocker locker(lock());
       _collection_set->clear();
-      _free_set->clear();
-
       heuristics()->choose_collection_set(_collection_set);
+    }
 
+    {
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
+      ShenandoahHeapLocker locker(lock());
       _free_set->rebuild();
     }
 
@@ -2512,6 +2513,7 @@ void ShenandoahHeap::op_final_updaterefs() {
   }
 
   {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_rebuild_freeset);
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }
