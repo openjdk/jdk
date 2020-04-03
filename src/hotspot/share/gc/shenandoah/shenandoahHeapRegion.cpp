@@ -521,7 +521,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   }
 
   size_t region_size;
-  if (FLAG_IS_DEFAULT(ShenandoahHeapRegionSize)) {
+  if (FLAG_IS_DEFAULT(ShenandoahRegionSize)) {
     if (ShenandoahMinRegionSize > max_heap_size / MIN_NUM_REGIONS) {
       err_msg message("Max heap size (" SIZE_FORMAT "%s) is too low to afford the minimum number "
                       "of regions (" SIZE_FORMAT ") of minimum region size (" SIZE_FORMAT "%s).",
@@ -564,27 +564,27 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
     region_size = MIN2(ShenandoahMaxRegionSize, region_size);
 
   } else {
-    if (ShenandoahHeapRegionSize > max_heap_size / MIN_NUM_REGIONS) {
+    if (ShenandoahRegionSize > max_heap_size / MIN_NUM_REGIONS) {
       err_msg message("Max heap size (" SIZE_FORMAT "%s) is too low to afford the minimum number "
                               "of regions (" SIZE_FORMAT ") of requested size (" SIZE_FORMAT "%s).",
                       byte_size_in_proper_unit(max_heap_size), proper_unit_for_byte_size(max_heap_size),
                       MIN_NUM_REGIONS,
-                      byte_size_in_proper_unit(ShenandoahHeapRegionSize), proper_unit_for_byte_size(ShenandoahHeapRegionSize));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahHeapRegionSize option", message);
+                      byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize));
+      vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
-    if (ShenandoahHeapRegionSize < ShenandoahMinRegionSize) {
+    if (ShenandoahRegionSize < ShenandoahMinRegionSize) {
       err_msg message("Heap region size (" SIZE_FORMAT "%s) should be larger than min region size (" SIZE_FORMAT "%s).",
-                      byte_size_in_proper_unit(ShenandoahHeapRegionSize), proper_unit_for_byte_size(ShenandoahHeapRegionSize),
+                      byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
                       byte_size_in_proper_unit(ShenandoahMinRegionSize),  proper_unit_for_byte_size(ShenandoahMinRegionSize));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahHeapRegionSize option", message);
+      vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
-    if (ShenandoahHeapRegionSize > ShenandoahMaxRegionSize) {
+    if (ShenandoahRegionSize > ShenandoahMaxRegionSize) {
       err_msg message("Heap region size (" SIZE_FORMAT "%s) should be lower than max region size (" SIZE_FORMAT "%s).",
-                      byte_size_in_proper_unit(ShenandoahHeapRegionSize), proper_unit_for_byte_size(ShenandoahHeapRegionSize),
+                      byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize),  proper_unit_for_byte_size(ShenandoahMaxRegionSize));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahHeapRegionSize option", message);
+      vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
-    region_size = ShenandoahHeapRegionSize;
+    region_size = ShenandoahRegionSize;
   }
 
   // Make sure region size is at least one large page, if enabled.

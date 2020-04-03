@@ -40,7 +40,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  experimental(size_t, ShenandoahHeapRegionSize, 0,                         \
+  experimental(size_t, ShenandoahRegionSize, 0,                             \
           "Static heap region size. Set zero to enable automatic sizing.")  \
                                                                             \
   experimental(size_t, ShenandoahTargetNumRegions, 2048,                    \
