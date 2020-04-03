@@ -3369,6 +3369,15 @@ operand immI8() %{
   interface(CONST_INTER);
 %}
 
+operand immU8() %{
+  predicate((0 <= n->get_int()) && (n->get_int() <= 255));
+  match(ConI);
+
+  op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immI16() %{
   predicate((-32768 <= n->get_int()) && (n->get_int() <= 32767));
   match(ConI);
