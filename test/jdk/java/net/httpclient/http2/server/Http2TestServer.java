@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import jdk.internal.net.http.frame.ErrorFrame;
  */
 public class Http2TestServer implements AutoCloseable {
     final ServerSocket server;
+    final boolean supportsHTTP11;
     volatile boolean secure;
     final ExecutorService exec;
     volatile boolean stopping = false;
@@ -111,19 +112,6 @@ public class Http2TestServer implements AutoCloseable {
         this(serverName, secure, port, exec, 50, null, context);
     }
 
-    /**
-     * Create a Http2Server listening on the given port. Currently needs
-     * to know in advance whether incoming connections are plain TCP "h2c"
-     * or TLS "h2"/
-     *
-     * @param serverName SNI servername
-     * @param secure https or http
-     * @param port listen port
-     * @param exec executor service (cached thread pool is used if null)
-     * @param backlog the server socket backlog
-     * @param properties additional configuration properties
-     * @param context the SSLContext used when secure is true
-     */
     public Http2TestServer(String serverName,
                            boolean secure,
                            int port,
@@ -133,7 +121,43 @@ public class Http2TestServer implements AutoCloseable {
                            SSLContext context)
         throws Exception
     {
+        this(serverName, secure, port, exec, backlog, properties, context, false);
+    }
+
+    /**
+     * Create a Http2Server listening on the given port. Currently needs
+     * to know in advance whether incoming connections are plain TCP "h2c"
+     * or TLS "h2".
+     *
+     * The HTTP/1.1 support, when supportsHTTP11 is true, is currently limited
+     * to a canned 0-length response that contains the following headers:
+     *       "X-Magic", "HTTP/1.1 request received by HTTP/2 server",
+     *       "X-Received-Body", <the request body>);
+     *
+     * @param serverName SNI servername
+     * @param secure https or http
+     * @param port listen port
+     * @param exec executor service (cached thread pool is used if null)
+     * @param backlog the server socket backlog
+     * @param properties additional configuration properties
+     * @param context the SSLContext used when secure is true
+     * @param supportsHTTP11 if true, the server may issue an HTTP/1.1 response
+     *        to either 1) a non-Upgrade HTTP/1.1 request, or 2) a secure
+     *        connection without the h2 ALPN. Otherwise, false to operate in
+     *        HTTP/2 mode exclusively.
+     */
+    public Http2TestServer(String serverName,
+                           boolean secure,
+                           int port,
+                           ExecutorService exec,
+                           int backlog,
+                           Properties properties,
+                           SSLContext context,
+                           boolean supportsHTTP11)
+        throws Exception
+    {
         this.serverName = serverName;
+        this.supportsHTTP11 = supportsHTTP11;
         if (secure) {
            if (context != null)
                this.sslContext = context;
@@ -220,7 +244,11 @@ public class Http2TestServer implements AutoCloseable {
         SSLServerSocket se = (SSLServerSocket) fac.createServerSocket();
         se.setReuseAddress(false);
         se.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
-        sslp.setApplicationProtocols(new String[]{"h2"});
+        if (supportsHTTP11) {
+            sslp.setApplicationProtocols(new String[]{"h2", "http/1.1"});
+        } else {
+            sslp.setApplicationProtocols(new String[]{"h2"});
+        }
         sslp.setEndpointIdentificationAlgorithm("HTTPS");
         se.setSSLParameters(sslp);
         se.setEnabledCipherSuites(se.getSupportedCipherSuites());
