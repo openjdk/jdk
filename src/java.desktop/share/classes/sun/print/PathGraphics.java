@@ -35,6 +35,8 @@ import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 
+import java.awt.AlphaComposite;
+import java.awt.Composite;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -1890,4 +1892,25 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
     }
 
+    protected boolean isCompositing(Composite composite) {
+
+        boolean isCompositing = false;
+
+        if (composite instanceof AlphaComposite) {
+            AlphaComposite alphaComposite = (AlphaComposite) composite;
+            float alpha = alphaComposite.getAlpha();
+            int rule = alphaComposite.getRule();
+
+            if (alpha != 1.0
+                    || (rule != AlphaComposite.SRC
+                        && rule != AlphaComposite.SRC_OVER))
+            {
+                isCompositing = true;
+            }
+
+        } else {
+            isCompositing = true;
+        }
+        return isCompositing;
+    }
 }

@@ -1092,7 +1092,9 @@ final class WPathGraphics extends PathGraphics {
                  * rendering just the opaque pixels.
                  */
                 boolean drawOpaque = true;
-                if (!handlingTransparency && hasTransparentPixels(img)) {
+                if (isCompositing(getComposite())) {
+                    drawOpaque = false;
+                } else if (!handlingTransparency && hasTransparentPixels(img)) {
                     drawOpaque = false;
                     if (isBitmaskTransparency(img)) {
                         if (bgcolor == null) {
