@@ -1351,11 +1351,11 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   }
 }
 
-class ShenandoahClearLivenessClosure : public ShenandoahHeapRegionClosure {
+class ShenandoahInitMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahMarkingContext* const _ctx;
 public:
-  ShenandoahClearLivenessClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
+  ShenandoahInitMarkUpdateRegionStateClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_active()) {
@@ -1395,9 +1395,9 @@ void ShenandoahHeap::op_init_mark() {
   }
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::clear_liveness);
-    ShenandoahClearLivenessClosure clc;
-    parallel_heap_region_iterate(&clc);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
+    ShenandoahInitMarkUpdateRegionStateClosure cl;
+    parallel_heap_region_iterate(&cl);
   }
 
   // Make above changes visible to worker threads
@@ -1426,19 +1426,43 @@ void ShenandoahHeap::op_mark() {
   concurrent_mark()->mark_from_roots();
 }
 
-class ShenandoahCompleteLivenessClosure : public ShenandoahHeapRegionClosure {
+class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahMarkingContext* const _ctx;
+  ShenandoahHeapLock* const _lock;
+
 public:
-  ShenandoahCompleteLivenessClosure() : _ctx(ShenandoahHeap::heap()->complete_marking_context()) {}
+  ShenandoahFinalMarkUpdateRegionStateClosure() :
+    _ctx(ShenandoahHeap::heap()->complete_marking_context()), _lock(ShenandoahHeap::heap()->lock()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_active()) {
+      // All allocations past TAMS are implicitly live, adjust the region data.
+      // Bitmaps/TAMS are swapped at this point, so we need to poll complete bitmap.
       HeapWord *tams = _ctx->top_at_mark_start(r);
       HeapWord *top = r->top();
       if (top > tams) {
         r->increase_live_data_alloc_words(pointer_delta(top, tams));
       }
+
+      // We are about to select the collection set, make sure it knows about
+      // current pinning status. Also, this allows trashing more regions that
+      // now have their pinning status dropped.
+      if (r->is_pinned()) {
+        if (r->pin_count() == 0) {
+          ShenandoahHeapLocker locker(_lock);
+          r->make_unpinned();
+        }
+      } else {
+        if (r->pin_count() > 0) {
+          ShenandoahHeapLocker locker(_lock);
+          r->make_pinned();
+        }
+      }
+
+      // Remember limit for updating refs. It's guaranteed that we get no
+      // from-space-refs written from here on.
+      r->set_update_watermark(r->top());
     } else {
       assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
@@ -1469,26 +1493,19 @@ void ShenandoahHeap::op_final_mark() {
     if (ShenandoahVerify) {
       verifier()->verify_roots_no_forwarded();
     }
-    // All allocations past TAMS are implicitly live, adjust the region data.
-    // Bitmaps/TAMS are swapped at this point, so we need to poll complete bitmap.
+
     {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::complete_liveness);
-      ShenandoahCompleteLivenessClosure cl;
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
+      ShenandoahFinalMarkUpdateRegionStateClosure cl;
       parallel_heap_region_iterate(&cl);
+
+      assert_pinned_region_status();
     }
 
     // Force the threads to reacquire their TLABs outside the collection set.
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::retire_tlabs);
       make_parsable(true);
-    }
-
-    // We are about to select the collection set, make sure it knows about
-    // current pinning status. Also, this allows trashing more regions that
-    // now have their pinning status dropped.
-    {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::sync_pinned);
-      sync_pinned_region_status();
     }
 
     {
@@ -1516,13 +1533,6 @@ void ShenandoahHeap::op_final_mark() {
 
       if (ShenandoahVerify) {
         verifier()->verify_before_evacuation();
-      }
-
-      // Remember limit for updating refs. It's guaranteed that we get no from-space-refs written
-      // from here on.
-      for (uint i = 0; i < num_regions(); i++) {
-        ShenandoahHeapRegion* r = get_region(i);
-        r->set_update_watermark(r->top());
       }
 
       set_evacuation_in_progress(true);
@@ -2397,6 +2407,35 @@ void ShenandoahHeap::op_init_updaterefs() {
   }
 }
 
+class ShenandoahFinalUpdateRefsUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahHeapLock* const _lock;
+
+public:
+  ShenandoahFinalUpdateRefsUpdateRegionStateClosure() : _lock(ShenandoahHeap::heap()->lock()) {}
+
+  void heap_region_do(ShenandoahHeapRegion* r) {
+    // Drop unnecessary "pinned" state from regions that does not have CP marks
+    // anymore, as this would allow trashing them.
+
+    if (r->is_active()) {
+      if (r->is_pinned()) {
+        if (r->pin_count() == 0) {
+          ShenandoahHeapLocker locker(_lock);
+          r->make_unpinned();
+        }
+      } else {
+        if (r->pin_count() > 0) {
+          ShenandoahHeapLocker locker(_lock);
+          r->make_pinned();
+        }
+      }
+    }
+  }
+
+  bool is_thread_safe() { return true; }
+};
+
 void ShenandoahHeap::op_final_updaterefs() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
 
@@ -2433,11 +2472,12 @@ void ShenandoahHeap::op_final_updaterefs() {
     verifier()->verify_roots_in_to_space();
   }
 
-  // Drop unnecessary "pinned" state from regions that does not have CP marks
-  // anymore, as this would allow trashing them below.
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_sync_pinned);
-    sync_pinned_region_status();
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_update_region_states);
+    ShenandoahFinalUpdateRefsUpdateRegionStateClosure cl;
+    parallel_heap_region_iterate(&cl);
+
+    assert_pinned_region_status();
   }
 
   {

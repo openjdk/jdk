@@ -384,18 +384,15 @@ public:
   size_t get_gclab_allocs() const;
 
   HeapWord* get_update_watermark() const {
-    // Updates to the update-watermark only happen at safepoints or, when pushing
-    // back the watermark for evacuation regions, under the Shenandoah heap-lock.
-    // Consequently, we should access the field under the same lock. However, since
-    // those updates are only monotonically increasing, possibly reading a stale value
-    // is only conservative - we would not miss to update any fields.
+    // Updates to the update-watermark only happen at safepoints.
+    // Since those updates are only monotonically increasing, possibly reading
+    // a stale value is only conservative - we would not miss to update any fields.
     HeapWord* watermark = _update_watermark;
     assert(bottom() <= watermark && watermark <= top(), "within bounds");
     return watermark;
   }
 
   void set_update_watermark(HeapWord* w) {
-    shenandoah_assert_heaplocked_or_safepoint();
     assert(bottom() <= w && w <= top(), "within bounds");
     _update_watermark = w;
   }

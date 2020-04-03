@@ -63,7 +63,7 @@ class outputStream;
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
   f(make_parsable,                                  "  Make Parsable")                 \
-  f(clear_liveness,                                 "  Clear Liveness")                \
+  f(init_update_region_states,                      "  Update Region States")          \
   f(scan_roots,                                     "  Scan Roots")                    \
   SHENANDOAH_GC_PAR_PHASE_DO(scan_,                 "    S: ", f)                      \
   f(resize_tlabs,                                   "  Resize TLABs")                  \
@@ -80,9 +80,8 @@ class outputStream;
   f(purge_par,                                      "    Parallel Cleanup")            \
   SHENANDOAH_GC_PAR_PHASE_DO(purge_par_roots,       "      PC: ", f)                   \
   f(purge_cldg,                                     "    CLDG")                        \
-  f(complete_liveness,                              "  Complete Liveness")             \
+  f(final_update_region_states,                     "  Update Region States")          \
   f(retire_tlabs,                                   "  Retire TLABs")                  \
-  f(sync_pinned,                                    "  Sync Pinned")                   \
   f(choose_cset,                                    "  Choose Collection Set")         \
   f(final_rebuild_freeset,                          "  Rebuild Free Set")              \
   f(init_evac,                                      "  Initial Evacuation")            \
@@ -98,7 +97,7 @@ class outputStream;
   f(final_update_refs_finish_work,                  "  Finish Work")                   \
   f(final_update_refs_roots,                        "  Update Roots")                  \
   SHENANDOAH_GC_PAR_PHASE_DO(final_update_,         "    UR: ", f)                     \
-  f(final_update_refs_sync_pinned,                  "  Sync Pinned")                   \
+  f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
                                                                                        \
