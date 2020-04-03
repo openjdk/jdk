@@ -97,12 +97,15 @@ public class NetworkConfiguration {
             if (nif.getName().contains("awdl")) {
                 return false; // exclude awdl
             }
-            // filter out interfaces that only have link-local addresses
+            // filter out interfaces that only have link-local IPv6 addresses
+            // on macOS interfaces like 'en6' fall in this category and
+            // need to be skipped
             return nif.inetAddresses()
                     .filter(Predicate.not(NetworkConfiguration::isIPv6LinkLocal))
                     .findAny()
                     .isPresent();
         }
+
         if (Platform.isWindows()) {
             String dName = nif.getDisplayName();
             if (dName != null && dName.contains("Teredo")) {
@@ -128,6 +131,12 @@ public class NetworkConfiguration {
         return ip6Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
     }
 
+    public static boolean hasNonLinkLocalAddress(NetworkInterface nif) {
+        return nif.inetAddresses()
+                .filter(Predicate.not(InetAddress::isLinkLocalAddress))
+                .findAny().isPresent();
+    }
+
     private boolean supportsIp4Multicast(NetworkInterface nif) {
         try {
             if (!nif.supportsMulticast()) {
@@ -145,6 +154,14 @@ public class NetworkConfiguration {
                 return false;
             }
 
+            if (Platform.isOSX()) {
+                // multicasting may not work on interfaces that only
+                // have link local addresses
+                if (!hasNonLinkLocalAddress(nif)) {
+                    return false;
+                }
+            }
+
             return hasIp4Addresses(nif);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -155,6 +172,14 @@ public class NetworkConfiguration {
         try {
             if (!nif.supportsMulticast()) {
                 return false;
+            }
+
+            if (Platform.isOSX()) {
+                // multicasting may not work on interfaces that only
+                // have link local addresses
+                if (!hasNonLinkLocalAddress(nif)) {
+                    return false;
+                }
             }
 
             return hasIp6Addresses(nif);

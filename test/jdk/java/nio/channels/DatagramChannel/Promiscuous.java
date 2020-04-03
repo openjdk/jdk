@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
 
 /* @test
- * @bug 8014377
+ * @bug 8014377 8241786
  * @summary Test for interference when two sockets are bound to the same
  *   port but joined to different multicast groups
  * @library /test/lib
@@ -65,15 +65,15 @@ public class Promiscuous {
     {
         ProtocolFamily family = (group instanceof Inet6Address) ?
             StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
-        DatagramChannel dc = DatagramChannel.open(family)
-            .setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
         int id = rand.nextInt();
-        byte[] msg = Integer.toString(id).getBytes("UTF-8");
-        ByteBuffer buf = ByteBuffer.wrap(msg);
-        System.out.format("Send message -> group %s (id=0x%x)\n",
-            group.getHostAddress(), id);
-        dc.send(buf, new InetSocketAddress(group, port));
-        dc.close();
+        try (DatagramChannel dc = DatagramChannel.open(family)) {
+            dc.setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
+            byte[] msg = Integer.toString(id).getBytes("UTF-8");
+            ByteBuffer buf = ByteBuffer.wrap(msg);
+            System.out.format("Send message -> group %s (id=0x%x)\n",
+                    group.getHostAddress(), id);
+            dc.send(buf, new InetSocketAddress(group, port));
+        }
         return id;
     }
 

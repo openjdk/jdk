@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,16 @@ public class MulticastSendReceiveTests {
     {
         ProtocolFamily family = (group instanceof Inet6Address) ?
             StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
-        DatagramChannel dc = DatagramChannel.open(family)
-            .bind(new InetSocketAddress(local, 0))
-            .setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
         int id = rand.nextInt();
-        byte[] msg = Integer.toString(id).getBytes("UTF-8");
-        ByteBuffer buf = ByteBuffer.wrap(msg);
-        System.out.format("Send message from %s -> group %s (id=0x%x)\n",
-            local.getHostAddress(), group.getHostAddress(), id);
-        dc.send(buf, new InetSocketAddress(group, port));
-        dc.close();
+        try (DatagramChannel dc = DatagramChannel.open(family)) {
+            dc.bind(new InetSocketAddress(local, 0));
+            dc.setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
+            byte[] msg = Integer.toString(id).getBytes("UTF-8");
+            ByteBuffer buf = ByteBuffer.wrap(msg);
+            System.out.format("Send message from %s -> group %s (id=0x%x)\n",
+                    local.getHostAddress(), group.getHostAddress(), id);
+            dc.send(buf, new InetSocketAddress(group, port));
+        }
         return id;
     }
 

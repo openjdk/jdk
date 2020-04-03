@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 4686717
+ * @bug 4686717 8241786
  * @summary Test MulticastSocket.setLoopbackMode with IPv4 addresses
  * @library /test/lib
+ * @modules java.base/java.net:+open
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
  *        SetLoopbackMode

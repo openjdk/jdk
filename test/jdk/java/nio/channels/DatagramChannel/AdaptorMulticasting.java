@@ -22,12 +22,12 @@
  */
 
 /* @test
- * @bug 8236925
+ * @bug 8236925 8241786
  * @summary Test DatagramChannel socket adaptor as a MulticastSocket
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.net.IPSupport
- * @run main AdaptorMulticasting
+ * @run main/othervm AdaptorMulticasting
  * @run main/othervm -Djava.net.preferIPv4Stack=true AdaptorMulticasting
  */
 
@@ -130,6 +130,9 @@ public class AdaptorMulticasting {
                                MulticastSocket s,
                                InetAddress group,
                                NetworkInterface ni) throws IOException {
+
+        System.out.format("testJoinGroup1: local socket address: %s%n", s.getLocalSocketAddress());
+
         // check network interface not set
         assertTrue(s.getOption(IP_MULTICAST_IF) == null);
 
@@ -180,6 +183,9 @@ public class AdaptorMulticasting {
                                MulticastSocket s,
                                InetAddress group,
                                NetworkInterface ni) throws IOException {
+
+        System.out.format("testJoinGroup2: local socket address: %s%n", s.getLocalSocketAddress());
+
         // check network interface not set
         assertTrue(s.getOption(IP_MULTICAST_IF) == null);
 
@@ -399,6 +405,9 @@ public class AdaptorMulticasting {
      * Send a datagram to the given multicast group and check that it is received.
      */
     static void testSendReceive(MulticastSocket s, InetAddress group) throws IOException {
+
+        System.out.println("testSendReceive");
+
         // outgoing multicast interface needs to be set
         assertTrue(s.getOption(IP_MULTICAST_IF) != null);
 
@@ -424,6 +433,9 @@ public class AdaptorMulticasting {
      * received.
      */
     static void testSendNoReceive(MulticastSocket s, InetAddress group) throws IOException {
+
+        System.out.println("testSendNoReceive");
+
         // outgoing multicast interface needs to be set
         assertTrue(s.getOption(IP_MULTICAST_IF) != null);
 
@@ -446,7 +458,7 @@ public class AdaptorMulticasting {
                 if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
                     throw new RuntimeException("message shouldn't have been received");
                 } else {
-                    System.out.println("Received unexpected message from " + p.getSocketAddress());
+                    System.out.format("Received unexpected message from %s%n", p.getSocketAddress());
                 }
             } catch (SocketTimeoutException expected) {
                 break;
