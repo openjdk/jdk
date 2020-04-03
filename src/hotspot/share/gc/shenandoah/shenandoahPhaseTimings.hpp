@@ -34,6 +34,7 @@ class ShenandoahCollectorPolicy;
 class outputStream;
 
 #define SHENANDOAH_GC_PAR_PHASE_DO(CNT_PREFIX, DESC_PREFIX, f)                         \
+  f(CNT_PREFIX ## TotalWork,                DESC_PREFIX "<total>")                     \
   f(CNT_PREFIX ## ThreadRoots,              DESC_PREFIX "Thread Roots")                \
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
   f(CNT_PREFIX ## UniverseRoots,            DESC_PREFIX "Universe Roots")              \
