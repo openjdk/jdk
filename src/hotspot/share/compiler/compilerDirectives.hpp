@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ private:
 public:
   DirectiveSet(CompilerDirectives* directive);
   ~DirectiveSet();
+  void init_disableintrinsic();
   CompilerDirectives* directive();
   bool parse_and_add_inline(char* str, const char*& error_msg);
   void append_inline(InlineMatcher* m);
