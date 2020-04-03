@@ -585,7 +585,7 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
 // Initializes the java.lang.Package and java.security.ProtectionDomain objects associated with
 // the given InstanceKlass.
 // Returns the ProtectionDomain for the InstanceKlass.
-Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceKlass* ik, TRAPS) {
+Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS) {
   Handle pd;
 
   if (ik != NULL) {
@@ -598,18 +598,10 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       // For shared app/platform classes originated from the run-time image:
       //   The ProtectionDomains are cached in the corresponding ModuleEntries
       //   for fast access by the VM.
-      ResourceMark rm;
-      ClassLoaderData *loader_data =
-                ClassLoaderData::class_loader_data(class_loader());
-      PackageEntryTable* pkgEntryTable = loader_data->packages();
-      TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
-      if (pkg_name != NULL) {
-        PackageEntry* pkg_entry = pkgEntryTable->lookup_only(pkg_name);
-        if (pkg_entry != NULL) {
-          ModuleEntry* mod_entry = pkg_entry->module();
-          pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
-          define_shared_package(class_name, class_loader, mod_entry, CHECK_(pd));
-        }
+      if (pkg_entry != NULL) {
+        ModuleEntry* mod_entry = pkg_entry->module();
+        pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
+        define_shared_package(class_name, class_loader, mod_entry, CHECK_(pd));
       }
     } else {
       // For shared app/platform classes originated from JAR files on the class path:
@@ -849,6 +841,15 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
   return k;
 }
 
+PackageEntry* SystemDictionaryShared::get_package_entry_from_class_name(Handle class_loader, Symbol* class_name) {
+  PackageEntry* pkg_entry = NULL;
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+  if (pkg_name != NULL) {
+    pkg_entry = class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
+  }
+  return pkg_entry;
+}
+
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
   assert(UseSharedSpaces, "must be");
@@ -859,9 +860,10 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
          SystemDictionary::is_system_class_loader(class_loader()))  ||
         (ik->is_shared_platform_class() &&
          SystemDictionary::is_platform_class_loader(class_loader()))) {
+      PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, class_name);
       Handle protection_domain =
-        SystemDictionaryShared::init_security_info(class_loader, ik, CHECK_NULL);
-      return load_shared_class(ik, class_loader, protection_domain, NULL, THREAD);
+        SystemDictionaryShared::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
+      return load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, THREAD);
     }
   }
   return NULL;
@@ -960,9 +962,12 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   // No need to lock, as <ik> can be held only by a single thread.
   loader_data->add_class(ik);
 
+  // Get the package entry.
+  PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, ik->name());
+
   // Load and check super/interfaces, restore unsharable info
   InstanceKlass* shared_klass = load_shared_class(ik, class_loader, protection_domain,
-                                                  cfs, THREAD);
+                                                  cfs, pkg_entry, THREAD);
   if (shared_klass == NULL || HAS_PENDING_EXCEPTION) {
     // TODO: clean up <ik> so it can be used again
     return NULL;

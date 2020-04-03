@@ -2433,12 +2433,13 @@ void InstanceKlass::remove_java_mirror() {
   }
 }
 
-void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain,
+                                             PackageEntry* pkg_entry, TRAPS) {
   // SystemDictionary::add_to_hierarchy() sets the init_state to loaded
   // before the InstanceKlass is added to the SystemDictionary. Make
   // sure the current state is <loaded.
   assert(!is_loaded(), "invalid init state");
-  set_package(loader_data, CHECK);
+  set_package(loader_data, pkg_entry, CHECK);
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
   Array<Method*>* methods = this->methods();
@@ -2462,7 +2463,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != NULL) {
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+    ArrayKlass::cast(array_klasses())->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize current biased locking state.
@@ -2657,23 +2658,22 @@ ModuleEntry* InstanceKlass::module() const {
   return class_loader_data()->unnamed_module();
 }
 
-void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
+void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS) {
 
   // ensure java/ packages only loaded by boot or platform builtin loaders
   check_prohibited_package(name(), loader_data, CHECK);
 
-  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(name());
+  TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() : ClassLoader::package_from_class_name(name());
 
   if (pkg_name != NULL && loader_data != NULL) {
 
     // Find in class loader's package entry table.
-    _package_entry = loader_data->packages()->lookup_only(pkg_name);
+    _package_entry = pkg_entry != NULL ? pkg_entry : loader_data->packages()->lookup_only(pkg_name);
 
     // If the package name is not found in the loader's package
     // entry table, it is an indication that the package has not
     // been defined. Consider it defined within the unnamed module.
     if (_package_entry == NULL) {
-      ResourceMark rm(THREAD);
 
       if (!ModuleEntryTable::javabase_defined()) {
         // Before java.base is defined during bootstrapping, define all packages in
@@ -2689,6 +2689,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
       }
 
       // A package should have been successfully created
+      DEBUG_ONLY(ResourceMark rm(THREAD));
       assert(_package_entry != NULL, "Package entry for class %s not found, loader %s",
              name()->as_C_string(), loader_data->loader_name_and_id());
     }

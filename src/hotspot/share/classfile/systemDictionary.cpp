@@ -1157,10 +1157,11 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 // Load a class for boot loader from the shared spaces. This also
 // forces the super class and all interfaces to be loaded.
 InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
+                                                        PackageEntry* pkg_entry,
                                                         TRAPS) {
   InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
   if (ik != NULL && ik->is_shared_boot_class()) {
-    return load_shared_class(ik, Handle(), Handle(), NULL, THREAD);
+    return load_shared_class(ik, Handle(), Handle(), NULL, pkg_entry, THREAD);
   }
   return NULL;
 }
@@ -1173,6 +1174,7 @@ InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
 //     be defined in an unnamed module.
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                InstanceKlass* ik,
+                                               PackageEntry* pkg_entry,
                                                Handle class_loader, TRAPS) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
@@ -1197,12 +1199,11 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     return true;
   }
   // Get the pkg_entry from the classloader
-  PackageEntry* pkg_entry = NULL;
   ModuleEntry* mod_entry = NULL;
-  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() :
+                                               ClassLoader::package_from_class_name(class_name);
   if (pkg_name != NULL) {
     if (loader_data != NULL) {
-      pkg_entry = loader_data->packages()->lookup_only(pkg_name);
       if (pkg_entry != NULL) {
         mod_entry = pkg_entry->module();
         // If the archived class is from a module that has been patched at runtime,
@@ -1299,13 +1300,14 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    Handle class_loader,
                                                    Handle protection_domain,
                                                    const ClassFileStream *cfs,
+                                                   PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != NULL, "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
   Symbol* class_name = ik->name();
 
   bool visible = is_shared_class_visible(
-                          class_name, ik, class_loader, CHECK_NULL);
+                          class_name, ik, pkg_entry, class_loader, CHECK_NULL);
   if (!visible) {
     return NULL;
   }
@@ -1341,7 +1343,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ObjectLocker ol(lockObject, THREAD, true);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
-    ik->restore_unshareable_info(loader_data, protection_domain, CHECK_NULL);
+    ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
   }
 
   load_shared_class_misc(ik, loader_data, CHECK_NULL);
@@ -1408,7 +1410,7 @@ void SystemDictionary::quick_resolve(InstanceKlass* klass, ClassLoaderData* load
     }
   }
 
-  klass->restore_unshareable_info(loader_data, domain, THREAD);
+  klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
   load_shared_class_misc(klass, loader_data, CHECK);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int hash = dictionary->compute_hash(klass->name());
@@ -1488,7 +1490,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
     {
 #if INCLUDE_CDS
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
-      k = load_shared_boot_class(class_name, THREAD);
+      k = load_shared_boot_class(class_name, pkg_entry, THREAD);
 #endif
     }
 

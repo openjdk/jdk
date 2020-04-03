@@ -5711,7 +5711,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   oop cl = ik->class_loader();
   Handle clh = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(cl));
   ClassLoaderData* cld = ClassLoaderData::class_loader_data_or_null(clh());
-  ik->set_package(cld, CHECK);
+  ik->set_package(cld, NULL, CHECK);
 
   const Array<Method*>* const methods = ik->methods();
   assert(methods != NULL, "invariant");

@@ -132,6 +132,8 @@ private:
                                                TRAPS);
   static Handle get_package_name(Symbol*  class_name, TRAPS);
 
+  static PackageEntry* get_package_entry_from_class_name(Handle class_loader, Symbol* class_name);
+
 
   // Package handling:
   //
@@ -180,7 +182,7 @@ private:
                                              TRAPS);
   static Handle get_shared_protection_domain(Handle class_loader,
                                              ModuleEntry* mod, TRAPS);
-  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, TRAPS);
+  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
 
   static void atomic_set_array_index(objArrayOop array, int index, oop o) {
     // Benign race condition:  array.obj_at(index) may already be filled in.

@@ -592,6 +592,7 @@ protected:
                                                 Handle class_loader,
                                                 InstanceKlass* k, TRAPS);
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
+                                      PackageEntry* pkg_entry,
                                       Handle class_loader, TRAPS);
   static bool check_shared_class_super_type(InstanceKlass* child, InstanceKlass* super,
                                             Handle class_loader,  Handle protection_domain,
@@ -602,10 +603,12 @@ protected:
                                           Handle class_loader,
                                           Handle protection_domain,
                                           const ClassFileStream *cfs,
+                                          PackageEntry* pkg_entry,
                                           TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
+                                               PackageEntry* pkg_entry,
                                                TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
