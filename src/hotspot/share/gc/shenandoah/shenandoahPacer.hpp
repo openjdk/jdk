@@ -73,7 +73,6 @@ public:
   void setup_for_mark();
   void setup_for_evac();
   void setup_for_updaterefs();
-  void setup_for_traversal();
 
   void setup_for_reset();
   void setup_for_preclean();

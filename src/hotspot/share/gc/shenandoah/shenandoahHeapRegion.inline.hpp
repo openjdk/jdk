@@ -89,9 +89,4 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
 #endif
 }
 
-inline uint64_t ShenandoahHeapRegion::seqnum_last_alloc_mutator() const {
-  assert(ShenandoahHeap::heap()->is_traversal_mode(), "Sanity");
-  return _seqnum_last_alloc_mutator;
-}
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

@@ -49,8 +49,6 @@ public class TestHeuristicsUnlock {
         testWith("-XX:ShenandoahGCHeuristics=static", Mode.PRODUCT);
         testWith("-XX:ShenandoahGCHeuristics=compact", Mode.PRODUCT);
 
-        testWith("-XX:ShenandoahGCMode=traversal", Mode.PRODUCT);
-
         testWith("-XX:ShenandoahGCHeuristics=aggressive", Mode.DIAGNOSTIC);
         testWith("-XX:ShenandoahGCHeuristics=passive", Mode.DIAGNOSTIC);
     }

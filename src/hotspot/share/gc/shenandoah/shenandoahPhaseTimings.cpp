@@ -76,9 +76,6 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
   guarantee(phase == init_evac ||
             phase == scan_roots ||
             phase == update_roots ||
-            phase == init_traversal_gc_work ||
-            phase == final_traversal_gc_work ||
-            phase == final_traversal_update_roots ||
             phase == final_update_refs_roots ||
             phase == full_gc_roots ||
             phase == degen_gc_update_roots ||

@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
-#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
@@ -70,10 +69,8 @@ void ShenandoahPeriodicSATBFlushTask::task() {
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  GCMode default_mode = heap->is_traversal_mode() ?
-                           concurrent_traversal : concurrent_normal;
-  GCCause::Cause default_cause = heap->is_traversal_mode() ?
-                           GCCause::_shenandoah_traversal_gc : GCCause::_shenandoah_concurrent_gc;
+  GCMode default_mode = concurrent_normal;
+  GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
 
   double last_shrink_time = os::elapsedTime();
@@ -192,9 +189,6 @@ void ShenandoahControlThread::run_service() {
       }
 
       switch (mode) {
-        case concurrent_traversal:
-          service_concurrent_traversal_cycle(cause);
-          break;
         case concurrent_normal:
           service_concurrent_normal_cycle(cause);
           break;
@@ -285,31 +279,6 @@ void ShenandoahControlThread::run_service() {
   while (!should_terminate()) {
     os::naked_short_sleep(ShenandoahControlIntervalMin);
   }
-}
-
-void ShenandoahControlThread::service_concurrent_traversal_cycle(GCCause::Cause cause) {
-  GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-  // Reset for upcoming cycle
-  heap->entry_reset();
-
-  heap->vmop_entry_init_traversal();
-
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_traversal)) return;
-
-  heap->entry_traversal();
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_traversal)) return;
-
-  heap->vmop_entry_final_traversal();
-
-  heap->entry_cleanup();
-
-  heap->heuristics()->record_success_concurrent();
-  heap->shenandoah_policy()->record_success_concurrent();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {

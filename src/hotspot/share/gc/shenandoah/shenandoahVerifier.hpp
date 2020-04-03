@@ -194,8 +194,6 @@ public:
   void verify_after_updaterefs();
   void verify_before_fullgc();
   void verify_after_fullgc();
-  void verify_before_traversal();
-  void verify_after_traversal();
   void verify_after_degenerated();
   void verify_generic(VerifyOption option);
 

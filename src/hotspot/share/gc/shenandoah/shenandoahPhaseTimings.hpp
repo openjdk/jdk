@@ -107,24 +107,6 @@ class outputStream;
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_GC_PAR_PHASE_DO(degen_gc_update_,      "    DU: ", f)                     \
                                                                                        \
-  f(init_traversal_gc_gross,                        "Pause Init Traversal (G)")        \
-  f(init_traversal_gc,                              "Pause Init Traversal (N)")        \
-  f(traversal_gc_prepare,                           "  Prepare")                       \
-  f(traversal_gc_make_parsable,                     "    Make Parsable")               \
-  f(traversal_gc_resize_tlabs,                      "    Resize TLABs")                \
-  f(traversal_gc_prepare_sync_pinned,               "    Sync Pinned")                 \
-  f(init_traversal_gc_work,                         "  Work")                          \
-  SHENANDOAH_GC_PAR_PHASE_DO(init_traversal_,       "    TI: ", f)                     \
-                                                                                       \
-  f(final_traversal_gc_gross,                       "Pause Final Traversal (G)")       \
-  f(final_traversal_gc,                             "Pause Final Traversal (N)")       \
-  f(final_traversal_gc_work,                        "  Work")                          \
-  SHENANDOAH_GC_PAR_PHASE_DO(final_trav_gc_,        "    TF: ", f)                     \
-  f(final_traversal_update_roots,                   "  Update Roots")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(final_trav_update_,    "    TU: ", f)                     \
-  f(traversal_gc_sync_pinned,                       "  Sync Pinned")                   \
-  f(traversal_gc_cleanup,                           "  Cleanup")                       \
-                                                                                       \
   f(full_gc_gross,                                  "Pause Full GC (G)")               \
   f(full_gc,                                        "Pause Full GC (N)")               \
   f(full_gc_heapdumps,                              "  Heap Dumps")                    \
@@ -159,7 +141,6 @@ class outputStream;
   f(conc_evac,                                      "Concurrent Evacuation")           \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
   f(conc_cleanup,                                   "Concurrent Cleanup")              \
-  f(conc_traversal,                                 "Concurrent Traversal")            \
                                                                                        \
   f(conc_uncommit,                                  "Concurrent Uncommit")             \
                                                                                        \

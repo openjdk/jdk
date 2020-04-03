@@ -903,32 +903,6 @@ void ShenandoahVerifier::verify_after_degenerated() {
   );
 }
 
-void ShenandoahVerifier::verify_before_traversal() {
-  verify_at_safepoint(
-          "Before Traversal",
-          _verify_forwarded_none,      // cannot have forwarded objects
-          _verify_marked_disable,      // bitmaps are not relevant before traversal
-          _verify_cset_none,           // no cset references before traversal
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash_nocset, // no trash and no cset regions
-          _verify_gcstate_stable,      // nothing forwarded before traversal
-          _verify_all_weak_roots
-  );
-}
-
-void ShenandoahVerifier::verify_after_traversal() {
-  verify_at_safepoint(
-          "After Traversal",
-          _verify_forwarded_none,      // cannot have forwarded objects
-          _verify_marked_complete,     // should have complete marking after traversal
-          _verify_cset_none,           // no cset references left after traversal
-          _verify_liveness_disable,    // liveness data is not collected for new allocations
-          _verify_regions_nocset,      // no cset regions, trash regions allowed
-          _verify_gcstate_stable,      // nothing forwarded after traversal
-          _verify_all_weak_roots
-  );
-}
-
 void ShenandoahVerifier::verify_before_fullgc() {
   verify_at_safepoint(
           "Before Full GC",

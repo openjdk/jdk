@@ -78,25 +78,6 @@
  *      TestGCThreadGroups
  */
 
-/**
- * @test TestGCThreadGroups
- * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
- * @key gc
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
- *
- * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal
- *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
- *      -Dtarget=1000
- *      TestGCThreadGroups
- *
- * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
- *      -Dtarget=1000
- *      TestGCThreadGroups
-*/
-
 public class TestGCThreadGroups {
 
     static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation, around 1K cycles to handle

@@ -135,9 +135,7 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   // Read and check the gc-state-flag.
   LIR_Opr flag_val = gen->new_register(T_INT);
   __ load(active_flag_addr, flag_val);
-  LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::HAS_FORWARDED |
-                                       ShenandoahHeap::EVACUATION |
-                                       ShenandoahHeap::TRAVERSAL);
+  LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::HAS_FORWARDED);
   LIR_Opr mask_reg = gen->new_register(T_INT);
   __ move(mask, mask_reg);
 
@@ -225,8 +223,7 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
     bool is_weak = (decorators & ON_WEAK_OOP_REF) != 0;
     bool is_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
     bool is_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-    bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
+    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
 
     if ((is_weak || is_phantom || is_anonymous) && keep_alive) {
       // Register the value in the referent field with the pre-barrier

@@ -54,7 +54,6 @@ inline oop ShenandoahBarrierSet::resolve_forwarded_not_null_mutator(oop p) {
 }
 
 inline void ShenandoahBarrierSet::enqueue(oop obj) {
-  shenandoah_assert_not_forwarded_if(NULL, obj, _heap->is_concurrent_traversal_in_progress());
   assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
 
   // Filter marked objects before hitting the SATB queues. The same predicate would
@@ -87,7 +86,7 @@ inline void ShenandoahBarrierSet::satb_enqueue(oop value) {
 }
 
 inline void ShenandoahBarrierSet::storeval_barrier(oop obj) {
-  if (obj != NULL && ShenandoahStoreValEnqueueBarrier && _heap->is_concurrent_traversal_in_progress()) {
+  if (obj != NULL && ShenandoahStoreValEnqueueBarrier) {
     enqueue(obj);
   }
 }
@@ -315,9 +314,6 @@ void ShenandoahBarrierSet::arraycopy_update_impl(T* src, size_t count) {
   if (_heap->is_evacuation_in_progress()) {
     ShenandoahEvacOOMScope oom_evac;
     arraycopy_work<T, true, true, false>(src, count);
-  } else if (_heap->is_concurrent_traversal_in_progress()){
-    ShenandoahEvacOOMScope oom_evac;
-    arraycopy_work<T, true, true, true>(src, count);
   } else if (_heap->has_forwarded_objects()) {
     arraycopy_work<T, true, false, false>(src, count);
   }

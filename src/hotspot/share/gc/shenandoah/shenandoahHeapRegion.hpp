@@ -222,21 +222,6 @@ private:
   static size_t MaxTLABSizeBytes;
   static size_t MaxTLABSizeWords;
 
-  // Global allocation counter, increased for each allocation under Shenandoah heap lock.
-  // Padded to avoid false sharing with the read-only fields above.
-  struct PaddedAllocSeqNum {
-    shenandoah_padding(0);
-    uint64_t value;
-    shenandoah_padding(1);
-
-    PaddedAllocSeqNum() {
-      // start with 1, reserve 0 for uninitialized value
-      value = 1;
-    }
-  };
-
-  static PaddedAllocSeqNum _alloc_seq_num;
-
   // Never updated fields
   size_t const _index;
   HeapWord* const _bottom;
@@ -254,8 +239,6 @@ private:
 
   size_t _tlab_allocs;
   size_t _gclab_allocs;
-
-  uint64_t _seqnum_last_alloc_mutator;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
@@ -345,11 +328,6 @@ public:
     return ShenandoahHeapRegion::MaxTLABSizeWords;
   }
 
-  static uint64_t seqnum_current_alloc() {
-    // Last used seq number
-    return _alloc_seq_num.value - 1;
-  }
-
   inline size_t index() const {
     return _index;
   }
@@ -404,9 +382,6 @@ public:
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
-
-  inline uint64_t seqnum_last_alloc_mutator() const;
-  void update_seqnum_last_alloc_mutator();
 
   HeapWord* get_update_watermark() const {
     // Updates to the update-watermark only happen at safepoints or, when pushing

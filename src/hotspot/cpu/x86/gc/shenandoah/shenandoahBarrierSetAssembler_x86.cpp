@@ -157,7 +157,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   Address buffer(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::MARKING | ShenandoahHeap::TRAVERSAL);
+  __ testb(gc_state, ShenandoahHeap::MARKING);
   __ jcc(Assembler::zero, done);
 
   // Do we need to load the previous value?
@@ -892,7 +892,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
 
   // Is SATB still active?
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::MARKING | ShenandoahHeap::TRAVERSAL);
+  __ testb(gc_state, ShenandoahHeap::MARKING);
   __ jcc(Assembler::zero, done);
 
   // Can we store original value in the thread's buffer?

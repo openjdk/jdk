@@ -566,8 +566,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
     bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
     bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
-    bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
+    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
 
     // If we are reading the value of the referent field of a Reference
     // object (either by using Unsafe directly or through reflection)

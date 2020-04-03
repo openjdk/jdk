@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"
 
@@ -179,9 +178,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Allocation successful, bump stats:
     if (req.is_mutator_alloc()) {
       increase_used(size * HeapWordSize);
-      if (_heap->is_traversal_mode()) {
-        r->update_seqnum_last_alloc_mutator();
-      }
     }
 
     // Record actual allocation size
@@ -189,14 +185,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
     if (req.is_gc_alloc()) {
       r->set_update_watermark(r->top());
-      if (_heap->is_concurrent_traversal_in_progress()) {
-        // Traversal needs to traverse through GC allocs. Adjust TAMS to the new top
-        // so that these allocations appear below TAMS, and thus get traversed.
-        // See top of shenandoahTraversal.cpp for an explanation.
-        _heap->marking_context()->capture_top_at_mark_start(r);
-        _heap->traversal_gc()->traversal_set()->add_region_check_for_duplicates(r);
-        OrderAccess::fence();
-      }
     }
   }
 

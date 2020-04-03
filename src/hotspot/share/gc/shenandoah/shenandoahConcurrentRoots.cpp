@@ -28,8 +28,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 
 bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
-  // Don't support traversal GC at this moment
-  return !ShenandoahHeap::heap()->is_traversal_mode();
+  return true;
 }
 
 bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
@@ -40,8 +39,7 @@ bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
 bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
 #if defined(X86) && !defined(SOLARIS)
   return ShenandoahCodeRootsStyle == 2 &&
-         ClassUnloading &&
-         strcmp(ShenandoahGCMode, "traversal") != 0;
+         ClassUnloading;
 #else
   return false;
 #endif

@@ -87,10 +87,6 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
     ShenandoahEvacOOMScope evac_scope;
     ShenandoahUpdateRefsForOopClosure</* evac = */ true, /* enqueue */ false> cl;
     obj->oop_iterate(&cl);
-  } else if (_heap->is_concurrent_traversal_in_progress()) {
-    ShenandoahEvacOOMScope evac_scope;
-    ShenandoahUpdateRefsForOopClosure</* evac = */ true, /* enqueue */ true> cl;
-    obj->oop_iterate(&cl);
   } else {
     ShenandoahUpdateRefsForOopClosure</* evac = */ false, /* enqueue */ false> cl;
     obj->oop_iterate(&cl);

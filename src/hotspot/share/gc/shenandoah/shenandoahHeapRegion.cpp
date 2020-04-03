@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.inline.hpp"
@@ -53,8 +52,6 @@ size_t ShenandoahHeapRegion::HumongousThresholdWords = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeBytes = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeWords = 0;
 
-ShenandoahHeapRegion::PaddedAllocSeqNum ShenandoahHeapRegion::_alloc_seq_num;
-
 ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed) :
   _index(index),
   _bottom(start),
@@ -65,7 +62,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _top(start),
   _tlab_allocs(0),
   _gclab_allocs(0),
-  _seqnum_last_alloc_mutator(0),
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start) {
@@ -310,25 +306,15 @@ void ShenandoahHeapRegion::clear_live_data() {
 void ShenandoahHeapRegion::reset_alloc_metadata() {
   _tlab_allocs = 0;
   _gclab_allocs = 0;
-  _seqnum_last_alloc_mutator = 0;
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata_to_shared() {
   if (used() > 0) {
     _tlab_allocs = 0;
     _gclab_allocs = 0;
-    if (ShenandoahHeap::heap()->is_traversal_mode()) {
-      update_seqnum_last_alloc_mutator();
-    }
   } else {
     reset_alloc_metadata();
   }
-}
-
-void ShenandoahHeapRegion::update_seqnum_last_alloc_mutator() {
-  assert(ShenandoahHeap::heap()->is_traversal_mode(), "Sanity");
-  shenandoah_assert_heaplocked_or_safepoint();
-  _seqnum_last_alloc_mutator = _alloc_seq_num.value++;
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
@@ -418,7 +404,6 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|S " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
   st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP " SIZE_FORMAT_W(3), pin_count());
-  st->print("|SN " UINT64_FORMAT_X_W(12), _seqnum_last_alloc_mutator);
   st->cr();
 }
 
