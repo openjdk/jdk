@@ -1483,8 +1483,8 @@ public class DatagramSocket implements java.io.Closeable {
         return getImpl().getOption(name);
     }
 
-    private static Set<SocketOption<?>> options;
-    private static boolean optionsSet = false;
+    private volatile Set<SocketOption<?>> options;
+    private final Object optionsLock = new Object();
 
     /**
      * Returns a set of the socket options supported by this socket.
@@ -1498,18 +1498,22 @@ public class DatagramSocket implements java.io.Closeable {
      * @since 9
      */
     public Set<SocketOption<?>> supportedOptions() {
-        synchronized(DatagramSocket.class) {
-            if (optionsSet) {
+        Set<SocketOption<?>> options = this.options;
+        if (options != null)
+            return options;
+
+        synchronized (optionsLock) {
+            options = this.options;
+            if (options != null)
                 return options;
-            }
+
             try {
                 DatagramSocketImpl impl = getImpl();
                 options = Collections.unmodifiableSet(impl.supportedOptions());
             } catch (IOException e) {
                 options = Collections.emptySet();
             }
-            optionsSet = true;
-            return options;
+            return this.options = options;
         }
     }
 }
