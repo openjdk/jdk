@@ -22,7 +22,6 @@
  */
 package nsk.share.runner;
 
-import nsk.share.Wicket;
 import nsk.share.gc.OOMStress;
 import nsk.share.log.*;
 import nsk.share.test.Stresser;
@@ -45,7 +44,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
     private RunParams runParams;
     private List<Runnable> runnables = new ArrayList<Runnable>();
     private List<ManagedThread> threads = new ArrayList<ManagedThread>();
-    private Wicket wicket = new Wicket();
+    private AtomicInteger notStarted;
     private AtomicInteger finished;
     private boolean started = false;
     private boolean successful = true;
@@ -97,7 +96,10 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
 
         @Override
         public void run() {
-            wicket.waitFor();
+            notStarted.decrementAndGet();
+            while (notStarted.get() != 0) {
+                Thread.onSpinWait();
+            }
             try {
                 stresser.start(runParams.getIterations());
                 while (!this.thread.isInterrupted() && stresser.iteration()) {
@@ -187,6 +189,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
 
     private void create() {
         int threadCount = runnables.size();
+        notStarted = new AtomicInteger(threadCount);
         finished = new AtomicInteger(threadCount);
         ManagedThreadFactory factory = ManagedThreadFactory.createFactory(runParams);
         for (int i = 0; i < threadCount; ++i) {
@@ -208,7 +211,6 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
             log.debug("Starting " + t);
             t.start();
         }
-        wicket.unlock();
         started = true;
     }
 

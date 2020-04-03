@@ -116,8 +116,8 @@ public class Wicket {
     public void waitFor() {
         long id = System.currentTimeMillis();
 
+        lock.lock();
         try {
-            lock.lock();
             ++waiters;
             if (debugOutput != null) {
                 debugOutput.printf("Wicket %d %s: waitFor(). There are %d waiters totally now.\n", id, name, waiters);
@@ -172,8 +172,8 @@ public class Wicket {
 
         long id = System.currentTimeMillis();
 
+        lock.lock();
         try {
-            lock.lock();
             ++waiters;
             if (debugOutput != null) {
                 debugOutput.printf("Wicket %d %s: waitFor(). There are %d waiters totally now.\n", id, name, waiters);
@@ -209,8 +209,8 @@ public class Wicket {
      */
     public void unlock() {
 
+        lock.lock();
         try {
-            lock.lock();
             if (count == 0)
                 throw new IllegalStateException("locks are already open");
 
@@ -241,8 +241,8 @@ public class Wicket {
             debugOutput.printf("Wicket %s: unlockAll()\n", name);
         }
 
+        lock.lock();
         try {
-            lock.lock();
             count = 0;
             condition.signalAll();
         } finally {
@@ -257,8 +257,9 @@ public class Wicket {
      * @return number of waiters
      */
     public int getWaiters() {
+
+        lock.lock();
         try {
-            lock.lock();
             if (debugOutput != null) {
                 debugOutput.printf("Wicket %s: getWaiters()\n", name);
             }
