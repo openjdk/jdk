@@ -164,7 +164,7 @@
   experimental(bool, UseEpsilonGC, false,                                   \
           "Use the Epsilon (no-op) garbage collector")                      \
                                                                             \
-  experimental(bool, UseZGC, false,                                         \
+  product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \
                                                                             \
   experimental(bool, UseShenandoahGC, false,                                \

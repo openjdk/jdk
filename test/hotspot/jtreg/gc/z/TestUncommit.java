@@ -27,9 +27,9 @@ package gc.z;
  * @test TestUncommit
  * @requires vm.gc.Z & !vm.graal.enabled & vm.compMode != "Xcomp"
  * @summary Test ZGC uncommit unused memory
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit true 2
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms512M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit false 1
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 -XX:-ZUncommit gc.z.TestUncommit false 1
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit true 2
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms512M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit false 1
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 -XX:-ZUncommit gc.z.TestUncommit false 1
  */
 
 /*

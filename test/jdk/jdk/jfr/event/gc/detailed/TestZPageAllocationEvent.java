@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZPageAllocationEvent
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZPageAllocationEvent
  */
 
 public class TestZPageAllocationEvent {

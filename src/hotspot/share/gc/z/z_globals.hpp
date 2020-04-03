@@ -38,26 +38,26 @@
                    range,                                                   \
                    constraint)                                              \
                                                                             \
-  experimental(double, ZAllocationSpikeTolerance, 2.0,                      \
+  product(double, ZAllocationSpikeTolerance, 2.0,                           \
           "Allocation spike tolerance factor")                              \
                                                                             \
-  experimental(double, ZFragmentationLimit, 25.0,                           \
+  product(double, ZFragmentationLimit, 25.0,                                \
           "Maximum allowed heap fragmentation")                             \
                                                                             \
-  experimental(size_t, ZMarkStackSpaceLimit, 8*G,                           \
+  product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  experimental(uint, ZCollectionInterval, 0,                                \
+  product(uint, ZCollectionInterval, 0,                                     \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
-  experimental(bool, ZProactive, true,                                      \
+  product(bool, ZProactive, true,                                           \
           "Enable proactive GC cycles")                                     \
                                                                             \
-  experimental(bool, ZUncommit, true,                                       \
+  product(bool, ZUncommit, true,                                            \
           "Uncommit unused memory")                                         \
                                                                             \
-  experimental(uintx, ZUncommitDelay, 5 * 60,                               \
+  product(uintx, ZUncommitDelay, 5 * 60,                                    \
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \

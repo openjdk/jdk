@@ -54,7 +54,6 @@ public class TestSmallHeap {
     public static void main(String[] args) throws Exception {
         for (var maxCapacity: args) {
             ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(new String[] {
-                                        "-XX:+UnlockExperimentalVMOptions",
                                         "-XX:+UseZGC",
                                         "-Xlog:gc,gc+init,gc+reloc,gc+heap",
                                         "-Xmx" + maxCapacity,
