@@ -50,7 +50,7 @@ public class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
         String desktopFileName = String.format("%s-%s.desktop", getPackageName(
                 cmd), Optional.ofNullable(launcherName).orElseGet(
-                        () -> cmd.name()));
+                        () -> cmd.name()).replaceAll("\\s+", "_"));
         return cmd.appLayout().destktopIntegrationDirectory().resolve(
                 desktopFileName);
     }

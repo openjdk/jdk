@@ -91,8 +91,16 @@ public class ShortcutHintTest {
         return new PackageTest()
                 .forTypes(PackageType.LINUX)
                 .configureHelloApp()
-                .addBundleDesktopIntegrationVerifier(true);
-
+                .addBundleDesktopIntegrationVerifier(true)
+                .addInitializer(cmd -> {
+                    String defaultAppName = cmd.name();
+                    String appName = defaultAppName.replace(
+                            ShortcutHintTest.class.getSimpleName(),
+                            "Shortcut Hint  Test");
+                    cmd.setArgumentValue("--name", appName);
+                    cmd.addArguments("--linux-package-name",
+                            defaultAppName.toLowerCase());
+                });
     }
 
     /**
@@ -163,9 +171,7 @@ public class ShortcutHintTest {
                     ));
         })
         .addInstallVerifier(cmd -> {
-            Path desktopFile = cmd.appLayout().destktopIntegrationDirectory().resolve(
-                    String.format("%s-%s.desktop",
-                            LinuxHelper.getPackageName(cmd), cmd.name()));
+            Path desktopFile = LinuxHelper.getDesktopFile(cmd);
             TKit.assertFileExists(desktopFile);
             TKit.assertTextStream(expectedVersionString)
                     .label(String.format("[%s] file", desktopFile))
