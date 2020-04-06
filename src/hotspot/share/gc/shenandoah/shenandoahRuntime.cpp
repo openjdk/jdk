@@ -31,24 +31,14 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/copy.hpp"
 
-void ShenandoahRuntime::write_ref_array_pre_oop_entry(oop* src, oop* dst, size_t length) {
+void ShenandoahRuntime::arraycopy_barrier_oop_entry(oop* src, oop* dst, size_t length) {
   ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_pre(src, dst, length);
+  bs->arraycopy_barrier(src, dst, length);
 }
 
-void ShenandoahRuntime::write_ref_array_pre_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length) {
+void ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length) {
   ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_pre(src, dst, length);
-}
-
-void ShenandoahRuntime::write_ref_array_pre_duinit_oop_entry(oop* src, oop* dst, size_t length) {
-  ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_update(src, length);
-}
-
-void ShenandoahRuntime::write_ref_array_pre_duinit_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length) {
-  ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_update(src, length);
+  bs->arraycopy_barrier(src, dst, length);
 }
 
 // Shenandoah pre write barrier slowpath

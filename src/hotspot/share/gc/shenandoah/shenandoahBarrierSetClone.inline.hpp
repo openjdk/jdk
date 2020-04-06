@@ -82,7 +82,7 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
   // that potentially need to be updated.
 
   shenandoah_assert_correct(NULL, obj);
-  if (skip_bulk_update(cast_from_oop<HeapWord*>(obj))) return;
+  if (!need_bulk_update(cast_from_oop<HeapWord*>(obj))) return;
   if (_heap->is_evacuation_in_progress()) {
     ShenandoahEvacOOMScope evac_scope;
     ShenandoahUpdateRefsForOopClosure</* evac = */ true, /* enqueue */ false> cl;

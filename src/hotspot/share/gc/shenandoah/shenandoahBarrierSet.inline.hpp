@@ -249,9 +249,9 @@ bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy
                                                                                          arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                                                          size_t length) {
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_pre(arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw),
-                    arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw),
-                    length);
+  bs->arraycopy_barrier(arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw),
+                        arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw),
+                        length);
   return Raw::oop_arraycopy_in_heap(src_obj, src_offset_in_bytes, src_raw, dst_obj, dst_offset_in_bytes, dst_raw, length);
 }
 
@@ -285,46 +285,47 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_pre_work(T* src, T* dst, size_t count) {
-  if (_heap->is_concurrent_mark_in_progress() &&
-      !_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
-    arraycopy_work<T, false, false, true>(dst, count);
+void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
+  if (count == 0) {
+    return;
   }
-
-  if (_heap->has_forwarded_objects()) {
-    arraycopy_update_impl(src, count);
+  int gc_state = _heap->gc_state();
+  if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+    arraycopy_marking(dst, count);
+  } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+    arraycopy_evacuation(src, count);
+  } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
+    arraycopy_update(src, count);
   }
-}
-
-void ShenandoahBarrierSet::arraycopy_pre(oop* src, oop* dst, size_t count) {
-  arraycopy_pre_work(src, dst, count);
-}
-
-void ShenandoahBarrierSet::arraycopy_pre(narrowOop* src, narrowOop* dst, size_t count) {
-  arraycopy_pre_work(src, dst, count);
-}
-
-inline bool ShenandoahBarrierSet::skip_bulk_update(HeapWord* dst) {
-  return dst >= _heap->heap_region_containing(dst)->get_update_watermark();
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_update_impl(T* src, size_t count) {
-  if (skip_bulk_update(reinterpret_cast<HeapWord*>(src))) return;
-  if (_heap->is_evacuation_in_progress()) {
-    ShenandoahEvacOOMScope oom_evac;
-    arraycopy_work<T, true, true, false>(src, count);
-  } else if (_heap->has_forwarded_objects()) {
-    arraycopy_work<T, true, false, false>(src, count);
+void ShenandoahBarrierSet::arraycopy_marking(T* array, size_t count) {
+  assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
+  if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(array))) {
+    arraycopy_work<T, false, false, true>(array, count);
   }
 }
 
-void ShenandoahBarrierSet::arraycopy_update(oop* src, size_t count) {
-  arraycopy_update_impl(src, count);
+inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) {
+  return ary < _heap->heap_region_containing(ary)->get_update_watermark();
 }
 
-void ShenandoahBarrierSet::arraycopy_update(narrowOop* src, size_t count) {
-  arraycopy_update_impl(src, count);
+template <class T>
+void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
+  assert(_heap->is_evacuation_in_progress(), "only during evacuation");
+  if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
+    ShenandoahEvacOOMScope oom_evac;
+    arraycopy_work<T, true, true, false>(src, count);
+  }
+}
+
+template <class T>
+void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
+  assert(_heap->is_update_refs_in_progress(), "only during update-refs");
+  if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
+    arraycopy_work<T, true, false, false>(src, count);
+  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP

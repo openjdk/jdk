@@ -33,10 +33,9 @@ class oopDesc;
 
 class ShenandoahRuntime : public AllStatic {
 public:
-  static void write_ref_array_pre_oop_entry(oop* src, oop* dst, size_t length);
-  static void write_ref_array_pre_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length);
-  static void write_ref_array_pre_duinit_oop_entry(oop* src, oop* dst, size_t length);
-  static void write_ref_array_pre_duinit_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length);
+  static void arraycopy_barrier_oop_entry(oop* src, oop* dst, size_t length);
+  static void arraycopy_barrier_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length);
+
   static void write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread);
 
   static oopDesc* load_reference_barrier(oopDesc* src, oop* load_addr);

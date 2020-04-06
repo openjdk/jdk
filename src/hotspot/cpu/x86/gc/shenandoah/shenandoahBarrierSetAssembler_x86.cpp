@@ -77,7 +77,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ testptr(count, count);
       __ jcc(Assembler::zero, done);
 
-      // Avoid runtime call when not marking.
+      // Avoid runtime call when not active.
       Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
       int flags = ShenandoahHeap::HAS_FORWARDED;
       if (!dest_uninitialized) {
@@ -87,25 +87,21 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ jcc(Assembler::zero, done);
 
       __ pusha();                      // push registers
+
 #ifdef _LP64
       assert(src == rdi, "expected");
       assert(dst == rsi, "expected");
       assert(count == rdx, "expected");
       if (UseCompressedOops) {
-        if (dest_uninitialized) {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_duinit_narrow_oop_entry), src, dst, count);
-        } else {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_narrow_oop_entry), src, dst, count);
-        }
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry),
+                        src, dst, count);
       } else
 #endif
       {
-        if (dest_uninitialized) {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_duinit_oop_entry), src, dst, count);
-        } else {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_oop_entry), src, dst, count);
-        }
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop_entry),
+                        src, dst, count);
       }
+
       __ popa();
       __ bind(done);
       NOT_LP64(__ pop(thread);)
