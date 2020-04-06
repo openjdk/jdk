@@ -51,6 +51,8 @@ final class KeyShareExtension {
             new CHKeyShareProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHKeyShareConsumer();
+    static final HandshakeAbsence chOnTradAbsence =
+            new CHKeyShareOnTradeAbsence();
     static final SSLStringizer chStringizer =
             new CHKeyShareStringizer();
 
@@ -371,6 +373,36 @@ final class KeyShareExtension {
             shc.handshakeExtensions.put(SSLExtension.CH_KEY_SHARE, spec);
         }
     }
+
+    /**
+     * The absence processing if the extension is not present in
+     * a ClientHello handshake message.
+     */
+    private static final class CHKeyShareOnTradeAbsence
+            implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // A client is considered to be attempting to negotiate using this
+            // specification if the ClientHello contains a "supported_versions"
+            // extension with 0x0304 contained in its body.  Such a ClientHello
+            // message MUST meet the following requirements:
+            //    -  If containing a "supported_groups" extension, it MUST also
+            //       contain a "key_share" extension, and vice versa.  An empty
+            //       KeyShare.client_shares vector is permitted.
+            if (shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_SUPPORTED_GROUPS)) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                        "No key_share extension to work with " +
+                        "the supported_groups extension");
+            }
+        }
+    }
+
 
     /**
      * The key share entry used in ServerHello "key_share" extensions.

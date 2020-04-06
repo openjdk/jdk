@@ -52,6 +52,8 @@ final class SupportedGroupsExtension {
             new CHSupportedGroupsProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHSupportedGroupsConsumer();
+    static final HandshakeAbsence chOnTradAbsence =
+            new CHSupportedGroupsOnTradeAbsence();
     static final SSLStringizer sgsStringizer =
             new SupportedGroupsStringizer();
 
@@ -433,6 +435,35 @@ final class SupportedGroupsExtension {
             shc.handshakeExtensions.put(CH_SUPPORTED_GROUPS, spec);
 
             // No impact on session resumption.
+        }
+    }
+
+    /**
+     * The absence processing if the extension is not present in
+     * a ClientHello handshake message.
+     */
+    private static final class CHSupportedGroupsOnTradeAbsence
+            implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // A client is considered to be attempting to negotiate using this
+            // specification if the ClientHello contains a "supported_versions"
+            // extension with 0x0304 contained in its body.  Such a ClientHello
+            // message MUST meet the following requirements:
+            //    -  If containing a "supported_groups" extension, it MUST also
+            //       contain a "key_share" extension, and vice versa.  An empty
+            //       KeyShare.client_shares vector is permitted.
+            if (shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_KEY_SHARE)) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                        "No supported_groups extension to work with " +
+                        "the key_share extension");
+            }
         }
     }
 

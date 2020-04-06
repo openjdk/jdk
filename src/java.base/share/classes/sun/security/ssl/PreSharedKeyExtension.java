@@ -56,9 +56,11 @@ final class PreSharedKeyExtension {
     static final ExtensionConsumer chOnLoadConsumer =
             new CHPreSharedKeyConsumer();
     static final HandshakeAbsence chOnLoadAbsence =
-            new CHPreSharedKeyAbsence();
+            new CHPreSharedKeyOnLoadAbsence();
     static final HandshakeConsumer chOnTradeConsumer =
             new CHPreSharedKeyUpdate();
+    static final HandshakeAbsence chOnTradAbsence =
+            new CHPreSharedKeyOnTradeAbsence();
     static final SSLStringizer chStringizer =
             new CHPreSharedKeyStringizer();
 
@@ -822,7 +824,7 @@ final class PreSharedKeyExtension {
     }
 
     private static final
-            class CHPreSharedKeyAbsence implements HandshakeAbsence {
+            class CHPreSharedKeyOnLoadAbsence implements HandshakeAbsence {
         @Override
         public void absent(ConnectionContext context,
                            HandshakeMessage message) throws IOException {
@@ -837,6 +839,37 @@ final class PreSharedKeyExtension {
             // Resumption is only determined by PSK, when enabled
             shc.resumingSession = null;
             shc.isResumption = false;
+        }
+    }
+
+    /**
+     * The absence processing if the extension is not present in
+     * a ClientHello handshake message.
+     */
+    private static final class CHPreSharedKeyOnTradeAbsence
+            implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // A client is considered to be attempting to negotiate using this
+            // specification if the ClientHello contains a "supported_versions"
+            // extension with 0x0304 contained in its body.  Such a ClientHello
+            // message MUST meet the following requirements:
+            //   -  If not containing a "pre_shared_key" extension, it MUST
+            //      contain both a "signature_algorithms" extension and a
+            //      "supported_groups" extension.
+            if (shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    (!shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_SIGNATURE_ALGORITHMS) ||
+                     !shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_SUPPORTED_GROUPS))) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                    "No supported_groups or signature_algorithms extension " +
+                    "when pre_shared_key extension is not present");
+            }
         }
     }
 
