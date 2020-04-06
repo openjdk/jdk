@@ -110,6 +110,16 @@ public class FontStrikeDesc {
      * must therefore include device and font transforms.
      */
     public static int getAAHintIntVal(Object aa, Font2D font2D, int ptSize) {
+
+        if (FontUtilities.isMacOSX14 &&
+            (aa == VALUE_TEXT_ANTIALIAS_OFF ||
+             aa == VALUE_TEXT_ANTIALIAS_DEFAULT ||
+             aa == VALUE_TEXT_ANTIALIAS_ON ||
+             aa == VALUE_TEXT_ANTIALIAS_GASP))
+        {
+             return INTVAL_TEXT_ANTIALIAS_ON;
+        }
+
         if (aa == VALUE_TEXT_ANTIALIAS_OFF ||
             aa == VALUE_TEXT_ANTIALIAS_DEFAULT) {
             return INTVAL_TEXT_ANTIALIAS_OFF;
@@ -142,6 +152,16 @@ public class FontStrikeDesc {
     public static int getAAHintIntVal(Font2D font2D, Font font,
                                       FontRenderContext frc) {
         Object aa = frc.getAntiAliasingHint();
+
+        if (FontUtilities.isMacOSX14 &&
+            (aa == VALUE_TEXT_ANTIALIAS_OFF ||
+             aa == VALUE_TEXT_ANTIALIAS_DEFAULT ||
+             aa == VALUE_TEXT_ANTIALIAS_ON ||
+             aa == VALUE_TEXT_ANTIALIAS_GASP))
+        {
+             return INTVAL_TEXT_ANTIALIAS_ON;
+        }
+
         if (aa == VALUE_TEXT_ANTIALIAS_OFF ||
             aa == VALUE_TEXT_ANTIALIAS_DEFAULT) {
             return INTVAL_TEXT_ANTIALIAS_OFF;

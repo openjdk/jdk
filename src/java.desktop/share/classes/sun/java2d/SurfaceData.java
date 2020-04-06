@@ -34,6 +34,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 
+import sun.font.FontUtilities;
 import sun.java2d.loops.RenderCache;
 import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.CompositeType;
@@ -448,8 +449,12 @@ public abstract class SurfaceData
         colorPrimitives = new LoopPipe();
 
         outlineTextRenderer = new OutlineTextRenderer();
-        solidTextRenderer = new SolidTextRenderer();
         aaTextRenderer = new AATextRenderer();
+        if (FontUtilities.isMacOSX14) {
+            solidTextRenderer = aaTextRenderer;
+        } else {
+            solidTextRenderer = new SolidTextRenderer();
+        }
         lcdTextRenderer = new LCDTextRenderer();
 
         colorPipe = new AlphaColorPipe();

@@ -22,7 +22,7 @@
  */
 /**
  * @test
- * @bug     8015606
+ * @bug     8015606 8220150
  * @summary Test verifies whether a text is rendered correctly to
  *          a custom buffered image.
  *
