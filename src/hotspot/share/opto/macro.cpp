@@ -364,7 +364,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   Node* res = NULL;
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
-    Node* base = ac->in(ArrayCopyNode::Src)->in(AddPNode::Base);
+    Node* base = ac->in(ArrayCopyNode::Src);
     Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
     res = LoadNode::make(_igvn, ctl, mem, adr, adr_type, type, bt, MemNode::unordered, LoadNode::UnknownControl);
@@ -671,11 +671,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X &&
-              SHENANDOAHGC_ONLY((!UseShenandoahGC || !ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(n)) &&)
-              !(n->is_ArrayCopy() &&
-                n->as_ArrayCopy()->is_clonebasic() &&
-                n->in(ArrayCopyNode::Dest) == use)) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X
+              SHENANDOAHGC_ONLY(&& (!UseShenandoahGC || !ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(n))) ) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -686,7 +683,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
           }
         }
       } else if (use->is_ArrayCopy() &&
-                 (use->as_ArrayCopy()->is_arraycopy_validated() ||
+                 (use->as_ArrayCopy()->is_clonebasic() ||
+                  use->as_ArrayCopy()->is_arraycopy_validated() ||
                   use->as_ArrayCopy()->is_copyof_validated() ||
                   use->as_ArrayCopy()->is_copyofrange_validated()) &&
                  use->in(ArrayCopyNode::Dest) == res) {
@@ -967,18 +965,6 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
             }
 #endif
             _igvn.replace_node(n, n->in(MemNode::Memory));
-          } else if (n->is_ArrayCopy()) {
-            // Disconnect ArrayCopy node
-            ArrayCopyNode* ac = n->as_ArrayCopy();
-            assert(ac->is_clonebasic(), "unexpected array copy kind");
-            Node* membar_after = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
-            disconnect_projections(ac, _igvn);
-            assert(alloc->in(0)->is_Proj() && alloc->in(0)->in(0)->Opcode() == Op_MemBarCPUOrder, "mem barrier expected before allocation");
-            Node* membar_before = alloc->in(0)->in(0);
-            disconnect_projections(membar_before->as_MemBar(), _igvn);
-            if (membar_after->is_MemBar()) {
-              disconnect_projections(membar_after->as_MemBar(), _igvn);
-            }
           } else {
             eliminate_gc_barrier(n);
           }
@@ -988,30 +974,40 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       } else if (use->is_ArrayCopy()) {
         // Disconnect ArrayCopy node
         ArrayCopyNode* ac = use->as_ArrayCopy();
-        assert(ac->is_arraycopy_validated() ||
-               ac->is_copyof_validated() ||
-               ac->is_copyofrange_validated(), "unsupported");
-        CallProjections callprojs;
-        ac->extract_projections(&callprojs, true);
+        if (ac->is_clonebasic()) {
+          Node* membar_after = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
+          disconnect_projections(ac, _igvn);
+          assert(alloc->in(0)->is_Proj() && alloc->in(0)->in(0)->Opcode() == Op_MemBarCPUOrder, "mem barrier expected before allocation");
+          Node* membar_before = alloc->in(0)->in(0);
+          disconnect_projections(membar_before->as_MemBar(), _igvn);
+          if (membar_after->is_MemBar()) {
+            disconnect_projections(membar_after->as_MemBar(), _igvn);
+          }
+        } else {
+          assert(ac->is_arraycopy_validated() ||
+                 ac->is_copyof_validated() ||
+                 ac->is_copyofrange_validated(), "unsupported");
+          CallProjections callprojs;
+          ac->extract_projections(&callprojs, true);
 
-        _igvn.replace_node(callprojs.fallthrough_ioproj, ac->in(TypeFunc::I_O));
-        _igvn.replace_node(callprojs.fallthrough_memproj, ac->in(TypeFunc::Memory));
-        _igvn.replace_node(callprojs.fallthrough_catchproj, ac->in(TypeFunc::Control));
+          _igvn.replace_node(callprojs.fallthrough_ioproj, ac->in(TypeFunc::I_O));
+          _igvn.replace_node(callprojs.fallthrough_memproj, ac->in(TypeFunc::Memory));
+          _igvn.replace_node(callprojs.fallthrough_catchproj, ac->in(TypeFunc::Control));
 
-        // Set control to top. IGVN will remove the remaining projections
-        ac->set_req(0, top());
-        ac->replace_edge(res, top());
+          // Set control to top. IGVN will remove the remaining projections
+          ac->set_req(0, top());
+          ac->replace_edge(res, top());
 
-        // Disconnect src right away: it can help find new
-        // opportunities for allocation elimination
-        Node* src = ac->in(ArrayCopyNode::Src);
-        ac->replace_edge(src, top());
-        // src can be top at this point if src and dest of the
-        // arraycopy were the same
-        if (src->outcnt() == 0 && !src->is_top()) {
-          _igvn.remove_dead_node(src);
+          // Disconnect src right away: it can help find new
+          // opportunities for allocation elimination
+          Node* src = ac->in(ArrayCopyNode::Src);
+          ac->replace_edge(src, top());
+          // src can be top at this point if src and dest of the
+          // arraycopy were the same
+          if (src->outcnt() == 0 && !src->is_top()) {
+            _igvn.remove_dead_node(src);
+          }
         }
-
         _igvn._worklist.push(ac);
       } else {
         eliminate_gc_barrier(use);
