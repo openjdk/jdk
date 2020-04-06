@@ -604,9 +604,9 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241530 macosx-all
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241530 macosx-all
-sun/management/jdp/JdpSpecificAddressTest.java                  8241530 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
+sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
 
 ############################################################################
 
@@ -919,9 +919,6 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
-
-com/sun/jdi/JdwpAttachTest.java                                 8241530 macosx-all
-com/sun/jdi/JdwpListenTest.java                                 8241530 macosx-all
 
 ############################################################################
 

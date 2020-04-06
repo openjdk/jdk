@@ -26,6 +26,7 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -45,6 +46,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -305,6 +307,37 @@ public final class Utils {
             port++;
         }
         throw new RuntimeException("Unable to find system port that is refusing connections");
+    }
+
+    /**
+     * Returns local addresses with symbolic and numeric scopes
+     */
+    public static List<InetAddress> getAddressesWithSymbolicAndNumericScopes() {
+        List<InetAddress> result = new LinkedList<>();
+        try {
+            NetworkConfiguration conf = NetworkConfiguration.probe();
+            conf.ip4Addresses().forEach(result::add);
+            // Java reports link local addresses with symbolic scope,
+            // but on Windows java.net.NetworkInterface generates its own scope names
+            // which are incompatible with native Windows routines.
+            // So on Windows test only addresses with numeric scope.
+            // On other platforms test both symbolic and numeric scopes.
+            conf.ip6Addresses().forEach(addr6 -> {
+                try {
+                    result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
+                } catch (UnknownHostException e) {
+                    // cannot happen!
+                    throw new RuntimeException("Unexpected", e);
+                }
+                if (!Platform.isWindows()) {
+                    result.add(addr6);
+                }
+            });
+        } catch (IOException e) {
+            // cannot happen!
+            throw new RuntimeException("Unexpected", e);
+        }
+        return result;
     }
 
     /**

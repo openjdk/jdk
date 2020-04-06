@@ -26,19 +26,14 @@ import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.AttachingConnector;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
-import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import lib.jdb.Debuggee;
 
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -58,10 +53,11 @@ public class JdwpListenTest {
     private static boolean allowNegativeTesting = false;
 
     public static void main(String[] args) throws Exception {
-        List<InetAddress> addresses = getAddresses();
+        List<InetAddress> addresses = Utils.getAddressesWithSymbolicAndNumericScopes();
 
         boolean ipv4EnclosedTested = false;
         boolean ipv6EnclosedTested = false;
+
         for (InetAddress listen: addresses) {
             for (InetAddress attach: addresses) {
                 // can connect only from the same address
@@ -112,77 +108,6 @@ public class JdwpListenTest {
             }
         }
         log("PASSED");
-    }
-
-    private static void addAddr(List<InetAddress> list, InetAddress addr) {
-        log(" - (" + addr.getClass().getSimpleName() + ") " + addr.getHostAddress());
-        list.add(addr);
-    }
-
-    private static boolean isTeredo(Inet6Address addr) {
-        // Teredo prefix is 2001::/32 (i.e. first 4 bytes are 2001:0000)
-        byte[] bytes = addr.getAddress();
-        return bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 && bytes[3] == 0x00;
-    }
-
-    private static List<InetAddress> getAddresses() {
-        List<InetAddress> result = new LinkedList<>();
-        try {
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            while (networkInterfaces.hasMoreElements()) {
-                NetworkInterface iface = networkInterfaces.nextElement();
-                try {
-                    if (iface.isUp()) {
-                        Enumeration<InetAddress> addresses = iface.getInetAddresses();
-                        while (addresses.hasMoreElements()) {
-                            InetAddress addr = addresses.nextElement();
-                            // Java reports link local addresses with symbolic scope,
-                            // but on Windows java.net.NetworkInterface generates its own scope names
-                            // which are incompatible with native Windows routines.
-                            // So on Windows test only addresses with numeric scope.
-                            // On other platforms test both symbolic and numeric scopes.
-                            if (addr instanceof Inet6Address) {
-                                Inet6Address addr6 = (Inet6Address)addr;
-                                // Teredo clients cause intermittent errors on listen ("bind failed")
-                                // and attach ("no route to host").
-                                // Teredo is supposed to be a temporary measure, but some test machines have it.
-                                if (isTeredo(addr6)) {
-                                    continue;
-                                }
-                                NetworkInterface scopeIface = addr6.getScopedInterface();
-                                if (scopeIface != null && scopeIface.getName() != null) {
-                                    // On some test machines VPN creates link local addresses
-                                    // which we cannot connect to.
-                                    // Skip them.
-                                    if (scopeIface.isPointToPoint()) {
-                                        continue;
-                                    }
-
-                                    try {
-                                        // the same address with numeric scope
-                                        addAddr(result, Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
-                                    } catch (UnknownHostException e) {
-                                        // cannot happen!
-                                        throw new RuntimeException("Unexpected", e);
-                                    }
-
-                                    if (Platform.isWindows()) {
-                                        // don't add addresses with symbolic scope
-                                        continue;
-                                    }
-                                }
-                            }
-                            addAddr(result, addr);
-                        }
-                    }
-                } catch (SocketException e) {
-                    log("Interface " + iface.getDisplayName() + ": failed to get addresses");
-                }
-            }
-        } catch (SocketException e) {
-            log("Interface enumeration error: " + e);
-        }
-        return result;
     }
 
     private static String ATTACH_CONNECTOR = "com.sun.jdi.SocketAttach";
