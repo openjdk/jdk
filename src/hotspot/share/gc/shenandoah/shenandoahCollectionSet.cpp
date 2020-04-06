@@ -93,23 +93,6 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   r->make_cset();
 }
 
-bool ShenandoahCollectionSet::add_region_check_for_duplicates(ShenandoahHeapRegion* r) {
-  if (!is_in(r)) {
-    add_region(r);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void ShenandoahCollectionSet::remove_region(ShenandoahHeapRegion* r) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(Thread::current()->is_VM_thread(), "Must be VMThread");
-  assert(is_in(r), "Not in collection set");
-  _cset_map[r->index()] = 0;
-  _region_count --;
-}
-
 void ShenandoahCollectionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   Copy::zero_to_bytes(_cset_map, _map_size);

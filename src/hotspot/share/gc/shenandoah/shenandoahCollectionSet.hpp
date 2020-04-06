@@ -56,10 +56,6 @@ public:
 
   // Add region to collection set
   void add_region(ShenandoahHeapRegion* r);
-  bool add_region_check_for_duplicates(ShenandoahHeapRegion* r);
-
-  // Remove region from collection set
-  void remove_region(ShenandoahHeapRegion* r);
 
   // MT version
   ShenandoahHeapRegion* claim_next();
