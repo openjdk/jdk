@@ -76,7 +76,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
   size_t cur_cset = 0;
   size_t cur_garbage = 0;
-  _bytes_in_cset = 0;
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx]._region;
@@ -90,7 +89,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
     if ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)) {
       cset->add_region(r);
-      _bytes_in_cset += r->used();
       cur_cset = new_cset;
       cur_garbage = new_garbage;
     }
