@@ -299,10 +299,6 @@ void ShenandoahHeapRegion::make_committed_bypass() {
   }
 }
 
-void ShenandoahHeapRegion::clear_live_data() {
-  Atomic::release_store_fence(&_live_data, (size_t)0);
-}
-
 void ShenandoahHeapRegion::reset_alloc_metadata() {
   _tlab_allocs = 0;
   _gclab_allocs = 0;
@@ -323,26 +319,6 @@ size_t ShenandoahHeapRegion::get_gclab_allocs() const {
 void ShenandoahHeapRegion::set_live_data(size_t s) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
   _live_data = (s >> LogHeapWordSize);
-}
-
-size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return Atomic::load_acquire(&_live_data);
-}
-
-size_t ShenandoahHeapRegion::get_live_data_bytes() const {
-  return get_live_data_words() * HeapWordSize;
-}
-
-bool ShenandoahHeapRegion::has_live() const {
-  return get_live_data_words() != 0;
-}
-
-size_t ShenandoahHeapRegion::garbage() const {
-  assert(used() >= get_live_data_bytes(), "Live Data must be a subset of used() live: " SIZE_FORMAT " used: " SIZE_FORMAT,
-         get_live_data_bytes(), used());
-
-  size_t result = used() - get_live_data_bytes();
-  return result;
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
