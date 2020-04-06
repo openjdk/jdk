@@ -377,7 +377,6 @@ public:
   size_t free() const           { return byte_size(top(),    end()); }
 
   inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
-  void reset_alloc_metadata_to_shared();
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;

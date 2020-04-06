@@ -313,7 +313,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     r->set_top(r->bottom() + used_words);
-    r->reset_alloc_metadata_to_shared();
 
     _mutator_free_bitmap.clear_bit(r->index());
   }

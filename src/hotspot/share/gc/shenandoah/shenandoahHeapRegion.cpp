@@ -308,15 +308,6 @@ void ShenandoahHeapRegion::reset_alloc_metadata() {
   _gclab_allocs = 0;
 }
 
-void ShenandoahHeapRegion::reset_alloc_metadata_to_shared() {
-  if (used() > 0) {
-    _tlab_allocs = 0;
-    _gclab_allocs = 0;
-  } else {
-    reset_alloc_metadata();
-  }
-}
-
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
   return used() - (_tlab_allocs + _gclab_allocs) * HeapWordSize;
 }
