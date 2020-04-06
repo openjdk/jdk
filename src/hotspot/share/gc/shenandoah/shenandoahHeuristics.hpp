@@ -78,7 +78,6 @@ protected:
   } RegionData;
 
   RegionData* _region_data;
-  size_t _region_data_size;
 
   uint _degenerated_cycles_in_a_row;
   uint _successful_cycles_in_a_row;
@@ -96,8 +95,6 @@ protected:
   ShenandoahSharedFlag _metaspace_oom;
 
   static int compare_by_garbage(RegionData a, RegionData b);
-
-  RegionData* get_region_data_cache(size_t num);
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,

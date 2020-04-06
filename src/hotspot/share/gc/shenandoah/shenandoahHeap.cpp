@@ -144,8 +144,6 @@ public:
 };
 
 jint ShenandoahHeap::initialize() {
-  initialize_heuristics();
-
   //
   // Figure out heap sizing
   //
@@ -166,6 +164,9 @@ jint ShenandoahHeap::initialize() {
   Universe::check_alignment(init_byte_size, reg_size_bytes, "Shenandoah heap");
 
   _num_regions = ShenandoahHeapRegion::region_count();
+
+  // Now we know the number of regions, initialize the heuristics.
+  initialize_heuristics();
 
   size_t num_committed_regions = init_byte_size / reg_size_bytes;
   num_committed_regions = MIN2(num_committed_regions, _num_regions);
