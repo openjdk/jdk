@@ -378,7 +378,7 @@ public abstract class Executable extends AccessibleObject
     private void verifyParameters(final Parameter[] parameters) {
         final int mask = Modifier.FINAL | Modifier.SYNTHETIC | Modifier.MANDATED;
 
-        if (getParameterTypes().length != parameters.length)
+        if (getParameterCount() != parameters.length)
             throw new MalformedParametersException("Wrong number of parameters in MethodParameters attribute");
 
         for (Parameter parameter : parameters) {
