@@ -266,8 +266,8 @@ public abstract class URLStreamHandler {
                          spec.substring(start, limit);
 
             } else {
-                String separator = (authority != null) ? "/" : "";
-                path = separator + spec.substring(start, limit);
+                path = spec.substring(start, limit);
+                path = (authority != null) ? "/" + path : path;
             }
         } else if (queryOnly && path != null) {
             int ind = path.lastIndexOf('/');
