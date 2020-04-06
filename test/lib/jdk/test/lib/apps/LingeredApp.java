@@ -109,14 +109,6 @@ public class LingeredApp {
 
     /**
      *
-     * @return name of testapp
-     */
-    public String getAppName() {
-        return this.getClass().getName();
-    }
-
-    /**
-     *
      *  @return pid of java process running testapp
      */
     public long getPid() {
@@ -314,6 +306,14 @@ public class LingeredApp {
     }
 
     /**
+     * Adds application name to the command line.
+     * By default adds name of this class.
+     */
+    protected void runAddAppName(List<String> cmd) {
+        cmd.add(getClass().getName());
+    }
+
+    /**
      * Assemble command line to a printable string
      */
     public void printCommandLine(List<String> cmd) {
@@ -337,7 +337,7 @@ public class LingeredApp {
 
         List<String> cmd = runAppPrepare(vmOpts);
 
-        cmd.add(this.getAppName());
+        runAddAppName(cmd);
         cmd.add(lockFileName);
 
         printCommandLine(cmd);
