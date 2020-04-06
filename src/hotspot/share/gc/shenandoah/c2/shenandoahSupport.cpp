@@ -860,8 +860,8 @@ static void hide_strip_mined_loop(OuterStripMinedLoopNode* outer, CountedLoopNod
   inner->clear_strip_mined();
 }
 
-void ShenandoahBarrierC2Support::test_heap_stable(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
-                                                  PhaseIdealLoop* phase) {
+void ShenandoahBarrierC2Support::test_heap_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
+                                                 PhaseIdealLoop* phase, int flags) {
   IdealLoopTree* loop = phase->get_loop(ctrl);
   Node* thread = new ThreadLocalNode();
   phase->register_new_node(thread, ctrl);
@@ -875,7 +875,7 @@ void ShenandoahBarrierC2Support::test_heap_stable(Node*& ctrl, Node* raw_mem, No
 
   Node* gc_state = new LoadBNode(ctrl, raw_mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered);
   phase->register_new_node(gc_state, ctrl);
-  Node* heap_stable_and = new AndINode(gc_state, phase->igvn().intcon(ShenandoahHeap::HAS_FORWARDED));
+  Node* heap_stable_and = new AndINode(gc_state, phase->igvn().intcon(flags));
   phase->register_new_node(heap_stable_and, ctrl);
   Node* heap_stable_cmp = new CmpINode(heap_stable_and, phase->igvn().zerocon(T_INT));
   phase->register_new_node(heap_stable_cmp, ctrl);
@@ -889,7 +889,7 @@ void ShenandoahBarrierC2Support::test_heap_stable(Node*& ctrl, Node* raw_mem, No
   ctrl = new IfTrueNode(heap_stable_iff);
   phase->register_control(ctrl, loop, heap_stable_iff);
 
-  assert(is_heap_stable_test(heap_stable_iff), "Should match the shape");
+  assert(is_heap_state_test(heap_stable_iff, flags), "Should match the shape");
 }
 
 void ShenandoahBarrierC2Support::test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase) {
@@ -1437,7 +1437,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
-    test_heap_stable(ctrl, raw_mem, heap_stable_ctrl, phase);
+    test_heap_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::HAS_FORWARDED);
     IfNode* heap_stable_iff = heap_stable_ctrl->in(0)->as_If();
 
     // Heap stable case
@@ -1608,7 +1608,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* phi2 = PhiNode::make(region2, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
-    test_heap_stable(ctrl, raw_mem, heap_stable_ctrl, phase);
+    test_heap_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::MARKING);
     region->init_req(_heap_stable, heap_stable_ctrl);
     phi->init_req(_heap_stable, raw_mem);
 

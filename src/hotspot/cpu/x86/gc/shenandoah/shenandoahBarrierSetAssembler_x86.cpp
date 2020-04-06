@@ -53,7 +53,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (is_reference_type(type)) {
 
-    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahLoadRefBarrier) {
+    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahStoreValEnqueueBarrier || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
       Register thread = r15_thread;
 #else
@@ -79,9 +79,11 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
       // Avoid runtime call when not active.
       Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-      int flags = ShenandoahHeap::HAS_FORWARDED;
-      if (!dest_uninitialized) {
-        flags |= ShenandoahHeap::MARKING;
+      int flags;
+      if (ShenandoahSATBBarrier && dest_uninitialized) {
+        flags = ShenandoahHeap::HAS_FORWARDED;
+      } else {
+        flags = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING;
       }
       __ testb(gc_state, flags);
       __ jcc(Assembler::zero, done);

@@ -40,16 +40,23 @@ public class TestWrongBarrierDisable {
     public static void main(String[] args) throws Exception {
         String[] concurrent = {
                 "ShenandoahLoadRefBarrier",
+                "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahSATBBarrier",
+        };
+        String[] iu = {
+                "ShenandoahLoadRefBarrier",
+                "ShenandoahCASBarrier",
+                "ShenandoahCloneBarrier",
         };
 
         shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
+        shouldFailAll("-XX:ShenandoahGCMode=iu",               iu);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
+        shouldPassAll("-XX:ShenandoahGCMode=passive",          iu);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {

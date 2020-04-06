@@ -57,7 +57,7 @@
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \
-    if (!name) {                                                            \
+    if (!(name)) {                                                          \
       err_msg message("Heuristics needs -XX:+" #name " to work correctly"); \
       vm_exit_during_initialization("Error", message);                      \
     }                                                                       \

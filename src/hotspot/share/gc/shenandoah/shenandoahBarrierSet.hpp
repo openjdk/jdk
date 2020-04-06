@@ -107,11 +107,15 @@ public:
 
 private:
   template <class T>
-  inline void arraycopy_marking(T* ary, size_t count);
+  inline void arraycopy_marking(T* src, T* dst, size_t count);
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
+
+  inline void clone_marking(oop src);
+  inline void clone_evacuation(oop src);
+  inline void clone_update(oop src);
 
   template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
   inline void arraycopy_work(T* src, size_t count);

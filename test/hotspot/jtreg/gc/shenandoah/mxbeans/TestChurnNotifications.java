@@ -64,6 +64,22 @@
  *      TestChurnNotifications
  */
 
+/*
+ * @test TestChurnNotifications
+ * @summary Check that MX notifications are reported for all cycles
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ *
+ * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -Dprecise=false
+ *      TestChurnNotifications
+ *
+ * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      -Dprecise=false
+ *      TestChurnNotifications
+ */
+
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import javax.management.*;
