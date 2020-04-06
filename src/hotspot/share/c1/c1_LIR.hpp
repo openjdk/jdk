@@ -834,7 +834,6 @@ class LIR_OprFact: public AllStatic {
   static LIR_Opr metadataConst(Metadata* m)      { return (LIR_Opr)(new LIR_Const(m)); }
 
   static LIR_Opr value_type(ValueType* type);
-  static LIR_Opr dummy_value_type(ValueType* type);
 };
 
 
@@ -880,13 +879,11 @@ class    LIR_OpAssert;
 enum LIR_Code {
     lir_none
   , begin_op0
-      , lir_word_align
       , lir_label
       , lir_nop
       , lir_backwardbranch_target
       , lir_std_entry
       , lir_osr_entry
-      , lir_build_frame
       , lir_fpop_raw
       , lir_breakpoint
       , lir_rtcall
@@ -2052,7 +2049,6 @@ class LIR_List: public CompilationResourceObj {
   }
 
   void get_thread(LIR_Opr result)                { append(new LIR_Op0(lir_get_thread, result)); }
-  void word_align()                              { append(new LIR_Op0(lir_word_align)); }
   void membar()                                  { append(new LIR_Op0(lir_membar)); }
   void membar_acquire()                          { append(new LIR_Op0(lir_membar_acquire)); }
   void membar_release()                          { append(new LIR_Op0(lir_membar_release)); }
@@ -2062,7 +2058,6 @@ class LIR_List: public CompilationResourceObj {
   void membar_storeload()                        { append(new LIR_Op0(lir_membar_storeload)); }
 
   void nop()                                     { append(new LIR_Op0(lir_nop)); }
-  void build_frame()                             { append(new LIR_Op0(lir_build_frame)); }
 
   void std_entry(LIR_Opr receiver)               { append(new LIR_Op0(lir_std_entry, receiver)); }
   void osr_entry(LIR_Opr osrPointer)             { append(new LIR_Op0(lir_osr_entry, osrPointer)); }
@@ -2234,8 +2229,6 @@ class LIR_List: public CompilationResourceObj {
   void arraycopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_Opr dst_pos, LIR_Opr length, LIR_Opr tmp, ciArrayKlass* expected_type, int flags, CodeEmitInfo* info) { append(new LIR_OpArrayCopy(src, src_pos, dst, dst_pos, length, tmp, expected_type, flags, info)); }
 
   void update_crc32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)  { append(new LIR_OpUpdateCRC32(crc, val, res)); }
-
-  void fpop_raw()                                { append(new LIR_Op0(lir_fpop_raw)); }
 
   void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
   void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci);
