@@ -41,6 +41,7 @@ import java.net.NetworkInterface;
 import java.net.PortUnreachableException;
 import java.net.ProtocolFamily;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
 import java.net.StandardProtocolFamily;
@@ -811,6 +812,8 @@ class DatagramChannelImpl
                     }
                     if (ia.isLinkLocalAddress())
                         isa = IPAddressUtil.toScopedAddress(isa);
+                    if (isa.getPort() == 0)
+                        throw new SocketException("Can't send to port 0");
                     n = send(fd, src, isa);
                     if (blocking) {
                         while (IOStatus.okayToRetry(n) && isOpen()) {
@@ -1226,6 +1229,8 @@ class DatagramChannelImpl
                     ensureOpen();
                     if (check && state == ST_CONNECTED)
                         throw new AlreadyConnectedException();
+                    if (isa.getPort() == 0)
+                        throw new SocketException("Can't connect to port 0");
 
                     // ensure that the socket is bound
                     if (localAddress == null) {
