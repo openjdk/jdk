@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @summary Test the clhsdb 'findpc' command
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC true
  */
