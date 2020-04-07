@@ -69,6 +69,22 @@ public class ZipFsBaseTest {
         };
     }
 
+    /*
+     * DataProvider used to verify that an entry can be copied or moved within
+     * a Zip file system using a different compression from when the entry
+     * was first created
+     */
+    @DataProvider(name = "copyMoveMap")
+    protected Object[][] copyMoveMap() {
+        return new Object[][]{
+                {Map.of("create", "true"), ZipEntry.DEFLATED, ZipEntry.STORED},
+                {Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED, ZipEntry.DEFLATED},
+                {Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED, ZipEntry.STORED}
+        };
+    }
+
     /**
      * DataProvider with the compression methods to be used for a given test run
      *
