@@ -25,63 +25,20 @@
 #ifndef OS_CPU_WINDOWS_X86_BYTES_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_BYTES_WINDOWS_X86_INLINE_HPP
 
-#pragma warning(disable: 4035) // Disable warning 4035: no return value
+#include <stdlib.h>
 
 // Efficient swapping of data bytes from Java byte
 // ordering to native byte ordering and vice versa.
 inline u2 Bytes::swap_u2(u2 x) {
-#ifdef AMD64
-  address p = (address) &x;
-  return  ( (u2(p[0]) << 8 ) | ( u2(p[1])) );
-#else
-  __asm {
-    mov ax, x
-    xchg al, ah
-  }
-  // no return statement needed, result is already in ax
-  // compiler warning C4035 disabled via warning pragma
-#endif // AMD64
+  return (u2) _byteswap_ushort((unsigned short) x);
 }
 
 inline u4 Bytes::swap_u4(u4 x) {
-#ifdef AMD64
-  address p = (address) &x;
-  return ( (u4(p[0]) << 24) | (u4(p[1]) << 16) | (u4(p[2]) << 8) | u4(p[3])) ;
-#else
-  __asm {
-    mov eax, x
-    bswap eax
-  }
-  // no return statement needed, result is already in eax
-  // compiler warning C4035 disabled via warning pragma
-#endif // AMD64
-}
-
-#ifdef AMD64
-inline u8 Bytes::swap_u8(u8 x) {
-  address p = (address) &x;
-  return ( (u8(p[0]) << 56) | (u8(p[1]) << 48) | (u8(p[2]) << 40) | (u8(p[3]) << 32) |
-           (u8(p[4]) << 24) | (u8(p[5]) << 16) | (u8(p[6]) << 8)  | u8(p[7])) ;
-}
-
-#else
-// Helper function for swap_u8
-inline u8 Bytes::swap_u8_base(u4 x, u4 y) {
-  __asm {
-    mov eax, y
-    mov edx, x
-    bswap eax
-    bswap edx
-  }
-  // no return statement needed, result is already in edx:eax
-  // compiler warning C4035 disabled via warning pragma
+  return (u4) _byteswap_ulong((unsigned long) x);
 }
 
 inline u8 Bytes::swap_u8(u8 x) {
-  return swap_u8_base(*(u4*)&x, *(((u4*)&x)+1));
+  return (u8) _byteswap_uint64((unsigned __int64) x);
 }
-#endif // AMD64
-
-#pragma warning(default: 4035) // Enable warning 4035: no return value
 
 #endif // OS_CPU_WINDOWS_X86_BYTES_WINDOWS_X86_INLINE_HPP
