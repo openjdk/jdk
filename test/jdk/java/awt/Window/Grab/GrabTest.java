@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class GrabTest {
             });
 
         f1 = new Frame("OtherFrame");
-        f1.setBounds(700, 100, 200, 200);
+        f1.setBounds(700, 100, 300, 300);
 
         w = new Window(f);
         w.setLayout(new FlowLayout());
@@ -89,7 +89,7 @@ public class GrabTest {
                 }
             });
         w.add(b);
-        w.setBounds(400, 100, 200, 200);
+        w.setBounds(400, 100, 300, 300);
         w.setBackground(Color.blue);
         w.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
@@ -103,11 +103,13 @@ public class GrabTest {
 
         frame = new Frame();
         window1 = new Window(frame);
-        window1.setBounds(0, 0, 100, 100);
+        window1.setSize(200, 200);
+        window1.setLocationRelativeTo(null);
         window1.setBackground(Color.blue);
 
         window2 = new Window(window1);
-        window2.setBounds(0, 0, 50, 50);
+        window2.setSize(100, 100);
+        window2.setLocationRelativeTo(null);
         window2.setBackground(Color.green);
 
         tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
