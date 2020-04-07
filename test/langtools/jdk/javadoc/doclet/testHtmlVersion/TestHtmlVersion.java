@@ -394,7 +394,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<h2>Optional Element Summary</h2>\n"
                 + "<div class=\"member-summary\">\n<table>",
                 "<section class=\"details\" id=\"annotation.type.element.detail\">\n"
-                + "<ul class=\"block-list\">\n"
+                + "<ul class=\"details-list\">\n"
                 + "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->\n"
                 + "<li>\n"
                 + "<section class=\"member-details\">\n"

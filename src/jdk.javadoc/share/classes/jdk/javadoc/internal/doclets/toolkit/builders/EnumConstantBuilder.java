@@ -74,7 +74,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     private EnumConstantBuilder(Context context,
             TypeElement typeElement, EnumConstantWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         enumConstants = getVisibleMembers(ENUM_CONSTANTS);
     }
 
@@ -109,16 +109,13 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     /**
      * Build the enum constant documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException is there is a problem while building the documentation
      */
-    protected void buildEnumConstant(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildEnumConstant(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
             Content enumConstantsDetailsTreeHeader = writer.getEnumConstantsDetailsTreeHeader(typeElement,
-                    memberDetailsTree);
+                    detailsList);
             Content memberList = writer.getMemberList();
 
             for (Element enumConstant : enumConstants) {
@@ -133,8 +130,9 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
                 memberList.add(writer.getMemberListItem(enumConstantsTree));
             }
-            memberDetailsTree.add(
-                    writer.getEnumConstantsDetails(enumConstantsDetailsTreeHeader, memberList));
+            Content enumConstantDetails = writer.getEnumConstantsDetails(
+                    enumConstantsDetailsTreeHeader, memberList);
+            detailsList.add(enumConstantDetails);
         }
     }
 

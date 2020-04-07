@@ -97,29 +97,29 @@ public class WriterFactoryImpl implements WriterFactory {
 
     @Override
     public EnumConstantWriterImpl getEnumConstantWriter(ClassWriter classWriter) {
-        return new EnumConstantWriterImpl((SubWriterHolderWriter) classWriter,
+        return new EnumConstantWriterImpl((ClassWriterImpl) classWriter,
                 classWriter.getTypeElement());
     }
 
     @Override
     public FieldWriterImpl getFieldWriter(ClassWriter classWriter) {
-        return new FieldWriterImpl((SubWriterHolderWriter) classWriter, classWriter.getTypeElement());
+        return new FieldWriterImpl((ClassWriterImpl) classWriter, classWriter.getTypeElement());
     }
 
     @Override
     public PropertyWriterImpl getPropertyWriter(ClassWriter classWriter) {
-        return new PropertyWriterImpl((SubWriterHolderWriter) classWriter,
+        return new PropertyWriterImpl((ClassWriterImpl) classWriter,
                 classWriter.getTypeElement());
     }
 
     @Override
     public MethodWriterImpl getMethodWriter(ClassWriter classWriter) {
-        return new MethodWriterImpl((SubWriterHolderWriter) classWriter, classWriter.getTypeElement());
+        return new MethodWriterImpl((ClassWriterImpl) classWriter, classWriter.getTypeElement());
     }
 
     @Override
     public ConstructorWriterImpl getConstructorWriter(ClassWriter classWriter) {
-        return new ConstructorWriterImpl((SubWriterHolderWriter) classWriter,
+        return new ConstructorWriterImpl((ClassWriterImpl) classWriter,
                 classWriter.getTypeElement());
     }
 

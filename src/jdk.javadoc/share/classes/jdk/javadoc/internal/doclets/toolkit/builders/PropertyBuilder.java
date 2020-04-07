@@ -75,7 +75,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
             TypeElement typeElement,
             PropertyWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         properties = getVisibleMembers(PROPERTIES);
     }
 
@@ -111,15 +111,12 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     /**
      * Build the property documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildPropertyDoc(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildPropertyDoc(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
-            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(memberDetailsTree);
+            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(detailsList);
             Content memberList = writer.getMemberList();
 
             for (Element property : properties) {
@@ -132,8 +129,8 @@ public class PropertyBuilder extends AbstractMemberBuilder {
 
                 memberList.add(writer.getMemberListItem(propertyDocTree));
             }
-            memberDetailsTree.add(
-                    writer.getPropertyDetails(propertyDetailsTreeHeader, memberList));
+            Content propertyDetails = writer.getPropertyDetails(propertyDetailsTreeHeader, memberList);
+            detailsList.add(propertyDetails);
         }
     }
 

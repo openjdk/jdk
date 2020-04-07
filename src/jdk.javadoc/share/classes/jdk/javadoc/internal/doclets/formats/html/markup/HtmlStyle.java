@@ -68,6 +68,7 @@ public enum HtmlStyle {
     deprecationComment,
     descfrmTypeLabel,
     details,
+    detailsList,
     detail,
     externalLink,
     fieldDetails,

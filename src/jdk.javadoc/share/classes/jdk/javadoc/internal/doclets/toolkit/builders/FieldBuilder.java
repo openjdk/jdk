@@ -75,7 +75,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
                          TypeElement typeElement,
                          FieldWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         fields = getVisibleMembers(FIELDS);
     }
 
@@ -111,15 +111,12 @@ public class FieldBuilder extends AbstractMemberBuilder {
     /**
      * Build the field documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildFieldDoc(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildFieldDoc(Content detailsList) throws DocletException {
         if (!fields.isEmpty()) {
-            Content fieldDetailsTreeHeader = writer.getFieldDetailsTreeHeader(memberDetailsTree);
+            Content fieldDetailsTreeHeader = writer.getFieldDetailsTreeHeader(detailsList);
             Content memberList = writer.getMemberList();
 
             for (Element element : fields) {
@@ -133,8 +130,8 @@ public class FieldBuilder extends AbstractMemberBuilder {
 
                 memberList.add(writer.getMemberListItem(fieldDocTree));
             }
-            memberDetailsTree.add(
-                    writer.getFieldDetails(fieldDetailsTreeHeader, memberList));
+            Content fieldDetails = writer.getFieldDetails(fieldDetailsTreeHeader, memberList);
+            detailsList.add(fieldDetails);
         }
     }
 

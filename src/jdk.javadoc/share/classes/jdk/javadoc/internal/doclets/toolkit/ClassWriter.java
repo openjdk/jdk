@@ -172,6 +172,21 @@ public interface ClassWriter {
     Content getMemberTreeHeader();
 
     /**
+     * Returns a list to be used for the list of details for members of a given kind.
+     *
+     * @return a list to be used for the list of details for members of a given kind
+     */
+    Content getDetailsList();
+
+    /**
+     * Returns an item for the list of details for members of a given kind.
+     *
+     * @param content content for the item
+     * @return an item for the list of details for members of a given kind
+     */
+    Content getDetailsListItem(Content content);
+
+    /**
      * Add the class content tree.
      *
      * @param classContentTree class content tree which will be added to the content tree

@@ -213,6 +213,25 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
+     * Returns a list to be used for the list of details for members of a given kind.
+     *
+     * @return a list to be used for the list of details for members of a given kind
+     */
+    public Content getDetailsList() {
+        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.detailsList);
+    }
+
+    /**
+     * Returns an item for the list of details for members of a given kind.
+     *
+     * @param content content for the item
+     * @return an item for the list of details for members of a given kind
+     */
+    public Content getDetailsListItem(Content content) {
+        return HtmlTree.LI(content);
+    }
+
+    /**
      * Returns a list to be used for the list of members of a given kind.
      *
      * @return a list to be used for the list of members of a given kind
@@ -224,11 +243,11 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Returns an item for the list of elements of a given kind
      *
-     * @param contentTree the tree used to generate the complete member tree
+     * @param content content for the item
      * @return an item for the list of elements of a given kind
      */
-    public Content getMemberListItem(Content contentTree) {
-        return HtmlTree.LI(contentTree);
+    public Content getMemberListItem(Content content) {
+        return HtmlTree.LI(content);
     }
 
     public Content getMemberInheritedTree() {

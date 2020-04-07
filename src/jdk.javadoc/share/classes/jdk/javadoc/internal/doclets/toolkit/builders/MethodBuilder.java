@@ -78,7 +78,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
             TypeElement typeElement,
             MethodWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         methods = getVisibleMembers(METHODS);
     }
 
@@ -109,15 +109,12 @@ public class MethodBuilder extends AbstractMemberBuilder {
     /**
      * Build the method documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMethodDoc(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildMethodDoc(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
-            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(memberDetailsTree);
+            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(detailsList);
             Content memberList = writer.getMemberList();
 
             for (Element method : methods) {
@@ -131,7 +128,8 @@ public class MethodBuilder extends AbstractMemberBuilder {
 
                 memberList.add(writer.getMemberListItem(methodDocTree));
             }
-            memberDetailsTree.add(writer.getMethodDetails(methodDetailsTreeHeader, memberList));
+            Content methodDetails = writer.getMethodDetails(methodDetailsTreeHeader, memberList);
+            detailsList.add(methodDetails);
         }
     }
 

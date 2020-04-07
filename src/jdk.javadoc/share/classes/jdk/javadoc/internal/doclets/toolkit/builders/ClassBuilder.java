@@ -335,67 +335,67 @@ public class ClassBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildMemberDetails(Content classContentTree) throws DocletException {
-        Content memberDetailsTree = writer.getMemberTreeHeader();
+        Content detailsList = writer.getDetailsList();
 
-        buildEnumConstantsDetails(memberDetailsTree);
-        buildPropertyDetails(memberDetailsTree);
-        buildFieldDetails(memberDetailsTree);
-        buildConstructorDetails(memberDetailsTree);
-        buildAnnotationTypeRequiredMemberDetails(memberDetailsTree);
-        buildAnnotationTypeOptionalMemberDetails(memberDetailsTree);
-        buildMethodDetails(memberDetailsTree);
+        buildEnumConstantsDetails(detailsList);
+        buildPropertyDetails(detailsList);
+        buildFieldDetails(detailsList);
+        buildConstructorDetails(detailsList);
+        buildAnnotationTypeRequiredMemberDetails(detailsList);
+        buildAnnotationTypeOptionalMemberDetails(detailsList);
+        buildMethodDetails(detailsList);
 
-        classContentTree.add(writer.getMemberDetailsTree(memberDetailsTree));
+        classContentTree.add(writer.getMemberDetailsTree(detailsList));
     }
 
     /**
      * Build the enum constants documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildEnumConstantsDetails(Content memberDetailsTree) throws DocletException {
-        builderFactory.getEnumConstantsBuilder(writer).build(memberDetailsTree);
+    protected void buildEnumConstantsDetails(Content detailsList) throws DocletException {
+        builderFactory.getEnumConstantsBuilder(writer).build(detailsList);
     }
 
     /**
      * Build the field documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildFieldDetails(Content memberDetailsTree) throws DocletException {
-        builderFactory.getFieldBuilder(writer).build(memberDetailsTree);
+    protected void buildFieldDetails(Content detailsList) throws DocletException {
+        builderFactory.getFieldBuilder(writer).build(detailsList);
     }
 
     /**
      * Build the property documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPropertyDetails( Content memberDetailsTree) throws DocletException {
-        builderFactory.getPropertyBuilder(writer).build(memberDetailsTree);
+    public void buildPropertyDetails( Content detailsList) throws DocletException {
+        builderFactory.getPropertyBuilder(writer).build(detailsList);
     }
 
     /**
      * Build the constructor documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildConstructorDetails(Content memberDetailsTree) throws DocletException {
-        builderFactory.getConstructorBuilder(writer).build(memberDetailsTree);
+    protected void buildConstructorDetails(Content detailsList) throws DocletException {
+        builderFactory.getConstructorBuilder(writer).build(detailsList);
     }
 
     /**
      * Build the method documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMethodDetails(Content memberDetailsTree) throws DocletException {
-        builderFactory.getMethodBuilder(writer).build(memberDetailsTree);
+    protected void buildMethodDetails(Content detailsList) throws DocletException {
+        builderFactory.getMethodBuilder(writer).build(detailsList);
     }
 
     /**
