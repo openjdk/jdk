@@ -43,12 +43,6 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics() : ShenandoahHeu
   if (ClassUnloading) {
     SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUnloadClassesFrequency, 1);
   }
-
-  // Final configuration checks
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier || ShenandoahStoreValEnqueueBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
 
 void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,

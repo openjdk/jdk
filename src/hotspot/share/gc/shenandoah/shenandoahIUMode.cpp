@@ -38,14 +38,19 @@ void ShenandoahIUMode::initialize_flags() const {
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
 
-  FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
-  FLAG_SET_DEFAULT(ShenandoahSATBBarrier, false);
+  if (FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier)) {
+    FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
+  }
+  if (FLAG_IS_DEFAULT(ShenandoahSATBBarrier)) {
+    FLAG_SET_DEFAULT(ShenandoahSATBBarrier, false);
+  }
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
+  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValEnqueueBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);

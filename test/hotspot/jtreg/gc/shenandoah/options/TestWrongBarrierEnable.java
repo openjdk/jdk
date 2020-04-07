@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-/* @test TestWrongBarrierDisable
+/* @test TestWrongBarrierEnable
  * @summary Test that disabling wrong barriers fails early
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
- * @run main/othervm TestWrongBarrierDisable
+ * @run main/othervm TestWrongBarrierEnable
  */
 
 import java.util.*;
@@ -35,20 +35,14 @@ import java.util.*;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class TestWrongBarrierDisable {
+public class TestWrongBarrierEnable {
 
     public static void main(String[] args) throws Exception {
         String[] concurrent = {
-                "ShenandoahLoadRefBarrier",
-                "ShenandoahSATBBarrier",
-                "ShenandoahCASBarrier",
-                "ShenandoahCloneBarrier",
+                "ShenandoahStoreValEnqueueBarrier",
         };
         String[] iu = {
-                "ShenandoahLoadRefBarrier",
-                "ShenandoahStoreValEnqueueBarrier",
-                "ShenandoahCASBarrier",
-                "ShenandoahCloneBarrier",
+                "ShenandoahSATBBarrier",
         };
 
         shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
@@ -67,7 +61,7 @@ public class TestWrongBarrierDisable {
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     h,
-                    "-XX:-" + b,
+                    "-XX:+" + b,
                     "-version"
             );
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -84,7 +78,7 @@ public class TestWrongBarrierDisable {
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     h,
-                    "-XX:-" + b,
+                    "-XX:+" + b,
                     "-version"
             );
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
