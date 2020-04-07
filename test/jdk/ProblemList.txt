@@ -936,8 +936,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # svc_tools
 
-sun/tools/jhsdb/BasicLauncherTest.java                          8193639,8211767 solaris-all,linux-ppc64,linux-ppc64le
-sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
+sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-ppc64,linux-ppc64le
 sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231634,8230731,8001227 generic-all,windows-all
 
 

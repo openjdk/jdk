@@ -225,6 +225,8 @@ public class Platform {
     public static boolean hasSA() {
         if (isAix()) {
             return false; // SA not implemented.
+        } else if (isSolaris()) {
+            return false; // Testing disabled due to JDK-8193639.
         } else if (isLinux()) {
             if (isS390x() || isARM()) {
                 return false; // SA not implemented.
