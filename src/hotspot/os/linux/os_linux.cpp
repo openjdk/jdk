@@ -2084,20 +2084,18 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
 
     // Read line by line from 'file'
     while (fgets(line, sizeof(line), procmapsFile) != NULL) {
-      u8 base, top, offset, inode;
-      char permissions[5];
-      char device[6];
+      u8 base, top, inode;
       char name[sizeof(line)];
 
-      // Parse fields from line
-      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %4s " UINT64_FORMAT_X " %5s " INT64_FORMAT " %s",
-             &base, &top, permissions, &offset, device, &inode, name);
-      // the last entry 'name' is empty for some entries, so we might have 6 matches instead of 7 for some lines
-      if (matches < 6) continue;
-      if (matches == 6) name[0] = '\0';
+      // Parse fields from line, discard perms, offset and device
+      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %*s %*s %*s " INT64_FORMAT " %s",
+             &base, &top, &inode, name);
+      // the last entry 'name' is empty for some entries, so we might have 3 matches instead of 4 for some lines
+      if (matches < 3) continue;
+      if (matches == 3) name[0] = '\0';
 
-      // Filter by device id '00:00' so that we only get file system mapped files.
-      if (strcmp(device, "00:00") != 0) {
+      // Filter by inode 0 so that we only get file system mapped files.
+      if (inode != 0) {
 
         // Call callback with the fields of interest
         if(callback(name, (address)base, (address)top, param)) {
