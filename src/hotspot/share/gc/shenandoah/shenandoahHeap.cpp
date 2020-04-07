@@ -283,6 +283,7 @@ jint ShenandoahHeap::initialize() {
   //
   size_t region_align = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
   size_t region_storage_size = align_up(region_align * _num_regions, region_page_size);
+  region_storage_size = align_up(region_storage_size, os::vm_allocation_granularity());
 
   ReservedSpace region_storage(region_storage_size, region_page_size);
   MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
