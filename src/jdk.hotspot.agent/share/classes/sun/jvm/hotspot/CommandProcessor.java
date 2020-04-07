@@ -1726,6 +1726,36 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("class", "class name", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                    return;
+                }
+                String classname = t.nextToken();
+                InstanceKlass ik = SystemDictionaryHelper.findInstanceKlass(classname);
+                if (ik == null) {
+                    System.out.println("class not found: " + classname);
+                } else {
+                    System.out.println(ik.getName().asString() + " @" + ik.getAddress());
+                }
+            }
+        },
+        new Command("classes", "classes", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                    return;
+                }
+                ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+                cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
+                        public void visit(Klass k) {
+                            System.out.println(k.getName().asString() + " @" + k.getAddress());
+                        }
+                    }
+                );
+            }
+        },
     };
 
     private boolean verboseExceptions = false;
