@@ -71,111 +71,89 @@ public interface WriterFactory {
     ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle);
 
     /**
-     * Return the writer for a class.
+     * Returns the writer for a given type element,
+     * or null if this writer is not supported by the doclet.
      *
-     * @param typeElement the class being documented.
-     * @param classTree the class tree.
-     * @return the writer for the class.  Return null if this
-     * writer is not supported by the doclet.
+     * @param typeElement the class being documented
+     * @param classTree   the class tree
+     * @return the writer
      */
     ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree);
 
     /**
-     * Return the writer for an annotation type.
+     * Return the method writer for a given type element,
+     * or null if this writer is not supported by the doclet.
      *
-     * @param annotationType the type being documented.
-     * @return the writer for the annotation type.  Return null if this
-     * writer is not supported by the doclet.
-     */
-    AnnotationTypeWriter getAnnotationTypeWriter(TypeElement annotationType);
-
-    /**
-     * Return the method writer for a given class.
-     *
-     * @param classWriter the writer for the class being documented.
-     * @return the method writer for the give class.  Return null if this
-     * writer is not supported by the doclet.
+     * @param classWriter the writer for the class being documented
+     * @return the method writer
      */
     MethodWriter getMethodWriter(ClassWriter classWriter);
 
     /**
-     * Return the annotation type field writer for a given annotation type.
-     *
-     * @param annotationTypeWriter the writer for the annotation type
-     *        being documented.
-     * @return the member writer for the given annotation type.  Return null if
-     *         this writer is not supported by the doclet.
-     */
-    AnnotationTypeFieldWriter getAnnotationTypeFieldWriter(
-            AnnotationTypeWriter annotationTypeWriter);
-
-    /**
      * Return the annotation type optional member writer for a given annotation
-     * type.
+     * type, or null if this writer is not supported by the doclet.
      *
-     * @param annotationTypeWriter the writer for the annotation type
-     *        being documented.
-     * @return the member writer for the given annotation type.  Return null if
-     *         this writer is not supported by the doclet.
+     * @param classWriter the writer for the annotation type being documented
+     * @return the member writer
      */
     AnnotationTypeOptionalMemberWriter getAnnotationTypeOptionalMemberWriter(
-            AnnotationTypeWriter annotationTypeWriter);
+            ClassWriter classWriter);
 
     /**
-     * Return the annotation type required member writer for a given annotation type.
+     * Return the annotation type required member writer for a given annotation
+     * type, or null if this writer is not supported by the doclet.
      *
-     * @param annotationTypeWriter the writer for the annotation type
-     *        being documented.
-     * @return the member writer for the given annotation type.  Return null if
-     *         this writer is not supported by the doclet.
+     * @param classWriter the writer for the annotation type being documented
+     * @return the member writer
      */
     AnnotationTypeRequiredMemberWriter getAnnotationTypeRequiredMemberWriter(
-            AnnotationTypeWriter annotationTypeWriter);
+            ClassWriter classWriter);
 
     /**
-     * Return the enum constant writer for a given class.
+     * Return the enum constant writer for a given type element,
+     * or null if this writer is not supported by the doclet.
      *
-     * @param classWriter the writer for the class being documented.
-     * @return the enum constant writer for the give class.  Return null if this
-     * writer is not supported by the doclet.
+     * @param classWriter the writer for the type element being documented
+     * @return the enum constant writer
      */
     EnumConstantWriter getEnumConstantWriter(ClassWriter classWriter);
 
     /**
-     * Return the field writer for a given class.
+     * Return the field writer for a given type element,
+     * or null if this writer is not supported by the doclet.
      *
      * @param classWriter the writer for the class being documented.
-     * @return the field writer for the give class.  Return null if this
+     * @return the field writer for the given class.  Return null if this
      * writer is not supported by the doclet.
      */
     FieldWriter getFieldWriter(ClassWriter classWriter);
 
     /**
-     * Return the property writer for a given class.
+     * Return the property writer for a given class,
+     * or null if this writer is not supported by the doclet.
      *
-     * @param classWriter the writer for the class being documented.
-     * @return the property writer for the give class.  Return null if this
-     * writer is not supported by the doclet.
+     * @param classWriter the writer for the type elemen t being documented.
+     * @return the property writer
      */
     PropertyWriter getPropertyWriter(ClassWriter classWriter);
 
     /**
-     * Return the constructor writer for a given class.
+     * Return the constructor writer for a given type element,
+     * or null if this writer is not supported by the doclet.
      *
-     * @param classWriter the writer for the class being documented.
-     * @return the method writer for the give class.  Return null if this
-     * writer is not supported by the doclet.
+     * @param classWriter the writer for the type element being documented
+     * @return the constructor writer
      */
     ConstructorWriter getConstructorWriter(ClassWriter classWriter);
 
     /**
-     * Return the specified member summary writer for a given class.
+     * Return the specified member summary writer for a given type element,
+     * or null if this writer is not supported by the doclet.
      *
      * @param classWriter the writer for the class being documented.
      * @param memberType  the {@link VisibleMemberTable} member type indicating
      *                    the type of member summary that should be returned.
-     * @return the summary writer for the give class.  Return null if this
-     * writer is not supported by the doclet.
+     * @return the summary writer
      *
      * @see VisibleMemberTable
      */
@@ -183,31 +161,16 @@ public interface WriterFactory {
                                                VisibleMemberTable.Kind memberType);
 
     /**
-     * Return the specified member summary writer for a given annotation type.
-     *
-     * @param annotationTypeWriter the writer for the annotation type being
-     *                             documented.
-     * @param memberType  the {@link VisibleMemberTable} member type indicating
-     *                    the type of member summary that should be returned.
-     * @return the summary writer for the give class.  Return null if this
-     * writer is not supported by the doclet.
-     *
-     * @see VisibleMemberTable
-     */
-    MemberSummaryWriter getMemberSummaryWriter(AnnotationTypeWriter annotationTypeWriter,
-                                               VisibleMemberTable.Kind memberType);
-
-    /**
      * Return the writer for the serialized form.
      *
-     * @return the writer for the serialized form.
+     * @return the writer for the serialized form
      */
     SerializedFormWriter getSerializedFormWriter();
 
     /**
      * Return the handler for doc files.
      *
-     * @return the handler for the doc files.
+     * @return the handler for the doc files
      */
     DocFilesHandler getDocFilesHandler(Element pkg);
 }

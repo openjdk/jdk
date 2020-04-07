@@ -626,21 +626,16 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             set.remove(STRICTFP);
 
             // According to JLS, we should not be showing public modifier for
-            // interface methods.
-            if ((utils.isField(element) || utils.isMethod(element))
-                    && ((writer instanceof ClassWriterImpl
-                    && utils.isInterface(((ClassWriterImpl) writer).getTypeElement())  ||
-                    writer instanceof AnnotationTypeWriterImpl) )) {
-                // Remove the implicit abstract and public modifiers
-                if (utils.isMethod(element) &&
-                        (utils.isInterface(element.getEnclosingElement()) ||
-                                utils.isAnnotationType(element.getEnclosingElement()))) {
-                    set.remove(ABSTRACT);
-                    set.remove(PUBLIC);
-                }
-                if (!utils.isMethod(element)) {
-                    set.remove(PUBLIC);
-                }
+            // interface methods and fields.
+            if ((utils.isField(element) || utils.isMethod(element))) {
+               Element te = element.getEnclosingElement();
+               if (utils.isInterface(te) || utils.isAnnotationType(te)) {
+                   // Remove the implicit abstract and public modifiers
+                   if (utils.isMethod(element)) {
+                       set.remove(ABSTRACT);
+                   }
+                   set.remove(PUBLIC);
+               }
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));

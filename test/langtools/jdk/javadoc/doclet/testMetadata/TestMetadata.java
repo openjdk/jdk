@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8218998 8219946 8219060 8241190
+ * @bug 8218998 8219946 8219060 8241190 8242056
  * @summary Add metadata to generated API documentation files
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -206,7 +206,6 @@ public class TestMetadata extends JavadocTester {
     final Set<String> allGenerators = Set.of(
             "AllClassesIndexWriter",
             "AllPackagesIndexWriter",
-            "AnnotationTypeWriterImpl",
             "ClassUseWriter",
             "ClassWriterImpl",
             "ConstantsSummaryWriterImpl",

@@ -87,7 +87,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -1608,8 +1607,7 @@ public class HtmlDocletWriter {
      * @return Return true if a relative link should not be redirected.
      */
     private boolean shouldNotRedirectRelativeLinks() {
-        return  this instanceof AnnotationTypeWriter ||
-                this instanceof ClassWriter ||
+        return  this instanceof ClassWriter ||
                 this instanceof PackageSummaryWriter;
     }
 

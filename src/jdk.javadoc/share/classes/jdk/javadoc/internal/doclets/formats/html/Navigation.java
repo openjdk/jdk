@@ -366,7 +366,7 @@ public class Navigation {
             case CLASS:
                 if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
                     addAnnotationTypeSummaryLink("doclet.navField",
-                            ANNOTATION_TYPE_FIELDS, listContents);
+                            FIELDS, listContents);
                     addAnnotationTypeSummaryLink("doclet.navAnnotationTypeRequiredMember",
                             ANNOTATION_TYPE_MEMBER_REQUIRED, listContents);
                     addAnnotationTypeSummaryLink("doclet.navAnnotationTypeOptionalMember",
@@ -565,9 +565,9 @@ public class Navigation {
         } else {
             boolean link = memberSummaryBuilder.getVisibleMemberTable().hasVisibleMembers(kind);
             switch (kind) {
-                case ANNOTATION_TYPE_FIELDS:
+                case FIELDS:
                     if (link) {
-                        addContentToList(listContents, links.createLink(SectionName.ANNOTATION_TYPE_FIELD_SUMMARY,
+                        addContentToList(listContents, links.createLink(SectionName.FIELD_SUMMARY,
                                 contents.navField));
                     } else {
                         addContentToList(listContents, contents.navField);
@@ -697,7 +697,7 @@ public class Navigation {
         TypeElement annotationType = (TypeElement) element;
         AbstractMemberWriter writerField
                 = ((AbstractMemberWriter) memberSummaryBuilder.
-                        getMemberSummaryWriter(ANNOTATION_TYPE_FIELDS));
+                        getMemberSummaryWriter(FIELDS));
         AbstractMemberWriter writerOptional
                 = ((AbstractMemberWriter) memberSummaryBuilder.
                         getMemberSummaryWriter(ANNOTATION_TYPE_MEMBER_OPTIONAL));
@@ -705,8 +705,8 @@ public class Navigation {
                 = ((AbstractMemberWriter) memberSummaryBuilder.
                         getMemberSummaryWriter(ANNOTATION_TYPE_MEMBER_REQUIRED));
         if (writerField != null) {
-            addAnnotationTypeDetailLink(ANNOTATION_TYPE_FIELDS,
-                    !configuration.utils.getAnnotationFields(annotationType).isEmpty(),
+            addAnnotationTypeDetailLink(FIELDS,
+                    !configuration.utils.getFields(annotationType).isEmpty(),
                     listContents);
         } else {
             addContentToList(listContents, contents.navField);
@@ -731,9 +731,9 @@ public class Navigation {
      */
     protected void addAnnotationTypeDetailLink(VisibleMemberTable.Kind type, boolean link, List<Content> listContents) {
         switch (type) {
-            case ANNOTATION_TYPE_FIELDS:
+            case FIELDS:
                 if (link) {
-                    addContentToList(listContents, links.createLink(SectionName.ANNOTATION_TYPE_FIELD_DETAIL,
+                    addContentToList(listContents, links.createLink(SectionName.FIELD_DETAIL,
                             contents.navField));
                 } else {
                     addContentToList(listContents, contents.navField);

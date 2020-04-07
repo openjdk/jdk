@@ -147,8 +147,9 @@ public class IndexBuilder {
      */
     private void indexMembers(TypeElement te) {
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
-        indexElements(vmt.getMembers(ANNOTATION_TYPE_FIELDS));
         indexElements(vmt.getMembers(FIELDS));
+        indexElements(vmt.getMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL));
+        indexElements(vmt.getMembers(ANNOTATION_TYPE_MEMBER_REQUIRED));
         indexElements(vmt.getMembers(METHODS));
         indexElements(vmt.getMembers(CONSTRUCTORS));
         indexElements(vmt.getMembers(ENUM_CONSTANTS));

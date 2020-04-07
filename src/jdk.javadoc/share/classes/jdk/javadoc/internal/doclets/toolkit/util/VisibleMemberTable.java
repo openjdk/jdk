@@ -94,7 +94,6 @@ public class VisibleMemberTable {
         FIELDS,
         CONSTRUCTORS,
         METHODS,
-        ANNOTATION_TYPE_FIELDS,
         ANNOTATION_TYPE_MEMBER_OPTIONAL,
         ANNOTATION_TYPE_MEMBER_REQUIRED,
         PROPERTIES;
@@ -352,6 +351,11 @@ public class VisibleMemberTable {
     }
 
     private void computeParents() {
+        // suppress parents of annotation types
+        if (utils.isAnnotationType(te)) {
+            return;
+        }
+
         for (TypeMirror intfType : te.getInterfaces()) {
             TypeElement intfc = utils.asTypeElement(intfType);
             if (intfc != null) {
@@ -673,16 +677,16 @@ public class VisibleMemberTable {
                         break;
                     case FIELD:
                         addMember(e, Kind.FIELDS);
-                        addMember(e, Kind.ANNOTATION_TYPE_FIELDS);
                         break;
                     case METHOD:
-                        ExecutableElement ee = (ExecutableElement)e;
                         if (utils.isAnnotationType(te)) {
+                            ExecutableElement ee = (ExecutableElement) e;
                             addMember(e, ee.getDefaultValue() == null
                                     ? Kind.ANNOTATION_TYPE_MEMBER_REQUIRED
                                     : Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
+                        } else {
+                            addMember(e, Kind.METHODS);
                         }
-                        addMember(e, Kind.METHODS);
                         break;
                     case CONSTRUCTOR:
                             addMember(e, Kind.CONSTRUCTORS);
