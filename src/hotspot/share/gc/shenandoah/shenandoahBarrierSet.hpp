@@ -96,11 +96,8 @@ public:
   oop load_reference_barrier(oop obj);
   oop load_reference_barrier_not_null(oop obj);
 
-  oop load_reference_barrier_mutator(oop obj, oop* load_addr);
-  oop load_reference_barrier_mutator(oop obj, narrowOop* load_addr);
-
   template <class T>
-  oop load_reference_barrier_mutator_work(oop obj, T* load_addr);
+  inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
   oop load_reference_barrier_native(oop obj, oop* load_addr);
   oop load_reference_barrier_native(oop obj, narrowOop* load_addr);
