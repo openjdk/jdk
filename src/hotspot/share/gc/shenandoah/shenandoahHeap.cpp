@@ -3024,9 +3024,9 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
   assert(_liveness_cache != NULL, "sanity");
   jushort* ld = _liveness_cache[worker_id];
   for (uint i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
     jushort live = ld[i];
     if (live > 0) {
+      ShenandoahHeapRegion* r = get_region(i);
       r->increase_live_data_gc_words(live);
       ld[i] = 0;
     }
