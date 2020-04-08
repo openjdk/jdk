@@ -25,7 +25,7 @@
  * @test
  * @bug 8192985
  * @summary Test the clhsdb 'scanoops' command
- * @requires vm.gc.ParallelGC
+ * @requires vm.gc.Parallel
  * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm/timeout=1200 ClhsdbScanOops UseParallelGC
@@ -35,7 +35,7 @@
  * @test
  * @bug 8192985
  * @summary Test the clhsdb 'scanoops' command
- * @requires vm.gc.SerialGC
+ * @requires vm.gc.Serial
  * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm/timeout=1200 ClhsdbScanOops UseSerialGC
