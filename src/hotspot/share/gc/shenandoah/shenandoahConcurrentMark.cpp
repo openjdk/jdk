@@ -30,6 +30,7 @@
 
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -687,16 +688,18 @@ void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {
 
     if (_heap->has_forwarded_objects()) {
       ShenandoahCMKeepAliveUpdateClosure keep_alive(get_queue(serial_worker_id));
-      rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
-                                        &complete_gc, &executor,
-                                        &pt);
-
+      const ReferenceProcessorStats& stats =
+        rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
+                                          &complete_gc, &executor,
+                                          &pt);
+       _heap->tracer()->report_gc_reference_stats(stats);
     } else {
       ShenandoahCMKeepAliveClosure keep_alive(get_queue(serial_worker_id));
-      rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
-                                        &complete_gc, &executor,
-                                        &pt);
-
+      const ReferenceProcessorStats& stats =
+        rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
+                                          &complete_gc, &executor,
+                                          &pt);
+      _heap->tracer()->report_gc_reference_stats(stats);
     }
 
     pt.print_all_references();
