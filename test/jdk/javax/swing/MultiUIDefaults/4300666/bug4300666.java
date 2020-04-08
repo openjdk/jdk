@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,34 @@
  * @summary Printing UIDefaults throws NoSuchElementExcept
  */
 
-import javax.swing.*;
+import java.awt.EventQueue;
 
-public class bug4300666 {
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
-    public static void main(final String[] args) {
-        UIDefaults d = UIManager.getDefaults();
-        d.toString();
+import static javax.swing.UIManager.getInstalledLookAndFeels;
+
+public final class bug4300666 {
+
+    public static void main(final String[] args) throws Exception {
+        for (UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
+            EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
+            EventQueue.invokeAndWait(() -> {
+                UIDefaults d = UIManager.getDefaults();
+                d.toString();
+            });
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported L&F: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
