@@ -109,12 +109,9 @@ class ValidOptions {
             options.put(CLIOptions.MAC_SIGN.getId(), USE.ALL);
             options.put(CLIOptions.MAC_BUNDLE_NAME.getId(), USE.ALL);
             options.put(CLIOptions.MAC_BUNDLE_IDENTIFIER.getId(), USE.ALL);
-            options.put(CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(),
-                    USE.ALL);
+            options.put(CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(), USE.ALL);
             options.put(CLIOptions.MAC_SIGNING_KEY_NAME.getId(), USE.ALL);
             options.put(CLIOptions.MAC_SIGNING_KEYCHAIN.getId(), USE.ALL);
-            options.put(CLIOptions.MAC_APP_STORE_ENTITLEMENTS.getId(),
-                    USE.ALL);
         }
 
         if (Platform.getPlatform() == Platform.LINUX) {
