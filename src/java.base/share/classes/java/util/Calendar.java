@@ -235,7 +235,7 @@ import sun.util.spi.CalendarProvider;
  * originally set to August 31, 1999. Calling <code>set(Calendar.MONTH,
  * Calendar.SEPTEMBER)</code> sets the date to September 31,
  * 1999. This is a temporary internal representation that resolves to
- * October 1, 1999 if {@code getTime()}is then called. However, a
+ * October 1, 1999 if {@code getTime()} is then called. However, a
  * call to {@code set(Calendar.DAY_OF_MONTH, 30)} before the call to
  * {@code getTime()} sets the date to September 30, 1999, since
  * no recomputation occurs after {@code set()} itself.</p>

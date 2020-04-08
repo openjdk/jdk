@@ -698,8 +698,8 @@ public class MulticastSocket extends DatagramSocket {
     }
 
     /**
-     * Sends a datagram packet to the destination, with a TTL (time-
-     * to-live) other than the default for the socket.  This method
+     * Sends a datagram packet to the destination, with a TTL (time-to-live)
+     * other than the default for the socket.  This method
      * need only be used in instances where a particular TTL is desired;
      * otherwise it is preferable to set a TTL once on the socket, and
      * use that default TTL for all packets.  This method does <B>not

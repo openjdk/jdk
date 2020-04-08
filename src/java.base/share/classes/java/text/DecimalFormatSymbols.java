@@ -904,7 +904,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * the same as {@code decimalSeparator} and {@code exponential}
      * to be 'E'.
      * If {@code serialVersionOnStream} is less than 2,
-     * initializes {@code locale}to the root locale, and initializes
+     * initializes {@code locale} to the root locale, and initializes
      * If {@code serialVersionOnStream} is less than 3, it initializes
      * {@code exponentialSeparator} using {@code exponential}.
      * If {@code serialVersionOnStream} is less than 4, it initializes

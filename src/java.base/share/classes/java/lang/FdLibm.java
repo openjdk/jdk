@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,8 +237,8 @@ class FdLibm {
             // floating-point divide.  Splitting a floating-point
             // number into non-overlapping portions can be
             // accomplished by judicious use of multiplies and
-            // additions. For details see T. J. Dekker, A Floating
-            // Point Technique for Extending the Available Precision ,
+            // additions. For details see T. J. Dekker, A Floating-Point
+            // Technique for Extending the Available Precision,
             // Numerische Mathematik, vol. 18, 1971, pp.224-242 and
             // subsequent work.
 

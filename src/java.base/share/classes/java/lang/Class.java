@@ -144,7 +144,7 @@ import sun.reflect.misc.ReflectUtil;
  * For example:
  *
  * <blockquote>
- *     {@code System.out.println("The name of class Foo is: "+Foo.class.getName());}
+ *     {@code System.out.println("The name of class Foo is: " + Foo.class.getName());}
  * </blockquote>
  *
  * @param <T> the type of the class modeled by this {@code Class}
@@ -207,7 +207,7 @@ public final class Class<T> implements java.io.Serializable,
      * The string is formatted as a list of type modifiers, if any,
      * followed by the kind of type (empty string for primitive types
      * and {@code class}, {@code enum}, {@code interface},
-     * <code>&#64;</code>{@code interface}, or {@code record} as appropriate), followed
+     * {@code @interface}, or {@code record} as appropriate), followed
      * by the type's name, followed by an angle-bracketed
      * comma-separated list of the type's type parameters, if any,
      * including informative bounds on the type parameters, if any.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public final class Parameter implements AnnotatedElement {
      * Returns a string describing this parameter.  The format is the
      * modifiers for the parameter, if any, in canonical order as
      * recommended by <cite>The Java&trade; Language
-     * Specification</cite>, followed by the fully- qualified type of
+     * Specification</cite>, followed by the fully-qualified type of
      * the parameter (excluding the last [] if the parameter is
      * variable arity), followed by "..." if the parameter is variable
      * arity, followed by a space, followed by the name of the

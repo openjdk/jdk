@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ package java.lang.annotation;
  * given type.
  *
  * <p>The syntactic locations where annotations may appear are split into
- * <em>declaration contexts</em> , where annotations apply to declarations, and
- * <em>type contexts</em> , where annotations apply to types used in
+ * <em>declaration contexts</em>, where annotations apply to declarations, and
+ * <em>type contexts</em>, where annotations apply to types used in
  * declarations and expressions.
  *
  * <p>The constants {@link #ANNOTATION_TYPE}, {@link #CONSTRUCTOR}, {@link
