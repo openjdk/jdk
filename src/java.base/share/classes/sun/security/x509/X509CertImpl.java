@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,11 +601,11 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             SignatureUtil.initSignWithParam(sigEngine, key, signingParams,
                     null);
 
-            // in case the name is reset
             if (signingParams != null) {
                 algId = AlgorithmId.get(sigEngine.getParameters());
             } else {
-                algId = AlgorithmId.get(algorithm);
+                // in case the name is reset
+                algId = AlgorithmId.get(sigEngine.getAlgorithm());
             }
             DerOutputStream out = new DerOutputStream();
             DerOutputStream tmp = new DerOutputStream();

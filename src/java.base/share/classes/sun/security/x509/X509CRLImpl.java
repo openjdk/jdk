@@ -35,6 +35,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.CRLException;
 import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
@@ -495,10 +496,20 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             else
                 sigEngine = Signature.getInstance(algorithm, provider);
 
-            sigEngine.initSign(key);
+            AlgorithmParameterSpec params = AlgorithmId
+                    .getDefaultAlgorithmParameterSpec(algorithm, key);
+            try {
+                SignatureUtil.initSignWithParam(sigEngine, key, params, null);
+            } catch (InvalidAlgorithmParameterException e) {
+                throw new SignatureException(e);
+            }
 
-            // in case the name is reset
-            sigAlgId = AlgorithmId.get(sigEngine.getAlgorithm());
+            if (params != null) {
+                sigAlgId = AlgorithmId.get(sigEngine.getParameters());
+            } else {
+                // in case the name is reset
+                sigAlgId = AlgorithmId.get(sigEngine.getAlgorithm());
+            }
             infoSigAlgId = sigAlgId;
 
             DerOutputStream out = new DerOutputStream();
