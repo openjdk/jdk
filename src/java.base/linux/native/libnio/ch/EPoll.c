@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,9 @@ Java_sun_nio_ch_EPoll_dataOffset(JNIEnv* env, jclass clazz)
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_EPoll_create(JNIEnv *env, jclass clazz) {
-    /* size hint not used in modern kernels */
-    int epfd = epoll_create(256);
+    int epfd = epoll_create1(EPOLL_CLOEXEC);
     if (epfd < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "epoll_create failed");
+        JNU_ThrowIOExceptionWithLastError(env, "epoll_create1 failed");
     }
     return epfd;
 }
