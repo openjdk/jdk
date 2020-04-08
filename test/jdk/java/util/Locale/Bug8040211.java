@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8040211 8191404 8203872 8222980 8225435 8241082
+ * @bug 8040211 8191404 8203872 8222980 8225435 8241082 8242010
  * @summary Checks the IANA language subtag registry data update
- *          (LSR Revision: 2020-03-16) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2020-04-01) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main Bug8040211
  */
@@ -43,9 +43,9 @@ public class Bug8040211 {
     static boolean err = false;
 
     private static final String ACCEPT_LANGUAGE =
-        "Accept-Language: aam, adp, aog, aue, bcg, cey, cqu, dif, ema,"
-        + " en-gb-oed, gti, kdz, koj, kwq, kxe, lii, lmm, lsn, lsv, lvi, mtm,"
-        + " ngv, nns, oyb, phr, pnd, pub, snz, suj, szy,taj, tjj, tjp, tvx,"
+        "Accept-Language: aam, adp, aog, aue, bcg, bpp, cey, cnp, cqu, csp, dif, dmw, ema,"
+        + " en-gb-oed, gti, kdz, koj, kru, kwq, kxe, kzk, lii, lmm, lsn, lsv, lvi, mtm,"
+        + " ngv, nns, oyb, phr, pnd, pub, scv, snz, suj, szy, taj, tjj, tjp, tvx,"
         + " uss, uth, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
     private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
             new LanguageRange("aam", 1.0),
@@ -58,11 +58,19 @@ public class Bug8040211 {
             new LanguageRange("ktz", 1.0),
             new LanguageRange("bcg", 1.0),
             new LanguageRange("bgm", 1.0),
+            new LanguageRange("bpp", 1.0),
+            new LanguageRange("nxu", 1.0),
             new LanguageRange("cey", 1.0),
+            new LanguageRange("cnp", 1.0),
+            new LanguageRange("zh-cnp", 1.0),
             new LanguageRange("cqu", 1.0),
             new LanguageRange("quh", 1.0),
+            new LanguageRange("csp", 1.0),
+            new LanguageRange("zh-csp", 1.0),
             new LanguageRange("dif", 1.0),
             new LanguageRange("dit", 1.0),
+            new LanguageRange("dmw", 1.0),
+            new LanguageRange("xrq", 1.0),
             new LanguageRange("ema", 1.0),
             new LanguageRange("uok", 1.0),
             new LanguageRange("en-gb-oed", 1.0),
@@ -73,16 +81,23 @@ public class Bug8040211 {
             new LanguageRange("ncp", 1.0),
             new LanguageRange("koj", 1.0),
             new LanguageRange("kwv", 1.0),
+            new LanguageRange("kru", 1.0),
+            new LanguageRange("kxl", 1.0),
             new LanguageRange("kwq", 1.0),
             new LanguageRange("yam", 1.0),
             new LanguageRange("kxe", 1.0),
             new LanguageRange("tvd", 1.0),
+            new LanguageRange("kzk", 1.0),
+            new LanguageRange("gli", 1.0),
+            new LanguageRange("drr", 1.0),
             new LanguageRange("lii", 1.0),
             new LanguageRange("raq", 1.0),
             new LanguageRange("lmm", 1.0),
             new LanguageRange("rmx", 1.0),
             new LanguageRange("lsn", 1.0),
+            new LanguageRange("sgn-lsn", 1.0),
             new LanguageRange("lsv", 1.0),
+            new LanguageRange("sgn-lsv", 1.0),
             new LanguageRange("lvi", 1.0),
             new LanguageRange("mtm", 1.0),
             new LanguageRange("ymt", 1.0),
@@ -99,6 +114,8 @@ public class Bug8040211 {
             new LanguageRange("pnd", 1.0),
             new LanguageRange("pub", 1.0),
             new LanguageRange("puz", 1.0),
+            new LanguageRange("scv", 1.0),
+            new LanguageRange("zir", 1.0),
             new LanguageRange("snz", 1.0),
             new LanguageRange("asd", 1.0),
             new LanguageRange("suj", 1.0),
