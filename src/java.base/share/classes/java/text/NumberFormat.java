@@ -865,7 +865,7 @@ public abstract class NumberFormat extends Format  {
      * Sets the minimum number of digits allowed in the fraction portion of a
      * number. minimumFractionDigits must be &le; maximumFractionDigits.  If the
      * new value for minimumFractionDigits exceeds the current value
-     * of maximumFractionDigits, then maximumIntegerDigits will also be set to
+     * of maximumFractionDigits, then maximumFractionDigits will also be set to
      * the new value
      *
      * @param newValue the minimum number of fraction digits to be shown; if
