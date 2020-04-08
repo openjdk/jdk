@@ -120,6 +120,8 @@ public:
   void prepare_for_full_collection_end();
 
   virtual HeapRegion* allocate_free_region(HeapRegionType type, uint node_index);
+  virtual HeapRegion* allocate_humongous_from_free_list(uint num_regions);
+  virtual HeapRegion* allocate_humongous_allow_expand(uint num_regions);
 
   // Return maximum number of regions that heap can expand to.
   uint max_expandable_length() const;
@@ -129,12 +131,6 @@ public:
 
   // Override.
   uint expand_at(uint start, uint num_regions, WorkGang* pretouch_workers);
-
-  // Override. This function is called for humongous allocation, so we need to find empty regions in nv-dimm.
-  uint find_contiguous_only_empty(size_t num);
-
-  // Override. This function is called for humongous allocation, so we need to find empty or unavailable regions in nv-dimm.
-  uint find_contiguous_empty_or_unavailable(size_t num);
 
   // Overrides base class implementation to find highest free region in dram.
   uint find_highest_free(bool* expanded);

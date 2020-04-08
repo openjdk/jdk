@@ -73,8 +73,10 @@ inline void HeapRegionManager::insert_into_free_list(HeapRegion* hr) {
   _free_list.add_ordered(hr);
 }
 
-inline void HeapRegionManager::allocate_free_regions_starting_at(uint first, uint num_regions) {
-  _free_list.remove_starting_at(at(first), num_regions);
+inline HeapRegion* HeapRegionManager::allocate_free_regions_starting_at(uint first, uint num_regions) {
+  HeapRegion* start = at(first);
+  _free_list.remove_starting_at(start, num_regions);
+  return start;
 }
 
 #endif // SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
