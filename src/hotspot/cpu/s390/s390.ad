@@ -605,6 +605,17 @@ static Register reg_to_register_object(int register_encoding);
 //       from the start of the call to the point where the return address
 //       will point.
 
+void PhaseOutput::pd_perform_mach_node_analysis() {
+}
+
+int MachNode::pd_alignment_required() const {
+  return 1;
+}
+
+int MachNode::compute_padding(int current_offset) const {
+  return 0;
+}
+
 int MachCallStaticJavaNode::ret_addr_offset() {
   if (_method) {
     return 8;
@@ -1421,6 +1432,13 @@ class HandlerImpl {
   static uint size_deopt_handler() {
     return NativeCall::max_instruction_size();
   }
+};
+
+class Node::PD {
+public:
+  enum NodeFlags {
+    _last_flag = Node::_last_flag
+  };
 };
 
 %} // end source_hpp section

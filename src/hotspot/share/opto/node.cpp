@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/ad.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
@@ -1033,7 +1034,12 @@ bool Node::verify_jvms(const JVMState* using_jvms) const {
 //------------------------------init_NodeProperty------------------------------
 void Node::init_NodeProperty() {
   assert(_max_classes <= max_jushort, "too many NodeProperty classes");
-  assert(_max_flags <= max_jushort, "too many NodeProperty flags");
+  assert(max_flags() <= max_jushort, "too many NodeProperty flags");
+}
+
+//-----------------------------max_flags---------------------------------------
+juint Node::max_flags() {
+  return (PD::_last_flag << 1) - 1; // allow flags combination
 }
 #endif
 

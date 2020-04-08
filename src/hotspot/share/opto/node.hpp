@@ -740,13 +740,16 @@ public:
     Flag_is_scheduled                = Flag_is_reduction << 1,
     Flag_has_vector_mask_set         = Flag_is_scheduled << 1,
     Flag_is_expensive                = Flag_has_vector_mask_set << 1,
-    Flag_intel_jcc_erratum           = Flag_is_expensive << 1,
-    _max_flags = (Flag_intel_jcc_erratum << 1) - 1 // allow flags combination
+    _last_flag                       = Flag_is_expensive
   };
+
+  class PD;
 
 private:
   jushort _class_id;
   jushort _flags;
+
+  static juint max_flags();
 
 protected:
   // These methods should be called from constructors only.
@@ -754,11 +757,11 @@ protected:
     _class_id = c; // cast out const
   }
   void init_flags(uint fl) {
-    assert(fl <= _max_flags, "invalid node flag");
+    assert(fl <= max_flags(), "invalid node flag");
     _flags |= fl;
   }
   void clear_flag(uint fl) {
-    assert(fl <= _max_flags, "invalid node flag");
+    assert(fl <= max_flags(), "invalid node flag");
     _flags &= ~fl;
   }
 

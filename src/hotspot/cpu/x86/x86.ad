@@ -1165,11 +1165,51 @@ class HandlerImpl {
 #endif
 };
 
+class Node::PD {
+public:
+  enum NodeFlags {
+    Flag_intel_jcc_erratum = Node::_last_flag << 1,
+    _last_flag             = Flag_intel_jcc_erratum
+  };
+};
+
 %} // end source_hpp
 
 source %{
 
 #include "opto/addnode.hpp"
+#include "c2_intelJccErratum_x86.hpp"
+
+void PhaseOutput::pd_perform_mach_node_analysis() {
+  if (VM_Version::has_intel_jcc_erratum()) {
+    int extra_padding = IntelJccErratum::tag_affected_machnodes(C, C->cfg(), C->regalloc());
+    _buf_sizes._code += extra_padding;
+  }
+}
+
+int MachNode::pd_alignment_required() const {
+  PhaseOutput* output = Compile::current()->output();
+  Block* block = output->block();
+  int index = output->index();
+  if (VM_Version::has_intel_jcc_erratum() && IntelJccErratum::is_jcc_erratum_branch(block, this, index)) {
+    // Conservatively add worst case padding. We assume that relocInfo::addr_unit() is 1 on x86.
+    return IntelJccErratum::largest_jcc_size() + 1;
+  } else {
+    return 1;
+  }
+}
+
+int MachNode::compute_padding(int current_offset) const {
+  if (flags() & Node::PD::Flag_intel_jcc_erratum) {
+    Compile* C = Compile::current();
+    PhaseOutput* output = C->output();
+    Block* block = output->block();
+    int index = output->index();
+    return IntelJccErratum::compute_padding(current_offset, this, block, index, C->regalloc());
+  } else {
+    return 0;
+  }
+}
 
 // Emit exception handler code.
 // Stuff framesize into a register and call a VM stub routine.

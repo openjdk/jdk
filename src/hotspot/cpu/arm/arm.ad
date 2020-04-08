@@ -116,6 +116,13 @@ class HandlerImpl {
 
 };
 
+class Node::PD {
+public:
+  enum NodeFlags {
+    _last_flag = Node::_last_flag
+  };
+};
+
 %}
 
 source %{
@@ -124,6 +131,16 @@ source %{
 static FloatRegister reg_to_FloatRegister_object(int register_encoding);
 static Register reg_to_register_object(int register_encoding);
 
+void PhaseOutput::pd_perform_mach_node_analysis() {
+}
+
+int MachNode::pd_alignment_required() const {
+  return 1;
+}
+
+int MachNode::compute_padding(int current_offset) const {
+  return 0;
+}
 
 // ****************************************************************************
 

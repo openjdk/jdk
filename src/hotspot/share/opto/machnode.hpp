@@ -286,11 +286,12 @@ public:
 
   // Return the alignment required (in units of relocInfo::addr_unit())
   // for this instruction (must be a power of 2)
-  virtual int   alignment_required() const { return 1; }
+  int           pd_alignment_required() const;
+  virtual int   alignment_required() const { return pd_alignment_required(); }
 
   // Return the padding (in bytes) to be emitted before this
   // instruction to properly align it.
-  virtual int   compute_padding(int current_offset) const { return 0; }
+  virtual int   compute_padding(int current_offset) const;
 
   // Return number of relocatable values contained in this instruction
   virtual int   reloc() const { return 0; }

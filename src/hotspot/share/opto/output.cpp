@@ -53,9 +53,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
-#ifdef X86
-#include "c2_intelJccErratum_x86.hpp"
-#endif
 
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
@@ -243,7 +240,10 @@ PhaseOutput::PhaseOutput()
     _node_bundling_limit(0),
     _node_bundling_base(NULL),
     _orig_pc_slot(0),
-    _orig_pc_slot_offset_in_bytes(0) {
+    _orig_pc_slot_offset_in_bytes(0),
+    _buf_sizes(),
+    _block(NULL),
+    _index(0) {
   C->set_output(this);
   if (C->stub_name() == NULL) {
     _orig_pc_slot = C->fixed_slots() - (sizeof(address) / VMRegImpl::stack_slot_size);
@@ -255,6 +255,15 @@ PhaseOutput::~PhaseOutput() {
   if (_scratch_buffer_blob != NULL) {
     BufferBlob::free(_scratch_buffer_blob);
   }
+}
+
+void PhaseOutput::perform_mach_node_analysis() {
+  // Late barrier analysis must be done after schedule and bundle
+  // Otherwise liveness based spilling will fail
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->late_barrier_analysis();
+
+  pd_perform_mach_node_analysis();
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -320,10 +329,10 @@ void PhaseOutput::Output() {
   }
 
   // Keeper of sizing aspects
-  BufferSizingData buf_sizes = BufferSizingData();
+  _buf_sizes = BufferSizingData();
 
   // Initialize code buffer
-  estimate_buffer_size(buf_sizes._const);
+  estimate_buffer_size(_buf_sizes._const);
   if (C->failing()) return;
 
   // Pre-compute the length of blocks and replace
@@ -331,27 +340,17 @@ void PhaseOutput::Output() {
   // Must be done before ScheduleAndBundle due to SPARC delay slots
   uint* blk_starts = NEW_RESOURCE_ARRAY(uint, C->cfg()->number_of_blocks() + 1);
   blk_starts[0] = 0;
-  shorten_branches(blk_starts, buf_sizes);
+  shorten_branches(blk_starts);
 
   ScheduleAndBundle();
   if (C->failing()) {
     return;
   }
 
-  // Late barrier analysis must be done after schedule and bundle
-  // Otherwise liveness based spilling will fail
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->late_barrier_analysis();
-
-#ifdef X86
-  if (VM_Version::has_intel_jcc_erratum()) {
-    int extra_padding = IntelJccErratum::tag_affected_machnodes(C, C->cfg(), C->regalloc());
-    buf_sizes._code += extra_padding;
-  }
-#endif
+  perform_mach_node_analysis();
 
   // Complete sizing of codebuffer
-  CodeBuffer* cb = init_buffer(buf_sizes);
+  CodeBuffer* cb = init_buffer();
   if (cb == NULL || C->failing()) {
     return;
   }
@@ -433,7 +432,7 @@ void PhaseOutput::compute_loop_first_inst_sizes() {
 
 // The architecture description provides short branch variants for some long
 // branch instructions. Replace eligible long branches with short branches.
-void PhaseOutput::shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes) {
+void PhaseOutput::shorten_branches(uint* blk_starts) {
   // Compute size of each block, method size, and relocation information size
   uint nblocks  = C->cfg()->number_of_blocks();
 
@@ -468,6 +467,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes
   uint nop_size = (new MachNopNode())->size(C->regalloc());
   for (uint i = 0; i < nblocks; i++) { // For all blocks
     Block* block = C->cfg()->get_block(i);
+    _block = block;
 
     // During short branch replacement, we store the relative (to blk_starts)
     // offset of jump in jmp_offset, rather than the absolute offset of jump.
@@ -483,18 +483,12 @@ void PhaseOutput::shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes
     uint last_inst = block->number_of_nodes();
     uint blk_size = 0;
     for (uint j = 0; j < last_inst; j++) {
-      Node* nj = block->get_node(j);
+      _index = j;
+      Node* nj = block->get_node(_index);
       // Handle machine instruction nodes
       if (nj->is_Mach()) {
-        MachNode *mach = nj->as_Mach();
+        MachNode* mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
-#ifdef X86
-        if (VM_Version::has_intel_jcc_erratum() && IntelJccErratum::is_jcc_erratum_branch(block, mach, j)) {
-          // Conservatively add worst case padding
-          blk_size += IntelJccErratum::largest_jcc_size();
-        }
-#endif
-
         reloc_size += mach->reloc();
         if (mach->is_MachCall()) {
           // add size information for trampoline stub
@@ -697,9 +691,9 @@ void PhaseOutput::shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes
   // The CodeBuffer will expand the locs array if this estimate is too low.
   reloc_size *= 10 / sizeof(relocInfo);
 
-  buf_sizes._reloc = reloc_size;
-  buf_sizes._code  = code_size;
-  buf_sizes._stub  = stub_size;
+  _buf_sizes._reloc = reloc_size;
+  _buf_sizes._code  = code_size;
+  _buf_sizes._stub  = stub_size;
 }
 
 //------------------------------FillLocArray-----------------------------------
@@ -1239,11 +1233,10 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   init_scratch_buffer_blob(const_req);
 }
 
-CodeBuffer* PhaseOutput::init_buffer(BufferSizingData& buf_sizes) {
-
-  int stub_req  = buf_sizes._stub;
-  int code_req  = buf_sizes._code;
-  int const_req = buf_sizes._const;
+CodeBuffer* PhaseOutput::init_buffer() {
+  int stub_req  = _buf_sizes._stub;
+  int code_req  = _buf_sizes._code;
+  int const_req = _buf_sizes._const;
 
   int pad_req   = NativeCall::instruction_size;
 
@@ -1272,7 +1265,7 @@ CodeBuffer* PhaseOutput::init_buffer(BufferSizingData& buf_sizes) {
     total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
-  cb->initialize(total_req, buf_sizes._reloc);
+  cb->initialize(total_req, _buf_sizes._reloc);
 
   // Have we run out of code space?
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
@@ -1361,6 +1354,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   for (uint i = 0; i < nblocks; i++) {
     Block* block = C->cfg()->get_block(i);
+    _block = block;
     Node* head = block->head();
 
     // If this block needs to start aligned (i.e, can be reached other
@@ -1391,6 +1385,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     // Emit block normally, except for last instruction.
     // Emit means "dump code bits into code buffer".
     for (uint j = 0; j<last_inst; j++) {
+      _index = j;
 
       // Get the node
       Node* n = block->get_node(j);
@@ -1437,12 +1432,6 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           // Avoid back to back some instructions.
           padding = nop_size;
         }
-#ifdef X86
-        if (mach->flags() & Node::Flag_intel_jcc_erratum) {
-          assert(padding == 0, "can't have contradicting padding requirements");
-          padding = IntelJccErratum::compute_padding(current_offset, mach, block, j, C->regalloc());
-        }
-#endif
 
         if (padding > 0) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");

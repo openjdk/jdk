@@ -96,6 +96,13 @@ private:
 
   ConstantTable          _constant_table;        // The constant table for this compilation unit.
 
+  BufferSizingData       _buf_sizes;
+  Block*                 _block;
+  uint                   _index;
+
+  void perform_mach_node_analysis();
+  void pd_perform_mach_node_analysis();
+
 public:
   PhaseOutput();
   ~PhaseOutput();
@@ -119,9 +126,13 @@ public:
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }
 
+  // Code emission iterator
+  Block* block()   { return _block; }
+  int index()      { return _index; }
+
   // The architecture description provides short branch variants for some long
   // branch instructions. Replace eligible long branches with short branches.
-  void shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes);
+  void shorten_branches(uint* blk_starts);
   ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
   void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
   void FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
@@ -132,7 +143,7 @@ public:
 
   // Initialize code buffer
   void estimate_buffer_size(int& const_req);
-  CodeBuffer* init_buffer(BufferSizingData& buf_sizes);
+  CodeBuffer* init_buffer();
 
   // Write out basic block data to code buffer
   void fill_buffer(CodeBuffer* cb, uint* blk_starts);
