@@ -151,23 +151,6 @@ public class FileFontStrike extends PhysicalStrike {
             }
         }
 
-        /* Amble fonts are better rendered unhinted although there's the
-         * inevitable fuzziness that accompanies this due to no longer
-         * snapping stems to the pixel grid. The exception is that in B&W
-         * mode they are worse without hinting. The down side to that is that
-         * B&W metrics will differ which normally isn't the case, although
-         * since AA mode is part of the measuring context that should be OK.
-         * We don't expect Amble to be installed in the Windows fonts folder.
-         * If we were to, then we'd also might want to disable using the
-         * native rasteriser path which is used for LCD mode for platform
-         * fonts. since we have no way to disable hinting by GDI.
-         * In the case of Amble, since its 'gasp' table says to disable
-         * hinting, I'd expect GDI to follow that, so likely it should
-         * all be consistent even if GDI used.
-         */
-        boolean disableHinting = desc.aaHint != INTVAL_TEXT_ANTIALIAS_OFF &&
-                                 fileFont.familyName.startsWith("Amble");
-
         /* If any of the values is NaN then substitute the null scaler context.
          * This will return null images, zero advance, and empty outlines
          * as no rendering need take place in this case.
@@ -181,7 +164,7 @@ public class FileFontStrike extends PhysicalStrike {
         } else {
             pScalerContext = fileFont.getScaler().createScalerContext(matrix,
                                     desc.aaHint, desc.fmHint,
-                                    boldness, italic, disableHinting);
+                                    boldness, italic);
         }
 
         mapper = fileFont.getMapper();

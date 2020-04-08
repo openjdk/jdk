@@ -225,8 +225,7 @@ class FreetypeFontScaler extends FontScaler {
     }
 
     synchronized long createScalerContext(double[] matrix,
-            int aa, int fm, float boldness, float italic,
-            boolean disableHinting) {
+            int aa, int fm, float boldness, float italic) {
         if (nativeScaler != 0L) {
             return createScalerContextNative(nativeScaler, matrix,
                                              aa, fm, boldness, italic);

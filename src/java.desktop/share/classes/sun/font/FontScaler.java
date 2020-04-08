@@ -205,8 +205,7 @@ public abstract class FontScaler implements DisposerRecord {
      */
     abstract long createScalerContext(double[] matrix,
                                       int aa, int fm,
-                                      float boldness, float italic,
-                                      boolean disableHinting);
+                                      float boldness, float italic);
 
     /* Marks context as invalid because native scaler is invalid.
        Notes:
