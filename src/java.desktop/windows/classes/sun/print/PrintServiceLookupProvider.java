@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package sun.print;
 
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+
 import javax.print.DocFlavor;
 import javax.print.MultiDocPrintService;
 import javax.print.PrintService;
@@ -120,13 +120,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         if (win32PrintLUS == null) {
             win32PrintLUS = this;
 
-            String osName = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("os.name"));
-            // There's no capability for Win98 to refresh printers.
-            // See "OpenPrinter" for more info.
-            if (osName != null && osName.startsWith("Windows 98")) {
-                return;
-            }
             // start the local printer listener thread
             Thread thr = new Thread(null, new PrinterChangeListener(),
                                     "PrinterListener", 0, false);
@@ -356,29 +349,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         return defaultPrintService;
     }
 
-    class PrinterChangeListener implements Runnable {
-        long chgObj;
-        PrinterChangeListener() {
-            chgObj = notifyFirstPrinterChange(null);
-        }
-
+    private final class PrinterChangeListener implements Runnable {
         @Override
         public void run() {
-            if (chgObj != -1) {
-                while (true) {
-                    // wait for configuration to change
-                    if (notifyPrinterChange(chgObj) != 0) {
-                        try {
-                            refreshServices();
-                        } catch (SecurityException se) {
-                            break;
-                        }
-                    } else {
-                        notifyClosePrinterChange(chgObj);
-                        break;
-                    }
-                }
-            }
+            notifyLocalPrinterChange(); // busy loop in the native code
         }
     }
 
@@ -446,8 +420,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private native String getDefaultPrinterName();
     private native String[] getAllPrinterNames();
-    private native long notifyFirstPrinterChange(String printer);
-    private native void notifyClosePrinterChange(long chgObj);
-    private native int notifyPrinterChange(long chgObj);
+    private native void notifyLocalPrinterChange();
     private native String[] getRemotePrintersNames();
 }

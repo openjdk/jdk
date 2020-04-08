@@ -185,28 +185,20 @@ Java_sun_print_PrintServiceLookupProvider_getRemotePrintersNames(JNIEnv *env,
     return getPrinterNames(env, PRINTER_ENUM_CONNECTIONS);
 }
 
+JNIEXPORT void JNICALL
+Java_sun_print_PrintServiceLookupProvider_notifyLocalPrinterChange(JNIEnv *env,
+                                                                   jobject peer)
+{
+    jclass cls = env->GetObjectClass(peer);
+    CHECK_NULL(cls);
+    jmethodID refresh = env->GetMethodID(cls, "refreshServices", "()V");
+    CHECK_NULL(refresh);
 
-JNIEXPORT jlong JNICALL
-Java_sun_print_PrintServiceLookupProvider_notifyFirstPrinterChange(JNIEnv *env,
-                                                                jobject peer,
-                                                                jstring printer) {
     HANDLE hPrinter;
-
-    LPTSTR printerName = NULL;
-    if (printer != NULL) {
-        printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                         printer,
-                                                         NULL);
-        JNU_ReleaseStringPlatformChars(env, printer, printerName);
+    LPTSTR printerName = NULL; // NULL indicates the local printer server
+    if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
+        return;
     }
-
-    // printerName - "Win NT/2K/XP: If NULL, it indicates the local printer
-    // server" - MSDN.   Win9x : OpenPrinter returns 0.
-    BOOL ret = OpenPrinter(printerName, &hPrinter, NULL);
-    if (!ret) {
-      return (jlong)-1;
-    }
-
     // PRINTER_CHANGE_PRINTER = PRINTER_CHANGE_ADD_PRINTER |
     //                          PRINTER_CHANGE_SET_PRINTER |
     //                          PRINTER_CHANGE_DELETE_PRINTER |
@@ -215,32 +207,23 @@ Java_sun_print_PrintServiceLookupProvider_notifyFirstPrinterChange(JNIEnv *env,
                                                        PRINTER_CHANGE_PRINTER,
                                                        0,
                                                        NULL);
-    return (chgObj == INVALID_HANDLE_VALUE) ? (jlong)-1 : (jlong)chgObj;
-}
+    if (chgObj != INVALID_HANDLE_VALUE) {
+        BOOL keepMonitoring;
+        do {
+            keepMonitoring = FALSE;
+            if (WaitForSingleObject(chgObj, INFINITE) == WAIT_OBJECT_0) {
+                DWORD dwChange;
+                keepMonitoring = FindNextPrinterChangeNotification(
+                                                 chgObj, &dwChange, NULL, NULL);
+            }
+            if (keepMonitoring) {
+                env->CallVoidMethod(peer, refresh);
+            }
+        } while (keepMonitoring && !env->ExceptionCheck());
 
-
-
-JNIEXPORT void JNICALL
-Java_sun_print_PrintServiceLookupProvider_notifyClosePrinterChange(JNIEnv *env,
-                                                                jobject peer,
-                                                                jlong chgObject) {
-    FindClosePrinterChangeNotification((HANDLE)chgObject);
-}
-
-
-JNIEXPORT jint JNICALL
-Java_sun_print_PrintServiceLookupProvider_notifyPrinterChange(JNIEnv *env,
-                                                           jobject peer,
-                                                           jlong chgObject) {
-    DWORD dwChange;
-
-    DWORD ret = WaitForSingleObject((HANDLE)chgObject, INFINITE);
-    if (ret == WAIT_OBJECT_0) {
-        return(FindNextPrinterChangeNotification((HANDLE)chgObject,
-                                                  &dwChange, NULL, NULL));
-    } else {
-        return 0;
+        FindClosePrinterChangeNotification(chgObj);
     }
+    ::ClosePrinter(hPrinter);
 }
 
 
