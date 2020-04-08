@@ -62,6 +62,16 @@ class ShenandoahVerifier;
 class ShenandoahWorkGang;
 class VMStructs;
 
+// Used for buffering per-region liveness data.
+// Needed since ShenandoahHeapRegion uses atomics to update liveness.
+// The ShenandoahHeap array has max-workers elements, each of which is an array of
+// uint16_t * max_regions. The choice of uint16_t is not accidental:
+// there is a tradeoff between static/dynamic footprint that translates
+// into cache pressure (which is already high during marking), and
+// too many atomic updates. uint32_t is too large, uint8_t is too small.
+typedef uint16_t ShenandoahLiveData;
+#define SHENANDOAH_LIVEDATA_MAX ((ShenandoahLiveData)-1)
+
 class ShenandoahRegionIterator : public StackObj {
 private:
   ShenandoahHeap* _heap;
@@ -613,15 +623,7 @@ private:
   bool _bitmap_region_special;
   bool _aux_bitmap_region_special;
 
-  // Used for buffering per-region liveness data.
-  // Needed since ShenandoahHeapRegion uses atomics to update liveness.
-  //
-  // The array has max-workers elements, each of which is an array of
-  // jushort * max_regions. The choice of jushort is not accidental:
-  // there is a tradeoff between static/dynamic footprint that translates
-  // into cache pressure (which is already high during marking), and
-  // too many atomic updates. size_t/jint is too large, jbyte is too small.
-  jushort** _liveness_cache;
+  ShenandoahLiveData** _liveness_cache;
 
 public:
   inline ShenandoahMarkingContext* complete_marking_context() const;
@@ -651,7 +653,7 @@ public:
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
   // Liveness caching support
-  jushort* get_liveness_cache(uint worker_id);
+  ShenandoahLiveData* get_liveness_cache(uint worker_id);
   void flush_liveness_cache(uint worker_id);
 
 // ---------- Evacuation support

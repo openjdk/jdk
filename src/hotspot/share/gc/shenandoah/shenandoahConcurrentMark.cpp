@@ -817,7 +817,7 @@ void ShenandoahConcurrentMark::mark_loop_prework(uint w, TaskTerminator *t, Refe
                                                  bool strdedup) {
   ShenandoahObjToScanQueue* q = get_queue(w);
 
-  jushort* ld = _heap->get_liveness_cache(w);
+  ShenandoahLiveData* ld = _heap->get_liveness_cache(w);
 
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
@@ -863,7 +863,7 @@ void ShenandoahConcurrentMark::mark_loop_prework(uint w, TaskTerminator *t, Refe
 }
 
 template <class T, bool CANCELLABLE>
-void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint worker_id, TaskTerminator *terminator) {
+void ShenandoahConcurrentMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator) {
   uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
