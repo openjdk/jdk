@@ -56,4 +56,5 @@ serviceability/sa/TestJhsdbJstackLock.java                    8220624   generic-
 serviceability/sa/TestJhsdbJstackMixed.java                   8220624   generic-all
 serviceability/sa/TestJmapCore.java                           8220624   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8220624   generic-all
+serviceability/sa/TestSysProps.java                           8220624   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8220624   generic-all
