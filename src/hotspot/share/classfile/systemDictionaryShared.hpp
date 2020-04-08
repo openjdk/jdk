@@ -248,14 +248,6 @@ public:
                                                       PackageEntry* pkg_entry,
                                                       ModuleEntry* mod_entry,
                                                       TRAPS);
-  static PackageEntry* get_package_entry(Symbol* pkg,
-                                         ClassLoaderData *loader_data) {
-    if (loader_data != NULL) {
-      PackageEntryTable* pkgEntryTable = loader_data->packages();
-      return pkgEntryTable->lookup_only(pkg);
-    }
-    return NULL;
-  }
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
   static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,

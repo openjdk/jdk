@@ -220,9 +220,9 @@ Symbol* ClassLoader::package_from_class_name(const Symbol* name, bool* bad_class
   return SymbolTable::new_symbol(name, start - base, end - base);
 }
 
-// Given a fully qualified class name, find its defining package in the class loader's
+// Given a fully qualified package name, find its defining package in the class loader's
 // package entry table.
-PackageEntry* ClassLoader::get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data, TRAPS) {
+PackageEntry* ClassLoader::get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data) {
   if (pkg_name == NULL) {
     return NULL;
   }
@@ -396,9 +396,9 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(const char* name, C
       if (!Universe::is_module_initialized()) {
         location = (*JImageFindResource)(_jimage, JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
       } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data, CHECK_NULL);
+        PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
         if (package_entry != NULL) {
-          ResourceMark rm;
+          ResourceMark rm(THREAD);
           // Get the module name
           ModuleEntry* module = package_entry->module();
           assert(module != NULL, "Boot classLoader package missing module");
@@ -1147,7 +1147,7 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
   // Find the class' defining module in the boot loader's module entry table
   TempNewSymbol class_name_symbol = SymbolTable::new_symbol(class_name);
   TempNewSymbol pkg_name = package_from_class_name(class_name_symbol);
-  PackageEntry* pkg_entry = get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data(), CHECK_NULL);
+  PackageEntry* pkg_entry = get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data());
   ModuleEntry* mod_entry = (pkg_entry != NULL) ? pkg_entry->module() : NULL;
 
   // If the module system has not defined java.base yet, then

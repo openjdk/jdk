@@ -703,8 +703,11 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
         // It's not guaranteed that the class is from the classpath if the
         // PackageEntry cannot be found from the AppClassloader. Need to check
         // the boot and platform classloader as well.
-        if (get_package_entry(pkg_name, ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_platform_loader())) == NULL &&
-            get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data()) == NULL) {
+        ClassLoaderData* platform_loader_data =
+          ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_platform_loader()); // can be NULL during bootstrap
+        if ((platform_loader_data == NULL ||
+             ClassLoader::get_package_entry(pkg_name, platform_loader_data) == NULL) &&
+             ClassLoader::get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data()) == NULL) {
           // The PackageEntry is not defined in any of the boot/platform/app classloaders.
           // The archived class must from -cp path and not from the runtime image.
           if (!ent->is_modules_image() && path_index >= ClassLoaderExt::app_class_paths_start_index() &&

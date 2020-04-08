@@ -272,9 +272,7 @@ class ClassLoader: AllStatic {
   static bool get_canonical_path(const char* orig, char* out, int len);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
-  static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data, TRAPS);
-
- public:
+  static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
   static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(const char *path,
                                            bool check_for_duplicates,
