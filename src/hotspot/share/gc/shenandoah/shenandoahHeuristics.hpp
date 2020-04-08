@@ -96,10 +96,6 @@ public:
   ShenandoahHeuristics();
   virtual ~ShenandoahHeuristics();
 
-  void record_gc_start();
-
-  void record_gc_end();
-
   void record_metaspace_oom()     { _metaspace_oom.set(); }
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
   bool has_metaspace_oom() const  { return _metaspace_oom.is_set(); }

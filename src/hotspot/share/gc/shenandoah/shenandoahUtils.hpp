@@ -120,7 +120,6 @@ private:
 
 public:
   ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_type type);
-  ~ShenandoahGCPauseMark();
 };
 
 class ShenandoahSafepoint : public AllStatic {
