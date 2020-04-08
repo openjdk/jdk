@@ -789,7 +789,12 @@ public class FormView extends ComponentView implements ActionListener {
             for (int i = 0; i < model.getSize(); i++) {
                 if (model.isSelectedIndex(i)) {
                     Option option = model.getElementAt(i);
-                    appendBuffer(buffer, name, option.getValue());
+                    if (option != null) {
+                        String value = option.getValue();
+                        if (value != null) {
+                            appendBuffer(buffer, name, value);
+                        }
+                    }
                 }
             }
         } else if (m instanceof ComboBoxModel) {
@@ -797,7 +802,10 @@ public class FormView extends ComponentView implements ActionListener {
             ComboBoxModel<?> model = (ComboBoxModel)m;
             Option option = (Option)model.getSelectedItem();
             if (option != null) {
-                appendBuffer(buffer, name, option.getValue());
+                String value = option.getValue();
+                if (value != null) {
+                    appendBuffer(buffer, name, value);
+                }
             }
         }
     }
