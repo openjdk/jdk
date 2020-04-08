@@ -34,10 +34,18 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test TestGCPhaseConcurrent
- * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
+ * @requires vm.hasJFR & vm.gc.Z
  * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent
+ */
+
+/**
+ * @test TestGCPhaseConcurrent
+ * @key jfr
+ * @library /test/lib /test/jdk /test/hotspot/jtreg
+ * @requires vm.hasJFR & vm.gc.Shenandoah
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent
  */
 public class TestGCPhaseConcurrent {
     public static void main(String[] args) throws Exception {
