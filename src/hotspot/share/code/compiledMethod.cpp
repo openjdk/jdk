@@ -642,6 +642,11 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
         continue;
       }
       is_in_static_stub = false;
+      if (is_unloading()) {
+        // If the nmethod itself is dying, then it may point at dead metadata.
+        // Nobody should follow that metadata; it is strictly unsafe.
+        continue;
+      }
       metadata_Relocation* r = iter.metadata_reloc();
       Metadata* md = r->metadata_value();
       if (md != NULL && md->is_method()) {
