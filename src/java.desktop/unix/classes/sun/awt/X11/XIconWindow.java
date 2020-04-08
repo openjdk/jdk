@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,26 @@
  */
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.AlphaComposite;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.SystemColor;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
+import java.awt.image.DataBufferUShort;
+import java.awt.image.ImageObserver;
+import java.awt.image.WritableRaster;
 
 import sun.awt.IconInfo;
-import sun.awt.image.ToolkitImage;
 import sun.awt.image.ImageRepresentation;
-
+import sun.awt.image.ToolkitImage;
 import sun.util.logging.PlatformLogger;
 
 public class XIconWindow extends XBaseWindow {
@@ -480,7 +493,7 @@ public class XIconWindow extends XBaseWindow {
             if (window == 0) {
                 log.finest("Icon window wasn't set");
                 XCreateWindowParams params = getDelayedParams();
-                params.add(BORDER_PIXEL, Long.valueOf(XToolkit.getAwtDefaultFg()));
+                params.add(BORDER_PIXEL, Long.valueOf(0));
                 params.add(BACKGROUND_PIXMAP, iconPixmap);
                 params.add(COLORMAP, adata.get_awt_cmap());
                 params.add(DEPTH, awtImage.get_Depth());
