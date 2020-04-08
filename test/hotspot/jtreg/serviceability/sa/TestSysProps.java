@@ -110,8 +110,17 @@ public class TestSysProps {
             String[] jinfoLines = jinfoOut.getStdout().split("\\R");
             String[] appLines   = app.getOutput().getStdout().split("\\R");
             int numAppProps = 0;
+            boolean foundStartOfList = false;
             for (String appProp : appLines) {
                 boolean found;
+
+                // Skip any output that occurs before the first property
+                if (!foundStartOfList) {
+                    if (appProp.indexOf("-- listing properties --") != -1) {
+                        foundStartOfList = true;
+                    }
+                    continue;
+                }
 
                 // Find the next property in the app output
                 int idx = appProp.indexOf("=");
