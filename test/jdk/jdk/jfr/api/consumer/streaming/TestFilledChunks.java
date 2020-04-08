@@ -54,6 +54,7 @@ public class TestFilledChunks {
 
     public static void main(String... args) throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
+            rs.setOrdered(false);
             rs.onEvent(FillEvent.class.getName(), e -> {
                 int id = e.getInt("id");
                 // Some events may get lost due to

@@ -40,7 +40,7 @@ import jdk.jfr.consumer.EventStream;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.streaming.TestFilledChunks
+ * @run main/othervm jdk.jfr.api.consumer.streaming.TestChunkGap
  */
 public class TestChunkGap {
 
