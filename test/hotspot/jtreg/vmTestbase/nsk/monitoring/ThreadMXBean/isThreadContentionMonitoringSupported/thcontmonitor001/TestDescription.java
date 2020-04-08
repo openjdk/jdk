@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that
- *         ThreadMBean.isThreadContentionMonitoringSupported()
+ *         ThreadMXBean.isThreadContentionMonitoringSupported()
  *     method returns true. The test performs directly access to management
  *     metrics within the same JVM.
  *     Note, that the test is correct ONLY against Sun's Hotspot VM. This
@@ -44,6 +44,6 @@
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
- *      nsk.monitoring.ThreadMBean.isThreadContentionMonitoringSupported.thcontmonitor001
+ *      nsk.monitoring.ThreadMXBean.isThreadContentionMonitoringSupported.thcontmonitor001
  */
 

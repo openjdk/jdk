@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,13 @@
  * questions.
  */
 
-package nsk.monitoring.ThreadMBean.resetPeakThreadCount;
+package nsk.monitoring.ThreadMXBean.findMonitorDeadlockedThreads;
 
 import java.io.*;
 import nsk.share.*;
 import nsk.monitoring.share.*;
 
-public class reset001 {
-    private static boolean testFailed = false;
-
+public class find001 {
     public static void main(String[] argv) {
         System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
     }
@@ -38,37 +36,28 @@ public class reset001 {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         Log log = new Log(out, argHandler);
         ThreadMonitor monitor = Monitor.getThreadMonitor(log, argHandler);
+        long id = Thread.currentThread().getId();
+        long[] ids = monitor.findMonitorDeadlockedThreads();
 
-        // Start a couple of threads and wait until they exit
-        Thread left = new Thread();
-        Thread right = new Thread();
-        left.start();
-        right.start();
-
-        try {
-            left.join();
-            right.join();
-        } catch (InterruptedException e) {
-            log.complain("Unexpected exception.");
-            e.printStackTrace(log.getOutStream());
-            testFailed = true;
+        if (ids == null) {
+            log.display("findCircularBlockedThread() returned null");
+            return Consts.TEST_PASSED;
         }
 
-        // The test supposes that no threads are appered/disappeared between
-        // "getPeakThreadCount()" and "getThreadCount()" calls
-        monitor.resetPeakThreadCount();
-        int peak = monitor.getPeakThreadCount();
-        int live = monitor.getThreadCount();
-
-        if (peak != live) {
-            log.complain("getPeakThreadCount() returned " + peak + ", but "
-                      + "getThreadCount() returned " + live + " after "
-                      + "resetPeakThreadCount().");
-            testFailed = true;
+        if (ids.length == 0) {
+            log.display("findCircularBlockedThread() returned array of length "
+                      + "0");
+            return Consts.TEST_PASSED;
         }
 
-        if (testFailed)
-            out.println("TEST FAILED");
-        return (testFailed) ? Consts.TEST_FAILED : Consts.TEST_PASSED;
+        for (int i = 0; i < ids.length; i++) {
+            if (ids[i] == id) {
+                log.complain("TEST FAILED");
+                log.complain("findCircularBlockedThread() returned current "
+                           + "thread (id = " + id + ")");
+                return Consts.TEST_FAILED;
+            }
+        }
+        return Consts.TEST_PASSED;
     }
 }

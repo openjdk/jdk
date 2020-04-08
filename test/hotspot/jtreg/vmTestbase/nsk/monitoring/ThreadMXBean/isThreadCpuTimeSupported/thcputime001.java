@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-package nsk.monitoring.ThreadMBean.isThreadContentionMonitoringSupported;
+package nsk.monitoring.ThreadMXBean.isThreadCpuTimeSupported;
 
 import java.io.*;
 import nsk.share.*;
 import nsk.monitoring.share.*;
 
-public class thcontmonitor001 {
+public class thcputime001 {
     public static void main(String[] argv) {
         System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
     }
@@ -38,9 +38,11 @@ public class thcontmonitor001 {
         ThreadMonitor monitor = Monitor.getThreadMonitor(log, argHandler);
 
         // Check the method is... for the specified way of access to MBeans
-        if (!monitor.isThreadContentionMonitoringSupported()) {
-            log.complain("Thread contention monitoring is not supported.");
-            return 2;
+        boolean isSupported = monitor.isThreadCpuTimeSupported();
+        if (isSupported) {
+            log.display("Thread cpu time is supported.");
+        } else {
+            log.display("Thread cpu time is not supported.");
         }
         return 0;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import nsk.monitoring.share.*;
 /**
  * The test starts recursive threads, switches them  to the various
  * state after reaching defined depth and checks up their stack traces
- * and states gotten via the ThreadMBean interface. The test may be executed
+ * and states gotten via the ThreadMXBean interface. The test may be executed
  * with the following parameters:
  * <ul>
  *      <li>
@@ -78,8 +78,8 @@ import nsk.monitoring.share.*;
  * <code>BLOCKED</code>, <code>WAITING</code>, <code>SLEEPING</code> or
  * <code>RUNNING</code>.
  * <p>After threads are reaching the specified state, test checks up their stack
- * traces and states gotten via the ThreadMBean interface.
- * <p>The test fails if state of some thread gotten via the ThreadMBean
+ * traces and states gotten via the ThreadMXBean interface.
+ * <p>The test fails if state of some thread gotten via the ThreadMXBean
  * interface doesn't correspond to the state specified by the test or stack
  * trace contains an extra element. Expected stack trace elements are specified
  * by {@link nsk.monitoring.share.ThreadMonitor ThreadMonitor}

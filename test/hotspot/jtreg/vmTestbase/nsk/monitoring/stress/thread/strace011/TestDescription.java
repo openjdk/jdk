@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * DESCRIPTION
  *     The test starts 50 recursive threads, switches them  to the various
  *     state after reaching 200 depth and checks up their stack traces
- *     and states gotten via the ThreadMBean interface.
+ *     and states gotten via the ThreadMXBean interface.
  *     Executable class of the test is the same as for the strace010 test.
  *     In contrast to the strace010 test, the strace011 test is performed for
  *     that:

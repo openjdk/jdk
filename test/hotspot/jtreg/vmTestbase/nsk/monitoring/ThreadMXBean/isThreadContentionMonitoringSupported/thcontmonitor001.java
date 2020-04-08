@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-package nsk.monitoring.ThreadMBean.findMonitorDeadlockedThreads;
+package nsk.monitoring.ThreadMXBean.isThreadContentionMonitoringSupported;
 
 import java.io.*;
 import nsk.share.*;
 import nsk.monitoring.share.*;
 
-public class find001 {
+public class thcontmonitor001 {
     public static void main(String[] argv) {
         System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
     }
@@ -36,28 +36,12 @@ public class find001 {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         Log log = new Log(out, argHandler);
         ThreadMonitor monitor = Monitor.getThreadMonitor(log, argHandler);
-        long id = Thread.currentThread().getId();
-        long[] ids = monitor.findMonitorDeadlockedThreads();
 
-        if (ids == null) {
-            log.display("findCircularBlockedThread() returned null");
-            return Consts.TEST_PASSED;
+        // Check the method is... for the specified way of access to MBeans
+        if (!monitor.isThreadContentionMonitoringSupported()) {
+            log.complain("Thread contention monitoring is not supported.");
+            return 2;
         }
-
-        if (ids.length == 0) {
-            log.display("findCircularBlockedThread() returned array of length "
-                      + "0");
-            return Consts.TEST_PASSED;
-        }
-
-        for (int i = 0; i < ids.length; i++) {
-            if (ids[i] == id) {
-                log.complain("TEST FAILED");
-                log.complain("findCircularBlockedThread() returned current "
-                           + "thread (id = " + id + ")");
-                return Consts.TEST_FAILED;
-            }
-        }
-        return Consts.TEST_PASSED;
+        return 0;
     }
 }
