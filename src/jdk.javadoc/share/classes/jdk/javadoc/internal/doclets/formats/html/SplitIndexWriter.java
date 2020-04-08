@@ -135,14 +135,10 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                         contents.getContent("doclet.Index"))));
         Content mainContent = new ContentBuilder();
         addLinksForIndexes(mainContent);
-        if (tagSearchIndexMap.get(unicode) == null) {
-            addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
-        } else if (indexBuilder.getMemberList(unicode) == null) {
-            addSearchContents(unicode, tagSearchIndexMap.get(unicode), mainContent);
-        } else {
-            addContents(unicode, indexBuilder.getMemberList(unicode),
-                        tagSearchIndexMap.get(unicode), mainContent);
+        if (tagSearchIndexMap.get(unicode) != null) {
+            indexBuilder.addSearchTags(unicode, tagSearchIndexMap.get(unicode));
         }
+        addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
         addLinksForIndexes(mainContent);
         main.add(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();

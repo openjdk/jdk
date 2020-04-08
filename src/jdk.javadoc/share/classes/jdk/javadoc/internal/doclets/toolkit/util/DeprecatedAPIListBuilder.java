@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class DeprecatedAPIListBuilder {
         deprecatedMap = new EnumMap<>(DeprElementKind.class);
         for (DeprElementKind kind : DeprElementKind.values()) {
             deprecatedMap.put(kind,
-                    new TreeSet<>(utils.makeDeprecatedComparator()));
+                    new TreeSet<>(utils.comparators.makeDeprecatedComparator()));
         }
         buildDeprecatedAPIInfo();
     }
@@ -85,8 +85,6 @@ public class DeprecatedAPIListBuilder {
      * Build the sorted list of all the deprecated APIs in this run.
      * Build separate lists for deprecated modules, packages, classes, constructors,
      * methods and fields.
-     *
-     * @param configuration the current configuration of the doclet.
      */
     private void buildDeprecatedAPIInfo() {
         SortedSet<Element> rset = deprecatedMap.get(DeprElementKind.REMOVAL);
@@ -165,7 +163,6 @@ public class DeprecatedAPIListBuilder {
      *
      * @param rset set of elements deprecated for removal.
      * @param sset set of deprecated elements.
-     * @param list List of all the particular deprecated members, e.g. methods.
      * @param members members to be added in the list.
      */
     private void composeDeprecatedList(SortedSet<Element> rset, SortedSet<Element> sset, List<? extends Element> members) {

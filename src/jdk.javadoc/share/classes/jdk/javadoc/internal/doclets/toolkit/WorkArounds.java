@@ -445,8 +445,8 @@ public class WorkArounds {
         NewSerializedForm(Utils utils, Elements elements, TypeElement te) {
             this.utils = utils;
             this.elements = elements;
-            methods = new TreeSet<>(utils.makeGeneralPurposeComparator());
-            fields = new TreeSet<>(utils.makeGeneralPurposeComparator());
+            methods = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+            fields = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
             if (utils.isExternalizable(te)) {
                 /* look up required public accessible methods,
                  *   writeExternal and readExternal.

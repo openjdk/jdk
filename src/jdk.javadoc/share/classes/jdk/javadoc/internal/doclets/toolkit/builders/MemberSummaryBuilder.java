@@ -84,7 +84,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     private MemberSummaryBuilder(Context context, TypeElement typeElement) {
         super(context, typeElement);
         memberSummaryWriters = new EnumMap<>(VisibleMemberTable.Kind.class);
-        comparator = utils.makeIndexUseComparator();
+        comparator = utils.comparators.makeIndexElementComparator();
         pHelper = new PropertyHelper(this);
     }
 

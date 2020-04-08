@@ -117,7 +117,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     @Override
     public void build() throws DocletException {
-        SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
         rootclasses.addAll(configuration.getIncludedTypeElements());
         if (!serialClassFoundToDocument(rootclasses)) {
             //Nothing to document.
@@ -470,7 +470,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         // ObjectStreamFields. Print a member for each serialField tag.
         // (There should be one serialField tag per ObjectStreamField
         // element.)
-        SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.makeSerialFieldTreeComparator());
+        SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.makeSerialFieldTreeComparator());
         // sort the elements
         for (DocTree dt : utils.getSerialFieldTrees(field)) {
             SerialFieldTree st = (SerialFieldTree) dt;

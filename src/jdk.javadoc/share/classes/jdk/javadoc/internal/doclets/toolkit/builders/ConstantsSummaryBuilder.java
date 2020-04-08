@@ -96,7 +96,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         super(context);
         this.writer = writer;
         this.typeElementsWithConstFields = new HashSet<>();
-        this.printedPackageHeaders = new TreeSet<>(utils.makePackageComparator());
+        this.printedPackageHeaders = new TreeSet<>(utils.comparators.makePackageComparator());
     }
 
     /**
@@ -315,7 +315,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             members.addAll(vmt.getVisibleMembers(FIELDS));
             members.addAll(vmt.getVisibleMembers(ENUM_CONSTANTS));
             SortedSet<VariableElement> includes =
-                    new TreeSet<>(utils.makeGeneralPurposeComparator());
+                    new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
             for (Element element : members) {
                 VariableElement member = (VariableElement)element;
                 if (member.getConstantValue() != null) {

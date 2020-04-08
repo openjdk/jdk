@@ -265,7 +265,7 @@ public abstract class AbstractDoclet implements Doclet {
     protected void generateClassFiles(DocletEnvironment docEnv, ClassTree classtree)
             throws DocletException {
         generateClassFiles(classtree);
-        SortedSet<PackageElement> packages = new TreeSet<>(utils.makePackageComparator());
+        SortedSet<PackageElement> packages = new TreeSet<>(utils.comparators.makePackageComparator());
         packages.addAll(configuration.getSpecifiedPackageElements());
         configuration.modulePackages.values().stream().forEach(packages::addAll);
         for (PackageElement pkg : packages) {

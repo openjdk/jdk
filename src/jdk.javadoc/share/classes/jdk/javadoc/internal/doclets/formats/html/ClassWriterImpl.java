@@ -409,7 +409,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addImplementedInterfacesInfo(Content classInfoTree) {
-        SortedSet<TypeMirror> interfaces = new TreeSet<>(utils.makeTypeMirrorClassUseComparator());
+        SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.makeTypeMirrorClassUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
         if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
             HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
@@ -422,7 +422,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addSuperInterfacesInfo(Content classInfoTree) {
         SortedSet<TypeMirror> interfaces =
-                new TreeSet<>(utils.makeTypeMirrorIndexUseComparator());
+                new TreeSet<>(comparators.makeTypeMirrorIndexUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
         if (utils.isInterface(typeElement) && !interfaces.isEmpty()) {

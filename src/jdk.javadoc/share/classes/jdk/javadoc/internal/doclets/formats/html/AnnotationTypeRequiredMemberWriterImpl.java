@@ -109,7 +109,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
                 new StringContent(simpleName));
         annotationDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree)
-                .setId(simpleName + utils.signature((ExecutableElement) member));
+                .setId(simpleName + utils.signature((ExecutableElement) member, typeElement));
     }
 
     @Override

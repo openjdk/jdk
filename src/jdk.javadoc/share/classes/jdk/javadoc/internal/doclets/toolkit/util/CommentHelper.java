@@ -405,16 +405,6 @@ public class CommentHelper {
         return (n == -1) ? null : s.substring(n + 1);
     }
 
-    public String getReferencedMemberName(Element e) {
-        if (e == null) {
-            return null;
-        }
-        Utils utils = configuration.utils;
-        return utils.isExecutableElement(e)
-                ? utils.getSimpleName(e) + utils.makeSignature((ExecutableElement) e, true, true)
-                : utils.getSimpleName(e);
-    }
-
     public PackageElement getReferencedPackage(DocTree dtree) {
         Element e = getReferencedElement(dtree);
         if (e != null) {

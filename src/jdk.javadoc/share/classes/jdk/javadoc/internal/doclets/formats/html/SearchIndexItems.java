@@ -69,9 +69,9 @@ public final class SearchIndexItems {
     private Set<SearchIndexItem> newSetForCategory(Category category) {
         final Comparator<SearchIndexItem> cmp;
         if (category == Category.TYPES) {
-            cmp = utils.makeTypeSearchIndexComparator();
+            cmp = utils.comparators.makeTypeSearchIndexComparator();
         } else {
-            cmp = utils.makeGenericSearchIndexComparator();
+            cmp = utils.comparators.makeGenericSearchIndexComparator();
         }
         return new TreeSet<>(cmp);
     }

@@ -77,7 +77,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -94,6 +93,7 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
+import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -168,6 +168,8 @@ public class HtmlDocletWriter {
 
     protected final DocPaths docPaths;
 
+    protected final Comparators comparators;
+
     /**
      * To check whether annotation heading is printed or not.
      */
@@ -218,6 +220,7 @@ public class HtmlDocletWriter {
         this.resources = configuration.docResources;
         this.links = new Links(path);
         this.utils = configuration.utils;
+        this.comparators = utils.comparators;
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
@@ -990,7 +993,7 @@ public class HtmlDocletWriter {
             return executableElement.getSimpleName().toString();
         }
         String member = anchorName(executableElement);
-        String erasedSignature = utils.makeSignature(executableElement, true, true);
+        String erasedSignature = utils.makeSignature(executableElement, null, true, true);
         return member + erasedSignature;
     }
 
@@ -1119,7 +1122,7 @@ public class HtmlDocletWriter {
             }
             if (utils.isExecutableElement(refMem)) {
                 if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement)refMem, true);
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
                 }
                 if (overriddenMethod != null) {
                     // The method to actually link.

@@ -111,7 +111,7 @@ public class ClassTree {
         Messages messages = configuration.getMessages();
         messages.notice("doclet.Building_Tree");
 
-        comparator = utils.makeClassUseComparator();
+        comparator = utils.comparators.makeClassUseComparator();
         baseAnnotationTypes = new TreeSet<>(comparator);
         baseEnums = new TreeSet<>(comparator);
         baseClasses = new TreeSet<>(comparator);
@@ -128,7 +128,7 @@ public class ClassTree {
     public ClassTree(DocletEnvironment docEnv, BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
-        comparator = utils.makeClassUseComparator();
+        comparator = utils.comparators.makeClassUseComparator();
         baseAnnotationTypes = new TreeSet<>(comparator);
         baseEnums = new TreeSet<>(comparator);
         baseClasses = new TreeSet<>(comparator);
@@ -145,7 +145,7 @@ public class ClassTree {
     public ClassTree(SortedSet<TypeElement>classesSet, BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
-        comparator = utils.makeClassUseComparator();
+        comparator = utils.comparators.makeClassUseComparator();
         baseAnnotationTypes = new TreeSet<>(comparator);
         baseEnums = new TreeSet<>(comparator);
         baseClasses = new TreeSet<>(comparator);
