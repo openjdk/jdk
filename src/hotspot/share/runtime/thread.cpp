@@ -1690,6 +1690,7 @@ void JavaThread::initialize() {
   _SleepEvent = ParkEvent::Allocate(this);
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
+  _handshake.set_handshakee(this);
 
   debug_only(_java_call_counter = 0);
 
@@ -4465,12 +4466,21 @@ bool Threads::destroy_vm() {
   // exit_globals() will delete tty
   exit_globals();
 
-  // We are after VM_Exit::set_vm_exited() so we can't call
-  // thread->smr_delete() or we will block on the Threads_lock.
-  // Deleting the shutdown thread here is safe because another
-  // JavaThread cannot have an active ThreadsListHandle for
-  // this JavaThread.
-  delete thread;
+  // We are here after VM_Exit::set_vm_exited() so we can't call
+  // thread->smr_delete() or we will block on the Threads_lock. We
+  // must check that there are no active references to this thread
+  // before attempting to delete it. A thread could be waiting on
+  // _handshake_turn_sem trying to execute a direct handshake with
+  // this thread.
+  if (!ThreadsSMRSupport::is_a_protected_JavaThread(thread)) {
+    delete thread;
+  } else {
+    // Clear value for _thread_key in TLS to prevent, depending
+    // on pthreads implementation, possible execution of
+    // thread-specific destructor in infinite loop at thread
+    // exit.
+    Thread::clear_thread_current();
+  }
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {

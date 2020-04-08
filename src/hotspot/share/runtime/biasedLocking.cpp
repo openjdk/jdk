@@ -622,7 +622,7 @@ BiasedLocking::Condition BiasedLocking::single_revoke_with_handshake(Handle obj,
                                      p2i(biaser), p2i(obj()));
 
   RevokeOneBias revoke(obj, requester, biaser);
-  bool executed = Handshake::execute(&revoke, biaser);
+  bool executed = Handshake::execute_direct(&revoke, biaser);
   if (revoke.status_code() == NOT_REVOKED) {
     return NOT_REVOKED;
   }
@@ -666,24 +666,24 @@ BiasedLocking::Condition BiasedLocking::single_revoke_with_handshake(Handle obj,
 
 // Caller should have instantiated a ResourceMark object before calling this method
 void BiasedLocking::walk_stack_and_revoke(oop obj, JavaThread* biased_locker) {
+  Thread* cur = Thread::current();
   assert(!SafepointSynchronize::is_at_safepoint(), "this should always be executed outside safepoints");
-  assert(Thread::current() == biased_locker || Thread::current()->is_VM_thread(), "wrong thread");
+  assert(cur == biased_locker || cur == biased_locker->active_handshaker(), "wrong thread");
 
   markWord mark = obj->mark();
   assert(mark.biased_locker() == biased_locker &&
          obj->klass()->prototype_header().bias_epoch() == mark.bias_epoch(), "invariant");
 
-  log_trace(biasedlocking)("%s(" INTPTR_FORMAT ") revoking object " INTPTR_FORMAT ", mark "
+  log_trace(biasedlocking)("JavaThread(" INTPTR_FORMAT ") revoking object " INTPTR_FORMAT ", mark "
                            INTPTR_FORMAT ", type %s, prototype header " INTPTR_FORMAT
                            ", biaser " INTPTR_FORMAT " %s",
-                           Thread::current()->is_VM_thread() ? "VMThread" : "JavaThread",
-                           p2i(Thread::current()),
+                           p2i(cur),
                            p2i(obj),
                            mark.value(),
                            obj->klass()->external_name(),
                            obj->klass()->prototype_header().value(),
                            p2i(biased_locker),
-                           Thread::current()->is_VM_thread() ? "" : "(walking own stack)");
+                           cur != biased_locker ? "" : "(walking own stack)");
 
   markWord unbiased_prototype = markWord::prototype().set_age(obj->mark().age());
 
