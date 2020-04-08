@@ -394,7 +394,7 @@ jboolean RegisterPrimitives(JNIEnv *env,
         CompositeType *pComp = pPrim->pCompType;
         SurfaceType *pDst = pPrim->pDstType;
 
-        pPrim->funcs.initializer = MapAccelFunction(pPrim->funcs_c.initializer);
+        pPrim->funcs.initializer = pPrim->funcs_c.initializer;
 
         /*
          * Calculate the necessary SurfaceData lock flags for the
