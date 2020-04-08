@@ -106,7 +106,6 @@ public class VersionCheck extends TestHelper {
         "klist",
         "ktab",
         "jpackage",
-        "rmic",
         "rmid",
         "rmiregistry",
         "serialver",

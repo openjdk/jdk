@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@ package java.rmi.server;
  * An <code>Operation</code> contains a description of a Java method.
  * <code>Operation</code> objects were used in JDK1.1 version stubs and
  * skeletons. The <code>Operation</code> class is not needed for 1.2 style
- * stubs (stubs generated with <code>rmic -v1.2</code>); hence, this class
- * is deprecated.
+ * stubs; hence, this class is deprecated.
  *
  * @since 1.1
  * @deprecated no replacement

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,14 @@ import sun.rmi.transport.LiveRef;
 
 /**
  * Used for exporting a remote object with JRMP and obtaining a stub
- * that communicates to the remote object. Stubs are either generated
- * at runtime using dynamic proxy objects, or they are generated statically
- * at build time, typically using the {@code rmic} tool.
+ * that communicates to the remote object. Stubs are generated
+ * at runtime using dynamic proxy objects.
  *
  * <p><strong>Deprecated: Static Stubs.</strong> <em>Support for statically
  * generated stubs is deprecated. This includes the API in this class that
  * requires the use of static stubs, as well as the runtime support for
  * loading static stubs.  Generating stubs dynamically is preferred, using one
- * of the non-deprecated ways of exporting objects as listed below. Do
- * not run {@code rmic} to generate static stub classes. It is unnecessary, and
- * it is also deprecated.</em>
+ * of the non-deprecated ways of exporting objects as listed below. </em>
  *
  * <p>There are eight ways to export remote objects:
  *
@@ -90,10 +87,8 @@ import sun.rmi.transport.LiveRef;
  * <p>The default value of the
  * {@code java.rmi.server.ignoreStubClasses} property is {@code false}.
  *
- * <p>Statically generated stubs are typically pregenerated from the
- * remote object's class using the {@code rmic} tool. A static stub is
- * loaded and an instance of that stub class is constructed as described
- * below.
+ * <p>Statically generated stubs are typically pregenerated from the remote object's class.
+ * A static stub is loaded and an instance of that stub class is constructed as described below.
  *
  * <ul>
  *

@@ -351,11 +351,6 @@ jdk.scripting.nashorn.shell_COPY += .js .properties
 
 ################################################################################
 
-jdk.rmic_DISABLED_WARNINGS += deprecation
-jdk.rmic_CLEAN += .properties
-
-################################################################################
-
 # No SCTP implementation on Mac OS X or AIX. These classes should be excluded.
 SCTP_IMPL_CLASSES = \
     $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/AssociationChange.java \

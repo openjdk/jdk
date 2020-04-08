@@ -172,7 +172,6 @@ DOCS_MODULES += \
     jdk.naming.rmi \
     jdk.net \
     jdk.nio.mapmode \
-    jdk.rmic \
     jdk.scripting.nashorn \
     jdk.sctp \
     jdk.security.auth \

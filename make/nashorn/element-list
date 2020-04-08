@@ -260,7 +260,6 @@ module:jdk.naming.rmi
 module:jdk.net
 jdk.net
 jdk.nio
-module:jdk.rmic
 module:jdk.scripting.nashorn
 jdk.nashorn.api.scripting
 jdk.nashorn.api.tree
