@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,8 +631,8 @@ public final class SoftMainMixer {
                 if (!hasactivevoices) {
                     synchronized (control_mutex) {
                         if (stoppedMixers != null) {
-                            if (stoppedMixers.contains(cmixer)) {
-                                stoppedMixers.remove(cmixer);
+                            if (stoppedMixers.contains(cmixer.mixer)) {
+                                stoppedMixers.remove(cmixer.mixer);
                                 cmixer.mixer.stop();
                             }
                         }
