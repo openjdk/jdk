@@ -2817,7 +2817,7 @@ void ShenandoahHeap::entry_roots() {
 
 void ShenandoahHeap::entry_cleanup() {
   static const char* msg = "Concurrent cleanup";
-  ShenandoahConcurrentPhase gc_phase(msg);
+  ShenandoahConcurrentPhase gc_phase(msg,  true /* log_heap_usage */);
   EventMark em("%s", msg);
 
   ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::conc_cleanup);
