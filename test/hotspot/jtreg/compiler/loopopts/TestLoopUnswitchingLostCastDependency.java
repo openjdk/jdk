@@ -26,7 +26,8 @@
  * @bug 8241900
  * @summary Loop unswitching may cause dependence on null check to be lost
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:+StressGCM -XX:+StressLCM TestLoopUnswitchingLostCastDependency
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:+StressGCM -XX:+StressLCM TestLoopUnswitchingLostCastDependency
  */
 
 import java.util.Arrays;
