@@ -85,6 +85,21 @@ void SparsePRTEntry::copy_cards(SparsePRTEntry* e) const {
 
 float RSHashTable::TableOccupancyFactor = 0.5f;
 
+// The empty table can't hold any entries and is effectively immutable
+// This means it can be used as an initial sentinel value
+static int empty_buckets[] = { RSHashTable::NullEntry };
+RSHashTable RSHashTable::empty_table;
+
+RSHashTable::RSHashTable() :
+  _num_entries(0),
+  _capacity(0),
+  _capacity_mask(0),
+  _occupied_entries(0),
+  _entries(NULL),
+  _buckets(empty_buckets),
+  _free_region(0),
+  _free_list(NullEntry) { }
+
 RSHashTable::RSHashTable(size_t capacity) :
   _num_entries((capacity * TableOccupancyFactor) + 1),
   _capacity(capacity),
@@ -99,14 +114,19 @@ RSHashTable::RSHashTable(size_t capacity) :
 }
 
 RSHashTable::~RSHashTable() {
-  FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries);
-  FREE_C_HEAP_ARRAY(int, _buckets);
+  // Nothing to free for empty RSHashTable
+  if (_buckets != empty_buckets) {
+    assert(_entries != NULL, "invariant");
+    FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries);
+    FREE_C_HEAP_ARRAY(int, _buckets);
+  }
 }
 
 void RSHashTable::clear() {
+  assert(_buckets != empty_buckets, "Shouldn't call this for the empty_table");
   _occupied_entries = 0;
-  guarantee(_entries != NULL, "INV");
-  guarantee(_buckets != NULL, "INV");
+  guarantee(_entries != NULL, "invariant");
+  guarantee(_buckets != NULL, "invariant");
 
   guarantee(_capacity <= ((size_t)1 << (sizeof(int)*BitsPerByte-1)) - 1,
                 "_capacity too large");
@@ -119,6 +139,7 @@ void RSHashTable::clear() {
 }
 
 SparsePRT::AddCardResult RSHashTable::add_card(RegionIdx_t region_ind, CardIdx_t card_index) {
+  assert(this != &empty_table, "can't add a card to the empty table");
   SparsePRTEntry* e = entry_for_region_ind_create(region_ind);
   assert(e != NULL && e->r_ind() == region_ind,
          "Postcondition of call above.");
@@ -207,7 +228,7 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
 
 bool RSHashTableBucketIter::has_next(SparsePRTEntry*& entry) {
   while (_bl_ind == RSHashTable::NullEntry)  {
-    if (_tbl_ind == (int)_rsht->capacity() - 1) {
+    if (_tbl_ind + 1 >= _rsht->capacity()) {
       return false;
     }
     _tbl_ind++;
@@ -231,12 +252,14 @@ size_t RSHashTable::mem_size() const {
 // ----------------------------------------------------------------------
 
 SparsePRT::SparsePRT() :
-  _table(new RSHashTable(InitialCapacity)) {
+  _table(&RSHashTable::empty_table) {
 }
 
 
 SparsePRT::~SparsePRT() {
-  delete _table;
+  if (_table != &RSHashTable::empty_table) {
+    delete _table;
+  }
 }
 
 
@@ -262,23 +285,27 @@ bool SparsePRT::delete_entry(RegionIdx_t region_id) {
 }
 
 void SparsePRT::clear() {
-  // If the entry table is not at initial capacity, just create a new one.
-  if (_table->capacity() != InitialCapacity) {
-    delete _table;
-    _table = new RSHashTable(InitialCapacity);
-  } else {
+  // If the entry table not at initial capacity, just reset to the empty table.
+  if (_table->capacity() == InitialCapacity) {
     _table->clear();
+  } else if (_table != &RSHashTable::empty_table) {
+    delete _table;
+    _table = &RSHashTable::empty_table;
   }
 }
 
 void SparsePRT::expand() {
   RSHashTable* last = _table;
-  _table = new RSHashTable(last->capacity() * 2);
-  for (size_t i = 0; i < last->num_entries(); i++) {
-    SparsePRTEntry* e = last->entry((int)i);
-    if (e->valid_entry()) {
-      _table->add_entry(e);
+  if (last != &RSHashTable::empty_table) {
+    _table = new RSHashTable(last->capacity() * 2);
+    for (size_t i = 0; i < last->num_entries(); i++) {
+      SparsePRTEntry* e = last->entry((int)i);
+      if (e->valid_entry()) {
+        _table->add_entry(e);
+      }
     }
+    delete last;
+  } else {
+    _table = new RSHashTable(InitialCapacity);
   }
-  delete last;
 }

@@ -173,11 +173,15 @@ class RSHashTable : public CHeapObj<mtGC> {
   // deleted from any bucket lists.
   void free_entry(int fi);
 
+  // For the empty sentinel created at static initialization time
+  RSHashTable();
+
 public:
   RSHashTable(size_t capacity);
   ~RSHashTable();
 
   static const int NullEntry = -1;
+  static RSHashTable empty_table;
 
   bool should_expand() const { return _occupied_entries == _num_entries; }
 
@@ -215,8 +219,8 @@ public:
 
 // This is embedded in HRRS iterator.
 class RSHashTableBucketIter {
-  int _tbl_ind;         // [-1, 0.._rsht->_capacity)
-  int _bl_ind;          // [-1, 0.._rsht->_capacity)
+  uint _tbl_ind;        // [0.._rsht->_capacity)
+  int  _bl_ind;         // [-1, 0.._rsht->_capacity)
 
   RSHashTable* _rsht;
 
