@@ -23,8 +23,10 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8214751
  * @summary Test operations in C2 MulAddS2I and MulAddVS2VI nodes.
+ * @library /test/lib
  *
  * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
@@ -73,6 +75,7 @@
 
 package compiler.loopopts.superword;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class Vec_MulAddS2I {
         static final int NUM = 1024;
@@ -111,7 +114,7 @@ public class Vec_MulAddS2I {
         for (int i = 0; i < NUM; i++) {
             out[i] += ((in1[2*i] * in2[2*i]) + (in1[2*i+1] * in2[2*i+1]));
         }
-        Random rand = new Random();
+        Random rand = Utils.getRandomInstance();
         int n = rand.nextInt(NUM-1);
         return out[n];
     }

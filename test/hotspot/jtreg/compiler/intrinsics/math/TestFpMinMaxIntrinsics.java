@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,9 @@
  * @test
  * @bug 8212043
  * @summary Test compiler intrinsics of floating-point Math.min/max
+ * @library /test/lib
  *
+ * @comment the test isn't marked by 'randomness' b/c randomSearchTree case isn't used
  * @run main/othervm -Xint compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:TieredStopAtLevel=1
@@ -52,6 +54,7 @@ package compiler.intrinsics.math;
 import java.util.Arrays;
 import java.util.Random;
 import java.lang.reflect.Method;
+import jdk.test.lib.Utils;
 
 public class TestFpMinMaxIntrinsics {
 
@@ -198,7 +201,7 @@ public class TestFpMinMaxIntrinsics {
     private static final int COUNT = 1000;
     private static final int LOOPS = 100;
 
-    private static Random r = new Random();
+    private static Random r = Utils.getRandomInstance();
 
     private static Node[] pool = new Node[COUNT];
 

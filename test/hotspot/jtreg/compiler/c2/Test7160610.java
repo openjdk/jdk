@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,18 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7160610
  * @summary Unknown Native Code compilation issue.
- *
+ * @library /test/lib
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-OptimizeFill compiler.c2.Test7160610
  */
 
 package compiler.c2;
+
+import jdk.test.lib.Utils;
+
+import java.util.Random;
 
 public class Test7160610 {
   private static final byte[] BYTE_ARRAY = new byte[7];
@@ -37,14 +42,15 @@ public class Test7160610 {
   private static int[] anIntArray1191 = new int[32768];
 
   public static void main(String arg[]) {
+    Random rng = Utils.getRandomInstance();
     int i = 256;
     for(int j = BYTE_ARRAY[2]; j < anIntArray1190.length; j++) {
       anIntArray1190[j] = BYTE_ARRAY[2];
     }
 
     for(int k = BYTE_ARRAY[2]; (k ^ BYTE_ARRAY[1]) > -5001; k++) {
-      int i1 = (int)(Math.random() * 128D * (double)i);
-      anIntArray1190[i1] = (int)(Math.random() * 256D);
+      int i1 = (int)(rng.nextDouble() * 128D * (double)i);
+      anIntArray1190[i1] = (int)(rng.nextDouble() * 256D);
     }
 
     for(int l = BYTE_ARRAY[2]; (l ^ BYTE_ARRAY[1]) > -21; l++) {

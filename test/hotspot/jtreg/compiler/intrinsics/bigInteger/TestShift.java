@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8234692
  * @summary Add C2 x86 intrinsic for BigInteger::shiftLeft() and BigInteger::shiftRight() method
+ * @library /test/lib
  * @requires vm.compiler2.enabled
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
@@ -50,6 +52,7 @@ package compiler.intrinsics.bigInteger;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestShift {
 
@@ -97,9 +100,7 @@ public class TestShift {
       BigInteger [] oldRightShiftResult = new BigInteger[10];
       BigInteger [] newRightShiftResult = new BigInteger[10];
 
-      Random rand = new Random();
-      long seed = System.nanoTime();
-      rand.setSeed(seed);
+      Random rand = Utils.getRandomInstance();
       int shiftCount = rand.nextInt(30) + 1;
 
       for(int i = 0; i < inputbuffer.length; i++) {

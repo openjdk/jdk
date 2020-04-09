@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,6 @@ public class BMITestRunner {
      *   <li>-iterations=&lt;N&gt; each operation implemented by
      *       <b>expr</b> will be executed <i>N</i> times. Default value
      *       is 4000.</li>
-     *   <li>-seed=&lt;SEED&gt; arguments for <b>expr</b>'s methods
-     *       obtained via RNG initiated with seed <i>SEED</i>. By default
-     *       some random seed will be used.</li>
      * </ul>
      *
      * @param expr operation that should be tested
@@ -75,15 +72,15 @@ public class BMITestRunner {
                                 String... additionalVMOpts)
                          throws Throwable {
 
-        int seed = Utils.getRandomInstance().nextInt();
+        // ensure seed got printed out
+        Utils.getRandomInstance();
+        long seed = Utils.SEED;
         int iterations = DEFAULT_ITERATIONS_COUNT;
 
         for (String testOption : testOpts) {
             if (testOption.startsWith("-iterations=")) {
                 iterations = Integer.valueOf(testOption.
                                              replace("-iterations=", ""));
-            } else if (testOption.startsWith("-seed=")) {
-                seed = Integer.valueOf(testOption.replace("-seed=", ""));
             }
         }
 
@@ -119,7 +116,7 @@ public class BMITestRunner {
     public static OutputAnalyzer runTest(Class<? extends Expr> expr,
                                          VMMode testVMMode,
                                          String additionalVMOpts[],
-                                         int seed, int iterations)
+                                         long seed, int iterations)
                                   throws Throwable {
 
         List<String> vmOpts = new LinkedList<String>();
