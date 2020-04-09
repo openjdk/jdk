@@ -27,6 +27,7 @@ package sun.jvm.hotspot;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -80,6 +81,7 @@ import sun.jvm.hotspot.tools.PStack;
 import sun.jvm.hotspot.tools.StackTrace;
 import sun.jvm.hotspot.tools.jcore.ClassDump;
 import sun.jvm.hotspot.tools.jcore.ClassFilter;
+import sun.jvm.hotspot.tools.jcore.ClassWriter;
 import sun.jvm.hotspot.types.CIntegerType;
 import sun.jvm.hotspot.types.Field;
 import sun.jvm.hotspot.types.Type;
@@ -1700,6 +1702,66 @@ public class CommandProcessor {
                     usage();
                 } else {
                     Assert.ASSERTS_ENABLED = Boolean.valueOf(t.nextToken()).booleanValue();
+                }
+            }
+        },
+        new Command("dumpclass", "dumpclass {address | name} [directory]", false) {
+            public void doit(Tokens t) {
+                int tokenCount = t.countTokens();
+                if (tokenCount != 1 && tokenCount != 2) {
+                    usage();
+                    return;
+                }
+
+                /* Find the InstanceKlass for specified class name or class address. */
+                InstanceKlass ik = null;
+                String classname = t.nextToken();
+                if (classname.startsWith("0x")) {
+                    // treat it as address
+                    VM vm = VM.getVM();
+                    Address addr = vm.getDebugger().parseAddress(classname);
+                    Metadata metadata = Metadata.instantiateWrapperFor(addr.addOffsetTo(0));
+                    if (metadata instanceof InstanceKlass) {
+                        ik = (InstanceKlass) metadata;
+                    } else {
+                        System.out.println("Specified address is not an InstanceKlass");
+                        return;
+                    }
+                } else {
+                    ik = SystemDictionaryHelper.findInstanceKlass(classname);
+                    if (ik == null) {
+                        System.out.println("class not found: " + classname);
+                        return;
+                    }
+                }
+
+                /* Compute filename for class. */
+                StringBuffer buf = new StringBuffer();
+                if (tokenCount > 1) {
+                    buf.append(t.nextToken());
+                } else {
+                    buf.append('.');
+                }
+                buf.append(File.separatorChar);
+                buf.append(ik.getName().asString().replace('/', File.separatorChar));
+                buf.append(".class");
+                String fileName = buf.toString();
+                File file = new File(fileName);
+
+                /* Dump the class file. */
+                try {
+                    int index = fileName.lastIndexOf(File.separatorChar);
+                    File dir = new File(fileName.substring(0, index));
+                    dir.mkdirs();
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        ClassWriter cw = new ClassWriter(ik, fos);
+                        cw.write();
+                    }
+                } catch (Exception e) {
+                    err.println("Error: " + e);
+                    if (verboseExceptions) {
+                        e.printStackTrace(err);
+                    }
                 }
             }
         },
