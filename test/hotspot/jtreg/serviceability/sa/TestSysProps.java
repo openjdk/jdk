@@ -34,14 +34,38 @@ import jdk.test.lib.SA.SATestUtils;
 
 /**
  * @test
- * @bug 8242165
- * @summary Test "jhsdb jinfo --sysprops" and "jinfo -sysprops" commands
+ * @bug 8242165 8242162
+ * @summary Test "jhsdb jinfo --sysprops", "jinfo -sysprops", and clhsdb "sysprops" commands
  * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm TestSysProps
  */
 
 public class TestSysProps {
+    public static void findProp(String[] propLines, String propname, String cmdName) {
+        boolean found = false;
+        for (String propLine : propLines) {
+            if (propLine.startsWith(propname)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new RuntimeException("Could not find property in " + cmdName + " output: " + propname);
+        }
+    }
+
+    public static void countProps(String[] propLines, int expectedCount, String cmdName) {
+        int numProps = 0;
+        for (String propLine : propLines) {
+            if (propLine.indexOf("=") != -1) {
+                numProps++;
+            }
+        }
+        if (numProps != expectedCount) {
+            throw new RuntimeException("Wrong number of " + cmdName + " properties: " + numProps);
+        }
+    }
 
     public static void main (String... args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
@@ -52,7 +76,7 @@ public class TestSysProps {
             LingeredApp.startApp(app);
             System.out.println("Started LingeredAppSysProps with pid " + app.getPid());
 
-            // First get properties using the SA version of jinfo
+            // Get properties using the SA version of jinfo
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
             jhsdbLauncher.addToolArg("jinfo");
@@ -72,7 +96,7 @@ public class TestSysProps {
 
             jhsdbOut.shouldMatch("Debugger attached successfully.");
 
-            // Now get properties using the Attach API version of jinfo
+            // Get the properties using the Attach API version of jinfo
 
             JDKToolLauncher jinfoLauncher = JDKToolLauncher.createUsingTestJDK("jinfo");
             jinfoLauncher.addToolArg("-sysprops");
@@ -91,8 +115,17 @@ public class TestSysProps {
 
             jinfoOut.shouldMatch("Java System Properties:");
 
+            // Get the properties using "clhsdb sysprops".
+
+            System.out.println("clhsdb sysprops output:");
+            ClhsdbLauncher test = new ClhsdbLauncher();
+            List<String> cmds = List.of("sysprops");
+            String output = test.run(app.getPid(), cmds, null, null);
+            OutputAnalyzer clhsdbOut = new OutputAnalyzer(output);
+            clhsdbOut.shouldMatch("java.specification.version");
+
             // Get the output from LingeredAppSysProps, which has printed all the
-            // system properties from java.
+            // system properties using java.
 
             app.stopApp();
             System.out.println("LingeredAppSysProps output:");
@@ -108,12 +141,11 @@ public class TestSysProps {
 
             String[] jhsdbLines = jhsdbOut.getStdout().split("\\R");
             String[] jinfoLines = jinfoOut.getStdout().split("\\R");
+            String[] clhsdbLines = clhsdbOut.getStdout().split("\\R");
             String[] appLines   = app.getOutput().getStdout().split("\\R");
             int numAppProps = 0;
             boolean foundStartOfList = false;
             for (String appProp : appLines) {
-                boolean found;
-
                 // Skip any output that occurs before the first property
                 if (!foundStartOfList) {
                     if (appProp.indexOf("-- listing properties --") != -1) {
@@ -129,33 +161,14 @@ public class TestSysProps {
                 System.out.println("Found prop " + propname);
                 numAppProps++;
 
-                // Find the same property in "jhsdb jinfo" output
-                found = false;
-                for (String jhsdbProp : jhsdbLines) {
-                    if (appProp.startsWith(jhsdbProp)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    throw new RuntimeException("Could not find property in jhsdb jinfo output: " + propname);
-                }
-
-                // Find the same property in "jinfo" output
-                found = false;
-                for (String jinfoProp : jinfoLines) {
-                    if (jinfoProp.startsWith(propname)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    throw new RuntimeException("Could not find property in jinfo output: " + propname);
-                }
+                // Make sure we can find the property in each of the other 3 lists
+                findProp(jhsdbLines, propname, "jhsdb jinfo");
+                findProp(jinfoLines, propname, "jinfo");
+                findProp(clhsdbLines, propname, "clhsdb sysprops");
             }
 
             // Make sure we found a reasonable number of properties in the app output. It should
-            // be close to 44, but the spec only mandates 29, so this is what we check for. The
+            // be close to 45, but the spec only mandates 29, so this is what we check for. The
             // main reason for this check is just to make sure something didn't go drastically
             // wrong, resulting in no properties in the app output, meaning that no comparison
             // was actually done with the other sets of output.
@@ -164,27 +177,10 @@ public class TestSysProps {
                 throw new RuntimeException("Did not find at least 29 properties: " + numAppProps);
             }
 
-            // Make sure jhsdb list has the same number of properties.
-            int numJhsdbProps = 0;
-            for (String jhsdbProp : jhsdbLines) {
-                if (jhsdbProp.indexOf("=") != -1) {
-                    numJhsdbProps++;
-                }
-            }
-            if (numJhsdbProps != numAppProps) {
-                throw new RuntimeException("Wrong number of jhsdb jinfo properties: " + numJhsdbProps);
-            }
-
-            // Make sure jinfo list has the same number of properties.
-            int numJinfoProps = 0;
-            for (String jinfoProp : jhsdbLines) {
-                if (jinfoProp.indexOf("=") != -1) {
-                    numJinfoProps++;
-                }
-            }
-            if (numJinfoProps != numAppProps) {
-                throw new RuntimeException("Wrong number of jinfo properties: " + numJhsdbProps);
-            }
+            // Make sure each list has the same number of properties.
+            countProps(jhsdbLines, numAppProps, "jhsdb jinfo");
+            countProps(jinfoLines, numAppProps, "jinfo");
+            countProps(clhsdbLines, numAppProps, "clhsdb sysprops");
 
             System.out.println("Test Completed");
         } finally {

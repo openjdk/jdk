@@ -79,6 +79,7 @@ import sun.jvm.hotspot.tools.JMap;
 import sun.jvm.hotspot.tools.PMap;
 import sun.jvm.hotspot.tools.PStack;
 import sun.jvm.hotspot.tools.StackTrace;
+import sun.jvm.hotspot.tools.SysPropsDumper;
 import sun.jvm.hotspot.tools.jcore.ClassDump;
 import sun.jvm.hotspot.tools.jcore.ClassFilter;
 import sun.jvm.hotspot.tools.jcore.ClassWriter;
@@ -1763,6 +1764,16 @@ public class CommandProcessor {
                         e.printStackTrace(err);
                     }
                 }
+            }
+        },
+        new Command("sysprops", "sysprops", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                    return;
+                }
+                SysPropsDumper sysProps = new SysPropsDumper();
+                sysProps.run();
             }
         },
         new Command("dumpheap", "dumpheap [filename]", false) {
