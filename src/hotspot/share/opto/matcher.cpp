@@ -1918,105 +1918,6 @@ OptoReg::Name Matcher::find_receiver( bool is_outgoing ) {
   return OptoReg::as_OptoReg(regs.first());
 }
 
-// This function identifies sub-graphs in which a 'load' node is
-// input to two different nodes, and such that it can be matched
-// with BMI instructions like blsi, blsr, etc.
-// Example : for b = -a[i] & a[i] can be matched to blsi r32, m32.
-// The graph is (AndL (SubL Con0 LoadL*) LoadL*), where LoadL*
-// refers to the same node.
-#ifdef X86
-// Match the generic fused operations pattern (op1 (op2 Con{ConType} mop) mop)
-// This is a temporary solution until we make DAGs expressible in ADL.
-template<typename ConType>
-class FusedPatternMatcher {
-  Node* _op1_node;
-  Node* _mop_node;
-  int _con_op;
-
-  static int match_next(Node* n, int next_op, int next_op_idx) {
-    if (n->in(1) == NULL || n->in(2) == NULL) {
-      return -1;
-    }
-
-    if (next_op_idx == -1) { // n is commutative, try rotations
-      if (n->in(1)->Opcode() == next_op) {
-        return 1;
-      } else if (n->in(2)->Opcode() == next_op) {
-        return 2;
-      }
-    } else {
-      assert(next_op_idx > 0 && next_op_idx <= 2, "Bad argument index");
-      if (n->in(next_op_idx)->Opcode() == next_op) {
-        return next_op_idx;
-      }
-    }
-    return -1;
-  }
-public:
-  FusedPatternMatcher(Node* op1_node, Node *mop_node, int con_op) :
-    _op1_node(op1_node), _mop_node(mop_node), _con_op(con_op) { }
-
-  bool match(int op1, int op1_op2_idx,  // op1 and the index of the op1->op2 edge, -1 if op1 is commutative
-             int op2, int op2_con_idx,  // op2 and the index of the op2->con edge, -1 if op2 is commutative
-             typename ConType::NativeType con_value) {
-    if (_op1_node->Opcode() != op1) {
-      return false;
-    }
-    if (_mop_node->outcnt() > 2) {
-      return false;
-    }
-    op1_op2_idx = match_next(_op1_node, op2, op1_op2_idx);
-    if (op1_op2_idx == -1) {
-      return false;
-    }
-    // Memory operation must be the other edge
-    int op1_mop_idx = (op1_op2_idx & 1) + 1;
-
-    // Check that the mop node is really what we want
-    if (_op1_node->in(op1_mop_idx) == _mop_node) {
-      Node *op2_node = _op1_node->in(op1_op2_idx);
-      if (op2_node->outcnt() > 1) {
-        return false;
-      }
-      assert(op2_node->Opcode() == op2, "Should be");
-      op2_con_idx = match_next(op2_node, _con_op, op2_con_idx);
-      if (op2_con_idx == -1) {
-        return false;
-      }
-      // Memory operation must be the other edge
-      int op2_mop_idx = (op2_con_idx & 1) + 1;
-      // Check that the memory operation is the same node
-      if (op2_node->in(op2_mop_idx) == _mop_node) {
-        // Now check the constant
-        const Type* con_type = op2_node->in(op2_con_idx)->bottom_type();
-        if (con_type != Type::TOP && ConType::as_self(con_type)->get_con() == con_value) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-};
-
-
-bool Matcher::is_bmi_pattern(Node *n, Node *m) {
-  if (n != NULL && m != NULL) {
-    if (m->Opcode() == Op_LoadI) {
-      FusedPatternMatcher<TypeInt> bmii(n, m, Op_ConI);
-      return bmii.match(Op_AndI, -1, Op_SubI,  1,  0)  ||
-             bmii.match(Op_AndI, -1, Op_AddI, -1, -1)  ||
-             bmii.match(Op_XorI, -1, Op_AddI, -1, -1);
-    } else if (m->Opcode() == Op_LoadL) {
-      FusedPatternMatcher<TypeLong> bmil(n, m, Op_ConL);
-      return bmil.match(Op_AndL, -1, Op_SubL,  1,  0) ||
-             bmil.match(Op_AndL, -1, Op_AddL, -1, -1) ||
-             bmil.match(Op_XorL, -1, Op_AddL, -1, -1);
-    }
-  }
-  return false;
-}
-#endif // X86
-
 bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
   if (n != NULL && m != NULL) {
     return VectorNode::is_vector_shift(n) &&
@@ -2025,6 +1926,20 @@ bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
   return false;
 }
 
+
+bool Matcher::clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  // Must clone all producers of flags, or we will not match correctly.
+  // Suppose a compare setting int-flags is shared (e.g., a switch-tree)
+  // then it will match into an ideal Op_RegFlags.  Alas, the fp-flags
+  // are also there, so we may match a float-branch to int-flags and
+  // expect the allocator to haul the flags from the int-side to the
+  // fp-side.  No can do.
+  if (_must_clone[m->Opcode()]) {
+    mstack.push(m, Visit);
+    return true;
+  }
+  return pd_clone_node(n, m, mstack);
+}
 
 bool Matcher::clone_base_plus_offset_address(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   Node *off = m->in(AddPNode::Offset);
@@ -2045,7 +1960,7 @@ bool Matcher::clone_base_plus_offset_address(AddPNode* m, Matcher::MStack& mstac
 
 //------------------------------find_shared------------------------------------
 // Set bits if Node is shared or otherwise a root
-void Matcher::find_shared( Node *n ) {
+void Matcher::find_shared(Node* n) {
   // Allocate stack of size C->live_nodes() * 2 to avoid frequent realloc
   MStack mstack(C->live_nodes() * 2);
   // Mark nodes as address_visited if they are inputs to an address expression
@@ -2083,36 +1998,17 @@ void Matcher::find_shared( Node *n ) {
       if (find_shared_visit(mstack, n, nop, mem_op, mem_addr_idx)) {
         continue;
       }
-      for(int i = n->req() - 1; i >= 0; --i) { // For my children
-        Node *m = n->in(i); // Get ith input
-        if (m == NULL) continue;  // Ignore NULLs
-        uint mop = m->Opcode();
-
-        // Must clone all producers of flags, or we will not match correctly.
-        // Suppose a compare setting int-flags is shared (e.g., a switch-tree)
-        // then it will match into an ideal Op_RegFlags.  Alas, the fp-flags
-        // are also there, so we may match a float-branch to int-flags and
-        // expect the allocator to haul the flags from the int-side to the
-        // fp-side.  No can do.
-        if( _must_clone[mop] ) {
-          mstack.push(m, Visit);
-          continue; // for(int i = ...)
+      for (int i = n->req() - 1; i >= 0; --i) { // For my children
+        Node* m = n->in(i); // Get ith input
+        if (m == NULL) {
+          continue;  // Ignore NULLs
         }
-
-        // if 'n' and 'm' are part of a graph for BMI instruction, clone this node.
-#ifdef X86
-        if (UseBMI1Instructions && is_bmi_pattern(n, m)) {
-          mstack.push(m, Visit);
-          continue;
-        }
-#endif
-        if (is_vshift_con_pattern(n, m)) {
-          mstack.push(m, Visit);
+        if (clone_node(n, m, mstack)) {
           continue;
         }
 
         // Clone addressing expressions as they are "free" in memory access instructions
-        if (mem_op && i == mem_addr_idx && mop == Op_AddP &&
+        if (mem_op && i == mem_addr_idx && m->is_AddP() &&
             // When there are other uses besides address expressions
             // put it on stack and mark as shared.
             !is_visited(m)) {
@@ -2122,7 +2018,7 @@ void Matcher::find_shared( Node *n ) {
           // But they should be marked as shared if there are other uses
           // besides address expressions.
 
-          if (clone_address_expressions(m->as_AddP(), mstack, address_visited)) {
+          if (pd_clone_address_expressions(m->as_AddP(), mstack, address_visited)) {
             continue;
           }
         }   // if( mem_op &&
