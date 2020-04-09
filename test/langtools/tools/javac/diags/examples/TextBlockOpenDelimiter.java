@@ -21,10 +21,7 @@
  * questions.
  */
 
- // key: compiler.warn.preview.feature.use.plural
- // key: compiler.misc.feature.text.blocks
- // key: compiler.err.illegal.text.block.open
- // options: --enable-preview -source ${jdk.version} -Xlint:preview
+  // key: compiler.err.illegal.text.block.open
 
 class TextBlockOpenDelimiter {
     String m() {

@@ -55,7 +55,7 @@ public @interface PreviewFeature {
 
     public enum Feature {
         PATTERN_MATCHING_IN_INSTANCEOF,
-        TEXT_BLOCKS,
+        TEXT_BLOCKS, // 8242284: needs to be removed after JDK 15
         RECORDS,
         ;
     }

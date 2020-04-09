@@ -58,7 +58,7 @@ public class TextBlockAPI {
      */
     static void test1() {
         for (String lineterminators : new String[] { "\n", "\r", "\r\n" })
-        for (String whitespace : new String[] { "", "   ", "\t", "\u2002" })
+        for (String whitespace : new String[] { "", "   ", "\t", "\f" })
         for (String content : new String[] { "a", "ab", "abc", "\u2022", "*".repeat(1000), "*".repeat(10000) })  {
             String code =
                     "public class CorrectTest {\n" +
@@ -126,10 +126,9 @@ public class TextBlockAPI {
             new JavacTask(TOOLBOX)
                     .sources(code)
                     .classpath(".")
-                    .options("--enable-preview", "-source", JDK_VERSION, "-encoding", "utf8")
+                    .options("-encoding", "utf8")
                     .run();
             String output = new JavaTask(TOOLBOX)
-                    .vmOptions("--enable-preview")
                     .classpath(".")
                     .classArgs("LineTerminatorTest")
                     .run()
@@ -210,7 +209,7 @@ public class TextBlockAPI {
         new JavacTask(TOOLBOX)
             .sources(code)
             .classpath(".")
-            .options("--enable-preview", "-source", JDK_VERSION, "-encoding", "utf8", "-Xlint")
+            .options("-encoding", "utf8", "-Xlint")
             .run();
      }
 
@@ -221,7 +220,7 @@ public class TextBlockAPI {
         String output = new JavacTask(TOOLBOX)
                 .sources(source)
                 .classpath(".")
-                .options("--enable-preview", "-source", JDK_VERSION, "-encoding", "utf8")
+                .options("-encoding", "utf8")
                 .run()
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -242,7 +241,7 @@ public class TextBlockAPI {
         String errors = new JavacTask(TOOLBOX)
                 .sources(source)
                 .classpath(".")
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", JDK_VERSION, "-encoding", "utf8")
+                .options("-XDrawDiagnostics", "-encoding", "utf8")
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);

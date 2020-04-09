@@ -21,11 +21,15 @@
  * questions.
  */
 
- // key: compiler.err.unclosed.text.block
+ // key: compiler.misc.feature.text.blocks
+ // key: compiler.err.feature.not.supported.in.source.plural
+ // key: compiler.warn.source.no.system.modules.path
+ // options: -source 14
 
-class TextBlockCloseDelimiter {
+class TextBlockSource {
     String m() {
         return """
-               ;
+               abc
+               """;
     }
 }

@@ -21,11 +21,9 @@
  * questions.
  */
 
- // key: compiler.warn.preview.feature.use.plural
- // key: compiler.misc.feature.text.blocks
  // key: compiler.warn.inconsistent.white.space.indentation
  // key: compiler.warn.trailing.white.space.will.be.removed
- // options: --enable-preview -source ${jdk.version} -Xlint:preview,text-blocks
+ // options: -Xlint:text-blocks
 
 class TextBlockWhitespace {
     String m() {
