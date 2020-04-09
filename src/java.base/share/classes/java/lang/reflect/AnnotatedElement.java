@@ -38,20 +38,38 @@ import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.AnnotationType;
 
 /**
- * Represents an annotated element of the program currently running in this
- * VM.  This interface allows annotations to be read reflectively.  All
+ * Represents an annotated construct of the program currently running
+ * in this VM.
+ *
+ * A construct is either an element or a type. Annotations on an
+ * element are on a <em>declaration</em>, whereas annotations on a
+ * type are on a specific <em>use</em> of a type name.
+ *
+ * As defined by <cite>The Java&trade; Language Specification</cite>
+ * section {@jls 9.7.4}, an annotation on an element is a
+ * <em>declaration annotation</em> and an annotation on a type is a
+ * <em>type annotation</em>.
+ *
+ * Note that any annotations returned by methods on the {@link
+ * AnnotatedType AnnotatedType} interface and its subinterfaces are
+ * type annotations as the entity being potentially annotated is a
+ * type. Annotations returned by methods outside of the {@code
+ * AnnotatedType} hierarchy are declaration annotations.
+ *
+ * <p>This interface allows annotations to be read reflectively.  All
  * annotations returned by methods in this interface are immutable and
- * serializable. The arrays returned by methods of this interface may be modified
- * by callers without affecting the arrays returned to other callers.
+ * serializable. The arrays returned by methods of this interface may
+ * be modified by callers without affecting the arrays returned to
+ * other callers.
  *
  * <p>The {@link #getAnnotationsByType(Class)} and {@link
  * #getDeclaredAnnotationsByType(Class)} methods support multiple
  * annotations of the same type on an element. If the argument to
- * either method is a repeatable annotation type (JLS 9.6), then the
- * method will "look through" a container annotation (JLS 9.7), if
- * present, and return any annotations inside the container. Container
- * annotations may be generated at compile-time to wrap multiple
- * annotations of the argument type.
+ * either method is a repeatable annotation type (JLS {@jls 9.6}),
+ * then the method will "look through" a container annotation (JLS
+ * {@jls 9.7}), if present, and return any annotations inside the
+ * container. Container annotations may be generated at compile-time
+ * to wrap multiple annotations of the argument type.
  *
  * <p>The terms <em>directly present</em>, <em>indirectly present</em>,
  * <em>present</em>, and <em>associated</em> are used throughout this
@@ -260,8 +278,8 @@ public interface AnnotatedElement {
      * <p>The truth value returned by this method is equivalent to:
      * {@code getAnnotation(annotationClass) != null}
      *
-     * <p>The body of the default method is specified to be the code
-     * above.
+     * @implSpec The default implementation returns {@code
+     * getAnnotation(annotationClass) != null}.
      *
      * @param annotationClass the Class object corresponding to the
      *        annotation type
@@ -310,7 +328,7 @@ public interface AnnotatedElement {
      *
      * The difference between this method and {@link #getAnnotation(Class)}
      * is that this method detects if its argument is a <em>repeatable
-     * annotation type</em> (JLS 9.6), and if so, attempts to find one or
+     * annotation type</em> (JLS {@jls 9.6}), and if so, attempts to find one or
      * more annotations of that type by "looking through" a container
      * annotation.
      *
@@ -406,7 +424,7 @@ public interface AnnotatedElement {
      *
      * The difference between this method and {@link
      * #getDeclaredAnnotation(Class)} is that this method detects if its
-     * argument is a <em>repeatable annotation type</em> (JLS 9.6), and if so,
+     * argument is a <em>repeatable annotation type</em> (JLS {@jls 9.6}), and if so,
      * attempts to find one or more annotations of that type by "looking
      * through" a container annotation if one is present.
      *

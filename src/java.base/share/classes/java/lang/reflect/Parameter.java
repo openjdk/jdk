@@ -75,6 +75,7 @@ public final class Parameter implements AnnotatedElement {
      * @param obj The object to compare.
      * @return Whether or not this is equal to the argument.
      */
+    @Override
     public boolean equals(Object obj) {
         if(obj instanceof Parameter) {
             Parameter other = (Parameter)obj;
@@ -90,6 +91,7 @@ public final class Parameter implements AnnotatedElement {
      *
      * @return A hash code based on the executable's hash code.
      */
+    @Override
     public int hashCode() {
         return executable.hashCode() ^ index;
     }
@@ -120,6 +122,7 @@ public final class Parameter implements AnnotatedElement {
      * @return A string representation of the parameter and associated
      * information.
      */
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         final Type type = getParameterizedType();
@@ -280,8 +283,11 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * {@inheritDoc}
+     * <p>Note that any annotation returned by this method is a
+     * declaration annotation.
      * @throws NullPointerException {@inheritDoc}
      */
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
         return annotationClass.cast(declaredAnnotations().get(annotationClass));
@@ -289,6 +295,9 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
+     *
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -300,14 +309,22 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      */
+    @Override
     public Annotation[] getDeclaredAnnotations() {
         return executable.getParameterAnnotations()[index];
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotation returned by this method is a
+     * declaration annotation.
+     *
      * @throws NullPointerException {@inheritDoc}
      */
+    @Override
     public <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass) {
         // Only annotations on classes are inherited, for all other
         // objects getDeclaredAnnotation is the same as
@@ -316,6 +333,10 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
+     *
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -328,7 +349,10 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      */
+    @Override
     public Annotation[] getAnnotations() {
         return getDeclaredAnnotations();
     }

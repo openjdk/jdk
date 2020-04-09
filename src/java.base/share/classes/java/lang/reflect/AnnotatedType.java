@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,17 @@
 
 package java.lang.reflect;
 
+import java.lang.annotation.Annotation;
+
 /**
  * {@code AnnotatedType} represents the potentially annotated use of a type in
  * the program currently running in this VM. The use may be of any type in the
  * Java programming language, including an array type, a parameterized type, a
  * type variable, or a wildcard type.
+ *
+ * Note that any annotations returned by methods on this interface are
+ * <em>type annotations</em> (JLS {@jls 9.7.4}) as the entity being
+ * potentially annotated is a type.
  *
  * @since 1.8
  */
@@ -72,4 +78,30 @@ public interface AnnotatedType extends AnnotatedElement {
      * @return the type this annotated type represents
      */
     public Type getType();
+
+    /**
+     * {@inheritDoc}
+     * <p>Note that any annotation returned by this method is a type
+     * annotation.
+     *
+     * @throws NullPointerException {@inheritDoc}
+     */
+    @Override
+    <T extends Annotation> T getAnnotation(Class<T> annotationClass);
+
+    /**
+     * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are type
+     * annotations.
+     */
+    @Override
+    Annotation[] getAnnotations();
+
+    /**
+     * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are type
+     * annotations.
+     */
+    @Override
+    Annotation[] getDeclaredAnnotations();
 }

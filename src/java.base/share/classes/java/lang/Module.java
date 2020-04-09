@@ -1381,6 +1381,9 @@ public final class Module implements AnnotatedElement {
     /**
      * {@inheritDoc}
      * This method returns {@code null} when invoked on an unnamed module.
+     *
+     * <p> Note that any annotation returned by this method is a
+     * declaration annotation.
      */
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
@@ -1390,6 +1393,9 @@ public final class Module implements AnnotatedElement {
     /**
      * {@inheritDoc}
      * This method returns an empty array when invoked on an unnamed module.
+     *
+     * <p> Note that any annotations returned by this method are
+     * declaration annotations.
      */
     @Override
     public Annotation[] getAnnotations() {
@@ -1399,6 +1405,9 @@ public final class Module implements AnnotatedElement {
     /**
      * {@inheritDoc}
      * This method returns an empty array when invoked on an unnamed module.
+     *
+     * <p> Note that any annotations returned by this method are
+     * declaration annotations.
      */
     @Override
     public Annotation[] getDeclaredAnnotations() {

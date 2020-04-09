@@ -180,6 +180,9 @@ public final class RecordComponent implements AnnotatedElement {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotation returned by this method is a
+     * declaration annotation.
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -215,6 +218,8 @@ public final class RecordComponent implements AnnotatedElement {
 
     /**
      * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      */
     @Override
     public Annotation[] getAnnotations() {
@@ -223,6 +228,8 @@ public final class RecordComponent implements AnnotatedElement {
 
     /**
      * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      */
     @Override
     public Annotation[] getDeclaredAnnotations() { return AnnotationParser.toArray(declaredAnnotations()); }
