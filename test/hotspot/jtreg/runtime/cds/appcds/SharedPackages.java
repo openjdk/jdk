@@ -44,7 +44,6 @@ public class SharedPackages {
                                                     "sun/tools/javac/Main",
                                                     "jdk/nio/zipfs/ZipInfo",
                                                     "java/net/URL",
-                                                    "sun/rmi/rmic/Main",
                                                     "com/sun/jndi/dns/DnsName"));
 
         OutputAnalyzer output;
