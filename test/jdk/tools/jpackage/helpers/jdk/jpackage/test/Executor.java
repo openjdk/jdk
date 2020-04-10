@@ -171,6 +171,10 @@ public final class Executor extends CommandArguments<Executor> {
             return assertExitCodeIs(0);
         }
 
+        public int getExitCode() {
+            return exitCode;
+        }
+
         final int exitCode;
         private List<String> output;
     }
