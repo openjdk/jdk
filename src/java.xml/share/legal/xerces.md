@@ -1,4 +1,4 @@
-## Apache Xerces v2.12.0
+## Apache Xerces v2.12.1
 
 ### Apache Xerces Notice
 <pre>
@@ -8,9 +8,11 @@
     =========================================================================
     
     Apache Xerces Java
-    Copyright 1999-2018 The Apache Software Foundation
+    Copyright 1999-2020 The Apache Software Foundation
+
     This product includes software developed at
     The Apache Software Foundation (http://www.apache.org/).
+
     Portions of this software were originally based on the following:
     - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
     - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
