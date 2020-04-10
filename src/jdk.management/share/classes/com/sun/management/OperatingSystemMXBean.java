@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,11 +110,11 @@ public interface OperatingSystemMXBean extends
     /**
      * Returns the total amount of physical memory in bytes.
      *
-     * @deprecated Use {@link #getMemorySize()} instead of
+     * @deprecated Use {@link #getTotalMemorySize()} instead of
      * this historically named method.
      *
      * @implSpec This implementation must return the same value
-     * as {@link #getMemorySize()}.
+     * as {@link #getTotalMemorySize()}.
      *
      * @return the total amount of physical memory in  bytes.
      */
