@@ -462,12 +462,6 @@ int os::Linux::get_fpu_control_word(void) {
 void os::Linux::set_fpu_control_word(int fpu_control) {
 }
 
-// Check that the linux kernel version is 2.4 or higher since earlier
-// versions do not support SSE without patches.
-bool os::supports_sse() {
-  return true;
-}
-
 bool os::is_allocatable(size_t bytes) {
   return true;
 }
