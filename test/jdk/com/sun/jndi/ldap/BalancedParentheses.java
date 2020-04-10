@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class BalancedParentheses {
         }
 
         // set up the environment for creating the initial context
-        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        Hashtable<Object, Object> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                                 "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, "ldap://localhost:" + serverPort);
@@ -121,7 +121,7 @@ public class BalancedParentheses {
         scs.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
         try {
-            NamingEnumeration answer = context.search(
+            NamingEnumeration<SearchResult> answer = context.search(
                                         "o=sun,c=us", "(&(cn=Bob)))", scs);
         } catch (InvalidSearchFilterException isfe) {
             // ignore, it is the expected filter exception.
@@ -132,7 +132,7 @@ public class BalancedParentheses {
         }
 
         try {
-            NamingEnumeration answer = context.search(
+            NamingEnumeration<SearchResult> answer = context.search(
                                         "o=sun,c=us", ")(&(cn=Bob)", scs);
         } catch (InvalidSearchFilterException isfe) {
             // ignore, it is the expected filter exception.
@@ -143,7 +143,7 @@ public class BalancedParentheses {
         }
 
         try {
-            NamingEnumeration answer = context.search(
+            NamingEnumeration<SearchResult> answer = context.search(
                                         "o=sun,c=us", "(&(cn=Bob))", scs);
         } catch (InvalidSearchFilterException isfe) {
             // ignore, it is the expected filter exception.

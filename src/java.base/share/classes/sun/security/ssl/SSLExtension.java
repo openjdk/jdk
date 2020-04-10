@@ -142,7 +142,7 @@ enum SSLExtension implements SSLStringizer {
                                 SupportedGroupsExtension.chOnLoadConsumer,
                                 null,
                                 null,
-                                null,
+                                SupportedGroupsExtension.chOnTradAbsence,
                                 SupportedGroupsExtension.sgsStringizer),
     EE_SUPPORTED_GROUPS     (0x000A, "supported_groups",
                                 SSLHandshake.ENCRYPTED_EXTENSIONS,
@@ -416,7 +416,9 @@ enum SSLExtension implements SSLStringizer {
                                 ProtocolVersion.PROTOCOLS_OF_13,
                                 KeyShareExtension.chNetworkProducer,
                                 KeyShareExtension.chOnLoadConsumer,
-                                null, null, null,
+                                null,
+                                null,
+                                KeyShareExtension.chOnTradAbsence,
                                 KeyShareExtension.chStringizer),
     SH_KEY_SHARE            (0x0033, "key_share",
                                 SSLHandshake.SERVER_HELLO,
@@ -469,7 +471,7 @@ enum SSLExtension implements SSLStringizer {
                                 PreSharedKeyExtension.chOnLoadConsumer,
                                 PreSharedKeyExtension.chOnLoadAbsence,
                                 PreSharedKeyExtension.chOnTradeConsumer,
-                                null,
+                                PreSharedKeyExtension.chOnTradAbsence,
                                 PreSharedKeyExtension.chStringizer),
     SH_PRE_SHARED_KEY       (0x0029, "pre_shared_key",
                                 SSLHandshake.SERVER_HELLO,
@@ -641,7 +643,8 @@ enum SSLExtension implements SSLStringizer {
     }
 
     @Override
-    public String toString(ByteBuffer byteBuffer) {
+    public String toString(
+            HandshakeContext handshakeContext, ByteBuffer byteBuffer) {
         MessageFormat messageFormat = new MessageFormat(
             "\"{0} ({1})\": '{'\n" +
             "{2}\n" +
@@ -654,7 +657,7 @@ enum SSLExtension implements SSLStringizer {
             String encoded = hexEncoder.encode(byteBuffer.duplicate());
             extData = encoded;
         } else {
-            extData = stringizer.toString(byteBuffer);
+            extData = stringizer.toString(handshakeContext, byteBuffer);
         }
 
         Object[] messageFields = {

@@ -69,7 +69,7 @@ import sun.security.util.ObjectIdentifier;
  * the purpose indicated. Certificate using applications may
  * nevertheless require that a particular purpose be indicated in
  * order for the certificate to be acceptable to that application.<p>
-
+ *
  * If a certificate contains both a critical key usage field and a
  * critical extended key usage field, then both fields MUST be
  * processed independently and the certificate MUST only be used for a

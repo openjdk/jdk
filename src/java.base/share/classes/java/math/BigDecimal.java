@@ -104,7 +104,7 @@ import java.util.Objects;
  * determines how any discarded trailing digits affect the returned
  * result.
  *
- * <p>For all arithmetic operators , the operation is carried out as
+ * <p>For all arithmetic operators, the operation is carried out as
  * though an exact intermediate result were first calculated and then
  * rounded to the number of digits specified by the precision setting
  * (if necessary), using the selected rounding mode.  If the exact
@@ -4323,7 +4323,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return asInt;
     }
 
-   /**
+    /**
      * Returns the compact value for given {@code BigInteger}, or
      * INFLATED if too big. Relies on internal representation of
      * {@code BigInteger}.

@@ -38,7 +38,7 @@ import javax.lang.model.element.VariableElement;
  *  deletion without notice.</b>
  */
 
-public interface FieldWriter {
+public interface FieldWriter extends MemberWriter {
 
     /**
      * Get the field details tree header.
@@ -96,14 +96,6 @@ public interface FieldWriter {
      * @return content tree for the field details
      */
     Content getFieldDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
-
-    /**
-     * Get the field documentation.
-     *
-     * @param fieldDocTree the content tree representing field documentation
-     * @return content tree for the field documentation
-     */
-    Content getFieldDoc(Content fieldDocTree);
 
     /**
      * Gets the member header tree.

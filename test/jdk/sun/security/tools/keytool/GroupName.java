@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020,                                    Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class GroupName {
                 .shouldNotContain("Specifying -keysize for generating EC keys is deprecated");
         checkCurveName("e", "secp256r1");
 
-        gen("f", "-keyalg EC -groupname brainpoolP256r1")
+        gen("f", "-J-Djdk.sunec.disableNative=false -keyalg EC -groupname brainpoolP256r1")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("Specifying -keysize for generating EC keys is deprecated");
         checkCurveName("f", "brainpoolP256r1");

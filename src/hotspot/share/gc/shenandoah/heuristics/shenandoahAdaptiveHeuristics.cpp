@@ -27,7 +27,7 @@
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "utilities/quickSort.hpp"
@@ -60,9 +60,9 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
   size_t capacity    = ShenandoahHeap::heap()->max_capacity();
-  size_t free_target = capacity / 100 * ShenandoahMinFreeThreshold;
-  size_t min_garbage = free_target > actual_free ? (free_target - actual_free) : 0;
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
+  size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
+  size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
 
   log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " SIZE_FORMAT "%s, Actual Free: "
                      SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s, Min Garbage: " SIZE_FORMAT "%s",
@@ -76,7 +76,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
   size_t cur_cset = 0;
   size_t cur_garbage = 0;
-  _bytes_in_cset = 0;
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx]._region;
@@ -90,7 +89,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
     if ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)) {
       cset->add_region(r);
-      _bytes_in_cset += r->used();
       cur_cset = new_cset;
       cur_garbage = new_garbage;
     }

@@ -609,7 +609,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     char* name = strdup(jvmci_env()->as_utf8_string(stubName));
     cb = RuntimeStub::new_runtime_stub(name,
                                        &buffer,
-                                       CodeOffsets::frame_never_safe,
+                                       _offsets.value(CodeOffsets::Frame_Complete),
                                        stack_slots,
                                        _debug_recorder->_oopmaps,
                                        false);
@@ -1320,6 +1320,9 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
         break;
       case DEOPT_HANDLER_ENTRY:
         _offsets.set_value(CodeOffsets::Deopt, pc_offset);
+        break;
+      case FRAME_COMPLETE:
+        _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);
         break;
       case INVOKEVIRTUAL:
       case INVOKEINTERFACE:

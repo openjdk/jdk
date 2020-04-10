@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,16 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 8.3.0
-ifeq ($(GCC_VER), 8.3.0)
+GCC_VER := 9.2.0
+ifeq ($(GCC_VER), 9.2.0)
+  gcc_ver := gcc-9.2.0
+  binutils_ver := binutils-2.34
+  ccache_ver := 3.7.3
+  mpfr_ver := mpfr-3.1.5
+  gmp_ver := gmp-6.1.2
+  mpc_ver := mpc-1.0.3
+  gdb_ver := gdb-8.3
+else ifeq ($(GCC_VER), 8.3.0)
   gcc_ver := gcc-8.3.0
   binutils_ver := binutils-2.32
   ccache_ver := 3.7.3

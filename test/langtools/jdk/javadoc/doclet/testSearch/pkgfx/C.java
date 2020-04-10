@@ -26,13 +26,11 @@ package pkgfx;
 public class C {
 
     /**
-     * @propertySetter Property
      * @propertyDescription PropertyDescription
      */
     public void CC() {}
 
     /**
-     * @propertyGetter Property
      *
      */
     public void B() {}

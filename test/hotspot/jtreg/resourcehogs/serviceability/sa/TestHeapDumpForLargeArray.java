@@ -21,23 +21,11 @@
  * questions.
  */
 
-import java.util.ArrayList;
-import java.util.List;
 import java.io.File;
-import java.nio.file.Files;
-import java.io.IOException;
-import java.io.BufferedInputStream;
 import java.util.stream.Collectors;
-import java.io.FileInputStream;
-
-import sun.jvm.hotspot.HotSpotAgent;
-import sun.jvm.hotspot.debugger.*;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
@@ -104,7 +92,7 @@ public class TestHeapDumpForLargeArray {
                 "-Xmx8g");
 
             theApp = new LingeredAppWithLargeArray();
-            LingeredApp.startApp(theApp, vmArgs);
+            LingeredApp.startAppExactJvmOpts(theApp, vmArgs);
             attachAndDump(heapDumpFileName, theApp.getPid());
         } finally {
             LingeredApp.stopApp(theApp);

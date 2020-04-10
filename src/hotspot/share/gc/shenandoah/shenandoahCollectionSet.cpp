@@ -26,6 +26,7 @@
 
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
@@ -83,39 +84,14 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(!is_in(r), "Already in collection set");
-  _cset_map[r->region_number()] = 1;
+  _cset_map[r->index()] = 1;
   _region_count ++;
   _garbage += r->garbage();
   _live_data += r->get_live_data_bytes();
   _used += r->used();
-}
 
-bool ShenandoahCollectionSet::add_region_check_for_duplicates(ShenandoahHeapRegion* r) {
-  if (!is_in(r)) {
-    add_region(r);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void ShenandoahCollectionSet::remove_region(ShenandoahHeapRegion* r) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(Thread::current()->is_VM_thread(), "Must be VMThread");
-  assert(is_in(r), "Not in collection set");
-  _cset_map[r->region_number()] = 0;
-  _region_count --;
-}
-
-void ShenandoahCollectionSet::update_region_status() {
-  for (size_t index = 0; index < _heap->num_regions(); index ++) {
-    ShenandoahHeapRegion* r = _heap->get_region(index);
-    if (is_in(r)) {
-      r->make_cset();
-    } else {
-      assert (!r->is_cset(), "should not be cset");
-    }
-  }
+  // Update the region status too. State transition would be checked internally.
+  r->make_cset();
 }
 
 void ShenandoahCollectionSet::clear() {

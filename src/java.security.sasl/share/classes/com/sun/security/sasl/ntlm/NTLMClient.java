@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,48 +42,48 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 /**
-  * Required callbacks:
-  * - RealmCallback
-  *    handle can provide domain info for authentication, optional
-  * - NameCallback
-  *    handler must enter username to use for authentication
-  * - PasswordCallback
-  *    handler must enter password for username to use for authentication
-  *
-  * Environment properties that affect behavior of implementation:
-  *
-  * javax.security.sasl.qop
-  *    String, quality of protection; only "auth" is accepted, default "auth"
-  *
-  * com.sun.security.sasl.ntlm.version
-  *    String, name a specific version to use; can be:
-  *      LM/NTLM: Original NTLM v1
-  *      LM: Original NTLM v1, LM only
-  *      NTLM: Original NTLM v1, NTLM only
-  *      NTLM2: NTLM v1 with Client Challenge
-  *      LMv2/NTLMv2: NTLM v2
-  *      LMv2: NTLM v2, LM only
-  *      NTLMv2: NTLM v2, NTLM only
-  *    If not specified, use system property "ntlm.version". If
-  *    still not specified, use default value "LMv2/NTLMv2".
-  *
-  * com.sun.security.sasl.ntlm.random
-  *    java.util.Random, the nonce source to be used in NTLM v2 or NTLM v1 with
-  *    Client Challenge. Default null, an internal java.util.Random object
-  *    will be used
-  *
-  * Negotiated Properties:
-  *
-  * javax.security.sasl.qop
-  *    Always "auth"
-  *
-  * com.sun.security.sasl.html.domain
-  *    The domain for the user, provided by the server
-  *
-  * @see <a href="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</a>
-  * - Simple Authentication and Security Layer (SASL)
-  *
-  */
+ * Required callbacks:
+ * - RealmCallback
+ *    handle can provide domain info for authentication, optional
+ * - NameCallback
+ *    handler must enter username to use for authentication
+ * - PasswordCallback
+ *    handler must enter password for username to use for authentication
+ *
+ * Environment properties that affect behavior of implementation:
+ *
+ * javax.security.sasl.qop
+ *    String, quality of protection; only "auth" is accepted, default "auth"
+ *
+ * com.sun.security.sasl.ntlm.version
+ *    String, name a specific version to use; can be:
+ *      LM/NTLM: Original NTLM v1
+ *      LM: Original NTLM v1, LM only
+ *      NTLM: Original NTLM v1, NTLM only
+ *      NTLM2: NTLM v1 with Client Challenge
+ *      LMv2/NTLMv2: NTLM v2
+ *      LMv2: NTLM v2, LM only
+ *      NTLMv2: NTLM v2, NTLM only
+ *    If not specified, use system property "ntlm.version". If
+ *    still not specified, use default value "LMv2/NTLMv2".
+ *
+ * com.sun.security.sasl.ntlm.random
+ *    java.util.Random, the nonce source to be used in NTLM v2 or NTLM v1 with
+ *    Client Challenge. Default null, an internal java.util.Random object
+ *    will be used
+ *
+ * Negotiated Properties:
+ *
+ * javax.security.sasl.qop
+ *    Always "auth"
+ *
+ * com.sun.security.sasl.html.domain
+ *    The domain for the user, provided by the server
+ *
+ * @see <a href="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</a>
+ * - Simple Authentication and Security Layer (SASL)
+ *
+ */
 final class NTLMClient implements SaslClient {
 
     private static final String NTLM_VERSION =

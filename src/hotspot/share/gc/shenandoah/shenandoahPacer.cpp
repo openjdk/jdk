@@ -129,33 +129,6 @@ void ShenandoahPacer::setup_for_updaterefs() {
 }
 
 /*
- * Traversal walks the entire heap once, and therefore we have to make assumptions about its
- * liveness, like concurrent mark does.
- */
-
-void ShenandoahPacer::setup_for_traversal() {
-  assert(ShenandoahPacing, "Only be here when pacing is enabled");
-
-  size_t live = update_and_get_progress_history();
-  size_t free = _heap->free_set()->available();
-
-  size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
-  size_t taxable = free - non_taxable;
-
-  double tax = 1.0 * live / taxable; // base tax for available free space
-  tax *= ShenandoahPacingSurcharge;  // additional surcharge to help unclutter heap
-
-  restart_with(non_taxable, tax);
-
-  log_info(gc, ergo)("Pacer for Traversal. Expected Live: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
-                     byte_size_in_proper_unit(live),        proper_unit_for_byte_size(live),
-                     byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
-                     byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
-                     tax);
-}
-
-/*
  * In idle phase, we have to pace the application to let control thread react with GC start.
  *
  * Here, we have rendezvous with concurrent thread that adds up the budget as it acknowledges

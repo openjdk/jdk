@@ -109,47 +109,43 @@ public:
   // the fact that it has a NULL fieldName
   static VMStructEntry localHotSpotVMStructs[];
   // The function to get localHotSpotVMStructs length
-  static size_t localHotSpotVMStructsLength();
+  static size_t localHotSpotVMStructsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMTypeEntry   localHotSpotVMTypes[];
   // The function to get localHotSpotVMTypes length
-  static size_t localHotSpotVMTypesLength();
+  static size_t localHotSpotVMTypesLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // Table of integer constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMIntConstantEntry localHotSpotVMIntConstants[];
   // The function to get localHotSpotVMIntConstants length
-  static size_t localHotSpotVMIntConstantsLength();
+  static size_t localHotSpotVMIntConstantsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // Table of long constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMLongConstantEntry localHotSpotVMLongConstants[];
   // The function to get localHotSpotVMIntConstants length
-  static size_t localHotSpotVMLongConstantsLength();
+  static size_t localHotSpotVMLongConstantsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   /**
    * Table of addresses.
    */
   static VMAddressEntry localHotSpotVMAddresses[];
 
+#ifdef ASSERT
   // This is used to run any checking code necessary for validation of
   // the data structure (debug build only)
-  static void init();
-
-#ifndef PRODUCT
-  // Execute unit tests
-  static void test();
-#endif
+  static void init() NOT_VM_STRUCTS_RETURN;
 
 private:
   // Look up a type in localHotSpotVMTypes using strcmp() (debug build only).
   // Returns 1 if found, 0 if not.
-  //  debug_only(static int findType(const char* typeName);)
-  static int findType(const char* typeName);
+  static int findType(const char* typeName) NOT_VM_STRUCTS_RETURN_(0);
+#endif // ASSERT
 };
 
 // This utility macro quotes the passed string
@@ -188,6 +184,9 @@ private:
 #define GENERATE_VM_STRUCT_LAST_ENTRY() \
  { NULL, NULL, NULL, 0, 0, NULL }
 
+
+#ifdef ASSERT
+
 // This macro checks the type of a VMStructEntry by comparing pointer types
 #define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
  {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
@@ -219,6 +218,7 @@ private:
 // This is a no-op macro for unchecked fields
 #define CHECK_NO_OP(a, b, c)
 
+#endif // ASSERT
 
 //--------------------------------------------------------------------------------
 // VMTypeEntry macros

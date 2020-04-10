@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * <dl>
      * <dt><i>SpecificationVersion:</i>
      * <dd><i>Digits RefinedVersion<sub>opt</sub></i>
-
+     *
      * <dt><i>RefinedVersion:</i>
      * <dd>{@code .} <i>Digits</i>
      * <dd>{@code .} <i>Digits RefinedVersion</i>
@@ -434,9 +434,14 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotation returned by this method is a
+     * declaration annotation.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
+    @Override
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         return getPackageInfo().getAnnotation(annotationClass);
     }
@@ -452,6 +457,10 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
@@ -461,13 +470,21 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      * @since 1.5
      */
+    @Override
     public Annotation[] getAnnotations() {
         return getPackageInfo().getAnnotations();
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotation returned by this method is a
+     * declaration annotation.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
@@ -486,8 +503,12 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      * @since 1.5
      */
+    @Override
     public Annotation[] getDeclaredAnnotations()  {
         return getPackageInfo().getDeclaredAnnotations();
     }

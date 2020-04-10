@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ import sun.security.util.*;
  *
  * <p>
  * The extension is defined in Section 5.2.6 of
- * <a href="http://tools.ietf.org/html/rfc5280">Internet X.509 PKI Certific
-ate and Certificate Revocation List (CRL) Profile</a>.
+ * <a href="http://tools.ietf.org/html/rfc5280">Internet X.509 PKI
+ * Certificate and Certificate Revocation List (CRL) Profile</a>.
  *
  * <p>
  * Its ASN.1 definition is as follows:

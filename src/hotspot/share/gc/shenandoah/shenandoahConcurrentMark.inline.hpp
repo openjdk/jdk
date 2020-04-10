@@ -37,10 +37,10 @@
 #include "runtime/prefetch.inline.hpp"
 
 template <class T>
-void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, jushort* live_data, ShenandoahMarkTask* task) {
+void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
-  shenandoah_assert_not_forwarded_except(NULL, obj, _heap->is_concurrent_traversal_in_progress() && _heap->cancelled_gc());
+  shenandoah_assert_not_forwarded(NULL, obj);
   shenandoah_assert_marked(NULL, obj);
   shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
 
@@ -67,28 +67,22 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, jusho
   }
 }
 
-inline void ShenandoahConcurrentMark::count_liveness(jushort* live_data, oop obj) {
+inline void ShenandoahConcurrentMark::count_liveness(ShenandoahLiveData* live_data, oop obj) {
   size_t region_idx = _heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* region = _heap->get_region(region_idx);
   size_t size = obj->size();
 
   if (!region->is_humongous_start()) {
     assert(!region->is_humongous(), "Cannot have continuations here");
-    size_t max = (1 << (sizeof(jushort) * 8)) - 1;
-    if (size >= max) {
-      // too big, add to region data directly
-      region->increase_live_data_gc_words(size);
+    ShenandoahLiveData cur = live_data[region_idx];
+    size_t new_val = size + cur;
+    if (new_val >= SHENANDOAH_LIVEDATA_MAX) {
+      // overflow, flush to region data
+      region->increase_live_data_gc_words(new_val);
+      live_data[region_idx] = 0;
     } else {
-      jushort cur = live_data[region_idx];
-      size_t new_val = cur + size;
-      if (new_val >= max) {
-        // overflow, flush to region data
-        region->increase_live_data_gc_words(new_val);
-        live_data[region_idx] = 0;
-      } else {
-        // still good, remember in locals
-        live_data[region_idx] = (jushort) new_val;
-      }
+      // still good, remember in locals
+      live_data[region_idx] = (ShenandoahLiveData) new_val;
     }
   } else {
     shenandoah_assert_in_correct_region(NULL, obj);

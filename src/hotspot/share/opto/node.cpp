@@ -28,6 +28,7 @@
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/ad.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
@@ -1033,7 +1034,12 @@ bool Node::verify_jvms(const JVMState* using_jvms) const {
 //------------------------------init_NodeProperty------------------------------
 void Node::init_NodeProperty() {
   assert(_max_classes <= max_jushort, "too many NodeProperty classes");
-  assert(_max_flags <= max_jushort, "too many NodeProperty flags");
+  assert(max_flags() <= max_jushort, "too many NodeProperty flags");
+}
+
+//-----------------------------max_flags---------------------------------------
+juint Node::max_flags() {
+  return (PD::_last_flag << 1) - 1; // allow flags combination
 }
 #endif
 
@@ -1624,12 +1630,15 @@ static bool is_disconnected(const Node* n) {
 }
 
 #ifdef ASSERT
-static void dump_orig(Node* orig, outputStream *st) {
+void Node::dump_orig(outputStream *st, bool print_key) const {
   Compile* C = Compile::current();
+  Node* orig = _debug_orig;
   if (NotANode(orig)) orig = NULL;
   if (orig != NULL && !C->node_arena()->contains(orig)) orig = NULL;
   if (orig == NULL) return;
-  st->print(" !orig=");
+  if (print_key) {
+    st->print(" !orig=");
+  }
   Node* fast = orig->debug_orig(); // tortoise & hare algorithm to detect loops
   if (NotANode(fast)) fast = NULL;
   while (orig != NULL) {
@@ -1694,7 +1703,7 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
   if (is_disconnected(this)) {
 #ifdef ASSERT
     st->print("  [%d]",debug_idx());
-    dump_orig(debug_orig(), st);
+    dump_orig(st);
 #endif
     st->cr();
     C->_in_dump_cnt--;
@@ -1742,7 +1751,7 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
     t->dump_on(st);
   }
   if (is_new) {
-    debug_only(dump_orig(debug_orig(), st));
+    DEBUG_ONLY(dump_orig(st));
     Node_Notes* nn = C->node_notes_at(_idx);
     if (nn != NULL && !nn->is_clear()) {
       if (nn->jvms() != NULL) {

@@ -58,7 +58,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<a href=\"#setRate(double)\"><code>setRate(double)</code></a></dd>",
                 "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">setRate</span>&#8203;"
-                + "(<span class=\"arguments\">double&nbsp;value)</span></div>\n"
+                + "(<span class=\"parameters\">double&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl class=\"notes\">\n"
                 + "<dt>Property description:</dt>",
@@ -78,8 +78,6 @@ public class TestJavaFX extends JavadocTester {
                 "<dt>Default value:</dt>",
                 "<dt>Since:</dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
-                "<p>Sets the value of the property <code>Property</code>",
-                "<p>Gets the value of the property <code>Property</code>",
                 "<dt>Property description:</dt>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
                 + "<a href=\"#setTestMethodProperty()\">"
@@ -103,7 +101,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<h3>setPaused</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">setPaused</span>&#8203;"
-                + "(<span class=\"arguments\">boolean&nbsp;value)</span></div>\n"
+                + "(<span class=\"parameters\">boolean&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property paused.</div>\n"
                 + "<dl class=\"notes\">\n"
                 + "<dt>Property description:</dt>\n"
@@ -132,7 +130,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<h3>setRate</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">setRate</span>&#8203;"
-                + "(<span class=\"arguments\">double&nbsp;value)</span></div>\n"
+                + "(<span class=\"parameters\">double&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl class=\"notes\">\n"
                 + "<dt>Property description:</dt>\n"
@@ -211,8 +209,8 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg2/Test.html", true,
                 "<section class=\"property-details\" id=\"property.detail\">\n"
                 + "<h2>Property Details</h2>\n"
-                + "<ul class=\"block-list\">\n"
-                + "<li class=\"block-list\">\n"
+                + "<ul class=\"member-list\">\n"
+                + "<li>\n"
                 + "<section class=\"detail\" id=\"betaProperty\">\n"
                 + "<h3>beta</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
@@ -220,7 +218,7 @@ public class TestJavaFX extends JavadocTester {
                 + "&nbsp;<span class=\"member-name\">betaProperty</span></div>\n"
                 + "</section>\n"
                 + "</li>\n"
-                + "<li class=\"block-list\">\n"
+                + "<li>\n"
                 + "<section class=\"detail\" id=\"gammaProperty\">\n"
                 + "<h3>gamma</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"
@@ -228,7 +226,7 @@ public class TestJavaFX extends JavadocTester {
                 + "&nbsp;<span class=\"member-name\">gammaProperty</span></div>\n"
                 + "</section>\n"
                 + "</li>\n"
-                + "<li class=\"block-list\">\n"
+                + "<li>\n"
                 + "<section class=\"detail\" id=\"deltaProperty\">\n"
                 + "<h3>delta</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">public final</span>&nbsp;"

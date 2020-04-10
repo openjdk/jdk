@@ -121,17 +121,13 @@ private:
   bool find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx);
   void find_shared_post_visit(Node* n, uint opcode);
 
-#ifdef X86
-  bool is_bmi_pattern(Node *n, Node *m);
-#endif
-
   bool is_vshift_con_pattern(Node *n, Node *m);
 
   // Debug and profile information for nodes in old space:
   GrowableArray<Node_Notes*>* _old_node_note_array;
 
   // Node labeling iterator for instruction selection
-  Node *Label_Root( const Node *n, State *svec, Node *control, const Node *mem );
+  Node* Label_Root(const Node* n, State* svec, Node* control, Node*& mem);
 
   Node *transform( Node *dummy );
 
@@ -452,10 +448,15 @@ public:
   // Some hardware have expensive CMOV for float and double.
   static const int float_cmove_cost();
 
+  // Should the input 'm' of node 'n' be cloned during matching?
+  // Reports back whether the node was cloned or not.
+  bool    clone_node(Node* n, Node* m, Matcher::MStack& mstack);
+  bool pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack);
+
   // Should the Matcher clone shifts on addressing modes, expecting them to
   // be subsumed into complex addressing expressions or compute them into
   // registers?  True for Intel but false for most RISCs
-  bool clone_address_expressions(AddPNode* m, MStack& mstack, VectorSet& address_visited);
+  bool pd_clone_address_expressions(AddPNode* m, MStack& mstack, VectorSet& address_visited);
   // Clone base + offset address expression
   bool clone_base_plus_offset_address(AddPNode* m, MStack& mstack, VectorSet& address_visited);
 

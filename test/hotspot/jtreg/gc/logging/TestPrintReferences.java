@@ -56,9 +56,6 @@ public class TestPrintReferences {
     static final String phaseNotifyKeepAliveFinalizer = "Notify and keep alive finalizable";
     static final String phaseNotifyPhantomReferences  = "Notify PhantomReferences";
 
-    static final String phase1 = "Phase1";
-    static final String phase2 = "Phase2";
-    static final String phase3 = "Phase3";
     static final String gcLogTimeRegex = ".* GC\\([0-9]+\\) ";
 
     public static void main(String[] args) throws Exception {

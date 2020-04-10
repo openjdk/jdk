@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,6 @@ runOne()
 
 # Test MemoryTest with ZGC. ZGC is a single generation GC, which means
 # it has one memory manager and one memory pool.
-runOne -XX:+UnlockExperimentalVMOptions -XX:+UseZGC MemoryTest 1 1
+runOne -XX:+UseZGC MemoryTest 1 1
 
 exit 0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ final class SupportedGroupsExtension {
             new CHSupportedGroupsProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHSupportedGroupsConsumer();
+    static final HandshakeAbsence chOnTradAbsence =
+            new CHSupportedGroupsOnTradeAbsence();
     static final SSLStringizer sgsStringizer =
             new SupportedGroupsStringizer();
 
@@ -78,21 +80,25 @@ final class SupportedGroupsExtension {
             }
         }
 
-        private SupportedGroupsSpec(ByteBuffer m) throws IOException  {
+        private SupportedGroupsSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException  {
             if (m.remaining() < 2) {      // 2: the length of the list
-                throw new SSLProtocolException(
-                    "Invalid supported_groups extension: insufficient data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_groups extension: insufficient data"));
             }
 
             byte[] ngs = Record.getBytes16(m);
             if (m.hasRemaining()) {
-                throw new SSLProtocolException(
-                    "Invalid supported_groups extension: unknown extra data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_groups extension: unknown extra data"));
             }
 
             if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
-                throw new SSLProtocolException(
-                    "Invalid supported_groups extension: incomplete data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid supported_groups extension: incomplete data"));
             }
 
             int[] ids = new int[ngs.length / 2];
@@ -138,9 +144,9 @@ final class SupportedGroupsExtension {
     private static final
             class SupportedGroupsStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new SupportedGroupsSpec(buffer)).toString();
+                return (new SupportedGroupsSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -414,12 +420,7 @@ final class SupportedGroupsExtension {
             }
 
             // Parse the extension.
-            SupportedGroupsSpec spec;
-            try {
-                spec = new SupportedGroupsSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            SupportedGroupsSpec spec = new SupportedGroupsSpec(shc, buffer);
 
             // Update the context.
             List<NamedGroup> knownNamedGroups = new LinkedList<>();
@@ -434,6 +435,35 @@ final class SupportedGroupsExtension {
             shc.handshakeExtensions.put(CH_SUPPORTED_GROUPS, spec);
 
             // No impact on session resumption.
+        }
+    }
+
+    /**
+     * The absence processing if the extension is not present in
+     * a ClientHello handshake message.
+     */
+    private static final class CHSupportedGroupsOnTradeAbsence
+            implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // A client is considered to be attempting to negotiate using this
+            // specification if the ClientHello contains a "supported_versions"
+            // extension with 0x0304 contained in its body.  Such a ClientHello
+            // message MUST meet the following requirements:
+            //    -  If containing a "supported_groups" extension, it MUST also
+            //       contain a "key_share" extension, and vice versa.  An empty
+            //       KeyShare.client_shares vector is permitted.
+            if (shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_KEY_SHARE)) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                        "No supported_groups extension to work with " +
+                        "the key_share extension");
+            }
         }
     }
 
@@ -535,12 +565,7 @@ final class SupportedGroupsExtension {
             }
 
             // Parse the extension.
-            SupportedGroupsSpec spec;
-            try {
-                spec = new SupportedGroupsSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            SupportedGroupsSpec spec = new SupportedGroupsSpec(chc, buffer);
 
             // Update the context.
             List<NamedGroup> knownNamedGroups =

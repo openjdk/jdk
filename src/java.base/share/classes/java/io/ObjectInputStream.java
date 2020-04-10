@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -517,7 +517,7 @@ public class ObjectInputStream
 
     /**
      * This method is called by trusted subclasses of ObjectInputStream that
-     + constructed ObjectInputStream using the protected no-arg constructor.
+     * constructed ObjectInputStream using the protected no-arg constructor.
      * The subclass is expected to provide an override method with the modifier
      * "final".
      *

@@ -934,8 +934,8 @@ public class JavaCompiler {
             // These method calls must be chained to avoid memory leaks
             processAnnotations(
                 enterTrees(
-                        stopIfError(CompileState.PARSE,
-                                initModules(stopIfError(CompileState.PARSE, parseFiles(sourceFileObjects))))
+                        stopIfError(CompileState.ENTER,
+                                initModules(stopIfError(CompileState.ENTER, parseFiles(sourceFileObjects))))
                 ),
                 classnames
             );
@@ -946,34 +946,36 @@ public class JavaCompiler {
                 todo.retainFiles(inputFiles);
             }
 
-            switch (compilePolicy) {
-            case ATTR_ONLY:
-                attribute(todo);
-                break;
+            if (!CompileState.ATTR.isAfter(shouldStopPolicyIfNoError)) {
+                switch (compilePolicy) {
+                case ATTR_ONLY:
+                    attribute(todo);
+                    break;
 
-            case CHECK_ONLY:
-                flow(attribute(todo));
-                break;
+                case CHECK_ONLY:
+                    flow(attribute(todo));
+                    break;
 
-            case SIMPLE:
-                generate(desugar(flow(attribute(todo))));
-                break;
+                case SIMPLE:
+                    generate(desugar(flow(attribute(todo))));
+                    break;
 
-            case BY_FILE: {
-                    Queue<Queue<Env<AttrContext>>> q = todo.groupByFile();
-                    while (!q.isEmpty() && !shouldStop(CompileState.ATTR)) {
-                        generate(desugar(flow(attribute(q.remove()))));
+                case BY_FILE: {
+                        Queue<Queue<Env<AttrContext>>> q = todo.groupByFile();
+                        while (!q.isEmpty() && !shouldStop(CompileState.ATTR)) {
+                            generate(desugar(flow(attribute(q.remove()))));
+                        }
                     }
+                    break;
+
+                case BY_TODO:
+                    while (!todo.isEmpty())
+                        generate(desugar(flow(attribute(todo.remove()))));
+                    break;
+
+                default:
+                    Assert.error("unknown compile policy");
                 }
-                break;
-
-            case BY_TODO:
-                while (!todo.isEmpty())
-                    generate(desugar(flow(attribute(todo.remove()))));
-                break;
-
-            default:
-                Assert.error("unknown compile policy");
             }
         } catch (Abort ex) {
             if (devVerbose)
@@ -1179,7 +1181,7 @@ public class JavaCompiler {
             // Unless all the errors are resolve errors, the errors were parse errors
             // or other errors during enter which cannot be fixed by running
             // any annotation processors.
-            if (unrecoverableError()) {
+            if (processAnnotations) {
                 deferredDiagnosticHandler.reportDeferredDiagnostics();
                 log.popDiagnosticHandler(deferredDiagnosticHandler);
                 return ;

@@ -26,6 +26,7 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -45,6 +46,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -119,6 +121,11 @@ public final class Utils {
      * "jdk.test.lib.random.seed" property value.
      */
     private static volatile Random RANDOM_GENERATOR;
+
+    /**
+     * Maximum number of attempts to get free socket
+     */
+    private static final int MAX_SOCKET_TRIES = 10;
 
     /**
      * Contains the seed value used for {@link java.util.Random} creation.
@@ -303,6 +310,37 @@ public final class Utils {
     }
 
     /**
+     * Returns local addresses with symbolic and numeric scopes
+     */
+    public static List<InetAddress> getAddressesWithSymbolicAndNumericScopes() {
+        List<InetAddress> result = new LinkedList<>();
+        try {
+            NetworkConfiguration conf = NetworkConfiguration.probe();
+            conf.ip4Addresses().forEach(result::add);
+            // Java reports link local addresses with symbolic scope,
+            // but on Windows java.net.NetworkInterface generates its own scope names
+            // which are incompatible with native Windows routines.
+            // So on Windows test only addresses with numeric scope.
+            // On other platforms test both symbolic and numeric scopes.
+            conf.ip6Addresses().forEach(addr6 -> {
+                try {
+                    result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
+                } catch (UnknownHostException e) {
+                    // cannot happen!
+                    throw new RuntimeException("Unexpected", e);
+                }
+                if (!Platform.isWindows()) {
+                    result.add(addr6);
+                }
+            });
+        } catch (IOException e) {
+            // cannot happen!
+            throw new RuntimeException("Unexpected", e);
+        }
+        return result;
+    }
+
+    /**
      * Returns the free port on the local host.
      *
      * @return The port number
@@ -313,6 +351,37 @@ public final class Utils {
                 new ServerSocket(0, 5, InetAddress.getLoopbackAddress());) {
             return serverSocket.getLocalPort();
         }
+    }
+
+    /**
+     * Returns the free unreserved port on the local host.
+     *
+     * @param reservedPorts reserved ports
+     * @return The port number or -1 if failed to find a free port
+     */
+    public static int findUnreservedFreePort(int... reservedPorts) {
+        int numTries = 0;
+        while (numTries++ < MAX_SOCKET_TRIES) {
+            int port = -1;
+            try {
+                port = getFreePort();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (port > 0 && !isReserved(port, reservedPorts)) {
+                return port;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isReserved(int port, int[] reservedPorts) {
+        for (int p : reservedPorts) {
+            if (p == port) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

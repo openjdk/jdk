@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2020, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -10,6 +10,8 @@ package jdk.internal.org.jline.reader.impl;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.internal.org.jline.reader.CompletingParsedLine;
 import jdk.internal.org.jline.reader.EOFError;
@@ -37,6 +39,10 @@ public class DefaultParser implements Parser {
 
     private char[] closingBrackets = null;
 
+    private String regexVariable = "[a-zA-Z_]{1,}[a-zA-Z0-9_-]*((.|\\['|\\[\\\"|\\[)[a-zA-Z0-9_-]*(|'\\]|\\\"\\]|\\])){0,1}";
+    private String regexCommand = "[:]{0,1}[a-zA-Z]{1,}[a-zA-Z0-9_-]*";
+    private int commandGroup = 4;
+
     //
     // Chainable setters
     //
@@ -56,13 +62,28 @@ public class DefaultParser implements Parser {
         return this;
     }
 
-    public DefaultParser eofOnUnclosedBracket(Bracket... brackets){
+    public DefaultParser eofOnUnclosedBracket(Bracket... brackets) {
         setEofOnUnclosedBracket(brackets);
         return this;
     }
 
     public DefaultParser eofOnEscapedNewLine(boolean eofOnEscapedNewLine) {
         this.eofOnEscapedNewLine = eofOnEscapedNewLine;
+        return this;
+    }
+
+    public DefaultParser regexVariable(String regexVariable) {
+        this.regexVariable = regexVariable;
+        return this;
+    }
+
+    public DefaultParser regexCommand(String regexCommand) {
+        this.regexCommand = regexCommand;
+        return this;
+    }
+
+    public DefaultParser commandGroup(int commandGroup) {
+        this.commandGroup = commandGroup;
         return this;
     }
 
@@ -102,7 +123,7 @@ public class DefaultParser implements Parser {
         return eofOnEscapedNewLine;
     }
 
-    public void setEofOnUnclosedBracket(Bracket... brackets){
+    public void setEofOnUnclosedBracket(Bracket... brackets) {
         if (brackets == null) {
             openingBrackets = null;
             closingBrackets = null;
@@ -135,6 +156,60 @@ public class DefaultParser implements Parser {
         }
     }
 
+    public void setRegexVariable(String regexVariable) {
+        this.regexVariable = regexVariable;
+    }
+
+    public void setRegexCommand(String regexCommand) {
+        this.regexCommand = regexCommand;
+    }
+
+    public void setCommandGroup(int commandGroup) {
+        this.commandGroup = commandGroup;
+    }
+
+    @Override
+    public boolean validCommandName(String name) {
+        return name != null && name.matches(regexCommand);
+    }
+
+    @Override
+    public boolean validVariableName(String name) {
+        return name != null && name.matches(regexVariable);
+    }
+
+
+    @Override
+    public String getCommand(final String line) {
+        String out = "";
+        Pattern  patternCommand = Pattern.compile("^\\s*" + regexVariable + "=(" + regexCommand + ")(\\s+.*|$)");
+        Matcher matcher = patternCommand.matcher(line);
+        if (matcher.find()) {
+            out = matcher.group(commandGroup);
+        } else {
+            out = line.trim().split("\\s+")[0];
+            int idx = out.indexOf("=");
+            if (idx > -1) {
+                out = out.substring(idx + 1);
+            }
+            if (!out.matches(regexCommand)) {
+                out = "";
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public String getVariable(final String line) {
+        String out = null;
+        Pattern  patternCommand = Pattern.compile("^\\s*(" + regexVariable + ")\\s*=[^=~].*");
+        Matcher matcher = patternCommand.matcher(line);
+        if (matcher.find()) {
+            out = matcher.group(1);
+        }
+        return out;
+    }
+
     public ParsedLine parse(final String line, final int cursor, ParseContext context) {
         List<String> words = new LinkedList<>();
         StringBuilder current = new StringBuilder();
@@ -144,7 +219,7 @@ public class DefaultParser implements Parser {
         int rawWordCursor = -1;
         int rawWordLength = -1;
         int rawWordStart = 0;
-        BracketChecker bracketChecker = new BracketChecker();
+        BracketChecker bracketChecker = new BracketChecker(cursor);
         boolean quotedWord = false;
 
         for (int i = 0; (line != null) && (i < line.length()); i++) {
@@ -163,12 +238,15 @@ public class DefaultParser implements Parser {
                 quoteStart = i;
                 if (current.length()==0) {
                     quotedWord = true;
+                    if (context == ParseContext.SPLIT_LINE) {
+                        current.append(line.charAt(i));
+                    }
                 } else {
                     current.append(line.charAt(i));
                 }
             } else if (quoteStart >= 0 && line.charAt(quoteStart) == line.charAt(i) && !isEscaped(line, i)) {
                 // End quote block
-                if (!quotedWord) {
+                if (!quotedWord || context == ParseContext.SPLIT_LINE) {
                     current.append(line.charAt(i));
                 } else if (rawWordCursor >= 0 && rawWordLength < 0) {
                     rawWordLength = i - rawWordStart + 1;
@@ -191,6 +269,8 @@ public class DefaultParser implements Parser {
                     if (quoteStart < 0) {
                         bracketChecker.check(line, i);
                     }
+                } else if (context == ParseContext.SPLIT_LINE) {
+                    current.append(line.charAt(i));
                 }
             }
         }
@@ -217,11 +297,18 @@ public class DefaultParser implements Parser {
                 throw new EOFError(-1, -1, "Missing closing quote", line.charAt(quoteStart) == '\''
                         ? "quote" : "dquote");
             }
-            if (bracketChecker.isOpeningBracketMissing()) {
-                throw new EOFError(-1, -1, "Missing opening bracket", "missing: " + bracketChecker.getMissingOpeningBracket());
-            }
-            if (bracketChecker.isClosingBracketMissing()) {
-                throw new EOFError(-1, -1, "Missing closing brackets", "add: " + bracketChecker.getMissingClosingBrackets());
+            if (bracketChecker.isClosingBracketMissing() || bracketChecker.isOpeningBracketMissing()) {
+                String message = null;
+                String missing = null;
+                if (bracketChecker.isClosingBracketMissing()) {
+                    message = "Missing closing brackets";
+                    missing = "add: " + bracketChecker.getMissingClosingBrackets();
+                } else {
+                    message = "Missing opening bracket";
+                    missing = "missing: " + bracketChecker.getMissingOpeningBracket();
+                }
+                throw new EOFError(-1, -1, message, missing,
+                        bracketChecker.getOpenBrackets(), bracketChecker.getNextClosingBracket());
             }
         }
 
@@ -347,10 +434,15 @@ public class DefaultParser implements Parser {
     private class BracketChecker {
         private int missingOpeningBracket = -1;
         private List<Integer> nested = new ArrayList<>();
+        private int openBrackets = 0;
+        private int cursor;
+        private String nextClosingBracket;
 
-        public BracketChecker(){}
+        public BracketChecker(int cursor) {
+            this.cursor = cursor;
+        }
 
-        public void check(final CharSequence buffer, final int pos){
+        public void check(final CharSequence buffer, final int pos) {
             if (openingBrackets == null || pos < 0) {
                 return;
             }
@@ -367,24 +459,30 @@ public class DefaultParser implements Parser {
                     }
                 }
             }
+            if (cursor > pos) {
+                openBrackets = nested.size();
+                if (nested.size() > 0) {
+                    nextClosingBracket = String.valueOf(closingBrackets[nested.get(nested.size() - 1)]);
+                }
+            }
         }
 
-        public boolean isOpeningBracketMissing(){
+        public boolean isOpeningBracketMissing() {
             return missingOpeningBracket != -1;
         }
 
-        public String getMissingOpeningBracket(){
+        public String getMissingOpeningBracket() {
             if (!isOpeningBracketMissing()) {
                 return null;
             }
             return Character.toString(openingBrackets[missingOpeningBracket]);
         }
 
-        public boolean isClosingBracketMissing(){
+        public boolean isClosingBracketMissing() {
             return !nested.isEmpty();
         }
 
-        public String getMissingClosingBrackets(){
+        public String getMissingClosingBrackets() {
             if (!isClosingBracketMissing()) {
                 return null;
             }
@@ -395,7 +493,15 @@ public class DefaultParser implements Parser {
             return out.toString();
         }
 
-        private int bracketId(final char[] brackets, final CharSequence buffer, final int pos){
+        public int getOpenBrackets() {
+            return openBrackets;
+        }
+
+        public String getNextClosingBracket() {
+            return nested.size() == 2 ? nextClosingBracket : null;
+        }
+
+        private int bracketId(final char[] brackets, final CharSequence buffer, final int pos) {
             for (int i=0; i < brackets.length; i++) {
                 if (buffer.charAt(pos) == brackets[i]) {
                     return i;

@@ -349,7 +349,6 @@ void Thread::record_stack_base_and_size() {
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
   set_stack_base(os::current_stack_base());
-  assert(_stack_base != NULL, "current_stack_base failed for %s", name());
   set_stack_size(os::current_stack_size());
 
 #ifdef SOLARIS
@@ -1691,6 +1690,7 @@ void JavaThread::initialize() {
   _SleepEvent = ParkEvent::Allocate(this);
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
+  _handshake.set_handshakee(this);
 
   debug_only(_java_call_counter = 0);
 
@@ -1700,9 +1700,7 @@ void JavaThread::initialize() {
   _popframe_preserved_args_size = 0;
   _frames_to_pop_failed_realloc = 0;
 
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    SafepointMechanism::initialize_header(this);
-  }
+  SafepointMechanism::initialize_header(this);
 
   _class_to_be_initialized = NULL;
 
@@ -4468,12 +4466,21 @@ bool Threads::destroy_vm() {
   // exit_globals() will delete tty
   exit_globals();
 
-  // We are after VM_Exit::set_vm_exited() so we can't call
-  // thread->smr_delete() or we will block on the Threads_lock.
-  // Deleting the shutdown thread here is safe because another
-  // JavaThread cannot have an active ThreadsListHandle for
-  // this JavaThread.
-  delete thread;
+  // We are here after VM_Exit::set_vm_exited() so we can't call
+  // thread->smr_delete() or we will block on the Threads_lock. We
+  // must check that there are no active references to this thread
+  // before attempting to delete it. A thread could be waiting on
+  // _handshake_turn_sem trying to execute a direct handshake with
+  // this thread.
+  if (!ThreadsSMRSupport::is_a_protected_JavaThread(thread)) {
+    delete thread;
+  } else {
+    // Clear value for _thread_key in TLS to prevent, depending
+    // on pthreads implementation, possible execution of
+    // thread-specific destructor in infinite loop at thread
+    // exit.
+    Thread::clear_thread_current();
+  }
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {

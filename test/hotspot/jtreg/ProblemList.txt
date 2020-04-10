@@ -85,7 +85,7 @@ gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
-gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
+gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
 #############################################################################
 
@@ -98,51 +98,14 @@ runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
 
 # :hotspot_serviceability
 
-serviceability/sa/ClhsdbAttach.java 8193639 solaris-all
-serviceability/sa/ClhsdbCDSCore.java 8193639 solaris-all
-serviceability/sa/ClhsdbCDSJstackPrintAll.java 8193639 solaris-all
-serviceability/sa/CDSJMapClstats.java 8193639 solaris-all
-serviceability/sa/ClhsdbField.java 8193639 solaris-all
-serviceability/sa/ClhsdbFindPC.java 8193639 solaris-all
-serviceability/sa/ClhsdbFlags.java 8193639 solaris-all
-serviceability/sa/ClhsdbInspect.java 8193639 solaris-all
-serviceability/sa/ClhsdbJdis.java 8193639 solaris-all
-serviceability/sa/ClhsdbJhisto.java 8193639 solaris-all
-serviceability/sa/ClhsdbJstack.java 8193639 solaris-all
-serviceability/sa/ClhsdbJstackXcompStress.java 8193639 solaris-all
-serviceability/sa/ClhsdbLongConstant.java 8193639 solaris-all
-serviceability/sa/ClhsdbPmap.java 8193639 solaris-all
-serviceability/sa/ClhsdbPrintAll.java 8193639 solaris-all
-serviceability/sa/ClhsdbPrintAs.java 8193639 solaris-all
-serviceability/sa/ClhsdbPrintStatics.java 8193639 solaris-all
-serviceability/sa/ClhsdbPstack.java 8193639,8240956 solaris-all,linux-all
-serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8193639 solaris-all
-serviceability/sa/ClhsdbScanOops.java 8193639,8235220,8230731 solaris-all,linux-x64,macosx-x64,windows-x64
-serviceability/sa/ClhsdbSource.java 8193639 solaris-all
-serviceability/sa/ClhsdbThread.java 8193639 solaris-all
-serviceability/sa/ClhsdbVmStructsDump.java 8193639 solaris-all
-serviceability/sa/ClhsdbWhere.java 8193639 solaris-all
-serviceability/sa/DeadlockDetectionTest.java 8193639 solaris-all
-serviceability/sa/JhsdbThreadInfoTest.java 8193639 solaris-all
-serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8193639 solaris-all
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64 
-serviceability/sa/TestClassDump.java 8193639 solaris-all
-serviceability/sa/TestClhsdbJstackLock.java 8193639 solaris-all
-serviceability/sa/TestCpoolForInvokeDynamic.java 8193639 solaris-all
-serviceability/sa/TestDefaultMethods.java 8193639 solaris-all
-serviceability/sa/TestG1HeapRegion.java 8193639 solaris-all
-serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639,8241158 solaris-all,macosx-x64
-serviceability/sa/TestHeapDumpForLargeArray.java 8193639 solaris-all
-serviceability/sa/TestInstanceKlassSize.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
-serviceability/sa/TestInstanceKlassSizeForInterface.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
-serviceability/sa/TestIntConstant.java 8193639 solaris-all
-serviceability/sa/TestJhsdbJstackLock.java 8193639 solaris-all
-serviceability/sa/TestJmapCore.java 8193639 solaris-all
-serviceability/sa/TestJmapCoreMetaspace.java 8193639 solaris-all
-serviceability/sa/TestPrintMdo.java 8193639 solaris-all
+serviceability/sa/ClhsdbDumpheap.java 8241158 macosx-x64
+serviceability/sa/ClhsdbScanOops.java#id0 8235220,8230731 linux-x64,macosx-x64,windows-x64
+serviceability/sa/ClhsdbScanOops.java#id1 8235220,8230731 linux-x64,macosx-x64,windows-x64
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
+serviceability/sa/TestHeapDumpForInvokeDynamic.java 8241158 macosx-x64
+serviceability/sa/TestInstanceKlassSize.java 8230664 linux-ppc64le,linux-ppc64
+serviceability/sa/TestInstanceKlassSizeForInterface.java 8230664 linux-ppc64le,linux-ppc64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
-serviceability/sa/TestType.java 8193639 solaris-all
-serviceability/sa/TestUniverse.java#id0 8193639 solaris-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all

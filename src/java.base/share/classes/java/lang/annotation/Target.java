@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ package java.lang.annotation;
  * constants of {@link ElementType java.lang.annotation.ElementType}.
  *
  * <p>If an {@code @Target} meta-annotation is not present on an annotation type
- * {@code T} , then an annotation of type {@code T} may be written as a
+ * {@code T}, then an annotation of type {@code T} may be written as a
  * modifier for any declaration except a type parameter declaration.
  *
  * <p>If an {@code @Target} meta-annotation is present, the compiler will enforce

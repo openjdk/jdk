@@ -261,9 +261,11 @@
 
 #if INCLUDE_JFR
 #define JFR_ONLY(code) code
+#define NOT_JFR_RETURN()      /* next token must be ; */
 #define NOT_JFR_RETURN_(code) /* next token must be ; */
 #else
 #define JFR_ONLY(code)
+#define NOT_JFR_RETURN()      {}
 #define NOT_JFR_RETURN_(code) { return code; }
 #endif
 

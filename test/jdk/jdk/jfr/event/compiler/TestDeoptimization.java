@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jfr.event.compiler;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,13 +35,15 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
+import sun.hotspot.WhiteBox;
+
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
 // Careful if moving this class or method somewhere since verifyDeoptimizationEventFields asserts the linenumber
 class Dummy {
-    static void dummyMethod(boolean b) {
+    public static void dummyMethod(boolean b) {
         if (b) {
-            return;
+            System.out.println("Deoptimized");
         }
     }
 }
@@ -53,29 +56,52 @@ class Dummy {
  * @requires vm.compMode != "Xint"
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  * @library /test/lib
- * @run main/othervm -XX:-BackgroundCompilation jdk.jfr.event.compiler.TestDeoptimization
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:-BackgroundCompilation -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI jdk.jfr.event.compiler.TestDeoptimization
  */
 public class TestDeoptimization {
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private final static String TYPE_NAME = Dummy.class.getName().replace(".", "/");
     private final static String METHOD_NAME = "dummyMethod";
     private static final String METHOD_DESCRIPTOR = "(Z)V";
-    private static final String COMPILER = "c2";
+    private static final String[] COMPILER =  { "c2",  "jvmci" };
 
     public static void main(String[] args) throws Throwable {
         new TestDeoptimization().doTest();
     }
 
     public void doTest() throws Throwable {
+        Method dummyMethodDesc = Dummy.class.getDeclaredMethod("dummyMethod", boolean.class);
+
+        System.out.println("Deoptimization Test");
+
         Recording recording = new Recording();
         recording.enable(EventNames.Deoptimization);
         recording.enable(EventNames.Compilation);
         recording.start();
 
         long start = System.currentTimeMillis();
-        // compile dummyMethod
+
+        // load
+        Dummy.dummyMethod(false);
+
+        // compiling at level 3, for profiling support
+        if (!WHITE_BOX.enqueueMethodForCompilation(dummyMethodDesc, 3)) {
+            return;
+        }
+
+        // profile dummyMethod
         for (int i = 0; i < 20000; i++) {
             Dummy.dummyMethod(false);
         }
+
+        // compiling at level 4
+        if (!WHITE_BOX.enqueueMethodForCompilation(dummyMethodDesc, 4)) {
+            return;
+        }
+
         // provoke deoptimization by executing the uncommon trap in dummyMethod
         Dummy.dummyMethod(true);
         System.out.println("Time to load, compile and deoptimize dummyMethod: " + (System.currentTimeMillis() - start));
@@ -114,11 +140,13 @@ public class TestDeoptimization {
     private void verifyDeoptimizationEventFields(RecordedEvent event) {
         Events.assertEventThread(event);
         Events.assertField(event, "compileId").atLeast(0);
-        Events.assertField(event, "compiler").equal(COMPILER);
-        Events.assertField(event, "lineNumber").equal(42);
-        Events.assertField(event, "bci").equal(1);
-        Events.assertField(event, "instruction").equal("ifeq");
+        Events.assertField(event, "compiler").containsAny(COMPILER);
+        Events.assertField(event, "lineNumber").equal(45);
+        Events.assertField(event, "bci").atMost(1);
+        // Both graal and c2 traps at ifeq. c2 deopt reinterpret from unstable ifeq, while Graal deopt reinterpret from next instruction after last state change.
+        Events.assertField(event, "instruction").containsAny("ifeq", "iload_0");
         Events.assertField(event, "action").notEmpty().equal("reinterpret");
-        Events.assertField(event, "reason").notEmpty().equal("unstable_if");
+        Events.assertField(event, "reason").notEmpty().containsAny("unstable_if", "null_assert_or_unreached0");
     }
 }
+

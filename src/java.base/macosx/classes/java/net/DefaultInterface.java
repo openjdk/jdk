@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,30 @@ class DefaultInterface {
     /**
      * Choose a default interface. This method returns the first interface that
      * is both "up" and supports multicast. This method chooses an interface in
-     * order of preference:
-     * 1. neither loopback nor point to point
-     *    ( prefer interfaces with dual IP support )
-     * 2. point to point
-     * 3. loopback
+     * order of preference, using the following algorithm:
+     *
+     * <pre>
+     * Interfaces that are down, or don't support multicasting, are skipped.
+     * In steps 1-4 below, PPP and loopback interfaces are skipped.
+     *
+     * 1. The first interface that has at least an IPv4 address, and an IPv6 address,
+     *    and a non link-local IP address, is picked.
+     *
+     * 2. If none is found, then the first interface that has at least an
+     *    IPv4 address, and an IPv6 address is picked.
+     *
+     * 3. If none is found, then the first interface that has at least a
+     *    non link local IP address is picked.
+     *
+     * 4. If none is found, then the first non loopback and non PPP interface
+     *    is picked.
+     *
+     * 5. If none is found then first PPP interface is picked.
+     *
+     * 6. If none is found, then the first loopback interface is picked.
+     *
+     * 7. If none is found, then null is returned.
+     * </pre>
      *
      * @return  the chosen interface or {@code null} if there isn't a suitable
      *          default
@@ -74,6 +93,8 @@ class DefaultInterface {
         }
 
         NetworkInterface preferred = null;
+        NetworkInterface dual = null;
+        NetworkInterface nonLinkLocal = null;
         NetworkInterface ppp = null;
         NetworkInterface loopback = null;
 
@@ -83,7 +104,7 @@ class DefaultInterface {
                 if (!ni.isUp() || !ni.supportsMulticast())
                     continue;
 
-                boolean ip4 = false, ip6 = false;
+                boolean ip4 = false, ip6 = false, isNonLinkLocal = false;
                 PrivilegedAction<Enumeration<InetAddress>> pa = ni::getInetAddresses;
                 Enumeration<InetAddress> addrs = AccessController.doPrivileged(pa);
                 while (addrs.hasMoreElements()) {
@@ -93,6 +114,9 @@ class DefaultInterface {
                             ip4 = true;
                         } else if (addr instanceof Inet6Address) {
                             ip6 = true;
+                        }
+                        if (!addr.isLinkLocalAddress()) {
+                            isNonLinkLocal = true;
                         }
                     }
                 }
@@ -104,8 +128,13 @@ class DefaultInterface {
                     // point-to-point interface
                     if (preferred == null) {
                         preferred = ni;
-                    } else if (ip4 && ip6){
-                        return ni;
+                    }
+                    if (ip4 && ip6) {
+                        if (isNonLinkLocal) return ni;
+                        if (dual == null) dual = ni;
+                    }
+                    if (nonLinkLocal == null) {
+                        if (isNonLinkLocal) nonLinkLocal = ni;
                     }
                 }
                 if (ppp == null && isPPP)
@@ -116,7 +145,11 @@ class DefaultInterface {
             } catch (IOException skip) { }
         }
 
-        if (preferred != null) {
+        if (dual != null) {
+            return dual;
+        } else if (nonLinkLocal != null) {
+            return nonLinkLocal;
+        } else if (preferred != null) {
             return preferred;
         } else {
             return (ppp != null) ? ppp : loopback;

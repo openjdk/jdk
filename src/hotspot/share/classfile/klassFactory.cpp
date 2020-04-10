@@ -94,8 +94,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       }
 
       if (class_loader.is_null()) {
-        ResourceMark rm;
-        ClassLoader::add_package(class_name->as_C_string(), path_index, THREAD);
+        ClassLoader::add_package(new_ik, path_index, THREAD);
       }
 
       return new_ik;

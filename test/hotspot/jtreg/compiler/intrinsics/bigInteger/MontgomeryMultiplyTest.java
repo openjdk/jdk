@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -201,7 +201,7 @@ public class MontgomeryMultiplyTest {
         }
     }
 
-    Random rnd = new Random(0);
+    Random rnd = new Random(42);
 
     // Return a random value of length <= bits in an array of even length
     int[] random_val(int bits) {

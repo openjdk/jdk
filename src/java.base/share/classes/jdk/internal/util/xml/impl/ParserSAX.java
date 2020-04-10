@@ -40,14 +40,14 @@ import jdk.internal.org.xml.sax.helpers.DefaultHandler;
 
 /**
  * XML non-validating push parser.
- *
- * This non-validating parser conforms to <a href="http://www.w3.org/TR/REC-xml"
- * >Extensible Markup Language (XML) 1.0</a> and <a
- * href="http://www.w3.org/TR/REC-xml-names" >"Namespaces in XML"</a>
- * specifications. The API supported by the parser are <a
- * href="http://java.sun.com/aboutJava/communityprocess/final/jsr030/index.html">CLDC
- * 1.0</a> and <a href="http://www.jcp.org/en/jsr/detail?id=280">JSR-280</a>, a
- * JavaME subset of <a href="http://java.sun.com/xml/jaxp/index.html">JAXP</a>
+ * <p>
+ * This non-validating parser conforms to <a href="http://www.w3.org/TR/REC-xml">
+ * Extensible Markup Language (XML) 1.0</a> and
+ * <a href="http://www.w3.org/TR/REC-xml-names" >Namespaces in XML</a>
+ * specifications. The API supported by the parser are
+ * <a href="https://www.oracle.com/technetwork/java/cldc-141990.html">CLDC</a> and
+ * <a href="http://www.jcp.org/en/jsr/detail?id=280">JSR-280</a>, a JavaME subset of
+ * <a href="https://www.oracle.com/technetwork/java/intro-140052.html">JAXP</a>
  * and <a href="http://www.saxproject.org/">SAX2</a>.
  *
  * @see org.xml.sax.XMLReader

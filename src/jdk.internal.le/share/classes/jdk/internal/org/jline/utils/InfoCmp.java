@@ -576,7 +576,9 @@ public final class InfoCmp {
                     String key = cap.substring(0, index);
                     String val = cap.substring(index + 1);
                     int iVal;
-                    if (val.startsWith("0x")) {
+                    if ("0".equals(val)) {
+                        iVal = 0;
+                    } else if (val.startsWith("0x")) {
                         iVal = Integer.parseInt(val.substring(2), 16);
                     } else if (val.startsWith("0")) {
                         iVal = Integer.parseInt(val.substring(1), 8);
@@ -615,9 +617,9 @@ public final class InfoCmp {
     }
 
     static {
-        for (String s : Arrays.asList("dumb", "ansi", "xterm", "xterm-256color",
-                                      "windows", "windows-256color", "windows-conemu", "windows-vtp",
-                                      "screen", "screen-256color")) {
+        for (String s : Arrays.asList("dumb", "dumb-color", "ansi", "xterm", "xterm-256color",
+                "windows", "windows-256color", "windows-conemu", "windows-vtp",
+                "screen", "screen-256color")) {
             setDefaultInfoCmp(s, () -> loadDefaultInfoCmp(s));
         }
     }

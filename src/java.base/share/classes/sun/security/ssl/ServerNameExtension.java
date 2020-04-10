@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,16 +93,19 @@ final class ServerNameExtension {
                     new ArrayList<>(serverNames));
         }
 
-        private CHServerNamesSpec(ByteBuffer buffer) throws IOException {
+        private CHServerNamesSpec(HandshakeContext hc,
+                ByteBuffer buffer) throws IOException {
             if (buffer.remaining() < 2) {
-                throw new SSLProtocolException(
-                    "Invalid server_name extension: insufficient data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid server_name extension: insufficient data"));
             }
 
             int sniLen = Record.getInt16(buffer);
             if ((sniLen == 0) || sniLen != buffer.remaining()) {
-                throw new SSLProtocolException(
-                    "Invalid server_name extension: incomplete data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid server_name extension: incomplete data"));
             }
 
             Map<Integer, SNIServerName> sniMap = new LinkedHashMap<>();
@@ -121,8 +124,9 @@ final class ServerNameExtension {
                 byte[] encoded = Record.getBytes16(buffer);
                 if (nameType == StandardConstants.SNI_HOST_NAME) {
                     if (encoded.length == 0) {
-                        throw new SSLProtocolException(
-                            "Empty HostName in server_name extension");
+                        throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                                new SSLProtocolException(
+                            "Empty HostName in server_name extension"));
                     }
 
                     try {
@@ -134,7 +138,8 @@ final class ServerNameExtension {
                             (new String(encoded, StandardCharsets.UTF_8)) +
                             ", value={" +
                             Utilities.toHexString(encoded) + "}");
-                        throw (SSLProtocolException)spe.initCause(iae);
+                        throw hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                                (SSLProtocolException)spe.initCause(iae));
                     }
                 } else {
                     try {
@@ -144,15 +149,17 @@ final class ServerNameExtension {
                             "Illegal server name, type=(" + nameType +
                             "), value={" +
                             Utilities.toHexString(encoded) + "}");
-                        throw (SSLProtocolException)spe.initCause(iae);
+                        throw hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                                (SSLProtocolException)spe.initCause(iae));
                     }
                 }
 
                 // check for duplicated server name type
                 if (sniMap.put(serverName.getType(), serverName) != null) {
-                    throw new SSLProtocolException(
+                        throw hc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                                new SSLProtocolException(
                             "Duplicated server name of type " +
-                            serverName.getType());
+                            serverName.getType()));
                 }
             }
 
@@ -183,9 +190,9 @@ final class ServerNameExtension {
 
     private static final class CHServerNamesStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new CHServerNamesSpec(buffer)).toString();
+                return (new CHServerNamesSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -291,12 +298,7 @@ final class ServerNameExtension {
             }
 
             // Parse the extension.
-            CHServerNamesSpec spec;
-            try {
-                spec = new CHServerNamesSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            CHServerNamesSpec spec = new CHServerNamesSpec(shc, buffer);
 
             // Update the context.
             shc.handshakeExtensions.put(CH_SERVER_NAME, spec);
@@ -390,10 +392,12 @@ final class ServerNameExtension {
             // blank
         }
 
-        private SHServerNamesSpec(ByteBuffer buffer) throws IOException {
+        private SHServerNamesSpec(HandshakeContext hc,
+                ByteBuffer buffer) throws IOException {
             if (buffer.remaining() != 0) {
-                throw new SSLProtocolException(
-                    "Invalid ServerHello server_name extension: not empty");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid ServerHello server_name extension: not empty"));
             }
         }
 
@@ -405,9 +409,9 @@ final class ServerNameExtension {
 
     private static final class SHServerNamesStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new SHServerNamesSpec(buffer)).toString();
+                return (new SHServerNamesSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();

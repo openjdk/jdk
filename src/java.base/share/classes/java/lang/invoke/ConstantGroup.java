@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,9 +135,9 @@ interface ConstantGroup {
      * must always return true.
      * <p>
      * If this method returns {@code false}, nothing in particular
-     *  can be inferred, since the query only concerns the internal
+     * can be inferred, since the query only concerns the internal
      * logic of the {@code ConstantGroup} object which ensures that
-     a successful * query to a constant will always remain successful.
+     * a successful query to a constant will always remain successful.
      * The only way to force a permanent decision about whether
      * a constant is available is to call {@link #get(int)} and
      * be ready for an exception if the constant is unavailable.

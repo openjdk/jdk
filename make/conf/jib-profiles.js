@@ -248,7 +248,7 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
-        configure_args: concat(["--enable-jtreg-failure-handler"],
+        configure_args: concat("--enable-jtreg-failure-handler",
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
@@ -776,6 +776,10 @@ var getJibProfilesProfiles = function (input, common, data) {
                     = concat(profiles[cmpBaselineName].default_make_targets, "docs");
             }
             profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
+            profiles[cmpBaselineName].configure_args = concat(
+                profiles[cmpBaselineName].configure_args,
+                "--with-hotspot-build-time=n/a", 
+                "--disable-precompiled-headers");
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
@@ -881,6 +885,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             make_args: testOnlyMake,
             environment: {
                 "BOOT_JDK": common.boot_jdk_home,
+                "JT_HOME": input.get("jtreg", "home_path"),
                 "JDK_IMAGE_DIR": input.get(testedProfileJdk, "home_path"),
                 "TEST_IMAGE_DIR": input.get(testedProfileTest, "home_path")
             },
@@ -968,7 +973,7 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc8.3.0-OL6.4+1.0",
+        linux_x64: "gcc9.2.0-OL6.4+1.0",
         macosx_x64: "Xcode10.1-MacOSX10.14+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u6-Solaris11u3+1.0",
@@ -1059,7 +1064,8 @@ var getJibProfilesDependencies = function (input, common) {
             checksum_file: "MD5_VALUES",
             file: "bundles/jtreg_bin-5.0.zip",
             environment_name: "JT_HOME",
-            environment_path: input.get("jtreg", "install_path") + "/jtreg/bin"
+            environment_path: input.get("jtreg", "home_path") + "/bin",
+            configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
         },
 
         jmh: {

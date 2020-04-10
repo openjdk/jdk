@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,56 +45,56 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 /**
-  * An implementation of the DIGEST-MD5
-  * (<a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>) SASL
-  * (<a href="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</a>) mechanism.
-  *
-  * The DIGEST-MD5 SASL mechanism specifies two modes of authentication.
-  * - Initial Authentication
-  * - Subsequent Authentication - optional, (currently unsupported)
-  *
-  * Required callbacks:
-  * - RealmChoiceCallback
-  *    shows user list of realms server has offered; handler must choose one
-  *    from list
-  * - RealmCallback
-  *    shows user the only realm server has offered or none; handler must
-  *    enter realm to use
-  * - NameCallback
-  *    handler must enter username to use for authentication
-  * - PasswordCallback
-  *    handler must enter password for username to use for authentication
-  *
-  * Environment properties that affect behavior of implementation:
-  *
-  * javax.security.sasl.qop
-  *    quality of protection; list of auth, auth-int, auth-conf; default is "auth"
-  * javax.security.sasl.strength
-  *    auth-conf strength; list of high, medium, low; default is highest
-  *    available on platform ["high,medium,low"].
-  *    high means des3 or rc4 (128); medium des or rc4-56; low is rc4-40;
-  *    choice of cipher depends on its availablility on platform
-  * javax.security.sasl.maxbuf
-  *    max receive buffer size; default is 65536
-  * javax.security.sasl.sendmaxbuffer
-  *    max send buffer size; default is 65536; (min with server max recv size)
-  *
-  * com.sun.security.sasl.digest.cipher
-  *    name a specific cipher to use; setting must be compatible with the
-  *    setting of the javax.security.sasl.strength property.
-  *
-  * @see <a href="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</a>
-  * - Simple Authentication and Security Layer (SASL)
-  * @see <a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>
-  * - Using Digest Authentication as a SASL Mechanism
-  * @see <a href="http://java.sun.com/products/jce">Java(TM)
-  * Cryptography Extension 1.2.1 (JCE)</a>
-  * @see <a href="http://java.sun.com/products/jaas">Java(TM)
-  * Authentication and Authorization Service (JAAS)</a>
-  *
-  * @author Jonathan Bruce
-  * @author Rosanna Lee
-  */
+ * An implementation of the DIGEST-MD5
+ * (<a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>) SASL
+ * (<a href="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</a>) mechanism.
+ *
+ * The DIGEST-MD5 SASL mechanism specifies two modes of authentication.
+ * - Initial Authentication
+ * - Subsequent Authentication - optional, (currently unsupported)
+ *
+ * Required callbacks:
+ * - RealmChoiceCallback
+ *    shows user list of realms server has offered; handler must choose one
+ *    from list
+ * - RealmCallback
+ *    shows user the only realm server has offered or none; handler must
+ *    enter realm to use
+ * - NameCallback
+ *    handler must enter username to use for authentication
+ * - PasswordCallback
+ *    handler must enter password for username to use for authentication
+ *
+ * Environment properties that affect behavior of implementation:
+ *
+ * javax.security.sasl.qop
+ *    quality of protection; list of auth, auth-int, auth-conf; default is "auth"
+ * javax.security.sasl.strength
+ *    auth-conf strength; list of high, medium, low; default is highest
+ *    available on platform ["high,medium,low"].
+ *    high means des3 or rc4 (128); medium des or rc4-56; low is rc4-40;
+ *    choice of cipher depends on its availablility on platform
+ * javax.security.sasl.maxbuf
+ *    max receive buffer size; default is 65536
+ * javax.security.sasl.sendmaxbuffer
+ *    max send buffer size; default is 65536; (min with server max recv size)
+ *
+ * com.sun.security.sasl.digest.cipher
+ *    name a specific cipher to use; setting must be compatible with the
+ *    setting of the javax.security.sasl.strength property.
+ *
+ * @see <a href="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</a>
+ * - Simple Authentication and Security Layer (SASL)
+ * @see <a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>
+ * - Using Digest Authentication as a SASL Mechanism
+ * @see <a href="http://java.sun.com/products/jce">Java(TM)
+ * Cryptography Extension 1.2.1 (JCE)</a>
+ * @see <a href="http://java.sun.com/products/jaas">Java(TM)
+ * Authentication and Authorization Service (JAAS)</a>
+ *
+ * @author Jonathan Bruce
+ * @author Rosanna Lee
+ */
 final class DigestMD5Client extends DigestMD5Base implements SaslClient {
     private static final String MY_CLASS_NAME = DigestMD5Client.class.getName();
 
@@ -136,17 +136,17 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
     private byte[] authzidBytes;  // byte repr of authzid
 
     /**
-      * Constructor for DIGEST-MD5 mechanism.
-      *
-      * @param authzid A non-null String representing the principal
-      * for which authorization is being granted..
-      * @param digestURI A non-null String representing detailing the
-      * combined protocol and host being used for authentication.
-      * @param props The possibly null properties to be used by the SASL
-      * mechanism to configure the authentication exchange.
-      * @param cbh The non-null CallbackHanlder object for callbacks
-      * @throws SaslException if no authentication ID or password is supplied
-      */
+     * Constructor for DIGEST-MD5 mechanism.
+     *
+     * @param authzid A non-null String representing the principal
+     * for which authorization is being granted..
+     * @param digestURI A non-null String representing detailing the
+     * combined protocol and host being used for authentication.
+     * @param props The possibly null properties to be used by the SASL
+     * mechanism to configure the authentication exchange.
+     * @param cbh The non-null CallbackHanlder object for callbacks
+     * @throws SaslException if no authentication ID or password is supplied
+     */
     DigestMD5Client(String authzid, String protocol, String serverName,
         Map<String, ?> props, CallbackHandler cbh) throws SaslException {
 

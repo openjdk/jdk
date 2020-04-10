@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -471,6 +471,13 @@ class HandlerImpl {
   }
 };
 
+class Node::PD {
+public:
+  enum NodeFlags {
+    _last_flag = Node::_last_flag
+  };
+};
+
 %}
 
 source %{
@@ -482,6 +489,17 @@ source %{
 static FloatRegister reg_to_SingleFloatRegister_object(int register_encoding);
 static FloatRegister reg_to_DoubleFloatRegister_object(int register_encoding);
 static Register reg_to_register_object(int register_encoding);
+
+void PhaseOutput::pd_perform_mach_node_analysis() {
+}
+
+int MachNode::pd_alignment_required() const {
+  return 1;
+}
+
+int MachNode::compute_padding(int current_offset) const {
+  return 0;
+}
 
 // Used by the DFA in dfa_sparc.cpp.
 // Check for being able to use a V9 branch-on-register.  Requires a
@@ -592,7 +610,7 @@ bool SafePointNode::needs_polling_address_input() {
 
 // emit an interrupt that is caught by the debugger (for debugging compiler)
 void emit_break(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ breakpoint_trap();
 }
 
@@ -612,7 +630,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 
 // Traceable jump
 void  emit_jmpl(CodeBuffer &cbuf, int jump_target) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Register rdest = reg_to_register_object(jump_target);
   __ JMP(rdest, 0);
   __ delayed()->nop();
@@ -620,19 +638,19 @@ void  emit_jmpl(CodeBuffer &cbuf, int jump_target) {
 
 // Traceable jump and set exception pc
 void  emit_jmpl_set_exception_pc(CodeBuffer &cbuf, int jump_target) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Register rdest = reg_to_register_object(jump_target);
   __ JMP(rdest, 0);
   __ delayed()->add(O7, frame::pc_return_offset, Oissuing_pc );
 }
 
 void emit_nop(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ nop();
 }
 
 void emit_illtrap(CodeBuffer &cbuf) {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ illtrap(0);
 }
 
@@ -908,7 +926,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
     disp += STACK_BIAS;
     // Check that stack offset fits, load into O7 if not
     if (!Assembler::is_simm13(disp)) {
-      MacroAssembler _masm(&cbuf);
+      C2_MacroAssembler _masm(&cbuf);
       __ set(disp, O7);
       if (index != R_G0_enc) {
         __ add(O7, reg_to_register_object(index), O7);
@@ -932,7 +950,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
 
 #ifdef ASSERT
   if (VerifyOops) {
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     if (is_verified_oop_base) {
       __ verify_oop(reg_to_register_object(src1_enc));
     }
@@ -960,7 +978,7 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, RelocationHolder co
   // putting the "mov" instruction in the delay slot but the problem
   // may bite us again at some other point and a cleaner/generic
   // solution using relocations would be needed.
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   __ set_inst_mark();
 
   // We flush the current window just so that there is a valid stack copy
@@ -1024,7 +1042,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
   ConstantTable& constant_table = C->output()->constant_table();
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
@@ -1153,7 +1171,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   for (int i = 0; i < OptoPrologueNops; i++) {
     __ nop();
@@ -1206,11 +1224,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   Compile* C = ra_->C;
 
   if(do_polling() && ra_->C->is_method_compilation()) {
-    if (SafepointMechanism::uses_global_page_poll()) {
-      st->print("SETHI  #PollAddr,L0\t! Load Polling address\n\t");
-    } else {
-      st->print("LDX    [R_G2 + #poll_offset],L0\t! Load local polling address\n\t");
-    }
+    st->print("LDX    [R_G2 + #poll_offset],L0\t! Load local polling address\n\t");
     st->print("LDX    [L0],G0\t!Poll for Safepointing\n\t");
   }
 
@@ -1226,7 +1240,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
 
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
 
   __ verify_thread();
@@ -1237,12 +1251,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // If this does safepoint polling, then do it here
   if(do_polling() && ra_->C->is_method_compilation()) {
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      __ ld_ptr(Address(G2_thread, Thread::polling_page_offset()), L0);
-    } else {
-      AddressLiteral polling_page(os::get_polling_page());
-      __ sethi(polling_page, L0);
-    }
+    __ ld_ptr(Address(G2_thread, Thread::polling_page_offset()), L0);
     __ relocate(relocInfo::poll_return_type);
     __ ld_ptr(L0, 0, G0);
   }
@@ -1271,12 +1280,6 @@ int MachEpilogNode::reloc() const {
 
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
-}
-
-int MachEpilogNode::safepoint_offset() const {
-  assert(SafepointMechanism::uses_global_page_poll(), "sanity");
-  assert( do_polling(), "no return for this epilog node");
-  return MacroAssembler::insts_for_sethi(os::get_polling_page()) * BytesPerInstWord;
 }
 
 //=============================================================================
@@ -1534,7 +1537,7 @@ void MachNopNode::format(PhaseRegAlloc *, outputStream *st) const {
 #endif
 
 void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   for (int i = 0; i < _count; i += 1) {
     __ nop();
   }
@@ -1555,7 +1558,7 @@ void BoxLockNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
 
 void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem()) + STACK_BIAS;
   int reg = ra_->get_encode(this);
 
@@ -1599,7 +1602,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
   Register G5_ic_reg  = reg_to_register_object(Matcher::inline_cache_reg_encode());
   Register temp_reg   = G3;
   assert( G5_ic_reg != temp_reg, "conflicting registers" );
@@ -1624,7 +1627,7 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   Register temp_reg = G3;
   AddressLiteral exception_blob(OptoRuntime::exception_blob()->entry_point());
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
   if (base == NULL) {
@@ -1649,7 +1652,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   // at a poll and everything (including G3) can be live.
   Register temp_reg = L0;
   AddressLiteral deopt_blob(SharedRuntime::deopt_blob()->unpack());
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
   if (base == NULL) {
@@ -1959,10 +1962,15 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 
 const bool Matcher::convi2l_type_required = true;
 
+// Should the matcher clone input 'm' of node 'n'?
+bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  return false;
+}
+
 // Should the Matcher clone shifts on addressing modes, expecting them
 // to be subsumed into complex addressing expressions or compute them
 // into registers?
-bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
 }
 
@@ -2007,7 +2015,7 @@ void Compile::reshape_address(AddPNode* addp) {
 encode %{
   enc_class enc_untested %{
 #ifdef ASSERT
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ untested("encoding");
 #endif
   %}
@@ -2142,7 +2150,7 @@ encode %{
 
   /* %%% merge with enc_to_bool */
   enc_class enc_convP2B( iRegI dst, iRegP src ) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register   src_reg = reg_to_register_object($src$$reg);
     Register   dst_reg = reg_to_register_object($dst$$reg);
@@ -2151,7 +2159,7 @@ encode %{
 
   enc_class enc_cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp ) %{
     // (Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)))
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register   p_reg = reg_to_register_object($p$$reg);
     Register   q_reg = reg_to_register_object($q$$reg);
@@ -2284,13 +2292,13 @@ encode %{
   %}
 
   enc_class enc_PartialSubtypeCheck() %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ call(StubRoutines::Sparc::partial_subtype_check(), relocInfo::runtime_call_type);
     __ delayed()->nop();
   %}
 
   enc_class enc_bp( label labl, cmpOp cmp, flagsReg cc ) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* L = $labl$$label;
     Assembler::Predict predict_taken =
       cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
@@ -2300,7 +2308,7 @@ encode %{
   %}
 
   enc_class enc_bpr( label labl, cmpOp_reg cmp, iRegI op1 ) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Label* L = $labl$$label;
     Assembler::Predict predict_taken =
       cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
@@ -2419,13 +2427,13 @@ encode %{
   %}
 
   enc_class Set32( immI src, iRegI rd ) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ set($src$$constant, reg_to_register_object($rd$$reg));
   %}
 
   enc_class call_epilog %{
     if( VerifyStackAtCalls ) {
-      MacroAssembler _masm(&cbuf);
+      C2_MacroAssembler _masm(&cbuf);
       int framesize = ra_->C->output()->frame_size_in_bytes();
       Register temp_reg = G3;
       __ add(SP, framesize, temp_reg);
@@ -2447,12 +2455,12 @@ encode %{
   %}
 
   enc_class preserve_SP %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(SP, L7_mh_SP_save);
   %}
 
   enc_class restore_SP %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(L7_mh_SP_save, SP);
   %}
 
@@ -2477,7 +2485,7 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ set_inst_mark();
     int vtable_index = this->_vtable_index;
     // MachCallDynamicJavaNode::ret_addr_offset uses this same test
@@ -2526,7 +2534,7 @@ encode %{
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register G5_ic_reg = reg_to_register_object(Matcher::inline_cache_reg_encode());
     Register temp_reg = G3;   // caller must kill G3!  We cannot reuse G5_ic_reg here because
@@ -2543,7 +2551,7 @@ encode %{
   %}
 
 enc_class idiv_reg(iRegIsafe src1, iRegIsafe src2, iRegIsafe dst) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdividend = reg_to_register_object($src1$$reg);
     Register Rdivisor = reg_to_register_object($src2$$reg);
     Register Rresult = reg_to_register_object($dst$$reg);
@@ -2554,7 +2562,7 @@ enc_class idiv_reg(iRegIsafe src1, iRegIsafe src2, iRegIsafe dst) %{
 %}
 
 enc_class idiv_imm(iRegIsafe src1, immI13 imm, iRegIsafe dst) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register Rdividend = reg_to_register_object($src1$$reg);
     int divisor = $imm$$constant;
@@ -2565,7 +2573,7 @@ enc_class idiv_imm(iRegIsafe src1, immI13 imm, iRegIsafe dst) %{
 %}
 
 enc_class enc_mul_hi(iRegIsafe dst, iRegIsafe src1, iRegIsafe src2) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rsrc1 = reg_to_register_object($src1$$reg);
     Register Rsrc2 = reg_to_register_object($src2$$reg);
     Register Rdst  = reg_to_register_object($dst$$reg);
@@ -2577,7 +2585,7 @@ enc_class enc_mul_hi(iRegIsafe dst, iRegIsafe src1, iRegIsafe src2) %{
 %}
 
 enc_class irem_reg(iRegIsafe src1, iRegIsafe src2, iRegIsafe dst, o7RegL scratch) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdividend = reg_to_register_object($src1$$reg);
     Register Rdivisor = reg_to_register_object($src2$$reg);
     Register Rresult = reg_to_register_object($dst$$reg);
@@ -2594,7 +2602,7 @@ enc_class irem_reg(iRegIsafe src1, iRegIsafe src2, iRegIsafe dst, o7RegL scratch
 %}
 
 enc_class irem_imm(iRegIsafe src1, immI13 imm, iRegIsafe dst, o7RegL scratch) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register Rdividend = reg_to_register_object($src1$$reg);
     int divisor = $imm$$constant;
@@ -2610,7 +2618,7 @@ enc_class irem_imm(iRegIsafe src1, immI13 imm, iRegIsafe dst, o7RegL scratch) %{
 %}
 
 enc_class fabss (sflt_reg dst, sflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_SingleFloatRegister_object($src$$reg);
@@ -2619,7 +2627,7 @@ enc_class fabss (sflt_reg dst, sflt_reg src) %{
 %}
 
 enc_class fabsd (dflt_reg dst, dflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_DoubleFloatRegister_object($src$$reg);
@@ -2628,7 +2636,7 @@ enc_class fabsd (dflt_reg dst, dflt_reg src) %{
 %}
 
 enc_class fnegd (dflt_reg dst, dflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_DoubleFloatRegister_object($src$$reg);
@@ -2637,7 +2645,7 @@ enc_class fnegd (dflt_reg dst, dflt_reg src) %{
 %}
 
 enc_class fsqrts (sflt_reg dst, sflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_SingleFloatRegister_object($src$$reg);
@@ -2646,7 +2654,7 @@ enc_class fsqrts (sflt_reg dst, sflt_reg src) %{
 %}
 
 enc_class fsqrtd (dflt_reg dst, dflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_DoubleFloatRegister_object($src$$reg);
@@ -2656,7 +2664,7 @@ enc_class fsqrtd (dflt_reg dst, dflt_reg src) %{
 
 
 enc_class fmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
@@ -2667,7 +2675,7 @@ enc_class fmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
 %}
 
 enc_class fmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
@@ -2678,7 +2686,7 @@ enc_class fmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
 %}
 
 enc_class fmsubs (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
@@ -2689,7 +2697,7 @@ enc_class fmsubs (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
 %}
 
 enc_class fmsubd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
@@ -2700,7 +2708,7 @@ enc_class fmsubd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
 %}
 
 enc_class fnmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
@@ -2711,7 +2719,7 @@ enc_class fnmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
 %}
 
 enc_class fnmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
@@ -2722,7 +2730,7 @@ enc_class fnmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
 %}
 
 enc_class fnmsubs (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
@@ -2733,7 +2741,7 @@ enc_class fnmsubs (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
 %}
 
 enc_class fnmsubd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
@@ -2745,7 +2753,7 @@ enc_class fnmsubd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
 
 
 enc_class fmovs (dflt_reg dst, dflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_SingleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_SingleFloatRegister_object($src$$reg);
@@ -2754,7 +2762,7 @@ enc_class fmovs (dflt_reg dst, dflt_reg src) %{
 %}
 
 enc_class fmovd (dflt_reg dst, dflt_reg src) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     FloatRegister Fdst = reg_to_DoubleFloatRegister_object($dst$$reg);
     FloatRegister Fsrc = reg_to_DoubleFloatRegister_object($src$$reg);
@@ -2763,7 +2771,7 @@ enc_class fmovd (dflt_reg dst, dflt_reg src) %{
 %}
 
 enc_class Fast_Lock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register Roop  = reg_to_register_object($oop$$reg);
     Register Rbox  = reg_to_register_object($box$$reg);
@@ -2779,7 +2787,7 @@ enc_class Fast_Lock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
 %}
 
 enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 
     Register Roop  = reg_to_register_object($oop$$reg);
     Register Rbox  = reg_to_register_object($box$$reg);
@@ -2795,7 +2803,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
   %}
 
   enc_class enc_cas( iRegP mem, iRegP old, iRegP new ) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rmem = reg_to_register_object($mem$$reg);
     Register Rold = reg_to_register_object($old$$reg);
     Register Rnew = reg_to_register_object($new$$reg);
@@ -2809,7 +2817,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register Rold = reg_to_register_object($old$$reg);
     Register Rnew = reg_to_register_object($new$$reg);
 
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(Rnew, O7);
     __ casx(Rmem, Rold, O7);
     __ cmp( Rold, O7 );
@@ -2821,7 +2829,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register Rold = reg_to_register_object($old$$reg);
     Register Rnew = reg_to_register_object($new$$reg);
 
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(Rnew, O7);
     __ cas(Rmem, Rold, O7);
     __ cmp( Rold, O7 );
@@ -2833,7 +2841,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register Rold = reg_to_register_object($old$$reg);
     Register Rnew = reg_to_register_object($new$$reg);
 
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ cas(Rmem, Rold, Rnew);
   %}
 
@@ -2843,14 +2851,14 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register Rold = reg_to_register_object($old$$reg);
     Register Rnew = reg_to_register_object($new$$reg);
 
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ casx(Rmem, Rold, Rnew);
   %}
 
   enc_class enc_lflags_ne_to_boolean( iRegI res ) %{
     Register Rres = reg_to_register_object($res$$reg);
 
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(1, Rres);
     __ movcc( Assembler::notEqual, false, Assembler::xcc, G0, Rres );
   %}
@@ -2858,13 +2866,13 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
   enc_class enc_iflags_ne_to_boolean( iRegI res ) %{
     Register Rres = reg_to_register_object($res$$reg);
 
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ mov(1, Rres);
     __ movcc( Assembler::notEqual, false, Assembler::icc, G0, Rres );
   %}
 
   enc_class floating_cmp ( iRegP dst, regF src1, regF src2 ) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     Register Rdst = reg_to_register_object($dst$$reg);
     FloatRegister Fsrc1 = $primary ? reg_to_SingleFloatRegister_object($src1$$reg)
                                      : reg_to_DoubleFloatRegister_object($src1$$reg);
@@ -2880,7 +2888,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register temp_reg = G3;
     AddressLiteral rethrow_stub(OptoRuntime::rethrow_stub());
     assert(temp_reg != reg_to_register_object(R_I0_num), "temp must not break oop_reg");
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
 #ifdef ASSERT
     __ save_frame(0);
     AddressLiteral last_rethrow_addrlit(&last_rethrow);
@@ -2911,17 +2919,17 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
   %}
 
   enc_class enc_membar_acquire %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ membar( Assembler::Membar_mask_bits(Assembler::LoadStore | Assembler::LoadLoad) );
   %}
 
   enc_class enc_membar_release %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ membar( Assembler::Membar_mask_bits(Assembler::LoadStore | Assembler::StoreStore) );
   %}
 
   enc_class enc_membar_volatile %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     __ membar( Assembler::Membar_mask_bits(Assembler::StoreLoad) );
   %}
 
@@ -3371,15 +3379,6 @@ operand immP0() %{
   match(ConP);
   op_cost(0);
 
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immP_poll() %{
-  predicate(n->get_ptr() != 0 && n->get_ptr() == (intptr_t)os::get_polling_page());
-  match(ConP);
-
-  // formats are generated automatically for constants and base registers
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -4488,12 +4487,6 @@ pipe_class loadConL( iRegL dst, immL src ) %{
 
 // Pointer Constant
 pipe_class loadConP( iRegP dst, immP src ) %{
-    instruction_count(0); multiple_bundles;
-    fixed_latency(6);
-%}
-
-// Polling Address
-pipe_class loadConP_poll( iRegP dst, immP_poll src ) %{
     instruction_count(0); multiple_bundles;
     fixed_latency(6);
 %}
@@ -5881,17 +5874,6 @@ instruct loadConP0(iRegP dst, immP0 src) %{
     __ clr($dst$$Register);
   %}
   ins_pipe(ialu_imm);
-%}
-
-instruct loadConP_poll(iRegP dst, immP_poll src) %{
-  match(Set dst src);
-  ins_cost(DEFAULT_COST);
-  format %{ "SET    $src,$dst\t!ptr" %}
-  ins_encode %{
-    AddressLiteral polling_page(os::get_polling_page());
-    __ sethi(polling_page, reg_to_register_object($dst$$reg));
-  %}
-  ins_pipe(loadConP_poll);
 %}
 
 instruct loadConN0(iRegN dst, immN0 src) %{

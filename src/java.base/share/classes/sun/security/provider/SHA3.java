@@ -62,7 +62,7 @@ abstract class SHA3 extends DigestBase {
     };
 
     private byte[] state = new byte[WIDTH];
-    private final long[] lanes = new long[DM*DM];
+    private long[] lanes = new long[DM*DM];
 
     /**
      * Creates a new SHA-3 object.
@@ -259,6 +259,7 @@ abstract class SHA3 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         SHA3 copy = (SHA3) super.clone();
         copy.state = copy.state.clone();
+        copy.lanes = new long[DM*DM];
         return copy;
     }
 

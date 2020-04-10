@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@ import com.sun.security.sasl.util.PolicyUtils;
 
 
 /**
-  * Client and server factory for DIGEST-MD5 SASL client/server mechanisms.
-  * See DigestMD5Client and DigestMD5Server for input requirements.
-  *
-  * @author Jonathan Bruce
-  * @author Rosanna Lee
-  */
+ * Client and server factory for DIGEST-MD5 SASL client/server mechanisms.
+ * See DigestMD5Client and DigestMD5Server for input requirements.
+ *
+ * @author Jonathan Bruce
+ * @author Rosanna Lee
+ */
 
 public final class FactoryImpl implements SaslClientFactory,
 SaslServerFactory{
@@ -50,8 +50,8 @@ SaslServerFactory{
         PolicyUtils.NOPLAINTEXT|PolicyUtils.NOANONYMOUS};
 
     /**
-      * Empty constructor.
-      */
+     * Empty constructor.
+     */
     public FactoryImpl() {
     }
 
@@ -112,11 +112,11 @@ SaslServerFactory{
     }
 
     /**
-      * Returns the authentication mechanisms that this factory can produce.
-      *
-      * @return String[] {"DigestMD5"} if policies in env match those of this
-      * factory.
-      */
+     * Returns the authentication mechanisms that this factory can produce.
+     *
+     * @return String[] {"DigestMD5"} if policies in env match those of this
+     * factory.
+     */
     public String[] getMechanismNames(Map<String,?> env) {
         return PolicyUtils.filterMechs(myMechs, mechPolicies, env);
     }

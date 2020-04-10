@@ -434,7 +434,7 @@ public class CLDRConverter {
         parentData.keySet().stream()
                 .filter(key -> key.startsWith(PARENT_LOCALE_PREFIX))
                 .forEach(key -> {
-                parentLocalesMap.put(key, new TreeSet(
+                parentLocalesMap.put(key, new TreeSet<String>(
                     Arrays.asList(((String)parentData.get(key)).split(" "))));
             });
 
@@ -481,7 +481,7 @@ public class CLDRConverter {
         });
     }
 
-    private static void parseLDMLFile(File srcfile, AbstractLDMLHandler handler) throws Exception {
+    private static void parseLDMLFile(File srcfile, AbstractLDMLHandler<?> handler) throws Exception {
         info("..... Parsing " + srcfile.getName() + " .....");
         SAXParserFactory pf = SAXParserFactory.newInstance();
         pf.setValidating(true);
@@ -574,7 +574,7 @@ public class CLDRConverter {
      * Translate the aliases into the real entries in the bundle map.
      */
     static void handleAliases(Map<String, Object> bundleMap) {
-        Set bundleKeys = bundleMap.keySet();
+        Set<String> bundleKeys = bundleMap.keySet();
         try {
             for (String key : aliases.keySet()) {
                 String targetKey = aliases.get(key);
@@ -1158,10 +1158,10 @@ public class CLDRConverter {
 
     private static Stream<String> pluralRulesStream() {
         return handlerPlurals.getData().entrySet().stream()
-            .filter(e -> !((Map<String, String>)e.getValue()).isEmpty())
+            .filter(e -> !(e.getValue()).isEmpty())
             .map(e -> {
                 String loc = e.getKey();
-                Map<String, String> rules = (Map<String, String>)e.getValue();
+                Map<String, String> rules = e.getValue();
                 return "        {\"" + loc + "\", \"" +
                     rules.entrySet().stream()
                         .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))

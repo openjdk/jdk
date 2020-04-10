@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class NoWaitForReplyTest {
         ldapServer.start();
 
         // Set up the environment for creating the initial context
-        Hashtable env = new Hashtable(11);
+        Hashtable<Object, Object> env = new Hashtable<>(11);
         env.put(Context.PROVIDER_URL, "ldap://localhost:" +
             ldapServer.getPortNumber());
         env.put(Context.INITIAL_CONTEXT_FACTORY,
@@ -70,7 +70,7 @@ public class NoWaitForReplyTest {
             SearchControls scl = new SearchControls();
             scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
             System.out.println("Client: performing search");
-            NamingEnumeration answer =
+            NamingEnumeration<SearchResult> answer =
             ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
 
             // Server will never reply: either we waited in the call above until

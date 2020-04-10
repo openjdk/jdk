@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,38 +57,11 @@ JAVA_FILES = BenchServer.java \
 	ShortCalls.java \
 	SmallObjTreeCalls.java \
 	TheTerminator.java
-REMOTE_CLASSES = bench.rmi.BenchServerImpl \
-	bench.rmi.BooleanArrayCalls.ServerImpl \
-	bench.rmi.BooleanCalls.ServerImpl \
-	bench.rmi.ByteArrayCalls.ServerImpl \
-	bench.rmi.ByteCalls.ServerImpl \
-	bench.rmi.CharArrayCalls.ServerImpl \
-	bench.rmi.CharCalls.ServerImpl \
-	bench.rmi.DoubleArrayCalls.ServerImpl \
-	bench.rmi.DoubleCalls.ServerImpl \
-	bench.rmi.ExceptionCalls.ServerImpl \
-	bench.rmi.ExportObjs.RemoteObj \
-	bench.rmi.IntCalls.ServerImpl \
-	bench.rmi.NullCalls.ServerImpl \
-	bench.rmi.FloatArrayCalls.ServerImpl \
-	bench.rmi.FloatCalls.ServerImpl \
-	bench.rmi.IntArrayCalls.ServerImpl \
-	bench.rmi.LongArrayCalls.ServerImpl \
-	bench.rmi.LongCalls.ServerImpl \
-	bench.rmi.ObjArrayCalls.ServerImpl \
-	bench.rmi.ObjTreeCalls.ServerImpl \
-	bench.rmi.ProxyArrayCalls.ServerImpl \
-	bench.rmi.RemoteObjArrayCalls.ServerImpl \
-	bench.rmi.RemoteObjArrayCalls.RemoteObj \
-	bench.rmi.ShortArrayCalls.ServerImpl \
-	bench.rmi.ShortCalls.ServerImpl \
-	bench.rmi.SmallObjTreeCalls.ServerImpl 
 
 all: .classes altroot.dir
 
 .classes: $(JAVA_FILES)
 	javac -d $(BUILD_DIR) $(JAVA_FILES)
-	rmic -d $(BUILD_DIR) $(REMOTE_CLASSES)
 	touch .classes
 
 altroot.dir:

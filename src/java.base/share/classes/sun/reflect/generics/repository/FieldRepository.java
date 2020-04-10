@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
     /** The generic type info.  Lazily initialized. */
     private volatile Type genericType;
 
- // protected, to enforce use of static factory yet allow subclassing
+    // protected, to enforce use of static factory yet allow subclassing
     protected FieldRepository(String rawSig, GenericsFactory f) {
       super(rawSig, f);
     }
@@ -66,15 +66,15 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
         return new FieldRepository(rawSig, f);
     }
 
- /*
- * When queried for a particular piece of type information, the
- * general pattern is to consult the corresponding cached value.
- * If the corresponding field is non-null, it is returned.
- * If not, it is created lazily. This is done by selecting the appropriate
- * part of the tree and transforming it into a reflective object
- * using a visitor, which is created by feeding it the factory
- * with which the repository was created.
- */
+    /*
+     * When queried for a particular piece of type information, the
+     * general pattern is to consult the corresponding cached value.
+     * If the corresponding field is non-null, it is returned.
+     * If not, it is created lazily. This is done by selecting the appropriate
+     * part of the tree and transforming it into a reflective object
+     * using a visitor, which is created by feeding it the factory
+     * with which the repository was created.
+     */
 
     public Type getGenericType() {
         Type value = genericType;

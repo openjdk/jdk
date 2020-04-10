@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ import sun.util.calendar.ZoneInfo;
  *          Field
  *       </th>
  *       <th scope="col">
-            Default Value
+ *          Default Value
  *       </th>
  *     </tr>
  *   </thead>
@@ -296,7 +296,6 @@ import sun.util.calendar.ZoneInfo;
  *                    + (calendar.get(Calendar.ZONE_OFFSET)/(60*60*1000)));
  * System.out.println("DST_OFFSET: "
  *                    + (calendar.get(Calendar.DST_OFFSET)/(60*60*1000)));
-
  * System.out.println("Current Time, with hour reset to 3");
  * calendar.clear(Calendar.HOUR_OF_DAY); // so doesn't override
  * calendar.set(Calendar.HOUR, 3);

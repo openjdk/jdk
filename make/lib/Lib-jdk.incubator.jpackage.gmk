@@ -59,7 +59,8 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     SRC := $(JPACKAGE_APPLAUNCHER_SRC), \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CXXFLAGS_JDKEXE), \
+    CFLAGS := $(CFLAGS_JDKEXE), \
+    CXXFLAGS := $(CXXFLAGS_JDKEXE), \
     CFLAGS_windows := -EHsc -DLAUNCHERC -DUNICODE -D_UNICODE, \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
     LIBS_macosx := -framework Cocoa, \

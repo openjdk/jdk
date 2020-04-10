@@ -31,6 +31,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
@@ -104,8 +105,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, new StringContent(targetPath))));
 
-        Content body = new HtmlTree(TagName.BODY)
-                .put(HtmlAttr.CLASS, "index-redirect");
+        Content body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
         HtmlTree main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 

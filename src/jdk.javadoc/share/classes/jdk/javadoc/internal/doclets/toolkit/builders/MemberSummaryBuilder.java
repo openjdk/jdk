@@ -39,7 +39,6 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.UnknownBlockTagTree;
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -85,7 +84,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     private MemberSummaryBuilder(Context context, TypeElement typeElement) {
         super(context, typeElement);
         memberSummaryWriters = new EnumMap<>(VisibleMemberTable.Kind.class);
-        comparator = utils.makeIndexUseComparator();
+        comparator = utils.comparators.makeIndexElementComparator();
         pHelper = new PropertyHelper(this);
     }
 
@@ -105,6 +104,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 buildPropertiesSummary(contentTree);
                 buildNestedClassesSummary(contentTree);
                 buildEnumConstantsSummary(contentTree);
+                buildAnnotationTypeRequiredMemberSummary(contentTree);
+                buildAnnotationTypeOptionalMemberSummary(contentTree);
                 buildFieldsSummary(contentTree);
                 buildConstructorsSummary(contentTree);
                 buildMethodsSummary(contentTree);
@@ -119,40 +120,6 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         for (VisibleMemberTable.Kind kind : VisibleMemberTable.Kind.values()) {
             MemberSummaryWriter msw = builder.getVisibleMemberTable().hasVisibleMembers(kind)
                     ? wf.getMemberSummaryWriter(classWriter, kind)
-                    : null;
-            builder.memberSummaryWriters.put(kind, msw);
-        }
-        return builder;
-    }
-
-    /**
-     * Construct a new MemberSummaryBuilder for an annotation type.
-     *
-     * @param annotationTypeWriter the writer for the class whose members are
-     *                             being summarized.
-     * @param context       the build context.
-     * @return              the instance
-     */
-    public static MemberSummaryBuilder getInstance(
-            AnnotationTypeWriter annotationTypeWriter, Context context) {
-        MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
-                annotationTypeWriter.getAnnotationTypeElement()) {
-            @Override
-            public void build(Content contentTree) {
-                buildAnnotationTypeFieldsSummary(contentTree);
-                buildAnnotationTypeRequiredMemberSummary(contentTree);
-                buildAnnotationTypeOptionalMemberSummary(contentTree);
-            }
-
-            @Override
-            public boolean hasMembersToDocument() {
-                return !utils.getAnnotationMembers(typeElement).isEmpty();
-            }
-        };
-        WriterFactory wf = context.configuration.getWriterFactory();
-        for (VisibleMemberTable.Kind kind : VisibleMemberTable.Kind.values()) {
-            MemberSummaryWriter msw = builder.getVisibleMemberTable().hasVisibleMembers(kind)
-                    ? wf.getMemberSummaryWriter(annotationTypeWriter, kind)
                     : null;
             builder.memberSummaryWriters.put(kind, msw);
         }
@@ -222,8 +189,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
     protected void buildAnnotationTypeFieldsSummary(Content memberSummaryTree) {
-        MemberSummaryWriter writer = memberSummaryWriters.get(ANNOTATION_TYPE_FIELDS);
-        addSummary(writer, ANNOTATION_TYPE_FIELDS, false, memberSummaryTree);
+        MemberSummaryWriter writer = memberSummaryWriters.get(FIELDS);
+        addSummary(writer, FIELDS, false, memberSummaryTree);
     }
 
     /**

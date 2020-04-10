@@ -74,7 +74,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
             TypeElement typeElement,
             ConstructorWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         constructors = getVisibleMembers(CONSTRUCTORS);
         for (Element ctor : constructors) {
             if (utils.isProtected(ctor) || utils.isPrivate(ctor)) {
@@ -118,16 +118,13 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     /**
      * Build the constructor documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
-     * @throws DocletException is there is a problem while building the documentation
+     * @param detailsList the content tree to which the documentation will be added
+     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildConstructorDoc(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildConstructorDoc(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
-            Content constructorDetailsTreeHeader = writer.getConstructorDetailsTreeHeader(memberDetailsTree);
-            Content constructorDetailsTree = writer.getMemberTreeHeader();
+            Content constructorDetailsTreeHeader = writer.getConstructorDetailsTreeHeader(detailsList);
+            Content memberList = writer.getMemberList();
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
@@ -138,10 +135,10 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                 buildConstructorComments(constructorDocTree);
                 buildTagInfo(constructorDocTree);
 
-                constructorDetailsTree.add(writer.getConstructorDoc(constructorDocTree));
+                memberList.add(writer.getMemberListItem(constructorDocTree));
             }
-            memberDetailsTree.add(
-                    writer.getConstructorDetails(constructorDetailsTreeHeader, constructorDetailsTree));
+            Content constructorDetails = writer.getConstructorDetails(constructorDetailsTreeHeader, memberList);
+            detailsList.add(constructorDetails);
         }
     }
 
@@ -165,7 +162,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the constructor.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param constructorDocTree the content tree to which the documentation will be added
      */

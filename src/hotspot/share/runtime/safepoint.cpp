@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,6 @@ int SafepointSynchronize::_current_jni_active_count = 0;
 
 WaitBarrier* SafepointSynchronize::_wait_barrier;
 
-static volatile bool PageArmed = false;        // safepoint polling page is RO|RW vs PROT_NONE
 static bool timeout_error_printed = false;
 
 // Statistic related
@@ -250,13 +249,6 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     if (SafepointTimeout && safepoint_limit_time < os::javaTimeNanos()) {
       print_safepoint_timeout();
     }
-    if (int(iterations) == -1) { // overflow - something is wrong.
-      // We can only overflow here when we are using global
-      // polling pages. We keep this guarantee in its original
-      // form so that searches of the bug database for this
-      // failure mode find the right bugs.
-      guarantee (!PageArmed, "invariant");
-    }
 
     p_prev = &tss_head;
     ThreadSafepointState *cur_tss = tss_head;
@@ -297,9 +289,6 @@ void SafepointSynchronize::arm_safepoint() {
   //  1. Running interpreted
   //     When executing branching/returning byte codes interpreter
   //     checks if the poll is armed, if so blocks in SS::block().
-  //     When using global polling the interpreter dispatch table
-  //     is changed to force it to check for a safepoint condition
-  //     between bytecodes.
   //  2. Running in native code
   //     When returning from the native code, a Java thread must check
   //     the safepoint _state to see if we must block.  If the
@@ -334,26 +323,15 @@ void SafepointSynchronize::arm_safepoint() {
   OrderAccess::storestore(); // Ordered with _safepoint_counter
   _state = _synchronizing;
 
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    // Arming the per thread poll while having _state != _not_synchronized means safepointing
-    log_trace(safepoint)("Setting thread local yield flag for threads");
-    OrderAccess::storestore(); // storestore, global state -> local state
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); ) {
-      // Make sure the threads start polling, it is time to yield.
-      SafepointMechanism::arm_local_poll(cur);
-    }
+  // Arming the per thread poll while having _state != _not_synchronized means safepointing
+  log_trace(safepoint)("Setting thread local yield flag for threads");
+  OrderAccess::storestore(); // storestore, global state -> local state
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); ) {
+    // Make sure the threads start polling, it is time to yield.
+    SafepointMechanism::arm_local_poll(cur);
   }
+
   OrderAccess::fence(); // storestore|storeload, global state -> local state
-
-  if (SafepointMechanism::uses_global_page_poll()) {
-    // Make interpreter safepoint aware
-    Interpreter::notice_safepoints();
-
-    // Make polling safepoint aware
-    guarantee (!PageArmed, "invariant") ;
-    PageArmed = true;
-    os::make_polling_page_unreadable();
-  }
 }
 
 // Roll all threads forward to a safepoint and suspend them all
@@ -464,15 +442,6 @@ void SafepointSynchronize::disarm_safepoint() {
     }
 #endif // ASSERT
 
-    if (SafepointMechanism::uses_global_page_poll()) {
-      guarantee (PageArmed, "invariant");
-      // Make polling safepoint aware
-      os::make_polling_page_readable();
-      PageArmed = false;
-      // Remove safepoint check from interpreter
-      Interpreter::ignore_safepoints();
-    }
-
     OrderAccess::fence(); // keep read and write of _state from floating up
     assert(_state == _synchronized, "must be synchronized before ending safepoint synchronization");
 
@@ -494,8 +463,6 @@ void SafepointSynchronize::disarm_safepoint() {
       assert(!cur_state->is_running(), "Thread not suspended at safepoint");
       cur_state->restart(); // TSS _running
       assert(cur_state->is_running(), "safepoint state has not been reset");
-
-      SafepointMechanism::disarm_if_needed(current, false /* NO release */);
     }
   } // ~JavaThreadIteratorWithHandle
 
@@ -736,7 +703,6 @@ static bool safepoint_safe_with(JavaThread *thread, JavaThreadState state) {
 }
 
 bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
-  assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   if (thread->is_ext_suspended() || thread->is_terminated()) {
     return true;
   }
@@ -878,9 +844,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
-  if (!SafepointMechanism::uses_thread_local_poll()) {
-    assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
-  }
 
   if (log_is_enabled(Info, safepoint, stats)) {
     Atomic::inc(&_nof_threads_hit_polling_page);
@@ -1048,11 +1011,6 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
 // Block the thread at poll or poll return for safepoint/handshake.
 void ThreadSafepointState::handle_polling_page_exception() {
-
-  // If we're using a global poll, then the thread should not be
-  // marked as safepoint safe yet.
-  assert(!SafepointMechanism::uses_global_page_poll() || !_safepoint_safe,
-         "polling page exception on thread safepoint safe");
 
   // Step 1: Find the nmethod from the return address
   address real_return_addr = thread()->saved_exception_pc();

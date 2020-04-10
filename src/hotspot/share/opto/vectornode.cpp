@@ -518,6 +518,39 @@ bool VectorNode::is_vector_shift_count(int opc) {
   }
 }
 
+static bool is_con_M1(Node* n) {
+  if (n->is_Con()) {
+    const Type* t = n->bottom_type();
+    if (t->isa_int() && t->is_int()->get_con() == -1) {
+      return true;
+    }
+    if (t->isa_long() && t->is_long()->get_con() == -1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool VectorNode::is_all_ones_vector(Node* n) {
+  switch (n->Opcode()) {
+  case Op_ReplicateB:
+  case Op_ReplicateS:
+  case Op_ReplicateI:
+  case Op_ReplicateL:
+    return is_con_M1(n->in(1));
+  default:
+    return false;
+  }
+}
+
+bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
+  if (n->Opcode() == Op_XorV) {
+    return is_all_ones_vector(n->in(1)) ||
+           is_all_ones_vector(n->in(2));
+  }
+  return false;
+}
+
 // Return initial Pack node. Additional operands added with add_opd() calls.
 PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
@@ -673,7 +706,30 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_DOUBLE, "must be");
       vopc = Op_MaxReductionV;
       break;
-    // TODO: add MulL for targets that support it
+    case Op_AndI:
+      assert(bt == T_INT, "must be");
+      vopc = Op_AndReductionV;
+      break;
+    case Op_AndL:
+      assert(bt == T_LONG, "must be");
+      vopc = Op_AndReductionV;
+      break;
+    case Op_OrI:
+      assert(bt == T_INT, "must be");
+      vopc = Op_OrReductionV;
+      break;
+    case Op_OrL:
+      assert(bt == T_LONG, "must be");
+      vopc = Op_OrReductionV;
+      break;
+    case Op_XorI:
+      assert(bt == T_INT, "must be");
+      vopc = Op_XorReductionV;
+      break;
+    case Op_XorL:
+      assert(bt == T_LONG, "must be");
+      vopc = Op_XorReductionV;
+      break;
     default:
       break;
   }
@@ -697,8 +753,11 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
   case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2);
   case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2);
-  case Op_MinReductionV: return new MinReductionVNode(ctrl, n1, n2);
-  case Op_MaxReductionV: return new MaxReductionVNode(ctrl, n1, n2);
+  case Op_MinReductionV:  return new MinReductionVNode(ctrl, n1, n2);
+  case Op_MaxReductionV:  return new MaxReductionVNode(ctrl, n1, n2);
+  case Op_AndReductionV:  return new AndReductionVNode(ctrl, n1, n2);
+  case Op_OrReductionV:   return new OrReductionVNode(ctrl, n1, n2);
+  case Op_XorReductionV:  return new XorReductionVNode(ctrl, n1, n2);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -713,4 +772,14 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc != opc && Matcher::match_rule_supported(vopc);
   }
   return false;
+}
+
+MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* v1, Node* v2, Node* v3,
+                                      uint truth_table, const TypeVect* vt) {
+  assert(truth_table <= 0xFF, "invalid");
+  assert(v1->bottom_type() == vt, "mismatch");
+  assert(v2->bottom_type() == vt, "mismatch");
+  assert(v3->bottom_type() == vt, "mismatch");
+  Node* fn = gvn.intcon(truth_table);
+  return new MacroLogicVNode(v1, v2, v3, fn, vt);
 }

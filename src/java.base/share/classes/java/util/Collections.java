@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3366,7 +3366,7 @@ public class Collections {
         }
     }
 
-/**
+    /**
      * Returns a dynamically typesafe view of the specified navigable set.
      * Any attempt to insert an element of the wrong type will result in an
      * immediate {@link ClassCastException}.  Assuming a navigable set

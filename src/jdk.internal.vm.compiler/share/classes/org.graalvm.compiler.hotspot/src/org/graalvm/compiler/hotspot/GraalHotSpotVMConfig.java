@@ -522,7 +522,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
 
     public final int logOfHRGrainBytes = getFieldValue("HeapRegion::LogOfHRGrainBytes", Integer.class, "int");
 
-    public final long cardtableStartAddress = getFieldValue("CompilerToVM::Data::cardtable_start_address", Long.class, "jbyte*");
+    public final long cardtableStartAddress = getFieldValue("CompilerToVM::Data::cardtable_start_address", Long.class, "CardTable::CardValue*");
     public final int cardtableShift = getFieldValue("CompilerToVM::Data::cardtable_shift", Integer.class, "int");
 
     /**
@@ -550,7 +550,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int basicLockSize = getFieldValue("CompilerToVM::Data::sizeof_BasicLock", Integer.class, "int");
     public final int basicLockDisplacedHeaderOffset = getFieldOffset("BasicLock::_displaced_header", Integer.class, markWord);
 
-    public final int threadPollingPageOffset = getFieldOffset("Thread::_polling_page", Integer.class, "address", -1);
+    public final int threadPollingPageOffset = getFieldOffset("Thread::_polling_page", Integer.class, "volatile void*", -1);
     public final int threadAllocatedBytesOffset = getFieldOffset("Thread::_allocated_bytes", Integer.class, "jlong");
 
     public final int tlabRefillWasteIncrement = getFlag("TLABWasteIncrement", Integer.class);

@@ -86,6 +86,11 @@ public abstract class AbstractPty implements Pty {
             }
         }
 
+        @Override
+        public int readBuffered(byte[] b) throws IOException {
+            return in.read(b);
+        }
+
         private void setNonBlocking() {
             if (current == null
                     || current.getControlChar(Attributes.ControlChar.VMIN) != 0

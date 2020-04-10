@@ -38,6 +38,7 @@
 
 class FileMapInfo;
 class CHeapBitMap;
+struct ArchiveHeapOopmapInfo;
 
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
@@ -358,7 +359,9 @@ class MetaspaceShared : AllStatic {
     return is_windows;
   }
 
-  static void write_core_archive_regions(FileMapInfo* mapinfo);
+  static void write_core_archive_regions(FileMapInfo* mapinfo,
+                                         GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                         GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
 private:
 #if INCLUDE_CDS
   static void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,

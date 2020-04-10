@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,31 @@
 
 /*
  * @test
- * @bug 4742177
+ * @bug 4742177 8241786
+ * @library /test/lib
+ * @run main/othervm SetOutgoingIf
  * @summary Re-test IPv6 (and specifically MulticastSocket) with latest Linux & USAGI code
  */
+import java.io.IOException;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import jdk.test.lib.NetworkConfiguration;
 
 
-public class SetOutgoingIf {
-    private static int PORT = 9001;
+public class SetOutgoingIf implements AutoCloseable {
     private static String osname;
+    private final MulticastSocket SOCKET;
+    private final int PORT;
+    private final Map<NetIf, MulticastSender> sendersMap = new ConcurrentHashMap<>();
+    private SetOutgoingIf() {
+        try {
+            SOCKET = new MulticastSocket();
+            PORT = SOCKET.getLocalPort();
+        } catch (IOException io) {
+            throw new ExceptionInInitializerError(io);
+        }
+    }
 
     static boolean isWindows() {
         if (osname == null)
@@ -45,20 +60,28 @@ public class SetOutgoingIf {
     }
 
     private static boolean hasIPv6() throws Exception {
-        List<NetworkInterface> nics = Collections.list(
-                                        NetworkInterface.getNetworkInterfaces());
-        for (NetworkInterface nic : nics) {
-            List<InetAddress> addrs = Collections.list(nic.getInetAddresses());
-            for (InetAddress addr : addrs) {
-                if (addr instanceof Inet6Address)
-                    return true;
-            }
-        }
-
-        return false;
+        return NetworkConfiguration.probe()
+                .ip6Addresses()
+                .findAny()
+                .isPresent();
     }
 
     public static void main(String[] args) throws Exception {
+        try (var test = new SetOutgoingIf()) {
+            test.run();
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            SOCKET.close();
+        } finally {
+            sendersMap.values().stream().forEach(MulticastSender::close);
+        }
+    }
+
+    public void run() throws Exception {
         if (isWindows()) {
             System.out.println("The test only run on non-Windows OS. Bye.");
             return;
@@ -99,10 +122,13 @@ public class SetOutgoingIf {
                 System.out.println("Ignore NetworkInterface nic == " + nic);
             }
         }
+        Collections.reverse(netIfs);
         if (netIfs.size() <= 1) {
             System.out.println("Need 2 or more network interfaces to run. Bye.");
             return;
         }
+
+        System.out.println("Using PORT: " + PORT);
 
         // We will send packets to one ipv4, and one ipv6
         // multicast group using each network interface :-
@@ -129,9 +155,9 @@ public class SetOutgoingIf {
             netIf.groups(groups);
 
             // use a separated thread to send to those 2 groups
-            Thread sender = new Thread(new Sender(netIf,
-                                                  groups,
-                                                  PORT));
+            var multicastSender = new MulticastSender(netIf, groups, PORT);
+            sendersMap.put(netIf, multicastSender);
+            Thread sender = new Thread(multicastSender);
             sender.setDaemon(true); // we want sender to stop when main thread exits
             sender.start();
         }
@@ -143,46 +169,44 @@ public class SetOutgoingIf {
         for (NetIf netIf : netIfs) {
             NetworkInterface nic = netIf.nic();
             for (InetAddress group : netIf.groups()) {
-                MulticastSocket mcastsock = new MulticastSocket(PORT);
-                mcastsock.setSoTimeout(5000);   // 5 second
-                DatagramPacket packet = new DatagramPacket(buf, 0, buf.length);
+                try (MulticastSocket mcastsock = new MulticastSocket(PORT)) {
+                    mcastsock.setSoTimeout(5000);   // 5 second
+                    DatagramPacket packet = new DatagramPacket(buf, 0, buf.length);
 
-                // the interface supports the IP multicast group
-                debug("Joining " + group + " on " + nic.getName());
-                mcastsock.joinGroup(new InetSocketAddress(group, PORT), nic);
+                    // the interface supports the IP multicast group
+                    debug("Joining " + group + " on " + nic.getName());
+                    mcastsock.joinGroup(new InetSocketAddress(group, PORT), nic);
 
-                try {
-                    mcastsock.receive(packet);
-                    debug("received packet on " + packet.getAddress());
-                } catch (Exception e) {
-                    // test failed if any exception
-                    throw new RuntimeException(e);
-                }
-
-                // now check which network interface this packet comes from
-                NetworkInterface from = NetworkInterface.getByInetAddress(packet.getAddress());
-                NetworkInterface shouldbe = nic;
-                if (from != null) {
-                    if (!from.equals(shouldbe)) {
-                        System.out.println("Packets on group "
-                                        + group + " should come from "
-                                        + shouldbe.getName() + ", but came from "
-                                        + from.getName());
+                    try {
+                        mcastsock.receive(packet);
+                        debug("received packet on " + packet.getAddress());
+                    } catch (Exception e) {
+                        // test failed if any exception
+                        throw new RuntimeException(e);
                     }
-                }
 
-                mcastsock.leaveGroup(new InetSocketAddress(group, PORT), nic);
+                    // now check which network interface this packet comes from
+                    NetworkInterface from = NetworkInterface.getByInetAddress(packet.getAddress());
+                    NetworkInterface shouldbe = nic;
+                    if (from != null) {
+                        if (!from.equals(shouldbe)) {
+                            System.out.println("Packets on group "
+                                    + group + " should come from "
+                                    + shouldbe.getName() + ", but came from "
+                                    + from.getName());
+                        }
+                    }
+
+                    mcastsock.leaveGroup(new InetSocketAddress(group, PORT), nic);
+                }
             }
         }
     }
 
     private static boolean isTestExcludedInterface(NetworkInterface nif) {
-        if (isMacOS() && nif.getName().contains("awdl"))
-            return true;
-        String dName = nif.getDisplayName();
-        if (isWindows() && dName != null && dName.contains("Teredo"))
-            return true;
-        return false;
+       return !NetworkConfiguration.isTestable(nif)
+               || isMacOS() && nif.getName().startsWith("utun")
+               || !NetworkConfiguration.hasNonLinkLocalAddress(nif);
     }
 
     private static boolean debug = true;
@@ -193,12 +217,14 @@ public class SetOutgoingIf {
     }
 }
 
-class Sender implements Runnable {
-    private NetIf netIf;
-    private List<InetAddress> groups;
-    private int port;
+class MulticastSender implements Runnable, AutoCloseable {
+    private final NetIf netIf;
+    private final List<InetAddress> groups;
+    private final int port;
+    private volatile boolean closed;
+    private long count;
 
-    public Sender(NetIf netIf,
+    public MulticastSender(NetIf netIf,
                   List<InetAddress> groups,
                   int port) {
         this.netIf = netIf;
@@ -206,10 +232,15 @@ class Sender implements Runnable {
         this.port = port;
     }
 
+    @Override
+    public void close() {
+        closed = true;
+    }
+
     public void run() {
-        try {
-            MulticastSocket mcastsock = new MulticastSocket();
-            mcastsock.setNetworkInterface(netIf.nic());
+        var nic = netIf.nic();
+        try (MulticastSocket mcastsock = new MulticastSocket()) {
+            mcastsock.setNetworkInterface(nic);
             List<DatagramPacket> packets = new LinkedList<DatagramPacket>();
 
             byte[] buf = "hello world".getBytes();
@@ -217,14 +248,23 @@ class Sender implements Runnable {
                 packets.add(new DatagramPacket(buf, buf.length, new InetSocketAddress(group, port)));
             }
 
-            for (;;) {
-                for (DatagramPacket packet : packets)
+            while (!closed) {
+                for (DatagramPacket packet : packets) {
                     mcastsock.send(packet);
-
+                    count++;
+                }
+                System.out.printf("Sent %d packets from %s\n", count, nic.getName());
                 Thread.sleep(1000);   // sleep 1 second
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (!closed) {
+                System.err.println("Unexpected exception for MulticastSender("
+                        + nic.getName() + "): " + e);
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+        } finally {
+            System.out.printf("Sent %d packets from %s\n", count, nic.getName());
         }
     }
 }
@@ -281,4 +321,3 @@ class NetIf {
         this.groups = groups;
     }
 }
-

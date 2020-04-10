@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      4973609 8015249 8025633 8026567 6469561 8071982 8162363 8182765 8223364
+             8242056
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @library  ../../lib
@@ -50,16 +51,14 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationTypeField.html", true,
                 "<li>Summary:&nbsp;</li>\n"
-                + "<li><a href=\"#annotation.type."
-                + "field.summary\">Field</a>&nbsp;|&nbsp;</li>",
+                + "<li><a href=\"#field.summary\">Field</a>&nbsp;|&nbsp;</li>",
                 "<li>Detail:&nbsp;</li>\n"
-                + "<li><a href=\"#annotation.type."
-                + "field.detail\">Field</a>&nbsp;|&nbsp;</li>",
-                "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->",
+                + "<li><a href=\"#field.detail\">Field</a>&nbsp;|&nbsp;</li>",
+                "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
                 + "</code></th>",
-                "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
+                "<!-- ============ FIELD DETAIL =========== -->",
                 "<section class=\"detail\" id=\"DEFAULT_NAME\">\n"
                 + "<h3>DEFAULT_NAME</h3>\n"
                 + "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
@@ -74,14 +73,14 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                     "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
-                    "<ul class=\"block-list\">",
-                    "<li class=\"block-list\">",
+                    "<ul class=\"member-list\">",
+                    "<li>",
                     "<section class=\"details\" id=\"annotation.type.element.detail\">",
                     "<h2>Element Details</h2>",
                     "<!--   -->",
                     "</a>",
-                    "<ul class=\"block-list\">",
-                    "<li class=\"block-list\">",
+                    "<ul class=\"member-list\">",
+                    "<li>",
                     "<section class=\"detail\" id=\"value()\">",
                     "<h3>value</h3>\n",
                     "<div class=\"member-signature\"><span class=\"return-type\">int</span>"

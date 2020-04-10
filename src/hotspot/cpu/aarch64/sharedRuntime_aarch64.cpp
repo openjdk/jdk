@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 #include "adfiles/ad_aarch64.hpp"
 #include "opto/runtime.hpp"
 #endif
@@ -170,11 +170,12 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
-#ifndef COMPILER2
-  assert(!restore_vectors, "vectors are generated only by C2 and JVMCI");
-#endif
+#if COMPILER2_OR_JVMCI
   __ pop_CPU_state(restore_vectors);
   __ leave();
+#else
+  assert(!restore_vectors, "vectors are generated only by C2 and JVMCI");
+#endif
 }
 
 void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
@@ -2537,7 +2538,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
 void SharedRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
@@ -2728,7 +2729,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   _uncommon_trap_blob =  UncommonTrapBlob::create(&buffer, oop_maps,
                                                  SimpleRuntimeFrame::framesize >> 1);
 }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
 
 //------------------------------generate_handler_blob------
@@ -2806,7 +2807,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ bind(noException);
 
   Label no_adjust, bail;
-  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+  if (!cause_return) {
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ ldr(rscratch1, Address(rfp, wordSize));
     __ cmp(r20, rscratch1);
@@ -2936,7 +2937,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 // This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame
 //
 //------------------------------generate_exception_blob---------------------------
@@ -3065,4 +3066,4 @@ void OptoRuntime::generate_exception_blob() {
   // Set exception blob
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2

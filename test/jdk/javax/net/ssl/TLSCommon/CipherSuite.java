@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public enum CipherSuite {
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256(
             0x0067, KeyExAlgorithm.DHE_RSA, Protocol.TLSV1_2, Protocol.TLSV1_2),
     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA(
-            0x004C, KeyExAlgorithm.ECDH_ECDSA, Protocol.TLSV1, Protocol.TLSV1_2),
+            0x004C, KeyExAlgorithm.ECDH_ECDSA, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_DHE_DSS_WITH_AES_128_CBC_SHA256(
             0x0040, KeyExAlgorithm.DHE_DSS, Protocol.TLSV1_2, Protocol.TLSV1_2),
     TLS_RSA_WITH_AES_256_CBC_SHA256(
@@ -159,7 +159,7 @@ public enum CipherSuite {
     TLS_DH_anon_WITH_AES_256_CBC_SHA(
             0x003A, KeyExAlgorithm.DH_ANON, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA(
-            0x0039, KeyExAlgorithm.DHE_RSA, Protocol.TLSV1, Protocol.TLSV1_2),
+            0x0039, KeyExAlgorithm.DHE_RSA, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_DHE_DSS_WITH_AES_256_CBC_SHA(
             0x0038, KeyExAlgorithm.DHE_DSS, Protocol.TLSV1_2, Protocol.TLSV1_2),
     TLS_RSA_WITH_AES_256_CBC_SHA(

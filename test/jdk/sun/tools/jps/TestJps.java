@@ -25,8 +25,6 @@
  * @test
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
- * @build LingeredAppForJps
- * @build LingeredApp
  * @run main/othervm/timeout=360 TestJps
  */
 
@@ -40,41 +38,26 @@
   *   of the full package name actually is not tested.
   */
 
-import java.util.List;
-import java.io.File;
+import jdk.test.lib.apps.LingeredApp;
 
 public class TestJps {
 
-    public static void testJpsClass() throws Throwable {
-        LingeredApp app = new LingeredAppForJps();
+    public static void testJps(boolean useJar) throws Throwable {
+        LingeredAppForJps app = new LingeredAppForJps();
+        if (useJar) {
+            app.buildJar();
+        }
         try {
             LingeredApp.startApp(app, JpsHelper.getVmArgs());
             JpsHelper.runJpsVariants(app.getPid(),
-                LingeredAppForJps.getProcessName(), LingeredAppForJps.getFullProcessName(), app.getLockFileName());
-
+                    app.getProcessName(), app.getFullProcessName(), app.getLockFileName());
         } finally {
             LingeredApp.stopApp(app);
         }
     }
 
-    public static void testJpsJar() throws Throwable {
-        // Get any jar exception as early as possible
-        File jar = LingeredAppForJps.buildJar();
-
-        // Jar created go to the main test
-        LingeredAppForJps app = new LingeredAppForJps();
-        try {
-            LingeredAppForJps.startAppJar(app, JpsHelper.getVmArgs(), jar);
-            JpsHelper.runJpsVariants(app.getPid(),
-                LingeredAppForJps.getProcessName(jar), LingeredAppForJps.getFullProcessName(jar), app.getLockFileName());
-        } finally {
-            LingeredAppForJps.stopApp(app);
-        }
-
-    }
-
     public static void main(String[] args) throws Throwable {
-        testJpsClass();
-        testJpsJar();
+        testJps(false);
+        testJps(true);
     }
 }

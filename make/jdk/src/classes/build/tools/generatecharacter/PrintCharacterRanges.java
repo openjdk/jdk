@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,16 @@ public class PrintCharacterRanges {
     int end()   { return end;   }
   }
 
-  private static List/*<BooleanRange>*/ recoverBooleanRanges(String methodName) throws Exception {
-    List result = new ArrayList();
+  private static List<BooleanRange> recoverBooleanRanges(String methodName) throws Exception {
+    List<BooleanRange> result = new ArrayList<>();
     int currentRangeStart = -1;
-    Method method = Character.class.getDeclaredMethod(methodName, new Class[] { Character.TYPE });
+    Method method = Character.class.getDeclaredMethod(methodName, new Class<?>[] { Character.TYPE });
     if (method == null) {
       throw new RuntimeException("No method \"" + methodName + "\"(C) found");
     }
 
     for (int i = 0; i <= 255; i++) {
-      boolean methodRes = ((Boolean) method.invoke(null, new Object[] { new Character((char) i) })).booleanValue();
+      boolean methodRes = ((Boolean) method.invoke(null, new Object[] { Character.valueOf((char) i) })).booleanValue();
       if (methodRes) {
         if (currentRangeStart < 0) {
           currentRangeStart = i;
@@ -91,17 +91,17 @@ public class PrintCharacterRanges {
     return s.toString();
   }
 
-  private static void printBooleanRanges(List/*<BooleanRange>*/ ranges, String methodName) {
+  private static void printBooleanRanges(List<BooleanRange> ranges, String methodName) {
     System.out.print(methodName + ":");
-    for (Iterator iter = ranges.iterator(); iter.hasNext();) {
-      BooleanRange range = (BooleanRange) iter.next();
+    for (Iterator<BooleanRange> iter = ranges.iterator(); iter.hasNext();) {
+      BooleanRange range = iter.next();
       System.out.print(" [ " + describe(range.begin()) + ", " + describe(range.end()) + " ]");
     }
     System.out.println("");
   }
 
   private static void recoverAndPrintBooleanRanges(String methodName) throws Exception {
-    List ranges = recoverBooleanRanges(methodName);
+    List<BooleanRange> ranges = recoverBooleanRanges(methodName);
     printBooleanRanges(ranges, methodName);
   }
 
@@ -121,17 +121,17 @@ public class PrintCharacterRanges {
     int offset() { return offset; }
   }
 
-  private static List/*<ShiftRange>*/ recoverShiftRanges(String methodName) throws Exception {
-    List result = new ArrayList();
+  private static List<ShiftRange> recoverShiftRanges(String methodName) throws Exception {
+    List<ShiftRange> result = new ArrayList<>();
     int currentRangeStart = -1;
     int currentRangeOffset = -1;
-    Method method = Character.class.getDeclaredMethod(methodName, new Class[] { Character.TYPE });
+    Method method = Character.class.getDeclaredMethod(methodName, new Class<?>[] { Character.TYPE });
     if (method == null) {
       throw new RuntimeException("No method \"" + methodName + "\"(C) found");
     }
 
     for (int i = 0; i <= 255; i++) {
-      char methodRes = ((Character) method.invoke(null, new Object[] { new Character((char) i) })).charValue();
+      char methodRes = ((Character) method.invoke(null, new Object[] { Character.valueOf((char) i) })).charValue();
       if (methodRes != i) {
         int offset = methodRes - i;
         if (currentRangeStart < 0) {
@@ -155,11 +155,11 @@ public class PrintCharacterRanges {
     return result;
   }
 
-  private static void printShiftRanges(List/*<ShiftRange>*/ ranges, String methodName) {
+  private static void printShiftRanges(List<ShiftRange> ranges, String methodName) {
     System.out.print(methodName + ":");
     boolean isFirst = true;
-    for (Iterator iter = ranges.iterator(); iter.hasNext();) {
-      ShiftRange range = (ShiftRange) iter.next();
+    for (Iterator<ShiftRange> iter = ranges.iterator(); iter.hasNext();) {
+      ShiftRange range = iter.next();
       if (isFirst) {
         isFirst = false;
       } else {
@@ -173,7 +173,7 @@ public class PrintCharacterRanges {
   }
 
   private static void recoverAndPrintShiftRanges(String methodName) throws Exception {
-    List ranges = recoverShiftRanges(methodName);
+    List<ShiftRange> ranges = recoverShiftRanges(methodName);
     printShiftRanges(ranges, methodName);
   }
 

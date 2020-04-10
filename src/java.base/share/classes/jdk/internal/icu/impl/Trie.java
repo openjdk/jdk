@@ -73,22 +73,22 @@ public abstract class Trie
     // public class declaration ----------------------------------------
 
     /**
-    * Character data in com.ibm.impl.Trie have different user-specified format
-    * for different purposes.
-    * This interface specifies methods to be implemented in order for
-    * com.ibm.impl.Trie, to surrogate offset information encapsulated within
-    * the data.
-    */
+     * Character data in com.ibm.impl.Trie have different user-specified format
+     * for different purposes.
+     * This interface specifies methods to be implemented in order for
+     * com.ibm.impl.Trie, to surrogate offset information encapsulated within
+     * the data.
+     */
     public static interface DataManipulate
     {
         /**
-        * Called by com.ibm.icu.impl.Trie to extract from a lead surrogate's
-        * data
-        * the index array offset of the indexes for that lead surrogate.
-        * @param value data value for a surrogate from the trie, including the
-        *        folding offset
-        * @return data offset or 0 if there is no data for the lead surrogate
-        */
+         * Called by com.ibm.icu.impl.Trie to extract from a lead surrogate's
+         * data
+         * the index array offset of the indexes for that lead surrogate.
+         * @param value data value for a surrogate from the trie, including the
+         *        folding offset
+         * @return data offset or 0 if there is no data for the lead surrogate
+         */
         public int getFoldingOffset(int value);
     }
 
@@ -102,14 +102,14 @@ public abstract class Trie
     // protected constructor -------------------------------------------
 
     /**
-    * Trie constructor for CharTrie use.
-    * @param inputStream ICU data file input stream which contains the
-    *                        trie
-    * @param dataManipulate object containing the information to parse the
-    *                       trie data
-    * @throws IOException thrown when input stream does not have the
-    *                        right header.
-    */
+     * Trie constructor for CharTrie use.
+     * @param inputStream ICU data file input stream which contains the
+     *                        trie
+     * @param dataManipulate object containing the information to parse the
+     *                       trie data
+     * @throws IOException thrown when input stream does not have the
+     *                        right header.
+     */
     protected Trie(InputStream inputStream,
                    DataManipulate  dataManipulate) throws IOException
     {
@@ -195,27 +195,27 @@ public abstract class Trie
     // protected methods -----------------------------------------------
 
     /**
-    * Gets the offset to the data which the surrogate pair points to.
-    * @param lead lead surrogate
-    * @param trail trailing surrogate
-    * @return offset to data
-    */
+     * Gets the offset to the data which the surrogate pair points to.
+     * @param lead lead surrogate
+     * @param trail trailing surrogate
+     * @return offset to data
+     */
     protected abstract int getSurrogateOffset(char lead, char trail);
 
     /**
-    * Gets the offset to the data which the index ch after variable offset
-    * points to.
-    * Note for locating a non-supplementary character data offset, calling
-    * <p>
-    * getRawOffset(0, ch);
-    * </p>
-    * will do. Otherwise if it is a supplementary character formed by
-    * surrogates lead and trail. Then we would have to call getRawOffset()
-    * with getFoldingIndexOffset(). See getSurrogateOffset().
-    * @param offset index offset which ch is to start from
-    * @param ch index to be used after offset
-    * @return offset to the data
-    */
+     * Gets the offset to the data which the index ch after variable offset
+     * points to.
+     * Note for locating a non-supplementary character data offset, calling
+     * <p>
+     * getRawOffset(0, ch);
+     * </p>
+     * will do. Otherwise if it is a supplementary character formed by
+     * surrogates lead and trail. Then we would have to call getRawOffset()
+     * with getFoldingIndexOffset(). See getSurrogateOffset().
+     * @param offset index offset which ch is to start from
+     * @param ch index to be used after offset
+     * @return offset to the data
+     */
     protected final int getRawOffset(int offset, char ch)
     {
         return (m_index_[offset + (ch >> INDEX_STAGE_1_SHIFT_)]
@@ -224,11 +224,11 @@ public abstract class Trie
     }
 
     /**
-    * Gets the offset to data which the BMP character points to
-    * Treats a lead surrogate as a normal code point.
-    * @param ch BMP character
-    * @return offset to data
-    */
+     * Gets the offset to data which the BMP character points to
+     * Treats a lead surrogate as a normal code point.
+     * @param ch BMP character
+     * @return offset to data
+     */
     protected final int getBMPOffset(char ch)
     {
         return (ch >= UTF16.LEAD_SURROGATE_MIN_VALUE
@@ -239,13 +239,13 @@ public abstract class Trie
     }
 
     /**
-    * Gets the offset to the data which this lead surrogate character points
-    * to.
-    * Data at the returned offset may contain folding offset information for
-    * the next trailing surrogate character.
-    * @param ch lead surrogate character
-    * @return offset to data
-    */
+     * Gets the offset to the data which this lead surrogate character points
+     * to.
+     * Data at the returned offset may contain folding offset information for
+     * the next trailing surrogate character.
+     * @param ch lead surrogate character
+     * @return offset to data
+     */
     protected final int getLeadOffset(char ch)
     {
        return getRawOffset(0, ch);
@@ -282,11 +282,11 @@ public abstract class Trie
     }
 
     /**
-    * <p>Parses the inputstream and creates the trie index with it.</p>
-    * <p>This is overwritten by the child classes.
-    * @param inputStream input stream containing the trie information
-    * @exception IOException thrown when data reading fails.
-    */
+     * <p>Parses the inputstream and creates the trie index with it.</p>
+     * <p>This is overwritten by the child classes.
+     * @param inputStream input stream containing the trie information
+     * @exception IOException thrown when data reading fails.
+     */
     protected void unserialize(InputStream inputStream) throws IOException
     {
         //indexLength is a multiple of 1024 >> INDEX_STAGE_2_SHIFT_
@@ -298,9 +298,9 @@ public abstract class Trie
     }
 
     /**
-    * Determines if this is a 16 bit trie
-    * @return true if this is a 16 bit trie
-    */
+     * Determines if this is a 16 bit trie
+     * @return true if this is a 16 bit trie
+     */
     protected final boolean isCharTrie()
     {
         return (m_options_ & HEADER_OPTIONS_DATA_IS_32_BIT_) == 0;
@@ -313,12 +313,12 @@ public abstract class Trie
      */
     protected static final int HEADER_OPTIONS_LATIN1_IS_LINEAR_MASK_ = 0x200;
     /**
-    * Constant number to authenticate the byte block
-    */
+     * Constant number to authenticate the byte block
+     */
     protected static final int HEADER_SIGNATURE_ = 0x54726965;
     /**
-    * Header option formatting
-    */
+     * Header option formatting
+     */
     private static final int HEADER_OPTIONS_SHIFT_MASK_ = 0xF;
     protected static final int HEADER_OPTIONS_INDEX_SHIFT_ = 4;
     protected static final int HEADER_OPTIONS_DATA_IS_32_BIT_ = 0x100;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@ import java.util.Hashtable;
 
 public class DummyContext extends InitialContext {
 
-    private Hashtable env;
+    private Hashtable<?,?> env;
 
-    DummyContext(Hashtable env) throws NamingException {
+    DummyContext(Hashtable<?,?> env) throws NamingException {
         this.env = env;
     }
 
-    public Hashtable getEnvironment() throws NamingException {
+    public Hashtable<?,?> getEnvironment() throws NamingException {
         return env;
     }
 }

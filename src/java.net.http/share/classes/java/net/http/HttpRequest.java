@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Iterator;
@@ -614,12 +616,16 @@ public abstract class HttpRequest {
          * method, when the {@code BodyPublisher} is created. Care must be taken
          * that the {@code BodyPublisher} is not shared with untrusted code.
          *
-         * @param path the path to the file containing the body
+         * @param  path the path to the file containing the body
          * @return a BodyPublisher
          * @throws java.io.FileNotFoundException if the path is not found
-         * @throws SecurityException if a security manager has been installed
-         *          and it denies {@link SecurityManager#checkRead(String)
-         *          read access} to the given file
+         * @throws SecurityException if
+         *         {@linkplain Files#newInputStream(Path, OpenOption...)
+         *         opening the file for reading} is denied:
+         *         in the case of the system-default file system provider,
+         *         and a security manager is installed,
+         *         {@link SecurityManager#checkRead(String) checkRead}
+         *         is invoked to check read access to the given file
          */
         public static BodyPublisher ofFile(Path path) throws FileNotFoundException {
             Objects.requireNonNull(path);

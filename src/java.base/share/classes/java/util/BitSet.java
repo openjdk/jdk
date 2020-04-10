@@ -295,7 +295,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @return a byte array containing a little-endian representation
      *         of all the bits in this bit set
      * @since 1.7
-    */
+     */
     public byte[] toByteArray() {
         int n = wordsInUse;
         if (n == 0)
@@ -324,7 +324,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @return a long array containing a little-endian representation
      *         of all the bits in this bit set
      * @since 1.7
-    */
+     */
     public long[] toLongArray() {
         return Arrays.copyOf(words, wordsInUse);
     }

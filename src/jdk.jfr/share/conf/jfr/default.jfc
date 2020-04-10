@@ -391,6 +391,11 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.GCPhaseConcurrentLevel1">
+      <setting name="enabled" control="gc-enabled-all">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.GCReferenceStatistics">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -705,12 +710,29 @@
       <setting name="enabled">true</setting>
     </event>
 
-    <event name="jdk.ZPageAllocation">
+    <event name="jdk.ZAllocationStall">
       <setting name="enabled">true</setting>
-      <setting name="threshold">10 ms</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.ZThreadPhase">
+    <event name="jdk.ZPageAllocation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">1 ms</setting>
+    </event>
+
+    <event name="jdk.ZPageCacheFlush">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZRelocationSet">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZRelocationSetGroup">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
@@ -725,6 +747,16 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.ZThreadPhase">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZUncommit">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.Deoptimization">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">false</setting>
@@ -733,7 +765,7 @@
     <event name="jdk.HeapDump">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ns</setting>
-      <setting name="stackTrace">true</setting>  
+      <setting name="stackTrace">true</setting>
     </event>
 
 
@@ -855,7 +887,7 @@
         <option label="High" name="high">high</option>
         <option label="Ludicrous (High Overhead)" name="ludicrous">ludicrous</option>
       </selection>
-      
+
       <condition name="method-sampling-java-interval" true="999 d">
         <test name="method-sampling-interval" operator="equal" value="off"/>
       </condition>
@@ -871,7 +903,7 @@
       <condition name="method-sampling-java-interval" true="1 ms">
         <test name="method-sampling-interval" operator="equal" value="ludicrous"/>
       </condition>
-      
+
       <condition name="method-sampling-native-interval" true="999 d">
         <test name="method-sampling-interval" operator="equal" value="off"/>
       </condition>
@@ -882,7 +914,7 @@
           <test name="method-sampling-interval" operator="equal" value="high"/>
           <test name="method-sampling-interval" operator="equal" value="ludicrous"/>
         </or>
-      </condition>  
+      </condition>
 
       <condition name="method-sampling-enabled" true="false" false="true">
         <test name="method-sampling-interval" operator="equal" value="off"/>

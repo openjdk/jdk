@@ -28,6 +28,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -91,9 +92,9 @@ private:
   ShenandoahNMethod** const   _array;
   const int                   _length;
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
+  shenandoah_padding(0);
   volatile size_t       _claimed;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
 public:
   ShenandoahNMethodTableSnapshot(ShenandoahNMethodTable* table);

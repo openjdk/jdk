@@ -153,6 +153,9 @@ public:
 
   // Clear the entire contents of this remembered set.
   void clear();
+
+  // Safe for use by concurrent readers outside _m
+  bool is_region_coarsened(RegionIdx_t from_hrm_ind) const;
 };
 
 class PerRegionTable: public CHeapObj<mtGC> {

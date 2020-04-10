@@ -242,7 +242,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * General category "Nd" in the Unicode specification.
      * @since   1.1
      */
-    public static final byte DECIMAL_DIGIT_NUMBER        = 9;
+    public static final byte DECIMAL_DIGIT_NUMBER = 9;
 
     /**
      * General category "Nl" in the Unicode specification.
@@ -390,7 +390,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     public static final byte DIRECTIONALITY_RIGHT_TO_LEFT = 1;
 
     /**
-    * Strong bidirectional character type "AL" in the Unicode specification.
+     * Strong bidirectional character type "AL" in the Unicode specification.
      * @since 1.4
      */
     public static final byte DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC = 2;
@@ -3181,7 +3181,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
                              "MAYAN NUMERALS",
                              "MAYANNUMERALS");
 
-       /**
+        /**
          * Constant for the "Indic Siyaq Numbers" Unicode
          * character block.
          * @since 12
@@ -3285,7 +3285,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
                              "SYMBOLS AND PICTOGRAPHS EXTENDED-A",
                              "SYMBOLSANDPICTOGRAPHSEXTENDED-A");
 
-        private static final int blockStarts[] = {
+        private static final int[] blockStarts = {
             0x0000,   // 0000..007F; Basic Latin
             0x0080,   // 0080..00FF; Latin-1 Supplement
             0x0100,   // 0100..017F; Latin Extended-A
@@ -4773,7 +4773,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
          */
         WARANG_CITI,
 
-         /**
+        /**
          * Unicode script "Ahom".
          * @since 9
          */
@@ -8068,7 +8068,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             UNKNOWN,                  // E01F0..10FFFF
         };
 
-        private static HashMap<String, Character.UnicodeScript> aliases;
+        private static final HashMap<String, Character.UnicodeScript> aliases;
         static {
             aliases = new HashMap<>((int)(153 / 0.75f + 1.0f));
             aliases.put("ADLM", ADLAM);
@@ -8421,8 +8421,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @return  a string representation of this object.
      */
     public String toString() {
-        char buf[] = {value};
-        return String.valueOf(buf);
+        return String.valueOf(value);
     }
 
     /**
@@ -8590,7 +8589,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * values is a valid
      * <a href="http://www.unicode.org/glossary/#surrogate_pair">
      * Unicode surrogate pair</a>.
-
+     *
      * <p>This method is equivalent to the expression:
      * <blockquote><pre>{@code
      * isHighSurrogate(high) && isLowSurrogate(low)
@@ -10967,7 +10966,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Compares two {@code Character} objects numerically.
      *
      * @param   anotherCharacter   the {@code Character} to be compared.
-
      * @return  the value {@code 0} if the argument {@code Character}
      *          is equal to this {@code Character}; a value less than
      *          {@code 0} if this {@code Character} is numerically less
@@ -11074,7 +11072,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Note: if the specified character is not assigned a name by
      * the <i>UnicodeData</i> file (part of the Unicode Character
      * Database maintained by the Unicode Consortium), the returned
-     * name is the same as the result of expression.
+     * name is the same as the result of expression:
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
@@ -11118,7 +11116,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * Note: if a character is not assigned a name by the <i>UnicodeData</i>
      * file (part of the Unicode Character Database maintained by the Unicode
-     * Consortium), its name is defined as the result of expression
+     * Consortium), its name is defined as the result of expression:
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')

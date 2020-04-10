@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ import sun.util.spi.CalendarProvider;
  * the calendar fields are normalized. For example, a lenient
  * {@code GregorianCalendar} interprets {@code MONTH == JANUARY},
  * {@code DAY_OF_MONTH == 32} as February 1.
-
+ *
  * <p>When a {@code Calendar} is in non-lenient mode, it throws an
  * exception if there is any inconsistency in its calendar fields. For
  * example, a {@code GregorianCalendar} always produces
@@ -235,7 +235,7 @@ import sun.util.spi.CalendarProvider;
  * originally set to August 31, 1999. Calling <code>set(Calendar.MONTH,
  * Calendar.SEPTEMBER)</code> sets the date to September 31,
  * 1999. This is a temporary internal representation that resolves to
- * October 1, 1999 if {@code getTime()}is then called. However, a
+ * October 1, 1999 if {@code getTime()} is then called. However, a
  * call to {@code set(Calendar.DAY_OF_MONTH, 30)} before the call to
  * {@code getTime()} sets the date to September 30, 1999, since
  * no recomputation occurs after {@code set()} itself.</p>

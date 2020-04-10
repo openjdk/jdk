@@ -327,11 +327,11 @@ void VM_Version::get_processor_features() {
     }
   } else {
     if (UseAES) {
-      warning("UseAES specified, but not supported on this CPU");
+      warning("AES instructions are not available on this CPU");
       FLAG_SET_DEFAULT(UseAES, false);
     }
     if (UseAESIntrinsics) {
-      warning("UseAESIntrinsics specified, but not supported on this CPU");
+      warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
   }
@@ -425,6 +425,11 @@ void VM_Version::get_processor_features() {
   }
 
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    FLAG_SET_DEFAULT(UsePopCountInstruction, true);
+  }
+
+  if (!UsePopCountInstruction) {
+    warning("UsePopCountInstruction is always enabled on this CPU");
     UsePopCountInstruction = true;
   }
 

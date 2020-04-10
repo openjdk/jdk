@@ -143,7 +143,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
-  if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
+  if (class_loader.is_null()) return ClassLoaderData::the_null_class_loader_data();
   return ClassLoaderDataGraph::find_or_create(class_loader);
 }
 
@@ -1157,10 +1157,11 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 // Load a class for boot loader from the shared spaces. This also
 // forces the super class and all interfaces to be loaded.
 InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
+                                                        PackageEntry* pkg_entry,
                                                         TRAPS) {
   InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
   if (ik != NULL && ik->is_shared_boot_class()) {
-    return load_shared_class(ik, Handle(), Handle(), NULL, THREAD);
+    return load_shared_class(ik, Handle(), Handle(), NULL, pkg_entry, THREAD);
   }
   return NULL;
 }
@@ -1173,6 +1174,7 @@ InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
 //     be defined in an unnamed module.
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                InstanceKlass* ik,
+                                               PackageEntry* pkg_entry,
                                                Handle class_loader, TRAPS) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
@@ -1197,23 +1199,20 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     return true;
   }
   // Get the pkg_entry from the classloader
-  TempNewSymbol pkg_name = NULL;
-  PackageEntry* pkg_entry = NULL;
   ModuleEntry* mod_entry = NULL;
-  pkg_name = InstanceKlass::package_from_name(class_name, CHECK_false);
+  TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() :
+                                               ClassLoader::package_from_class_name(class_name);
   if (pkg_name != NULL) {
     if (loader_data != NULL) {
-      pkg_entry = loader_data->packages()->lookup_only(pkg_name);
+      if (pkg_entry != NULL) {
+        mod_entry = pkg_entry->module();
+        // If the archived class is from a module that has been patched at runtime,
+        // the class cannot be loaded from the archive.
+        if (mod_entry != NULL && mod_entry->is_patched()) {
+          return false;
+        }
+      }
     }
-    if (pkg_entry != NULL) {
-      mod_entry = pkg_entry->module();
-    }
-  }
-
-  // If the archived class is from a module that has been patched at runtime,
-  // the class cannot be loaded from the archive.
-  if (mod_entry != NULL && mod_entry->is_patched()) {
-    return false;
   }
 
   if (class_loader.is_null()) {
@@ -1301,13 +1300,14 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    Handle class_loader,
                                                    Handle protection_domain,
                                                    const ClassFileStream *cfs,
+                                                   PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != NULL, "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
   Symbol* class_name = ik->name();
 
   bool visible = is_shared_class_visible(
-                          class_name, ik, class_loader, CHECK_NULL);
+                          class_name, ik, pkg_entry, class_loader, CHECK_NULL);
   if (!visible) {
     return NULL;
   }
@@ -1343,7 +1343,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ObjectLocker ol(lockObject, THREAD, true);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
-    ik->restore_unshareable_info(loader_data, protection_domain, CHECK_NULL);
+    ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
   }
 
   load_shared_class_misc(ik, loader_data, CHECK_NULL);
@@ -1357,8 +1357,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
     int path_index = ik->shared_classpath_index();
-    ResourceMark rm(THREAD);
-    ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
+    ClassLoader::add_package(ik, path_index, THREAD);
   }
 
   if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
@@ -1411,7 +1410,7 @@ void SystemDictionary::quick_resolve(InstanceKlass* klass, ClassLoaderData* load
     }
   }
 
-  klass->restore_unshareable_info(loader_data, domain, THREAD);
+  klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
   load_shared_class_misc(klass, loader_data, CHECK);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int hash = dictionary->compute_hash(klass->name());
@@ -1430,7 +1429,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
     ClassLoaderData *loader_data = class_loader_data(class_loader);
 
     // Find the package in the boot loader's package entry table.
-    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_NULL);
+    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
     if (pkg_name != NULL) {
       pkg_entry = loader_data->packages()->lookup_only(pkg_name);
     }
@@ -1491,7 +1490,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
     {
 #if INCLUDE_CDS
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
-      k = load_shared_boot_class(class_name, THREAD);
+      k = load_shared_boot_class(class_name, pkg_entry, THREAD);
 #endif
     }
 
@@ -2569,9 +2568,7 @@ Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
     // Check accessibility, emulating ConstantPool::verify_constant_pool_resolve.
     Klass* sel_klass = java_lang_Class::as_Klass(mirror());
     if (sel_klass != NULL) {
-      bool fold_type_to_class = true;
-      LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
-                                              fold_type_to_class, CHECK_NH);
+      LinkResolver::check_klass_accessibility(accessing_klass, sel_klass, CHECK_NH);
     }
   }
   return mirror;
@@ -2636,9 +2633,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       Klass* sel_klass = java_lang_Class::as_Klass(mirror);
       mirror = NULL;  // safety
       // Emulate ConstantPool::verify_constant_pool_resolve.
-      bool fold_type_to_class = true;
-      LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
-                                              fold_type_to_class, CHECK_(empty));
+      LinkResolver::check_klass_accessibility(accessing_klass, sel_klass, CHECK_(empty));
     }
   }
   assert(arg == npts, "");

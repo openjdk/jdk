@@ -77,10 +77,8 @@ public class DeadlockDetectionTest {
         }
 
         try {
-            String[] vmArgs = Utils.appendTestJavaOpts("-XX:+UsePerfData");
-
             theApp = new LingeredAppWithDeadlock();
-            LingeredApp.startApp(theApp, vmArgs);
+            LingeredApp.startApp(theApp, "-XX:+UsePerfData");
             OutputAnalyzer output = jstack("--pid", Long.toString(theApp.getPid()));
             System.out.println(output.getOutput());
 

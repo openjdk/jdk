@@ -28,7 +28,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "logging/log.hpp"
@@ -42,32 +42,10 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   else return 0;
 }
 
-int ShenandoahHeuristics::compare_by_garbage_then_alloc_seq_ascending(RegionData a, RegionData b) {
-  int r = compare_by_garbage(a, b);
-  if (r != 0) {
-    return r;
-  }
-  return compare_by_alloc_seq_ascending(a, b);
-}
-
-int ShenandoahHeuristics::compare_by_alloc_seq_ascending(RegionData a, RegionData b) {
-  if (a._seqnum_last_alloc == b._seqnum_last_alloc)
-    return 0;
-  else if (a._seqnum_last_alloc < b._seqnum_last_alloc)
-    return -1;
-  else return 1;
-}
-
-int ShenandoahHeuristics::compare_by_alloc_seq_descending(RegionData a, RegionData b) {
-  return -compare_by_alloc_seq_ascending(a, b);
-}
-
 ShenandoahHeuristics::ShenandoahHeuristics() :
   _region_data(NULL),
-  _region_data_size(0),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
-  _bytes_in_cset(0),
   _cycle_start(os::elapsedTime()),
   _last_cycle_end(0),
   _gc_times_learned(0),
@@ -79,26 +57,15 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   if (!ClassUnloadingWithConcurrentMark) {
     FLAG_SET_DEFAULT(ShenandoahUnloadClassesFrequency, 0);
   }
+
+  size_t num_regions = ShenandoahHeap::heap()->num_regions();
+  assert(num_regions > 0, "Sanity");
+
+  _region_data = NEW_C_HEAP_ARRAY(RegionData, num_regions, mtGC);
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {
-  if (_region_data != NULL) {
-    FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
-  }
-}
-
-ShenandoahHeuristics::RegionData* ShenandoahHeuristics::get_region_data_cache(size_t num) {
-  RegionData* res = _region_data;
-  if (res == NULL) {
-    res = NEW_C_HEAP_ARRAY(RegionData, num, mtGC);
-    _region_data = res;
-    _region_data_size = num;
-  } else if (_region_data_size < num) {
-    res = REALLOC_C_HEAP_ARRAY(RegionData, _region_data, num, mtGC);
-    _region_data = res;
-    _region_data_size = num;
-  }
-  return res;
+  FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
 void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
@@ -113,7 +80,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   size_t num_regions = heap->num_regions();
 
-  RegionData* candidates = get_region_data_cache(num_regions);
+  RegionData* candidates = _region_data;
 
   size_t cand_idx = 0;
 
@@ -179,31 +146,32 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
           byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
           byte_size_in_proper_unit(total_garbage),     proper_unit_for_byte_size(total_garbage));
 
-  size_t immediate_percent = total_garbage == 0 ? 0 : (immediate_garbage * 100 / total_garbage);
+  size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-    collection_set->update_region_status();
-
-    size_t cset_percent = total_garbage == 0 ? 0 : (collection_set->garbage() * 100 / total_garbage);
-    log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%% of total), " SIZE_FORMAT "%s CSet, " SIZE_FORMAT " CSet regions",
-                       byte_size_in_proper_unit(collection_set->garbage()),   proper_unit_for_byte_size(collection_set->garbage()),
-                       cset_percent,
-                       byte_size_in_proper_unit(collection_set->live_data()), proper_unit_for_byte_size(collection_set->live_data()),
-                       collection_set->count());
   }
 
-  log_info(gc, ergo)("Immediate Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%% of total), " SIZE_FORMAT " regions",
-                     byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
-                     immediate_percent, immediate_regions);
-}
+  size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);
 
-void ShenandoahHeuristics::record_gc_start() {
-  // Do nothing
-}
+  size_t collectable_garbage = collection_set->garbage() + immediate_garbage;
+  size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
 
-void ShenandoahHeuristics::record_gc_end() {
-  // Do nothing
+  log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), "
+                     "Immediate: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), "
+                     "CSet: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%)",
+
+                     byte_size_in_proper_unit(collectable_garbage),
+                     proper_unit_for_byte_size(collectable_garbage),
+                     collectable_garbage_percent,
+
+                     byte_size_in_proper_unit(immediate_garbage),
+                     proper_unit_for_byte_size(immediate_garbage),
+                     immediate_percent,
+
+                     byte_size_in_proper_unit(collection_set->garbage()),
+                     proper_unit_for_byte_size(collection_set->garbage()),
+                     cset_percent);
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
@@ -280,12 +248,10 @@ void ShenandoahHeuristics::record_success_full() {
 }
 
 void ShenandoahHeuristics::record_allocation_failure_gc() {
-  _bytes_in_cset = 0;
+  // Do nothing.
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
-  _bytes_in_cset = 0;
-
   // Assume users call System.gc() when external state changes significantly,
   // which forces us to re-learn the GC timings and allocation rates.
   _gc_times_learned = 0;

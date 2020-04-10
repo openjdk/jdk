@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ cleanupAndReturn:
 /*
  * Class:     java_net_Inet4AddressImpl
  * Method:    getHostByAddr
- * Signature: (I)Ljava/lang/String;
+ * Signature: ([B)Ljava/lang/String;
  *
  * Theoretically the UnknownHostException could be enriched with gai error
  * information. But as it is silently ignored anyway, there's no need for this.

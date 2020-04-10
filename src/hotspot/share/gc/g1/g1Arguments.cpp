@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,7 +50,7 @@ void G1Arguments::initialize_alignments() {
   // There is a circular dependency here. We base the region size on the heap
   // size, but the heap size should be aligned with the region size. To get
   // around this we use the unaligned values for the heap.
-  HeapRegion::setup_heap_region_size(InitialHeapSize, MaxHeapSize);
+  HeapRegion::setup_heap_region_size(MaxHeapSize);
   HeapRegionRemSet::setup_remset_size();
 
   SpaceAlignment = HeapRegion::GrainBytes;
@@ -97,6 +97,23 @@ void G1Arguments::parse_verification_type(const char* type) {
   }
 }
 
+// Returns the maximum number of workers to be used in a concurrent
+// phase based on the number of GC workers being used in a STW
+// phase.
+static uint scale_concurrent_worker_threads(uint num_gc_workers) {
+  return MAX2((num_gc_workers + 2) / 4, 1U);
+}
+
+void G1Arguments::initialize_mark_stack_size() {
+  if (FLAG_IS_DEFAULT(MarkStackSize)) {
+    size_t mark_stack_size = MIN2(MarkStackSizeMax,
+                                  MAX2(MarkStackSize, (size_t)ConcGCThreads * TASKQUEUE_SIZE));
+    FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
+  }
+
+  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
+}
+
 void G1Arguments::initialize() {
   GCArguments::initialize();
   assert(UseG1GC, "Error");
@@ -117,12 +134,11 @@ void G1Arguments::initialize() {
     FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 
-  // MarkStackSize will be set (if it hasn't been set by the user)
-  // when concurrent marking is initialized.
-  // Its value will be based upon the number of parallel marking threads.
-  // But we do set the maximum mark stack size here.
-  if (FLAG_IS_DEFAULT(MarkStackSizeMax)) {
-    FLAG_SET_DEFAULT(MarkStackSizeMax, 128 * TASKQUEUE_SIZE);
+  if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
+    // Calculate the number of concurrent worker threads by scaling
+    // the number of parallel GC threads.
+    uint marking_thread_num = scale_concurrent_worker_threads(ParallelGCThreads);
+    FLAG_SET_ERGO(ConcGCThreads, marking_thread_num);
   }
 
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
@@ -158,8 +174,6 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
 
-  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-
   // By default do not let the target stack size to be more than 1/4 of the entries
   if (FLAG_IS_DEFAULT(GCDrainStackTargetSize)) {
     FLAG_SET_ERGO(GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, (uintx)TASKQUEUE_SIZE / 4));
@@ -175,6 +189,7 @@ void G1Arguments::initialize() {
   }
 #endif
 
+  initialize_mark_stack_size();
   initialize_verification_types();
 }
 

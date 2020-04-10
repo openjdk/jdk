@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,47 +39,47 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.*;
 
 /**
-  * Required callbacks:
-  * - RealmCallback
-  *      used as key by handler to fetch password, optional
-  * - NameCallback
-  *      used as key by handler to fetch password
-  * - PasswordCallback
-  *      handler must enter password for username/realm supplied
-  *
-  * Environment properties that affect the implementation:
-  *
-  * javax.security.sasl.qop
-  *    String, quality of protection; only "auth" is accepted, default "auth"
-  *
-  * com.sun.security.sasl.ntlm.version
-  *    String, name a specific version to accept:
-  *      LM/NTLM: Original NTLM v1
-  *      LM: Original NTLM v1, LM only
-  *      NTLM: Original NTLM v1, NTLM only
-  *      NTLM2: NTLM v1 with Client Challenge
-  *      LMv2/NTLMv2: NTLM v2
-  *      LMv2: NTLM v2, LM only
-  *      NTLMv2: NTLM v2, NTLM only
-  *    If not specified, use system property "ntlm.version". If also
-  *    not specified, all versions are accepted.
-  *
-  * com.sun.security.sasl.ntlm.domain
-  *    String, the domain of the server, default is server name (fqdn parameter)
-  *
-  * com.sun.security.sasl.ntlm.random
-  *    java.util.Random, the nonce source. Default null, an internal
-  *    java.util.Random object will be used
-  *
-  * Negotiated Properties:
-  *
-  * javax.security.sasl.qop
-  *    Always "auth"
-  *
-  * com.sun.security.sasl.ntlm.hostname
-  *    The hostname for the user, provided by the client
-  *
-  */
+ * Required callbacks:
+ * - RealmCallback
+ *      used as key by handler to fetch password, optional
+ * - NameCallback
+ *      used as key by handler to fetch password
+ * - PasswordCallback
+ *      handler must enter password for username/realm supplied
+ *
+ * Environment properties that affect the implementation:
+ *
+ * javax.security.sasl.qop
+ *    String, quality of protection; only "auth" is accepted, default "auth"
+ *
+ * com.sun.security.sasl.ntlm.version
+ *    String, name a specific version to accept:
+ *      LM/NTLM: Original NTLM v1
+ *      LM: Original NTLM v1, LM only
+ *      NTLM: Original NTLM v1, NTLM only
+ *      NTLM2: NTLM v1 with Client Challenge
+ *      LMv2/NTLMv2: NTLM v2
+ *      LMv2: NTLM v2, LM only
+ *      NTLMv2: NTLM v2, NTLM only
+ *    If not specified, use system property "ntlm.version". If also
+ *    not specified, all versions are accepted.
+ *
+ * com.sun.security.sasl.ntlm.domain
+ *    String, the domain of the server, default is server name (fqdn parameter)
+ *
+ * com.sun.security.sasl.ntlm.random
+ *    java.util.Random, the nonce source. Default null, an internal
+ *    java.util.Random object will be used
+ *
+ * Negotiated Properties:
+ *
+ * javax.security.sasl.qop
+ *    Always "auth"
+ *
+ * com.sun.security.sasl.ntlm.hostname
+ *    The hostname for the user, provided by the client
+ *
+ */
 
 final class NTLMServer implements SaslServer {
 

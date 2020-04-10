@@ -23,70 +23,85 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/symbolTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"
 
-// Tests ClassLoader::package_from_name()
-TEST_VM(classLoader, null_class_name) {
-  ResourceMark rm;
+// Tests ClassLoader::package_from_class_name()
+TEST_VM(ClassLoader, null_class_name) {
   bool bad_class_name = false;
-  const char* retval= ClassLoader::package_from_name(NULL, &bad_class_name);
+  TempNewSymbol retval = ClassLoader::package_from_class_name(NULL, &bad_class_name);
   ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with NULL class name";
-  ASSERT_STREQ(retval, NULL) << "Wrong package for NULL class name pointer";
+  ASSERT_TRUE(retval == NULL) << "Wrong package for NULL class name pointer";
 }
 
-TEST_VM(classLoader, empty_class_name) {
-  ResourceMark rm;
-  const char* retval = ClassLoader::package_from_name("");
-  ASSERT_STREQ(retval, NULL) << "Wrong package for empty string";
-}
-
-TEST_VM(classLoader, no_slash) {
-  ResourceMark rm;
-  const char* retval = ClassLoader::package_from_name("L");
-  ASSERT_STREQ(retval, NULL) << "Wrong package for class with no slashes";
-}
-
-TEST_VM(classLoader, just_slash) {
-  ResourceMark rm;
+TEST_VM(ClassLoader, empty_class_name) {
   bool bad_class_name = false;
-  const char* retval = ClassLoader::package_from_name("/", &bad_class_name);
+  TempNewSymbol name = SymbolTable::new_symbol("");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
+  ASSERT_TRUE(retval == NULL) << "Wrong package for empty string";
+}
+
+TEST_VM(ClassLoader, no_slash) {
+  bool bad_class_name = false;
+  TempNewSymbol name = SymbolTable::new_symbol("L");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
+  ASSERT_FALSE(bad_class_name) << "Function set bad_class_name with empty package";
+  ASSERT_TRUE(retval == NULL) << "Wrong package for class with no slashes";
+}
+
+TEST_VM(ClassLoader, just_slash) {
+  bool bad_class_name = false;
+  TempNewSymbol name = SymbolTable::new_symbol("/");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
   ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with package of length 0";
-  ASSERT_STREQ(retval, NULL) << "Wrong package for class with just slash";
+  ASSERT_TRUE(retval == NULL) << "Wrong package for class with just slash";
 }
 
-TEST_VM(classLoader, multiple_slashes) {
-  ResourceMark rm;
-  const char* retval = ClassLoader::package_from_name("///");
-  ASSERT_STREQ(retval, "//") << "Wrong package for class with just slashes";
-}
-
-TEST_VM(classLoader, standard_case_1) {
-  ResourceMark rm;
-  bool bad_class_name = true;
-  const char* retval = ClassLoader::package_from_name("package/class", &bad_class_name);
-  ASSERT_FALSE(bad_class_name) << "Function did not reset bad_class_name";
-  ASSERT_STREQ(retval, "package") << "Wrong package for class with one slash";
-}
-
-TEST_VM(classLoader, standard_case_2) {
-  ResourceMark rm;
-  const char* retval = ClassLoader::package_from_name("package/folder/class");
-  ASSERT_STREQ(retval, "package/folder") << "Wrong package for class with multiple slashes";
-}
-
-TEST_VM(classLoader, class_array) {
-  ResourceMark rm;
+TEST_VM(ClassLoader, multiple_slashes) {
   bool bad_class_name = false;
-  const char* retval = ClassLoader::package_from_name("[package/class", &bad_class_name);
+  TempNewSymbol name = SymbolTable::new_symbol("///");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
+  ASSERT_FALSE(bad_class_name) << "Function set bad_class_name with slashes package";
+  ASSERT_TRUE(retval->equals("//")) << "Wrong package for class with just slashes";
+}
+
+TEST_VM(ClassLoader, standard_case_1) {
+  bool bad_class_name = false;
+  TempNewSymbol name = SymbolTable::new_symbol("package/class");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
+  ASSERT_FALSE(bad_class_name) << "Function set bad_class_name for valid package";
+  ASSERT_TRUE(retval->equals("package")) << "Wrong package for class with one slash";
+}
+
+TEST_VM(ClassLoader, standard_case_2) {
+  bool bad_class_name = false;
+  TempNewSymbol name = SymbolTable::new_symbol("package/folder/class");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
+  ASSERT_FALSE(bad_class_name) << "Function set bad_class_name for valid package";
+  ASSERT_TRUE(retval->equals("package/folder")) << "Wrong package for class with multiple slashes";
+}
+
+TEST_VM(ClassLoader, class_array) {
+  bool bad_class_name = false;
+  TempNewSymbol name = SymbolTable::new_symbol("[package/class");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
   ASSERT_FALSE(bad_class_name) << "Function set bad_class_name with class array";
-  ASSERT_STREQ(retval, "package") << "Wrong package for class with leading bracket";
+  ASSERT_TRUE(retval->equals("package")) << "Wrong package for class with leading bracket";
 }
 
-TEST_VM(classLoader, class_object_array) {
-  ResourceMark rm;
+TEST_VM(ClassLoader, class_multiarray) {
   bool bad_class_name = false;
-  const char* retval = ClassLoader::package_from_name("[Lpackage/class", &bad_class_name);
+  TempNewSymbol name = SymbolTable::new_symbol("[[package/class");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
+  ASSERT_FALSE(bad_class_name) << "Function set bad_class_name with class array";
+  ASSERT_TRUE(retval->equals("package")) << "Wrong package for class with leading bracket";
+}
+
+TEST_VM(ClassLoader, class_object_array) {
+  bool bad_class_name = false;
+  TempNewSymbol name = SymbolTable::new_symbol("[Lpackage/class");
+  TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
   ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with array of class objects";
-  ASSERT_STREQ(retval, NULL) << "Wrong package for class with leading '[L'";
+  ASSERT_TRUE(retval == NULL) << "Wrong package for class with leading '[L'";
 }

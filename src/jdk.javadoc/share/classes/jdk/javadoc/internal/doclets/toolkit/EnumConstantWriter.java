@@ -37,7 +37,7 @@ import javax.lang.model.element.VariableElement;
  *  deletion without notice.</b>
  */
 
-public interface EnumConstantWriter {
+public interface EnumConstantWriter extends MemberWriter {
 
     /**
      * Get the enum constants details tree header.
@@ -98,14 +98,6 @@ public interface EnumConstantWriter {
      * @return content tree for the enum constant details
      */
     Content getEnumConstantsDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
-
-    /**
-     * Get the enum constants documentation.
-     *
-     * @param enumConstantsTree the content tree representing enum constants documentation
-     * @return content tree for the enum constants documentation
-     */
-    Content getEnumConstants(Content enumConstantsTree);
 
     /**
      * Gets the member header tree.

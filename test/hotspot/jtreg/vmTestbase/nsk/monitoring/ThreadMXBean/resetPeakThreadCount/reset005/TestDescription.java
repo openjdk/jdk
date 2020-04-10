@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that
- *         ThreadMBean.resetPeakThreadCount()
+ *         ThreadMXBean.resetPeakThreadCount()
  *     returns correct result.
  *     The test starts a couple of user threads and waits until they finish. After
  *     that, resetPeakThreadCount() is invoked to reset the peak. Then
@@ -44,7 +44,7 @@
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
- *      nsk.monitoring.ThreadMBean.resetPeakThreadCount.reset001
+ *      nsk.monitoring.ThreadMXBean.resetPeakThreadCount.reset001
  *      -testMode=proxy
  *      -MBeanServer=custom
  */

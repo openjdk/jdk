@@ -257,8 +257,8 @@ public class LineDisciplineTerminal extends AbstractTerminal {
         this.slaveInput.setIoException(ioException);
     }
 
-    public void close() throws IOException {
-        super.close();
+    protected void doClose() throws IOException {
+        super.doClose();
         try {
             slaveReader.close();
         } finally {

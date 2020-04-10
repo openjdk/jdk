@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,17 +73,6 @@ public class Compatibility {
         PrintStream origStdOut = System.out;
         PrintStream origStdErr = System.err;
 
-        boolean debug = Boolean.getBoolean("debug");
-
-        String securityPropertiesFile = System.getProperty(
-                "test.security.properties",
-                System.getProperty("test.src") + "/java.security");
-        System.out.println("security properties: " + securityPropertiesFile);
-
-        // If true, server and client CANNOT be a same JDK
-        boolean disallowSameEndpoint = Boolean.getBoolean("disallowSameEndpoint");
-        System.out.println("disallowSameEndpoint: " + disallowSameEndpoint);
-
         try (PrintStream printStream = new PrintStream(
                 new FileOutputStream(Utils.TEST_LOG, true))) {
             System.setOut(printStream);
@@ -92,83 +81,13 @@ public class Compatibility {
             System.out.println(Utils.startHtml());
             System.out.println(Utils.startPre());
 
+            JdkInfo targetJdkInfo = new JdkInfo(System.getProperty("test.jdk"));
             for (UseCase useCase : getUseCases()) {
-                for (JdkInfo serverJdk : jdkInfos) {
-                    Map<String, String> props = new LinkedHashMap<>();
-                    if (debug) {
-                        props.put("javax.net.debug", "all");
-                    }
-                    props.put("java.security.properties", securityPropertiesFile);
-
-                    props.put(Utils.PROP_PROTOCOL, useCase.protocol.name);
-                    props.put(Utils.PROP_CIPHER_SUITE, useCase.cipherSuite.name());
-                    props.put(Utils.PROP_CLIENT_AUTH, String.valueOf(useCase.clientAuth));
-                    if (useCase.appProtocol != UseCase.AppProtocol.NONE) {
-                        props.put(Utils.PROP_APP_PROTOCOLS,
-                                Utils.join(Utils.VALUE_DELIMITER,
-                                        useCase.appProtocol.appProtocols));
-                        props.put(Utils.PROP_NEGO_APP_PROTOCOL,
-                                useCase.appProtocol.negoAppProtocol);
-                    }
-                    props.put(Utils.PROP_SERVER_JDK, serverJdk.version);
-
-                    props.put(Utils.PROP_SUPPORTS_SNI_ON_SERVER,
-                            serverJdk.supportsSNI + "");
-                    props.put(Utils.PROP_SUPPORTS_ALPN_ON_SERVER,
-                            serverJdk.supportsALPN + "");
-
-                    for (JdkInfo clientJdk : jdkInfos) {
-                        if (disallowSameEndpoint && clientJdk == serverJdk) {
-                            continue;
-                        }
-
-                        TestCase testCase = new TestCase(serverJdk, clientJdk,
-                                useCase);
-                        System.out.println(Utils.anchorName(testCase.toString(),
-                                "===== Case start ====="));
-                        System.out.println(testCase.toString());
-
-                        props.put(Utils.PROP_NEGATIVE_CASE_ON_SERVER,
-                                testCase.negativeCaseOnServer + "");
-                        props.put(Utils.PROP_NEGATIVE_CASE_ON_CLIENT,
-                                testCase.negativeCaseOnClient + "");
-
-                        Future<OutputAnalyzer> serverFuture = executor.submit(() -> {
-                            return runServer(serverJdk.jdkPath, props);
-                        });
-                        int port = waitForServerStarted();
-                        System.out.println("port=" + port);
-
-                        props.put(Utils.PROP_PORT, port + "");
-
-                        props.put(Utils.PROP_CLIENT_JDK, clientJdk.version);
-
-                        props.put(Utils.PROP_SUPPORTS_SNI_ON_CLIENT,
-                                clientJdk.supportsSNI + "");
-                        props.put(Utils.PROP_SUPPORTS_ALPN_ON_CLIENT,
-                                clientJdk.supportsALPN + "");
-                        if (useCase.serverName != UseCase.ServerName.NONE) {
-                            props.put(Utils.PROP_SERVER_NAME,
-                                    useCase.serverName.name);
-                        }
-
-                        Status clientStatus = null;
-                        if (port != -1) {
-                            String clientOutput = runClient(clientJdk.jdkPath,
-                                    props).getOutput();
-                            clientStatus = getStatus(clientOutput);
-                        }
-
-                        String serverOutput = serverFuture.get().getOutput();
-                        Status serverStatus = getStatus(serverOutput);
-                        testCase.setStatus(caseStatus(serverStatus, clientStatus));
-                        testCases.add(testCase);
-                        System.out.printf(
-                                "ServerStatus=%s, ClientStatus=%s, CaseStatus=%s%n",
-                                serverStatus, clientStatus, testCase.getStatus());
-
-                        System.out.println("===== Case end =====");
-                    }
+                for (JdkInfo jdkInfo : jdkInfos) {
+                    testCases.add(
+                            runCase(targetJdkInfo, jdkInfo, useCase, executor));
+                    testCases.add(
+                            runCase(jdkInfo, targetJdkInfo, useCase, executor));
                 }
             }
 
@@ -182,6 +101,81 @@ public class Compatibility {
         return testCases;
     }
 
+    private TestCase runCase(JdkInfo serverJdk, JdkInfo clientJdk,
+            UseCase useCase, ExecutorService executor) throws Exception {
+        Map<String, String> props = new LinkedHashMap<>();
+        if (Utils.DEBUG) {
+            props.put("javax.net.debug", "all");
+        }
+
+        props.put("java.security.properties", Utils.SECURITY_PROPERTIES_FILE);
+
+        props.put(Utils.PROP_CERTS, Utils.join(Utils.VALUE_DELIMITER,
+                Cert.getCerts(useCase.cipherSuite)));
+        props.put(Utils.PROP_CLIENT_AUTH, String.valueOf(useCase.clientAuth));
+        if (useCase.appProtocol != UseCase.AppProtocol.NONE) {
+            props.put(Utils.PROP_APP_PROTOCOLS,
+                    Utils.join(Utils.VALUE_DELIMITER,
+                            useCase.appProtocol.appProtocols));
+            props.put(Utils.PROP_NEGO_APP_PROTOCOL,
+                    useCase.appProtocol.negoAppProtocol);
+        }
+        props.put(Utils.PROP_SERVER_JDK, serverJdk.version);
+
+        props.put(Utils.PROP_SUPPORTS_SNI_ON_SERVER,
+                serverJdk.supportsSNI + "");
+        props.put(Utils.PROP_SUPPORTS_ALPN_ON_SERVER,
+                serverJdk.supportsALPN + "");
+
+        TestCase testCase = new TestCase(serverJdk, clientJdk, useCase);
+        System.out.println(Utils.anchorName(testCase.toString(),
+                "===== Case start ====="));
+        System.out.println(testCase.toString());
+
+        props.put(Utils.PROP_NEGATIVE_CASE_ON_SERVER,
+                testCase.negativeCaseOnServer + "");
+        props.put(Utils.PROP_NEGATIVE_CASE_ON_CLIENT,
+                testCase.negativeCaseOnClient + "");
+
+        Future<OutputAnalyzer> serverFuture = executor.submit(() -> {
+            return runServer(serverJdk.jdkPath, props);
+        });
+        int port = waitForServerStarted();
+        System.out.println("port=" + port);
+
+        props.put(Utils.PROP_PORT, port + "");
+
+        props.put(Utils.PROP_CLIENT_JDK, clientJdk.version);
+
+        props.put(Utils.PROP_PROTOCOL, useCase.protocol.name);
+        props.put(Utils.PROP_CIPHER_SUITE, useCase.cipherSuite.name());
+        props.put(Utils.PROP_SUPPORTS_SNI_ON_CLIENT,
+                clientJdk.supportsSNI + "");
+        props.put(Utils.PROP_SUPPORTS_ALPN_ON_CLIENT,
+                clientJdk.supportsALPN + "");
+        if (useCase.serverName != UseCase.ServerName.NONE) {
+            props.put(Utils.PROP_SERVER_NAME,
+                    useCase.serverName.name);
+        }
+
+        Status clientStatus = null;
+        if (port != -1) {
+            String clientOutput = runClient(clientJdk.jdkPath,
+                    props).getOutput();
+            clientStatus = getStatus(clientOutput);
+        }
+
+        String serverOutput = serverFuture.get().getOutput();
+        Status serverStatus = getStatus(serverOutput);
+        testCase.setStatus(caseStatus(serverStatus, clientStatus));
+        System.out.printf(
+                "ServerStatus=%s, ClientStatus=%s, CaseStatus=%s%n",
+                serverStatus, clientStatus, testCase.getStatus());
+
+        System.out.println("===== Case end =====");
+        return testCase;
+    }
+
     // Generates the test result report.
     protected boolean generateReport(List<TestCase> testCases)
             throws IOException {
@@ -192,14 +186,15 @@ public class Compatibility {
         report.append(Utils.startTable());
         report.append(Utils.row(
                 "No.",
-                "ServerJDK",
-                "ClientJDK",
+                "Client",
+                "Server",
                 "Protocol",
-                "CipherSuite",
-                "ClientAuth",
+                "Cipher suite",
+                "Client auth",
                 "SNI",
                 "ALPN",
-                "Status"));
+                "Status",
+                "Reason"));
         for (int i = 0, size = testCases.size(); i < size; i++) {
             TestCase testCase = testCases.get(i);
 
@@ -208,8 +203,8 @@ public class Compatibility {
                             Utils.TEST_LOG,
                             testCase.toString(),
                             i + ""),
-                    testCase.serverJdk.version,
                     testCase.clientJdk.version,
+                    testCase.serverJdk.version,
                     testCase.useCase.protocol.name,
                     testCase.useCase.cipherSuite,
                     Utils.boolToStr(
@@ -218,10 +213,10 @@ public class Compatibility {
                             testCase.useCase.serverName == UseCase.ServerName.EXAMPLE),
                     Utils.boolToStr(
                             testCase.useCase.appProtocol == UseCase.AppProtocol.EXAMPLE),
-                    testCase.getStatus()));
-            failed = failed
-                    || testCase.getStatus() == Status.FAIL
-                    || testCase.getStatus() == Status.UNEXPECTED_SUCCESS;
+                    testCase.getStatus(),
+                    testCase.reason()));
+
+            failed = failed || testCase.isFailed();
         }
         report.append(Utils.endTable());
         report.append(Utils.endHtml());
@@ -263,26 +258,15 @@ public class Compatibility {
     }
 
     private static Status caseStatus(Status serverStatus, Status clientStatus) {
-        if (clientStatus == null || clientStatus == Status.TIMEOUT) {
-            return serverStatus == Status.EXPECTED_FAIL
-                   ? Status.EXPECTED_FAIL
-                   : Status.FAIL;
-        } else if (serverStatus == Status.TIMEOUT) {
-            return clientStatus == Status.EXPECTED_FAIL
-                   ? Status.EXPECTED_FAIL
-                   : Status.FAIL;
-        } else {
-            return serverStatus == clientStatus
-                   ? serverStatus
-                   : Status.FAIL;
-        }
+        return (serverStatus == Status.EXPECTED_FAIL && clientStatus != Status.SUCCESS)
+                || (clientStatus == Status.EXPECTED_FAIL && serverStatus != Status.SUCCESS)
+                ? Status.EXPECTED_FAIL
+                : (serverStatus == clientStatus ? serverStatus : Status.FAIL);
     }
 
     // Retrieves JDK info from the file which is specified by jdkListFile.
-    // And the current testing JDK, which is specified by test.jdk, always be used.
     private static Set<JdkInfo> jdkInfoList() {
         List<String> jdkList = jdkList();
-        jdkList.add(System.getProperty("test.jdk"));
 
         Set<JdkInfo> jdkInfoList = new LinkedHashSet<>();
         for (String jdkPath : jdkList) {

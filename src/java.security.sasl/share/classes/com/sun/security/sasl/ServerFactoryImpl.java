@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,14 @@ import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 
 /**
-  * Server factory for CRAM-MD5.
-  *
-  * Requires the following callback to be satisfied by callback handler
-  * when using CRAM-MD5.
-  * - AuthorizeCallback (to get canonicalized authzid)
-  *
-  * @author Rosanna Lee
-  */
+ * Server factory for CRAM-MD5.
+ *
+ * Requires the following callback to be satisfied by callback handler
+ * when using CRAM-MD5.
+ * - AuthorizeCallback (to get canonicalized authzid)
+ *
+ * @author Rosanna Lee
+ */
 final public class ServerFactoryImpl implements SaslServerFactory {
     private static final String[] myMechs = {
         "CRAM-MD5", //

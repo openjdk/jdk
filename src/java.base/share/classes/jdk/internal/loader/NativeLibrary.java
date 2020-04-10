@@ -31,15 +31,18 @@ package jdk.internal.loader;
 public interface NativeLibrary {
     String name();
 
-    /*
+    /**
      * Finds the address of the entry of the given name.  Returns 0
      * if not found.
+     *
+     * @param name the name of the symbol to be found
      */
     long find(String name);
 
-    /*
+    /**
      * Finds the address of the entry of the given name.
      *
+     * @param name the name of the symbol to be found
      * @throws NoSuchMethodException if the named entry is not found.
      */
     default long lookup(String name) throws NoSuchMethodException {

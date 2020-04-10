@@ -672,8 +672,6 @@ public class TagletManager {
      * Initialize JavaFX-related tags.
      */
     private void initJavaFXTaglets() {
-        addStandardTaglet(new PropertyGetterTaglet());
-        addStandardTaglet(new PropertySetterTaglet());
         addStandardTaglet(new SimpleTaglet("propertyDescription",
                 resources.getText("doclet.PropertyDescription"),
                 EnumSet.of(Location.METHOD, Location.FIELD)));

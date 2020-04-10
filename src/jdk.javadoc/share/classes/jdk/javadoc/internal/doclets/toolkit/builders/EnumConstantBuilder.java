@@ -74,7 +74,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     private EnumConstantBuilder(Context context,
             TypeElement typeElement, EnumConstantWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         enumConstants = getVisibleMembers(ENUM_CONSTANTS);
     }
 
@@ -109,32 +109,30 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     /**
      * Build the enum constant documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException is there is a problem while building the documentation
      */
-    protected void buildEnumConstant(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildEnumConstant(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
             Content enumConstantsDetailsTreeHeader = writer.getEnumConstantsDetailsTreeHeader(typeElement,
-                    memberDetailsTree);
-            Content enumConstantsDetailsTree = writer.getMemberTreeHeader();
+                    detailsList);
+            Content memberList = writer.getMemberList();
 
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
                 Content enumConstantsTree = writer.getEnumConstantsTreeHeader(currentElement,
-                        enumConstantsDetailsTree);
+                        memberList);
 
                 buildSignature(enumConstantsTree);
                 buildDeprecationInfo(enumConstantsTree);
                 buildEnumConstantComments(enumConstantsTree);
                 buildTagInfo(enumConstantsTree);
 
-                enumConstantsDetailsTree.add(writer.getEnumConstants(enumConstantsTree));
+                memberList.add(writer.getMemberListItem(enumConstantsTree));
             }
-            memberDetailsTree.add(
-                    writer.getEnumConstantsDetails(enumConstantsDetailsTreeHeader, enumConstantsDetailsTree));
+            Content enumConstantDetails = writer.getEnumConstantsDetails(
+                    enumConstantsDetailsTreeHeader, memberList);
+            detailsList.add(enumConstantDetails);
         }
     }
 
@@ -158,7 +156,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the enum constant.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param enumConstantsTree the content tree to which the documentation will be added
      */

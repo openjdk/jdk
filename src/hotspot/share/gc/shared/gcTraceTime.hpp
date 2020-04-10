@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_GCTRACETIME_HPP
 #define SHARE_GC_SHARED_GCTRACETIME_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
 #include "logging/logStream.hpp"
@@ -43,32 +44,112 @@ class GCTraceCPUTime : public StackObj {
 
 class GCTimer;
 
-class GCTraceTimeImpl : public StackObj {
- private:
-  LogTargetHandle _out_start;
-  LogTargetHandle _out_stop;
-  bool _enabled;
-  Ticks _start_ticks;
-  const char* _title;
-  GCCause::Cause _gc_cause;
-  GCTimer* _timer;
-  size_t _heap_usage_before;
-
-  void log_start(jlong start_counter);
-  void log_stop(jlong start_counter, jlong stop_counter);
-  void time_stamp(Ticks& ticks);
-
- public:
-  GCTraceTimeImpl(LogTargetHandle out_start, LogTargetHandle out_end, const char* title, GCTimer* timer = NULL, GCCause::Cause gc_cause = GCCause::_no_gc, bool log_heap_usage = false);
-  ~GCTraceTimeImpl();
+// Callback to be invoked when the
+// GCTraceTimer goes in and out of scope.
+class TimespanCallback {
+public:
+  virtual void at_start(Ticks start) = 0;
+  virtual void at_end(Ticks end) = 0;
 };
 
-template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-class GCTraceTimeImplWrapper : public StackObj {
-  GCTraceTimeImpl _impl;
+// Class used by the GCTraceTimer to to feed start and end ticks
+// when it goes in and out of scope. All callbacks get the same
+// start and end ticks.
+//
+// Example of callbacks:
+//  Logging to unified loggingUnified Logging logger
+//  Registering GCTimer phases
+class GCTraceTimeDriver : public StackObj {
+ private:
+  // An arbitrary number of callbacks - extend if needed
+  TimespanCallback* _cb0;
+  TimespanCallback* _cb1;
+  TimespanCallback* _cb2;
+
+  bool has_callbacks() const;
+
+  void at_start(TimespanCallback* cb, Ticks start);
+  void at_end(TimespanCallback* cb, Ticks end);
+
+ public:
+  GCTraceTimeDriver(TimespanCallback* cb0 = NULL,
+                    TimespanCallback* cb1 = NULL,
+                    TimespanCallback* cb2 = NULL);
+  ~GCTraceTimeDriver();
+};
+
+// Implements the ordinary logging part of the GCTraceTimer.
+class GCTraceTimeLoggerImpl : public TimespanCallback {
+  const bool            _enabled;
+  const char* const     _title;
+  const GCCause::Cause  _gc_cause;
+  const bool            _log_heap_usage;
+  const LogTargetHandle _out_start;
+  const LogTargetHandle _out_end;
+
+  size_t _heap_usage_before;
+  Ticks  _start;
+
+  void log_start(Ticks start);
+  void log_end(Ticks end);
+
 public:
-  GCTraceTimeImplWrapper(const char* title, GCTimer* timer = NULL, GCCause::Cause gc_cause = GCCause::_no_gc, bool log_heap_usage = false);
-  ~GCTraceTimeImplWrapper();
+  GCTraceTimeLoggerImpl(const char* title,
+                        GCCause::Cause gc_cause,
+                        bool log_heap_usage,
+                        LogTargetHandle out_start,
+                        LogTargetHandle out_end);
+
+  virtual void at_start(Ticks start);
+  virtual void at_end(Ticks end);
+
+  bool is_enabled() const;
+};
+
+// Implements the GCTimer phase registration. Can be used when
+// GCTraceTime is used to register a sub-phase. The super-phase
+// determines the type (Pause or Concurrent).
+class GCTraceTimeTimer : public TimespanCallback {
+  const char* const _title;
+  GCTimer* const    _timer;
+
+public:
+  GCTraceTimeTimer(const char* title, GCTimer* timer);
+
+  virtual void at_start(Ticks start);
+  virtual void at_end(Ticks end);
+};
+
+// Implements GCTimer pause registration. Can be used
+// when the GCTraceTimer is used to report the top-level
+// pause phase.
+class GCTraceTimePauseTimer : public TimespanCallback {
+  const char* const _title;
+  GCTimer* const    _timer;
+
+public:
+  GCTraceTimePauseTimer(const char* title, GCTimer* timer);
+
+  virtual void at_start(Ticks start);
+  virtual void at_end(Ticks end);
+};
+
+// The GCTraceTime implementation class.It creates the normal
+// set of callbacks and installs them into the driver. When the
+// constructor is run the callbacks get the at_start call, and
+// when the destructor is run the callbacks get the at_end call.
+class GCTraceTimeImpl : public StackObj {
+  GCTraceTimeLoggerImpl _logger;
+  GCTraceTimeTimer      _timer;
+  GCTraceTimeDriver     _driver;
+
+public:
+  GCTraceTimeImpl(const char* title,
+                  LogTargetHandle out_start,
+                  LogTargetHandle out_end,
+                  GCTimer* timer,
+                  GCCause::Cause gc_cause,
+                  bool log_heap_usage);
 };
 
 // Similar to GCTraceTimeImpl but is intended for concurrent phase logging,

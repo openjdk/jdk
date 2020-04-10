@@ -566,8 +566,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
     bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
     bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
-    bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
+    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
 
     // If we are reading the value of the referent field of a Reference
     // object (either by using Unsafe directly or through reflection)
@@ -775,7 +774,7 @@ bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_couple
   if (!is_oop) {
     return false;
   }
-  if (tightly_coupled_alloc) {
+  if (ShenandoahSATBBarrier && tightly_coupled_alloc) {
     if (phase == Optimization) {
       return false;
     }
@@ -842,7 +841,11 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
     debug_only(gc_state_adr_type = phase->C->get_adr_type(gc_state_idx));
 
     Node* gc_state    = phase->transform_later(new LoadBNode(ctrl, mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered));
-    Node* stable_and  = phase->transform_later(new AndINode(gc_state, phase->igvn().intcon(ShenandoahHeap::HAS_FORWARDED)));
+    int flags = ShenandoahHeap::HAS_FORWARDED;
+    if (ShenandoahStoreValEnqueueBarrier) {
+      flags |= ShenandoahHeap::MARKING;
+    }
+    Node* stable_and  = phase->transform_later(new AndINode(gc_state, phase->igvn().intcon(flags)));
     Node* stable_cmp  = phase->transform_later(new CmpINode(stable_and, phase->igvn().zerocon(T_INT)));
     Node* stable_test = phase->transform_later(new BoolNode(stable_cmp, BoolTest::ne));
 

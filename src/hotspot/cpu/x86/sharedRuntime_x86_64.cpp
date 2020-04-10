@@ -3512,7 +3512,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 #ifdef ASSERT
   Label bail;
 #endif
-  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+  if (!cause_return) {
     Label no_prefix, not_special;
 
     // If our stashed return pc was modified by the runtime we avoid touching it

@@ -87,13 +87,6 @@ public class JVMAddModuleExportsToAll {
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAll(m2x, "p3");
-            throw new RuntimeException("Failed to get the expected IAE for package that is in another module");
-        } catch(IllegalArgumentException e) {
-            // Expected
-        }
-
-        try {
             ModuleHelper.AddModuleExportsToAll(m2x, "p4");
             throw new RuntimeException("Failed to get the expected IAE for package not in any module");
         } catch(IllegalArgumentException e) {

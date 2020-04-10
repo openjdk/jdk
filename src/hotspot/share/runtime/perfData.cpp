@@ -276,6 +276,9 @@ void PerfDataManager::destroy() {
   _has_PerfData = false;
   os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
 
+  log_debug(perf, datacreation)("Total = %d, Sampled = %d, Constants = %d",
+                                _all->length(), _sampled->length(), _constants->length());
+
   for (int index = 0; index < _all->length(); index++) {
     PerfData* p = _all->at(index);
     delete p;
@@ -294,8 +297,9 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
 
   MutexLocker ml(PerfDataManager_lock);
 
+  // Default sizes determined using -Xlog:perf+datacreation=debug
   if (_all == NULL) {
-    _all = new PerfDataList(100);
+    _all = new PerfDataList(191);
     _has_PerfData = true;
   }
 
@@ -306,7 +310,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
 
   if (p->variability() == PerfData::V_Constant) {
     if (_constants == NULL) {
-      _constants = new PerfDataList(25);
+      _constants = new PerfDataList(51);
     }
     _constants->append(p);
     return;
@@ -314,18 +318,9 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
 
   if (sampled) {
     if (_sampled == NULL) {
-      _sampled = new PerfDataList(25);
+      _sampled = new PerfDataList(1);
     }
     _sampled->append(p);
-  }
-}
-
-PerfData* PerfDataManager::find_by_name(const char* name) {
-  // if add_item hasn't been called the list won't be initialized
-  if (_all != NULL) {
-    return _all->find_by_name(name);
-  } else {
-    return NULL;
   }
 }
 
@@ -612,8 +607,7 @@ PerfDataList* PerfDataList::clone() {
 }
 
 PerfTraceTime::~PerfTraceTime() {
-  if (!UsePerfData || (_recursion_counter != NULL &&
-      --(*_recursion_counter) > 0)) return;
+  if (!UsePerfData) return;
   _t.stop();
   _timerp->inc(_t.ticks());
 }

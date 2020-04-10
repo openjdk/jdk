@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class GetContDirCtx {
     public static void main(String[] args) throws Exception {
 
         CannotProceedException cpe = new CannotProceedException();
-        Hashtable env = new Hashtable(1);
+        Hashtable<Object, Object> env = new Hashtable<>(1);
         cpe.setEnvironment(env);
 
         Reference ref = new Reference("java.lang.Object",
@@ -52,7 +52,7 @@ public class GetContDirCtx {
         } catch (CannotProceedException e) {
         }
 
-        Hashtable contEnv = contCtx.getEnvironment();
+        Hashtable<?,?> contEnv = contCtx.getEnvironment();
         if (contEnv.get(NamingManager.CPE) != cpe) {
             throw new Exception("Test failed: CPE property not set" +
                         " in the continuation context");

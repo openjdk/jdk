@@ -1207,7 +1207,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     new_predicate_proj = upper_bound_proj;
 
     if (iff->is_RangeCheck()) {
-      new_predicate_proj = insert_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow, reason);
+      new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow, reason);
     }
 
 #ifndef PRODUCT
@@ -1238,13 +1238,13 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
 // of the main loop induction variable. Make a copy of the predicates
 // here with an opaque node as a place holder for the value (will be
 // updated by PhaseIdealLoop::clone_skeleton_predicate()).
-ProjNode* PhaseIdealLoop::insert_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
-                                                    ProjNode* proj, ProjNode *predicate_proj,
-                                                    ProjNode* upper_bound_proj,
-                                                    int scale, Node* offset,
-                                                    Node* init, Node* limit, jint stride,
-                                                    Node* rng, bool &overflow,
-                                                    Deoptimization::DeoptReason reason) {
+ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
+                                                            ProjNode* proj, ProjNode *predicate_proj,
+                                                            ProjNode* upper_bound_proj,
+                                                            int scale, Node* offset,
+                                                            Node* init, Node* limit, jint stride,
+                                                            Node* rng, bool &overflow,
+                                                            Deoptimization::DeoptReason reason) {
   assert(proj->_con && predicate_proj->_con, "not a range check?");
   Node* opaque_init = new Opaque1Node(C, init);
   register_new_node(opaque_init, upper_bound_proj);

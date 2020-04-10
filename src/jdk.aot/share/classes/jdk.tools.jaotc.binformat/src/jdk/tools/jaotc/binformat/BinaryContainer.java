@@ -432,10 +432,6 @@ public final class BinaryContainer implements SymbolTable {
         return "_aot_stub_routines_crc_table_adr";
     }
 
-    public static String getPollingPageSymbolName() {
-        return "_aot_polling_page";
-    }
-
     public static String getResolveStaticEntrySymbolName() {
         return "_resolve_static_entry";
     }
@@ -512,7 +508,6 @@ public final class BinaryContainer implements SymbolTable {
         createGotSymbol(getHeapEndAddressSymbolName());
         createGotSymbol(getNarrowKlassBaseAddressSymbolName());
         createGotSymbol(getNarrowOopBaseAddressSymbolName());
-        createGotSymbol(getPollingPageSymbolName());
         createGotSymbol(getLogOfHeapRegionGrainBytesSymbolName());
         createGotSymbol(getInlineContiguousAllocationSupportedSymbolName());
 

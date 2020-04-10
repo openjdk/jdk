@@ -100,7 +100,9 @@ public:
 
 struct ArchiveHeapOopmapInfo {
   address _oopmap;               // bitmap for relocating embedded oops
+  size_t  _offset;               // this oopmap is stored at this offset from the bottom of the BM region
   size_t  _oopmap_size_in_bits;
+  size_t  _oopmap_size_in_bytes;
 };
 
 class SharedPathTable {
@@ -448,7 +450,9 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
-  void  write_bitmap_region(const CHeapBitMap* ptrmap);
+  void  write_bitmap_region(const CHeapBitMap* ptrmap,
+                            GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                            GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
   size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
                                     GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
                                     int first_region_id, int max_num_regions);
@@ -534,6 +538,10 @@ public:
   FileMapRegion* first_core_space() const;
   FileMapRegion* last_core_space() const;
 
+  FileMapRegion* space_at(int i) const {
+    return header()->space_at(i);
+  }
+
  private:
   void  seek_to_position(size_t pos);
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
@@ -549,14 +557,12 @@ public:
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
   void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
-  char* map_relocation_bitmap(size_t& bitmap_size);
+  char* map_bitmap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  read_region(int i, char* base, size_t size);
   bool  relocate_pointers(intx addr_delta);
-
-  FileMapRegion* space_at(int i) const {
-    return header()->space_at(i);
-  }
+  static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
+  static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, uintptr_t* buffer);
 
   // The starting address of spc, as calculated with CompressedOop::decode_non_null()
   address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {

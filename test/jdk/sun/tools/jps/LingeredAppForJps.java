@@ -27,42 +27,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.net.URL;
+import jdk.test.lib.apps.LingeredApp;
 
 public class LingeredAppForJps extends LingeredApp {
 
-    // Copy runApp logic here to be able to run an app from JarFile
-    public void runAppWithName(String[] vmArguments, String runName)
-            throws IOException {
+    // if set, the app is run from jar file
+    private File jarFile;
 
-        List<String> cmd = runAppPrepare(vmArguments);
-        if (runName.endsWith(".jar")) {
+    @Override
+    protected void runAddAppName(List<String> cmd) {
+        if (jarFile != null) {
             cmd.add("-Xdiag");
             cmd.add("-jar");
+            cmd.add(jarFile.getAbsolutePath());
+        } else {
+            super.runAddAppName(cmd);
         }
-        cmd.add(runName);
-        cmd.add(lockFileName);
-
-        printCommandLine(cmd);
-
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        // we don't expect any error output but make sure we are not stuck on pipe
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        appProcess = pb.start();
-        startGobblerPipe();
-    }
-
-    public static LingeredApp startAppJar(LingeredAppForJps app, String[] cmd, File jar) throws IOException {
-        app.createLock();
-        try {
-            app.runAppWithName(cmd, jar.getAbsolutePath());
-            app.waitAppReady(appWaitTime);
-        } catch (Exception ex) {
-            app.deleteLock();
-            throw ex;
-        }
-
-        return app;
     }
 
     /**
@@ -70,26 +50,21 @@ public class LingeredAppForJps extends LingeredApp {
      * (except when jps is started in quite mode).
      * The expected name of the test process is prepared here.
      */
-    public static String getProcessName() {
-        return LingeredAppForJps.class.getSimpleName();
-    }
-
-    public static String getProcessName(File jar) {
-        return jar.getName();
+    public String getProcessName() {
+        return jarFile == null
+                ? getClass().getSimpleName()
+                : jarFile.getName();
     }
 
     // full package name for the application's main class or the full path
     // name to the application's JAR file:
-
-    public static String getFullProcessName() {
-        return LingeredAppForJps.class.getCanonicalName();
+    public String getFullProcessName() {
+        return jarFile == null
+                ? getClass().getCanonicalName()
+                : jarFile.getAbsolutePath();
     }
 
-    public static String getFullProcessName(File jar) {
-        return jar.getAbsolutePath();
-    }
-
-    public static File buildJar() throws IOException {
+    public void buildJar() throws IOException {
         String className = LingeredAppForJps.class.getName();
         File jar = new File(className + ".jar");
         String testClassPath = System.getProperty("test.class.path", "?");
@@ -138,7 +113,7 @@ public class LingeredAppForJps extends LingeredApp {
             throw new IOException("jar failed: args=" + jarArgs.toString());
         }
 
-        return jar;
+        jarFile = jar;
     }
 
     public static void main(String args[]) {

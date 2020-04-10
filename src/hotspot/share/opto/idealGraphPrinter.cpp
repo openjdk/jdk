@@ -584,12 +584,8 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
 #ifdef ASSERT
     if (node->debug_orig() != NULL) {
-      temp_set->clear();
       stringStream dorigStream;
-      Node* dorig = node->debug_orig();
-      while (dorig && temp_set->test_set(dorig->_idx)) {
-        dorigStream.print("%d ", dorig->_idx);
-      }
+      node->dump_orig(&dorigStream, false);
       print_prop("debug_orig", dorigStream.as_string());
     }
 #endif

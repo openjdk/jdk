@@ -212,6 +212,44 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         return ul;
     }
 
+    /**
+     * Returns a list to be used for the list of details for members of a given kind.
+     *
+     * @return a list to be used for the list of details for members of a given kind
+     */
+    public Content getDetailsList() {
+        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.detailsList);
+    }
+
+    /**
+     * Returns an item for the list of details for members of a given kind.
+     *
+     * @param content content for the item
+     * @return an item for the list of details for members of a given kind
+     */
+    public Content getDetailsListItem(Content content) {
+        return HtmlTree.LI(content);
+    }
+
+    /**
+     * Returns a list to be used for the list of members of a given kind.
+     *
+     * @return a list to be used for the list of members of a given kind
+     */
+    public Content getMemberList() {
+        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.memberList);
+    }
+
+    /**
+     * Returns an item for the list of elements of a given kind
+     *
+     * @param content content for the item
+     * @return an item for the list of elements of a given kind
+     */
+    public Content getMemberListItem(Content content) {
+        return HtmlTree.LI(content);
+    }
+
     public Content getMemberInheritedTree() {
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.inheritedList);
@@ -238,7 +276,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a content tree for the member
      */
     public Content getMemberTree(Content contentTree) {
-        return HtmlTree.LI(HtmlStyle.blockList, contentTree);
+        return HtmlTree.LI(contentTree);
     }
 
     /**

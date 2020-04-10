@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@
  * @bug 4686717
  * @summary Test MulticastSocket.setLoopbackMode
  * @library /test/lib
+ * @modules java.base/java.net:+open
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
  * @run main/othervm SetLoopbackMode
  */
 
+import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.*;
 import java.io.IOException;
 import jdk.test.lib.NetworkConfiguration;
@@ -99,38 +102,75 @@ public class SetLoopbackMode {
         int failures = 0;
         NetworkConfiguration nc = NetworkConfiguration.probe();
 
-        MulticastSocket mc = new MulticastSocket();
-        InetAddress grp = InetAddress.getByName("224.80.80.80");
+        try (MulticastSocket mc = new MulticastSocket()) {
+            InetAddress grp = InetAddress.getByName("224.80.80.80");
 
 
-        /*
-         * If IPv6 is available then use IPv6 multicast group - needed
-         * to workaround Linux IPv6 bug whereby !IPV6_MULTICAST_LOOP
-         * doesn't prevent loopback of IPv4 multicast packets.
-         */
+            /*
+             * If IPv6 is available then use IPv6 multicast group - needed
+             * to workaround Linux IPv6 bug whereby !IPV6_MULTICAST_LOOP
+             * doesn't prevent loopback of IPv4 multicast packets.
+             */
 
-        if (canUseIPv6(nc)) {
-            grp = InetAddress.getByName("ff01::1");
+            if (canUseIPv6(nc)) {
+                System.out.println("IPv6 can be used");
+                grp = InetAddress.getByName("ff01::1");
+            } else {
+                System.out.println("IPv6 cannot be used: using IPv4");
+            }
+            System.out.println("Default network interface: " + DefaultInterface.getDefaultName());
+            System.out.println("\nTest will use multicast group: " + grp);
+            try {
+                System.out.println("NetworkInterface.getByInetAddress(grp): "
+                        + getName(NetworkInterface.getByInetAddress(grp)));
+            } catch (Exception x) {
+                // OK
+            }
+            mc.joinGroup(grp);
+
+            System.out.println("\n******************\n");
+
+            mc.setLoopbackMode(true);
+            if (test(mc, grp) == FAILED) failures++;
+
+            System.out.println("\n******************\n");
+
+            mc.setLoopbackMode(false);
+            if (test(mc, grp) == FAILED) failures++;
+
+            System.out.println("\n******************\n");
+
+            if (failures > 0) {
+                throw new RuntimeException("Test failed");
+            }
         }
+    }
 
-        //mc.setNetworkInterface(NetworkInterface.getByInetAddress(lb));
-        System.out.println("\nTest will use multicast group: " + grp);
-        mc.joinGroup(grp);
+    static String getName(NetworkInterface nif) {
+        return nif == null ? null : nif.getName();
+    }
 
-        System.out.println("\n******************\n");
-
-        mc.setLoopbackMode(true);
-        if (test(mc, grp) == FAILED) failures++;
-
-        System.out.println("\n******************\n");
-
-        mc.setLoopbackMode(false);
-        if (test(mc, grp) == FAILED) failures++;
-
-        System.out.println("\n******************\n");
-
-        if (failures > 0) {
-            throw new RuntimeException("Test failed");
+    static class DefaultInterface {
+        static final Method GET_DEFAULT;
+        static {
+            try {
+                GET_DEFAULT = Class.forName("java.net.DefaultInterface")
+                        .getDeclaredMethod("getDefault");
+                GET_DEFAULT.setAccessible(true);
+            } catch (Exception x) {
+                throw new ExceptionInInitializerError(x);
+            }
+        }
+        static NetworkInterface getDefault() {
+            try {
+                return (NetworkInterface) GET_DEFAULT
+                        .invoke(null);
+            } catch (Exception x) {
+                throw new UndeclaredThrowableException(x);
+            }
+        }
+        static String getDefaultName() {
+            return getName(getDefault());
         }
     }
 }

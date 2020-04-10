@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,9 +273,13 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
+  #ifndef HOTSPOT_BUILD_TIME
+    #define HOTSPOT_BUILD_TIME __DATE__ " " __TIME__
+  #endif
+
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
          " for " OS "-" CPU FLOAT_ARCH_STR \
-         " JRE (" VERSION_STRING "), built on " __DATE__ " " __TIME__ \
+         " JRE (" VERSION_STRING "), built on " HOTSPOT_BUILD_TIME \
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
 
   return strcmp(DEBUG_LEVEL, "release") == 0

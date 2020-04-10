@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -34,6 +35,19 @@
 #endif
 
 #if INCLUDE_JFR
+
+class ZPageTypeConstant : public JfrSerializer {
+public:
+  virtual void serialize(JfrCheckpointWriter& writer) {
+    writer.write_count(3);
+    writer.write_key(ZPageTypeSmall);
+    writer.write("Small");
+    writer.write_key(ZPageTypeMedium);
+    writer.write("Medium");
+    writer.write_key(ZPageTypeLarge);
+    writer.write("Large");
+  }
+};
 
 class ZStatisticsCounterTypeConstant : public JfrSerializer {
 public:
@@ -58,6 +72,9 @@ public:
 };
 
 static void register_jfr_type_serializers() {
+  JfrSerializer::register_serializer(TYPE_ZPAGETYPETYPE,
+                                     true /* permit_cache */,
+                                     new ZPageTypeConstant());
   JfrSerializer::register_serializer(TYPE_ZSTATISTICSCOUNTERTYPE,
                                      true /* permit_cache */,
                                      new ZStatisticsCounterTypeConstant());
@@ -111,21 +128,6 @@ void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Tick
     e.set_name(name);
     e.set_starttime(start);
     e.set_endtime(end);
-    e.commit();
-  }
-}
-
-void ZTracer::send_page_alloc(size_t size, size_t used, size_t free, size_t cache, ZAllocationFlags flags) {
-  NoSafepointVerifier nsv;
-
-  EventZPageAllocation e;
-  if (e.should_commit()) {
-    e.set_pageSize(size);
-    e.set_usedAfter(used);
-    e.set_freeAfter(free);
-    e.set_inCacheAfter(cache);
-    e.set_nonBlocking(flags.non_blocking());
-    e.set_noReserve(flags.no_reserve());
     e.commit();
   }
 }

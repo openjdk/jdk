@@ -73,7 +73,7 @@ public class BootLoader {
 
     // native libraries loaded by the boot class loader
     private static final NativeLibraries NATIVE_LIBS
-        = new NativeLibraries(null);
+        = NativeLibraries.jniNativeLibraries(null);
 
     /**
      * Returns the unnamed module for the boot loader.

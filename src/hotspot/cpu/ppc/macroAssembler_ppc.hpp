@@ -761,39 +761,6 @@ class MacroAssembler: public Assembler {
   void clear_memory_constlen(Register base_ptr, int cnt_dwords, Register tmp = R0);
   void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0, long const_cnt = -1);
 
-#ifdef COMPILER2
-  // Intrinsics for CompactStrings
-  // Compress char[] to byte[] by compressing 16 bytes at once.
-  void string_compress_16(Register src, Register dst, Register cnt,
-                          Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
-                          Label& Lfailure);
-
-  // Compress char[] to byte[]. cnt must be positive int.
-  void string_compress(Register src, Register dst, Register cnt, Register tmp, Label& Lfailure);
-
-  // Inflate byte[] to char[] by inflating 16 bytes at once.
-  void string_inflate_16(Register src, Register dst, Register cnt,
-                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
-
-  // Inflate byte[] to char[]. cnt must be positive int.
-  void string_inflate(Register src, Register dst, Register cnt, Register tmp);
-
-  void string_compare(Register str1, Register str2, Register cnt1, Register cnt2,
-                      Register tmp1, Register result, int ae);
-
-  void array_equals(bool is_array_equ, Register ary1, Register ary2,
-                    Register limit, Register tmp1, Register result, bool is_byte);
-
-  void string_indexof(Register result, Register haystack, Register haycnt,
-                      Register needle, ciTypeArray* needle_values, Register needlecnt, int needlecntval,
-                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, int ae);
-
-  void string_indexof_char(Register result, Register haystack, Register haycnt,
-                           Register needle, jchar needleChar, Register tmp1, Register tmp2, bool is_byte);
-
-  void has_negatives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
-#endif
-
   // Emitters for BigInteger.multiplyToLen intrinsic.
   inline void multiply64(Register dest_hi, Register dest_lo,
                          Register x, Register y);

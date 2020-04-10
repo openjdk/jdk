@@ -127,13 +127,18 @@ public class TestCrossProcessStreaming {
     }
 
     static class EventProducer {
+        private static final String MAIN_STARTED = "MAIN_STARTED";
+
         static Process start() throws Exception {
             String[] args = {"-XX:StartFlightRecording", EventProducer.class.getName()};
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, args);
-            return ProcessTools.startProcess("Event-Producer", pb);
+            return ProcessTools.startProcess("Event-Producer", pb,
+                                             line -> line.contains(MAIN_STARTED),
+                                             0, TimeUnit.SECONDS);
         }
 
         public static void main(String... args) throws Exception {
+            System.out.println(MAIN_STARTED);
             ResultEvent rs = new ResultEvent();
             rs.batch1Count = emit(TestEvent1.class, "second-batch");
             rs.batch2Count = emit(TestEvent2.class, "exit");

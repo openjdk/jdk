@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468 8222548 8223378 8234746
+ *      8184205 8214468 8222548 8223378 8234746 8241219
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -34,6 +34,10 @@
  */
 
 import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javadoc.tester.JavadocTester;
 
@@ -623,6 +627,32 @@ public class TestSearch extends JavadocTester {
                 + "    return urlPrefix;\n"
                 + "}",
                 "url += ui.item.l;");
+
+        checkCssClasses("search.js", "stylesheet.css");
+    }
+
+    void checkCssClasses(String jsFile, String cssFile) {
+        // Check that all CSS class names mentioned in the JavaScript file
+        // are also defined as class selectors somewhere in the stylesheet file.
+        String js = readOutputFile(jsFile);
+        Set<String> cssClasses = new TreeSet<>();
+        addMatches(js, Pattern.compile("class=\\\\*\"([^\\\\\"]+)\\\\*\""), cssClasses);
+        addMatches(js, Pattern.compile("attr\\(\"class\", \"([^\"]+)\"\\)"), cssClasses);
+        // verify that the regex did find use of CSS class names
+        checking("Checking CSS classes found");
+        if (cssClasses.isEmpty()) {
+            failed("no CSS classes found");
+        } else {
+            passed(cssClasses.size() + " found: " + cssClasses);
+        }
+        checkOutput(cssFile, true, cssClasses.toArray(new String[0]));
+    }
+
+    void addMatches(String js, Pattern p, Set<String> cssClasses) {
+        Matcher m = p.matcher(js);
+        while (m.find()) {
+            cssClasses.add("." + m.group(1));
+        }
     }
 
     void checkSingleIndexSearchTagDuplication() {

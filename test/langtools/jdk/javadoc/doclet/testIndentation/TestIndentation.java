@@ -51,7 +51,7 @@ public class TestIndentation extends JavadocTester {
                 "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
                 + "<span class=\"type-parameters\">&lt;T&gt;</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">m</span>"
-                + "&#8203;(<span class=\"arguments\">T&nbsp;t1,\n"
+                + "&#8203;(<span class=\"parameters\">T&nbsp;t1,\n"
                 + "T&nbsp;t2)</span>\n"
                 + "           throws <span class=\"exceptions\">java.lang.Exception</span></div>");
 

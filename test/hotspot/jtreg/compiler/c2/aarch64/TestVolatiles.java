@@ -39,7 +39,7 @@
  *                    Serial,
  *                    Parallel,
  *                    Shenandoah,
- *                    ShenandoahTraversal}
+ *                    ShenandoahIU}
  */
 
 
@@ -94,12 +94,12 @@ public class TestVolatiles {
             procArgs[argcount - 3] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
             break;
-        case "ShenandoahTraversal":
+        case "ShenandoahIU":
             argcount = 11;
             procArgs = new String[argcount];
             procArgs[argcount - 4] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 3] = "-XX:+UseShenandoahGC";
-            procArgs[argcount - 2] = "-XX:ShenandoahGCMode=traversal";
+            procArgs[argcount - 2] = "-XX:ShenandoahGCMode=iu";
             break;
         default:
             throw new RuntimeException("unexpected test type " + testType);
@@ -331,7 +331,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                  // Shenandoah generates normal object graphs for
                  // volatile stores
                 matches = new String[] {
@@ -410,7 +410,7 @@ public class TestVolatiles {
                 break;
 
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                  // Shenandoah generates normal object graphs for
                  // volatile stores
                 matches = new String[] {
@@ -500,7 +500,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                 // For volatile CAS, Shenanodoah generates normal
                 // graphs with a shenandoah-specific cmpxchg
                 matches = new String[] {
@@ -578,7 +578,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                 // For volatile CAS, Shenanodoah generates normal
                 // graphs with a shenandoah-specific cmpxchg
                 matches = new String[] {
@@ -684,7 +684,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                 // For volatile CAS, Shenanodoah generates normal
                 // graphs with a shenandoah-specific cmpxchg
                 matches = new String[] {
@@ -762,7 +762,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                 // For volatile CAS, Shenanodoah generates normal
                 // graphs with a shenandoah-specific cmpxchg
                 matches = new String[] {
@@ -848,7 +848,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                 matches = new String[] {
                     "membar_release \\(elided\\)",
                     useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
@@ -924,7 +924,7 @@ public class TestVolatiles {
                 };
                 break;
             case "Shenandoah":
-            case "ShenandoahTraversal":
+            case "ShenandoahIU":
                 matches = new String[] {
                     "membar_release",
                     "dmb ish",

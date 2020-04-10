@@ -702,6 +702,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VPCLMULQDQ;
     _features &= ~CPU_AVX512_VAES;
     _features &= ~CPU_AVX512_VNNI;
+    _features &= ~CPU_AVX512_VBMI;
     _features &= ~CPU_AVX512_VBMI2;
   }
 
@@ -757,10 +758,9 @@ void VM_Version::get_processor_features() {
                (supports_clmul()  ? ", clmul" : ""),
                (supports_erms()   ? ", erms" : ""),
                (supports_rtm()    ? ", rtm" : ""),
-               (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
-
                (supports_lzcnt()   ? ", lzcnt": ""),
+
                (supports_sse4a()   ? ", sse4a": ""),
                (supports_ht() ? ", ht": ""),
                (supports_tsc() ? ", tsc": ""),
@@ -770,8 +770,8 @@ void VM_Version::get_processor_features() {
                (supports_bmi2() ? ", bmi2" : ""),
                (supports_adx() ? ", adx" : ""),
                (supports_evex() ? ", avx512f" : ""),
-
                (supports_avx512dq() ? ", avx512dq" : ""),
+
                (supports_avx512pf() ? ", avx512pf" : ""),
                (supports_avx512er() ? ", avx512er" : ""),
                (supports_avx512cd() ? ", avx512cd" : ""),
@@ -779,6 +779,7 @@ void VM_Version::get_processor_features() {
                (supports_avx512vl() ? ", avx512vl" : ""),
                (supports_avx512_vpopcntdq() ? ", avx512_vpopcntdq" : ""),
                (supports_avx512_vpclmulqdq() ? ", avx512_vpclmulqdq" : ""),
+               (supports_avx512_vbmi() ? ", avx512_vbmi" : ""),
                (supports_avx512_vbmi2() ? ", avx512_vbmi2" : ""),
                (supports_avx512_vaes() ? ", avx512_vaes" : ""),
 

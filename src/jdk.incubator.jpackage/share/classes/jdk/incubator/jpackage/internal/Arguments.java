@@ -285,9 +285,6 @@ public class Arguments {
         MAC_SIGNING_KEYCHAIN ("mac-signing-keychain",
                     OptionCategories.PLATFORM_MAC),
 
-        MAC_APP_STORE_ENTITLEMENTS ("mac-app-store-entitlements",
-                    OptionCategories.PLATFORM_MAC),
-
         WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-menu", true);
         }),

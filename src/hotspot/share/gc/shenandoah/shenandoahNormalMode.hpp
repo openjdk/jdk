@@ -33,6 +33,9 @@ class ShenandoahNormalMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
   virtual ShenandoahHeuristics* initialize_heuristics() const;
+  virtual const char* name()     { return "Normal"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHNORMALMODE_HPP

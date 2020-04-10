@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,6 @@ inline void ZTracer::report_stat_sampler(const ZStatSampler& sampler, uint64_t v
 inline void ZTracer::report_thread_phase(const char* name, const Ticks& start, const Ticks& end) {
   if (EventZThreadPhase::is_enabled()) {
     send_thread_phase(name, start, end);
-  }
-}
-
-inline void ZTracer::report_page_alloc(size_t size, size_t used, size_t free, size_t cache, ZAllocationFlags flags) {
-  if (EventZPageAllocation::is_enabled()) {
-    send_page_alloc(size, used, free, cache, flags);
   }
 }
 

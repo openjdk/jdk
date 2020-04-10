@@ -257,17 +257,17 @@ ul.sub-nav-list li {
 /*
  * Styles for headings.
  */
-body.class-declaration .summary h2,
-body.class-declaration .details h2,
-body.class-use h2,
-body.module-declaration .block-list h2 {
+body.class-declaration-page .summary h2,
+body.class-declaration-page .details h2,
+body.class-use-page  h2,
+body.module-declaration-page  .block-list h2 {
     font-style: italic;
     padding:0;
     margin:15px 0;
 }
-body.class-declaration .summary h3,
-body.class-declaration .details h3,
-body.class-declaration .summary .inherited-list h2 {
+body.class-declaration-page .summary h3,
+body.class-declaration-page .details h3,
+body.class-declaration-page .summary .inherited-list h2 {
     background-color:#dee3e9;
     border:1px solid #d0d9e0;
     margin:0 0 6px -8px;
@@ -321,11 +321,11 @@ div.inheritance {
 div.inheritance div.inheritance {
     margin-left:2em;
 }
-ul.block-list {
+ul.block-list, ul.details-list, ul.member-list {
     margin:10px 0 10px 0;
     padding:0;
 }
-ul.block-list li.block-list {
+ul.block-list > li, ul.details-list > li, ul.member-list > li {
     list-style:none;
     margin-bottom:15px;
     line-height:1.4;
@@ -531,7 +531,7 @@ div.member-signature span.annotations {
     white-space: pre-wrap;
 }
 div.member-signature span.type-parameters-long,
-div.member-signature span.arguments,
+div.member-signature span.parameters,
 div.member-signature span.exceptions {
     display: inline-block;
     vertical-align: top;
@@ -562,7 +562,7 @@ h1.hidden {
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link {
     font-weight:bold;
 }
-.deprecation-comment, .emphasized-phrase, .interface-name {
+.deprecation-comment, .help-footnote, .interface-name {
     font-style:italic;
 }
 .deprecation-block {
@@ -672,19 +672,22 @@ ul.ui-autocomplete  li {
 section.description {
     line-height: 1.4;
 }
-.summary section[class$="Summary"], .details section[class$="Details"],
+.summary section[class$="-summary"], .details section[class$="-details"],
 .class-uses .detail, .serialized-class-details {
     padding: 0px 20px 5px 10px;
     border: 1px solid #ededed;
     background-color: #f8f8f8;
 }
-.inherited-list, section[class$="Details"] .detail {
+.inherited-list, section[class$="-details"] .detail {
     padding:0 0 5px 8px;
     background-color:#ffffff;
     border:none;
 }
 .vertical-separator {
     padding: 0 5px;
+}
+ul.help-section-list {
+    margin: 0;
 }
 /*
  * Indicator icon for external links.

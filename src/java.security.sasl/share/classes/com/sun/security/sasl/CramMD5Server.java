@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +36,21 @@ import javax.security.auth.callback.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
-  * Implements the CRAM-MD5 SASL server-side mechanism.
-  * (<A HREF="http://www.ietf.org/rfc/rfc2195.txt">RFC 2195</A>).
-  * CRAM-MD5 has no initial response.
-  *
-  * client <---- M={random, timestamp, server-fqdn} ------- server
-  * client ----- {username HMAC_MD5(pw, M)} --------------> server
-  *
-  * CallbackHandler must be able to handle the following callbacks:
-  * - NameCallback: default name is name of user for whom to get password
-  * - PasswordCallback: must fill in password; if empty, no pw
-  * - AuthorizeCallback: must setAuthorized() and canonicalized authorization id
-  *      - auth id == authzid, but needed to get canonicalized authzid
-  *
-  * @author Rosanna Lee
-  */
+ * Implements the CRAM-MD5 SASL server-side mechanism.
+ * (<A HREF="http://www.ietf.org/rfc/rfc2195.txt">RFC 2195</A>).
+ * CRAM-MD5 has no initial response.
+ *
+ * client <---- M={random, timestamp, server-fqdn} ------- server
+ * client ----- {username HMAC_MD5(pw, M)} --------------> server
+ *
+ * CallbackHandler must be able to handle the following callbacks:
+ * - NameCallback: default name is name of user for whom to get password
+ * - PasswordCallback: must fill in password; if empty, no pw
+ * - AuthorizeCallback: must setAuthorized() and canonicalized authorization id
+ *      - auth id == authzid, but needed to get canonicalized authzid
+ *
+ * @author Rosanna Lee
+ */
 final class CramMD5Server extends CramMD5Base implements SaslServer {
     private String fqdn;
     private byte[] challengeData = null;

@@ -235,6 +235,7 @@ java/awt/TrayIcon/TrayIconMouseTest/TrayIconMouseTest.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupClickTest.java 8150540 windows-all,macosx-all
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
 java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
+
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
@@ -277,6 +278,7 @@ sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
+
 sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
 sun/java2d/X11SurfaceData/SharedMemoryPixmapsTest/SharedMemoryPixmapsTest.sh 8221451 linux-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
@@ -604,6 +606,10 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
+sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
+sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
+
 ############################################################################
 
 # jdk_jmx
@@ -807,7 +813,7 @@ javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/JPopupMenu/4966112/bug4966112.java 8064915 macosx-all
 javax/swing/JSpinner/8223788/JSpinnerButtonFocusTest.java 8238085 macosx-all
 javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
-javax/swing/UIDefaults/8146330/UIDefaultKeySizeTest.java 8241228 linux-all,solaris-all
+javax/swing/UIDefaults/8146330/UIDefaultKeySizeTest.java 8241228 aix-all,linux-all,solaris-all
 javax/swing/UITest/UITest.java 8198392 generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
 javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
@@ -931,8 +937,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # svc_tools
 
-sun/tools/jhsdb/BasicLauncherTest.java                          8193639,8211767 solaris-all,linux-ppc64,linux-ppc64le
-sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
+sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-ppc64,linux-ppc64le
 sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231634,8230731,8001227 generic-all,windows-all
 
 

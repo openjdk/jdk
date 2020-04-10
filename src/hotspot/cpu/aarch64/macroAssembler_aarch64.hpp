@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1217,20 +1217,15 @@ public:
     }
   }
 
-  address read_polling_page(Register r, address page, relocInfo::relocType rtype);
   address read_polling_page(Register r, relocInfo::relocType rtype);
-  void get_polling_page(Register dest, address page, relocInfo::relocType rtype);
+  void get_polling_page(Register dest, relocInfo::relocType rtype);
+  address fetch_and_read_polling_page(Register r, relocInfo::relocType rtype);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_word_crc32(Register crc, Register v, Register tmp,
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
-
-  void string_compare(Register str1, Register str2,
-                      Register cnt1, Register cnt2, Register result,
-                      Register tmp1, Register tmp2, FloatRegister vtmp1,
-                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
 
   void has_negatives(Register ary1, Register len, Register result);
 
@@ -1260,15 +1255,6 @@ public:
                         Register len, Register result,
                         FloatRegister Vtmp1, FloatRegister Vtmp2,
                         FloatRegister Vtmp3, FloatRegister Vtmp4);
-  void string_indexof(Register str1, Register str2,
-                      Register cnt1, Register cnt2,
-                      Register tmp1, Register tmp2,
-                      Register tmp3, Register tmp4,
-                      Register tmp5, Register tmp6,
-                      int int_cnt1, Register result, int ae);
-  void string_indexof_char(Register str1, Register cnt1,
-                           Register ch, Register result,
-                           Register tmp1, Register tmp2, Register tmp3);
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
                 FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,

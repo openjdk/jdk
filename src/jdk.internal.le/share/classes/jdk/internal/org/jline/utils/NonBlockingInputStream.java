@@ -78,6 +78,16 @@ public abstract class NonBlockingInputStream extends InputStream {
         return 1;
     }
 
+    public int readBuffered(byte[] b) throws IOException {
+        if (b == null) {
+            throw new NullPointerException();
+        } else if (b.length == 0) {
+            return 0;
+        } else {
+            return super.read(b, 0, b.length);
+        }
+    }
+
     /**
      * Shuts down the thread that is handling blocking I/O if any. Note that if the
      * thread is currently blocked waiting for I/O it may not actually

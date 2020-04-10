@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,7 @@ void ObjectSampler::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   ObjectSample* current = sampler._list->last();
   while (current != NULL) {
     if (current->_object != NULL) {
-      if (is_alive->do_object_b(current->object())) {
+      if (is_alive->do_object_b(current->object_raw())) {
         // The weakly referenced object is alive, update pointer
         f->do_oop(const_cast<oop*>(current->object_addr()));
       } else {

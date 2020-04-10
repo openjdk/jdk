@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,7 +64,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
-#define THREAD_LOCAL_POLL
 // If UseSIGTRAP is active, we only use the poll bit and no polling page.
 // Otherwise, we fall back to usage of the polling page in nmethods.
 // Define the condition to use this -XX flag.

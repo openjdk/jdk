@@ -25,91 +25,180 @@
 #ifndef SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP
 #define SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP
 
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/universe.hpp"
 #include "utilities/ticks.hpp"
 
-#define LOG_STOP_HEAP_FORMAT SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)"
+inline GCTraceTimeDriver::GCTraceTimeDriver(
+    TimespanCallback* cb0,
+    TimespanCallback* cb1,
+    TimespanCallback* cb2) :
+  _cb0(cb0),
+  _cb1(cb1),
+  _cb2(cb2) {
 
-inline void GCTraceTimeImpl::log_start(jlong start_counter) {
-  if (_out_start.is_enabled()) {
-    LogStream out(_out_start);
+  Ticks start;
 
-    out.print("%s", _title);
-    if (_gc_cause != GCCause::_no_gc) {
-      out.print(" (%s)", GCCause::to_string(_gc_cause));
-    }
-    out.cr();
+  if (has_callbacks()) {
+    start.stamp();
+  }
+
+  at_start(_cb0, start);
+  at_start(_cb1, start);
+  at_start(_cb2, start);
+}
+
+inline GCTraceTimeDriver::~GCTraceTimeDriver() {
+  Ticks end;
+
+  if (has_callbacks()) {
+    end.stamp();
+  }
+
+  at_end(_cb0, end);
+  at_end(_cb1, end);
+  at_end(_cb2, end);
+}
+
+inline bool GCTraceTimeDriver::has_callbacks() const {
+  return _cb0 != NULL || _cb1 != NULL || _cb2 != NULL;
+}
+
+inline void GCTraceTimeDriver::at_start(TimespanCallback* cb, Ticks start) {
+  if (cb != NULL) {
+    cb->at_start(start);
   }
 }
 
-inline void GCTraceTimeImpl::log_stop(jlong start_counter, jlong stop_counter) {
-  double duration_in_ms = TimeHelper::counter_to_millis(stop_counter - start_counter);
-  double start_time_in_secs = TimeHelper::counter_to_seconds(start_counter);
-  double stop_time_in_secs = TimeHelper::counter_to_seconds(stop_counter);
-
-  LogStream out(_out_stop);
-
-  out.print("%s", _title);
-
-  if (_gc_cause != GCCause::_no_gc) {
-    out.print(" (%s)", GCCause::to_string(_gc_cause));
-  }
-
-  if (_heap_usage_before != SIZE_MAX) {
-    CollectedHeap* heap = Universe::heap();
-    size_t used_before_m = _heap_usage_before / M;
-    size_t used_m = heap->used() / M;
-    size_t capacity_m = heap->capacity() / M;
-    out.print(" " LOG_STOP_HEAP_FORMAT, used_before_m, used_m, capacity_m);
-  }
-
-  out.print_cr(" %.3fms", duration_in_ms);
-}
-
-inline void GCTraceTimeImpl::time_stamp(Ticks& ticks) {
-  if (_enabled || _timer != NULL) {
-    ticks.stamp();
+inline void GCTraceTimeDriver::at_end(TimespanCallback* cb, Ticks end) {
+  if (cb != NULL) {
+    cb->at_end(end);
   }
 }
 
-inline GCTraceTimeImpl::GCTraceTimeImpl(LogTargetHandle out_start, LogTargetHandle out_stop, const char* title, GCTimer* timer, GCCause::Cause gc_cause, bool log_heap_usage) :
-  _out_start(out_start),
-  _out_stop(out_stop),
-  _enabled(out_stop.is_enabled()),
-  _start_ticks(),
-  _title(title),
-  _gc_cause(gc_cause),
-  _timer(timer),
-  _heap_usage_before(SIZE_MAX) {
+inline GCTraceTimeLoggerImpl::GCTraceTimeLoggerImpl(
+    const char* title,
+    GCCause::Cause gc_cause,
+    bool log_heap_usage,
+    LogTargetHandle out_start,
+    LogTargetHandle out_end) :
+        _enabled(out_end.is_enabled()),
+        _title(title),
+        _gc_cause(gc_cause),
+        _log_heap_usage(log_heap_usage),
+        _out_start(out_start),
+        _out_end(out_end),
+        _heap_usage_before(SIZE_MAX),
+        _start() {}
 
-  time_stamp(_start_ticks);
+inline void GCTraceTimeLoggerImpl::at_start(Ticks start) {
   if (_enabled) {
-    if (log_heap_usage) {
-      _heap_usage_before = Universe::heap()->used();
-    }
-    log_start(_start_ticks.value());
-  }
-  if (_timer != NULL) {
-    _timer->register_gc_phase_start(_title, _start_ticks);
+    log_start(start);
   }
 }
 
-inline GCTraceTimeImpl::~GCTraceTimeImpl() {
-  Ticks stop_ticks;
-  time_stamp(stop_ticks);
+inline void GCTraceTimeLoggerImpl::at_end(Ticks end) {
   if (_enabled) {
-    log_stop(_start_ticks.value(), stop_ticks.value());
-  }
-  if (_timer != NULL) {
-    _timer->register_gc_phase_end(stop_ticks);
+    log_end(end);
   }
 }
+
+inline bool GCTraceTimeLoggerImpl::is_enabled() const {
+  return _enabled;
+}
+
+inline GCTraceTimeTimer::GCTraceTimeTimer(const char* title, GCTimer* timer) : _title(title), _timer(timer) {}
+
+inline void GCTraceTimeTimer::at_start(Ticks start) {
+  if (_timer != NULL) {
+    _timer->register_gc_phase_start(_title, start);
+  }
+
+}
+
+inline void GCTraceTimeTimer::at_end(Ticks end) {
+  if (_timer != NULL) {
+    _timer->register_gc_phase_end(end);
+  }
+}
+
+inline GCTraceTimePauseTimer::GCTraceTimePauseTimer(const char* title, GCTimer* timer) : _title(title), _timer(timer) {}
+
+inline void GCTraceTimePauseTimer::at_start(Ticks start) {
+  if (_timer != NULL) {
+    _timer->register_gc_pause_start(_title, start);
+  }
+}
+
+inline void GCTraceTimePauseTimer::at_end(Ticks end) {
+  if (_timer != NULL) {
+    _timer->register_gc_pause_end(end);
+  }
+}
+
+inline GCTraceTimeImpl::GCTraceTimeImpl(
+    const char* title,
+    LogTargetHandle out_start,
+    LogTargetHandle out_end,
+    GCTimer* timer,
+    GCCause::Cause gc_cause,
+    bool log_heap_usage) :
+        _logger(title,
+                gc_cause,
+                log_heap_usage,
+                out_start,
+                out_end),
+        _timer(title, timer),
+        // Only register the callbacks if they are enabled
+        _driver((_logger.is_enabled() ? &_logger : NULL),
+                (timer != NULL ? &_timer : NULL)) {}
+
+// Figure out the first __NO_TAG position and replace it with 'start'.
+#define INJECT_START_TAG(T1, T2, T3, T4) \
+    ((                          T1 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T1), \
+    ((T1 != LogTag::__NO_TAG && T2 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T2), \
+    ((T2 != LogTag::__NO_TAG && T3 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T3), \
+    ((T3 != LogTag::__NO_TAG && T4 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T4)
+
+// Shim to convert LogTag templates to LogTargetHandle
+template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+class GCTraceTimeLoggerWrapper : public GCTraceTimeLoggerImpl {
+public:
+  GCTraceTimeLoggerWrapper(const char* title, GCCause::Cause gc_cause, bool log_heap_usage) :
+      GCTraceTimeLoggerImpl(
+          title,
+          gc_cause,
+          log_heap_usage,
+          LogTargetHandle::create<level, T0, INJECT_START_TAG(T1, T2, T3, T4), GuardTag>(),
+          LogTargetHandle::create<level, T0, T1, T2, T3, T4, GuardTag>()) {
+    STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
+    STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
+  }
+};
+
+// Shim to convert LogTag templates to LogTargetHandle
+template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+class GCTraceTimeWrapper : public StackObj {
+  GCTraceTimeImpl _impl;
+public:
+  GCTraceTimeWrapper(
+      const char* title,
+      GCTimer* timer = NULL,
+      GCCause::Cause gc_cause = GCCause::_no_gc,
+      bool log_heap_usage = false) :
+          _impl(title,
+                LogTargetHandle::create<level, T0, INJECT_START_TAG(T1, T2, T3, T4), GuardTag>(),
+                LogTargetHandle::create<level, T0, T1, T2, T3, T4, GuardTag>(),
+                timer,
+                gc_cause,
+                log_heap_usage) {
+    STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
+    STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
+  }
+};
+
+#undef INJECT_START_TAG
 
 template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag >
 GCTraceConcTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::GCTraceConcTimeImpl(const char* title) :
@@ -128,34 +217,29 @@ GCTraceConcTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::~GCTraceConcTimeImpl()
   }
 }
 
-// Figure out the first __NO_TAG position and replace it with 'start'.
-#define INJECT_START_TAG(T1, T2, T3, T4) \
-    ((                          T1 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T1), \
-    ((T1 != LogTag::__NO_TAG && T2 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T2), \
-    ((T2 != LogTag::__NO_TAG && T3 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T3), \
-    ((T3 != LogTag::__NO_TAG && T4 == LogTag::__NO_TAG) ? PREFIX_LOG_TAG(start) : T4)
+// Helper macros to support the usual use-cases.
 
-template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-GCTraceTimeImplWrapper<level, T0, T1, T2, T3, T4, GuardTag>::GCTraceTimeImplWrapper(
-    const char* title, GCTimer* timer, GCCause::Cause gc_cause, bool log_heap_usage)
-    : _impl(
-        LogTargetHandle::create<level, T0, INJECT_START_TAG(T1, T2, T3, T4), GuardTag>(),
-        LogTargetHandle::create<level, T0, T1, T2, T3, T4, GuardTag>(),
-        title,
-        timer,
-        gc_cause,
-        log_heap_usage) {
+// This is the main macro used by most GCTraceTime users.
+//
+// Examples:
+//  GCTraceTime(Info, gc, phase) t("The sub-phase name");
+//   Log to unified logging on gc+phase=info level.
+//
+//  GCTraceTime(Info, gc, phase) t("The sub-phase name", timer);
+//   Same as above but also register the times in the GCTimer timer.
+//
+// See GCTraceTimeWrapper for the available parameters.
+#define GCTraceTime(Level, ...)     GCTraceTimeWrapper<LogLevel::Level, LOG_TAGS(__VA_ARGS__)>
 
-  STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
-  STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
-}
+// The vanilla GCTraceTime macro doesn't cater to all use-cases.
+// This macro allows the users to create the unified logging callback.
+//
+// Example:
+//  GCTraceTimeLogger(Info, gc) logger(_message, GCCause::_no_gc, true);
+//  GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
+//  GCTraceTimeDriver           t(&logger, &timer);
+#define GCTraceTimeLogger(Level, ...) GCTraceTimeLoggerWrapper<LogLevel::Level, LOG_TAGS(__VA_ARGS__)>
 
-#undef INJECT_START_TAG
-
-template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-GCTraceTimeImplWrapper<Level, T0, T1, T2, T3, T4, GuardTag>::~GCTraceTimeImplWrapper() {}
-
-#define GCTraceTime(Level, ...) GCTraceTimeImplWrapper<LogLevel::Level, LOG_TAGS(__VA_ARGS__)>
 #define GCTraceConcTime(Level, ...) GCTraceConcTimeImpl<LogLevel::Level, LOG_TAGS(__VA_ARGS__)>
 
 #endif // SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP

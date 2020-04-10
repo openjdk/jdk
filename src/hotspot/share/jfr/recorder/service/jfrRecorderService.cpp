@@ -623,13 +623,7 @@ size_t JfrRecorderService::flush() {
   if (_stack_trace_repository.is_modified()) {
     total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
   }
-  if (_checkpoint_manager.is_type_set_required()) {
-    total_elements += flush_typeset(_checkpoint_manager, _chunkwriter);
-  } else if (_checkpoint_manager.is_static_type_set_required()) {
-    // don't tally this, it is only in order to flush the waiting constants
-    _checkpoint_manager.flush_static_type_set();
-  }
-  return total_elements;
+  return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
 }
 
 typedef Content<JfrRecorderService, &JfrRecorderService::flush> FlushFunctor;

@@ -188,7 +188,7 @@ void assert_lock_strong(const Mutex* lock) {
 }
 
 void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread) {
-  if (Thread::current()->is_VM_thread() && thread->is_vmthread_processing_handshake()) return;
+  if (Thread::current() == thread->active_handshaker()) return;
   assert_locked_or_safepoint(lock);
 }
 #endif

@@ -27,10 +27,10 @@ abstract class UndocumentedGenericParent<T, E extends Throwable, F extends Throw
     /**
      * A field.
      */
-    public T f;
+    public T parentField;
 
     /**
-     * Returns some value.
+     * Returns some value with an {@index "inherited search tag"}.
      *
      * @param t a parameter
      * @return some value

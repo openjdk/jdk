@@ -78,4 +78,20 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorGroup::stat
   return _stats;
 }
 
+inline size_t ZRelocationSetSelector::total() const {
+  return _small.stats().total() + _medium.stats().total() + _large.stats().total();
+}
+
+inline size_t ZRelocationSetSelector::empty() const {
+  return _small.stats().empty() + _medium.stats().empty() + _large.stats().empty();
+}
+
+inline size_t ZRelocationSetSelector::compacting_from() const {
+  return _small.stats().compacting_from() + _medium.stats().compacting_from() + _large.stats().compacting_from();
+}
+
+inline size_t ZRelocationSetSelector::compacting_to() const {
+  return _small.stats().compacting_to() + _medium.stats().compacting_to() + _large.stats().compacting_to();
+}
+
 #endif // SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP

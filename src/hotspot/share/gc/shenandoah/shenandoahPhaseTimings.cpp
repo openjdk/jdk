@@ -76,9 +76,6 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
   guarantee(phase == init_evac ||
             phase == scan_roots ||
             phase == update_roots ||
-            phase == init_traversal_gc_work ||
-            phase == final_traversal_gc_work ||
-            phase == final_traversal_update_roots ||
             phase == final_update_refs_roots ||
             phase == full_gc_roots ||
             phase == degen_gc_update_roots ||
@@ -87,11 +84,13 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
             phase == _num_phases,
             "only in these phases we can add per-thread phase times");
   if (phase != _num_phases) {
-    // Merge _phase_time to counters below the given phase.
-    for (uint i = 0; i < GCParPhasesSentinel; i++) {
-      double t = _gc_par_phases[i]->average();
-      _timing_data[phase + i + 1].add(t);
+    double s = 0;
+    for (uint i = 1; i < GCParPhasesSentinel; i++) {
+      double t = _gc_par_phases[i]->sum();
+      _timing_data[phase + i + 1].add(t); // add to each line in phase
+      s += t;
     }
+    _timing_data[phase + 1].add(s); // add to total for phase
   }
 }
 
@@ -103,6 +102,9 @@ void ShenandoahPhaseTimings::print_on(outputStream* out) const {
   out->print_cr("  \"(N)\" (net) pauses are the times spent in the actual GC code.");
   out->print_cr("  \"a\" is average time for each phase, look at levels to see if average makes sense.");
   out->print_cr("  \"lvls\" are quantiles: 0%% (minimum), 25%%, 50%% (median), 75%%, 100%% (maximum).");
+  out->cr();
+  out->print_cr("  All times are wall-clock times, except per-root-class counters, that are sum over");
+  out->print_cr("  all workers. Dividing the <total> over the root stage time estimates parallelism.");
   out->cr();
 
   for (uint i = 0; i < _num_phases; i++) {

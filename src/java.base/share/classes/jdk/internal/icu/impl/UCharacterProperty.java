@@ -67,18 +67,18 @@ public final class UCharacterProperty
     public static final UCharacterProperty INSTANCE;
 
     /**
-    * Trie data
-    */
+     * Trie data
+     */
     public Trie2_16 m_trie_;
 
     /**
-    * Unicode version
-    */
+     * Unicode version
+     */
     public VersionInfo m_unicodeVersion_;
 
     /**
-    * Character type mask
-    */
+     * Character type mask
+     */
     public static final int TYPE_MASK = 0x1F;
 
     // uprops.h enum UPropertySource --------------------------------------- ***
@@ -97,10 +97,10 @@ public final class UCharacterProperty
     // public methods ----------------------------------------------------
 
     /**
-    * Gets the main property value for code point ch.
-    * @param ch code point whose property value is to be retrieved
-    * @return property value of code point
-    */
+     * Gets the main property value for code point ch.
+     * @param ch code point whose property value is to be retrieved
+     * @return property value of code point
+     */
     public final int getProperty(int ch)
     {
         return m_trie_.get(ch);
@@ -228,13 +228,13 @@ public final class UCharacterProperty
     }
 
     /**
-    * Forms a supplementary code point from the argument character<br>
-    * Note this is for internal use hence no checks for the validity of the
-    * surrogate characters are done
-    * @param lead lead surrogate character
-    * @param trail trailing surrogate character
-    * @return code point of the supplementary character
-    */
+     * Forms a supplementary code point from the argument character<br>
+     * Note this is for internal use hence no checks for the validity of the
+     * surrogate characters are done
+     * @param lead lead surrogate character
+     * @param trail trailing surrogate character
+     * @return code point of the supplementary character
+     */
     public static int getRawSupplementary(char lead, char trail)
     {
         return (lead << LEAD_SURROGATE_SHIFT_) + trail + SURROGATE_OFFSET_;
@@ -318,8 +318,8 @@ public final class UCharacterProperty
     // private variables -------------------------------------------------
 
     /**
-    * Default name of the datafile
-    */
+     * Default name of the datafile
+     */
     @SuppressWarnings("deprecation")
     private static final String DATA_FILE_NAME_ =
             "/jdk/internal/icu/impl/data/icudt" +
@@ -327,12 +327,12 @@ public final class UCharacterProperty
             "/uprops.icu";
 
     /**
-    * Shift value for lead surrogate to form a supplementary character.
-    */
+     * Shift value for lead surrogate to form a supplementary character.
+     */
     private static final int LEAD_SURROGATE_SHIFT_ = 10;
     /**
-    * Offset to add to combined surrogate pair to avoid masking.
-    */
+     * Offset to add to combined surrogate pair to avoid masking.
+     */
     private static final int SURROGATE_OFFSET_ =
                            UTF16.SUPPLEMENTARY_MIN_VALUE -
                            (UTF16.SURROGATE_MIN_VALUE <<

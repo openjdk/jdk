@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class EmptyNameSearch {
         Thread.sleep(3000);
 
         // Setup JNDI parameters
-        Hashtable env = new Hashtable();
+        Hashtable<Object, Object> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
             "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, "ldap://localhost:" + s.getPortNumber());
@@ -58,7 +58,7 @@ public class EmptyNameSearch {
             DirContext ctx = new InitialDirContext(env);
 
             System.out.println("Client: performing search...");
-            ctx.search(new LdapName(Collections.EMPTY_LIST), "cn=*", null);
+            ctx.search(new LdapName(Collections.emptyList()), "cn=*", null);
             ctx.close();
 
             // Exit

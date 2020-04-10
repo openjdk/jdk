@@ -810,6 +810,35 @@ bool Type::interface_vs_oop(const Type *t) const {
 
 #endif
 
+void Type::check_symmetrical(const Type *t, const Type *mt) const {
+#ifdef ASSERT
+  assert(mt == t->xmeet(this), "meet not commutative");
+  const Type* dual_join = mt->_dual;
+  const Type *t2t    = dual_join->xmeet(t->_dual);
+  const Type *t2this = dual_join->xmeet(this->_dual);
+
+  // Interface meet Oop is Not Symmetric:
+  // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
+  // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
+
+  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this->_dual) ) {
+    tty->print_cr("=== Meet Not Symmetric ===");
+    tty->print("t   =                   ");              t->dump(); tty->cr();
+    tty->print("this=                   ");                 dump(); tty->cr();
+    tty->print("mt=(t meet this)=       ");             mt->dump(); tty->cr();
+
+    tty->print("t_dual=                 ");       t->_dual->dump(); tty->cr();
+    tty->print("this_dual=              ");          _dual->dump(); tty->cr();
+    tty->print("mt_dual=                ");      mt->_dual->dump(); tty->cr();
+
+    tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
+    tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
+
+    fatal("meet not symmetric" );
+  }
+#endif
+}
+
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
 // commutative and the lattice is symmetric.
@@ -827,33 +856,28 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   t = t->maybe_remove_speculative(include_speculative);
 
   const Type *mt = this_t->xmeet(t);
+#ifdef ASSERT
   if (isa_narrowoop() || t->isa_narrowoop()) return mt;
   if (isa_narrowklass() || t->isa_narrowklass()) return mt;
-#ifdef ASSERT
-  assert(mt == t->xmeet(this_t), "meet not commutative");
-  const Type* dual_join = mt->_dual;
-  const Type *t2t    = dual_join->xmeet(t->_dual);
-  const Type *t2this = dual_join->xmeet(this_t->_dual);
-
-  // Interface meet Oop is Not Symmetric:
-  // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
-  // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
-
-  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this_t->_dual) ) {
-    tty->print_cr("=== Meet Not Symmetric ===");
-    tty->print("t   =                   ");              t->dump(); tty->cr();
-    tty->print("this=                   ");         this_t->dump(); tty->cr();
-    tty->print("mt=(t meet this)=       ");             mt->dump(); tty->cr();
-
-    tty->print("t_dual=                 ");       t->_dual->dump(); tty->cr();
-    tty->print("this_dual=              ");  this_t->_dual->dump(); tty->cr();
-    tty->print("mt_dual=                ");      mt->_dual->dump(); tty->cr();
-
-    tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
-    tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
-
-    fatal("meet not symmetric" );
+  Compile* C = Compile::current();
+  if (!C->_type_verify_symmetry) {
+    return mt;
   }
+  this_t->check_symmetrical(t, mt);
+  // In the case of an array, computing the meet above, caused the
+  // computation of the meet of the elements which at verification
+  // time caused the computation of the meet of the dual of the
+  // elements. Computing the meet of the dual of the arrays here
+  // causes the meet of the dual of the elements to be computed which
+  // would cause the meet of the dual of the dual of the elements,
+  // that is the meet of the elements already computed above to be
+  // computed. Avoid redundant computations by requesting no
+  // verification.
+  C->_type_verify_symmetry = false;
+  const Type *mt_dual = this_t->_dual->xmeet(t->_dual);
+  this_t->_dual->check_symmetrical(t->_dual, mt_dual);
+  assert(!C->_type_verify_symmetry, "shouldn't have changed");
+  C->_type_verify_symmetry = true;
 #endif
   return mt;
 }
@@ -4315,7 +4339,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
            (tap->_klass_is_exact && !tap->klass()->is_subtype_of(klass())) ||
            // 'this' is exact and super or unrelated:
            (this->_klass_is_exact && !klass()->is_subtype_of(tap->klass())))) {
-      if (above_centerline(ptr)) {
+      if (above_centerline(ptr) || (tary->_elem->make_ptr() && above_centerline(tary->_elem->make_ptr()->_ptr))) {
         tary = TypeAry::make(Type::BOTTOM, tary->_size, tary->_stable);
       }
       return make(NotNull, NULL, tary, lazy_klass, false, off, InstanceBot, speculative, depth);

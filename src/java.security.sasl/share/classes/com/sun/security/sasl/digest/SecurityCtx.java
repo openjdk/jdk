@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@ package com.sun.security.sasl.digest;
 import javax.security.sasl.SaslException;
 
 /**
-  * Interface used for classes implementing integrity checking and privacy
-  * for DIGEST-MD5 SASL mechanism implementation.
-  *
-  * @see <a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>
-  * - Using Digest Authentication as a SASL Mechanism
-  *
-  * @author Jonathan Bruce
-  */
+ * Interface used for classes implementing integrity checking and privacy
+ * for DIGEST-MD5 SASL mechanism implementation.
+ *
+ * @see <a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>
+ * - Using Digest Authentication as a SASL Mechanism
+ *
+ * @author Jonathan Bruce
+ */
 
 interface SecurityCtx {
 

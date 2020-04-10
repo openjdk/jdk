@@ -41,6 +41,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @key jfr
+ * @requires vm.gc == "Serial" | vm.gc == null
  * @requires vm.hasJFR
  * @library /test/lib
  * @run driver jdk.jfr.event.runtime.TestVMInfoEvent generateFlagsFile

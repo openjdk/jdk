@@ -44,8 +44,6 @@ private:
   size_t _used;
 
   void assert_bounds() const NOT_DEBUG_RETURN;
-  void assert_heaplock_owned_by_current_thread() const NOT_DEBUG_RETURN;
-  void assert_heaplock_not_owned_by_current_thread() const NOT_DEBUG_RETURN;
 
   bool is_mutator_free(size_t idx) const;
   bool is_collector_free(size_t idx) const;
@@ -91,6 +89,9 @@ public:
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
   size_t unsafe_peek_free() const;
+
+  double internal_fragmentation();
+  double external_fragmentation();
 
   void print_on(outputStream* out) const;
 };

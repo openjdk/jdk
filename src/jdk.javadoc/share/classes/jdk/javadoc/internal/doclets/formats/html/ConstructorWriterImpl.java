@@ -153,21 +153,13 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public Content getConstructorDetails(Content constructorDetailsTreeHeader, Content constructorDetailsTree) {
-        Content constructorDetails = new ContentBuilder(constructorDetailsTreeHeader, constructorDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.constructorDetails, constructorDetails)
-                .setId(SectionName.CONSTRUCTOR_DETAIL.getName()));
+        return writer.getDetailsListItem(
+                HtmlTree.SECTION(HtmlStyle.constructorDetails)
+                        .setId(SectionName.CONSTRUCTOR_DETAIL.getName())
+                        .add(constructorDetailsTreeHeader)
+                        .add(constructorDetailsTree));
     }
 
-    @Override
-    public Content getConstructorDoc(Content constructorDocTree) {
-        return getMemberTree(constructorDocTree);
-    }
-
-    /**
-     * Let the writer know whether a non public constructor was found.
-     *
-     * @param foundNonPubConstructor true if we found a non public constructor.
-     */
     @Override
     public void setFoundNonPubConstructor(boolean foundNonPubConstructor) {
         this.foundNonPubConstructor = foundNonPubConstructor;

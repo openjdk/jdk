@@ -135,7 +135,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                                         TypeElement typeElement,
                                         Content contentTree)
     {
-        SortedSet<TypeElement> interfaces = new TreeSet<>(utils.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.makeGeneralPurposeComparator());
         typeElement.getInterfaces().forEach(t -> interfaces.add(utils.asTypeElement(t)));
         if (interfaces.size() > (utils.isInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;

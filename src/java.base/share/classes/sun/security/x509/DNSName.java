@@ -83,7 +83,7 @@ public class DNSName implements GeneralNameInterface {
          * Name will consist of label components separated by "."
          * startIndex is the index of the first character of a component
          * endIndex is the index of the last character of a component plus 1
-        */
+         */
         for (int endIndex,startIndex = 0; startIndex < name.length(); startIndex = endIndex+1) {
             endIndex = name.indexOf('.', startIndex);
             if (endIndex < 0) {

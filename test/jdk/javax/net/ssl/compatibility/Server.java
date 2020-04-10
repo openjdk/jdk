@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,6 @@ public class Server {
         this(certs, 0);
     }
 
-    private void setEnabledCipherSuites(String... cipherSuites) {
-        serverSocket.setEnabledCipherSuites(cipherSuites);
-    }
-
-    private void setEnabledProtocols(String... protocols) {
-        serverSocket.setEnabledProtocols(protocols);
-    }
-
     private void setNeedClientAuth(boolean needClientAuth) {
         serverSocket.setNeedClientAuth(needClientAuth);
     }
@@ -100,8 +92,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
         System.out.println("----- Server start -----");
-        String protocol = System.getProperty(Utils.PROP_PROTOCOL);
-        String cipherSuite = System.getProperty(Utils.PROP_CIPHER_SUITE);
+        String certs = System.getProperty(Utils.PROP_CERTS);
         boolean clientAuth
                 = Boolean.getBoolean(Utils.PROP_CLIENT_AUTH);
         String appProtocols = System.getProperty(Utils.PROP_APP_PROTOCOLS);
@@ -112,19 +103,16 @@ public class Server {
 
         System.out.println(Utils.join(Utils.PARAM_DELIMITER,
                 "ServerJDK=" + System.getProperty(Utils.PROP_SERVER_JDK),
-                "Protocol=" + protocol,
-                "CipherSuite=" + cipherSuite,
                 "ClientAuth=" + clientAuth,
                 "AppProtocols=" + appProtocols));
 
         Status status = Status.SUCCESS;
         Server server = null;
         try {
-            server = new Server(Cert.getCerts(CipherSuite.cipherSuite(cipherSuite)));
+            server = new Server(
+                    Cert.getCerts(Utils.split(certs, Utils.VALUE_DELIMITER)));
             System.out.println("port=" + server.getPort());
             server.setNeedClientAuth(clientAuth);
-            server.setEnabledProtocols(protocol);
-            server.setEnabledCipherSuites(cipherSuite);
             if (appProtocols != null) {
                 if (supportsALPN) {
                     server.setApplicationProtocols(

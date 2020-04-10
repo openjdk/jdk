@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -218,7 +218,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
   // Calc dispatch table address.
   load_dispatch_table(R11_scratch1, table);
 
-  if (SafepointMechanism::uses_thread_local_poll() && generate_poll) {
+  if (generate_poll) {
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;

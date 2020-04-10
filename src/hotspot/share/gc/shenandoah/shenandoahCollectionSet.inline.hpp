@@ -30,13 +30,13 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
-bool ShenandoahCollectionSet::is_in(size_t region_number) const {
-  assert(region_number < _heap->num_regions(), "Sanity");
-  return _cset_map[region_number] == 1;
+bool ShenandoahCollectionSet::is_in(size_t region_idx) const {
+  assert(region_idx < _heap->num_regions(), "Sanity");
+  return _cset_map[region_idx] == 1;
 }
 
 bool ShenandoahCollectionSet::is_in(ShenandoahHeapRegion* r) const {
-  return is_in(r->region_number());
+  return is_in(r->index());
 }
 
 bool ShenandoahCollectionSet::is_in(oop p) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,10 @@ class os: AllStatic {
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
+
+  static char*  pd_reserve_memory_special(size_t size, size_t alignment,
+                                          char* addr, bool executable);
+  static bool   pd_release_memory_special(char* addr, size_t bytes);
 
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
 
@@ -393,13 +397,6 @@ class os: AllStatic {
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
   static bool   can_execute_large_page_memory();
-
-  // OS interface to polling page
-  static address get_polling_page()             { return _polling_page; }
-  static void    set_polling_page(address page) { _polling_page = page; }
-  static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + os::vm_page_size()); }
-  static void    make_polling_page_unreadable();
-  static void    make_polling_page_readable();
 
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);

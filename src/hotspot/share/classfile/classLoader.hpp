@@ -170,8 +170,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_classes_linked;
   static PerfCounter* _perf_class_link_time;
   static PerfCounter* _perf_class_link_selftime;
-  static PerfCounter* _perf_class_parse_time;
-  static PerfCounter* _perf_class_parse_selftime;
   static PerfCounter* _perf_sys_class_lookup_time;
   static PerfCounter* _perf_shared_classload_time;
   static PerfCounter* _perf_sys_classload_time;
@@ -260,23 +258,21 @@ class ClassLoader: AllStatic {
                                                  bool is_boot_append,
                                                  bool from_class_path_attr, TRAPS);
 
-  // If the package for the fully qualified class name is in the boot
-  // loader's package entry table then add_package() sets the classpath_index
-  // field so that get_system_package() will know to return a non-null value
-  // for the package's location.  And, so that the package will be added to
-  // the list of packages returned by get_system_packages().
+  // If the package for InstanceKlass is in the boot loader's package entry
+  // table then add_package() sets the classpath_index field so that
+  // get_system_package() will know to return a non-null value for the
+  // package's location.  And, so that the package will be added to the list of
+  // packages returned by get_system_packages().
   // For packages whose classes are loaded from the boot loader class path, the
   // classpath_index indicates which entry on the boot loader class path.
-  static bool add_package(const char *fullq_class_name, s2 classpath_index, TRAPS);
+  static bool add_package(const InstanceKlass* ik, s2 classpath_index, TRAPS);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
   static bool get_canonical_path(const char* orig, char* out, int len);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
-  static PackageEntry* get_package_entry(const char* class_name, ClassLoaderData* loader_data, TRAPS);
-
- public:
+  static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
   static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(const char *path,
                                            bool check_for_duplicates,
@@ -297,8 +293,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_classes_linked()           { return _perf_classes_linked; }
   static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
   static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
-  static PerfCounter* perf_class_parse_time()         { return _perf_class_parse_time; }
-  static PerfCounter* perf_class_parse_selftime()     { return _perf_class_parse_selftime; }
   static PerfCounter* perf_sys_class_lookup_time()    { return _perf_sys_class_lookup_time; }
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
@@ -440,10 +434,10 @@ class ClassLoader: AllStatic {
 
   static bool string_ends_with(const char* str, const char* str_to_find);
 
-  // obtain package name from a fully qualified class name
+  // Extract package name from a fully qualified class name
   // *bad_class_name is set to true if there's a problem with parsing class_name, to
   // distinguish from a class_name with no package name, as both cases have a NULL return value
-  static const char* package_from_name(const char* const class_name, bool* bad_class_name = NULL);
+  static Symbol* package_from_class_name(const Symbol* class_name, bool* bad_class_name = NULL);
 
   // Debugging
   static void verify()              PRODUCT_RETURN;

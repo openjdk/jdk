@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,22 +191,9 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, JVMCIObject hotspot_met
   }
 }
 
-static void relocate_poll_near(address pc) {
-  NativeInstruction* ni = nativeInstruction_at(pc);
-  int32_t* disp = (int32_t*) Assembler::locate_operand(pc, Assembler::disp32_operand);
-  int32_t offset = *disp; // The Java code installed the polling page offset into the disp32 operand
-  intptr_t new_disp = (intptr_t) (os::get_polling_page() + offset) - (intptr_t) ni;
-  *disp = (int32_t)new_disp;
-}
-
-
 void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
   switch (mark) {
-    case POLL_NEAR: {
-      relocate_poll_near(pc);
-      _instructions->relocate(pc, relocInfo::poll_type, Assembler::disp32_operand);
-      break;
-    }
+    case POLL_NEAR:
     case POLL_FAR:
       // This is a load from a register so there is no relocatable operand.
       // We just have to ensure that the format is not disp32_operand
@@ -214,11 +201,7 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
       // thing (i.e. ignores this relocation record)
       _instructions->relocate(pc, relocInfo::poll_type, Assembler::imm_operand);
       break;
-    case POLL_RETURN_NEAR: {
-      relocate_poll_near(pc);
-      _instructions->relocate(pc, relocInfo::poll_return_type, Assembler::disp32_operand);
-      break;
-    }
+    case POLL_RETURN_NEAR:
     case POLL_RETURN_FAR:
       // see comment above for POLL_FAR
       _instructions->relocate(pc, relocInfo::poll_return_type, Assembler::imm_operand);

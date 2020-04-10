@@ -33,10 +33,10 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -592,6 +592,34 @@ CompilerCounters::CompilerCounters() {
   _compile_type = CompileBroker::no_compile;
 }
 
+#if INCLUDE_JFR
+// It appends new compiler phase names to growable array phase_names(a new CompilerPhaseType mapping
+// in compiler/compilerEvent.cpp) and registers it with its serializer.
+//
+// c2 uses explicit CompilerPhaseType idToPhase mapping in opto/phasetype.hpp,
+// so if c2 is used, it should be always registered first.
+// This function is called during vm initialization.
+void register_jfr_phasetype_serializer(CompilerType compiler_type) {
+  ResourceMark rm;
+  static bool first_registration = true;
+  if (compiler_type == compiler_jvmci) {
+    // register serializer, phases will be added later lazily.
+    GrowableArray<const char*>* jvmci_phase_names = new GrowableArray<const char*>(1);
+    jvmci_phase_names->append("NOT_A_PHASE_NAME");
+    CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
+    first_registration = false;
+  } else if (compiler_type == compiler_c2) {
+    assert(first_registration, "invariant"); // c2 must be registered first.
+    GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
+    for (int i = 0; i < PHASE_NUM_TYPES; i++) {
+      c2_phase_names->append(CompilerPhaseTypeHelper::to_string((CompilerPhaseType)i));
+    }
+    CompilerEvent::PhaseEvent::register_phases(c2_phase_names);
+    first_registration = false;
+  }
+}
+#endif // INCLUDE_JFR
+
 // ------------------------------------------------------------------
 // CompileBroker::compilation_init
 //
@@ -638,9 +666,20 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
   if (true JVMCI_ONLY( && !UseJVMCICompiler)) {
     if (_c2_count > 0) {
       _compilers[1] = new C2Compiler();
+      // Register c2 first as c2 CompilerPhaseType idToPhase mapping is explicit.
+      // idToPhase mapping for c2 is in opto/phasetype.hpp
+      JFR_ONLY(register_jfr_phasetype_serializer(compiler_c2);)
     }
   }
 #endif // COMPILER2
+
+#if INCLUDE_JVMCI
+   // Register after c2 registration.
+   // JVMCI CompilerPhaseType idToPhase mapping is dynamic.
+   if (EnableJVMCI) {
+     JFR_ONLY(register_jfr_phasetype_serializer(compiler_jvmci);)
+   }
+#endif // INCLUDE_JVMCI
 
   // Start the compiler thread(s) and the sweeper thread
   init_compiler_sweeper_threads();
@@ -2018,19 +2057,17 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool
   assert(task->compile_id() != CICrashAt, "just as planned");
 }
 
-static void post_compilation_event(EventCompilation* event, CompileTask* task) {
-  assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
+static void post_compilation_event(EventCompilation& event, CompileTask* task) {
   assert(task != NULL, "invariant");
-  event->set_compileId(task->compile_id());
-  event->set_compiler(task->compiler()->type());
-  event->set_method(task->method());
-  event->set_compileLevel(task->comp_level());
-  event->set_succeded(task->is_success());
-  event->set_isOsr(task->osr_bci() != CompileBroker::standard_entry_bci);
-  event->set_codeSize((task->code() == NULL) ? 0 : task->code()->total_size());
-  event->set_inlinedBytes(task->num_inlined_bytecodes());
-  event->commit();
+  CompilerEvent::CompilationEvent::post(event,
+                                        task->compile_id(),
+                                        task->compiler()->type(),
+                                        task->method(),
+                                        task->comp_level(),
+                                        task->is_success(),
+                                        task->osr_bci() != CompileBroker::standard_entry_bci,
+                                        (task->code() == NULL) ? 0 : task->code()->total_size(),
+                                        task->num_inlined_bytecodes());
 }
 
 int DirectivesStack::_depth = 0;
@@ -2129,7 +2166,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
     post_compile(thread, task, task->code() != NULL, NULL, compilable, failure_reason);
     if (event.should_commit()) {
-      post_compilation_event(&event, task);
+      post_compilation_event(event, task);
     }
 
   } else
@@ -2189,7 +2226,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     post_compile(thread, task, !ci_env.failing(), &ci_env, compilable, failure_reason);
     if (event.should_commit()) {
-      post_compilation_event(&event, task);
+      post_compilation_event(event, task);
     }
   }
   // Remove the JNI handle block after the ciEnv destructor has run in

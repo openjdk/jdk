@@ -346,7 +346,7 @@ public abstract class SelectionKey {
      * method always returns {@code false}.  </p>
      *
      * @return  {@code true} if, and only if,
-                {@code readyOps() & OP_READ} is nonzero
+     *          {@code readyOps() & OP_READ} is nonzero
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled

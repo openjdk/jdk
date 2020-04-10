@@ -135,6 +135,35 @@ HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint re
   return hr;
 }
 
+HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
+  uint candidate = find_contiguous_in_free_list(num_regions);
+  if (candidate == G1_NO_HRM_INDEX) {
+    return NULL;
+  }
+  return allocate_free_regions_starting_at(candidate, num_regions);
+}
+
+HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
+  uint candidate = find_contiguous_allow_expand(num_regions);
+  if (candidate == G1_NO_HRM_INDEX) {
+    return NULL;
+  }
+  expand_exact(candidate, num_regions, G1CollectedHeap::heap()->workers());
+  return allocate_free_regions_starting_at(candidate, num_regions);
+}
+
+HeapRegion* HeapRegionManager::allocate_humongous(uint num_regions) {
+  // Special case a single region to avoid expensive search.
+  if (num_regions == 1) {
+    return allocate_free_region(HeapRegionType::Humongous, G1NUMA::AnyNodeIndex);
+  }
+  return allocate_humongous_from_free_list(num_regions);
+}
+
+HeapRegion* HeapRegionManager::expand_and_allocate_humongous(uint num_regions) {
+  return allocate_humongous_allow_expand(num_regions);
+}
+
 #ifdef ASSERT
 bool HeapRegionManager::is_free(HeapRegion* hr) const {
   return _free_list.contains(hr);
@@ -271,6 +300,19 @@ uint HeapRegionManager::expand_at(uint start, uint num_regions, WorkGang* pretou
   return expanded;
 }
 
+void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkGang* pretouch_workers) {
+  assert(num_regions != 0, "Need to request at least one region");
+  uint end = start + num_regions;
+
+  for (uint i = start; i < end; i++) {
+    if (!is_available(i)) {
+      make_regions_available(i, 1, pretouch_workers);
+    }
+  }
+
+  verify_optional();
+}
+
 uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
   uint expand_candidate = UINT_MAX;
   for (uint i = 0; i < max_length(); i++) {
@@ -291,7 +333,7 @@ uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
     return 0;
   }
 
-  make_regions_available(expand_candidate, 1, NULL);
+  expand_exact(expand_candidate, 1, NULL);
   return 1;
 }
 
@@ -300,36 +342,61 @@ bool HeapRegionManager::is_on_preferred_index(uint region_index, uint preferred_
   return region_node_index == preferred_node_index;
 }
 
-uint HeapRegionManager::find_contiguous(size_t num, bool empty_only) {
-  uint found = 0;
-  size_t length_found = 0;
-  uint cur = 0;
-
-  while (length_found < num && cur < max_length()) {
-    HeapRegion* hr = _regions.get_by_index(cur);
-    if ((!empty_only && !is_available(cur)) || (is_available(cur) && hr != NULL && hr->is_empty())) {
-      // This region is a potential candidate for allocation into.
-      length_found++;
-    } else {
-      // This region is not a candidate. The next region is the next possible one.
-      found = cur + 1;
-      length_found = 0;
-    }
-    cur++;
+void HeapRegionManager::guarantee_contiguous_range(uint start, uint num_regions) {
+  // General sanity check, regions found should either be available and empty
+  // or not available so that we can make them available and use them.
+  for (uint i = start; i < (start + num_regions); i++) {
+    HeapRegion* hr = _regions.get_by_index(i);
+    guarantee(!is_available(i) || hr->is_free(),
+              "Found region sequence starting at " UINT32_FORMAT ", length " UINT32_FORMAT
+              " that is not free at " UINT32_FORMAT ". Hr is " PTR_FORMAT ", type is %s",
+              start, num_regions, i, p2i(hr), hr->get_type_str());
   }
+}
 
-  if (length_found == num) {
-    for (uint i = found; i < (found + num); i++) {
-      HeapRegion* hr = _regions.get_by_index(i);
-      // sanity check
-      guarantee((!empty_only && !is_available(i)) || (is_available(i) && hr != NULL && hr->is_empty()),
-                "Found region sequence starting at " UINT32_FORMAT ", length " SIZE_FORMAT
-                " that is not empty at " UINT32_FORMAT ". Hr is " PTR_FORMAT, found, num, i, p2i(hr));
+uint HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_regions) {
+  assert(start <= end, "precondition");
+  assert(num_regions >= 1, "precondition");
+  uint candidate = start;       // First region in candidate sequence.
+  uint unchecked = candidate;   // First unchecked region in candidate.
+  // While the candidate sequence fits in the range...
+  while (num_regions <= (end - candidate)) {
+    // Walk backward over the regions for the current candidate.
+    for (uint i = candidate + num_regions - 1; true; --i) {
+      if (is_available(i) && !at(i)->is_free()) {
+        // Region i can't be used, so restart with i+1 as the start
+        // of a new candidate sequence, and with the region after the
+        // old candidate sequence being the first unchecked region.
+        unchecked = candidate + num_regions;
+        candidate = i + 1;
+        break;
+      } else if (i == unchecked) {
+        // All regions of candidate sequence have passed check.
+        guarantee_contiguous_range(candidate, num_regions);
+        return candidate;
+      }
     }
-    return found;
-  } else {
-    return G1_NO_HRM_INDEX;
   }
+  return G1_NO_HRM_INDEX;
+}
+
+uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
+  BitMap::idx_t range_start = 0;
+  BitMap::idx_t range_end = range_start;
+  uint candidate = G1_NO_HRM_INDEX;
+
+  do {
+    range_start = _available_map.get_next_one_offset(range_end);
+    range_end = _available_map.get_next_zero_offset(range_start);
+    candidate = find_contiguous_in_range((uint) range_start, (uint) range_end, num_regions);
+  } while (candidate == G1_NO_HRM_INDEX && range_end < max_length());
+
+  return candidate;
+}
+
+uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
+  // Find any candidate.
+  return find_contiguous_in_range(0, max_length(), num_regions);
 }
 
 HeapRegion* HeapRegionManager::next_region_in_heap(const HeapRegion* r) const {

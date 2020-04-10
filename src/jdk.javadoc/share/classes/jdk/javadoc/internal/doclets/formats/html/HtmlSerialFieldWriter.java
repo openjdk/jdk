@@ -107,7 +107,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
             section.add(serialHeading);
             section.add(serializableFieldsTree);
         }
-        return HtmlTree.LI(HtmlStyle.blockList, section);
+        return HtmlTree.LI(section);
     }
 
     @Override

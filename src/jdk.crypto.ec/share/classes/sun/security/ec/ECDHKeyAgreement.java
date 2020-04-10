@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import sun.security.util.ArrayUtil;
+import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
+import sun.security.util.NamedCurve;
 import sun.security.util.math.*;
 import sun.security.ec.point.*;
 
@@ -165,11 +167,24 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         if ((privateKey == null) || (publicKey == null)) {
             throw new IllegalStateException("Not initialized correctly");
         }
-
+        byte[] result;
         Optional<byte[]> resultOpt = deriveKeyImpl(privateKey, publicKey);
-        byte[] result = resultOpt.orElseGet(
-            () -> deriveKeyNative(privateKey, publicKey)
-        );
+        if (resultOpt.isPresent()) {
+            result = resultOpt.get();
+        } else {
+            if (SunEC.isNativeDisabled()) {
+                NamedCurve privNC = CurveDB.lookup(privateKey.getParams());
+                NamedCurve pubNC = CurveDB.lookup(publicKey.getParams());
+                throw new IllegalStateException(
+                        new InvalidAlgorithmParameterException("Legacy SunEC " +
+                                "curve disabled, one or both keys:  " +
+                                "Private: " + ((privNC != null) ?
+                                privNC.toString() : " unknown") +
+                                ", PublicKey:" + ((pubNC != null) ?
+                                pubNC.toString() : " unknown")));
+            }
+            result = deriveKeyNative(privateKey, publicKey);
+        }
         publicKey = null;
         return result;
     }

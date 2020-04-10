@@ -84,19 +84,21 @@ final class DesktopIntegration {
                 .setCategory(I18N.getString("resource.menu-shortcut-descriptor"))
                 .setPublicName(APP_NAME.fetchFrom(params) + ".desktop");
 
+        final String escapedAppFileName = APP_NAME.fetchFrom(params).replaceAll("\\s+", "_");
+
         // XDG recommends to use vendor prefix in desktop file names as xdg
         // commands copy files to system directories.
         // Package name should be a good prefix.
         final String desktopFileName = String.format("%s-%s.desktop",
-                    thePackage.name(), APP_NAME.fetchFrom(params));
+                    thePackage.name(), escapedAppFileName);
         final String mimeInfoFileName = String.format("%s-%s-MimeInfo.xml",
-                    thePackage.name(), APP_NAME.fetchFrom(params));
+                    thePackage.name(), escapedAppFileName);
 
         mimeInfoFile = new DesktopFile(mimeInfoFileName);
 
         if (withDesktopFile) {
             desktopFile = new DesktopFile(desktopFileName);
-            iconFile = new DesktopFile(APP_NAME.fetchFrom(params)
+            iconFile = new DesktopFile(escapedAppFileName
                     + IOUtils.getSuffix(Path.of(DEFAULT_ICON)));
 
             if (curIconResource == null) {

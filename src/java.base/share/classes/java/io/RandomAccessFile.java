@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,8 +529,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Writes a sub array as a sequence of bytes.
+     *
      * @param     b the data to be written
-
      * @param     off the start offset in the data
      * @param     len the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.

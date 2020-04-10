@@ -70,7 +70,16 @@ class UTF8 : AllStatic {
   static char* next_character(const char* str, jint* value);
 
   // Utility methods
-  static const jbyte* strrchr(const jbyte* base, int length, jbyte c);
+
+  // Returns NULL if 'c' it not found. This only works as long
+  // as 'c' is an ASCII character
+  static const jbyte* strrchr(const jbyte* base, int length, jbyte c) {
+    assert(length >= 0, "sanity check");
+    assert(c >= 0, "does not work for non-ASCII characters");
+    // Skip backwards in string until 'c' is found or end is reached
+    while(--length >= 0 && base[length] != c);
+    return (length < 0) ? NULL : &base[length];
+  }
   static bool   equal(const jbyte* base1, int length1, const jbyte* base2,int length2);
   static bool   is_supplementary_character(const unsigned char* str);
   static jint   get_supplementary_character(const unsigned char* str);

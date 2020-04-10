@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,16 @@ public class RemoteDebuggerServer extends UnicastRemoteObject
   }
 
   /** This is the constructor used on the machine where the debuggee
-      process lies */
-  public RemoteDebuggerServer(Debugger debugger) throws RemoteException {
-    super();
+   process lies that accepts an RMI connector port */
+  public RemoteDebuggerServer(Debugger debugger, int port) throws RemoteException {
+    super(port);
     this.debugger = debugger;
+  }
+
+  /** This is the constructor used on the machine where the debuggee
+   process lies */
+  public RemoteDebuggerServer(Debugger debugger) throws RemoteException {
+    this(debugger, 0);
   }
 
   public String getOS() throws RemoteException {

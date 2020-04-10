@@ -117,6 +117,33 @@ public class BindingReader {
         return null;
     }
 
+    public String readStringUntil(String sequence) {
+        StringBuilder sb = new StringBuilder();
+        if (!pushBackChar.isEmpty()) {
+            pushBackChar.forEach(sb::appendCodePoint);
+        }
+        try {
+            char[] buf = new char[64];
+            while (true) {
+                int idx = sb.indexOf(sequence, Math.max(0, sb.length() - buf.length - sequence.length()));
+                if (idx >= 0) {
+                    String rem = sb.substring(idx + sequence.length());
+                    runMacro(rem);
+                    return sb.substring(0, idx);
+                }
+                int l = reader.readBuffered(buf);
+                if (l < 0) {
+                    throw new ClosedException();
+                }
+                sb.append(buf, 0, l);
+            }
+        } catch (ClosedException e) {
+            throw new EndOfFileException(e);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
     /**
      * Read a codepoint from the terminal.
      *
@@ -137,6 +164,47 @@ public class BindingReader {
                 }
             }
             return s != 0 ? Character.toCodePoint((char) s, (char) c) : c;
+        } catch (ClosedException e) {
+            throw new EndOfFileException(e);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public int readCharacterBuffered() {
+        try {
+            if (pushBackChar.isEmpty()) {
+                char[] buf = new char[32];
+                int l = reader.readBuffered(buf);
+                if (l <= 0) {
+                    return -1;
+                }
+                int s = 0;
+                for (int i = 0; i < l; ) {
+                    int c = buf[i++];
+                    if (Character.isHighSurrogate((char) c)) {
+                        s = c;
+                        if (i < l) {
+                            c = buf[i++];
+                            pushBackChar.addLast(Character.toCodePoint((char) s, (char) c));
+                        } else {
+                            break;
+                        }
+                    } else {
+                        s = 0;
+                        pushBackChar.addLast(c);
+                    }
+                }
+                if (s != 0) {
+                    int c = reader.read();
+                    if (c >= 0) {
+                        pushBackChar.addLast(Character.toCodePoint((char) s, (char) c));
+                    } else {
+                        return -1;
+                    }
+                }
+            }
+            return pushBackChar.pop();
         } catch (ClosedException e) {
             throw new EndOfFileException(e);
         } catch (IOException e) {

@@ -25,9 +25,20 @@
  * @test
  * @bug 8192985
  * @summary Test the clhsdb 'scanoops' command
+ * @requires vm.gc.Parallel
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm/timeout=1200 ClhsdbScanOops
+ * @run main/othervm/timeout=1200 ClhsdbScanOops UseParallelGC
+ */
+
+/**
+ * @test
+ * @bug 8192985
+ * @summary Test the clhsdb 'scanoops' command
+ * @requires vm.gc.Serial
+ * @requires vm.hasSA
+ * @library /test/lib
+ * @run main/othervm/timeout=1200 ClhsdbScanOops UseSerialGC
  */
 
 import java.util.HashMap;
@@ -99,9 +110,9 @@ public class ClhsdbScanOops {
     }
 
     public static void main(String[] args) throws Exception {
+        String gc = args[0];
         System.out.println("Starting the ClhsdbScanOops test");
-        testWithGcType("-XX:+UseParallelGC");
-        testWithGcType("-XX:+UseSerialGC");
+        testWithGcType("-XX:+" + gc);
         System.out.println("Test PASSED");
     }
 }

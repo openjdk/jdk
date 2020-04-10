@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ package java.math;
 
 class SignedMutableBigInteger extends MutableBigInteger {
 
-   /**
+    /**
      * The sign of this MutableBigInteger.
      */
     int sign = 1;
@@ -77,9 +77,9 @@ class SignedMutableBigInteger extends MutableBigInteger {
         super(val);
     }
 
-   // Arithmetic Operations
+    // Arithmetic Operations
 
-   /**
+    /**
      * Signed addition built upon unsigned add and subtract.
      */
     void signedAdd(SignedMutableBigInteger addend) {
@@ -90,7 +90,7 @@ class SignedMutableBigInteger extends MutableBigInteger {
 
     }
 
-   /**
+    /**
      * Signed addition built upon unsigned add and subtract.
      */
     void signedAdd(MutableBigInteger addend) {
@@ -101,7 +101,7 @@ class SignedMutableBigInteger extends MutableBigInteger {
 
     }
 
-   /**
+    /**
      * Signed subtraction built upon unsigned add and subtract.
      */
     void signedSubtract(SignedMutableBigInteger addend) {
@@ -112,7 +112,7 @@ class SignedMutableBigInteger extends MutableBigInteger {
 
     }
 
-   /**
+    /**
      * Signed subtraction built upon unsigned add and subtract.
      */
     void signedSubtract(MutableBigInteger addend) {

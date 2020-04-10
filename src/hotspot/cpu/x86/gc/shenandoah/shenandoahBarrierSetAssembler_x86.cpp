@@ -53,7 +53,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (is_reference_type(type)) {
 
-    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahLoadRefBarrier) {
+    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahStoreValEnqueueBarrier || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
       Register thread = r15_thread;
 #else
@@ -77,35 +77,33 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ testptr(count, count);
       __ jcc(Assembler::zero, done);
 
-      // Avoid runtime call when not marking.
+      // Avoid runtime call when not active.
       Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-      int flags = ShenandoahHeap::HAS_FORWARDED;
-      if (!dest_uninitialized) {
-        flags |= ShenandoahHeap::MARKING;
+      int flags;
+      if (ShenandoahSATBBarrier && dest_uninitialized) {
+        flags = ShenandoahHeap::HAS_FORWARDED;
+      } else {
+        flags = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING;
       }
       __ testb(gc_state, flags);
       __ jcc(Assembler::zero, done);
 
       __ pusha();                      // push registers
+
 #ifdef _LP64
       assert(src == rdi, "expected");
       assert(dst == rsi, "expected");
       assert(count == rdx, "expected");
       if (UseCompressedOops) {
-        if (dest_uninitialized) {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_duinit_narrow_oop_entry), src, dst, count);
-        } else {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_narrow_oop_entry), src, dst, count);
-        }
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry),
+                        src, dst, count);
       } else
 #endif
       {
-        if (dest_uninitialized) {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_duinit_oop_entry), src, dst, count);
-        } else {
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_array_pre_oop_entry), src, dst, count);
-        }
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop_entry),
+                        src, dst, count);
       }
+
       __ popa();
       __ bind(done);
       NOT_LP64(__ pop(thread);)
@@ -157,7 +155,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   Address buffer(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::MARKING | ShenandoahHeap::TRAVERSAL);
+  __ testb(gc_state, ShenandoahHeap::MARKING);
   __ jcc(Assembler::zero, done);
 
   // Do we need to load the previous value?
@@ -892,7 +890,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
 
   // Is SATB still active?
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::MARKING | ShenandoahHeap::TRAVERSAL);
+  __ testb(gc_state, ShenandoahHeap::MARKING);
   __ jcc(Assembler::zero, done);
 
   // Can we store original value in the thread's buffer?

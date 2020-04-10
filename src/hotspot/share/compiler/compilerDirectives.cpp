@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@
 
 CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count(0) {
   _c1_store = new DirectiveSet(this);
+  _c1_store->init_disableintrinsic();
   _c2_store = new DirectiveSet(this);
+  _c2_store->init_disableintrinsic();
 };
 
 CompilerDirectives::~CompilerDirectives() {
@@ -200,15 +202,17 @@ ccstrlist DirectiveSet::canonicalize_disableintrinsic(ccstrlist option_value) {
   return canonicalized_list;
 }
 
+void DirectiveSet::init_disableintrinsic() {
+  // Canonicalize DisableIntrinsic to contain only ',' as a separator.
+  this->DisableIntrinsicOption = canonicalize_disableintrinsic(DisableIntrinsic);
+}
+
 DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _directive(d) {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
   memset(_modified, 0, sizeof(_modified));
-
-  // Canonicalize DisableIntrinsic to contain only ',' as a separator.
-  this->DisableIntrinsicOption = canonicalize_disableintrinsic(DisableIntrinsic);
 }
 
 DirectiveSet::~DirectiveSet() {
@@ -276,6 +280,10 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       }
     }
 
+    // Read old value of DisableIntrinsicOption, in case we need to free it
+    // and overwrite it with a new value.
+    ccstrlist old_disable_intrinsic_value = set->DisableIntrinsicOption;
+
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
 #define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompilerOracle::has_option_value(method, #cc_flag, v) && v != this->name##Option) { set->name##Option = v; changed = true;} }
     compilerdirectives_common_flags(init_default_cc)
@@ -287,6 +295,8 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     if (!_modified[DisableIntrinsicIndex] &&
         CompilerOracle::has_option_value(method, "DisableIntrinsic", option_value)) {
       set->DisableIntrinsicOption = canonicalize_disableintrinsic(option_value);
+      assert(old_disable_intrinsic_value != NULL, "");
+      FREE_C_HEAP_ARRAY(char, (void *)old_disable_intrinsic_value);
     }
 
 
@@ -414,6 +424,12 @@ bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
 
 DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
   DirectiveSet* set = new DirectiveSet(NULL);
+  // Ordinary allocations of DirectiveSet would call init_disableintrinsic()
+  // immediately to create a new copy for set->DisableIntrinsicOption.
+  // However, here it does not need to because the code below creates
+  // a copy of src->DisableIntrinsicOption that initializes
+  // set->DisableIntrinsicOption.
+
   memcpy(set->_modified, src->_modified, sizeof(src->_modified));
 
   InlineMatcher* tmp = src->_inlinematchers;

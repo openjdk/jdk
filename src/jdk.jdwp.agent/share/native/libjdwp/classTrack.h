@@ -46,6 +46,12 @@ void
 classTrack_initialize(JNIEnv *env);
 
 /*
+ * Activates class tracking.
+ */
+void
+classTrack_activate(JNIEnv *env);
+
+/*
  * Reset class tracking.
  */
 void

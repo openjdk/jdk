@@ -303,7 +303,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
   G1CollectedHeap*        _g1h;           // The heap
-  bool                    _completed_initialization; // Set to true when initialization is complete
 
   // Concurrent marking support structures
   G1CMBitMap              _mark_bitmap_1;
@@ -603,11 +602,6 @@ public:
   inline bool mark_in_next_bitmap(uint worker_id, oop const obj);
 
   inline bool is_marked_in_next_bitmap(oop p) const;
-
-  // Returns true if initialization was successfully completed.
-  bool completed_initialization() const {
-    return _completed_initialization;
-  }
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
   G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }

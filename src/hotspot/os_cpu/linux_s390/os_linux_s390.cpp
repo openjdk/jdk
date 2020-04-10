@@ -49,6 +49,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
@@ -393,7 +394,7 @@ JVM_handle_linux_signal(int sig,
       }
 
       else if (sig == SIGSEGV &&
-               os::is_poll_address((address)info->si_addr)) {
+               SafepointMechanism::is_poll_address((address)info->si_addr)) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }

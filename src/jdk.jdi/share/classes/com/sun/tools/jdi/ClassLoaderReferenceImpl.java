@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,16 +103,22 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
 
     Type findType(String signature) throws ClassNotLoadedException {
         List<ReferenceType> types = visibleClasses();
-        Iterator<ReferenceType> iter = types.iterator();
-        while (iter.hasNext()) {
-            ReferenceType type = iter.next();
+
+        // first check already loaded classes and possibly avoid massive signature retrieval later
+        for (ReferenceType type : vm.classesBySignature(signature)) {
+            if (types.contains(type)) {
+                return type;
+            }
+        }
+
+        for (ReferenceType type : types) {
             if (type.signature().equals(signature)) {
                 return type;
             }
         }
-        JNITypeParser parser = new JNITypeParser(signature);
-        throw new ClassNotLoadedException(parser.typeName(),
-                                         "Class " + parser.typeName() + " not loaded");
+
+        String typeName = new JNITypeParser(signature).typeName();
+        throw new ClassNotLoadedException(typeName, "Class " + typeName + " not loaded");
     }
 
     byte typeValueKey() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8137167
  * @summary Tests jcmd to be able to add a lot of huge directive files with
  *          parallel executed jcmds until timeout has reached
@@ -68,8 +69,9 @@ public class StressAddMultiThreadedTest extends StressAddJcmdBase {
 
     @Override
     protected boolean makeConnection(int pid) {
+        String nextCommand = nextCommand();
         executor.submit(() -> new PidJcmdExecutor(String.valueOf(pid))
-                .execute(nextCommand()));
+                .execute(nextCommand));
         return (--commands != 0);
     }
 

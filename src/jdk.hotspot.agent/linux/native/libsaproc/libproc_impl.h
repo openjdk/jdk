@@ -39,6 +39,7 @@ typedef struct eh_frame_info {
   uintptr_t library_base_addr;
   uintptr_t v_addr;
   unsigned char* data;
+  int size;
 } eh_frame_info;
 
 // list of shared objects

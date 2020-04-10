@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205593
+ * @bug 8205593 8240169
  * @summary Javadoc -link makes broken links if module name matches package name
  * @library /tools/lib ../../lib
  * @modules
@@ -48,7 +48,7 @@ import javadoc.tester.JavadocTester;
 public class TestLinkOptionWithModule extends JavadocTester {
 
     final ToolBox tb;
-    private final Path src;
+    private final Path moduleSrc, packageSrc;
 
     public static void main(String... args) throws Exception {
         TestLinkOptionWithModule tester = new TestLinkOptionWithModule();
@@ -57,7 +57,8 @@ public class TestLinkOptionWithModule extends JavadocTester {
 
     TestLinkOptionWithModule() throws Exception {
         tb = new ToolBox();
-        src = Paths.get("src");
+        moduleSrc = Paths.get("src", "modules");
+        packageSrc = Paths.get("src", "packages");
         initModulesAndPackages();
     }
 
@@ -66,11 +67,11 @@ public class TestLinkOptionWithModule extends JavadocTester {
         Path out1 = base.resolve("out1a"), out2 = base.resolve("out1b");
 
         javadoc("-d", out1.toString(),
-                "--module-source-path", src.toString(),
+                "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex1");
 
         javadoc("-d", out2.toString(),
-                "--module-source-path", src.toString(),
+                "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex2",
                 "-link", "../" + out1.getFileName());
 
@@ -85,11 +86,11 @@ public class TestLinkOptionWithModule extends JavadocTester {
         Path out1 = base.resolve("out2a"), out2 = base.resolve("out2b");
 
         javadoc("-d", out1.toString(),
-                "-sourcepath", src.toString(),
+                "-sourcepath", packageSrc.toString(),
                 "-subpackages", "com.ex1");
 
         javadoc("-d", out2.toString(),
-                "-sourcepath", src.toString(),
+                "-sourcepath", packageSrc.toString(),
                 "-subpackages", "com.ex2",
                 "-link", "../" + out1.getFileName());
 
@@ -104,18 +105,21 @@ public class TestLinkOptionWithModule extends JavadocTester {
         Path out1 = base.resolve("out3a"), out2 = base.resolve("out3b");
 
         javadoc("-d", out1.toString(),
-                "-sourcepath", src.toString(),
+                "-sourcepath", packageSrc.toString(),
                 "-subpackages", "com.ex1");
 
         javadoc("-d", out2.toString(),
-                "--module-source-path", src.toString(),
+                "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex2",
                 "-link", "../" + out1.getFileName());
 
-        checkExit(Exit.ERROR);
+        checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
                 "The code being documented uses modules but the packages defined "
                 + "in ../out3a/ are in the unnamed module");
+        checkOutput("com.ex2/com/ex2/B.html", true,
+                "<a href=\"../../../../out3a/com/ex1/A.html\" "
+                + "title=\"class or interface in com.ex1\" class=\"external-link\">A</a>");
     }
 
     @Test
@@ -123,18 +127,21 @@ public class TestLinkOptionWithModule extends JavadocTester {
         Path out1 = base.resolve("out4a"), out2 = base.resolve("out4b");
 
         javadoc("-d", out1.toString(),
-                "--module-source-path", src.toString(),
+                "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex1");
 
         javadoc("-d", out2.toString(),
-                "-sourcepath", src.toString(),
+                "-sourcepath", packageSrc.toString(),
                 "-subpackages", "com.ex2",
                 "-link", "../" + out1.getFileName());
 
-        checkExit(Exit.ERROR);
+        checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
                 "The code being documented uses packages in the unnamed module, but the packages defined "
                 + "in ../out4a/ are in named modules");
+        checkOutput("com/ex2/B.html", true,
+                "<a href=\"../../../out4a/com.ex1/com/ex1/A.html\" "
+                + "title=\"class or interface in com.ex1\" class=\"external-link\">A</a>");
     }
 
 
@@ -142,7 +149,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
         new ModuleBuilder(tb, "com.ex1")
                 .exports("com.ex1")
                 .classes("package com.ex1; public class A{}")
-                .write(src);
+                .write(moduleSrc);
 
         new ModuleBuilder(tb, "com.ex2")
                 .requires("com.ex1")
@@ -152,17 +159,17 @@ public class TestLinkOptionWithModule extends JavadocTester {
                         + "public class B{\n"
                         + "public B(A obj){}\n"
                         + "}\n")
-                .write(src);
+                .write(moduleSrc);
 
         new ClassBuilder(tb, "com.ex1.A")
                 .setModifiers("public","class")
-                .write(src);
+                .write(packageSrc);
 
         new ClassBuilder(tb, "com.ex2.B")
                 .addImports("com.ex1.A")
                 .setModifiers("public","class")
                 .addMembers(MethodBuilder.parse("public void foo(A a)"))
-                .write(src);
+                .write(packageSrc);
     }
 
 }

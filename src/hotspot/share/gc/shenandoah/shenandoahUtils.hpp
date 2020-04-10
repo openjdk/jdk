@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -40,7 +41,6 @@
 #include "services/memoryService.hpp"
 
 class GCTimer;
-class GCTracer;
 
 class ShenandoahGCSession : public StackObj {
 private:
@@ -52,6 +52,26 @@ private:
 public:
   ShenandoahGCSession(GCCause::Cause cause);
   ~ShenandoahGCSession();
+};
+
+class ShenandoahPausePhase : public StackObj {
+private:
+  GCTraceTimeWrapper<LogLevel::Info, LOG_TAGS(gc)> _tracer;
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahPausePhase(const char* title);
+  ~ShenandoahPausePhase();
+};
+
+class ShenandoahConcurrentPhase : public StackObj {
+private:
+  GCTraceTimeWrapper<LogLevel::Info, LOG_TAGS(gc)> _tracer;
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahConcurrentPhase(const char* title, bool log_heap_usage = false);
+  ~ShenandoahConcurrentPhase();
 };
 
 class ShenandoahGCPhase : public StackObj {
@@ -71,6 +91,15 @@ public:
 
   static bool is_current_phase_valid();
   static bool is_root_work_phase();
+};
+
+class ShenandoahGCSubPhase: public ShenandoahGCPhase {
+private:
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahGCSubPhase(ShenandoahPhaseTimings::Phase phase);
+  ~ShenandoahGCSubPhase();
 };
 
 class ShenandoahGCWorkerPhase : public StackObj {
@@ -93,7 +122,6 @@ private:
 
 public:
   ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_type type);
-  ~ShenandoahGCPauseMark();
 };
 
 class ShenandoahSafepoint : public AllStatic {
@@ -108,8 +136,6 @@ public:
     VM_Operation::VMOp_Type type = vm_op->type();
     return type == VM_Operation::VMOp_ShenandoahInitMark ||
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
-           type == VM_Operation::VMOp_ShenandoahInitTraversalGC ||
-           type == VM_Operation::VMOp_ShenandoahFinalTraversalGC ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFullGC ||

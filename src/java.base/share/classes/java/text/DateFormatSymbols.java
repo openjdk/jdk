@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>
  * New {@code DateFormatSymbols} subclasses may be added to support
  * {@code SimpleDateFormat} for date-time formatting for additional locales.
-
+ *
  * @see          DateFormat
  * @see          SimpleDateFormat
  * @see          java.util.SimpleTimeZone
@@ -176,7 +176,6 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Short month strings. For example: "Jan", "Feb", etc.  An array of
      * 13 strings (some calendars have 13 months), indexed by
      * {@code Calendar.JANUARY}, {@code Calendar.FEBRUARY}, etc.
-
      * @serial
      */
     String shortMonths[] = null;

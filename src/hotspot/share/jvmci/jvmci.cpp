@@ -36,6 +36,8 @@ MetadataHandleBlock* JVMCI::_metadata_handles = NULL;
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
 
+void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
+
 bool JVMCI::can_initialize_JVMCI() {
   // Initializing JVMCI requires the module system to be initialized past phase 3.
   // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
@@ -58,6 +60,7 @@ void JVMCI::initialize_compiler(TRAPS) {
 }
 
 void JVMCI::initialize_globals() {
+  jvmci_vmStructs_init();
   _metadata_handles = MetadataHandleBlock::allocate_block();
   if (UseJVMCINativeLibrary) {
     // There are two runtimes.

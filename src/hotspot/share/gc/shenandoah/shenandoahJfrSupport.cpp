@@ -57,7 +57,7 @@ class ShenandoahDumpHeapRegionInfoClosure : public ShenandoahHeapRegionClosure {
 public:
   virtual void heap_region_do(ShenandoahHeapRegion* r) {
     EventShenandoahHeapRegionInformation evt;
-    evt.set_index((unsigned)r->region_number());
+    evt.set_index((unsigned) r->index());
     evt.set_state((u8)r->state());
     evt.set_start((uintptr_t)r->bottom());
     evt.set_used(r->used());

@@ -157,6 +157,15 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
     HOTSPOT_TARGET_CPU_ARCH=zero
   fi
 
+  AC_ARG_WITH([hotspot-build-time], [AS_HELP_STRING([--with-hotspot-build-time],
+  [timestamp to use in hotspot version string, empty for on-the-fly @<:@empty@:>@])])
+
+  if test "x$with_hotspot_build_time" != x; then
+    HOTSPOT_BUILD_TIME="$with_hotspot_build_time"
+  fi
+  AC_SUBST(HOTSPOT_BUILD_TIME)
+
+
   # Override hotspot cpu definitions for ARM platforms
   if test "x$OPENJDK_TARGET_CPU" = xarm; then
     HOTSPOT_TARGET_CPU=arm_32

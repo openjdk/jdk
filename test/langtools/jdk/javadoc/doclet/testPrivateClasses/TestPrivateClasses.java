@@ -71,7 +71,7 @@ public class TestPrivateClasses extends JavadocTester {
                 // Method is documented as though it is declared in the inheriting method.
                 "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">"
-                + "methodInheritedFromParent</span>&#8203;(<span class=\"arguments\">int&nbsp;p1)</span>\n"
+                + "methodInheritedFromParent</span>&#8203;(<span class=\"parameters\">int&nbsp;p1)</span>\n"
                 + "                               throws <span class=\"exceptions\">java.lang.Exception</span></div>",
                 "<dl class=\"notes\">\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"

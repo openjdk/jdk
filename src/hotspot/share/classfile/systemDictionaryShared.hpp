@@ -132,6 +132,8 @@ private:
                                                TRAPS);
   static Handle get_package_name(Symbol*  class_name, TRAPS);
 
+  static PackageEntry* get_package_entry_from_class_name(Handle class_loader, Symbol* class_name);
+
 
   // Package handling:
   //
@@ -180,7 +182,7 @@ private:
                                              TRAPS);
   static Handle get_shared_protection_domain(Handle class_loader,
                                              ModuleEntry* mod, TRAPS);
-  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, TRAPS);
+  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
 
   static void atomic_set_array_index(objArrayOop array, int index, oop o) {
     // Benign race condition:  array.obj_at(index) may already be filled in.
@@ -246,14 +248,6 @@ public:
                                                       PackageEntry* pkg_entry,
                                                       ModuleEntry* mod_entry,
                                                       TRAPS);
-  static PackageEntry* get_package_entry(Symbol* pkg,
-                                         ClassLoaderData *loader_data) {
-    if (loader_data != NULL) {
-      PackageEntryTable* pkgEntryTable = loader_data->packages();
-      return pkgEntryTable->lookup_only(pkg);
-    }
-    return NULL;
-  }
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
   static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,

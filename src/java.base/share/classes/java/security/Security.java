@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -851,9 +851,9 @@ public final class Security {
     }
 
     /*
-    * Returns all providers who satisfy the specified
-    * criterion.
-    */
+     * Returns all providers who satisfy the specified
+     * criterion.
+     */
     private static LinkedHashSet<Provider> getAllQualifyingCandidates(
                                                 String filterKey,
                                                 String filterValue,
@@ -1067,7 +1067,7 @@ public final class Security {
      * or an empty set if no provider supports the specified service.
      *
      * @since 1.4
-     **/
+     */
     public static Set<String> getAlgorithms(String serviceName) {
 
         if ((serviceName == null) || (serviceName.isEmpty()) ||

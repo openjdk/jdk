@@ -52,4 +52,34 @@ inline bool ShenandoahMarkingContext::allocated_after_mark_start(HeapWord* addr)
   return alloc_after_mark_start;
 }
 
+inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRegion *r) {
+  size_t idx = r->index();
+  HeapWord* old_tams = _top_at_mark_starts_base[idx];
+  HeapWord* new_tams = r->top();
+
+  assert(new_tams >= old_tams,
+         "Region " SIZE_FORMAT", TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
+         idx, p2i(old_tams), p2i(new_tams));
+  assert(is_bitmap_clear_range(old_tams, new_tams),
+         "Region " SIZE_FORMAT ", bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
+         idx, p2i(old_tams), p2i(new_tams));
+
+  _top_at_mark_starts_base[idx] = new_tams;
+  _top_bitmaps[idx] = new_tams;
+}
+
+inline void ShenandoahMarkingContext::reset_top_at_mark_start(ShenandoahHeapRegion* r) {
+  _top_at_mark_starts_base[r->index()] = r->bottom();
+}
+
+inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(ShenandoahHeapRegion* r) const {
+  return _top_at_mark_starts_base[r->index()];
+}
+
+inline void ShenandoahMarkingContext::reset_top_bitmap(ShenandoahHeapRegion* r) {
+  assert(is_bitmap_clear_range(r->bottom(), r->end()),
+         "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
+  _top_bitmaps[r->index()] = r->bottom();
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_INLINE_HPP

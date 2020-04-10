@@ -40,7 +40,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  experimental(size_t, ShenandoahHeapRegionSize, 0,                         \
+  experimental(size_t, ShenandoahRegionSize, 0,                             \
           "Static heap region size. Set zero to enable automatic sizing.")  \
                                                                             \
   experimental(size_t, ShenandoahTargetNumRegions, 2048,                    \
@@ -67,7 +67,7 @@
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
           " normal - default concurrent GC (three pass mark-evac-update);"  \
-          " traversal - traversal concurrent GC (single-pass); "            \
+          " iu - incremental-update concurrent GC (three pass mark-evac-update);"  \
           " passive - stop the world GC only (either degenerated or full)") \
                                                                             \
   experimental(ccstr, ShenandoahGCHeuristics, "adaptive",                   \
@@ -94,11 +94,12 @@
           "GC cycles, as degenerated and full GCs would try to unload "     \
           "classes regardless. Set to zero to disable class unloading.")    \
                                                                             \
-  experimental(uintx, ShenandoahGarbageThreshold, 60,                       \
+  experimental(uintx, ShenandoahGarbageThreshold, 25,                       \
           "How much garbage a region has to contain before it would be "    \
-          "taken for collection. This a guideline only , as GC heuristics " \
+          "taken for collection. This a guideline only, as GC heuristics "  \
           "may select the region for collection even if it has little "     \
-          "garbage. In percents of heap region size.")                      \
+          "garbage. This also affects how much internal fragmentation the " \
+          "collector accepts. In percents of heap region size.")            \
           range(0,100)                                                      \
                                                                             \
   experimental(uintx, ShenandoahInitFreeThreshold, 70,                      \
@@ -338,9 +339,6 @@
                                                                             \
   diagnostic(bool, ShenandoahSATBBarrier, true,                             \
           "Turn on/off SATB barriers in Shenandoah")                        \
-                                                                            \
-  diagnostic(bool, ShenandoahKeepAliveBarrier, true,                        \
-          "Turn on/off keep alive barriers in Shenandoah")                  \
                                                                             \
   diagnostic(bool, ShenandoahStoreValEnqueueBarrier, false,                 \
           "Turn on/off enqueuing of oops for storeval barriers")            \

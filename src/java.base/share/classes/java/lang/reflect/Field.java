@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1132,9 +1132,12 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
         return annotationClass.cast(declaredAnnotations().get(annotationClass));
@@ -1142,6 +1145,7 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * {@inheritDoc}
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
@@ -1155,6 +1159,7 @@ class Field extends AccessibleObject implements Member {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Annotation[] getDeclaredAnnotations()  {
         return AnnotationParser.toArray(declaredAnnotations());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1335,11 +1335,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
     __ pop_frame();
   }
 
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    __ ld(polling_page, in_bytes(Thread::polling_page_offset()), R16_thread);
-  } else {
-    __ load_const_optimized(polling_page, (long)(address) os::get_polling_page(), R0);
-  }
+  __ ld(polling_page, in_bytes(Thread::polling_page_offset()), R16_thread);
 
   // Restore return pc relative to callers' sp.
   __ ld(return_pc, _abi(lr), R1_SP);
@@ -1362,11 +1358,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   const Register poll_addr = tmp->as_register();
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    __ ld(poll_addr, in_bytes(Thread::polling_page_offset()), R16_thread);
-  } else {
-    __ load_const_optimized(poll_addr, (intptr_t)os::get_polling_page(), R0);
-  }
+  __ ld(poll_addr, in_bytes(Thread::polling_page_offset()), R16_thread);
   if (info != NULL) {
     add_debug_info_for_branch(info);
   }

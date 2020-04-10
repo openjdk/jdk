@@ -1020,7 +1020,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   // Now write the archived data including the file offsets.
   const char* archive_name = Arguments::GetSharedDynamicArchivePath();
   dynamic_info->open_for_write(archive_name);
-  MetaspaceShared::write_core_archive_regions(dynamic_info);
+  MetaspaceShared::write_core_archive_regions(dynamic_info, NULL, NULL);
   dynamic_info->set_final_requested_base((char*)Arguments::default_SharedBaseAddress());
   dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
   dynamic_info->write_header();

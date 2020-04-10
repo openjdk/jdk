@@ -740,13 +740,16 @@ public:
     Flag_is_scheduled                = Flag_is_reduction << 1,
     Flag_has_vector_mask_set         = Flag_is_scheduled << 1,
     Flag_is_expensive                = Flag_has_vector_mask_set << 1,
-    Flag_intel_jcc_erratum           = Flag_is_expensive << 1,
-    _max_flags = (Flag_intel_jcc_erratum << 1) - 1 // allow flags combination
+    _last_flag                       = Flag_is_expensive
   };
+
+  class PD;
 
 private:
   jushort _class_id;
   jushort _flags;
+
+  static juint max_flags();
 
 protected:
   // These methods should be called from constructors only.
@@ -754,11 +757,11 @@ protected:
     _class_id = c; // cast out const
   }
   void init_flags(uint fl) {
-    assert(fl <= _max_flags, "invalid node flag");
+    assert(fl <= max_flags(), "invalid node flag");
     _flags |= fl;
   }
   void clear_flag(uint fl) {
-    assert(fl <= _max_flags, "invalid node flag");
+    assert(fl <= max_flags(), "invalid node flag");
     _flags &= ~fl;
   }
 
@@ -1181,6 +1184,7 @@ public:
   Node* _debug_orig;                   // Original version of this, if any.
   Node*  debug_orig() const            { return _debug_orig; }
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
+  void   dump_orig(outputStream *st, bool print_key = true) const;
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1557,6 +1561,11 @@ public:
 
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);
+
+  bool contains(const Node* n) const {
+    fatal("use faster member() instead");
+    return false;
+  }
 
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,19 @@
  * @run testng/othervm -Dtest.map.collisions.shortrun=true InPlaceOpsCollisions
  * @summary Ensure overrides of in-place operations in Maps behave well with lots of collisions.
  */
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
@@ -69,6 +77,19 @@ public class InPlaceOpsCollisions extends MapWithCollisionsProviders {
         }
         assertEquals(map.size(), keys.length,
                 String.format("map expected size m%d != k%d", map.size(), keys.length));
+    }
+
+    @Test(dataProvider = "nullValueFriendlyMaps")
+    void testPutIfAbsentOverwriteNull(String desc, Supplier<Map<Object, Object>> ms) {
+        Map<Object, Object> map = ms.get();
+        map.put("key", null);
+        assertEquals(map.size(), 1, desc + ": size != 1");
+        assertTrue(map.containsKey("key"), desc + ": does not have key");
+        assertNull(map.get("key"), desc + ": value is not null");
+        map.putIfAbsent("key", "value"); // must rewrite
+        assertEquals(map.size(), 1, desc + ": size != 1");
+        assertTrue(map.containsKey("key"), desc + ": does not have key");
+        assertEquals(map.get("key"), "value", desc + ": value is not 'value'");
     }
 
     @Test(dataProvider = "mapsWithObjectsAndStrings")
@@ -496,4 +517,13 @@ public class InPlaceOpsCollisions extends MapWithCollisionsProviders {
         }
     }
 
+    @DataProvider
+    public Iterator<Object[]> nullValueFriendlyMaps() {
+        return Arrays.asList(
+                new Object[]{"HashMap", (Supplier<Map<?, ?>>) HashMap::new},
+                new Object[]{"LinkedHashMap", (Supplier<Map<?, ?>>) LinkedHashMap::new},
+                new Object[]{"TreeMap", (Supplier<Map<?, ?>>) TreeMap::new},
+                new Object[]{"TreeMap(cmp)", (Supplier<Map<?, ?>>) () -> new TreeMap<>(Comparator.reverseOrder())}
+        ).iterator();
+    }
 }

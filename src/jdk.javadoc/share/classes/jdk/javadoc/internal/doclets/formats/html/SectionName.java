@@ -36,8 +36,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 public enum SectionName {
 
     ANNOTATION_TYPE_ELEMENT_DETAIL("annotation.type.element.detail"),
-    ANNOTATION_TYPE_FIELD_DETAIL("annotation.type.field.detail"),
-    ANNOTATION_TYPE_FIELD_SUMMARY("annotation.type.field.summary"),
     ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY("annotation.type.optional.element.summary"),
     ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY("annotation.type.required.element.summary"),
     CONSTRUCTOR_DETAIL("constructor.detail"),

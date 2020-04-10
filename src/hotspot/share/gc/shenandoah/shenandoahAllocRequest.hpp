@@ -95,6 +95,10 @@ public:
     return _alloc_type;
   }
 
+  inline const char* type_string() {
+    return alloc_type_to_string(_alloc_type);
+  }
+
   inline size_t min_size() {
     assert (is_lab_alloc(), "Only access for LAB allocs");
     return _min_size;

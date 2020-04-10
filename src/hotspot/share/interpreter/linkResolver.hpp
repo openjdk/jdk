@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ class CallInfo : public StackObj {
   };
  private:
   Klass*       _resolved_klass;         // static receiver klass, resolved from a symbolic reference
-  Klass*       _selected_klass;         // dynamic receiver class (same as static, or subklass)
   methodHandle _resolved_method;        // static target method
   methodHandle _selected_method;        // dynamic (actual) target method
   CallKind     _call_kind;              // kind of call (static(=bytecode static/special +
@@ -59,11 +58,11 @@ class CallInfo : public StackObj {
   Handle       _resolved_method_name;   // Object holding the ResolvedMethodName
 
   void set_static(Klass* resolved_klass, const methodHandle& resolved_method, TRAPS);
-  void set_interface(Klass* resolved_klass, Klass* selected_klass,
+  void set_interface(Klass* resolved_klass,
                      const methodHandle& resolved_method,
                      const methodHandle& selected_method,
                      int itable_index, TRAPS);
-  void set_virtual(Klass* resolved_klass, Klass* selected_klass,
+  void set_virtual(Klass* resolved_klass,
                    const methodHandle& resolved_method,
                    const methodHandle& selected_method,
                    int vtable_index, TRAPS);
@@ -72,7 +71,7 @@ class CallInfo : public StackObj {
   void set_handle(Klass* resolved_klass,
                   const methodHandle& resolved_method,
                   Handle resolved_appendix, TRAPS);
-  void set_common(Klass* resolved_klass, Klass* selected_klass,
+  void set_common(Klass* resolved_klass,
                   const methodHandle& resolved_method,
                   const methodHandle& selected_method,
                   CallKind kind,
@@ -95,7 +94,6 @@ class CallInfo : public StackObj {
   CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS);
 
   Klass*  resolved_klass() const                 { return _resolved_klass; }
-  Klass*  selected_klass() const                 { return _selected_klass; }
   Method* resolved_method() const                { return _resolved_method(); }
   Method* selected_method() const                { return _selected_method(); }
   Handle       resolved_appendix() const         { return _resolved_appendix; }
@@ -105,7 +103,6 @@ class CallInfo : public StackObj {
 
   BasicType    result_type() const               { return selected_method()->result_type(); }
   CallKind     call_kind() const                 { return _call_kind; }
-  int          call_index() const                { return _call_index; }
   int          vtable_index() const {
     // Even for interface calls the vtable index could be non-negative.
     // See CallInfo::set_interface.
@@ -272,16 +269,7 @@ class LinkResolver: AllStatic {
                                       const constantPoolHandle& pool, int index, TRAPS);
  public:
   // constant pool resolving
-  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
-                                        bool fold_type_to_class, TRAPS);
-  // The optional 'fold_type_to_class' means that a derived type (array)
-  // is first converted to the class it is derived from (element type).
-  // If this element type is not a class, then the check passes quietly.
-  // This is usually what is needed, but a few existing uses might break
-  // if this flag were always turned on.  FIXME: See if it can be, always.
-  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass, TRAPS) {
-    return check_klass_accessability(ref_klass, sel_klass, false, THREAD);
-  }
+  static void check_klass_accessibility(Klass* ref_klass, Klass* sel_klass, TRAPS);
 
   // static resolving calls (will not run any Java code);
   // used only from Bytecode_invoke::static_target

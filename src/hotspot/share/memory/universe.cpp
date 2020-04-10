@@ -280,7 +280,11 @@ void initialize_basic_type_klass(Klass* k, TRAPS) {
   if (UseSharedSpaces) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     assert(k->super() == ok, "u3");
-    k->restore_unshareable_info(loader_data, Handle(), CHECK);
+    if (k->is_instance_klass()) {
+      InstanceKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), NULL, CHECK);
+    } else {
+      ArrayKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), CHECK);
+    }
   } else
 #endif
   {

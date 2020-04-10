@@ -287,7 +287,7 @@ public abstract class Provider extends Properties {
      * @throws UnsupportedOperationException if a configuration argument is
      *         not supported.
      * @throws NullPointerException if the supplied configuration argument is
-               null.
+     *         null.
      * @throws InvalidParameterException if the supplied configuration argument
      *         is invalid.
      * @return a provider configured with the supplied configuration argument.

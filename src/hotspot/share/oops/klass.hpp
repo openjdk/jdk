@@ -506,6 +506,7 @@ protected:
   void set_vtable_length(int len) { _vtable_len= len; }
 
   vtableEntry* start_of_vtable() const;
+  void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
  public:
   Method* method_at_vtable(int index);
 
@@ -517,7 +518,6 @@ protected:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
-  virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
   bool is_unshareable_info_restored() const {
     assert(is_shared(), "use this for shared classes only");

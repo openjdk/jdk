@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,7 @@ public abstract class SctpMultiChannel
                                                    Association association)
          throws IOException;
 
-     /**
+    /**
      * Returns a set of the socket options supported by this channel.
      *
      * <P> This method will continue to return the set of options even after the

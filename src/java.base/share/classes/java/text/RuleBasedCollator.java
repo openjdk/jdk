@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.util.Locale;
  * for efficiency (other subclasses may be used for more complex languages) :
  * <ol>
  * <li>If a special collation rule controlled by a &lt;modifier&gt; is
-      specified it applies to the whole collator object.
+ *     specified it applies to the whole collator object.
  * <li>All non-mentioned characters are at the end of the
  *     collation order.
  * </ol>

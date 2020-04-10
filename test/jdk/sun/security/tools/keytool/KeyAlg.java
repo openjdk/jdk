@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ public class KeyAlg {
         keytool("-printcert -file user.crt")
                 .shouldMatch("Signature algorithm name:.*SHA1withECDSA")
                 .shouldMatch("Subject Public Key Algorithm:.*1024.*RSA");
-        keytool("-genkeypair -alias e -dname CN=e -keyalg EC -groupname brainpoolP256r1")
+        keytool("-genkeypair -alias e -dname CN=e " +
+                "-J-Djdk.sunec.disableNative=false -keyalg EC " +
+                        "-groupname brainpoolP256r1")
                 .shouldContain("Generating 256 bit EC (brainpoolP256r1) key pair");
         keytool("-genkeypair -alias f -dname CN=f -keyalg EC")
                 .shouldContain("Generating 256 bit EC (secp256r1) key pair");

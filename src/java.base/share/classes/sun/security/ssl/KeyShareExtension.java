@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ final class KeyShareExtension {
             new CHKeyShareProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHKeyShareConsumer();
+    static final HandshakeAbsence chOnTradAbsence =
+            new CHKeyShareOnTradeAbsence();
     static final SSLStringizer chStringizer =
             new CHKeyShareStringizer();
 
@@ -137,21 +139,24 @@ final class KeyShareExtension {
             this.clientShares = clientShares;
         }
 
-        private CHKeyShareSpec(ByteBuffer buffer) throws IOException {
+        private CHKeyShareSpec(HandshakeContext handshakeContext,
+                ByteBuffer buffer) throws IOException {
             // struct {
             //      KeyShareEntry client_shares<0..2^16-1>;
             // } KeyShareClientHello;
             if (buffer.remaining() < 2) {
-                throw new SSLProtocolException(
+                throw handshakeContext.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid key_share extension: " +
-                    "insufficient data (length=" + buffer.remaining() + ")");
+                    "insufficient data (length=" + buffer.remaining() + ")"));
             }
 
             int listLen = Record.getInt16(buffer);
             if (listLen != buffer.remaining()) {
-                throw new SSLProtocolException(
+                throw handshakeContext.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid key_share extension: " +
-                    "incorrect list length (length=" + listLen + ")");
+                    "incorrect list length (length=" + listLen + ")"));
             }
 
             List<KeyShareEntry> keyShares = new LinkedList<>();
@@ -159,8 +164,9 @@ final class KeyShareExtension {
                 int namedGroupId = Record.getInt16(buffer);
                 byte[] keyExchange = Record.getBytes16(buffer);
                 if (keyExchange.length == 0) {
-                    throw new SSLProtocolException(
-                        "Invalid key_share extension: empty key_exchange");
+                    throw handshakeContext.conContext.fatal(Alert.DECODE_ERROR,
+                            new SSLProtocolException(
+                        "Invalid key_share extension: empty key_exchange"));
                 }
 
                 keyShares.add(new KeyShareEntry(namedGroupId, keyExchange));
@@ -189,9 +195,10 @@ final class KeyShareExtension {
 
     private static final class CHKeyShareStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(
+                HandshakeContext handshakeContext, ByteBuffer buffer) {
             try {
-                return (new CHKeyShareSpec(buffer)).toString();
+                return (new CHKeyShareSpec(handshakeContext, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -324,13 +331,7 @@ final class KeyShareExtension {
             }
 
             // Parse the extension
-            CHKeyShareSpec spec;
-            try {
-                spec = new CHKeyShareSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            CHKeyShareSpec spec = new CHKeyShareSpec(shc, buffer);
             List<SSLCredentials> credentials = new LinkedList<>();
             for (KeyShareEntry entry : spec.clientShares) {
                 NamedGroup ng = NamedGroup.valueOf(entry.namedGroupId);
@@ -374,6 +375,36 @@ final class KeyShareExtension {
     }
 
     /**
+     * The absence processing if the extension is not present in
+     * a ClientHello handshake message.
+     */
+    private static final class CHKeyShareOnTradeAbsence
+            implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // A client is considered to be attempting to negotiate using this
+            // specification if the ClientHello contains a "supported_versions"
+            // extension with 0x0304 contained in its body.  Such a ClientHello
+            // message MUST meet the following requirements:
+            //    -  If containing a "supported_groups" extension, it MUST also
+            //       contain a "key_share" extension, and vice versa.  An empty
+            //       KeyShare.client_shares vector is permitted.
+            if (shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_SUPPORTED_GROUPS)) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                        "No key_share extension to work with " +
+                        "the supported_groups extension");
+            }
+        }
+    }
+
+
+    /**
      * The key share entry used in ServerHello "key_share" extensions.
      */
     static final class SHKeyShareSpec implements SSLExtensionSpec {
@@ -383,22 +414,25 @@ final class KeyShareExtension {
             this.serverShare = serverShare;
         }
 
-        private SHKeyShareSpec(ByteBuffer buffer) throws IOException {
+        private SHKeyShareSpec(HandshakeContext handshakeContext,
+                ByteBuffer buffer) throws IOException {
             // struct {
             //      KeyShareEntry server_share;
             // } KeyShareServerHello;
             if (buffer.remaining() < 5) {       // 5: minimal server_share
-                throw new SSLProtocolException(
+                throw handshakeContext.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid key_share extension: " +
-                    "insufficient data (length=" + buffer.remaining() + ")");
+                    "insufficient data (length=" + buffer.remaining() + ")"));
             }
 
             int namedGroupId = Record.getInt16(buffer);
             byte[] keyExchange = Record.getBytes16(buffer);
 
             if (buffer.hasRemaining()) {
-                throw new SSLProtocolException(
-                    "Invalid key_share extension: unknown extra data");
+                throw handshakeContext.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid key_share extension: unknown extra data"));
             }
 
             this.serverShare = new KeyShareEntry(namedGroupId, keyExchange);
@@ -427,9 +461,10 @@ final class KeyShareExtension {
 
     private static final class SHKeyShareStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext handshakeContext,
+                ByteBuffer buffer) {
             try {
-                return (new SHKeyShareSpec(buffer)).toString();
+                return (new SHKeyShareSpec(handshakeContext, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -581,13 +616,7 @@ final class KeyShareExtension {
             }
 
             // Parse the extension
-            SHKeyShareSpec spec;
-            try {
-                spec = new SHKeyShareSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            SHKeyShareSpec spec = new SHKeyShareSpec(chc, buffer);
             KeyShareEntry keyShare = spec.serverShare;
             NamedGroup ng = NamedGroup.valueOf(keyShare.namedGroupId);
             if (ng == null || !SupportedGroups.isActivatable(
@@ -660,14 +689,16 @@ final class KeyShareExtension {
             this.selectedGroup = serverGroup.id;
         }
 
-        private HRRKeyShareSpec(ByteBuffer buffer) throws IOException {
+        private HRRKeyShareSpec(HandshakeContext handshakeContext,
+                ByteBuffer buffer) throws IOException {
             // struct {
             //     NamedGroup selected_group;
             // } KeyShareHelloRetryRequest;
             if (buffer.remaining() != 2) {
-                throw new SSLProtocolException(
+                throw handshakeContext.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid key_share extension: " +
-                    "improper data (length=" + buffer.remaining() + ")");
+                    "improper data (length=" + buffer.remaining() + ")"));
             }
 
             this.selectedGroup = Record.getInt16(buffer);
@@ -687,9 +718,10 @@ final class KeyShareExtension {
 
     private static final class HRRKeyShareStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext handshakeContext,
+                ByteBuffer buffer) {
             try {
-                return (new HRRKeyShareSpec(buffer)).toString();
+                return (new HRRKeyShareSpec(handshakeContext, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -833,22 +865,16 @@ final class KeyShareExtension {
             }
 
             // Parse the extension
-            HRRKeyShareSpec spec;
-            try {
-                spec = new HRRKeyShareSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            HRRKeyShareSpec spec = new HRRKeyShareSpec(chc, buffer);
             NamedGroup serverGroup = NamedGroup.valueOf(spec.selectedGroup);
             if (serverGroup == null) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Unsupported HelloRetryRequest selected group: " +
                                 NamedGroup.nameOf(spec.selectedGroup));
             }
 
             if (!chc.clientRequestedNamedGroups.contains(serverGroup)) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Unexpected HelloRetryRequest selected group: " +
                                 serverGroup.name);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,17 +239,6 @@ void NarrowOopModeConstant::serialize(JfrCheckpointWriter& writer) {
     writer.write_key(i);
     writer.write(CompressedOops::mode_to_string((CompressedOops::Mode)i));
   }
-}
-
-void CompilerPhaseTypeConstant::serialize(JfrCheckpointWriter& writer) {
-#ifdef COMPILER2
-  static const u4 nof_entries = PHASE_NUM_TYPES;
-  writer.write_count(nof_entries);
-  for (u4 i = 0; i < nof_entries; ++i) {
-    writer.write_key(i);
-    writer.write(CompilerPhaseTypeHelper::to_string((CompilerPhaseType)i));
-  }
-#endif
 }
 
 void CodeBlobTypeConstant::serialize(JfrCheckpointWriter& writer) {

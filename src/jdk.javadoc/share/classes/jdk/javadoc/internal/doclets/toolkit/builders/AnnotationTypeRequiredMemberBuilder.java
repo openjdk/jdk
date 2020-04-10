@@ -78,7 +78,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
             AnnotationTypeRequiredMemberWriter writer,
             VisibleMemberTable.Kind memberType) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         this.members = getVisibleMembers(memberType);
     }
 
@@ -126,18 +126,15 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * Build the member documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if an error occurs
      */
-    protected void buildAnnotationTypeMember(Content memberDetailsTree)
+    protected void buildAnnotationTypeMember(Content detailsList)
             throws DocletException {
-        if (writer == null) {
-            return;
-        }
         if (hasMembersToDocument()) {
-            writer.addAnnotationDetailsMarker(memberDetailsTree);
+            writer.addAnnotationDetailsMarker(detailsList);
             Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader();
-            Content detailsTree = writer.getMemberTreeHeader();
+            Content memberList = writer.getMemberList();
 
             for (Element member : members) {
                 currentMember = member;
@@ -145,9 +142,10 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
                 buildAnnotationTypeMemberChildren(annotationDocTree);
 
-                detailsTree.add(writer.getAnnotationDoc(annotationDocTree));
+                memberList.add(writer.getMemberListItem(annotationDocTree));
             }
-            memberDetailsTree.add(writer.getAnnotationDetails(annotationDetailsTreeHeader, detailsTree));
+            Content annotationDetails = writer.getAnnotationDetails(annotationDetailsTreeHeader, memberList);
+            detailsList.add(annotationDetails);
         }
     }
 
@@ -178,7 +176,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the member.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param annotationDocTree the content tree to which the documentation will be added
      */

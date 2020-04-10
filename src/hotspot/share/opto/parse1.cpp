@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2253,8 +2253,7 @@ void Parse::add_safepoint() {
   // See if we can avoid this safepoint.  No need for a SafePoint immediately
   // after a Call (except Leaf Call) or another SafePoint.
   Node *proj = control();
-  bool add_poll_param = SafePointNode::needs_polling_address_input();
-  uint parms = add_poll_param ? TypeFunc::Parms+1 : TypeFunc::Parms;
+  uint parms = TypeFunc::Parms+1;
   if( proj->is_Proj() ) {
     Node *n0 = proj->in(0);
     if( n0->is_Catch() ) {
@@ -2301,17 +2300,11 @@ void Parse::add_safepoint() {
   sfpnt->init_req(TypeFunc::FramePtr , top() );
 
   // Create a node for the polling address
-  if( add_poll_param ) {
-    Node *polladr;
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      Node *thread = _gvn.transform(new ThreadLocalNode());
-      Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(Thread::polling_page_offset())));
-      polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
-    } else {
-      polladr = ConPNode::make((address)os::get_polling_page());
-    }
-    sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
-  }
+  Node *polladr;
+  Node *thread = _gvn.transform(new ThreadLocalNode());
+  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(Thread::polling_page_offset())));
+  polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
+  sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 
   // Fix up the JVM State edges
   add_safepoint_edges(sfpnt);

@@ -69,7 +69,7 @@ OtherRegionsTable::OtherRegionsTable(Mutex* m) :
   _g1h(G1CollectedHeap::heap()),
   _m(m),
   _num_occupied(0),
-  _coarse_map(G1CollectedHeap::heap()->max_regions(), mtGC),
+  _coarse_map(mtGC),
   _n_coarse_entries(0),
   _fine_grain_regions(NULL),
   _n_fine_entries(0),
@@ -132,7 +132,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   RegionIdx_t from_hrm_ind = (RegionIdx_t) from_hr->hrm_index();
 
   // If the region is already coarsened, return.
-  if (_coarse_map.at(from_hrm_ind)) {
+  if (is_region_coarsened(from_hrm_ind)) {
     assert(contains_reference(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
     return;
   }
@@ -226,7 +226,6 @@ PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted)
   PerRegionTable* max = NULL;
   jint max_occ = 0;
   PerRegionTable** max_prev = NULL;
-  size_t max_ind;
 
   size_t i = _fine_eviction_start;
   for (size_t k = 0; k < _fine_eviction_sample_size; k++) {
@@ -244,7 +243,6 @@ PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted)
       if (max == NULL || cur_occ > max_occ) {
         max = cur;
         max_prev = prev;
-        max_ind = i;
         max_occ = cur_occ;
       }
       prev = cur->collision_list_next_addr();
@@ -265,7 +263,15 @@ PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted)
 
   // Set the corresponding coarse bit.
   size_t max_hrm_index = (size_t) max->hr()->hrm_index();
-  if (!_coarse_map.at(max_hrm_index)) {
+  if (_n_coarse_entries == 0) {
+    // This will lazily initialize an uninitialized bitmap
+    _coarse_map.reinitialize(G1CollectedHeap::heap()->max_regions());
+    _coarse_map.at_put(max_hrm_index, true);
+    // Release store guarantees that the bitmap has initialized before any
+    // concurrent reader will ever see a non-zero value for _n_coarse_entries
+    // (when read with load_acquire)
+    Atomic::release_store(&_n_coarse_entries, _n_coarse_entries + 1);
+  } else if (!_coarse_map.at(max_hrm_index)) {
     _coarse_map.at_put(max_hrm_index, true);
     _n_coarse_entries++;
   }
@@ -344,17 +350,23 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
   HeapRegion* hr = _g1h->heap_region_containing(from);
   RegionIdx_t hr_ind = (RegionIdx_t) hr->hrm_index();
   // Is this region in the coarse map?
-  if (_coarse_map.at(hr_ind)) return true;
+  if (is_region_coarsened(hr_ind)) return true;
 
   PerRegionTable* prt = find_region_table(hr_ind & _mod_max_fine_entries_mask,
                                           hr);
   if (prt != NULL) {
     return prt->contains_reference(from);
-
   } else {
     CardIdx_t card_index = card_within_region(from, hr);
     return _sparse_table.contains_card(hr_ind, card_index);
   }
+}
+
+// A load_acquire on _n_coarse_entries - coupled with the release_store in
+// delete_region_table - guarantees we don't access _coarse_map before
+// it's been properly initialized.
+bool OtherRegionsTable::is_region_coarsened(RegionIdx_t from_hrm_ind) const {
+  return Atomic::load_acquire(&_n_coarse_entries) > 0 && _coarse_map.at(from_hrm_ind);
 }
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,

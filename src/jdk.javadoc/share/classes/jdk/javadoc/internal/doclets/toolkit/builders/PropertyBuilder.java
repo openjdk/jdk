@@ -75,7 +75,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
             TypeElement typeElement,
             PropertyWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         properties = getVisibleMembers(PROPERTIES);
     }
 
@@ -111,16 +111,13 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     /**
      * Build the property documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildPropertyDoc(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildPropertyDoc(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
-            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(memberDetailsTree);
-            Content propertyDetailsTree = writer.getMemberTreeHeader();
+            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(detailsList);
+            Content memberList = writer.getMemberList();
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -130,10 +127,10 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                 buildPropertyComments(propertyDocTree);
                 buildTagInfo(propertyDocTree);
 
-                propertyDetailsTree.add(writer.getPropertyDoc(propertyDocTree));
+                memberList.add(writer.getMemberListItem(propertyDocTree));
             }
-            memberDetailsTree.add(
-                    writer.getPropertyDetails(propertyDetailsTreeHeader, propertyDetailsTree));
+            Content propertyDetails = writer.getPropertyDetails(propertyDetailsTreeHeader, memberList);
+            detailsList.add(propertyDetails);
         }
     }
 
@@ -157,7 +154,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the property.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param propertyDocTree the content tree to which the documentation will be added
      */

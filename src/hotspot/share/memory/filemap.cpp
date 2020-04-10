@@ -1209,14 +1209,42 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   }
 }
 
+size_t FileMapInfo::set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_size) {
+  for (int i = 0; i < oopmaps->length(); i++) {
+    oopmaps->at(i)._offset = curr_size;
+    curr_size += oopmaps->at(i)._oopmap_size_in_bytes;
+  }
+  return curr_size;
+}
 
-void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap) {
+size_t FileMapInfo::write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_offset, uintptr_t* buffer) {
+  for (int i = 0; i < oopmaps->length(); i++) {
+    memcpy(((char*)buffer) + curr_offset, oopmaps->at(i)._oopmap, oopmaps->at(i)._oopmap_size_in_bytes);
+    curr_offset += oopmaps->at(i)._oopmap_size_in_bytes;
+  }
+  return curr_offset;
+}
+
+void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
+                                      GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                      GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps) {
   ResourceMark rm;
   size_t size_in_bits = ptrmap->size();
   size_t size_in_bytes = ptrmap->size_in_bytes();
+
+  if (closed_oopmaps != NULL && open_oopmaps != NULL) {
+    size_in_bytes = set_oopmaps_offset(closed_oopmaps, size_in_bytes);
+    size_in_bytes = set_oopmaps_offset(open_oopmaps, size_in_bytes);
+  }
+
   uintptr_t* buffer = (uintptr_t*)NEW_RESOURCE_ARRAY(char, size_in_bytes);
-  ptrmap->write_to(buffer, size_in_bytes);
+  ptrmap->write_to(buffer, ptrmap->size_in_bytes());
   header()->set_ptrmap_size_in_bits(size_in_bits);
+
+  if (closed_oopmaps != NULL && open_oopmaps != NULL) {
+    size_t curr_offset = write_oopmaps(closed_oopmaps, ptrmap->size_in_bytes(), buffer);
+    write_oopmaps(open_oopmaps, curr_offset, buffer);
+  }
 
   log_debug(cds)("ptrmap = " INTPTR_FORMAT " (" SIZE_FORMAT " bytes)",
                  p2i(buffer), size_in_bytes);
@@ -1284,9 +1312,7 @@ size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_me
                    i, p2i(start), p2i(start + size), size);
     write_region(i, start, size, false, false);
     if (size > 0) {
-      address oopmap = oopmaps->at(arr_idx)._oopmap;
-      assert(oopmap >= (address)SharedBaseAddress, "must be");
-      space_at(i)->init_oopmap(oopmap - (address)SharedBaseAddress,
+      space_at(i)->init_oopmap(oopmaps->at(arr_idx)._offset,
                                oopmaps->at(arr_idx)._oopmap_size_in_bits);
     }
   }
@@ -1510,41 +1536,44 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   return MAP_ARCHIVE_SUCCESS;
 }
 
-char* FileMapInfo::map_relocation_bitmap(size_t& bitmap_size) {
+// The return value is the location of the archive relocation bitmap.
+char* FileMapInfo::map_bitmap_region() {
   FileMapRegion* si = space_at(MetaspaceShared::bm);
-  bitmap_size = si->used_aligned();
+  if (si->mapped_base() != NULL) {
+    return si->mapped_base();
+  }
   bool read_only = true, allow_exec = false;
   char* requested_addr = NULL; // allow OS to pick any location
   char* bitmap_base = os::map_memory(_fd, _full_path, si->file_offset(),
-                                     requested_addr, bitmap_size, read_only, allow_exec);
+                                     requested_addr, si->used_aligned(), read_only, allow_exec);
   if (bitmap_base == NULL) {
     log_error(cds)("failed to map relocation bitmap");
     return NULL;
   }
 
-  if (VerifySharedSpaces && !region_crc_check(bitmap_base, bitmap_size, si->crc())) {
+  if (VerifySharedSpaces && !region_crc_check(bitmap_base, si->used_aligned(), si->crc())) {
     log_error(cds)("relocation bitmap CRC error");
-    if (!os::unmap_memory(bitmap_base, bitmap_size)) {
+    if (!os::unmap_memory(bitmap_base, si->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
     }
     return NULL;
   }
 
+  si->set_mapped_base(bitmap_base);
+  si->set_mapped_from_file(true);
   return bitmap_base;
 }
 
 bool FileMapInfo::relocate_pointers(intx addr_delta) {
   log_debug(cds, reloc)("runtime archive relocation start");
-  size_t bitmap_size;
-  char* bitmap_base = map_relocation_bitmap(bitmap_size);
+  char* bitmap_base = map_bitmap_region();
 
   if (bitmap_base == NULL) {
     return false;
   } else {
     size_t ptrmap_size_in_bits = header()->ptrmap_size_in_bits();
-    log_debug(cds, reloc)("mapped relocation bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT
-                          " bytes = " SIZE_FORMAT " bits)",
-                          p2i(bitmap_base), bitmap_size, ptrmap_size_in_bits);
+    log_debug(cds, reloc)("mapped relocation bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
+                          p2i(bitmap_base), ptrmap_size_in_bits);
 
     BitMapView ptrmap((BitMap::bm_word_t*)bitmap_base, ptrmap_size_in_bits);
 
@@ -1567,9 +1596,8 @@ bool FileMapInfo::relocate_pointers(intx addr_delta) {
                                        valid_new_base, valid_new_end, addr_delta);
     ptrmap.iterate(&patcher);
 
-    if (!os::unmap_memory(bitmap_base, bitmap_size)) {
-      fatal("os::unmap_memory of relocation bitmap failed");
-    }
+    // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
+
     log_debug(cds, reloc)("runtime archive relocation done");
     return true;
   }
@@ -1870,10 +1898,16 @@ void FileMapInfo::patch_archived_heap_embedded_pointers() {
 
 void FileMapInfo::patch_archived_heap_embedded_pointers(MemRegion* ranges, int num_ranges,
                                                         int first_region_idx) {
+  char* bitmap_base = map_bitmap_region();
+  if (bitmap_base == NULL) {
+    return;
+  }
   for (int i=0; i<num_ranges; i++) {
     FileMapRegion* si = space_at(i + first_region_idx);
-    HeapShared::patch_archived_heap_embedded_pointers(ranges[i], (address)(SharedBaseAddress + si->oopmap_offset()),
-                                                      si->oopmap_size_in_bits());
+    HeapShared::patch_archived_heap_embedded_pointers(
+      ranges[i],
+      (address)(space_at(MetaspaceShared::bm)->mapped_base()) + si->oopmap_offset(),
+      si->oopmap_size_in_bits());
   }
 }
 

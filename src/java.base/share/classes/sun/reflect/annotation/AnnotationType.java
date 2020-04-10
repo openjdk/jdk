@@ -121,7 +121,7 @@ public class AnnotationType {
             if (Modifier.isPublic(method.getModifiers()) &&
                 Modifier.isAbstract(method.getModifiers()) &&
                 !method.isSynthetic()) {
-                if (method.getParameterTypes().length != 0) {
+                if (method.getParameterCount() != 0) {
                     throw new IllegalArgumentException(method + " has params");
                 }
                 String name = method.getName();

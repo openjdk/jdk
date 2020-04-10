@@ -43,6 +43,7 @@ public abstract class AbstractTerminal implements Terminal {
     protected final Map<Capability, Integer> ints = new HashMap<>();
     protected final Map<Capability, String> strings = new HashMap<>();
     protected Status status;
+    protected Runnable onClose;
 
     public AbstractTerminal(String name, String type) throws IOException {
         this(name, type, null, SignalHandler.SIG_DFL);
@@ -55,6 +56,10 @@ public abstract class AbstractTerminal implements Terminal {
         for (Signal signal : Signal.values()) {
             handlers.put(signal, signalHandler);
         }
+    }
+
+    public void setOnClose(Runnable onClose) {
+        this.onClose = onClose;
     }
 
     public Status getStatus() {
@@ -85,7 +90,17 @@ public abstract class AbstractTerminal implements Terminal {
         }
     }
 
-    public void close() throws IOException {
+    public final void close() throws IOException {
+        try {
+            doClose();
+        } finally {
+            if (onClose != null) {
+                onClose.run();
+            }
+        }
+    }
+
+    protected void doClose() throws IOException {
         if (status != null) {
             status.update(null);
             flush();

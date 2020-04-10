@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ private:
   ZPage* alloc_page_blocking(uint8_t type, size_t size, ZAllocationFlags flags);
   ZPage* alloc_page_nonblocking(uint8_t type, size_t size, ZAllocationFlags flags);
 
-  size_t flush_cache(ZPageCacheFlushClosure* cl);
+  size_t flush_cache(ZPageCacheFlushClosure* cl, bool for_allocation);
   void flush_cache_for_allocation(size_t requested);
 
   void satisfy_alloc_queue();

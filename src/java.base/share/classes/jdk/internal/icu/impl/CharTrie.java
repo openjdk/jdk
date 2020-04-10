@@ -52,16 +52,16 @@ public class CharTrie extends Trie
     // public constructors ---------------------------------------------
 
     /**
-    * <p>Creates a new Trie with the settings for the trie data.</p>
-    * <p>Unserialize the 32-bit-aligned input stream and use the data for the
-    * trie.</p>
-    * @param inputStream file input stream to a ICU data file, containing
-    *                    the trie
-    * @param dataManipulate object which provides methods to parse the char
-    *                        data
-    * @throws IOException thrown when data reading fails
-    * @draft 2.1
-    */
+     * <p>Creates a new Trie with the settings for the trie data.</p>
+     * <p>Unserialize the 32-bit-aligned input stream and use the data for the
+     * trie.</p>
+     * @param inputStream file input stream to a ICU data file, containing
+     *                    the trie
+     * @param dataManipulate object which provides methods to parse the char
+     *                        data
+     * @throws IOException thrown when data reading fails
+     * @draft 2.1
+     */
     public CharTrie(InputStream inputStream,
                     DataManipulate dataManipulate) throws IOException
     {
@@ -103,14 +103,14 @@ public class CharTrie extends Trie
     }
 
     /**
-    * Gets the value to the data which this lead surrogate character points
-    * to.
-    * Returned data may contain folding offset information for the next
-    * trailing surrogate character.
-    * This method does not guarantee correct results for trail surrogates.
-    * @param ch lead surrogate character
-    * @return data value
-    */
+     * Gets the value to the data which this lead surrogate character points
+     * to.
+     * Returned data may contain folding offset information for the next
+     * trailing surrogate character.
+     * This method does not guarantee correct results for trail surrogates.
+     * @param ch lead surrogate character
+     * @return data value
+     */
     public final char getLeadValue(char ch)
     {
        return m_data_[getLeadOffset(ch)];
@@ -119,11 +119,11 @@ public class CharTrie extends Trie
     // protected methods -----------------------------------------------
 
     /**
-    * <p>Parses the input stream and stores its trie content into a index and
-    * data array</p>
-    * @param inputStream data input stream containing trie data
-    * @exception IOException thrown when data reading fails
-    */
+     * <p>Parses the input stream and stores its trie content into a index and
+     * data array</p>
+     * @param inputStream data input stream containing trie data
+     * @exception IOException thrown when data reading fails
+     */
     protected final void unserialize(InputStream inputStream)
                                                 throws IOException
     {
@@ -138,12 +138,12 @@ public class CharTrie extends Trie
     }
 
     /**
-    * Gets the offset to the data which the surrogate pair points to.
-    * @param lead lead surrogate
-    * @param trail trailing surrogate
-    * @return offset to data
-    * @draft 2.1
-    */
+     * Gets the offset to the data which the surrogate pair points to.
+     * @param lead lead surrogate
+     * @param trail trailing surrogate
+     * @return offset to data
+     * @draft 2.1
+     */
     protected final int getSurrogateOffset(char lead, char trail)
     {
         if (m_dataManipulate_ == null) {

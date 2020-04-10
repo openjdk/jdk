@@ -66,7 +66,7 @@ public class ShenandoahBitMap implements BitMapInterface {
 
     private int toBitMapOffset(long offset, ShenandoahHeapRegion region) {
         long regionSize = ShenandoahHeapRegion.regionSizeBytes();
-        long regionOffset = region.regionNumber() * regionSize;
+        long regionOffset = region.index() * regionSize;
         long offsetInRegion = offset - regionOffset;
 
         if (offsetInRegion < 0 || offsetInRegion >= regionSize) {

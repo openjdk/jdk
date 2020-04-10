@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 6661247
  * @summary Internal bug in 32-bit HotSpot optimizer while bit manipulations
  *
+ * @library /test/lib
  * @run main compiler.c2.Test6661247
  */
 
@@ -33,6 +35,7 @@ package compiler.c2;
 
 import java.nio.LongBuffer;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 // This isn't a completely reliable test for 6661247 since the results
 // depend on what the local schedule looks like but it does reproduce
@@ -133,7 +136,7 @@ public class Test6661247 {
         }
     }
     public static void main(String[] args) {
-        Random r = new Random();
+        Random r = Utils.getRandomInstance();
         int entries = 1000;
         boolean[] src = new boolean[entries * 64];
         long[] dest = new long[entries];

@@ -698,8 +698,8 @@ public class MulticastSocket extends DatagramSocket {
     }
 
     /**
-     * Sends a datagram packet to the destination, with a TTL (time-
-     * to-live) other than the default for the socket.  This method
+     * Sends a datagram packet to the destination, with a TTL (time-to-live)
+     * other than the default for the socket.  This method
      * need only be used in instances where a particular TTL is desired;
      * otherwise it is preferable to set a TTL once on the socket, and
      * use that default TTL for all packets.  This method does <B>not
@@ -808,24 +808,4 @@ public class MulticastSocket extends DatagramSocket {
                 } // synch p
             }  //synch ttl
     } //method
-
-    private static Set<SocketOption<?>> options;
-    private static boolean optionsSet = false;
-
-    @Override
-    public Set<SocketOption<?>> supportedOptions() {
-        synchronized (MulticastSocket.class) {
-            if (optionsSet) {
-                return options;
-            }
-            try {
-                DatagramSocketImpl impl = getImpl();
-                options = Collections.unmodifiableSet(impl.supportedOptions());
-            } catch (SocketException ex) {
-                options = Collections.emptySet();
-            }
-            optionsSet = true;
-            return options;
-        }
-    }
 }

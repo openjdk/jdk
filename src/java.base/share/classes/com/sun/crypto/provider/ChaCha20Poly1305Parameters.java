@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ import sun.security.util.*;
  *
  * <pre>
  * id-alg-AEADChaCha20Poly1305 OBJECT IDENTIFIER ::=
-          { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
-            pkcs9(9) smime(16) alg(3) 18 }
-
+ *        { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+ *          pkcs9(9) smime(16) alg(3) 18 }
+ *
  * AEADChaCha20Poly1305Nonce ::= OCTET STRING (SIZE(12))
  * </pre>
  *
@@ -86,7 +86,7 @@ public final class ChaCha20Poly1305Parameters extends AlgorithmParametersSpi {
     /**
      * Initialize the ChaCha20Poly1305Parameters from a DER encoded
      * parameter block.
-
+     *
      * @param encoded the DER encoding of the nonce as an OCTET STRING.
      *
      * @throws IOException if the encoded nonce is not 12 bytes long or a DER

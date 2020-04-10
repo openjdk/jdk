@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public interface Annotation {
      *     {@link Long}, {@link Short}, or {@link Boolean}).
      *
      * <li>The hash code of a string, enum, class, or annotation member-value
-     I     <i>{@code v}</i> is computed as by calling
+     *     <i>{@code v}</i> is computed as by calling
      *     <code><i>v</i>.hashCode()</code>.  (In the case of annotation
      *     member values, this is a recursive definition.)
      *

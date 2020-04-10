@@ -1851,6 +1851,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #ifndef EM_AARCH64
   #define EM_AARCH64    183               /* ARM AARCH64 */
 #endif
+#ifndef EM_RISCV
+  #define EM_RISCV      243               /* RISC-V */
+#endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1877,6 +1880,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
+    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
   };
 
 #if  (defined IA32)
@@ -1911,9 +1915,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_68K;
 #elif  (defined SH)
   static  Elf32_Half running_arch_code=EM_SH;
+#elif  (defined RISCV)
+  static  Elf32_Half running_arch_code=EM_RISCV;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -2078,20 +2084,18 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
 
     // Read line by line from 'file'
     while (fgets(line, sizeof(line), procmapsFile) != NULL) {
-      u8 base, top, offset, inode;
-      char permissions[5];
-      char device[6];
+      u8 base, top, inode;
       char name[sizeof(line)];
 
-      // Parse fields from line
-      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %4s " UINT64_FORMAT_X " %5s " INT64_FORMAT " %s",
-             &base, &top, permissions, &offset, device, &inode, name);
-      // the last entry 'name' is empty for some entries, so we might have 6 matches instead of 7 for some lines
-      if (matches < 6) continue;
-      if (matches == 6) name[0] = '\0';
+      // Parse fields from line, discard perms, offset and device
+      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %*s %*s %*s " INT64_FORMAT " %s",
+             &base, &top, &inode, name);
+      // the last entry 'name' is empty for some entries, so we might have 3 matches instead of 4 for some lines
+      if (matches < 3) continue;
+      if (matches == 3) name[0] = '\0';
 
-      // Filter by device id '00:00' so that we only get file system mapped files.
-      if (strcmp(device, "00:00") != 0) {
+      // Filter by inode 0 so that we only get file system mapped files.
+      if (inode != 0) {
 
         // Call callback with the fields of interest
         if(callback(name, (address)base, (address)top, param)) {
@@ -4145,8 +4149,8 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   }
 }
 
-char* os::reserve_memory_special(size_t bytes, size_t alignment,
-                                 char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment,
+                                    char* req_addr, bool exec) {
   assert(UseLargePages, "only for large pages");
 
   char* addr;
@@ -4161,9 +4165,6 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment,
     if (UseNUMAInterleaving) {
       numa_make_global(addr, bytes);
     }
-
-    // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
   }
 
   return addr;
@@ -4178,22 +4179,7 @@ bool os::Linux::release_memory_special_huge_tlbfs(char* base, size_t bytes) {
   return pd_release_memory(base, bytes);
 }
 
-bool os::release_memory_special(char* base, size_t bytes) {
-  bool res;
-  if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr(Tracker::release);
-    res = os::Linux::release_memory_special_impl(base, bytes);
-    if (res) {
-      tkr.record((address)base, bytes);
-    }
-
-  } else {
-    res = os::Linux::release_memory_special_impl(base, bytes);
-  }
-  return res;
-}
-
-bool os::Linux::release_memory_special_impl(char* base, size_t bytes) {
+bool os::pd_release_memory_special(char* base, size_t bytes) {
   assert(UseLargePages, "only for large pages");
   bool res;
 
@@ -5287,20 +5273,6 @@ jint os::init_2(void) {
   }
 
   return JNI_OK;
-}
-
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  if (!guard_memory((char*)_polling_page, Linux::page_size())) {
-    fatal("Could not disable polling page");
-  }
-}
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  if (!linux_mprotect((char *)_polling_page, Linux::page_size(), PROT_READ)) {
-    fatal("Could not enable polling page");
-  }
 }
 
 // older glibc versions don't have this macro (which expands to

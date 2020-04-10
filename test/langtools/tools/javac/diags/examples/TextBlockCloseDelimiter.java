@@ -21,10 +21,7 @@
  * questions.
  */
 
- // key: compiler.warn.preview.feature.use.plural
- // key: compiler.misc.feature.text.blocks
  // key: compiler.err.unclosed.text.block
- // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class TextBlockCloseDelimiter {
     String m() {

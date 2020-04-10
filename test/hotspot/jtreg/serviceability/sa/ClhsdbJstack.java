@@ -34,7 +34,17 @@ import jtreg.SkippedException;
  * @summary Test clhsdb Jstack command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbJstack
+ * @run main/othervm/timeout=480 ClhsdbJstack true
+ */
+
+/**
+ * @test
+ * @bug 8190198
+ * @requires vm.compMode != "Xcomp"
+ * @summary Test clhsdb Jstack command
+ * @requires vm.hasSA
+ * @library /test/lib
+ * @run main/othervm/timeout=480 ClhsdbJstack false
  */
 
 public class ClhsdbJstack {
@@ -74,9 +84,9 @@ public class ClhsdbJstack {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean xComp = Boolean.parseBoolean(args[0]);
         System.out.println("Starting ClhsdbJstack test");
-        testJstack(false);
-        testJstack(true);
+        testJstack(xComp);
         System.out.println("Test PASSED");
     }
 }

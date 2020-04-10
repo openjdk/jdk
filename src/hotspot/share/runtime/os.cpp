@@ -1748,6 +1748,7 @@ bool os::uncommit_memory(char* addr, size_t bytes) {
 bool os::release_memory(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
+    // Note: Tracker contains a ThreadCritical.
     Tracker tkr(Tracker::release);
     res = pd_release_memory(addr, bytes);
     if (res) {
@@ -1802,6 +1803,35 @@ void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   pd_realign_memory(addr, bytes, alignment_hint);
+}
+
+char* os::reserve_memory_special(size_t size, size_t alignment,
+                                 char* addr, bool executable) {
+
+  assert(is_aligned(addr, alignment), "Unaligned request address");
+
+  char* result = pd_reserve_memory_special(size, alignment, addr, executable);
+  if (result != NULL) {
+    // The memory is committed
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
+  }
+
+  return result;
+}
+
+bool os::release_memory_special(char* addr, size_t bytes) {
+  bool res;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    // Note: Tracker contains a ThreadCritical.
+    Tracker tkr(Tracker::release);
+    res = pd_release_memory_special(addr, bytes);
+    if (res) {
+      tkr.record((address)addr, bytes);
+    }
+  } else {
+    res = pd_release_memory_special(addr, bytes);
+  }
+  return res;
 }
 
 #ifndef _WINDOWS

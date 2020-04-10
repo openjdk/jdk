@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.InitialDirContext;
@@ -54,7 +55,7 @@ public class ListSubInterior extends ListFedBase {
         env().put(Context.OBJECT_FACTORIES, "FedObjectFactory");
         setContext(new InitialDirContext(env()));
 
-        NamingEnumeration enumObj = context().listBindings(getKey() + "/a/b");
+        NamingEnumeration<Binding> enumObj = context().listBindings(getKey() + "/a/b");
         verifyNamingEnumeration(enumObj, COUNT_LIMIT);
     }
 }

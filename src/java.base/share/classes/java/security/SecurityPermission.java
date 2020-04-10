@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ import java.util.StringTokenizer;
  *   <td>Getting an instance of a Policy implementation from a provider</td>
  *   <td>Granting this permission enables code to obtain a Policy object.
  * Malicious code may query the Policy object to determine what permissions
- * have been granted to code other than itself. </td>
+ * have been granted to code other than itself.</td>
  * </tr>
  *
  * <tr>
@@ -124,8 +124,7 @@ import java.util.StringTokenizer;
  * security policies.  while revealing this information does not
  * compromise the security of the system, it does provide malicious
  * code with additional information which it may use to better aim
- * an attack.
-</td>
+ * an attack.</td>
  * </tr>
  *
  * <tr>
@@ -139,8 +138,7 @@ import java.util.StringTokenizer;
  * permission to set the location of the system-wide security policy
  * may point it to a security policy that grants the attacker
  * all the necessary permissions it requires to successfully mount
- * an attack on the system.
-</td>
+ * an attack on the system.</td>
  * </tr>
  *
  * <tr>
@@ -153,8 +151,7 @@ import java.util.StringTokenizer;
  * currently does not check the integrity or authenticity of a provider
  * before attaching it. The "insertProvider" permission subsumes the
  * "insertProvider.{provider name}" permission (see the section below for
- * more information).
- * </td>
+ * more information).</td>
  * </tr>
  *
  * <tr>

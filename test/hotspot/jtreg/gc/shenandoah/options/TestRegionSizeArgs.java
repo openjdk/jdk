@@ -70,10 +70,10 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms100m",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=200m",
+                    "-XX:ShenandoahRegionSize=200m",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldMatch("Invalid -XX:ShenandoahHeapRegionSize option");
+            output.shouldMatch("Invalid -XX:ShenandoahRegionSize option");
             output.shouldHaveExitValue(1);
         }
 
@@ -82,7 +82,7 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms100m",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=9m",
+                    "-XX:ShenandoahRegionSize=9m",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -93,10 +93,10 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms100m",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=255K",
+                    "-XX:ShenandoahRegionSize=255K",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldMatch("Invalid -XX:ShenandoahHeapRegionSize option");
+            output.shouldMatch("Invalid -XX:ShenandoahRegionSize option");
             output.shouldHaveExitValue(1);
         }
 
@@ -105,7 +105,7 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms100m",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=260K",
+                    "-XX:ShenandoahRegionSize=260K",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -116,7 +116,7 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms1g",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=32M",
+                    "-XX:ShenandoahRegionSize=32M",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -127,10 +127,10 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms1g",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=64M",
+                    "-XX:ShenandoahRegionSize=64M",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldMatch("Invalid -XX:ShenandoahHeapRegionSize option");
+            output.shouldMatch("Invalid -XX:ShenandoahRegionSize option");
             output.shouldHaveExitValue(1);
         }
 
@@ -139,7 +139,7 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms1g",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=256K",
+                    "-XX:ShenandoahRegionSize=256K",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -150,10 +150,10 @@ public class TestRegionSizeArgs {
                     "-XX:+UseShenandoahGC",
                     "-Xms1g",
                     "-Xmx1g",
-                    "-XX:ShenandoahHeapRegionSize=128K",
+                    "-XX:ShenandoahRegionSize=128K",
                     "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldMatch("Invalid -XX:ShenandoahHeapRegionSize option");
+            output.shouldMatch("Invalid -XX:ShenandoahRegionSize option");
             output.shouldHaveExitValue(1);
         }
     }

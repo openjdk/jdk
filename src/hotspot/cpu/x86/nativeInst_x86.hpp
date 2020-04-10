@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,42 +731,15 @@ inline bool NativeInstruction::is_far_jump()     { return is_mov_literal64(); }
 inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) == 0x800F /* long jump */ ||
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
-  if (SafepointMechanism::uses_thread_local_poll()) {
 #ifdef AMD64
-    const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
-    const int test_offset = has_rex_prefix ? 1 : 0;
+  const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
+  const int test_offset = has_rex_prefix ? 1 : 0;
 #else
-    const int test_offset = 0;
+  const int test_offset = 0;
 #endif
-    const bool is_test_opcode = ubyte_at(test_offset) == NativeTstRegMem::instruction_code_memXregl;
-    const bool is_rax_target = (ubyte_at(test_offset + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
-    return is_test_opcode && is_rax_target;
-  }
-#ifdef AMD64
-  // Try decoding a near safepoint first:
-  if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-      ubyte_at(1) == 0x05) { // 00 rax 101
-    address fault = addr_at(6) + int_at(2);
-    NOT_JVMCI(assert(!Assembler::is_polling_page_far(), "unexpected poll encoding");)
-    return os::is_poll_address(fault);
-  }
-  // Now try decoding a far safepoint:
-  // two cases, depending on the choice of the base register in the address.
-  if (((ubyte_at(0) & NativeTstRegMem::instruction_rex_prefix_mask) == NativeTstRegMem::instruction_rex_prefix &&
-       ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl &&
-       (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) ||
-      (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-       (ubyte_at(1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg)) {
-    NOT_JVMCI(assert(Assembler::is_polling_page_far(), "unexpected poll encoding");)
-    return true;
-  }
-  return false;
-#else
-  return ( ubyte_at(0) == NativeMovRegMem::instruction_code_mem2reg ||
-           ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl ) &&
-           (ubyte_at(1)&0xC7) == 0x05 && /* Mod R/M == disp32 */
-           (os::is_poll_address((address)int_at(2)));
-#endif // AMD64
+  const bool is_test_opcode = ubyte_at(test_offset) == NativeTstRegMem::instruction_code_memXregl;
+  const bool is_rax_target = (ubyte_at(test_offset + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
+  return is_test_opcode && is_rax_target;
 }
 
 inline bool NativeInstruction::is_mov_literal64() {

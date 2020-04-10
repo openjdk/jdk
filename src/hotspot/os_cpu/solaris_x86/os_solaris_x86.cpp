@@ -45,6 +45,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
@@ -140,11 +141,11 @@ bool os::Solaris::valid_ucontext(Thread* thread, const ucontext_t* valid, const 
   }
 
   if (thread->is_Java_thread()) {
-    if (!thread->is_in_full_stack((address)suspect)) {
+    if (!thread->is_in_full_stack_checked((address)suspect)) {
       DEBUG_ONLY(tty->print_cr("valid_ucontext: uc_link not in thread stack");)
       return false;
     }
-    if (!thread->is_in_full_stack((address) suspect->uc_mcontext.gregs[REG_SP])) {
+    if (!thread->is_in_full_stack_checked((address) suspect->uc_mcontext.gregs[REG_SP])) {
       DEBUG_ONLY(tty->print_cr("valid_ucontext: stackpointer not in thread stack");)
       return false;
     }
@@ -529,7 +530,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
 
     if (thread->thread_state() == _thread_in_Java) {
       // Support Safepoint Polling
-      if ( sig == SIGSEGV && os::is_poll_address((address)info->si_addr)) {
+      if ( sig == SIGSEGV && SafepointMechanism::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
       }
       else if (sig == SIGBUS && info->si_code == BUS_OBJERR) {

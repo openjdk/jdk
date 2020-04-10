@@ -35,14 +35,12 @@
 
 class RSHashTable;
 class SparsePRTEntry;
-class SparsePRTIter;
 
 // Sparse remembered set for a heap region (the "owning" region).  Maps
 // indices of other regions to short sequences of cards in the other region
 // that might contain pointers into the owner region.
 // Concurrent access to a SparsePRT must be serialized by some external mutex.
 class SparsePRT {
-  friend class SparsePRTIter;
   friend class SparsePRTBucketIter;
 
   RSHashTable* _table;
@@ -119,7 +117,6 @@ public:
 
   RegionIdx_t r_ind() const { return _region_ind; }
   bool valid_entry() const { return r_ind() >= 0; }
-  void set_r_ind(RegionIdx_t rind) { _region_ind = rind; }
 
   int next_index() const { return _next_index; }
   int* next_index_addr() { return &_next_index; }
@@ -147,7 +144,6 @@ public:
 
 class RSHashTable : public CHeapObj<mtGC> {
 
-  friend class RSHashTableIter;
   friend class RSHashTableBucketIter;
 
   // Inverse maximum hash table occupancy used.
@@ -158,7 +154,6 @@ class RSHashTable : public CHeapObj<mtGC> {
   size_t _capacity;
   size_t _capacity_mask;
   size_t _occupied_entries;
-  size_t _occupied_cards;
 
   SparsePRTEntry* _entries;
   int* _buckets;
@@ -178,11 +173,15 @@ class RSHashTable : public CHeapObj<mtGC> {
   // deleted from any bucket lists.
   void free_entry(int fi);
 
+  // For the empty sentinel created at static initialization time
+  RSHashTable();
+
 public:
   RSHashTable(size_t capacity);
   ~RSHashTable();
 
   static const int NullEntry = -1;
+  static RSHashTable empty_table;
 
   bool should_expand() const { return _occupied_entries == _num_entries; }
 
@@ -206,7 +205,6 @@ public:
 
   size_t capacity() const      { return _capacity; }
   size_t capacity_mask() const { return _capacity_mask;  }
-  size_t occupied_entries() const { return _occupied_entries; }
   size_t mem_size() const;
   // The number of SparsePRTEntry instances available.
   size_t num_entries() const { return _num_entries; }
@@ -220,40 +218,9 @@ public:
 };
 
 // This is embedded in HRRS iterator.
-class RSHashTableIter {
-  // Return value indicating "invalid/no card".
-  static const int NoCardFound = -1;
-
-  int _tbl_ind;         // [-1, 0.._rsht->_capacity)
-  int _bl_ind;          // [-1, 0.._rsht->_capacity)
-  short _card_ind;      // [0..SparsePRTEntry::cards_num())
-  RSHashTable* _rsht;
-
-  // If the bucket list pointed to by _bl_ind contains a card, sets
-  // _bl_ind to the index of that entry,
-  // Returns the card found if there is, otherwise returns InvalidCard.
-  CardIdx_t find_first_card_in_list();
-
-  // Computes the proper card index for the card whose offset in the
-  // current region (as indicated by _bl_ind) is "ci".
-  // This is subject to errors when there is iteration concurrent with
-  // modification, but these errors should be benign.
-  size_t compute_card_ind(CardIdx_t ci);
-
-public:
-  RSHashTableIter(RSHashTable* rsht) :
-    _tbl_ind(RSHashTable::NullEntry), // So that first increment gets to 0.
-    _bl_ind(RSHashTable::NullEntry),
-    _card_ind((SparsePRTEntry::cards_num() - 1)),
-    _rsht(rsht) {}
-
-  bool has_next(size_t& card_index);
-};
-
-// This is embedded in HRRS iterator.
 class RSHashTableBucketIter {
-  int _tbl_ind;         // [-1, 0.._rsht->_capacity)
-  int _bl_ind;          // [-1, 0.._rsht->_capacity)
+  uint _tbl_ind;        // [0.._rsht->_capacity)
+  int  _bl_ind;         // [-1, 0.._rsht->_capacity)
 
   RSHashTable* _rsht;
 
@@ -264,16 +231,6 @@ public:
     _rsht(rsht) { }
 
   bool has_next(SparsePRTEntry*& entry);
-};
-
-class SparsePRTIter: public RSHashTableIter {
-public:
-  SparsePRTIter(const SparsePRT* sprt) :
-    RSHashTableIter(sprt->_table) { }
-
-  bool has_next(size_t& card_index) {
-    return RSHashTableIter::has_next(card_index);
-  }
 };
 
 class SparsePRTBucketIter: public RSHashTableBucketIter {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test OverloadCompileQueueTest
+ * @key stress randomness
  * @summary stressing code cache by overloading compile queues
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -46,9 +47,11 @@
 package compiler.codecache.stress;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 
 import java.lang.reflect.Method;
 import java.util.stream.IntStream;
+import java.util.Random;
 
 public class OverloadCompileQueueTest implements Runnable {
     private static final int MAX_SLEEP = 10000;
@@ -60,6 +63,7 @@ public class OverloadCompileQueueTest implements Runnable {
     private static final int TIERED_STOP_AT_LEVEL
             = Helper.WHITE_BOX.getIntxVMFlag("TieredStopAtLevel").intValue();
     private static final int[] AVAILABLE_LEVELS;
+    private final Random rng = Utils.getRandomInstance();
     static {
         if (TIERED_COMPILATION) {
             AVAILABLE_LEVELS = IntStream
@@ -104,7 +108,7 @@ public class OverloadCompileQueueTest implements Runnable {
 
     private void lockUnlock() {
         try {
-            int sleep = Helper.RNG.nextInt(MAX_SLEEP);
+            int sleep = rng.nextInt(MAX_SLEEP);
             Helper.WHITE_BOX.lockCompilation();
             Thread.sleep(sleep);
         } catch (InterruptedException e) {

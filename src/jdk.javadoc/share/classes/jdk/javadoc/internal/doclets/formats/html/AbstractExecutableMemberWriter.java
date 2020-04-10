@@ -90,7 +90,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             deprecatedLinkContent.add(".");
             deprecatedLinkContent.add(member.getSimpleName());
         }
-        String signature = utils.flatSignature((ExecutableElement) member);
+        String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
             deprecatedLinkContent.add(Entity.ZERO_WIDTH_SPACE);
         }

@@ -850,7 +850,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   address* const safepoint_table = Interpreter::safept_table(state);
 #ifdef _LP64
   Label no_safepoint, dispatch;
-  if (SafepointMechanism::uses_thread_local_poll() && table != safepoint_table && generate_poll) {
+  if (table != safepoint_table && generate_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
     testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
 
@@ -866,7 +866,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
 #else
   Address index(noreg, rbx, Address::times_ptr);
-  if (SafepointMechanism::uses_thread_local_poll() && table != safepoint_table && generate_poll) {
+  if (table != safepoint_table && generate_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
     Label no_safepoint;
     const Register thread = rcx;

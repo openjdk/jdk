@@ -158,6 +158,9 @@ class BitMap {
 
   static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
 
+  idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
+  idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
+
   // Verification.
 
   // Verify size_in_bits does not exceed max_size_in_bits().
@@ -309,6 +312,9 @@ class BitMap {
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
+
+  // Returns the number of bits set within  [beg, end).
+  idx_t count_one_bits(idx_t beg, idx_t end) const;
 
   // Set operations.
   void set_union(const BitMap& bits);

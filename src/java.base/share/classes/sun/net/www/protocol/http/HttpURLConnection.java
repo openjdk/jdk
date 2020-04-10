@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private static int timeout4ESBuffer = 0;
 
     /* buffer size for buffered error stream;
-    */
+     */
     private static int bufSize4ES = 0;
 
     /*
@@ -2355,8 +2355,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                     NTLMAuthenticationProxy.supportsTransparentAuth;
                             /* If the platform supports transparent authentication
                              * then normally it's ok to do transparent auth to a proxy
-                                         * because we generally trust proxies (chosen by the user)
-                                         * But not in the case of 305 response where the server
+                             * because we generally trust proxies (chosen by the user)
+                             * But not in the case of 305 response where the server
                              * chose it. */
                             if (tryTransparentNTLMProxy && useProxyResponseCode) {
                                 tryTransparentNTLMProxy = false;
@@ -2377,7 +2377,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                          * transparent authentication (Windows only) the username
                          * and password will be picked up from the current logged
                          * on users credentials.
-                        */
+                         */
                         if (tryTransparentNTLMProxy ||
                               (!tryTransparentNTLMProxy && a != null)) {
                             ret = NTLMAuthenticationProxy.proxy.create(true, host,

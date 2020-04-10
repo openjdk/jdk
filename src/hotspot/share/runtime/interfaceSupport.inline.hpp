@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ class InterfaceSupport: AllStatic {
  public:
   static long _scavenge_alot_counter;
   static long _fullgc_alot_counter;
-  static long _number_of_calls;
   static long _fullgc_alot_invocation;
 
   // Helper methods used to implement +ScavengeALot and +FullGCALot
@@ -354,7 +353,6 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #ifdef ASSERT
 #define TRACE_CALL(result_type, header)                            \
-  InterfaceSupport::_number_of_calls++;                            \
   if (CountRuntimeCalls) {                                         \
     static RuntimeHistogramElement* e = new RuntimeHistogramElement(#header); \
     if (e != NULL) e->increment_count();                           \

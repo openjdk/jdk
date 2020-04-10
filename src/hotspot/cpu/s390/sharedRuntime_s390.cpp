@@ -3217,7 +3217,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // Save registers, fpu state, and flags
   map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
 
-  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+  if (!cause_return) {
     // Keep a copy of the return pc to detect if it gets modified.
     __ z_lgr(Z_R6, Z_R14);
   }
@@ -3257,7 +3257,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // No exception case
   __ bind(noException);
 
-  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+  if (!cause_return) {
     Label no_adjust;
      // If our stashed return pc was modified by the runtime we avoid touching it
     const int offset_of_return_pc = _z_abi16(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);

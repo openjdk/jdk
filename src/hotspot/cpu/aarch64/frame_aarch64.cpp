@@ -76,14 +76,14 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
   // So unextended sp must be within the stack but we need not to check
   // that unextended sp >= sp
-  if (!thread->is_in_full_stack(unextended_sp)) {
+  if (!thread->is_in_full_stack_checked(unextended_sp)) {
     return false;
   }
 
   // an fp must be within the stack and above (but not equal) sp
   // second evaluation on fp+ is added to handle situation where fp is -1
   bool fp_safe = thread->is_in_stack_range_excl(fp, sp) &&
-                 thread->is_in_full_stack(fp + (return_addr_offset * sizeof(void*)));
+                 thread->is_in_full_stack_checked(fp + (return_addr_offset * sizeof(void*)));
 
   // We know sp/unextended_sp are safe only fp is questionable here
 
@@ -145,7 +145,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       sender_sp = _unextended_sp + _cb->frame_size();
       // Is sender_sp safe?
-      if (!thread->is_in_full_stack((address)sender_sp)) {
+      if (!thread->is_in_full_stack_checked((address)sender_sp)) {
         return false;
       }
       sender_unextended_sp = sender_sp;
@@ -264,6 +264,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 }
 
 void frame::patch_pc(Thread* thread, address pc) {
+  assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
@@ -273,7 +274,6 @@ void frame::patch_pc(Thread* thread, address pc) {
   // patch in the same address that's already there.
   assert(_pc == *pc_addr || pc == *pc_addr, "must be");
   *pc_addr = pc;
-  _cb = CodeCache::find_blob(pc);
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     assert(original_pc == _pc, "expected original PC to be stored before patching");

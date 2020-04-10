@@ -88,7 +88,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<TypeElement> usedClasses = usingPackageToUsedClasses
                             .get(utils.getPackageName(usingPackage));
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
+                        usedClasses = new TreeSet<>(comparators.makeGeneralPurposeComparator());
                         usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }
@@ -220,7 +220,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 table.addRow(typeContent, summary);
             }
             section.add(table);
-            ul.add(HtmlTree.LI(HtmlStyle.blockList, section));
+            ul.add(HtmlTree.LI(section));
         }
         Content li = HtmlTree.SECTION(HtmlStyle.packageUses, ul);
         contentTree.add(li);

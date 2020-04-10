@@ -368,14 +368,28 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             String signingIdentity =
                     DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
             if (signingIdentity != null) {
+                prepareEntitlements(params);
                 signAppBundle(params, root, signingIdentity,
-                        BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params), null, null);
+                        BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
+                        getConfig_Entitlements(params));
             }
             restoreKeychainList(params);
         }
     }
 
-    private String getLauncherName(Map<String, ? super Object> params) {
+    static File getConfig_Entitlements(Map<String, ? super Object> params) {
+        return new File(CONFIG_ROOT.fetchFrom(params),
+                getLauncherName(params) + ".entitlements");
+    }
+
+    static void prepareEntitlements(Map<String, ? super Object> params)
+            throws IOException {
+        createResource("entitlements.plist", params)
+                .setCategory(I18N.getString("resource.entitlements"))
+                .saveToFile(getConfig_Entitlements(params));
+    }
+
+    private static String getLauncherName(Map<String, ? super Object> params) {
         if (APP_NAME.fetchFrom(params) != null) {
             return APP_NAME.fetchFrom(params);
         } else {
@@ -735,16 +749,15 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         IOUtils.exec(pb);
     }
 
-    public static void signAppBundle(
+    static void signAppBundle(
             Map<String, ? super Object> params, Path appLocation,
-            String signingIdentity, String identifierPrefix,
-            String entitlementsFile, String inheritedEntitlements)
+            String signingIdentity, String identifierPrefix, File entitlements)
             throws IOException {
         AtomicReference<IOException> toThrow = new AtomicReference<>();
         String appExecutable = "/Contents/MacOS/" + APP_NAME.fetchFrom(params);
         String keyChain = SIGNING_KEYCHAIN.fetchFrom(params);
 
-        // sign all dylibs and jars
+        // sign all dylibs and executables
         try (Stream<Path> stream = Files.walk(appLocation)) {
             stream.peek(path -> { // fix permissions
                 try {
@@ -758,48 +771,43 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 } catch (IOException e) {
                     Log.verbose(e);
                 }
-            }).filter(p -> Files.isRegularFile(p)
-                      && !(p.toString().contains("/Contents/MacOS/libjli.dylib")
-                      || p.toString().endsWith(appExecutable)
+            }).filter(p -> Files.isRegularFile(p) &&
+                      (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
+                      && !(p.toString().endsWith(appExecutable)
                       || p.toString().contains("/Contents/runtime")
-                      || p.toString().contains("/Contents/Frameworks"))).forEach(p -> {
-                //noinspection ThrowableResultOfMethodCallIgnored
+                      || p.toString().contains("/Contents/Frameworks"))
+                     ).forEach(p -> {
+                // noinspection ThrowableResultOfMethodCallIgnored
                 if (toThrow.get() != null) return;
 
                 // If p is a symlink then skip the signing process.
                 if (Files.isSymbolicLink(p)) {
-                    if (VERBOSE.fetchFrom(params)) {
-                        Log.verbose(MessageFormat.format(I18N.getString(
-                                "message.ignoring.symlink"), p.toString()));
-                    }
+                    Log.verbose(MessageFormat.format(I18N.getString(
+                            "message.ignoring.symlink"), p.toString()));
+                } else if (isFileSigned(p)) {
+                    // executable or lib already signed
+                    Log.verbose(MessageFormat.format(I18N.getString(
+                            "message.already.signed"), p.toString()));
                 } else {
-                    if (p.toString().endsWith(LIBRARY_NAME)) {
-                        if (isFileSigned(p)) {
-                            return;
-                        }
-                    }
-
                     List<String> args = new ArrayList<>();
                     args.addAll(Arrays.asList("codesign",
-                            "-s", signingIdentity, // sign with this key
+                            "--timestamp",
+                            "--options", "runtime",
+                            "-s", signingIdentity,
                             "--prefix", identifierPrefix,
-                            // use the identifier as a prefix
                             "-vvvv"));
-                    if (entitlementsFile != null &&
-                            (p.toString().endsWith(".jar")
-                            || p.toString().endsWith(".dylib"))) {
-                        args.add("--entitlements");
-                        args.add(entitlementsFile); // entitlements
-                    } else if (inheritedEntitlements != null &&
-                            Files.isExecutable(p)) {
-                        args.add("--entitlements");
-                        args.add(inheritedEntitlements);
-                        // inherited entitlements for executable processes
-                    }
                     if (keyChain != null && !keyChain.isEmpty()) {
                         args.add("--keychain");
                         args.add(keyChain);
                     }
+
+                    if (Files.isExecutable(p)) {
+                        if (entitlements != null) {
+                            args.add("--entitlements");
+                            args.add(entitlements.toString());
+                        }
+                    }
+
                     args.add(p.toString());
 
                     try {
@@ -809,6 +817,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         f.setWritable(true, true);
 
                         ProcessBuilder pb = new ProcessBuilder(args);
+
                         IOUtils.exec(pb);
 
                         Files.setPosixFilePermissions(p, oldPermissions);
@@ -831,32 +840,22 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             try {
                 List<String> args = new ArrayList<>();
                 args.addAll(Arrays.asList("codesign",
-                        "-f",
+                        "--timestamp",
+                        "--options", "runtime",
+                        "--deep",
+                        "--force",
                         "-s", signingIdentity, // sign with this key
                         "--prefix", identifierPrefix,
                         // use the identifier as a prefix
                         "-vvvv"));
+
                 if (keyChain != null && !keyChain.isEmpty()) {
                     args.add("--keychain");
                     args.add(keyChain);
                 }
                 args.add(path.toString());
                 ProcessBuilder pb = new ProcessBuilder(args);
-                IOUtils.exec(pb);
 
-                args = new ArrayList<>();
-                args.addAll(Arrays.asList("codesign",
-                        "-s", signingIdentity, // sign with this key
-                        "--prefix", identifierPrefix,
-                        // use the identifier as a prefix
-                        "-vvvv"));
-                if (keyChain != null && !keyChain.isEmpty()) {
-                    args.add("--keychain");
-                    args.add(keyChain);
-                }
-                args.add(path.toString()
-                        + "/Contents/_CodeSignature/CodeResources");
-                pb = new ProcessBuilder(args);
                 IOUtils.exec(pb);
             } catch (IOException e) {
                 toThrow.set(e);
@@ -886,20 +885,28 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         // sign the app itself
         List<String> args = new ArrayList<>();
         args.addAll(Arrays.asList("codesign",
-                "-s", signingIdentity, // sign with this key
-                "-vvvv")); // super verbose output
-        if (entitlementsFile != null) {
-            args.add("--entitlements");
-            args.add(entitlementsFile); // entitlements
-        }
+                "--timestamp",
+                "--options", "runtime",
+                "--deep",
+                "--force",
+                "-s", signingIdentity,
+                "-vvvv"));
+
         if (keyChain != null && !keyChain.isEmpty()) {
             args.add("--keychain");
             args.add(keyChain);
         }
+
+        if (entitlements != null) {
+            args.add("--entitlements");
+            args.add(entitlements.toString());
+        }
+
         args.add(appLocation.toString());
 
         ProcessBuilder pb =
                 new ProcessBuilder(args.toArray(new String[args.size()]));
+
         IOUtils.exec(pb);
     }
 

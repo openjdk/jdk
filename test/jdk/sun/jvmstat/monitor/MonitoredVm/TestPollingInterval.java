@@ -54,8 +54,7 @@ public class TestPollingInterval {
             MonitorException, URISyntaxException {
         LingeredApp app = null;
         try {
-            String[] vmArgs = Utils.appendTestJavaOpts("-XX:+UsePerfData");
-            app = LingeredApp.startApp(vmArgs);
+            app = LingeredApp.startApp("-XX:+UsePerfData");
 
             MonitoredHost localHost = MonitoredHost.getMonitoredHost("localhost");
             String uriString = "//" + app.getPid() + "?mode=r"; // NOI18N

@@ -122,14 +122,11 @@ public class FieldWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getFieldDetails(Content fieldDetailsTreeHeader, Content fieldDetailsTree) {
-        Content fieldDetails = new ContentBuilder(fieldDetailsTreeHeader, fieldDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.fieldDetails, fieldDetails)
-                .setId(SectionName.FIELD_DETAIL.getName()));
-    }
-
-    @Override
-    public Content getFieldDoc(Content fieldTree) {
-        return getMemberTree(fieldTree);
+        return writer.getDetailsListItem(
+                HtmlTree.SECTION(HtmlStyle.fieldDetails)
+                        .setId(SectionName.FIELD_DETAIL.getName())
+                        .add(fieldDetailsTreeHeader)
+                        .add(fieldDetailsTree));
     }
 
     @Override

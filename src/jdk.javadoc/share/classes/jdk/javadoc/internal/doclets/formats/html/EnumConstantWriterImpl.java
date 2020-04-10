@@ -121,15 +121,11 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     public Content getEnumConstantsDetails(Content enumConstantsDetailsTreeHeader,
             Content enumConstantsDetailsTree) {
-        Content enumConstantsDetails =
-                new ContentBuilder(enumConstantsDetailsTreeHeader, enumConstantsDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.constantDetails, enumConstantsDetails)
-                .setId(SectionName.ENUM_CONSTANT_DETAIL.getName()));
-    }
-
-    @Override
-    public Content getEnumConstants(Content enumConstantsTree) {
-        return getMemberTree(enumConstantsTree);
+        return writer.getDetailsListItem(
+                HtmlTree.SECTION(HtmlStyle.constantDetails)
+                        .setId(SectionName.ENUM_CONSTANT_DETAIL.getName())
+                        .add(enumConstantsDetailsTreeHeader)
+                        .add(enumConstantsDetailsTree));
     }
 
     @Override

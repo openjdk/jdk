@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -614,7 +614,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     /*
      * This method is added so that null-check on charset can be performed before
      * creating InputStream as an existing test required it.
-    */
+     */
     private static Readable makeReadable(Path source, Charset charset)
             throws IOException {
         Objects.requireNonNull(charset, "charset");

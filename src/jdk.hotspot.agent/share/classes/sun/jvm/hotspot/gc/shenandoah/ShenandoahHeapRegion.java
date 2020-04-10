@@ -33,6 +33,7 @@ import sun.jvm.hotspot.oops.Oop;
 import sun.jvm.hotspot.oops.UnknownOopException;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.utilities.AddressOps;
 
@@ -42,7 +43,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 
-public class ShenandoahHeapRegion extends ContiguousSpace implements LiveRegionsProvider {
+public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvider {
     private static int EmptyUncommitted;
     private static int EmptyCommitted;
     private static int Regular;
@@ -56,8 +57,12 @@ public class ShenandoahHeapRegion extends ContiguousSpace implements LiveRegions
 
     private static CIntegerField RegionSizeBytesField;
     private static Field         RegionStateField;
-    private static CIntegerField RegionNumberField;
+    private static CIntegerField RegionIndexField;
     private static CIntegerField RegionSizeBytesShiftField;
+
+    private static AddressField BottomField;
+    private static AddressField TopField;
+    private static AddressField EndField;
 
     private ShenandoahHeap heap;
 
@@ -73,7 +78,10 @@ public class ShenandoahHeapRegion extends ContiguousSpace implements LiveRegions
         Type type = db.lookupType("ShenandoahHeapRegion");
         RegionSizeBytesField = type.getCIntegerField("RegionSizeBytes");
         RegionStateField = type.getField("_state");
-        RegionNumberField = type.getCIntegerField("_region_number");
+        RegionIndexField = type.getCIntegerField("_index");
+        BottomField = type.getAddressField("_bottom");
+        TopField = type.getAddressField("_top");
+        EndField = type.getAddressField("_end");
 
         RegionSizeBytesShiftField = type.getCIntegerField("RegionSizeBytesShift");
 
@@ -105,16 +113,28 @@ public class ShenandoahHeapRegion extends ContiguousSpace implements LiveRegions
         this.heap = heap;
     }
 
+    public Address bottom() {
+        return BottomField.getValue(addr);
+    }
+
+    public Address top() {
+        return TopField.getValue(addr);
+    }
+
+    public Address end() {
+        return EndField.getValue(addr);
+    }
+
     @Override
     public int hashCode() {
-        return (int)regionNumber();
+        return (int)index();
     }
 
     @Override
     public boolean equals(Object other) {
         if (other instanceof ShenandoahHeapRegion) {
             ShenandoahHeapRegion otherRegion = (ShenandoahHeapRegion)other;
-            return otherRegion.regionNumber() == regionNumber();
+            return otherRegion.index() == index();
         }
         return false;
     }
@@ -150,7 +170,7 @@ public class ShenandoahHeapRegion extends ContiguousSpace implements LiveRegions
     }
 
     private void handleHumongousRegion(List<MemRegion> res) {
-        long index = regionNumber();
+        long index = index();
         Address topAddr = top();
         ShenandoahHeapRegion region = heap.getRegion(++ index);
         while (region.regionState() == HumongousCont) {
@@ -197,8 +217,8 @@ public class ShenandoahHeapRegion extends ContiguousSpace implements LiveRegions
         }
     }
 
-    public long regionNumber() {
-        return RegionNumberField.getValue(addr);
+    public long index() {
+        return RegionIndexField.getValue(addr);
     }
 
     private boolean hasForwardee(Address rawPtr) {

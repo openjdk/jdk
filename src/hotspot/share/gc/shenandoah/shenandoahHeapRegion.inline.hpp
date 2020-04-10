@@ -31,8 +31,7 @@
 #include "runtime/atomic.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest::Type type) {
-  _heap->assert_heaplock_or_safepoint();
-
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
 
   HeapWord* obj = top();
@@ -53,33 +52,10 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest::Ty
 }
 
 inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t size) {
-  bool is_first_alloc = (top() == bottom());
-
-  switch (type) {
-    case ShenandoahAllocRequest::_alloc_shared:
-    case ShenandoahAllocRequest::_alloc_tlab:
-      _seqnum_last_alloc_mutator = _alloc_seq_num.value++;
-      if (is_first_alloc) {
-        assert (_seqnum_first_alloc_mutator == 0, "Region " SIZE_FORMAT " metadata is correct", _region_number);
-        _seqnum_first_alloc_mutator = _seqnum_last_alloc_mutator;
-      }
-      break;
-    case ShenandoahAllocRequest::_alloc_shared_gc:
-    case ShenandoahAllocRequest::_alloc_gclab:
-      _seqnum_last_alloc_gc = _alloc_seq_num.value++;
-      if (is_first_alloc) {
-        assert (_seqnum_first_alloc_gc == 0, "Region " SIZE_FORMAT " metadata is correct", _region_number);
-        _seqnum_first_alloc_gc = _seqnum_last_alloc_gc;
-      }
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
     case ShenandoahAllocRequest::_alloc_shared_gc:
-      _shared_allocs += size;
+      // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
       _tlab_allocs += size;
@@ -99,7 +75,7 @@ inline void ShenandoahHeapRegion::increase_live_data_alloc_words(size_t s) {
 inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
   if (ShenandoahPacing) {
-    _heap->pacer()->report_mark(s);
+    ShenandoahHeap::heap()->pacer()->report_mark(s);
   }
 }
 
@@ -111,6 +87,31 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
   assert(live_bytes <= used_bytes,
          "can't have more live data than used: " SIZE_FORMAT ", " SIZE_FORMAT, live_bytes, used_bytes);
 #endif
+}
+
+inline void ShenandoahHeapRegion::clear_live_data() {
+  Atomic::release_store_fence(&_live_data, (size_t)0);
+}
+
+inline size_t ShenandoahHeapRegion::get_live_data_words() const {
+  return Atomic::load_acquire(&_live_data);
+}
+
+inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
+  return get_live_data_words() * HeapWordSize;
+}
+
+inline bool ShenandoahHeapRegion::has_live() const {
+  return get_live_data_words() != 0;
+}
+
+inline size_t ShenandoahHeapRegion::garbage() const {
+  assert(used() >= get_live_data_bytes(),
+         "Live Data must be a subset of used() live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         get_live_data_bytes(), used());
+
+  size_t result = used() - get_live_data_bytes();
+  return result;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

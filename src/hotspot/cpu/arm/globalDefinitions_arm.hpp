@@ -62,6 +62,4 @@ const bool HaveVFP = true;
 #endif
 #endif
 
-#define THREAD_LOCAL_POLL
-
 #endif // CPU_ARM_GLOBALDEFINITIONS_ARM_HPP

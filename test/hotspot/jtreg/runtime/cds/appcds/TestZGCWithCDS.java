@@ -39,7 +39,6 @@ public class TestZGCWithCDS {
          OutputAnalyzer out = TestCommon
                                   .dump(helloJar,
                                         new String[] {"Hello"},
-                                        "-XX:+UnlockExperimentalVMOptions",
                                         "-XX:+UseZGC",
                                         "-Xlog:cds");
          out.shouldContain("Dumping shared data to file:");
@@ -49,7 +48,6 @@ public class TestZGCWithCDS {
          System.out.println("1. Run with same args of dump");
          out = TestCommon
                    .exec(helloJar,
-                         "-XX:+UnlockExperimentalVMOptions",
                          "-XX:+UseZGC",
                          "-Xlog:cds",
                          "Hello");
@@ -60,7 +58,6 @@ public class TestZGCWithCDS {
          System.out.println("2. Run with ZGC turned off");
          out = TestCommon
                    .exec(helloJar,
-                         "-XX:+UnlockExperimentalVMOptions",
                          "-XX:-UseZGC",
                          "-XX:+UseCompressedOops",           // in case turned off by vmoptions
                          "-XX:+UseCompressedClassPointers",  // by jtreg
@@ -120,7 +117,6 @@ public class TestZGCWithCDS {
          System.out.println("7. Run with ZGC");
          out = TestCommon
                    .exec(helloJar,
-                         "-XX:+UnlockExperimentalVMOptions",
                          "-XX:+UseZGC",
                          "-Xlog:cds",
                          "Hello");

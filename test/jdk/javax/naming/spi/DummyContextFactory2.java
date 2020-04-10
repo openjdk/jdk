@@ -42,13 +42,13 @@ public class DummyContextFactory2 implements InitialContextFactory {
 
     public class DummyContext extends InitialContext {
 
-        private Hashtable env;
+        private Hashtable<?, ?> env;
 
-        DummyContext(Hashtable env) throws NamingException {
+        DummyContext(Hashtable<?, ?> env) throws NamingException {
             this.env = env;
         }
 
-        public Hashtable getEnvironment() {
+        public Hashtable<?, ?> getEnvironment() {
             return env;
         }
     }

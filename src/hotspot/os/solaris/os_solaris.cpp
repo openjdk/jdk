@@ -2606,12 +2606,12 @@ bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t size, size_t alignment, char* addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t size, size_t alignment, char* addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on Solaris.");
   return NULL;
 }
 
-bool os::release_memory_special(char* base, size_t bytes) {
+bool os::pd_release_memory_special(char* base, size_t bytes) {
   fatal("os::release_memory_special should not be called on Solaris.");
   return false;
 }
@@ -4005,22 +4005,6 @@ jint os::init_2(void) {
   os::Posix::init_2();
 
   return JNI_OK;
-}
-
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  Events::log(NULL, "Protecting polling page " INTPTR_FORMAT " with PROT_NONE", p2i(_polling_page));
-  if (mprotect((char *)_polling_page, page_size, PROT_NONE) != 0) {
-    fatal("Could not disable polling page");
-  }
-}
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  Events::log(NULL, "Protecting polling page " INTPTR_FORMAT " with PROT_READ", p2i(_polling_page));
-  if (mprotect((char *)_polling_page, page_size, PROT_READ) != 0) {
-    fatal("Could not enable polling page");
-  }
 }
 
 // Is a (classpath) directory empty?

@@ -25,7 +25,6 @@
 
 package javax.lang.model.util;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -246,13 +245,13 @@ public interface Elements {
      * comment of an element.
      *
      * <p> A documentation comment of an element is a comment that
-     * begins with "{@code /**}" , ends with a separate
+     * begins with "{@code /**}", ends with a separate
      * "<code>*&#47;</code>", and immediately precedes the element,
      * ignoring white space.  Therefore, a documentation comment
-     * contains at least three"{@code *}" characters.  The text
+     * contains at least three "{@code *}" characters.  The text
      * returned for the documentation comment is a processed form of
-     * the comment as it appears in source code.  The leading "{@code
-     * /**}" and trailing "<code>*&#47;</code>" are removed.  For lines
+     * the comment as it appears in source code.  The leading "{@code /**}"
+     * and trailing "<code>*&#47;</code>" are removed.  For lines
      * of the comment starting after the initial "{@code /**}",
      * leading white space characters are discarded as are any
      * consecutive "{@code *}" characters appearing after the white
@@ -382,7 +381,7 @@ public interface Elements {
          */
         EXPLICIT,
 
-       /**
+        /**
          * A mandated construct is one that is not explicitly declared
          * in the source code, but whose presence is mandated by the
          * specification. Such a construct is said to be implicitly
@@ -403,7 +402,7 @@ public interface Elements {
          */
         MANDATED,
 
-       /**
+        /**
          * A synthetic construct is one that is neither implicitly nor
          * explicitly declared in the source code. Such a construct is
          * typically a translation artifact created by a compiler.
@@ -414,8 +413,8 @@ public interface Elements {
          * Returns {@code true} for values corresponding to constructs
          * that are implicitly or explicitly declared, {@code false}
          * otherwise.
-         * @return {@code true} for {@link EXPLICIT} and {@link
-         * MANDATED}, {@code false} otherwise.
+         * @return {@code true} for {@link #EXPLICIT} and {@link #MANDATED},
+         *         {@code false} otherwise.
          */
         public boolean isDeclared() {
             return this != SYNTHETIC;

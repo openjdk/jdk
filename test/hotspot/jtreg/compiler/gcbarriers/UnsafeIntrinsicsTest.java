@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8059022
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
  * @requires vm.gc.Z & !vm.graal.enabled
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyViews -XX:ZCollectionInterval=1 -XX:-CreateCoredumpOnCrash -XX:CompileCommand=dontinline,*::mergeImpl* compiler.gcbarriers.UnsafeIntrinsicsTest
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+ZVerifyViews -XX:ZCollectionInterval=1 -XX:-CreateCoredumpOnCrash -XX:CompileCommand=dontinline,*::mergeImpl* compiler.gcbarriers.UnsafeIntrinsicsTest
  */
 
 package compiler.gcbarriers;
@@ -35,6 +37,7 @@ package compiler.gcbarriers;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
+import jdk.test.lib.Utils;
 import sun.misc.Unsafe;
 
 public class UnsafeIntrinsicsTest {
@@ -75,7 +78,7 @@ public class UnsafeIntrinsicsTest {
 
         // start mutator threads
         ArrayList<Thread> thread_list = new ArrayList<Thread>();
-        Random r = new Random(System.nanoTime());
+        Random r = Utils.getRandomInstance();
         for (int i = 0; i < thread_count; i++) {
 
             setup(); // each thread has its own circle of nodes
@@ -93,7 +96,7 @@ public class UnsafeIntrinsicsTest {
 
         setup(); // All nodes are shared between threads
         ArrayList<Thread> thread_list = new ArrayList<Thread>();
-        Random r = new Random(System.nanoTime());
+        Random r = Utils.getRandomInstance();
         for (int i = 0; i < thread_count; i++) {
             Thread t = new Thread(new Runner(first_node, time, r.nextLong(), optype));
             t.start();

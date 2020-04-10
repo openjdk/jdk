@@ -214,8 +214,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         for (VariableElement field : fields) {
             table.addRow(getTypeColumn(field), getNameColumn(field), getValue(field));
         }
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-        classConstantTree.add(li);
+        classConstantTree.add(HtmlTree.LI(table));
     }
 
     /**

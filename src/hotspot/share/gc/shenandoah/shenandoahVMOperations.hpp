@@ -36,8 +36,6 @@
 //       - VM_ShenandoahInitUpdateRefs: initiate update references
 //       - VM_ShenandoahFinalUpdateRefs: finish up update references
 //       - VM_ShenandoahFullGC: do full GC
-//       - VM_ShenandoahInitTraversalGC: init traversal GC
-//       - VM_ShenandoahFinalTraversalGC: finish traversal GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
@@ -88,22 +86,6 @@ public:
   VM_ShenandoahFullGC(GCCause::Cause gc_cause) : VM_ShenandoahReferenceOperation(), _gc_cause(gc_cause) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFullGC; }
   const char* name()             const { return "Shenandoah Full GC"; }
-  virtual void doit();
-};
-
-class VM_ShenandoahInitTraversalGC: public VM_ShenandoahOperation {
-public:
-  VM_ShenandoahInitTraversalGC() : VM_ShenandoahOperation() {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitTraversalGC; }
-  const char* name()             const { return "Shenandoah Init Traversal Collection"; }
-  virtual void doit();
-};
-
-class VM_ShenandoahFinalTraversalGC: public VM_ShenandoahReferenceOperation {
-public:
-  VM_ShenandoahFinalTraversalGC() : VM_ShenandoahReferenceOperation() {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalTraversalGC; }
-  const char* name()             const { return "Shenandoah Final Traversal Collection"; }
   virtual void doit();
 };
 

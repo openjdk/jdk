@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,8 @@ public final class CompactByteArray implements Cloneable {
     }
 
     /**
-      *Compact the array.
-      */
+     * Compact the array.
+     */
     public void compact()
     {
         if (!isCompact) {
@@ -241,17 +241,19 @@ public final class CompactByteArray implements Cloneable {
         return hashes[i] != 0;
     }
 
-    /** For internal use only.  Do not modify the result, the behavior of
-      * modified results are undefined.
-      */
+    /**
+     * For internal use only.  Do not modify the result, the behavior of
+     * modified results are undefined.
+     */
     public short[] getIndexArray()
     {
         return indices;
     }
 
-    /** For internal use only.  Do not modify the result, the behavior of
-      * modified results are undefined.
-      */
+    /**
+     * For internal use only.  Do not modify the result, the behavior of
+     * modified results are undefined.
+     */
     public byte[] getStringArray()
     {
         return values;
@@ -297,7 +299,6 @@ public final class CompactByteArray implements Cloneable {
     /**
      * Generates the hash code for the compact array object
      */
-
     public int hashCode() {
         int result = 0;
         int increment = Math.min(3, values.length/16);
@@ -307,12 +308,9 @@ public final class CompactByteArray implements Cloneable {
         return result;
     }
 
-    // --------------------------------------------------------------
-    // package private
-    // --------------------------------------------------------------
     /**
-      * Expanding takes the array back to a 65536 element array.
-      */
+     * Expanding takes the array back to a 65536 element array.
+     */
     private void expand()
     {
         int i;

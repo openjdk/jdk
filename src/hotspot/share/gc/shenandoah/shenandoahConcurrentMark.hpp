@@ -34,7 +34,6 @@
 class ShenandoahStrDedupQueue;
 
 class ShenandoahConcurrentMark: public CHeapObj<mtGC> {
-  friend class ShenandoahTraversalGC;
 private:
   ShenandoahHeap* _heap;
   ShenandoahObjToScanQueueSet* _task_queues;
@@ -47,7 +46,7 @@ public:
 //
 private:
   template <class T>
-  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, jushort* live_data, ShenandoahMarkTask* task);
+  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
 
   template <class T>
   inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array);
@@ -55,10 +54,10 @@ private:
   template <class T>
   inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow);
 
-  inline void count_liveness(jushort* live_data, oop obj);
+  inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
   template <class T, bool CANCELLABLE>
-  void mark_loop_work(T* cl, jushort* live_data, uint worker_id, TaskTerminator *t);
+  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
   template <bool CANCELLABLE>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ReferenceProcessor *rp, bool strdedup);

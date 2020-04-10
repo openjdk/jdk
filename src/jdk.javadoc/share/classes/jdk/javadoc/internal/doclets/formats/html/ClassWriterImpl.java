@@ -214,36 +214,38 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (utils.isRecord(typeElement)) {
             pre.add(getRecordComponents(typeElement));
         }
-        if (!utils.isInterface(typeElement)) {
-            TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
-            if (superclass != null) {
-                pre.add(DocletConstants.NL);
-                pre.add("extends ");
-                Content link = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                        superclass));
-                pre.add(link);
-            }
-        }
-        List<? extends TypeMirror> interfaces = typeElement.getInterfaces();
-        if (!interfaces.isEmpty()) {
-            boolean isFirst = true;
-            for (TypeMirror type : interfaces) {
-                TypeElement tDoc = utils.asTypeElement(type);
-                if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
-                    continue;
-                }
-                if (isFirst) {
+        if (!utils.isAnnotationType(typeElement)) {
+            if (!utils.isInterface(typeElement)) {
+                TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
+                if (superclass != null) {
                     pre.add(DocletConstants.NL);
-                    pre.add(utils.isInterface(typeElement) ? "extends " : "implements ");
-                    isFirst = false;
-                } else {
-                    pre.add(", ");
+                    pre.add("extends ");
+                    Content link = getLink(new LinkInfoImpl(configuration,
+                            LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                            superclass));
+                    pre.add(link);
                 }
-                Content link = getLink(new LinkInfoImpl(configuration,
-                                                        LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                                                        type));
-                pre.add(link);
+            }
+            List<? extends TypeMirror> interfaces = typeElement.getInterfaces();
+            if (!interfaces.isEmpty()) {
+                boolean isFirst = true;
+                for (TypeMirror type : interfaces) {
+                    TypeElement tDoc = utils.asTypeElement(type);
+                    if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
+                        continue;
+                    }
+                    if (isFirst) {
+                        pre.add(DocletConstants.NL);
+                        pre.add(utils.isInterface(typeElement) ? "extends " : "implements ");
+                        isFirst = false;
+                    } else {
+                        pre.add(", ");
+                    }
+                    Content link = getLink(new LinkInfoImpl(configuration,
+                            LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                            type));
+                    pre.add(link);
+                }
             }
         }
         classInfoTree.add(pre);
@@ -407,7 +409,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addImplementedInterfacesInfo(Content classInfoTree) {
-        SortedSet<TypeMirror> interfaces = new TreeSet<>(utils.makeTypeMirrorClassUseComparator());
+        SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.makeTypeMirrorClassUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
         if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
             HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
@@ -420,7 +422,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addSuperInterfacesInfo(Content classInfoTree) {
         SortedSet<TypeMirror> interfaces =
-                new TreeSet<>(utils.makeTypeMirrorIndexUseComparator());
+                new TreeSet<>(comparators.makeTypeMirrorIndexUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
         if (utils.isInterface(typeElement) && !interfaces.isEmpty()) {
@@ -533,5 +535,20 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public TypeElement getTypeElement() {
         return typeElement;
+    }
+
+    /**
+     * Get the member details tree
+     *
+     * @param contentTree the tree used to generate the member details tree
+     * @return a content tree for the member details
+     */
+    public Content getMemberDetailsTree(Content contentTree) {
+        HtmlTree section = HtmlTree.SECTION(HtmlStyle.details, contentTree);
+        // The following id is required by the Navigation bar
+        if (utils.isAnnotationType(typeElement)) {
+            section.setId(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL.getName());
+        }
+        return section;
     }
 }

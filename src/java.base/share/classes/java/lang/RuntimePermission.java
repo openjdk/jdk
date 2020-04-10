@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,8 +291,7 @@ import java.lang.module.ModuleFinder;
  * the code would normally not be able to invoke those methods and/or
  * access the fields  because
  * it can't cast the object to the class/interface with those methods
- * and fields.
-</td>
+ * and fields.</td>
  * </tr>
  * <tr>
  *   <th scope="row">queuePrintJob</th>

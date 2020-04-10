@@ -1073,8 +1073,8 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
     length = old_compiled_method_table->length();
     for (int i = 0; i < length; i++) {
       CompiledMethod* cm = old_compiled_method_table->at(i);
-      // Only walk alive nmethods, the dead ones will get removed by the sweeper.
-      if (cm->is_alive()) {
+      // Only walk alive nmethods, the dead ones will get removed by the sweeper or GC.
+      if (cm->is_alive() && !cm->is_unloading()) {
         old_compiled_method_table->at(i)->metadata_do(f);
       }
     }

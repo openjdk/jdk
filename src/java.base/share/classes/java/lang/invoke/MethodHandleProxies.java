@@ -276,13 +276,13 @@ public class MethodHandleProxies {
         switch (m.getName()) {
         case "toString":
             return (m.getReturnType() == String.class
-                    && m.getParameterTypes().length == 0);
+                    && m.getParameterCount() == 0);
         case "hashCode":
             return (m.getReturnType() == int.class
-                    && m.getParameterTypes().length == 0);
+                    && m.getParameterCount() == 0);
         case "equals":
             return (m.getReturnType() == boolean.class
-                    && m.getParameterTypes().length == 1
+                    && m.getParameterCount() == 1
                     && m.getParameterTypes()[0] == Object.class);
         }
         return false;

@@ -114,7 +114,7 @@ public class TypeElementCatalog {
     public TypeElementCatalog(BaseConfiguration config) {
         this.configuration = config;
         this.utils = config.utils;
-        comparator = utils.makeGeneralPurposeComparator();
+        comparator = utils.comparators.makeGeneralPurposeComparator();
         allClasses = new HashMap<>();
         ordinaryClasses = new HashMap<>();
         exceptions = new HashMap<>();

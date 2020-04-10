@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -457,13 +457,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   int offset = 13; // movq r10,#addr; callq (r10)
   offset += clear_avx_size();
   return offset;
-}
-
-// Indicate if the safepoint node needs the polling page as an input,
-// it does if the polling page is more than disp32 away.
-bool SafePointNode::needs_polling_address_input()
-{
-  return SafepointMechanism::uses_thread_local_poll() || Assembler::is_polling_page_far();
 }
 
 //
@@ -939,18 +932,9 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   st->print_cr("popq    rbp");
   if (do_polling() && C->is_method_compilation()) {
     st->print("\t");
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      st->print_cr("movq    rscratch1, poll_offset[r15_thread] #polling_page_address\n\t"
-                   "testl   rax, [rscratch1]\t"
-                   "# Safepoint: poll for GC");
-    } else if (Assembler::is_polling_page_far()) {
-      st->print_cr("movq    rscratch1, #polling_page_address\n\t"
-                   "testl   rax, [rscratch1]\t"
-                   "# Safepoint: poll for GC");
-    } else {
-      st->print_cr("testl   rax, [rip + #offset_to_poll_page]\t"
-                   "# Safepoint: poll for GC");
-    }
+    st->print_cr("movq    rscratch1, poll_offset[r15_thread] #polling_page_address\n\t"
+                 "testl   rax, [rscratch1]\t"
+                 "# Safepoint: poll for GC");
   }
 }
 #endif
@@ -996,20 +980,9 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
   if (do_polling() && C->is_method_compilation()) {
     MacroAssembler _masm(&cbuf);
-    if (SafepointMechanism::uses_thread_local_poll()) {
-      __ movq(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
-      __ relocate(relocInfo::poll_return_type);
-      __ testl(rax, Address(rscratch1, 0));
-    } else {
-      AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
-      if (Assembler::is_polling_page_far()) {
-        __ lea(rscratch1, polling_page);
-        __ relocate(relocInfo::poll_return_type);
-        __ testl(rax, Address(rscratch1, 0));
-      } else {
-        __ testl(rax, polling_page);
-      }
-    }
+    __ movq(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
+    __ relocate(relocInfo::poll_return_type);
+    __ testl(rax, Address(rscratch1, 0));
   }
 }
 
@@ -1027,11 +1000,6 @@ int MachEpilogNode::reloc() const
 const Pipeline* MachEpilogNode::pipeline() const
 {
   return MachNode::pipeline_class();
-}
-
-int MachEpilogNode::safepoint_offset() const
-{
-  return 0;
 }
 
 //=============================================================================
@@ -12536,41 +12504,8 @@ instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
 
 // ============================================================================
 // Safepoint Instructions
-instruct safePoint_poll(rFlagsReg cr)
-%{
-  predicate(!Assembler::is_polling_page_far() && SafepointMechanism::uses_global_page_poll());
-  match(SafePoint);
-  effect(KILL cr);
-
-  format %{ "testl   rax, [rip + #offset_to_poll_page]\t"
-            "# Safepoint: poll for GC" %}
-  ins_cost(125);
-  ins_encode %{
-    AddressLiteral addr(os::get_polling_page(), relocInfo::poll_type);
-    __ testl(rax, addr);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct safePoint_poll_far(rFlagsReg cr, rRegP poll)
-%{
-  predicate(Assembler::is_polling_page_far() && SafepointMechanism::uses_global_page_poll());
-  match(SafePoint poll);
-  effect(KILL cr, USE poll);
-
-  format %{ "testl   rax, [$poll]\t"
-            "# Safepoint: poll for GC" %}
-  ins_cost(125);
-  ins_encode %{
-    __ relocate(relocInfo::poll_type);
-    __ testl(rax, Address($poll$$Register, 0));
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
 instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
 %{
-  predicate(SafepointMechanism::uses_thread_local_poll());
   match(SafePoint poll);
   effect(KILL cr, USE poll);
 

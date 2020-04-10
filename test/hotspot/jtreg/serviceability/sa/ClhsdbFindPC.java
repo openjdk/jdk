@@ -35,8 +35,20 @@ import jtreg.SkippedException;
  * @summary Test the clhsdb 'findpc' command
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC
+ * @run main/othervm/timeout=480 ClhsdbFindPC true
+ */
+
+/**
+ * @test
+ * @bug 8193124
+ * @summary Test the clhsdb 'findpc' command
+ * @requires vm.compMode != "Xcomp"
+ * @requires vm.hasSA
+ * @requires vm.compiler1.enabled
+ * @library /test/lib
+ * @run main/othervm/timeout=480 ClhsdbFindPC false
  */
 
 public class ClhsdbFindPC {
@@ -104,9 +116,9 @@ public class ClhsdbFindPC {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean xComp = Boolean.parseBoolean(args[0]);
         System.out.println("Starting the ClhsdbFindPC test");
-        testFindPC(true);
-        testFindPC(false);
+        testFindPC(xComp);
         System.out.println("Test PASSED");
     }
 }

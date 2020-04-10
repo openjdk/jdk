@@ -62,7 +62,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   }
 
   // Unextended sp must be within the stack
-  if (!thread->is_in_full_stack(unextended_sp)) {
+  if (!thread->is_in_full_stack_checked(unextended_sp)) {
     return false;
   }
 
@@ -247,12 +247,12 @@ frame frame::sender(RegisterMap* map) const {
 }
 
 void frame::patch_pc(Thread* thread, address pc) {
+  assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " PTR_FORMAT " [" PTR_FORMAT " -> " PTR_FORMAT "]",
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
   own_abi()->lr = (uint64_t)pc;
-  _cb = CodeCache::find_blob(pc);
   if (_cb != NULL && _cb->is_nmethod() && ((nmethod*)_cb)->is_deopt_pc(_pc)) {
     address orig = (((nmethod*)_cb)->get_original_pc(this));
     assert(orig == _pc, "expected original to be stored before patching");

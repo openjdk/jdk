@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,12 @@ final class MaxFragExtension {
             this.id = id;
         }
 
-        private MaxFragLenSpec(ByteBuffer buffer) throws IOException {
+        private MaxFragLenSpec(HandshakeContext hc,
+                ByteBuffer buffer) throws IOException {
             if (buffer.remaining() != 1) {
-                throw new SSLProtocolException(
-                    "Invalid max_fragment_length extension data");
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
+                    "Invalid max_fragment_length extension data"));
             }
 
             this.id = buffer.get();
@@ -88,9 +90,9 @@ final class MaxFragExtension {
 
     private static final class MaxFragLenStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new MaxFragLenSpec(buffer)).toString();
+                return (new MaxFragLenSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -249,13 +251,7 @@ final class MaxFragExtension {
             }
 
             // Parse the extension.
-            MaxFragLenSpec spec;
-            try {
-                spec = new MaxFragLenSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            MaxFragLenSpec spec = new MaxFragLenSpec(shc, buffer);
             MaxFragLenEnum mfle = MaxFragLenEnum.valueOf(spec.id);
             if (mfle == null) {
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
@@ -363,13 +359,7 @@ final class MaxFragExtension {
             }
 
             // Parse the extension.
-            MaxFragLenSpec spec;
-            try {
-                spec = new MaxFragLenSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            MaxFragLenSpec spec = new MaxFragLenSpec(chc, buffer);
             if (spec.id != requestedSpec.id) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "The maximum fragment length response is not requested");
@@ -535,13 +525,7 @@ final class MaxFragExtension {
             }
 
             // Parse the extension.
-            MaxFragLenSpec spec;
-            try {
-                spec = new MaxFragLenSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
-
+            MaxFragLenSpec spec = new MaxFragLenSpec(chc, buffer);
             if (spec.id != requestedSpec.id) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "The maximum fragment length response is not requested");

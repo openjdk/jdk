@@ -340,14 +340,14 @@ final class ProcessHandleImpl implements ProcessHandle {
     }
 
     /**
-      * Signal the process to terminate.
-      * The process is signaled only if its start time matches the known start time.
-      *
-      * @param pid  process id to kill
-      * @param startTime the start time of the process
-      * @param forcibly true to forcibly terminate (SIGKILL vs SIGTERM)
-      * @return true if the process was signaled without error; false otherwise
-      */
+     * Signal the process to terminate.
+     * The process is signaled only if its start time matches the known start time.
+     *
+     * @param pid  process id to kill
+     * @param startTime the start time of the process
+     * @param forcibly true to forcibly terminate (SIGKILL vs SIGTERM)
+     * @return true if the process was signaled without error; false otherwise
+     */
     private static native boolean destroy0(long pid, long startTime, boolean forcibly);
 
     @Override

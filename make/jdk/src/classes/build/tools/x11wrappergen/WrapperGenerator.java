@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,11 @@ public class WrapperGenerator {
     String defaultBaseClass = "XWrapperBase";
 
     String compile_options = "-lX11";
-    static Hashtable symbolTable = new Hashtable();
-    static Hashtable sizeTable32bit = new Hashtable();
-    static Hashtable sizeTable64bit = new Hashtable();
-    static Hashtable knownSizes32 = new Hashtable();
-    static Hashtable knownSizes64 = new Hashtable();
+    static Hashtable<String, BaseType> symbolTable = new Hashtable<>();
+    static Hashtable<String, String> sizeTable32bit = new Hashtable<>();
+    static Hashtable<String, String> sizeTable64bit = new Hashtable<>();
+    static Hashtable<String, Integer> knownSizes32 = new Hashtable<>();
+    static Hashtable<String, Integer> knownSizes64 = new Hashtable<>();
     static {
 /*
         knownSizes64.put("", Integer.valueOf());
@@ -391,7 +391,7 @@ public class WrapperGenerator {
                 alias = true;
                 aliasName = attributes[4];
             } else if (type == TYPE_ARRAY || type == TYPE_PTR || type == TYPE_STRUCT) {
-                referencedType = (BaseType)symbolTable.get(mod);
+                referencedType = symbolTable.get(mod);
                 if (referencedType == null) {
                     log.warning("Can't find type for name " + mod);
                 }
@@ -457,7 +457,7 @@ public class WrapperGenerator {
 
     private static class StructType extends BaseType {
 
-        Vector members;
+        Vector<BaseType> members;
         String description;
         boolean packed;
         int size;
@@ -472,7 +472,7 @@ public class WrapperGenerator {
          */
         public StructType(String _desc)
         {
-            members = new Vector();
+            members = new Vector<>();
             parseDescription(_desc);
         }
         public int getNumFields()
@@ -495,7 +495,7 @@ public class WrapperGenerator {
             return description;
         }
 
-        public Enumeration getMembers()
+        public Enumeration<BaseType> getMembers()
         {
             return members.elements();
         }
@@ -545,8 +545,8 @@ public class WrapperGenerator {
          * Returns String containing Java code calculating size of the structure depending on the data model
          */
         public String getSize() {
-            String s32 = (String) WrapperGenerator.sizeTable32bit.get(getName());
-            String s64 = (String) WrapperGenerator.sizeTable64bit.get(getName());
+            String s32 = WrapperGenerator.sizeTable32bit.get(getName());
+            String s64 = WrapperGenerator.sizeTable64bit.get(getName());
             if (s32 == null || s64 == null) {
                 return (s32 == null)?(s64):(s32);
             }
@@ -558,8 +558,8 @@ public class WrapperGenerator {
         }
         public String getOffset(AtomicType atp) {
             String key = getName()+"."+(atp.isAlias() ? atp.getAliasName() : atp.getName());
-            String s64 = (String) WrapperGenerator.sizeTable64bit.get(key);
-            String s32 = (String) WrapperGenerator.sizeTable32bit.get(key);
+            String s64 = WrapperGenerator.sizeTable64bit.get(key);
+            String s32 = WrapperGenerator.sizeTable32bit.get(key);
             if (s32 == null || s64 == null) {
                 return (s32 == null)?(s64):(s32);
             }
@@ -573,7 +573,7 @@ public class WrapperGenerator {
 
     private static class FunctionType extends BaseType {
 
-        Vector args;
+        Vector<BaseType> args;
         String description;
         boolean packed;
         String returnType;
@@ -582,7 +582,7 @@ public class WrapperGenerator {
 
         public FunctionType(String _desc)
         {
-            args = new Vector();
+            args = new Vector<>();
             description = _desc;
             setName(_desc);
         }
@@ -618,7 +618,7 @@ public class WrapperGenerator {
             return description;
         }
 
-        public Collection getArguments()
+        public Collection<BaseType> getArguments()
         {
             return args;
         }
@@ -653,28 +653,28 @@ public class WrapperGenerator {
     public String getOffsets(StructType stp,AtomicType atp, boolean wide)
     {
         String key = stp.getName()+"."+atp.getName();
-        return wide == true ? (String) sizeTable64bit.get(key) : (String) sizeTable32bit.get(key);
+        return wide == true ? sizeTable64bit.get(key) : sizeTable32bit.get(key);
     }
 
     public String getStructSize(StructType stp, boolean wide)
     {
-        return wide == true ? (String) sizeTable64bit.get(stp.getName()) : (String) sizeTable32bit.get(stp.getName());
+        return wide == true ? sizeTable64bit.get(stp.getName()) : sizeTable32bit.get(stp.getName());
     }
 
     public int getLongSize(boolean wide)
     {
-        return Integer.parseInt(wide == true ? (String)sizeTable64bit.get("long") : (String)sizeTable32bit.get("long"));
+        return Integer.parseInt(wide == true ? sizeTable64bit.get("long") : sizeTable32bit.get("long"));
     }
 
     public int getPtrSize(boolean wide)
     {
-        return Integer.parseInt(wide == true ? (String)sizeTable64bit.get("ptr") : (String)sizeTable32bit.get("ptr"));
+        return Integer.parseInt(wide == true ? sizeTable64bit.get("ptr") : sizeTable32bit.get("ptr"));
     }
     public int getBoolSize(boolean wide) {
         return getOrdinalSize("Bool", wide);
     }
     public int getOrdinalSize(String ordinal, boolean wide) {
-        return Integer.parseInt(wide == true ? (String)sizeTable64bit.get(ordinal) : (String)sizeTable32bit.get(ordinal));
+        return Integer.parseInt(wide == true ? sizeTable64bit.get(ordinal) : sizeTable32bit.get(ordinal));
     }
 
     public void writeToString(StructType stp, PrintWriter pw) {
@@ -682,7 +682,7 @@ public class WrapperGenerator {
         pw.println("\n\n\tString getName() {\n\t\treturn \"" + stp.getName()+ "\"; \n\t}");
         pw.println("\n\n\tString getFieldsAsString() {\n\t\tStringBuilder ret = new StringBuilder(" + stp.getNumFields() * 40 + ");\n");
 
-        for (Enumeration e = stp.getMembers() ; e.hasMoreElements() ;) {
+        for (Enumeration<BaseType> e = stp.getMembers() ; e.hasMoreElements() ;) {
             AtomicType tp = (AtomicType) e.nextElement();
 
             type = tp.getType();
@@ -718,7 +718,7 @@ public class WrapperGenerator {
         } else {
             prefix = "\t";
         }
-        for (Enumeration e = stp.getMembers() ; e.hasMoreElements() ;) {
+        for (Enumeration<BaseType> e = stp.getMembers() ; e.hasMoreElements() ;) {
             AtomicType tp = (AtomicType) e.nextElement();
 
             type = tp.getType();
@@ -753,7 +753,7 @@ public class WrapperGenerator {
         int acc_size_32 = 0;
         int acc_size_64 = 0;
         String s_log = (generateLog?"log.finest(\"\");":"");
-        for (Enumeration e = stp.getMembers() ; e.hasMoreElements() ;) {
+        for (Enumeration<BaseType> e = stp.getMembers() ; e.hasMoreElements() ;) {
             AtomicType tp = (AtomicType) e.nextElement();
 
             type = tp.getType();
@@ -946,7 +946,7 @@ public class WrapperGenerator {
             pw.println("\tprivate static Unsafe unsafe = XlibWrapper.unsafe;");
             pw.println("\tprivate boolean __executed = false;");
             pw.println("\tprivate boolean __disposed = false;");
-            Iterator iter = ft.getArguments().iterator();
+            Iterator<BaseType> iter = ft.getArguments().iterator();
             while (iter.hasNext()) {
                 AtomicType at = (AtomicType)iter.next();
                 if (at.isIn()) {
@@ -1110,8 +1110,8 @@ public class WrapperGenerator {
 
     public void writeJavaWrapperClass(String outputDir) {
         try {
-            for (Enumeration e = symbolTable.elements() ; e.hasMoreElements() ;) {
-                BaseType tp = (BaseType) e.nextElement();
+            for (Enumeration<BaseType> e = symbolTable.elements() ; e.hasMoreElements() ;) {
+                BaseType tp = e.nextElement();
                 if (tp instanceof StructType) {
                     StructType st = (StructType) tp;
                     writeWrapper(outputDir, st);
@@ -1132,7 +1132,7 @@ public class WrapperGenerator {
         int j=0;
         BaseType tp;
         StructType stp;
-        Enumeration eo;
+        Enumeration<BaseType> eo;
 
         try {
 
@@ -1158,7 +1158,7 @@ public class WrapperGenerator {
             pw.println("\n\nint main(){");
             j=0;
             for ( eo = symbolTable.elements() ; eo.hasMoreElements() ;) {
-                tp = (BaseType) eo.nextElement();
+                tp = eo.nextElement();
                 if (tp instanceof StructType)
                 {
                     stp = (StructType) tp;
@@ -1181,14 +1181,14 @@ public class WrapperGenerator {
             for (eo = symbolTable.elements() ; eo.hasMoreElements() ;) {
 
 
-                tp = (BaseType) eo.nextElement();
+                tp = eo.nextElement();
                 if (tp instanceof StructType)
                 {
                     stp = (StructType) tp;
                     if (stp.getIsInterface()) {
                         continue;
                     }
-                    for (Enumeration e = stp.getMembers() ; e.hasMoreElements() ;) {
+                    for (Enumeration<BaseType> e = stp.getMembers() ; e.hasMoreElements() ;) {
                         AtomicType atp = (AtomicType) e.nextElement();
                         if (atp.isAlias()) continue;
                         pw.println("printf(\""+ stp.getName() + "." + atp.getName() + "\t%d\\n\""+
@@ -1277,7 +1277,7 @@ public class WrapperGenerator {
 
                 }
                 else  if (line != null) {
-                    BaseType bt = (BaseType) symbolTable.get(line);
+                    BaseType bt = symbolTable.get(line);
                     if (bt == null) {
                         if (line.startsWith("!")) {
                             FunctionType ft = new FunctionType(line);

@@ -795,55 +795,6 @@ class StubGenerator: public StubCodeGenerator {
   __ BIND(L_exit);
   }
 
-  // Copy 64 bytes chunks
-  //
-  // Inputs:
-  //   from        - source array address
-  //   to_from     - destination array address - from
-  //   qword_count - 8-bytes element count, negative
-  //
-  void mmx_copy_forward(Register from, Register to_from, Register qword_count) {
-    assert( VM_Version::supports_mmx(), "supported cpu only" );
-    Label L_copy_64_bytes_loop, L_copy_64_bytes, L_copy_8_bytes, L_exit;
-    // Copy 64-byte chunks
-    __ jmpb(L_copy_64_bytes);
-    __ align(OptoLoopAlignment);
-  __ BIND(L_copy_64_bytes_loop);
-    __ movq(mmx0, Address(from, 0));
-    __ movq(mmx1, Address(from, 8));
-    __ movq(mmx2, Address(from, 16));
-    __ movq(Address(from, to_from, Address::times_1, 0), mmx0);
-    __ movq(mmx3, Address(from, 24));
-    __ movq(Address(from, to_from, Address::times_1, 8), mmx1);
-    __ movq(mmx4, Address(from, 32));
-    __ movq(Address(from, to_from, Address::times_1, 16), mmx2);
-    __ movq(mmx5, Address(from, 40));
-    __ movq(Address(from, to_from, Address::times_1, 24), mmx3);
-    __ movq(mmx6, Address(from, 48));
-    __ movq(Address(from, to_from, Address::times_1, 32), mmx4);
-    __ movq(mmx7, Address(from, 56));
-    __ movq(Address(from, to_from, Address::times_1, 40), mmx5);
-    __ movq(Address(from, to_from, Address::times_1, 48), mmx6);
-    __ movq(Address(from, to_from, Address::times_1, 56), mmx7);
-    __ addptr(from, 64);
-  __ BIND(L_copy_64_bytes);
-    __ subl(qword_count, 8);
-    __ jcc(Assembler::greaterEqual, L_copy_64_bytes_loop);
-    __ addl(qword_count, 8);
-    __ jccb(Assembler::zero, L_exit);
-    //
-    // length is too short, just copy qwords
-    //
-  __ BIND(L_copy_8_bytes);
-    __ movq(mmx0, Address(from, 0));
-    __ movq(Address(from, to_from, Address::times_1), mmx0);
-    __ addptr(from, 8);
-    __ decrement(qword_count);
-    __ jcc(Assembler::greater, L_copy_8_bytes);
-  __ BIND(L_exit);
-    __ emms();
-  }
-
   address generate_disjoint_copy(BasicType t, bool aligned,
                                  Address::ScaleFactor sf,
                                  address* entry, const char *name,
@@ -918,7 +869,7 @@ class StubGenerator: public StubCodeGenerator {
         __ subl(count, 1<<(shift-1));
       __ BIND(L_skip_align2);
       }
-      if (!VM_Version::supports_mmx()) {
+      if (!UseXMMForArrayCopy) {
         __ mov(rax, count);      // save 'count'
         __ shrl(count, shift); // bytes count
         __ addptr(to_from, from);// restore 'to'
@@ -935,18 +886,14 @@ class StubGenerator: public StubCodeGenerator {
           __ movl(Address(from, to_from, Address::times_1, 0), rax);
           __ addptr(from, 4);
           __ subl(count, 1<<shift);
-         }
+        }
       __ BIND(L_copy_64_bytes);
         __ mov(rax, count);
         __ shrl(rax, shift+1);  // 8 bytes chunk count
         //
-        // Copy 8-byte chunks through MMX registers, 8 per iteration of the loop
+        // Copy 8-byte chunks through XMM registers, 8 per iteration of the loop
         //
-        if (UseXMMForArrayCopy) {
-          xmm_copy_forward(from, to_from, rax);
-        } else {
-          mmx_copy_forward(from, to_from, rax);
-        }
+        xmm_copy_forward(from, to_from, rax);
       }
       // copy tailing dword
     __ BIND(L_copy_4_bytes);
@@ -979,9 +926,6 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    if (VM_Version::supports_mmx() && !UseXMMForArrayCopy) {
-      __ emms();
-    }
     __ movl(count, Address(rsp, 12+12)); // reread 'count'
     bs->arraycopy_epilogue(_masm, decorators, t, from, to, count);
 
@@ -1117,7 +1061,7 @@ class StubGenerator: public StubCodeGenerator {
         __ jcc(Assembler::below, L_copy_4_bytes);
       }
 
-      if (!VM_Version::supports_mmx()) {
+      if (!UseXMMForArrayCopy) {
         __ std();
         __ mov(rax, count); // Save 'count'
         __ mov(rdx, to);    // Save 'to'
@@ -1143,20 +1087,12 @@ class StubGenerator: public StubCodeGenerator {
         __ align(OptoLoopAlignment);
         // Move 8 bytes
       __ BIND(L_copy_8_bytes_loop);
-        if (UseXMMForArrayCopy) {
-          __ movq(xmm0, Address(from, count, sf, 0));
-          __ movq(Address(to, count, sf, 0), xmm0);
-        } else {
-          __ movq(mmx0, Address(from, count, sf, 0));
-          __ movq(Address(to, count, sf, 0), mmx0);
-        }
+        __ movq(xmm0, Address(from, count, sf, 0));
+        __ movq(Address(to, count, sf, 0), xmm0);
       __ BIND(L_copy_8_bytes);
         __ subl(count, 2<<shift);
         __ jcc(Assembler::greaterEqual, L_copy_8_bytes_loop);
         __ addl(count, 2<<shift);
-        if (!UseXMMForArrayCopy) {
-          __ emms();
-        }
       }
     __ BIND(L_copy_4_bytes);
       // copy prefix qword
@@ -1190,9 +1126,6 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    if (VM_Version::supports_mmx() && !UseXMMForArrayCopy) {
-      __ emms();
-    }
     __ movl2ptr(count, Address(rsp, 12+12)); // reread count
     bs->arraycopy_epilogue(_masm, decorators, t, from, to, count);
 
@@ -1232,12 +1165,8 @@ class StubGenerator: public StubCodeGenerator {
       // UnsafeCopyMemory page error: continue after ucm
       UnsafeCopyMemoryMark ucmm(this, true, true);
       __ subptr(to, from); // to --> to_from
-      if (VM_Version::supports_mmx()) {
-        if (UseXMMForArrayCopy) {
-          xmm_copy_forward(from, to_from, count);
-        } else {
-          mmx_copy_forward(from, to_from, count);
-        }
+      if (UseXMMForArrayCopy) {
+        xmm_copy_forward(from, to_from, count);
       } else {
         __ jmpb(L_copy_8_bytes);
         __ align(OptoLoopAlignment);
@@ -1249,9 +1178,6 @@ class StubGenerator: public StubCodeGenerator {
         __ decrement(count);
         __ jcc(Assembler::greaterEqual, L_copy_8_bytes_loop);
       }
-    }
-    if (VM_Version::supports_mmx() && !UseXMMForArrayCopy) {
-      __ emms();
     }
     inc_copy_counter_np(T_LONG);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -1298,14 +1224,9 @@ class StubGenerator: public StubCodeGenerator {
 
       __ align(OptoLoopAlignment);
     __ BIND(L_copy_8_bytes_loop);
-      if (VM_Version::supports_mmx()) {
-        if (UseXMMForArrayCopy) {
-          __ movq(xmm0, Address(from, count, Address::times_8));
-          __ movq(Address(to, count, Address::times_8), xmm0);
-        } else {
-          __ movq(mmx0, Address(from, count, Address::times_8));
-          __ movq(Address(to, count, Address::times_8), mmx0);
-        }
+      if (UseXMMForArrayCopy) {
+        __ movq(xmm0, Address(from, count, Address::times_8));
+        __ movq(Address(to, count, Address::times_8), xmm0);
       } else {
         __ fild_d(Address(from, count, Address::times_8));
         __ fistp_d(Address(to, count, Address::times_8));
@@ -1314,9 +1235,6 @@ class StubGenerator: public StubCodeGenerator {
       __ decrement(count);
       __ jcc(Assembler::greaterEqual, L_copy_8_bytes_loop);
 
-    }
-    if (VM_Version::supports_mmx() && !UseXMMForArrayCopy) {
-      __ emms();
     }
     inc_copy_counter_np(T_LONG);
     __ leave(); // required for proper stackwalking of RuntimeStub frame

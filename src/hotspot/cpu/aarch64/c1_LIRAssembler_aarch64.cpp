@@ -501,16 +501,13 @@ void LIR_Assembler::return_op(LIR_Opr result) {
     __ reserved_stack_check();
   }
 
-  address polling_page(os::get_polling_page());
-  __ read_polling_page(rscratch1, polling_page, relocInfo::poll_return_type);
+  __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
   __ ret(lr);
 }
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  address polling_page(os::get_polling_page());
   guarantee(info != NULL, "Shouldn't be NULL");
-  assert(os::is_poll_address(polling_page), "should be");
-  __ get_polling_page(rscratch1, polling_page, relocInfo::poll_type);
+  __ get_polling_page(rscratch1, relocInfo::poll_type);
   add_debug_info_for_branch(info);  // This isn't just debug info:
                                     // it's the oop map
   __ read_polling_page(rscratch1, relocInfo::poll_type);

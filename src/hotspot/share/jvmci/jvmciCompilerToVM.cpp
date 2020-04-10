@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -2628,6 +2629,45 @@ C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
                        CHECK);
 }
 
+C2V_VMENTRY_0(jlong, ticksNow, (JNIEnv* env, jobject))
+  return CompilerEvent::ticksNow();
+}
+
+C2V_VMENTRY_0(jint, registerCompilerPhases, (JNIEnv* env, jobject, jobjectArray jphases))
+#if INCLUDE_JFR
+  if (jphases == NULL) {
+    return -1;
+  }
+  JVMCIObjectArray phases = JVMCIENV->wrap(jphases);
+  int len = JVMCIENV->get_length(phases);
+  GrowableArray<const char*>* jvmci_phase_names = new GrowableArray<const char*>(len);
+  for (int i = 0; i < len; i++) {
+    JVMCIObject phase = JVMCIENV->get_object_at(phases, i);
+    jvmci_phase_names->append(strdup(JVMCIENV->as_utf8_string(phase)));
+  }
+  return CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
+#else
+  return -1;
+#endif // !INCLUDE_JFR
+}
+
+C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
+  EventCompilerPhase event;
+  if (event.should_commit()) {
+    CompilerEvent::PhaseEvent::post(event, startTime, phase, compileId, level);
+  }
+}
+
+C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compileId, jobject caller, jobject callee, jboolean succeeded, jstring jmessage, jint bci))
+  EventCompilerInlining event;
+  if (event.should_commit()) {
+    Method* caller_method = JVMCIENV->asMethod(caller);
+    Method* callee_method = JVMCIENV->asMethod(callee);
+    JVMCIObject message = JVMCIENV->wrap(jmessage);
+    CompilerEvent::InlineEvent::post(event, compileId, caller_method, callee_method, succeeded, JVMCIENV->as_utf8_string(message), bci);
+  }
+}
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
@@ -2775,6 +2815,10 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "releaseFailedSpeculations",                    CC "(J)V",                                                                            FN_PTR(releaseFailedSpeculations)},
   {CC "addFailedSpeculation",                         CC "(J[B)Z",                                                                          FN_PTR(addFailedSpeculation)},
   {CC "callSystemExit",                               CC "(I)V",                                                                            FN_PTR(callSystemExit)},
+  {CC "ticksNow",                                     CC "()J",                                                                             FN_PTR(ticksNow)},
+  {CC "registerCompilerPhases",                       CC "([" STRING ")I",                                                                  FN_PTR(registerCompilerPhases)},
+  {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
+  {CC "notifyCompilerInliningEvent",                  CC "(I" HS_RESOLVED_METHOD HS_RESOLVED_METHOD "ZLjava/lang/String;I)V",               FN_PTR(notifyCompilerInliningEvent)},
 };
 
 int CompilerToVM::methods_count() {

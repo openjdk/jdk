@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,38 +38,27 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.*;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.ext.Locator2;
 
 /**
  * @author Sunitha Reddy
  */
 public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
-
     private XMLEventWriter writer;
-
 
     private XMLEventFactory eventFactory;
 
-
     private List<Collection<Namespace>> namespaceStack = new ArrayList<>();
-
 
     private boolean needToCallStartDocument = false;
 
-
     public SAX2StAXEventWriter() {
-
         eventFactory = XMLEventFactory.newInstance();
-
     }
 
-
     public SAX2StAXEventWriter(XMLEventWriter writer) {
-
         this.writer = writer;
         eventFactory = XMLEventFactory.newInstance();
-
     }
 
     public SAX2StAXEventWriter(XMLEventWriter writer,
@@ -77,50 +66,31 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
         this.writer = writer;
         if (factory != null) {
-
             this.eventFactory = factory;
-
         } else {
-
             eventFactory = XMLEventFactory.newInstance();
-
         }
-
     }
 
     public XMLEventWriter getEventWriter() {
-
         return writer;
-
     }
-
 
     public void setEventWriter(XMLEventWriter writer) {
-
         this.writer = writer;
-
     }
-
 
     public XMLEventFactory getEventFactory() {
-
         return eventFactory;
-
     }
 
-
     public void setEventFactory(XMLEventFactory factory) {
-
         this.eventFactory = factory;
-
     }
 
     public void startDocument() throws SAXException {
-
         super.startDocument();
-
         namespaceStack.clear();
-
         eventFactory.setLocation(getCurrentLocation());
 
         // Encoding and version info will be available only after startElement
@@ -129,17 +99,10 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         needToCallStartDocument = true;
     }
 
-    private void writeStartDocument() throws SAXException {
+    void writeStartDocument() throws SAXException {
+        super.writeStartDocument();
         try {
-            if (docLocator == null)
-                writer.add(eventFactory.createStartDocument());
-            else {
-                try{
-                    writer.add(eventFactory.createStartDocument(((Locator2)docLocator).getEncoding(),((Locator2)docLocator).getXMLVersion()));
-                } catch(ClassCastException e){
-                    writer.add(eventFactory.createStartDocument());
-                }
-            }
+            writer.add(eventFactory.createStartDocument(encoding, xmlVersion));
         } catch (XMLStreamException e) {
             throw new SAXException(e);
         }
@@ -147,17 +110,12 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
     }
 
     public void endDocument() throws SAXException {
-
         eventFactory.setLocation(getCurrentLocation());
 
         try {
-
             writer.add(eventFactory.createEndDocument());
-
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         }
 
         super.endDocument();
@@ -169,7 +127,6 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-
         if (needToCallStartDocument) {
             writeStartDocument();
         }
@@ -184,21 +141,15 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         namespaceStack.add(events[0]);
 
         try {
-
             String[] qname = {null, null};
             parseQName(qName, qname);
 
             writer.add(eventFactory.createStartElement(qname[0], uri,
                     qname[1], events[1].iterator(), events[0].iterator()));
-
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         } finally {
-
             super.startElement(uri, localName, qName, attributes);
-
         }
 
     }
@@ -219,16 +170,11 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         Iterator<Namespace> nsIter = nsList.iterator();
 
         try {
-
             writer.add(eventFactory.createEndElement(qname[0], uri, qname[1],
                     nsIter));
-
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         }
-
     }
 
     public void comment(char[] ch, int start, int length) throws SAXException {
@@ -243,16 +189,11 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
         eventFactory.setLocation(getCurrentLocation());
         try {
-
             writer.add(eventFactory.createComment(new String(ch, start,
                     length)));
-
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         }
-
     }
 
     public void characters(char[] ch, int start, int length)
@@ -261,21 +202,15 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         super.characters(ch, start, length);
 
         try {
-
             if (!isCDATA) {
-
                 eventFactory.setLocation(getCurrentLocation());
                 writer.add(eventFactory.createCharacters(new String(ch,
                         start, length)));
-
             }
 
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         }
-
     }
 
     public void ignorableWhitespace(char[] ch, int start, int length)
@@ -283,7 +218,6 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
         super.ignorableWhitespace(ch, start, length);
         characters(ch, start, length);
-
     }
 
     public void processingInstruction(String target, String data)
@@ -298,32 +232,22 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
         super.processingInstruction(target, data);
         try {
-
             writer.add(eventFactory.createProcessingInstruction(target, data));
-
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         }
-
     }
 
     public void endCDATA() throws SAXException {
 
         eventFactory.setLocation(getCurrentLocation());
         try {
-
             writer.add(eventFactory.createCData(CDATABuffer.toString()));
-
         } catch (XMLStreamException e) {
-
             throw new SAXException(e);
-
         }
 
         super.endCDATA();
-
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -373,45 +297,31 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
                 }
 
             } else {
-
                 Attribute attribute;
                 if (attrPrefix.length() > 0) {
-
                     attribute = eventFactory.createAttribute(attrPrefix,
                             attrURI, attrLocal, attrValue);
-
                 } else {
-
                     attribute = eventFactory.createAttribute(attrLocal,
                             attrValue);
-
                 }
 
                 if (attrs == null) {
                     attrs = new ArrayList<>();
                 }
                 attrs.add(attribute);
-
             }
         }
 
         events[0] = (nsMap == null ? Collections.EMPTY_LIST : nsMap.values());
         events[1] = (attrs == null ? Collections.EMPTY_LIST : attrs);
-
     }
 
     protected Namespace createNamespace(String prefix, String uri) {
-
         if (prefix == null || prefix.length() == 0) {
-
             return eventFactory.createNamespace(uri);
-
         } else {
-
             return eventFactory.createNamespace(prefix, uri);
-
         }
-
     }
-
 }

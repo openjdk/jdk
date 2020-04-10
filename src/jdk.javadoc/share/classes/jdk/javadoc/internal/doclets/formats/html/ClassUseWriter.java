@@ -107,11 +107,11 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, filename);
         this.typeElement = typeElement;
         if (mapper.classToPackageAnnotations.containsKey(typeElement)) {
-            pkgToPackageAnnotations = new TreeSet<>(utils.makeClassUseComparator());
+            pkgToPackageAnnotations = new TreeSet<>(comparators.makeClassUseComparator());
             pkgToPackageAnnotations.addAll(mapper.classToPackageAnnotations.get(typeElement));
         }
         configuration.currentTypeElement = typeElement;
-        this.pkgSet = new TreeSet<>(utils.makePackageComparator());
+        this.pkgSet = new TreeSet<>(comparators.makePackageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
@@ -181,7 +181,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<PackageElement, List<Element>> map = new HashMap<>();
         List<? extends Element> elements = (List<? extends Element>) classMap.get(typeElement);
         if (elements != null) {
-            Collections.sort(elements, utils.makeClassUseComparator());
+            Collections.sort(elements, comparators.makeClassUseComparator());
             for (Element e : elements) {
                 PackageElement pkg = utils.containingPackage(e);
                 pkgSet.add(pkg);
@@ -316,7 +316,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
             htmlTree.add(heading);
             addClassUse(pkg, htmlTree);
-            ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
+            ul.add(HtmlTree.LI(htmlTree));
         }
         Content li = HtmlTree.SECTION(HtmlStyle.classUses, ul);
         contentTree.add(li);

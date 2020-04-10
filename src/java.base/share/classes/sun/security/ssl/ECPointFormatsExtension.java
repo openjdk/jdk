@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,13 @@ final class ECPointFormatsExtension {
             this.formats = formats;
         }
 
-        private ECPointFormatsSpec(ByteBuffer m) throws IOException {
+        private ECPointFormatsSpec(HandshakeContext hc,
+                ByteBuffer m) throws IOException {
             if (!m.hasRemaining()) {
-                throw new SSLProtocolException(
+                throw hc.conContext.fatal(Alert.DECODE_ERROR,
+                        new SSLProtocolException(
                     "Invalid ec_point_formats extension: " +
-                    "insufficient data");
+                    "insufficient data"));
             }
 
             this.formats = Record.getBytes8(m);
@@ -117,9 +119,9 @@ final class ECPointFormatsExtension {
 
     private static final class ECPointFormatsStringizer implements SSLStringizer {
         @Override
-        public String toString(ByteBuffer buffer) {
+        public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
-                return (new ECPointFormatsSpec(buffer)).toString();
+                return (new ECPointFormatsSpec(hc, buffer)).toString();
             } catch (IOException ioe) {
                 // For debug logging only, so please swallow exceptions.
                 return ioe.getMessage();
@@ -227,12 +229,7 @@ final class ECPointFormatsExtension {
             }
 
             // Parse the extension.
-            ECPointFormatsSpec spec;
-            try {
-                spec = new ECPointFormatsSpec(buffer);
-            } catch (IOException ioe) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            ECPointFormatsSpec spec = new ECPointFormatsSpec(shc, buffer);
 
             // per RFC 4492, uncompressed points must always be supported.
             if (!spec.hasUncompressedFormat()) {
@@ -276,12 +273,7 @@ final class ECPointFormatsExtension {
             }
 
             // Parse the extension.
-            ECPointFormatsSpec spec;
-            try {
-                spec = new ECPointFormatsSpec(buffer);
-            } catch (IOException ioe) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
-            }
+            ECPointFormatsSpec spec = new ECPointFormatsSpec(chc, buffer);
 
             // per RFC 4492, uncompressed points must always be supported.
             if (!spec.hasUncompressedFormat()) {

@@ -1281,7 +1281,6 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
   const int MAXPRIVATE = 1024;
   NoSafepointVerifier nsv;
 
-  stringStream ss;
   for (;;) {
     ObjectMonitor* m;
 
@@ -1388,10 +1387,11 @@ void ObjectSynchronizer::om_release(Thread* self, ObjectMonitor* m,
   guarantee(m->object() == NULL, "invariant");
   NoSafepointVerifier nsv;
 
-  stringStream ss;
-  guarantee((m->is_busy() | m->_recursions) == 0, "freeing in-use monitor: "
-            "%s, recursions=" INTX_FORMAT, m->is_busy_to_string(&ss),
-            m->_recursions);
+  if ((m->is_busy() | m->_recursions) != 0) {
+    stringStream ss;
+    fatal("freeing in-use monitor: %s, recursions=" INTX_FORMAT,
+          m->is_busy_to_string(&ss), m->_recursions);
+  }
   // _next_om is used for both per-thread in-use and free lists so
   // we have to remove 'm' from the in-use list first (as needed).
   if (from_per_thread_alloc) {
@@ -1554,8 +1554,10 @@ void ObjectSynchronizer::om_flush(Thread* self) {
       free_tail = s;
       free_count++;
       guarantee(s->object() == NULL, "invariant");
-      stringStream ss;
-      guarantee(!s->is_busy(), "must be !is_busy: %s", s->is_busy_to_string(&ss));
+      if (s->is_busy()) {
+        stringStream ss;
+        fatal("must be !is_busy: %s", s->is_busy_to_string(&ss));
+      }
     }
     guarantee(free_tail != NULL, "invariant");
     int l_om_free_count = Atomic::load(&self->om_free_count);

@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
+import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -244,21 +245,13 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
+        BuilderFactory f = configuration.getBuilderFactory();
         for (TypeElement te : typeElems) {
             if (utils.hasHiddenTag(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
-            if (utils.isAnnotationType(te)) {
-                AbstractBuilder annotationTypeBuilder =
-                    configuration.getBuilderFactory()
-                        .getAnnotationTypeBuilder(te);
-                annotationTypeBuilder.build();
-            } else {
-                AbstractBuilder classBuilder =
-                    configuration.getBuilderFactory().getClassBuilder(te, classTree);
-                classBuilder.build();
-            }
+            f.getClassBuilder(te, classTree).build();
         }
     }
 

@@ -94,7 +94,6 @@ public class VisibleMemberTable {
         FIELDS,
         CONSTRUCTORS,
         METHODS,
-        ANNOTATION_TYPE_FIELDS,
         ANNOTATION_TYPE_MEMBER_OPTIONAL,
         ANNOTATION_TYPE_MEMBER_REQUIRED,
         PROPERTIES;
@@ -115,8 +114,6 @@ public class VisibleMemberTable {
     private List<VisibleMemberTable> allSuperinterfaces;
     private List<VisibleMemberTable> parents;
 
-
-    private Map<Kind, List<Element>> extraMembers = new EnumMap<>(Kind.class);
     private Map<Kind, List<Element>> visibleMembers = null;
     private Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
@@ -147,11 +144,6 @@ public class VisibleMemberTable {
         }
         computeParents();
         computeVisibleMembers();
-    }
-
-    List<? extends Element> getExtraMembers(Kind kind) {
-        ensureInitialized();
-        return visibleMembers.getOrDefault(kind, Collections.emptyList());
     }
 
     List<VisibleMemberTable> getAllSuperclasses() {
@@ -287,7 +279,7 @@ public class VisibleMemberTable {
         // ... and finally the sorted super interfaces.
         allSuperinterfaces.stream()
                 .map(vmt -> vmt.te)
-                .sorted(utils.makeGeneralPurposeComparator())
+                .sorted(utils.comparators.makeGeneralPurposeComparator())
                 .forEach(result::add);
 
         return result;
@@ -352,6 +344,11 @@ public class VisibleMemberTable {
     }
 
     private void computeParents() {
+        // suppress parents of annotation types
+        if (utils.isAnnotationType(te)) {
+            return;
+        }
+
         for (TypeMirror intfType : te.getInterfaces()) {
             TypeElement intfc = utils.asTypeElement(intfType);
             if (intfc != null) {
@@ -379,21 +376,12 @@ public class VisibleMemberTable {
         LocalMemberTable lmt = new LocalMemberTable();
 
         for (Kind k : Kind.values()) {
-            computeLeafMembers(lmt, k);
             computeVisibleMembers(lmt, k);
         }
         // All members have been computed, compute properties.
         computeVisibleProperties(lmt);
     }
 
-    private void computeLeafMembers(LocalMemberTable lmt, Kind kind) {
-        List<Element> list = new ArrayList<>();
-        if (utils.isUndocumentedEnclosure(te)) {
-            list.addAll(lmt.getOrderedMembers(kind));
-        }
-        parents.forEach(pvmt -> list.addAll(pvmt.getExtraMembers(kind)));
-        extraMembers.put(kind, Collections.unmodifiableList(list));
-    }
 
     void computeVisibleMembers(LocalMemberTable lmt, Kind kind) {
         switch (kind) {
@@ -453,7 +441,6 @@ public class VisibleMemberTable {
     private void computeVisibleFieldsAndInnerClasses(LocalMemberTable lmt, Kind kind) {
         Set<Element> result = new LinkedHashSet<>();
         for (VisibleMemberTable pvmt : parents) {
-            result.addAll(pvmt.getExtraMembers(kind));
             result.addAll(pvmt.getAllVisibleMembers(kind));
         }
 
@@ -488,32 +475,6 @@ public class VisibleMemberTable {
                 }
             });
             inheritedMethods.addAll(pvmt.getAllVisibleMembers(Kind.METHODS));
-
-            // Copy the extra members (if any) from the lineage.
-            if (!utils.shouldDocument(pvmt.te)) {
-                List<? extends Element> extraMethods = pvmt.getExtraMembers(Kind.METHODS);
-
-                if (lmt.getOrderedMembers(Kind.METHODS).isEmpty()) {
-                    inheritedMethods.addAll(extraMethods);
-                    continue;
-                }
-
-                // Check if an extra-method ought to percolate through.
-                for (Element extraMethod : extraMethods) {
-                    boolean found = false;
-
-                    List<Element> lmethods = lmt.getMembers(extraMethod, Kind.METHODS);
-                    for (Element lmethod : lmethods) {
-                        ExecutableElement method = (ExecutableElement)lmethod;
-                        found = utils.elementUtils.overrides(method,
-                                (ExecutableElement)extraMethod, te);
-                        if (found)
-                            break;
-                    }
-                    if (!found)
-                        inheritedMethods.add(extraMethod);
-                }
-            }
         }
 
         // Filter out inherited methods that:
@@ -532,15 +493,14 @@ public class VisibleMemberTable {
             OverridingMethodInfo p = overriddenMethodTable.getOrDefault(m, null);
             return p == null || !p.simpleOverride;
         };
-        List<Element> mlist = lmt.getOrderedMembers(Kind.METHODS);
-        List<Element> llist = mlist.stream()
+        List<Element> localList = lmt.getOrderedMembers(Kind.METHODS)
+                .stream()
                 .map(m -> (ExecutableElement)m)
                 .filter(isVisible)
                 .collect(Collectors.toList());
 
-        // Merge the above lists, making sure the local methods precede
-        // the others
-        list.addAll(0, llist);
+        // Merge the above lists, making sure the local methods precede the others
+        list.addAll(0, localList);
 
         // Final filtration of elements
         list = list.stream()
@@ -673,16 +633,16 @@ public class VisibleMemberTable {
                         break;
                     case FIELD:
                         addMember(e, Kind.FIELDS);
-                        addMember(e, Kind.ANNOTATION_TYPE_FIELDS);
                         break;
                     case METHOD:
-                        ExecutableElement ee = (ExecutableElement)e;
                         if (utils.isAnnotationType(te)) {
+                            ExecutableElement ee = (ExecutableElement) e;
                             addMember(e, ee.getDefaultValue() == null
                                     ? Kind.ANNOTATION_TYPE_MEMBER_REQUIRED
                                     : Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
+                        } else {
+                            addMember(e, Kind.METHODS);
                         }
-                        addMember(e, Kind.METHODS);
                         break;
                     case CONSTRUCTOR:
                             addMember(e, Kind.CONSTRUCTORS);
@@ -893,12 +853,9 @@ public class VisibleMemberTable {
 
         private final Map<ExecutableElement, TypeMirror> interfaces = new HashMap<>();
         private final List<ExecutableElement> methlist = new ArrayList<>();
-        private final TypeElement typeElement;
-        private final ExecutableElement method;
 
         public ImplementedMethods(ExecutableElement method) {
-            this.method = method;
-            typeElement = utils.getEnclosingTypeElement(method);
+            TypeElement typeElement = utils.getEnclosingTypeElement(method);
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
             /*
              * Search for the method in the list of interfaces. If found check if it is

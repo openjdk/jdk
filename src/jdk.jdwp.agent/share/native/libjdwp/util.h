@@ -414,4 +414,6 @@ void createLocalRefSpace(JNIEnv *env, jint capacity);
 void saveGlobalRef(JNIEnv *env, jobject obj, jobject *pobj);
 void tossGlobalRef(JNIEnv *env, jobject *pobj);
 
+jvmtiEnv* getSpecialJvmti(void);
+
 #endif

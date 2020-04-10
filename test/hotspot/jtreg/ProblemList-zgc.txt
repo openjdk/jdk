@@ -28,10 +28,18 @@
 #############################################################################
 
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8220624   generic-all
+serviceability/sa/CDSJMapClstats.java                         8220624   generic-all
+serviceability/sa/ClhsdClasses.java                           8220624   generic-all
+serviceability/sa/ClhsdbDumpheap.java                         8220624   generic-all
+serviceability/sa/ClhsdbCDSJstackPrintAll.java                8220624   generic-all
+serviceability/sa/ClhsdbFindPC.java#id0                       8220624   generic-all
+serviceability/sa/ClhsdbFindPC.java#id1                       8220624   generic-all
 serviceability/sa/ClhsdbInspect.java                          8220624   generic-all
 serviceability/sa/ClhsdbJdis.java                             8220624   generic-all
 serviceability/sa/ClhsdbJhisto.java                           8220624   generic-all
-serviceability/sa/ClhsdbJstack.java                           8220624   generic-all
+serviceability/sa/ClhsdbJstack.java#id0                       8220624   generic-all
+serviceability/sa/ClhsdbJstack.java#id1                       8220624   generic-all
+serviceability/sa/ClhsdbJstackXcompStress.java                8220624   generic-all
 serviceability/sa/ClhsdbPrintAs.java                          8220624   generic-all
 serviceability/sa/ClhsdbPrintStatics.java                     8220624   generic-all
 serviceability/sa/ClhsdbPstack.java                           8220624   generic-all
@@ -48,4 +56,5 @@ serviceability/sa/TestJhsdbJstackLock.java                    8220624   generic-
 serviceability/sa/TestJhsdbJstackMixed.java                   8220624   generic-all
 serviceability/sa/TestJmapCore.java                           8220624   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8220624   generic-all
+serviceability/sa/TestSysProps.java                           8220624   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8220624   generic-all

@@ -25,8 +25,8 @@
  * @test
  * @bug 8223775
  * @summary This exercises String#stripIndent patterns and limits.
- * @compile --enable-preview -source ${jdk.version} StripIndent.java
- * @run main/othervm --enable-preview StripIndent
+ * @compile StripIndent.java
+ * @run main StripIndent
  */
 
 public class StripIndent {

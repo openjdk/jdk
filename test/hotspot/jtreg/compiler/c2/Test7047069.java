@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,20 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7047069
  * @summary Array can dynamically change size when assigned to an object field
  * @modules java.desktop
  *
+ * @library /test/lib
  * @run main/othervm -Xbatch compiler.c2.Test7047069
  */
 
 package compiler.c2;
 
 import java.awt.geom.Line2D;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class Test7047069 {
     static boolean verbose;
@@ -119,12 +123,13 @@ public class Test7047069 {
         this.squareflat = .0001f * .0001f;
         holdIndex = hold.length - 6;
         holdEnd = hold.length - 2;
-        hold[holdIndex + 0] = (float) (Math.random() * 100);
-        hold[holdIndex + 1] = (float) (Math.random() * 100);
-        hold[holdIndex + 2] = (float) (Math.random() * 100);
-        hold[holdIndex + 3] = (float) (Math.random() * 100);
-        hold[holdIndex + 4] = (float) (Math.random() * 100);
-        hold[holdIndex + 5] = (float) (Math.random() * 100);
+        Random rng = Utils.getRandomInstance();
+        hold[holdIndex + 0] = (float) (rng.nextDouble() * 100);
+        hold[holdIndex + 1] = (float) (rng.nextDouble() * 100);
+        hold[holdIndex + 2] = (float) (rng.nextDouble() * 100);
+        hold[holdIndex + 3] = (float) (rng.nextDouble() * 100);
+        hold[holdIndex + 4] = (float) (rng.nextDouble() * 100);
+        hold[holdIndex + 5] = (float) (rng.nextDouble() * 100);
         levelIndex = 0;
         this.limit = 10;
         this.levels = new int[limit + 1];

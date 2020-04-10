@@ -59,7 +59,7 @@ ShenandoahHeapRegionSet::~ShenandoahHeapRegionSet() {
 
 void ShenandoahHeapRegionSet::add_region(ShenandoahHeapRegion* r) {
   assert(!is_in(r), "Already in collection set");
-  _set_map[r->region_number()] = 1;
+  _set_map[r->index()] = 1;
   _region_count++;
 }
 
@@ -76,7 +76,7 @@ void ShenandoahHeapRegionSet::remove_region(ShenandoahHeapRegion* r) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(is_in(r), "Not in region set");
-  _set_map[r->region_number()] = 0;
+  _set_map[r->index()] = 0;
   _region_count --;
 }
 

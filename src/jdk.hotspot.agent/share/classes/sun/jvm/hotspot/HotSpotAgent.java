@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class HotSpotAgent {
     private String javaExecutableName;
     private String coreFileName;
     private String debugServerID;
+    private int rmiPort;
 
     // All needed information for server side
     private String serverID;
@@ -200,8 +201,12 @@ public class HotSpotAgent {
     /** This attaches to a process running on the local machine and
       starts a debug server, allowing remote machines to connect and
       examine this process. Uses specified name to uniquely identify a
-      specific debuggee on the server */
-    public synchronized void startServer(int processID, String uniqueID) {
+      specific debuggee on the server. Allows to specify the port number
+      to which the RMI connector is bound. If not specified a random
+      available port is used. */
+    public synchronized void startServer(int processID,
+                                         String uniqueID,
+                                         int rmiPort) {
         if (debugger != null) {
             throw new DebuggerException("Already attached");
         }
@@ -209,7 +214,16 @@ public class HotSpotAgent {
         startupMode = PROCESS_MODE;
         isServer = true;
         serverID = uniqueID;
+        this.rmiPort = rmiPort;
         go();
+    }
+
+    /** This attaches to a process running on the local machine and
+     starts a debug server, allowing remote machines to connect and
+     examine this process. Uses specified name to uniquely identify a
+     specific debuggee on the server */
+    public synchronized void startServer(int processID, String uniqueID) {
+        startServer(processID, uniqueID, 0);
     }
 
     /** This attaches to a process running on the local machine and
@@ -223,10 +237,12 @@ public class HotSpotAgent {
     /** This opens a core file on the local machine and starts a debug
       server, allowing remote machines to connect and examine this
       core file. Uses supplied uniqueID to uniquely identify a specific
-      debugee */
+      debuggee. Allows to specify the port number to which the RMI connector
+      is bound. If not specified a random available port is used.  */
     public synchronized void startServer(String javaExecutableName,
-    String coreFileName,
-    String uniqueID) {
+                                         String coreFileName,
+                                         String uniqueID,
+                                         int rmiPort) {
         if (debugger != null) {
             throw new DebuggerException("Already attached");
         }
@@ -238,7 +254,18 @@ public class HotSpotAgent {
         startupMode = CORE_FILE_MODE;
         isServer = true;
         serverID = uniqueID;
+        this.rmiPort = rmiPort;
         go();
+    }
+
+    /** This opens a core file on the local machine and starts a debug
+     server, allowing remote machines to connect and examine this
+     core file. Uses supplied uniqueID to uniquely identify a specific
+     debugee */
+    public synchronized void startServer(String javaExecutableName,
+                                         String coreFileName,
+                                         String uniqueID) {
+        startServer(javaExecutableName, coreFileName, uniqueID, 0);
     }
 
     /** This opens a core file on the local machine and starts a debug
@@ -349,7 +376,7 @@ public class HotSpotAgent {
             if (isServer) {
                 RemoteDebuggerServer remote = null;
                 try {
-                    remote = new RemoteDebuggerServer(debugger);
+                    remote = new RemoteDebuggerServer(debugger, rmiPort);
                 }
                 catch (RemoteException rem) {
                     throw new DebuggerException(rem);

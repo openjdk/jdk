@@ -177,11 +177,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    public Content getMethodDoc(Content methodDocTree) {
-        return getMemberTree(methodDocTree);
-    }
-
-    @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.methodSummary);
@@ -319,7 +314,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         VisibleMemberTable vmt = writer.configuration
                 .getVisibleMemberTable(utils.getEnclosingTypeElement(method));
         SortedSet<ExecutableElement> implementedMethods =
-                new TreeSet<>(utils.makeOverrideUseComparator());
+                new TreeSet<>(utils.comparators.makeOverrideUseComparator());
         implementedMethods.addAll(vmt.getImplementedMethods(method));
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);

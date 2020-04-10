@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,47 +42,47 @@ import javax.security.auth.callback.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
-  * An implementation of the DIGEST-MD5 server SASL mechanism.
-  * (<a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>)
-  * <p>
-  * The DIGEST-MD5 SASL mechanism specifies two modes of authentication.
-  * <ul><li>Initial Authentication
-  * <li>Subsequent Authentication - optional, (currently not supported)
-  * </ul>
-  *
-  * Required callbacks:
-  * - RealmCallback
-  *      used as key by handler to fetch password
-  * - NameCallback
-  *      used as key by handler to fetch password
-  * - PasswordCallback
-  *      handler must enter password for username/realm supplied
-  * - AuthorizeCallback
-  *      handler must verify that authid/authzids are allowed and set
-  *      authorized ID to be the canonicalized authzid (if applicable).
-  *
-  * Environment properties that affect the implementation:
-  * javax.security.sasl.qop:
-  *    specifies list of qops; default is "auth"; typically, caller should set
-  *    this to "auth, auth-int, auth-conf".
-  * javax.security.sasl.strength
-  *    specifies low/medium/high strength of encryption; default is all available
-  *    ciphers [high,medium,low]; high means des3 or rc4 (128); medium des or
-  *    rc4-56; low is rc4-40.
-  * javax.security.sasl.maxbuf
-  *    specifies max receive buf size; default is 65536
-  * javax.security.sasl.sendmaxbuffer
-  *    specifies max send buf size; default is 65536 (min of this and client's max
-  *    recv size)
-  *
-  * com.sun.security.sasl.digest.utf8:
-  *    "true" means to use UTF-8 charset; "false" to use ISO-8859-1 encoding;
-  *    default is "true".
-  * com.sun.security.sasl.digest.realm:
-  *    space-separated list of realms; default is server name (fqdn parameter)
-  *
-  * @author Rosanna Lee
-  */
+ * An implementation of the DIGEST-MD5 server SASL mechanism.
+ * (<a href="http://www.ietf.org/rfc/rfc2831.txt">RFC 2831</a>)
+ * <p>
+ * The DIGEST-MD5 SASL mechanism specifies two modes of authentication.
+ * <ul><li>Initial Authentication
+ * <li>Subsequent Authentication - optional, (currently not supported)
+ * </ul>
+ *
+ * Required callbacks:
+ * - RealmCallback
+ *      used as key by handler to fetch password
+ * - NameCallback
+ *      used as key by handler to fetch password
+ * - PasswordCallback
+ *      handler must enter password for username/realm supplied
+ * - AuthorizeCallback
+ *      handler must verify that authid/authzids are allowed and set
+ *      authorized ID to be the canonicalized authzid (if applicable).
+ *
+ * Environment properties that affect the implementation:
+ * javax.security.sasl.qop:
+ *    specifies list of qops; default is "auth"; typically, caller should set
+ *    this to "auth, auth-int, auth-conf".
+ * javax.security.sasl.strength
+ *    specifies low/medium/high strength of encryption; default is all available
+ *    ciphers [high,medium,low]; high means des3 or rc4 (128); medium des or
+ *    rc4-56; low is rc4-40.
+ * javax.security.sasl.maxbuf
+ *    specifies max receive buf size; default is 65536
+ * javax.security.sasl.sendmaxbuffer
+ *    specifies max send buf size; default is 65536 (min of this and client's max
+ *    recv size)
+ *
+ * com.sun.security.sasl.digest.utf8:
+ *    "true" means to use UTF-8 charset; "false" to use ISO-8859-1 encoding;
+ *    default is "true".
+ * com.sun.security.sasl.digest.realm:
+ *    space-separated list of realms; default is server name (fqdn parameter)
+ *
+ * @author Rosanna Lee
+ */
 
 final class DigestMD5Server extends DigestMD5Base implements SaslServer {
     private static final String MY_CLASS_NAME = DigestMD5Server.class.getName();

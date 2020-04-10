@@ -432,7 +432,8 @@ public class TagletWriterImpl extends TagletWriter {
                     @Override
                     public Void visitExecutable(ExecutableElement e, Void p) {
                         si.setHolder(utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
-                                             + "." + utils.getSimpleName(e) + utils.flatSignature(e));
+                                             + "." + utils.getSimpleName(e)
+                                             + utils.flatSignature(e, htmlWriter.getCurrentPageElement()));
                         return null;
                     }
 

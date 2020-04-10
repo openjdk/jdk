@@ -29,7 +29,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 
@@ -70,9 +69,6 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
   msg.append("    %3s marked \n",                    ctx->is_marked(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
-  if (heap->traversal_gc() != NULL) {
-    msg.append("    %3s in traversal set\n",         heap->traversal_gc()->traversal_set()->is_in(obj) ? "" : "not");
-  }
   msg.append("  mark:%s\n", mw_ss.as_string());
   msg.append("  region: %s", ss.as_string());
 }
@@ -169,7 +165,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
 }
 
 void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (!heap->is_in(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_heap failed",
@@ -179,7 +175,7 @@ void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *
 }
 
 void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
@@ -247,7 +243,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
   if (!r->is_active()) {
     print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_correct_region failed",
@@ -257,7 +253,7 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
 
   size_t alloc_size = obj->size();
   if (alloc_size > ShenandoahHeapRegion::humongous_threshold_words()) {
-    size_t idx = r->region_number();
+    size_t idx = r->index();
     size_t num_regions = ShenandoahHeapRegion::required_regions(alloc_size * HeapWordSize);
     for (size_t i = idx; i < idx + num_regions; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
@@ -300,7 +296,7 @@ void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const 
 void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->marking_context()->is_marked(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked failed",
                   "Object should be marked",
@@ -311,7 +307,7 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->in_collection_set(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_in_cset failed",
                   "Object should be in collection set",
@@ -322,7 +318,7 @@ void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* 
 void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->in_collection_set(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_not_in_cset failed",
                   "Object should not be in collection set",
@@ -331,7 +327,7 @@ void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const ch
 }
 
 void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->in_collection_set_loc(interior_loc)) {
     print_failure(_safe_unknown, NULL, interior_loc, NULL, "Shenandoah assert_not_in_cset_loc failed",
                   "Interior location should not be in collection set",
@@ -374,5 +370,42 @@ void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const
   }
 
   ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_heaplocked(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_not_heaplocked(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (!heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must not be owned by current thread");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
   report_vm_error(file, line, msg.buffer());
 }

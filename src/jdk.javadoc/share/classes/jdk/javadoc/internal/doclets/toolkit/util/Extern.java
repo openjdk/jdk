@@ -89,7 +89,7 @@ public class Extern {
     /**
      * Stores the info for one external doc set
      */
-    private class Item {
+    private static class Item {
 
         /**
          * Element name, found in the "element-list" file in the {@link #path}.
@@ -252,7 +252,7 @@ public class Extern {
         }
     }
 
-    private class Fault extends Exception {
+    private static class Fault extends Exception {
         private static final long serialVersionUID = 0;
 
         Fault(String msg, Exception cause) {
@@ -275,12 +275,6 @@ public class Extern {
             ModuleElement moduleElement = utils.containingModule(packageElement);
             Map<String, Item> pkgMap = packageItems.get(utils.getModuleName(moduleElement));
             item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(packageElement)) : null;
-            if (item == null && isAutomaticModule(moduleElement)) {
-                pkgMap = packageItems.get(utils.getModuleName(null));
-                if (pkgMap != null) {
-                    item = pkgMap.get(utils.getPackageName(packageElement));
-                }
-            }
         }
         return item;
     }
@@ -384,7 +378,7 @@ public class Extern {
      * @throws IOException if there is a problem reading or closing the stream
      */
     private void readElementList(InputStream input, String path, boolean relative)
-                         throws Fault, IOException {
+                         throws IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
             String elemname;
             DocPath elempath;
@@ -404,11 +398,9 @@ public class Extern {
                         } else {
                             elempath = elempath.resolve(pkgPath);
                         }
-                        checkLinkCompatibility(elemname, moduleName, path);
+                        String actualModuleName = checkLinkCompatibility(elemname, moduleName, path);
                         Item item = new Item(elemname, elempath, relative);
-                        packageItems.computeIfAbsent(
-                                moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName,
-                                k -> new TreeMap<>())
+                        packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
                     }
                 }
@@ -416,23 +408,38 @@ public class Extern {
         }
     }
 
-    private void checkLinkCompatibility(String packageName, String moduleName, String path) throws Fault {
+    /**
+     * Check if the external documentation format matches our internal model of the code.
+     * Returns the module name to use for external reference lookup according to the actual
+     * modularity of the external package (and regardless of modularity of documentation).
+     *
+     * @param packageName the package name
+     * @param moduleName the module name or null
+     * @param path the documentation path
+     * @return the module name to use according to actual modularity of the package
+     */
+    private String checkLinkCompatibility(String packageName, String moduleName, String path)  {
         PackageElement pe = utils.elementUtils.getPackageElement(packageName);
         if (pe != null) {
             ModuleElement me = (ModuleElement)pe.getEnclosingElement();
             if (me == null || me.isUnnamed()) {
                 if (moduleName != null) {
-                    throw new Fault(resources.getText("doclet.linkMismatch_PackagedLinkedtoModule",
-                            path), null);
+                    configuration.getReporter().print(Kind.WARNING,
+                            resources.getText("doclet.linkMismatch_PackagedLinkedtoModule", path));
                 }
+                // library is not modular, ignore module name even if documentation is modular
+                return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
-                // suppress the error message in the case of automatic modules
+                // suppress the warning message in the case of automatic modules
                 if (!isAutomaticModule(me)) {
-                    throw new Fault(resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
-                            path), null);
+                    configuration.getReporter().print(Kind.WARNING,
+                            resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
+                // library is modular, use module name for lookup even though documentation is not
+                return utils.getModuleName(me);
             }
         }
+        return moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
     }
 
     // The following should be replaced by a new method such as Elements.isAutomaticModule

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,10 +311,10 @@ final class BasicPermissionCollection
     private static final long serialVersionUID = 739301742472979399L;
 
     /**
-      * Key is name, value is permission. All permission objects in
-      * collection must be of the same type.
-      * Not serialized; see serialization section at end of class.
-      */
+     * Key is name, value is permission. All permission objects in
+     * collection must be of the same type.
+     * Not serialized; see serialization section at end of class.
+     */
     private transient ConcurrentHashMap<String, Permission> perms;
 
     /**

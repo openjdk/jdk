@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,20 @@
 
 package jdk.internal.net.http;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.Permission;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -50,6 +50,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.net.http.HttpRequest.BodyPublisher;
 import jdk.internal.net.http.common.Utils;
@@ -220,17 +221,17 @@ public final class RequestPublishers {
 
     /**
      * Publishes the content of a given file.
-     *
+     * <p>
      * Privileged actions are performed within a limited doPrivileged that only
      * asserts the specific, read, file permission that was checked during the
-     * construction of this FilePublisher.
+     * construction of this FilePublisher. This only applies if the file system
+     * that created the file provides interoperability with {@code java.io.File}.
      */
-    public static class FilePublisher implements BodyPublisher  {
+    public static class FilePublisher implements BodyPublisher {
 
-        private static final FilePermission[] EMPTY_FILE_PERMISSIONS = new FilePermission[0];
-
-        private final File file;
-        private final FilePermission[] filePermissions;
+        private final Path path;
+        private final long length;
+        private final Function<Path, InputStream> inputStreamSupplier;
 
         private static String pathForSecurityCheck(Path path) {
             return path.toFile().getPath();
@@ -243,48 +244,112 @@ public final class RequestPublishers {
          * FilePublisher. Permission checking and construction are deliberately
          * and tightly co-located.
          */
-        public static FilePublisher create(Path path) throws FileNotFoundException {
-            FilePermission filePermission = null;
+        public static FilePublisher create(Path path)
+                throws FileNotFoundException {
             SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
+            FilePermission filePermission = null;
+            boolean defaultFS = true;
+
+            try {
                 String fn = pathForSecurityCheck(path);
-                FilePermission readPermission = new FilePermission(fn, "read");
-                sm.checkPermission(readPermission);
-                filePermission = readPermission;
+                if (sm != null) {
+                    FilePermission readPermission = new FilePermission(fn, "read");
+                    sm.checkPermission(readPermission);
+                    filePermission = readPermission;
+                }
+            } catch (UnsupportedOperationException uoe) {
+                defaultFS = false;
+                // Path not associated with the default file system
+                // Test early if an input stream can still be obtained
+                try {
+                    if (sm != null) {
+                        Files.newInputStream(path).close();
+                    }
+                } catch (IOException ioe) {
+                    if (ioe instanceof FileNotFoundException) {
+                        throw (FileNotFoundException) ioe;
+                    } else {
+                        var ex = new FileNotFoundException(ioe.getMessage());
+                        ex.initCause(ioe);
+                        throw ex;
+                    }
+                }
             }
 
             // existence check must be after permission checks
             if (Files.notExists(path))
                 throw new FileNotFoundException(path + " not found");
 
-            return new FilePublisher(path, filePermission);
+            Permission perm = filePermission;
+            assert perm == null || perm.getActions().equals("read");
+            AccessControlContext acc = sm != null ?
+                    AccessController.getContext() : null;
+            boolean finalDefaultFS = defaultFS;
+            Function<Path, InputStream> inputStreamSupplier = (p) ->
+                    createInputStream(p, acc, perm, finalDefaultFS);
+
+            long length;
+            try {
+                length = Files.size(path);
+            } catch (IOException ioe) {
+                length = -1;
+            }
+
+            return new FilePublisher(path, length, inputStreamSupplier);
         }
 
-        private FilePublisher(Path name, FilePermission filePermission) {
-            assert filePermission != null ? filePermission.getActions().equals("read") : true;
-            file = name.toFile();
-            this.filePermissions = filePermission == null ? EMPTY_FILE_PERMISSIONS
-                    : new FilePermission[] { filePermission };
+        private static InputStream createInputStream(Path path,
+                                                     AccessControlContext acc,
+                                                     Permission perm,
+                                                     boolean defaultFS) {
+            try {
+                if (acc != null) {
+                    PrivilegedExceptionAction<InputStream> pa = defaultFS
+                            ? () -> new FileInputStream(path.toFile())
+                            : () -> Files.newInputStream(path);
+                    return perm != null
+                            ? AccessController.doPrivileged(pa, acc, perm)
+                            : AccessController.doPrivileged(pa, acc);
+                } else {
+                    return defaultFS
+                            ? new FileInputStream(path.toFile())
+                            : Files.newInputStream(path);
+                }
+            } catch (PrivilegedActionException pae) {
+                throw toUncheckedException(pae.getCause());
+            } catch (IOException io) {
+                throw new UncheckedIOException(io);
+            }
+        }
+
+        private static RuntimeException toUncheckedException(Throwable t) {
+            if (t instanceof RuntimeException)
+                throw (RuntimeException) t;
+            if (t instanceof Error)
+                throw (Error) t;
+            if (t instanceof IOException)
+                throw new UncheckedIOException((IOException) t);
+            throw new UndeclaredThrowableException(t);
+        }
+
+        private FilePublisher(Path name,
+                              long length,
+                              Function<Path, InputStream> inputStreamSupplier) {
+            path = name;
+            this.length = length;
+            this.inputStreamSupplier = inputStreamSupplier;
         }
 
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             InputStream is = null;
             Throwable t = null;
-            if (System.getSecurityManager() == null) {
-                try {
-                    is = new FileInputStream(file);
-                } catch (IOException ioe) {
-                    t = ioe;
-                }
-            } else {
-                try {
-                    PrivilegedExceptionAction<FileInputStream> pa =
-                            () -> new FileInputStream(file);
-                    is = AccessController.doPrivileged(pa, null, filePermissions);
-                } catch (PrivilegedActionException pae) {
-                    t = pae.getCause();
-                }
+            try {
+                is = inputStreamSupplier.apply(path);
+            } catch (UncheckedIOException | UndeclaredThrowableException ue) {
+                t = ue.getCause();
+            } catch (Throwable th) {
+                t = th;
             }
             final InputStream fis = is;
             PullPublisher<ByteBuffer> publisher;
@@ -298,12 +363,7 @@ public final class RequestPublishers {
 
         @Override
         public long contentLength() {
-            if (System.getSecurityManager() == null) {
-                return file.length();
-            } else {
-                PrivilegedAction<Long> pa = () -> file.length();
-                return AccessController.doPrivileged(pa, null, filePermissions);
-            }
+            return length;
         }
     }
 
@@ -313,6 +373,7 @@ public final class RequestPublishers {
     public static class StreamIterator implements Iterator<ByteBuffer> {
         final InputStream is;
         final Supplier<? extends ByteBuffer> bufSupplier;
+        private volatile boolean eof;
         volatile ByteBuffer nextBuffer;
         volatile boolean need2Read = true;
         volatile boolean haveNext;
@@ -331,6 +392,8 @@ public final class RequestPublishers {
 //        }
 
         private int read() {
+            if (eof)
+                return -1;
             nextBuffer = bufSupplier.get();
             nextBuffer.clear();
             byte[] buf = nextBuffer.array();
@@ -339,6 +402,7 @@ public final class RequestPublishers {
             try {
                 int n = is.read(buf, offset, cap);
                 if (n == -1) {
+                    eof = true;
                     is.close();
                     return -1;
                 }

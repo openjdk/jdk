@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,7 +378,7 @@ public abstract class Executable extends AccessibleObject
     private void verifyParameters(final Parameter[] parameters) {
         final int mask = Modifier.FINAL | Modifier.SYNTHETIC | Modifier.MANDATED;
 
-        if (getParameterTypes().length != parameters.length)
+        if (getParameterCount() != parameters.length)
             throw new MalformedParametersException("Wrong number of parameters in MethodParameters attribute");
 
         for (Parameter parameter : parameters) {
@@ -544,6 +544,9 @@ public abstract class Executable extends AccessibleObject
      * ("synthetic") to the parameter list for a method.  See {@link
      * java.lang.reflect.Parameter} for more information.
      *
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
+     *
      * @see java.lang.reflect.Parameter
      * @see java.lang.reflect.Parameter#getAnnotations
      * @return an array of arrays that represent the annotations on
@@ -577,6 +580,7 @@ public abstract class Executable extends AccessibleObject
      * {@inheritDoc}
      * @throws NullPointerException  {@inheritDoc}
      */
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
         return annotationClass.cast(declaredAnnotations().get(annotationClass));
@@ -584,6 +588,7 @@ public abstract class Executable extends AccessibleObject
 
     /**
      * {@inheritDoc}
+     *
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -596,6 +601,7 @@ public abstract class Executable extends AccessibleObject
     /**
      * {@inheritDoc}
      */
+    @Override
     public Annotation[] getDeclaredAnnotations()  {
         return AnnotationParser.toArray(declaredAnnotations());
     }

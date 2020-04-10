@@ -3086,7 +3086,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ set_last_Java_frame(SP, noreg);
 
   Register saved_O7 = O7->after_save();
-  if (!cause_return && SafepointMechanism::uses_thread_local_poll()) {
+  if (!cause_return) {
     // Keep a copy of the return pc in L0 to detect if it gets modified
     __ mov(saved_O7, L0);
     // Adjust and keep a copy of our npc saved by the signal handler
@@ -3117,7 +3117,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), O1);
   __ br_notnull_short(O1, Assembler::pn, pending);
 
-  if (!cause_return && SafepointMechanism::uses_thread_local_poll()) {
+  if (!cause_return) {
     // If nobody modified our return pc then we must return to the npc which he saved in L1
     __ cmp(saved_O7, L0);
     __ movcc(Assembler::equal, false, Assembler::ptr_cc, L1, saved_O7);

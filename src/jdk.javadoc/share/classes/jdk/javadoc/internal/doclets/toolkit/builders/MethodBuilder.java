@@ -78,7 +78,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
             TypeElement typeElement,
             MethodWriter writer) {
         super(context, typeElement);
-        this.writer = writer;
+        this.writer = Objects.requireNonNull(writer);
         methods = getVisibleMembers(METHODS);
     }
 
@@ -109,16 +109,13 @@ public class MethodBuilder extends AbstractMemberBuilder {
     /**
      * Build the method documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param detailsList the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMethodDoc(Content memberDetailsTree) throws DocletException {
-        if (writer == null) {
-            return;
-        }
+    protected void buildMethodDoc(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
-            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(memberDetailsTree);
-            Content methodDetailsTree = writer.getMemberTreeHeader();
+            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(detailsList);
+            Content memberList = writer.getMemberList();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
@@ -129,9 +126,10 @@ public class MethodBuilder extends AbstractMemberBuilder {
                 buildMethodComments(methodDocTree);
                 buildTagInfo(methodDocTree);
 
-                methodDetailsTree.add(writer.getMethodDoc(methodDocTree));
+                memberList.add(writer.getMemberListItem(methodDocTree));
             }
-            memberDetailsTree.add(writer.getMethodDetails(methodDetailsTreeHeader, methodDetailsTree));
+            Content methodDetails = writer.getMethodDetails(methodDetailsTreeHeader, memberList);
+            detailsList.add(methodDetails);
         }
     }
 
@@ -155,7 +153,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the method.  Do nothing if
-     * {@link BaseOptions#noComment} is set to true.
+     * {@link BaseOptions#noComment()} is set to true.
      *
      * @param methodDocTree the content tree to which the documentation will be added
      */

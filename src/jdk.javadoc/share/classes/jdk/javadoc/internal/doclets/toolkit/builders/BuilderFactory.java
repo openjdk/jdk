@@ -33,7 +33,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
@@ -118,18 +117,6 @@ public class BuilderFactory {
     }
 
     /**
-     * Return the builder for the annotation type.
-     *
-     * @param annotationType the annotation type being documented.
-     * @return the writer for the annotation type.  Return null if this
-     * writer is not supported by the doclet.
-     */
-    public AbstractBuilder getAnnotationTypeBuilder(TypeElement annotationType) {
-        return AnnotationTypeBuilder.getInstance(context, annotationType,
-            writerFactory.getAnnotationTypeWriter(annotationType));
-    }
-
-    /**
      * Return an instance of the method builder for the given class.
      *
      * @param classWriter the writer for the enclosing class
@@ -141,48 +128,33 @@ public class BuilderFactory {
     }
 
     /**
-     * Return an instance of the annotation type fields builder for the given
-     * class.
-     *
-     * @param annotationTypeWriter the writer for the enclosing annotation type
-     * @return an instance of the annotation type field builder for the given
-     *         annotation type.
-     */
-    public AbstractMemberBuilder getAnnotationTypeFieldsBuilder(
-            AnnotationTypeWriter annotationTypeWriter) {
-        return AnnotationTypeFieldBuilder.getInstance(context,
-                annotationTypeWriter.getAnnotationTypeElement(),
-                writerFactory.getAnnotationTypeFieldWriter(annotationTypeWriter));
-    }
-
-    /**
      * Return an instance of the annotation type member builder for the given
      * class.
      *
-     * @param annotationTypeWriter the writer for the enclosing annotation type
+     * @param classWriter the writer for the enclosing annotation type
      * @return an instance of the annotation type member builder for the given
      *         annotation type.
      */
     public AbstractMemberBuilder getAnnotationTypeOptionalMemberBuilder(
-            AnnotationTypeWriter annotationTypeWriter) {
+            ClassWriter classWriter) {
         return AnnotationTypeOptionalMemberBuilder.getInstance(context,
-            annotationTypeWriter.getAnnotationTypeElement(),
-            writerFactory.getAnnotationTypeOptionalMemberWriter(annotationTypeWriter));
+            classWriter.getTypeElement(),
+            writerFactory.getAnnotationTypeOptionalMemberWriter(classWriter));
     }
 
     /**
      * Return an instance of the annotation type member builder for the given
      * class.
      *
-     * @param annotationTypeWriter the writer for the enclosing annotation type
+     * @param classWriter the writer for the enclosing annotation type
      * @return an instance of the annotation type member builder for the given
      *         annotation type.
      */
     public AbstractMemberBuilder getAnnotationTypeRequiredMemberBuilder(
-            AnnotationTypeWriter annotationTypeWriter) {
+            ClassWriter classWriter) {
         return AnnotationTypeRequiredMemberBuilder.getInstance(context,
-            annotationTypeWriter.getAnnotationTypeElement(),
-            writerFactory.getAnnotationTypeRequiredMemberWriter(annotationTypeWriter));
+            classWriter.getTypeElement(),
+            writerFactory.getAnnotationTypeRequiredMemberWriter(classWriter));
     }
 
     /**
@@ -240,18 +212,6 @@ public class BuilderFactory {
      */
     public MemberSummaryBuilder getMemberSummaryBuilder(ClassWriter classWriter) {
         return MemberSummaryBuilder.getInstance(classWriter, context);
-    }
-
-    /**
-     * Return an instance of the member summary builder for the given annotation
-     * type.
-     *
-     * @param annotationTypeWriter the writer for the enclosing annotation type
-     * @return an instance of the member summary builder for the given
-     *         annotation type.
-     */
-    public MemberSummaryBuilder getMemberSummaryBuilder(AnnotationTypeWriter annotationTypeWriter) {
-        return MemberSummaryBuilder.getInstance(annotationTypeWriter, context);
     }
 
     /**

@@ -108,13 +108,16 @@ static ModuleEntry* get_module_entry(jobject module, TRAPS) {
   return java_lang_Module::module_entry(m);
 }
 
-static PackageEntry* get_package_entry(ModuleEntry* module_entry, const char* package_name, TRAPS) {
-  ResourceMark rm(THREAD);
-  if (package_name == NULL) return NULL;
+
+static PackageEntry* get_locked_package_entry(ModuleEntry* module_entry, const char* package_name, TRAPS) {
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
+  assert(package_name != NULL, "Precondition");
   TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name);
   PackageEntryTable* package_entry_table = module_entry->loader_data()->packages();
   assert(package_entry_table != NULL, "Unexpected null package entry table");
-  return package_entry_table->lookup_only(pkg_symbol);
+  PackageEntry* package_entry = package_entry_table->locked_lookup_only(pkg_symbol);
+  assert(package_entry == NULL || package_entry->module() == module_entry, "Unexpectedly found a package linked to another module");
+  return package_entry;
 }
 
 static PackageEntry* get_package_entry_by_name(Symbol* package,
@@ -525,32 +528,35 @@ void Modules::add_module_exports(jobject from_module, const char* package_name, 
     }
   }
 
-  PackageEntry *package_entry = get_package_entry(from_module_entry, package_name, CHECK);
-  ResourceMark rm(THREAD);
+  PackageEntry* package_entry = NULL;
+  {
+    MutexLocker ml(THREAD, Module_lock);
+    package_entry = get_locked_package_entry(from_module_entry, package_name, CHECK);
+    // Do nothing if modules are the same
+    // If the package is not found we'll throw an exception later
+    if (from_module_entry != to_module_entry &&
+        package_entry != NULL) {
+      package_entry->set_exported(to_module_entry);
+    }
+  }
+
+  // Handle errors and logging outside locked section
   if (package_entry == NULL) {
+    ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               err_msg("Package %s not found in from_module %s",
                       package_name != NULL ? package_name : "",
                       from_module_entry->name()->as_C_string()));
   }
-  if (package_entry->module() != from_module_entry) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              err_msg("Package: %s found in module %s, not in from_module: %s",
+
+  if (log_is_enabled(Debug, module)) {
+    ResourceMark rm(THREAD);
+    log_debug(module)("add_module_exports(): package %s in module %s is exported to module %s",
                       package_entry->name()->as_C_string(),
-                      package_entry->module()->name()->as_C_string(),
-                      from_module_entry->name()->as_C_string()));
-  }
-
-  log_debug(module)("add_module_exports(): package %s in module %s is exported to module %s",
-                    package_entry->name()->as_C_string(),
-                    from_module_entry->name()->as_C_string(),
-                    to_module_entry == NULL ? "NULL" :
+                      from_module_entry->name()->as_C_string(),
+                      to_module_entry == NULL ? "NULL" :
                       to_module_entry->is_named() ?
-                        to_module_entry->name()->as_C_string() : UNNAMED_MODULE);
-
-  // Do nothing if modules are the same.
-  if (from_module_entry != to_module_entry) {
-    package_entry->set_exported(to_module_entry);
+                      to_module_entry->name()->as_C_string() : UNNAMED_MODULE);
   }
 }
 
@@ -668,21 +674,6 @@ jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRA
   return NULL;
 }
 
-
-// This method is called by JFR and by the above method.
-jobject Modules::get_module(Symbol* package_name, Handle h_loader, TRAPS) {
-  const PackageEntry* const pkg_entry =
-    get_package_entry_by_name(package_name, h_loader, THREAD);
-  const ModuleEntry* const module_entry = (pkg_entry != NULL ? pkg_entry->module() : NULL);
-
-  if (module_entry != NULL &&
-      module_entry->module() != NULL) {
-    return JNIHandles::make_local(THREAD, module_entry->module());
-  }
-
-  return NULL;
-}
-
 // Export package in module to all unnamed modules.
 void Modules::add_module_exports_to_all_unnamed(jobject module, const char* package_name, TRAPS) {
   if (module == NULL) {
@@ -699,29 +690,35 @@ void Modules::add_module_exports_to_all_unnamed(jobject module, const char* pack
               "module is invalid");
   }
 
-  if (module_entry->is_named()) { // No-op for unnamed module.
-    PackageEntry *package_entry = get_package_entry(module_entry, package_name, CHECK);
-    ResourceMark rm(THREAD);
-    if (package_entry == NULL) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Package %s not found in module %s",
-                        package_name != NULL ? package_name : "",
-                        module_entry->name()->as_C_string()));
-    }
-    if (package_entry->module() != module_entry) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Package: %s found in module %s, not in module: %s",
-                        package_entry->name()->as_C_string(),
-                        package_entry->module()->name()->as_C_string(),
-                        module_entry->name()->as_C_string()));
-    }
+  // No-op for unnamed module and open modules
+  if (!module_entry->is_named() || module_entry->is_open())
+    return;
 
+  PackageEntry* package_entry = NULL;
+  {
+    MutexLocker m1(THREAD, Module_lock);
+    package_entry = get_locked_package_entry(module_entry, package_name, CHECK);
+
+    // Mark package as exported to all unnamed modules.
+    if (package_entry != NULL) {
+      package_entry->set_is_exported_allUnnamed();
+    }
+  }
+
+  // Handle errors and logging outside locked section
+  if (package_entry == NULL) {
+    ResourceMark rm(THREAD);
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              err_msg("Package %s not found in module %s",
+                      package_name != NULL ? package_name : "",
+                      module_entry->name()->as_C_string()));
+  }
+
+  if (log_is_enabled(Debug, module)) {
+    ResourceMark rm(THREAD);
     log_debug(module)("add_module_exports_to_all_unnamed(): package %s in module"
                       " %s is exported to all unnamed modules",
                        package_entry->name()->as_C_string(),
                        module_entry->name()->as_C_string());
-
-    // Mark package as exported to all unnamed modules.
-    package_entry->set_is_exported_allUnnamed();
   }
 }

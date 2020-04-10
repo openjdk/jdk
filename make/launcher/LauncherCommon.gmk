@@ -144,7 +144,7 @@ define SetupBuildLauncherBody
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
       CFLAGS_linux := -fPIC, \
-      CFLAGS_solaris := -KPIC -DHAVE_GETHRTIME, \
+      CFLAGS_solaris := -KPIC, \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       DISABLED_WARNINGS_gcc := unused-function, \
       LDFLAGS := $$(LDFLAGS_JDKEXE) \

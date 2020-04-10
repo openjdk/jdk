@@ -37,7 +37,7 @@ import javax.lang.model.element.TypeElement;
  *  deletion without notice.</b>
  */
 
-public interface AnnotationTypeRequiredMemberWriter {
+public interface AnnotationTypeRequiredMemberWriter extends MemberWriter {
 
     /**
      * Add the annotation type member tree header.
@@ -76,14 +76,6 @@ public interface AnnotationTypeRequiredMemberWriter {
      * @return content tree for the annotation type details
      */
     Content getAnnotationDetails(Content annotationDetailsTreeHeader, Content annotationDetailsTree);
-
-    /**
-     * Get the annotation type documentation.
-     *
-     * @param annotationDocTree the content tree representing annotation type documentation
-     * @return content tree for the annotation type documentation
-     */
-    Content getAnnotationDoc(Content annotationDocTree);
 
     /**
      * Get the signature for the given member.

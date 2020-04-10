@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class CRLException extends GeneralSecurityException {
     @java.io.Serial
     private static final long serialVersionUID = -6694728944094197147L;
 
-   /**
+    /**
      * Constructs a CRLException with no detail message. A
      * detail message is a String that describes this particular
      * exception.

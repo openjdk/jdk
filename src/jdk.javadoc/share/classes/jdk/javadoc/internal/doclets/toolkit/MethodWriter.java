@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -38,7 +37,7 @@ import javax.lang.model.type.TypeMirror;
  *  deletion without notice.</b>
  */
 
-public interface MethodWriter {
+public interface MethodWriter extends MemberWriter {
 
     /**
      * Get the method details tree header.
@@ -97,14 +96,6 @@ public interface MethodWriter {
      * @return content tree for the method details
      */
     Content getMethodDetails(Content methodDetailsTreeHeader, Content methodDetailsTree);
-
-    /**
-     * Get the method documentation.
-     *
-     * @param methodDocTree the content tree representing method documentation
-     * @return content tree for the method documentation
-     */
-    Content getMethodDoc(Content methodDocTree);
 
     /**
      * Gets the member header tree.

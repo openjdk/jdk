@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2019, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -7,6 +7,8 @@
  * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.reader.impl;
+
+import java.util.regex.Pattern;
 
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReader.RegionType;
@@ -17,6 +19,18 @@ import jdk.internal.org.jline.utils.AttributedStyle;
 import jdk.internal.org.jline.utils.WCWidth;
 
 public class DefaultHighlighter implements Highlighter {
+    private Pattern errorPattern;
+    private int errorIndex = -1;
+
+    @Override
+    public void setErrorPattern(Pattern errorPattern) {
+        this.errorPattern = errorPattern;
+    }
+
+    @Override
+    public void setErrorIndex(int errorIndex) {
+        this.errorIndex = errorIndex;
+    }
 
     @Override
     public AttributedString highlight(LineReader reader, String buffer) {
@@ -57,6 +71,10 @@ public class DefaultHighlighter implements Highlighter {
             if (i == negativeStart) {
                 sb.style(AttributedStyle::inverse);
             }
+            if (i == errorIndex) {
+                sb.style(AttributedStyle::inverse);
+            }
+
             char c = buffer.charAt(i);
             if (c == '\t' || c == '\n') {
                 sb.append(c);
@@ -77,6 +95,12 @@ public class DefaultHighlighter implements Highlighter {
             if (i == negativeEnd) {
                 sb.style(AttributedStyle::inverseOff);
             }
+            if (i == errorIndex) {
+                sb.style(AttributedStyle::inverseOff);
+            }
+        }
+        if (errorPattern != null) {
+            sb.styleMatches(errorPattern, AttributedStyle.INVERSE);
         }
         return sb.toAttributedString();
     }

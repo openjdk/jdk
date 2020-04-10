@@ -1,4 +1,2 @@
 TextBlockIllegalEscape.java:11:13: compiler.err.illegal.esc.char
-- compiler.note.preview.filename: TextBlockIllegalEscape.java
-- compiler.note.preview.recompile
 1 error

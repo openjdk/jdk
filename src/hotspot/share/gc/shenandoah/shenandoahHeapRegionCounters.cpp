@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
 #include "memory/resourceArea.hpp"
@@ -85,7 +85,6 @@ void ShenandoahHeapRegionCounters::update() {
       if (heap->is_concurrent_mark_in_progress())      status |= 1 << 0;
       if (heap->is_evacuation_in_progress())           status |= 1 << 1;
       if (heap->is_update_refs_in_progress())          status |= 1 << 2;
-      if (heap->is_concurrent_traversal_in_progress()) status |= 1 << 3;
       _status->set_value(status);
 
       _timestamp->set_value(os::elapsed_counter());
