@@ -1205,7 +1205,7 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("intConstant", "intConstant [ name [ value ] ]", true) {
+        new Command("intConstant", "intConstant [ name [ value ] ]", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1 && t.countTokens() != 0 && t.countTokens() != 2) {
                     usage();
@@ -1228,7 +1228,7 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("longConstant", "longConstant [ name [ value ] ]", true) {
+        new Command("longConstant", "longConstant [ name [ value ] ]", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1 && t.countTokens() != 0 && t.countTokens() != 2) {
                     usage();
@@ -1251,7 +1251,7 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("field", "field [ type [ name fieldtype isStatic offset address ] ]", true) {
+        new Command("field", "field [ type [ name fieldtype isStatic offset address ] ]", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1 && t.countTokens() != 0 && t.countTokens() != 6) {
                     usage();
@@ -1323,7 +1323,7 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("type", "type [ type [ name super isOop isInteger isUnsigned size ] ]", true) {
+        new Command("type", "type [ type [ name super isOop isInteger isUnsigned size ] ]", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1 && t.countTokens() != 0 && t.countTokens() != 6) {
                     usage();
