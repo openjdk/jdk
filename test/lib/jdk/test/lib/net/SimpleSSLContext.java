@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.util.*;
 import java.io.*;
 import java.security.*;
 import java.security.cert.*;
+import java.util.function.Supplier;
 import javax.net.ssl.*;
 
 /**
@@ -50,7 +51,12 @@ public class SimpleSSLContext {
      * source directory
      */
     public SimpleSSLContext() throws IOException {
+        this(() -> "TLS");
+    }
+
+    private SimpleSSLContext(Supplier<String> protocols) throws IOException {
         try {
+            final String proto = protocols.get();
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
@@ -63,7 +69,7 @@ public class SimpleSSLContext {
                             File f = new File(path, "jdk/test/lib/net/testkeys");
                             if (f.exists()) {
                                 try (FileInputStream fis = new FileInputStream(f)) {
-                                    init(fis);
+                                    init(fis, proto);
                                     return null;
                                 }
                             }
@@ -97,11 +103,11 @@ public class SimpleSSLContext {
     public SimpleSSLContext(String dir) throws IOException {
         String file = dir + "/testkeys";
         try (FileInputStream fis = new FileInputStream(file)) {
-            init(fis);
+            init(fis, "TLS");
         }
     }
 
-    private void init(InputStream i) throws IOException {
+    private void init(InputStream i, String protocol) throws IOException {
         try {
             char[] passphrase = "passphrase".toCharArray();
             KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -113,12 +119,21 @@ public class SimpleSSLContext {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
             tmf.init(ks);
 
-            ssl = SSLContext.getInstance("TLS");
+            ssl = SSLContext.getInstance(protocol);
             ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         } catch (KeyManagementException | KeyStoreException |
                 UnrecoverableKeyException | CertificateException |
                 NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public static SSLContext getContext(String protocol) throws IOException {
+        if(protocol == null || protocol.isEmpty()) {
+            return new SimpleSSLContext().get();
+        }
+        else {
+            return new SimpleSSLContext(() -> protocol).get();
         }
     }
 
