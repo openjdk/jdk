@@ -69,26 +69,38 @@ public class LingeredAppForJps extends LingeredApp {
         File jar = new File(className + ".jar");
         String testClassPath = System.getProperty("test.class.path", "?");
 
+        // Classpath contains test class dir, libraries class dir(s), and
+        // may contains some additional dirs.
+        // We need to add to jar only classes from the test class directory.
+        // Main class (this class) should only be found in one directory
+        // from the classpath (test class dir), therefore only added once.
+        // Libraries class dir(s) and any additional classpath directories
+        // are written the jar manifest.
+
         File manifestFile = new File(className + ".mf");
         String nl = System.getProperty("line.separator");
-        try (BufferedWriter output = new BufferedWriter(new FileWriter(manifestFile))) {
-            output.write("Main-Class: " + className + nl);
-        }
+        String manifestClasspath = "";
 
         List<String> jarArgs = new ArrayList<>();
         jarArgs.add("-cfm");
         jarArgs.add(jar.getAbsolutePath());
         jarArgs.add(manifestFile.getAbsolutePath());
-
         for (String path : testClassPath.split(File.pathSeparator)) {
             String classFullName = path + File.separator + className + ".class";
             File f = new File(classFullName);
             if (f.exists()) {
-              jarArgs.add("-C");
-              jarArgs.add(path);
-              jarArgs.add(".");
-              System.out.println("INFO: scheduled to jar " + path);
-              break;
+                jarArgs.add("-C");
+                jarArgs.add(path);
+                jarArgs.add(".");
+                System.out.println("INFO: scheduled to jar " + path);
+            } else {
+                manifestClasspath += " " + new File(path).toURI();
+            }
+        }
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(manifestFile))) {
+            output.write("Main-Class: " + className + nl);
+            if (!manifestClasspath.isEmpty()) {
+                output.write("Class-Path: " + manifestClasspath + nl);
             }
         }
 

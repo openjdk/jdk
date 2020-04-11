@@ -318,7 +318,6 @@ module:jdk.naming.rmi
 module:jdk.net
 jdk.net
 module:jdk.pack
-module:jdk.rmic
 module:jdk.scripting.nashorn
 jdk.nashorn.api.scripting
 jdk.nashorn.api.tree

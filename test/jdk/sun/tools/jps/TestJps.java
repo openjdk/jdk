@@ -25,12 +25,16 @@
  * @test
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
+ * @build jdk.test.lib.apps.LingeredApp
  * @run main/othervm/timeout=360 TestJps
  */
 
  /*
   * Notes:
   *   @modules tag is ignored in driver mode, so need main/othervm
+  *
+  *   LingeredApp is pre-built separately to have jdk.test.lib classes ready
+  *   before the test is compiled (see JDK-8242282).
   *
   *   Launching the process with relative path to an app jar file is not tested
   *

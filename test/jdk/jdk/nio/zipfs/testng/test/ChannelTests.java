@@ -339,14 +339,12 @@ public class ChannelTests extends ZipFsBaseTest {
     /**
      * Validate when SeekableByteChannel::close is called more than once, that
      * no error occurs
-     * <p>
-     * Note: this is currently disabled due to bug JDK-8241883
      *
      * @param env         Zip FS properties to use when creating the Zip file
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap", enabled = false)
+    @Test(dataProvider = "zipfsMap")
     public void sbcCloseTest(final Map<String, String> env,
                              final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");

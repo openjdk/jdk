@@ -48,7 +48,6 @@ public class ProtectionDomain {
                          "com/sun/tools/javac/Main",
                          "jdk/nio/zipfs/ZipInfo",
                          "java/net/URL",
-                         "sun/rmi/rmic/Main",
                          "com/sun/jndi/dns/DnsName"));
 
     // First class is loaded from CDS, second class is loaded from JAR

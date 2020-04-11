@@ -818,7 +818,7 @@ control variables.
 It is possible to build just a single module, a single phase, or a single phase
 of a single module, by creating make targets according to these followin
 patterns. A phase can be either of `gensrc`, `gendata`, `copy`, `java`,
-`launchers`, `libs` or `rmic`. See [Using Fine-Grained Make Targets](
+`launchers`, or `libs`. See [Using Fine-Grained Make Targets](
 #using-fine-grained-make-targets) for more details about this functionality.
 
   * `<phase>` - Build the specified phase and everything it depends on
@@ -1619,7 +1619,6 @@ and other artifact the module consists of. The phases are:
   * `java` (Compile Java code)
   * `launchers` (Compile native executables)
   * `libs` (Compile native libraries)
-  * `rmic` (Run the `rmic` tool)
 
 You can build only a single phase for a module by using the notation
 `$MODULE-$PHASE`. For instance, to build the `gensrc` phase for `java.base`,

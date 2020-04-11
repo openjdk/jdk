@@ -30,7 +30,6 @@ public class JimageClassProtDomain {
         //     sun.tools.javac.Main (testcase 1),
         //     jdk.nio.zipfs.ZipInfo (testcase 2),
         //     java.net.URL (testcase 3),
-        //     sun.rmi.rmic.Main (testcase 4),
         //     com.sun.jndi.dns.DnsName (testcase 5)
         String testcases[][] =
             {{"Loading shared boot module class first",

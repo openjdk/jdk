@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,19 +334,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     private static SSLParameters getDefaultParams(SSLContext ctx) {
-        SSLParameters params = ctx.getSupportedSSLParameters();
-        String[] protocols = params.getProtocols();
-        boolean found13 = false;
-        for (String proto : protocols) {
-            if (proto.equals("TLSv1.3")) {
-                found13 = true;
-                break;
-            }
-        }
-        if (found13)
-            params.setProtocols(new String[] {"TLSv1.3", "TLSv1.2"});
-        else
-            params.setProtocols(new String[] {"TLSv1.2"});
+        SSLParameters params = ctx.getDefaultSSLParameters();
         return params;
     }
 

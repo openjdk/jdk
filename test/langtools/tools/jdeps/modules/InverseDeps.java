@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,18 +92,17 @@ public class InverseDeps {
     @DataProvider(name = "jdkModules")
     public Object[][] jdkModules() {
         return new Object[][]{
-            // --require and a subset of dependences
+            // --require and a subset of dependencies
             { "jdk.compiler", new String[][] {
                     new String[] {"jdk.compiler", "jdk.jshell"},
-                    new String[] {"jdk.compiler", "jdk.rmic"},
-                    new String[] {"jdk.compiler", "jdk.javadoc", "jdk.rmic"},
+                    new String[] {"jdk.compiler", "jdk.javadoc"},
                 }
             },
             { "java.compiler", new String[][] {
                     new String[] {"java.compiler", "jdk.jshell"},
                     new String[] {"java.compiler", "jdk.compiler", "jdk.jshell"},
-                    new String[] {"java.compiler", "jdk.compiler", "jdk.rmic"},
-                    new String[] {"java.compiler", "jdk.compiler", "jdk.javadoc", "jdk.rmic"},
+                    new String[] {"java.compiler", "jdk.compiler"},
+                    new String[] {"java.compiler", "jdk.compiler", "jdk.javadoc"},
                     new String[] {"java.compiler", "java.se"},
                 }
             },

@@ -892,11 +892,18 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public void close() throws IOException {
-            // will update the entry
-            try (OutputStream os = getOutputStream(e)) {
-                os.write(toByteArray());
+            super.beginWrite();
+            try {
+                if (!isOpen())
+                    return;
+                // will update the entry
+                try (OutputStream os = getOutputStream(e)) {
+                    os.write(toByteArray());
+                }
+                super.close();
+            } finally {
+                super.endWrite();
             }
-            super.close();
         }
     }
 

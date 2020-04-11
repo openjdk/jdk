@@ -30,8 +30,7 @@ public class JimageClassPackage {
         //     sun.tools.javac.Main (testcase 1),
         //     jdk.nio.zipfs.ZipInfo (testcase 2),
         //     java.net.URL (testcase 3),
-        //     sun.rmi.rmic.Main (testcase 4),
-        //     com.sun.jndi.dns.DnsName (testcase 5)
+        //     com.sun.jndi.dns.DnsName (testcase 4)
         String testcases[][] =
             {{"Loading shared boot module class first", "java.util",
               "java.util.Dictionary", "java.util.ServiceConfigurationError"},
@@ -44,9 +43,6 @@ public class JimageClassPackage {
 
              {"Loading non-shared boot module class first", "java.net",
               "java.net.HttpCookie", "java.net.URL"},
-
-             {"Loading non-shared app module class first", "sun.rmi.rmic",
-              "sun.rmi.rmic.RMIGenerator", "sun.rmi.rmic.Main"},
 
              {"Loading non-shared ext module class first", "com.sun.jndi.dns",
               "com.sun.jndi.dns.Resolver", "com.sun.jndi.dns.DnsName"}};
