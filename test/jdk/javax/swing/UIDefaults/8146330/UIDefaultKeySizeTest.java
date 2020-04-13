@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8146330
  * @summary Size of values returned by UIDefaults.keys() and
             UIDefaults.keySet() are different
@@ -31,6 +32,7 @@
 
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import java.util.Enumeration;
 import java.util.Iterator;
 
@@ -44,30 +46,36 @@ public class UIDefaultKeySizeTest {
         installedLookAndFeels = UIManager.getInstalledLookAndFeels();
 
         for (UIManager.LookAndFeelInfo LF : installedLookAndFeels) {
-            UIManager.setLookAndFeel(LF.getClassName());
+            try {
+                UIManager.setLookAndFeel(LF.getClassName());
 
-            defaultTestFail = keySizeTest();
-            SwingUtilities.invokeAndWait(() -> {
-                UIManager.getDefaults().put("TestKey","TestValue");
-            });
-            writeTestFail = keySizeTest();
+                defaultTestFail = keySizeTest();
+                SwingUtilities.invokeAndWait(() -> {
+                    UIManager.getDefaults().put("TestKey", "TestValue");
+                });
+                writeTestFail = keySizeTest();
 
-            if(defaultTestFail && writeTestFail ) {
-                throw new RuntimeException("Default key count and Write key"+
-                        " count both are not same in keys() and keySet()");
-            } else if(defaultTestFail || writeTestFail) {
-                if(defaultTestFail) {
-                    throw new RuntimeException("Default key count is not same"+
-                            " in keys() and keySet()");
-                } else {
-                    throw new RuntimeException("Write key count is not same"+
-                            " in keys() and keySet()");
+                if (defaultTestFail && writeTestFail) {
+                    throw new RuntimeException("Default key count and Write " +
+                            "key count both are not same in keys() and" +
+                            " keySet()");
+                } else if (defaultTestFail || writeTestFail) {
+                    if (defaultTestFail) {
+                        throw new RuntimeException("Default key count is not" +
+                                " same in keys() and keySet()");
+                    } else {
+                        throw new RuntimeException("Write key count is not" +
+                                " same in keys() and keySet()");
+                    }
                 }
-            }
 
-            SwingUtilities.invokeAndWait(() -> {
-                UIManager.getDefaults().remove("TestKey");
-            });
+                SwingUtilities.invokeAndWait(() -> {
+                    UIManager.getDefaults().remove("TestKey");
+                });
+            } catch(UnsupportedLookAndFeelException e) {
+                System.out.println("    Note: LookAndFeel " + LF.getClassName()
+                        + " is not supported on this configuration");
+            }
         }
     }
 
