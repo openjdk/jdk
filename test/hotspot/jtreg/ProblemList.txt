@@ -99,8 +99,8 @@ runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
 # :hotspot_serviceability
 
 serviceability/sa/ClhsdbDumpheap.java 8241158 macosx-x64
-serviceability/sa/ClhsdbScanOops.java#id0 8235220,8230731 linux-x64,macosx-x64,windows-x64
-serviceability/sa/ClhsdbScanOops.java#id1 8235220,8230731 linux-x64,macosx-x64,windows-x64
+serviceability/sa/ClhsdbScanOops.java#id0 8241158,8230731 macosx-x64,windows-x64
+serviceability/sa/ClhsdbScanOops.java#id1 8241158,8230731 macosx-x64,windows-x64
 serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
 serviceability/sa/TestHeapDumpForInvokeDynamic.java 8241158 macosx-x64
 serviceability/sa/TestInstanceKlassSize.java 8230664 linux-ppc64le,linux-ppc64
