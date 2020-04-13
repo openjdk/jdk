@@ -425,6 +425,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         }
 
         public String className() {
+            assert classSignature.startsWith("L") && classSignature.endsWith(";");
             return classSignature.substring(1, classSignature.length()-1)
                 .replace('/', '.');
         }
