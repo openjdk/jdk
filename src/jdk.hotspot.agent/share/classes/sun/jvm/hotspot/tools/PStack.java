@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class PStack extends Tool {
 
    public void run(PrintStream out, Debugger dbg) {
       if (PlatformInfo.getOS().equals("darwin")) {
-        out.println("Not available on Darwin");
+        out.println("Not available on Mac OS X");
         return;
       }
 
