@@ -240,8 +240,7 @@ public class FileChannelImpl
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(offset, length, dsts.length);
         ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
@@ -297,8 +296,7 @@ public class FileChannelImpl
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(offset, length, srcs.length);
         ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
@@ -789,11 +787,11 @@ public class FileChannelImpl
             throw new NullPointerException();
         if (position < 0)
             throw new IllegalArgumentException("Negative position");
+        ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
         if (direct)
             Util.checkChannelPositionAligned(position, alignment);
-        ensureOpen();
         if (nd.needsPositionLock()) {
             synchronized (positionLock) {
                 return readInternal(dst, position);
@@ -829,11 +827,11 @@ public class FileChannelImpl
             throw new NullPointerException();
         if (position < 0)
             throw new IllegalArgumentException("Negative position");
+        ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
         if (direct)
             Util.checkChannelPositionAligned(position, alignment);
-        ensureOpen();
         if (nd.needsPositionLock()) {
             synchronized (positionLock) {
                 return writeInternal(src, position);
