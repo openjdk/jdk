@@ -99,12 +99,12 @@ public interface MemberSummaryWriter {
     Content getInheritedSummaryLinksTree();
 
     /**
-     * Add the member tree to the member summary tree.
+     * Adds the given summary to the list of summaries.
      *
-     * @param memberSummaryTree the content tree representing the member summary
-     * @param memberTree the content tree representing the member
+     * @param summariesList the list of summaries
+     * @param content       the summary
      */
-    void addMemberTree(Content memberSummaryTree, Content memberTree);
+    void addSummary(Content summariesList, Content content);
 
     /**
      * Get the member tree.

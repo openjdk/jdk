@@ -116,12 +116,6 @@ public class MarkerComments {
             new Comment("=========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY ===========");
 
     /**
-     * Marker to identify start of annotation type required member summary.
-     */
-    public static final Comment START_OF_ANNOTATION_TYPE_FIELD_SUMMARY =
-            new Comment("=========== ANNOTATION TYPE FIELD SUMMARY ===========");
-
-    /**
      * Marker to identify start of constructor summary.
      */
     public static final Comment START_OF_CONSTRUCTOR_SUMMARY =

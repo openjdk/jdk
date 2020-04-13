@@ -321,11 +321,17 @@ div.inheritance {
 div.inheritance div.inheritance {
     margin-left:2em;
 }
-ul.block-list, ul.details-list, ul.member-list {
+ul.block-list,
+ul.details-list,
+ul.member-list,
+ul.summary-list {
     margin:10px 0 10px 0;
     padding:0;
 }
-ul.block-list > li, ul.details-list > li, ul.member-list > li {
+ul.block-list > li,
+ul.details-list > li,
+ul.member-list > li,
+ul.summary-list > li {
     list-style:none;
     margin-bottom:15px;
     line-height:1.4;

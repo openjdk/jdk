@@ -70,9 +70,9 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.nestedClassSummary,
-                SectionName.NESTED_CLASS_SUMMARY, memberSummaryTree, memberTree);
+    public void addSummary(Content summariesList, Content content) {
+        writer.addSummary(HtmlStyle.nestedClassSummary,
+                SectionName.NESTED_CLASS_SUMMARY, summariesList, content);
     }
 
     @Override

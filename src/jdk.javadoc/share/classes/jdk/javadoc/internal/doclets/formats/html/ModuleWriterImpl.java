@@ -224,10 +224,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Get the summary section header.
      */
     @Override
-    public Content getSummaryHeader() {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
-        return ul;
+    public Content getSummariesList() {
+        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
     }
 
     /**
@@ -483,7 +481,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     @Override
-    public void addModulesSummary(Content summaryContentTree) {
+    public void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
@@ -514,7 +512,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 addModulesList(indirectModules, amrTable);
                 section.add(amrTable);
             }
-            summaryContentTree.add(HtmlTree.LI(section));
+            summariesList.add(HtmlTree.LI(section));
         }
     }
 
@@ -535,7 +533,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     @Override
-    public void addPackagesSummary(Content summaryContentTree) {
+    public void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
@@ -560,7 +558,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 addIndirectPackages(aopTable, indirectOpenPackages);
                 section.add(aopTable);
             }
-            summaryContentTree.add(HtmlTree.LI(section));
+            summariesList.add(HtmlTree.LI(section));
         }
     }
 
@@ -706,7 +704,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     @Override
-    public void addServicesSummary(Content summaryContentTree) {
+    public void addServicesSummary(Content summariesList) {
 
         boolean haveUses = displayServices(uses, usesTrees);
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
@@ -735,7 +733,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     section.add(table);
                 }
             }
-            summaryContentTree.add(HtmlTree.LI(section));
+            summariesList.add(HtmlTree.LI(section));
         }
     }
 

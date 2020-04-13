@@ -160,10 +160,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     @Override
-    public Content getSummaryHeader() {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
-        return ul;
+    public Content getSummariesList() {
+        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
     }
 
     @Override

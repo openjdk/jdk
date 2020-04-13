@@ -69,9 +69,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.constantsSummary,
-                SectionName.ENUM_CONSTANT_SUMMARY, memberSummaryTree, memberTree);
+    public void addSummary(Content summariesList, Content content) {
+        writer.addSummary(HtmlStyle.constantsSummary,
+                SectionName.ENUM_CONSTANT_SUMMARY, summariesList, content);
     }
 
     @Override

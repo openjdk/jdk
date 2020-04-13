@@ -62,7 +62,7 @@ public interface PackageSummaryWriter {
      *
      * @return a content tree with the package summary header
      */
-    Content getSummaryHeader();
+    Content getSummariesList();
 
     /**
      * Adds the table of interfaces to the documentation tree.

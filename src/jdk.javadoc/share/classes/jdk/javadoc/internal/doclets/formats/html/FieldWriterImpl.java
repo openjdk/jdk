@@ -72,9 +72,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.fieldSummary,
-                SectionName.FIELD_SUMMARY, memberSummaryTree, memberTree);
+    public void addSummary(Content summariesList, Content content) {
+        writer.addSummary(HtmlStyle.fieldSummary,
+                SectionName.FIELD_SUMMARY, summariesList, content);
     }
 
     @Override

@@ -323,9 +323,9 @@ public class ClassBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildMemberSummary(Content classContentTree) throws DocletException {
-        Content memberSummaryTree = writer.getMemberTreeHeader();
-        builderFactory.getMemberSummaryBuilder(writer).build(memberSummaryTree);
-        classContentTree.add(writer.getMemberSummaryTree(memberSummaryTree));
+        Content summariesList = writer.getSummariesList();
+        builderFactory.getMemberSummaryBuilder(writer).build(summariesList);
+        classContentTree.add(writer.getMemberSummaryTree(summariesList));
     }
 
     /**

@@ -85,9 +85,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.methodSummary,
-                SectionName.METHOD_SUMMARY, memberSummaryTree, memberTree);
+    public void addSummary(Content summariesList, Content content) {
+        writer.addSummary(HtmlStyle.methodSummary,
+                SectionName.METHOD_SUMMARY, summariesList, content);
     }
 
     @Override

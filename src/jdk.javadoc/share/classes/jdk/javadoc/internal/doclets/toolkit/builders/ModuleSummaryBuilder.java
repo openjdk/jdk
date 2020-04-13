@@ -129,52 +129,51 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     }
 
     /**
-     * Build the module summary.
+     * Builds the list of summary sections for this module.
      *
      * @param moduleContentTree the module content tree to which the summaries will
      *                           be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildSummary(Content moduleContentTree) throws DocletException {
-        Content summaryContentTree = moduleWriter.getSummaryHeader();
+        Content summariesList = moduleWriter.getSummariesList();
 
-        buildPackagesSummary(summaryContentTree);
-        buildModulesSummary(summaryContentTree);
-        buildServicesSummary(summaryContentTree);
+        buildPackagesSummary(summariesList);
+        buildModulesSummary(summariesList);
+        buildServicesSummary(summariesList);
 
-        moduleContentTree.add(moduleWriter.getSummaryTree(summaryContentTree));
+        moduleContentTree.add(moduleWriter.getSummaryTree(summariesList));
     }
 
     /**
-     * Build the modules summary.
+     * Builds the summary of the module dependencies of this module.
      *
-     * @param summaryContentTree the content tree to which the summaries will
-     *                           be added
+     * @param summariesList the list of summaries to which the summary will be added
      */
-    protected void buildModulesSummary(Content summaryContentTree) {
-        moduleWriter.addModulesSummary(summaryContentTree);
+    protected void buildModulesSummary(Content summariesList) {
+        moduleWriter.addModulesSummary(summariesList);
     }
 
     /**
-     * Build the package summary.
+     * Builds the summary of the packages exported or opened by this module.
      *
-     * @param summaryContentTree the content tree to which the summaries will be added
+     * @param summariesList the list of summaries to which the summary will be added
      */
-    protected void buildPackagesSummary(Content summaryContentTree) {
-        moduleWriter.addPackagesSummary(summaryContentTree);
+    protected void buildPackagesSummary(Content summariesList) {
+        moduleWriter.addPackagesSummary(summariesList);
     }
 
     /**
-     * Build the services summary.
+     * Builds the summary of the services used or provided by this module.
      *
-     * @param summaryContentTree the content tree to which the summaries will be added
+     * @param summariesList the list of summaries to which the summary will be added
      */
-    protected void buildServicesSummary(Content summaryContentTree) {
-        moduleWriter.addServicesSummary(summaryContentTree);
+    protected void buildServicesSummary(Content summariesList) {
+        moduleWriter.addServicesSummary(summariesList);
     }
 
     /**
-     * Build the description for the module.
+     * Builds the description for this module.
      *
      * @param moduleContentTree the tree to which the module description will
      *                           be added

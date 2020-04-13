@@ -213,6 +213,26 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
+     * Returns a list to be used for the list of summaries for members of a given kind.
+     *
+     * @return a list to be used for the list of summaries for members of a given kind
+     */
+    public Content getSummariesList() {
+        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
+    }
+
+    /**
+     * Returns an item for the list of summaries for members of a given kind.
+     *
+     * @param content content for the item
+     * @return an item for the list of summaries for members of a given kind
+     */
+    public Content getSummariesListItem(Content content) {
+        return HtmlTree.LI(content);
+    }
+
+
+    /**
      * Returns a list to be used for the list of details for members of a given kind.
      *
      * @return a list to be used for the list of details for members of a given kind
@@ -257,16 +277,17 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds the member tree with css style and id attribute.
-     * @param style the css style to be applied to member tree
-     * @param sectionName the section name to use for the section id attribute
-     * @param memberSummaryTree the content tree representing the member summary
-     * @param memberTree the content tree representing the member
+     * Adds a section for a summary tree with the given CSS {@code class} and {@code id} attribute.
+     *
+     * @param style         the CSS class for the section
+     * @param sectionName   the section name to use for the section id attribute
+     * @param summariesList the list of summary sections to which the summary will be added
+     * @param content       the content tree representing the summary
      */
-    public void addMemberTree(HtmlStyle style, SectionName sectionName, Content memberSummaryTree, Content memberTree) {
-        HtmlTree htmlTree = HtmlTree.SECTION(style, memberTree)
+    public void addSummary(HtmlStyle style, SectionName sectionName, Content summariesList, Content content) {
+        HtmlTree htmlTree = HtmlTree.SECTION(style, content)
                 .setId(sectionName.getName());
-        memberSummaryTree.add(getMemberTree(htmlTree));
+        summariesList.add(getSummariesListItem(htmlTree));
     }
 
     /**
