@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key randomness
  * @summary SharedArchiveConsistency
  * @requires vm.cds
  * @library /test/lib

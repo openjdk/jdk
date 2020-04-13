@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Stress test for malloc tracking
- * @key nmt jcmd stress
+ * @key nmt jcmd stress randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Random;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
@@ -159,6 +160,7 @@ public class MallocStressTest {
     }
 
     static class AllocThread extends Thread {
+        private final Random random = new Random(Utils.getRandomInstance().nextLong());
         AllocThread() {
             this.setName("MallocThread");
             this.start();
@@ -166,7 +168,6 @@ public class MallocStressTest {
 
         // AllocThread only runs "Alloc" phase
         public void run() {
-            Random random = new Random();
             // MallocStressTest.phase == TestPhase.alloc
             for (int loops = 0; loops < 100; loops++) {
                 int r = random.nextInt(Integer.MAX_VALUE);
@@ -201,7 +202,7 @@ public class MallocStressTest {
     }
 
     static class ReleaseThread extends Thread {
-        private Random random = new Random();
+        private final Random random = new Random(Utils.getRandomInstance().nextLong());
         ReleaseThread() {
             this.setName("ReleaseThread");
             this.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8054836
  * @summary Test to verify correctness of malloc tracking
- * @key nmt jcmd
+ * @key nmt jcmd randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -41,6 +41,7 @@ import java.util.Random;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Utils;
 
 import sun.hotspot.WhiteBox;
 
@@ -58,7 +59,7 @@ public class MallocTrackingVerify {
         String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
-        Random random = new Random();
+        Random random = Utils.getRandomInstance();
         // Allocate small amounts of memory with random pseudo call stack
         while (mallocd_total < MAX_ALLOC) {
             int size = random.nextInt(31) + 1;
