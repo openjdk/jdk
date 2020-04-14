@@ -504,7 +504,7 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
      * Get required buffer size to convert to Unicode.
      * The return value includes the terminating null character.
      */
-    unicode_path_len = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    unicode_path_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                            path, -1, NULL, 0);
     if (unicode_path_len == 0) {
         return EINVAL;
@@ -518,7 +518,7 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
     }
 
     wcsncpy(*wpath, prefix, prefix_len);
-    if (MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                             path, -1, &((*wpath)[prefix_len]), (int)wpath_len) == 0) {
         JLI_MemFree(*wpath);
         *wpath = NULL;

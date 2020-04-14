@@ -136,7 +136,7 @@ ZFILE_Open(const char *fname, int flags) {
             NULL);
     } else {
         /* Get required buffer size to convert to Unicode */
-        int wfname_len = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+        int wfname_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                              fname, -1, NULL, 0);
         if (wfname_len == 0) {
             return (jlong)INVALID_HANDLE_VALUE;
@@ -144,7 +144,7 @@ ZFILE_Open(const char *fname, int flags) {
         if ((wfname = (WCHAR*)malloc(wfname_len * sizeof(WCHAR))) == NULL) {
             return (jlong)INVALID_HANDLE_VALUE;
         }
-        if (MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+        if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                 fname, -1, wfname, wfname_len) == 0) {
             free(wfname);
             return (jlong)INVALID_HANDLE_VALUE;
