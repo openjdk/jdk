@@ -26,20 +26,16 @@
 package jdk.internal.access;
 
 import jdk.internal.access.foreign.MemorySegmentProxy;
+import jdk.internal.misc.VM.BufferPool;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 public interface JavaNioAccess {
+
     /**
-     * Provides access to information on buffer usage.
+     * Used by {@code jdk.internal.misc.VM}.
      */
-    interface BufferPool {
-        String getName();
-        long getCount();
-        long getTotalCapacity();
-        long getMemoryUsed();
-    }
     BufferPool getDirectBufferPool();
 
     /**

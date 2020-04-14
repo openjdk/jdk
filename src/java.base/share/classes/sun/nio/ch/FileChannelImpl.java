@@ -45,11 +45,11 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
-import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.ref.Cleaner;
 import jdk.internal.ref.CleanerFactory;
 
@@ -1158,8 +1158,8 @@ public class FileChannelImpl
      * Invoked by sun.management.ManagementFactoryHelper to create the management
      * interface for mapped buffers.
      */
-    public static JavaNioAccess.BufferPool getMappedBufferPool() {
-        return new JavaNioAccess.BufferPool() {
+    public static BufferPool getMappedBufferPool() {
+        return new BufferPool() {
             @Override
             public String getName() {
                 return "mapped";
@@ -1183,8 +1183,8 @@ public class FileChannelImpl
      * Invoked by sun.management.ManagementFactoryHelper to create the management
      * interface for sync mapped buffers.
      */
-    public static JavaNioAccess.BufferPool getSyncMappedBufferPool() {
-        return new JavaNioAccess.BufferPool() {
+    public static BufferPool getSyncMappedBufferPool() {
+        return new BufferPool() {
             @Override
             public String getName() {
                 return "mapped - 'non-volatile memory'";

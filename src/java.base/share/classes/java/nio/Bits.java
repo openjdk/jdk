@@ -26,10 +26,10 @@
 package java.nio;
 
 import jdk.internal.access.JavaLangRefAccess;
-import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.misc.VM.BufferPool;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -210,7 +210,7 @@ class Bits {                            // package-private
         assert cnt >= 0 && reservedMem >= 0 && totalCap >= 0;
     }
 
-    static final JavaNioAccess.BufferPool BUFFER_POOL = new JavaNioAccess.BufferPool() {
+    static final BufferPool BUFFER_POOL = new BufferPool() {
         @Override
         public String getName() {
             return "direct";
