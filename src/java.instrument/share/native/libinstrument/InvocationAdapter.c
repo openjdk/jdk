@@ -205,8 +205,10 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         /*
          * According to JVMS class name is represented as CONSTANT_Utf8_info,
          * so its length is u2 (i.e. must be <= 0xFFFF).
+         * Negative oldLen or newLen means we got signed integer overflow
+         * (modifiedUtf8LengthOfUtf8 returns negative value if oldLen is negative).
          */
-        if (newLen > 0xFFFF) {
+        if (oldLen < 0 || newLen < 0 || newLen > 0xFFFF) {
             fprintf(stderr, "-javaagent: Premain-Class value is too big\n");
             free(jarfile);
             if (options != NULL) free(options);
@@ -374,8 +376,10 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
         /*
          * According to JVMS class name is represented as CONSTANT_Utf8_info,
          * so its length is u2 (i.e. must be <= 0xFFFF).
+         * Negative oldLen or newLen means we got signed integer overflow
+         * (modifiedUtf8LengthOfUtf8 returns negative value if oldLen is negative).
          */
-        if (newLen > 0xFFFF) {
+        if (oldLen < 0 || newLen < 0 || newLen > 0xFFFF) {
             fprintf(stderr, "Agent-Class value is too big\n");
             free(jarfile);
             if (options != NULL) free(options);
@@ -510,8 +514,10 @@ jint loadAgent(JNIEnv* env, jstring path) {
     /*
      * According to JVMS class name is represented as CONSTANT_Utf8_info,
      * so its length is u2 (i.e. must be <= 0xFFFF).
+     * Negative oldLen or newLen means we got signed integer overflow
+     * (modifiedUtf8LengthOfUtf8 returns negative value if oldLen is negative).
      */
-    if (newLen > 0xFFFF) {
+    if (oldLen < 0 || newLen < 0 || newLen > 0xFFFF) {
         goto releaseAndReturn;
     }
     if (newLen == oldLen) {
@@ -556,16 +562,16 @@ jint loadAgent(JNIEnv* env, jstring path) {
     // initialization complete
     result = JNI_OK;
 
-    releaseAndReturn:
-        if (agentClass != NULL) {
-            free(agentClass);
-        }
-        if (attributes != NULL) {
-            freeAttributes(attributes);
-        }
-        if (jarfile != NULL) {
-            (*env)->ReleaseStringUTFChars(env, path, jarfile);
-        }
+releaseAndReturn:
+    if (agentClass != NULL) {
+        free(agentClass);
+    }
+    if (attributes != NULL) {
+        freeAttributes(attributes);
+    }
+    if (jarfile != NULL) {
+        (*env)->ReleaseStringUTFChars(env, path, jarfile);
+    }
 
     return result;
 }
