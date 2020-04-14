@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,10 +105,10 @@ final class KeyGeneratorCore {
         return new SecretKeySpec(b, name);
     }
 
-    // nested static classes for the HmacSHA-2 family of key generator
-    abstract static class HmacSHA2KG extends KeyGeneratorSpi {
+    // nested static classes for the Hmac key generator
+    abstract static class HmacKG extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
-        protected HmacSHA2KG(String algoName, int len) {
+        protected HmacKG(String algoName, int len) {
             core = new KeyGeneratorCore(algoName, len);
         }
         @Override
@@ -129,24 +129,54 @@ final class KeyGeneratorCore {
             return core.implGenerateKey();
         }
 
-        public static final class SHA224 extends HmacSHA2KG {
+        public static final class SHA224 extends HmacKG {
             public SHA224() {
                 super("HmacSHA224", 224);
             }
         }
-        public static final class SHA256 extends HmacSHA2KG {
+        public static final class SHA256 extends HmacKG {
             public SHA256() {
                 super("HmacSHA256", 256);
             }
         }
-        public static final class SHA384 extends HmacSHA2KG {
+        public static final class SHA384 extends HmacKG {
             public SHA384() {
                 super("HmacSHA384", 384);
             }
         }
-        public static final class SHA512 extends HmacSHA2KG {
+        public static final class SHA512 extends HmacKG {
             public SHA512() {
                 super("HmacSHA512", 512);
+            }
+        }
+        public static final class SHA512_224 extends HmacKG {
+            public SHA512_224() {
+                super("HmacSHA512/224", 224);
+            }
+        }
+        public static final class SHA512_256 extends HmacKG {
+            public SHA512_256() {
+                super("HmacSHA512/256", 256);
+            }
+        }
+        public static final class SHA3_224 extends HmacKG {
+            public SHA3_224() {
+                super("HmacSHA3-224", 224);
+            }
+        }
+        public static final class SHA3_256 extends HmacKG {
+            public SHA3_256() {
+                super("HmacSHA3-256", 256);
+            }
+        }
+        public static final class SHA3_384 extends HmacKG {
+            public SHA3_384() {
+                super("HmacSHA3-384", 384);
+            }
+        }
+        public static final class SHA3_512 extends HmacKG {
+            public SHA3_512() {
+                super("HmacSHA3-512", 512);
             }
         }
     }
