@@ -2863,7 +2863,7 @@ void ShenandoahHeap::entry_preclean() {
 
 void ShenandoahHeap::entry_uncommit(double shrink_before) {
   static const char *msg = "Concurrent uncommit";
-  ShenandoahConcurrentPhase gc_phase(msg);
+  ShenandoahConcurrentPhase gc_phase(msg, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
   ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::conc_uncommit);
