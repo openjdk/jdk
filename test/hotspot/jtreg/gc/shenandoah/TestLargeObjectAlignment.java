@@ -25,8 +25,9 @@
 /*
  * @test TestLargeObjectAlignment
  * @summary Shenandoah crashes with -XX:ObjectAlignmentInBytes=16
- * @key gc
+ * @key gc randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
@@ -36,7 +37,8 @@
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestLargeObjectAlignment {
 
@@ -50,8 +52,9 @@ public class TestLargeObjectAlignment {
         objects = new Object[SLABS_COUNT];
 
         long start = System.nanoTime();
+        Random rng = Utils.getRandomInstance();
         while (System.nanoTime() - start < TIME_NS) {
-            objects[ThreadLocalRandom.current().nextInt(SLABS_COUNT)] = createSome();
+            objects[rng.nextInt(SLABS_COUNT)] = createSome();
         }
     }
 

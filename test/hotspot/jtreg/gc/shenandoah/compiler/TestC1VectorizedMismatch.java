@@ -24,12 +24,16 @@
 
 /* @test TestC1VectorizedMismatch
  * @summary test C1 vectorized mismatch intrinsic
- * @key gc
+ * @key gc randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @library /test/lib
+ *
  * @run main/othervm -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestC1VectorizedMismatch
  */
 
 import java.util.Arrays;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestC1VectorizedMismatch {
 
@@ -57,8 +61,9 @@ public class TestC1VectorizedMismatch {
     }
 
     private static void fillArray(int[] array) {
+        Random r = Utils.getRandomInstance();
         for (int i = 0; i < ARRAY_SIZE; i++) {
-            int val = (int) (Math.random() * Integer.MAX_VALUE);
+            int val = (int) (r.nextDouble() * Integer.MAX_VALUE);
             array[i] = val;
         }
     }

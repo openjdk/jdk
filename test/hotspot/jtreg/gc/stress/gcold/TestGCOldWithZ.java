@@ -26,8 +26,8 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithZ
- * @key gc
- * @library /
+ * @key gc randomness
+ * @library / /test/lib
  * @requires vm.gc.Z & !vm.graal.enabled
  * @summary Stress the Z
  * @run main/othervm -Xmx384M -XX:+UseZGC gc.stress.gcold.TestGCOldWithZ 50 1 20 10 10000

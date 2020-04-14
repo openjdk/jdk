@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,14 +27,18 @@ package gc.stress.TestJNIBlockFullGC;
 /*
  * @test TestJNIBlockFullGC
  * @summary Check that in G1 a Full GC to reclaim space can not be blocked out by the GC locker.
- * @key gc
+ * @key gc randomness
  * @requires vm.gc.G1
+ * @library /test/lib
  * @run main/othervm/native -Xmx64m -XX:+UseG1GC -Xlog:gc=info,gc+alloc=trace -XX:MaxGCPauseMillis=10 gc.stress.TestJNIBlockFullGC.TestJNIBlockFullGC 10 10000 10000 10000 30000 10000 0.7
  */
 
 import java.lang.ref.SoftReference;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestJNIBlockFullGC {
+    private static final Random rng = Utils.getRandomInstance();
 
     static {
         System.loadLibrary("TestJNIBlockFullGC");
@@ -58,12 +62,13 @@ public class TestJNIBlockFullGC {
         }
     }
 
-    public static void warmUp(long warmupEndTime, int size) {
+    public static void warmUp(long warmupEndTime, int size, long seed) {
+        Random r = new Random(seed);
         // First let the GC assume most of our objects will die.
         Node[] roots = new Node[size];
 
         while (System.currentTimeMillis() < warmupEndTime) {
-            int index = (int) (Math.random() * roots.length);
+            int index = (int) (r.nextDouble() * roots.length);
             roots[index] = new Node(1);
         }
 
@@ -73,7 +78,8 @@ public class TestJNIBlockFullGC {
         }
     }
 
-    public static void runTest(long endTime, int size, double alive) {
+    public static void runTest(long endTime, int size, double alive, long seed) {
+        Random r = new Random(seed);
         final int length = 10000;
         int[] array1 = new int[length];
         for (int x = 1; x < length; x++) {
@@ -88,10 +94,10 @@ public class TestJNIBlockFullGC {
             while (!hadError && (System.currentTimeMillis() < endTime)) {
                 int test_val1 = TestCriticalArray0(array1);
 
-                if (Math.random() > alive) {
+                if (r.nextDouble() > alive) {
                     tmp = new Node(test_val1);
                 } else {
-                    index = (int) (Math.random() * roots.length);
+                    index = (int) (r.nextDouble() * roots.length);
 
                     if (roots[index] != null) {
                         Node node = new Node(test_val1);
@@ -150,9 +156,10 @@ public class TestJNIBlockFullGC {
         System.out.println("Start warm-up threads!");
         long warmupStartTime = System.currentTimeMillis();
         for (int i = 0; i < warmupThreads; i++) {
+            long seed = rng.nextLong();
             threads[i] = new Thread() {
                 public void run() {
-                    warmUp(warmupStartTime + warmupDuration, warmupIterations);
+                    warmUp(warmupStartTime + warmupDuration, warmupIterations, seed);
                 };
             };
             threads[i].start();
@@ -165,9 +172,10 @@ public class TestJNIBlockFullGC {
 
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < mainThreads; i++) {
+            long seed = rng.nextLong();
             threads[i] = new Thread() {
                 public void run() {
-                    runTest(startTime + mainDuration, mainIterations, liveFrac);
+                    runTest(startTime + mainDuration, mainIterations, liveFrac, seed);
                 };
             };
             threads[i].start();

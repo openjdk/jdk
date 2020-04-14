@@ -24,8 +24,10 @@
 
 /*
  * @test TestElasticTLAB
+ * @key randomness
  * @summary Test that Shenandoah is able to work with elastic TLABs
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -XX:-UseTLAB -XX:-ShenandoahElasticTLAB -XX:+ShenandoahVerify TestElasticTLAB
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -XX:-UseTLAB -XX:-ShenandoahElasticTLAB                       TestElasticTLAB
@@ -38,6 +40,7 @@
  */
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestElasticTLAB {
 
@@ -50,7 +53,7 @@ public class TestElasticTLAB {
         final int max = 384 * 1024;
         long count = TARGET_MB * 1024 * 1024 / (16 + 4 * (min + (max - min) / 2));
 
-        Random r = new Random();
+        Random r = Utils.getRandomInstance();
         for (long c = 0; c < count; c++) {
             sink = new int[min + r.nextInt(max - min)];
         }

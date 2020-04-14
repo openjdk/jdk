@@ -22,12 +22,14 @@
  *
  */
 
-import java.util.concurrent.*;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /*
  * @test TestArrayCopyStress
- * @key gc
+ * @key gc randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyStress
  */
@@ -57,10 +59,10 @@ public class TestArrayCopyStress {
         for (int i = 0; i < ARRAY_SIZE; i++) {
             array[i] = new Foo(i);
         }
-
-        int src_idx = ThreadLocalRandom.current().nextInt(0, ARRAY_SIZE);
-        int dst_idx = ThreadLocalRandom.current().nextInt(0, ARRAY_SIZE);
-        int len = ThreadLocalRandom.current().nextInt(0, Math.min(ARRAY_SIZE - src_idx, ARRAY_SIZE - dst_idx));
+        Random rng = Utils.getRandomInstance();
+        int src_idx = rng.nextInt(ARRAY_SIZE);
+        int dst_idx = rng.nextInt(ARRAY_SIZE);
+        int len = rng.nextInt(Math.min(ARRAY_SIZE - src_idx, ARRAY_SIZE - dst_idx));
         System.arraycopy(array, src_idx, array, dst_idx, len);
 
         for (int i = 0; i < ARRAY_SIZE; i++) {
