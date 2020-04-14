@@ -111,9 +111,9 @@ ifeq ($(call isTargetOs, macosx), true)
             missing-method-return-type, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
-            $(call SET_SHARED_LIBRARY_ORIGIN) \
-            -fobjc-link-runtime, \
+            $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := \
+            -lobjc \
             -framework JavaNativeFoundation \
             -framework CoreServices \
             -framework Security \
