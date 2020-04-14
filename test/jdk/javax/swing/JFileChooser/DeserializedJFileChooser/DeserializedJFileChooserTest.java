@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,48 +29,69 @@
  * @run main DeserializedJFileChooserTest
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.KeyEvent;
+import java.awt.EventQueue;
+import java.awt.Robot;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import static javax.swing.UIManager.getInstalledLookAndFeels;
+
 public class DeserializedJFileChooserTest {
 
-    private static int state = -1;
+    private static volatile JButton defaultSet;
     private static JFileChooser deserialized;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeLater( () -> {
-            try {
-                JFileChooser jfc = new JFileChooser();
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(bos);
-                oos.writeObject(jfc);
-                oos.close();
-                ByteArrayInputStream bis =
-                        new ByteArrayInputStream(bos.toByteArray());
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                deserialized = (JFileChooser) ois.readObject();
-                state = deserialized.showOpenDialog(null);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        for (UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
+            EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
+            SwingUtilities.invokeLater( () -> {
+                try {
+                    JFileChooser jfc = new JFileChooser();
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    ObjectOutputStream oos = new ObjectOutputStream(bos);
+                    oos.writeObject(jfc);
+                    oos.close();
+                    ByteArrayInputStream bis =
+                            new ByteArrayInputStream(bos.toByteArray());
+                    ObjectInputStream ois = new ObjectInputStream(bis);
+                    deserialized = (JFileChooser) ois.readObject();
+                    deserialized.showOpenDialog(null);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            EventQueue.invokeAndWait(()->{
+                defaultSet = deserialized.getRootPane().getDefaultButton();
+                // Trick to close the modal dialog
+                deserialized.setVisible(false);
+                Thread.currentThread().interrupt();
+            });
+            robot.waitForIdle();
+            if (defaultSet == null) {
+                throw new RuntimeException("default button is null");
             }
-        });
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_A);
-        robot.keyPress(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        robot.delay(1000);
-        if (state != JFileChooser.APPROVE_OPTION) {
-            deserialized.cancelSelection();
-            throw new RuntimeException("Failed");
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            System.out.println("laf = " + laf);
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 }
