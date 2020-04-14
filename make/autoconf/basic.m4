@@ -141,6 +141,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_LIB])
       # Corresponds to --with-msvcr-dll
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
+      # Corresponds to --with-vcruntime-1-dll
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VCRUNTIME_1_DLL])
       # Corresponds to --with-msvcp-dll
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
       # Corresponds to --with-ucrt-dll-dir

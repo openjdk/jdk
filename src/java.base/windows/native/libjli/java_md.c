@@ -251,6 +251,23 @@ LoadMSVCRT()
             }
         }
 #endif /* MSVCR_DLL_NAME */
+#ifdef VCRUNTIME_1_DLL_NAME
+        if (GetJREPath(crtpath, MAXPATHLEN)) {
+            if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
+                    JLI_StrLen(VCRUNTIME_1_DLL_NAME) >= MAXPATHLEN) {
+                JLI_ReportErrorMessage(JRE_ERROR11);
+                return JNI_FALSE;
+            }
+            (void)JLI_StrCat(crtpath, "\\bin\\" VCRUNTIME_1_DLL_NAME);   /* Add crt dll */
+            JLI_TraceLauncher("CRT path is %s\n", crtpath);
+            if (_access(crtpath, 0) == 0) {
+                if (LoadLibrary(crtpath) == 0) {
+                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    return JNI_FALSE;
+                }
+            }
+        }
+#endif /* VCRUNTIME_1_DLL_NAME */
 #ifdef MSVCP_DLL_NAME
         if (GetJREPath(crtpath, MAXPATHLEN)) {
             if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
