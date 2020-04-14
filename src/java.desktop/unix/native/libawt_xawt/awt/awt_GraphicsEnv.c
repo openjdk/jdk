@@ -405,15 +405,8 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         DTRACE_PRINTLN("RENDER extension available");
         xrenderLibHandle = dlopen("libXrender.so.1", RTLD_LAZY | RTLD_GLOBAL);
 
-#ifdef MACOSX
-#define XRENDER_LIB "/usr/X11/lib/libXrender.dylib"
-#else
-#define XRENDER_LIB "libXrender.so"
-#endif
-
         if (xrenderLibHandle == NULL) {
-            xrenderLibHandle = dlopen(XRENDER_LIB,
-                                      RTLD_LAZY | RTLD_GLOBAL);
+            xrenderLibHandle = dlopen("libXrender.so", RTLD_LAZY | RTLD_GLOBAL);
         }
 
 #if defined(__solaris__)

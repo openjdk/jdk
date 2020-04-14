@@ -906,7 +906,7 @@ handleKeyEventWithNumLockMask(XEvent *event, KeySym *keysym)
 {
     KeySym originalKeysym = *keysym;
 
-#if !defined(__linux__) && !defined(MACOSX)
+#if !defined(__linux__)
     /* The following code on Linux will cause the keypad keys
      * not to echo on JTextField when the NumLock is on. The
      * keysyms will be 0, because the last parameter 2 is not defined.
