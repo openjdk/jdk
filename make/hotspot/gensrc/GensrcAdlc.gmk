@@ -75,7 +75,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
       DEBUG_SYMBOLS := false, \
       DISABLED_WARNINGS_clang := tautological-compare, \
-      DEFINE_THIS_FILE := false, \
   ))
 
   ADLC_TOOL := $(BUILD_ADLC_TARGET)
@@ -201,6 +200,9 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 	$(NAWK) \
 	    'BEGIN { print "#line 1 \"$*\""; } \
 	     /^#line 999999$$/ {print "#line " (NR+1) " \"$*\""; next} \
+	     $(if $(call equals, $(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), false), \
+	       /^#line .*$$/ {sub("$(WORKSPACE_ROOT)/","")} \
+	     ) \
 	     {print}' \
 	    < $(ADLC_SUPPORT_DIR)/$* > $@
 

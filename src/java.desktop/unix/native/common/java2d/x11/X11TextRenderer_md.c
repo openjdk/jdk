@@ -154,7 +154,7 @@ static void FillBitmap(XImage *theImage,
         height = bottom - top;
         top -= clipTop;
         left -= clipLeft;
-        pPix = ((jubyte *) theImage->data) + (left >> 3) + top * scan;
+        pPix = ((jubyte *) theImage->data) + (left >> 3) + (intptr_t) top * scan;
         left &= 0x07;
         if (theImage->bitmap_bit_order == MSBFirst) {
             left = 0x80 >> left;

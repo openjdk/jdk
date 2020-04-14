@@ -26,11 +26,6 @@
 #ifndef _ALLOC_H_
 #define _ALLOC_H_
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #include "stdhdrs.h"
 
 // By defining std::bad_alloc in a local header file instead of including
@@ -135,12 +130,12 @@ void handle_bad_alloc(void);
         throw (std::bad_alloc);
 
     #define safe_Malloc(size) \
-        safe_Malloc_outofmem(size, THIS_FILE, __LINE__)
+        safe_Malloc_outofmem(size, __FILE__, __LINE__)
     #define safe_Calloc(num, size) \
-        safe_Calloc_outofmem(num, size, THIS_FILE, __LINE__)
+        safe_Calloc_outofmem(num, size, __FILE__, __LINE__)
     #define safe_Realloc(memblock, size) \
-        safe_Realloc_outofmem(memblock, size, THIS_FILE, __LINE__)
-    #define new new(THIS_FILE, __LINE__)
+        safe_Realloc_outofmem(memblock, size, __FILE__, __LINE__)
+    #define new new(__FILE__, __LINE__)
 #endif /* OUTOFMEM_TEST */
 
 #define TRY \

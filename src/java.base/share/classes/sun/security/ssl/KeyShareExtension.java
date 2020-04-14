@@ -336,7 +336,7 @@ final class KeyShareExtension {
             for (KeyShareEntry entry : spec.clientShares) {
                 NamedGroup ng = NamedGroup.valueOf(entry.namedGroupId);
                 if (ng == null || !SupportedGroups.isActivatable(
-                        shc.sslConfig.algorithmConstraints, ng)) {
+                        shc.algorithmConstraints, ng)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                                 "Ignore unsupported named group: " +
@@ -620,7 +620,7 @@ final class KeyShareExtension {
             KeyShareEntry keyShare = spec.serverShare;
             NamedGroup ng = NamedGroup.valueOf(keyShare.namedGroupId);
             if (ng == null || !SupportedGroups.isActivatable(
-                    chc.sslConfig.algorithmConstraints, ng)) {
+                    chc.algorithmConstraints, ng)) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported named group: " +
                         NamedGroup.nameOf(keyShare.namedGroupId));
@@ -762,7 +762,7 @@ final class KeyShareExtension {
             NamedGroup selectedGroup = null;
             for (NamedGroup ng : shc.clientRequestedNamedGroups) {
                 if (SupportedGroups.isActivatable(
-                        shc.sslConfig.algorithmConstraints, ng)) {
+                        shc.algorithmConstraints, ng)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                                 "HelloRetryRequest selected named group: " +

@@ -437,9 +437,9 @@ ReadRegionsInList(Display *disp, Visual *fakeVis, int depth, int format,
     bytes_per_line = ximage->bytes_per_line;
 
     if (format == ZPixmap)
-          ximage->data = malloc(height*bytes_per_line);
+          ximage->data = malloc((size_t) height * bytes_per_line);
     else
-        ximage->data = malloc(height*bytes_per_line*depth);
+        ximage->data = malloc((size_t) height * bytes_per_line * depth);
 
     ximage->bits_per_pixel = depth; /** Valid only if format is ZPixmap ***/
 

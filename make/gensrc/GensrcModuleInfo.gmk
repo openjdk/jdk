@@ -81,7 +81,9 @@ ifneq ($(MOD_FILES), )
       $(call DependOnVariable, ALL_MODULES)
 		$(call MakeTargetDir)
 		$(RM) $@ $@.tmp
-		$(TOOL_GENMODULEINFOSOURCE) -o $@.tmp \
+		$(TOOL_GENMODULEINFOSOURCE) \
+		    $(if $(call equals, $(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), true), -d) \
+		    -o $@.tmp \
 		    --source-file $< \
 		    --modules $(call CommaList, $(ALL_MODULES)) \
 		    $(MOD_FILES)

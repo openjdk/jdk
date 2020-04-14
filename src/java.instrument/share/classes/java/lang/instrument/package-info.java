@@ -32,6 +32,13 @@
  * programs running on the JVM. The mechanism for instrumentation is modification
  * of the byte-codes of methods.
  *
+ * <p> Note: developers/admininstrators are responsible for verifying
+ * the trustworthiness of content and structure of the Java Agents they deploy,
+ * since those are able to arbitrarily transform the bytecode from other JAR files.
+ * Since that happens after the Jars containing the bytecode have been verified
+ * as trusted, the trustworthiness of a Java Agent can determine the trust towards
+ * the entire program.
+ *
  * <p> An agent is deployed as a JAR file. An attribute in the JAR file manifest
  * specifies the agent class which will be loaded to start the agent. Agents can
  * be started in several ways:

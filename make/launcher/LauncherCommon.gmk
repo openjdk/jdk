@@ -143,7 +143,6 @@ define SetupBuildLauncherBody
           -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
-      CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC, \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       DISABLED_WARNINGS_gcc := unused-function, \

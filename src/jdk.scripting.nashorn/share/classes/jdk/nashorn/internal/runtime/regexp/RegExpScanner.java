@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,13 +141,13 @@ final class RegExpScanner extends Scanner {
             throw new PatternSyntaxException(e.getMessage(), string, scanner.position);
         }
 
-        scanner.processForwardReferences();
-
         // Throw syntax error unless we parsed the entire JavaScript regexp without syntax errors
         if (scanner.position != string.length()) {
             final String p = scanner.getStringBuilder().toString();
             throw new PatternSyntaxException(string, p, p.length() + 1);
         }
+
+        scanner.processForwardReferences();
 
         return scanner;
     }

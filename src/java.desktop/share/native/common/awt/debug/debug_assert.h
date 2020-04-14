@@ -32,22 +32,17 @@ extern "C" {
 
 #include "debug_util.h"
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #if defined(DEBUG)
 
 #define DASSERT(_expr) \
         if ( !(_expr) ) { \
-            DAssert_Impl( #_expr, THIS_FILE, __LINE__); \
+            DAssert_Impl( #_expr, __FILE__, __LINE__); \
         } else { \
         }
 
 #define DASSERTMSG(_expr, _msg) \
         if ( !(_expr) ) { \
-            DAssert_Impl( (_msg), THIS_FILE, __LINE__); \
+            DAssert_Impl( (_msg), __FILE__, __LINE__); \
         } else { \
         }
 

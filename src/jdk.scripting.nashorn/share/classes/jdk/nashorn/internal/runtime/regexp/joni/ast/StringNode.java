@@ -27,7 +27,6 @@ public final class StringNode extends Node implements StringType {
 
     private static final int NODE_STR_MARGIN = 16;
     private static final int NODE_STR_BUF_SIZE = 24;
-    public static final StringNode EMPTY = new StringNode(null, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
     public char[] chars;
     public int p;
@@ -36,7 +35,13 @@ public final class StringNode extends Node implements StringType {
     public int flag;
 
     public StringNode() {
-        this.chars = new char[NODE_STR_BUF_SIZE];
+        this(NODE_STR_BUF_SIZE);
+    }
+
+    private StringNode(int size) {
+        this.chars = new char[size];
+        this.p = 0;
+        this.end = 0;
     }
 
     public StringNode(final char[] chars, final int p, final int end) {
@@ -49,6 +54,13 @@ public final class StringNode extends Node implements StringType {
     public StringNode(final char c) {
         this();
         chars[end++] = c;
+    }
+
+    /**
+     * Create a new empty StringNode.
+     */
+    public static StringNode createEmpty() {
+        return new StringNode(0);
     }
 
     /* Ensure there is ahead bytes available in node's buffer

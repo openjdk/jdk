@@ -27,11 +27,6 @@
 
 #include "debug_util.h"
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #define DMEM_MIN(a,b)   (a) < (b) ? (a) : (b)
 #define DMEM_MAX(a,b)   (a) > (b) ? (a) : (b)
 
@@ -296,7 +291,7 @@ void DMem_ReportLeaks() {
     DMutex_Enter(DMemMutex);
 
     /* Force memory leaks to be output regardless of trace settings */
-    DTrace_EnableFile(THIS_FILE, TRUE);
+    DTrace_EnableFile(__FILE__, TRUE);
     DTRACE_PRINTLN("--------------------------");
     DTRACE_PRINTLN("Debug Memory Manager Leaks");
     DTRACE_PRINTLN("--------------------------");

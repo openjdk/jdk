@@ -37,14 +37,9 @@
 #ifdef USE_ERROR
 #include <stdio.h>
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #define MIDIOUT_CHECK_ERROR  { \
         if (err != MMSYSERR_NOERROR) \
-            ERROR3("MIDI OUT Error in %s:%d : %s\n", THIS_FILE, __LINE__, MIDI_OUT_GetErrorStr((INT32) err)); \
+            ERROR3("MIDI OUT Error in %s:%d : %s\n", __FILE__, __LINE__, MIDI_OUT_GetErrorStr((INT32) err)); \
         }
 #else
 #define MIDIOUT_CHECK_ERROR

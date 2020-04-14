@@ -105,13 +105,15 @@ class Heap$Type$Buffer$RW$
     }
 
     public $Type$Buffer slice() {
-        int rem = this.remaining();
+        int pos = this.position();
+        int lim = this.limit();
+        int rem = (pos <= lim ? lim - pos : 0);
         return new Heap$Type$Buffer$RW$(hb,
                                         -1,
                                         0,
                                         rem,
                                         rem,
-                                        this.position() + offset, segment);
+                                        pos + offset, segment);
     }
 
     @Override

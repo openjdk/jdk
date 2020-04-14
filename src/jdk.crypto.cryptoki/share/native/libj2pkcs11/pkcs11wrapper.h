@@ -477,14 +477,9 @@ void *p11malloc(size_t c, char *file, int line);
 void *p11calloc(size_t c, size_t s, char *file, int line);
 void p11free(void *p, char *file, int line);
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
-#define malloc(c)       (p11malloc((c), THIS_FILE, __LINE__))
-#define calloc(c, s)    (p11calloc((c), (s), THIS_FILE, __LINE__))
-#define free(c)         (p11free((c), THIS_FILE, __LINE__))
+#define malloc(c)       (p11malloc((c), __FILE__, __LINE__))
+#define calloc(c, s)    (p11calloc((c), (s), __FILE__, __LINE__))
+#define free(c)         (p11free((c), __FILE__, __LINE__))
 
 #endif
 

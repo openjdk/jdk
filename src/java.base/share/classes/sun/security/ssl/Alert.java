@@ -265,7 +265,7 @@ enum Alert {
                     // It's OK to get a no_certificate alert from a client of
                     // which we requested client authentication.  However,
                     // if we required it, then this is not acceptable.
-                     if (tc.sslConfig.isClientMode ||
+                    if (tc.sslConfig.isClientMode ||
                             alert != Alert.NO_CERTIFICATE ||
                             (tc.sslConfig.clientAuthType !=
                                     ClientAuthType.CLIENT_AUTH_REQUESTED)) {
@@ -273,8 +273,10 @@ enum Alert {
                             "received handshake warning: " + alert.description);
                     } else {
                         // Otherwise ignore the warning but remove the
-                        // CertificateVerify handshake consumer so the state
-                        // machine doesn't expect it.
+                        // Certificate and CertificateVerify handshake
+                        // consumer so the state machine doesn't expect it.
+                        tc.handshakeContext.handshakeConsumers.remove(
+                                SSLHandshake.CERTIFICATE.id);
                         tc.handshakeContext.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE_VERIFY.id);
                     }

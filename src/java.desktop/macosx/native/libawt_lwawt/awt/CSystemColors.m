@@ -33,11 +33,6 @@
 
 #import "ThreadUtilities.h"
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 NSColor **sColors = nil;
 NSColor **appleColors = nil;
 
@@ -135,7 +130,7 @@ static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemCol
         result = (useAppleColor ? appleColors : sColors)[colorIndex];
     }
     else {
-        NSLog(@"%s: %s %sColor: %ld not found, returning black.", THIS_FILE, __FUNCTION__, (useAppleColor) ? "Apple" : "System", colorIndex);
+        NSLog(@"%s: %s %sColor: %ld not found, returning black.", __FILE__, __FUNCTION__, (useAppleColor) ? "Apple" : "System", colorIndex);
         result = [NSColor blackColor];
     }
 

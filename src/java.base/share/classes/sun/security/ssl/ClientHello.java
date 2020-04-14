@@ -406,7 +406,7 @@ final class ClientHello {
             ProtocolVersion maxProtocolVersion = chc.maximumActiveProtocol;
 
             // session ID of the ClientHello message
-            SessionId sessionId = SSLSessionImpl.nullSession.getSessionId();
+            SessionId sessionId = new SessionId(new byte[0]);
 
             // a list of cipher suites sent by the client
             List<CipherSuite> cipherSuites = chc.activeCipherSuites;

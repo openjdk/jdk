@@ -116,7 +116,7 @@ public class Checksum {
             if (DEBUG) {
                 System.out.println("Exception in getting safe default " +
                                    "checksum value " +
-                                   "from the configuration Setting. " +
+                                   "from the configuration. " +
                                    "No safe default checksum set.");
                 exc.printStackTrace();
             }

@@ -49,14 +49,9 @@ extern "C" {
 #define JPLISASSERT_ENABLEASSERTIONS    (0)
 #endif
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #if JPLISASSERT_ENABLEASSERTIONS
-#define jplis_assert(x)             JPLISAssertCondition((jboolean)(x), #x, THIS_FILE, __LINE__)
-#define jplis_assert_msg(x, msg)    JPLISAssertConditionWithMessage((jboolean)(x), #x, msg, THIS_FILE, __LINE__)
+#define jplis_assert(x)             JPLISAssertCondition((jboolean)(x), #x, __FILE__, __LINE__)
+#define jplis_assert_msg(x, msg)    JPLISAssertConditionWithMessage((jboolean)(x), #x, msg, __FILE__, __LINE__)
 #else
 #define jplis_assert(x)
 #define jplis_assert_msg(x, msg)

@@ -263,7 +263,7 @@ Java_sun_java2d_x11_X11PMBlitLoops_updateBitmask
         return;
     }
     dstScan = image->bytes_per_line;
-    image->data = malloc(dstScan * height);
+    image->data = malloc((size_t) dstScan * height);
     if (image->data == NULL) {
         XFree(image);
         AWT_UNLOCK();
