@@ -342,17 +342,19 @@ bool HeapRegionManager::is_on_preferred_index(uint region_index, uint preferred_
   return region_node_index == preferred_node_index;
 }
 
-void HeapRegionManager::guarantee_contiguous_range(uint start, uint num_regions) {
+#ifdef ASSERT
+void HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) {
   // General sanity check, regions found should either be available and empty
   // or not available so that we can make them available and use them.
   for (uint i = start; i < (start + num_regions); i++) {
     HeapRegion* hr = _regions.get_by_index(i);
-    guarantee(!is_available(i) || hr->is_free(),
-              "Found region sequence starting at " UINT32_FORMAT ", length " UINT32_FORMAT
-              " that is not free at " UINT32_FORMAT ". Hr is " PTR_FORMAT ", type is %s",
-              start, num_regions, i, p2i(hr), hr->get_type_str());
+    assert(!is_available(i) || hr->is_free(),
+           "Found region sequence starting at " UINT32_FORMAT ", length " UINT32_FORMAT
+           " that is not free at " UINT32_FORMAT ". Hr is " PTR_FORMAT ", type is %s",
+           start, num_regions, i, p2i(hr), hr->get_type_str());
   }
 }
+#endif
 
 uint HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_regions) {
   assert(start <= end, "precondition");
@@ -372,7 +374,7 @@ uint HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_
         break;
       } else if (i == unchecked) {
         // All regions of candidate sequence have passed check.
-        guarantee_contiguous_range(candidate, num_regions);
+        assert_contiguous_range(candidate, num_regions);
         return candidate;
       }
     }
