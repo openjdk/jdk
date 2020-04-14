@@ -143,6 +143,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
+        new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
@@ -186,6 +187,7 @@ public class TestGCLogMessages {
 
     public static void main(String[] args) throws Exception {
         new TestGCLogMessages().testNormalLogs();
+        new TestGCLogMessages().testConcurrentRefinementLogs();
         new TestGCLogMessages().testWithToSpaceExhaustionLogs();
         new TestGCLogMessages().testWithInitialMark();
         new TestGCLogMessages().testExpandHeap();
@@ -219,6 +221,23 @@ public class TestGCLogMessages {
         output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, allLogMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
+    }
+
+    LogMessageWithLevel concRefineMessages[] = new LogMessageWithLevel[] {
+        new LogMessageWithLevel("Mutator refinement: ", Level.DEBUG),
+        new LogMessageWithLevel("Concurrent refinement: ", Level.DEBUG),
+        new LogMessageWithLevel("Total refinement: ", Level.DEBUG),
+        // "Concurrent refinement rate" optionally printed if any.
+        // "Generate dirty cards rate" optionally printed if any.
+    };
+
+    private void testConcurrentRefinementLogs() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                                  "-Xmx10M",
+                                                                  "-Xlog:gc+refine+stats=debug",
+                                                                  GCTest.class.getName());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        checkMessagesAtLevel(output, concRefineMessages, Level.DEBUG);
     }
 
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {

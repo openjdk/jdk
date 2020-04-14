@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,6 @@ class G1RemSet;
 // A G1RemSetSummary manages statistical information about the G1RemSet
 
 class G1RemSetSummary {
-private:
-  size_t _total_mutator_refined_cards;
-  size_t _total_concurrent_refined_cards;
-
   size_t _num_coarsenings;
 
   size_t _num_vtimes;
@@ -68,18 +64,6 @@ public:
 
   double sampling_thread_vtime() const {
     return _sampling_thread_vtime;
-  }
-
-  size_t total_mutator_refined_cards() const {
-    return _total_mutator_refined_cards;
-  }
-
-  size_t total_concurrent_refined_cards() const {
-    return _total_concurrent_refined_cards;
-  }
-
-  size_t total_refined_cards() const {
-    return total_mutator_refined_cards() + total_concurrent_refined_cards();
   }
 
   size_t num_coarsenings() const {
