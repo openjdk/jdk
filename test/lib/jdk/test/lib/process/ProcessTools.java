@@ -540,8 +540,12 @@ public final class ProcessTools {
         String currentLibPath = pb.environment().get(libPathVar);
 
         String newLibPath = jvmLibDir;
+        if (Platform.isWindows()) {
+            String libDir = Platform.libDir().toString();
+            newLibPath = newLibPath + File.pathSeparator + libDir;
+        }
         if ( (currentLibPath != null) && !currentLibPath.isEmpty() ) {
-            newLibPath = currentLibPath + File.pathSeparator + jvmLibDir;
+            newLibPath = newLibPath + File.pathSeparator + currentLibPath;
         }
 
         pb.environment().put(libPathVar, newLibPath);
