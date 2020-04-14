@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,9 +329,12 @@ import java.util.function.BiFunction;
  * each endpoint must decide which role to assume.  This choice determines
  * who begins the handshaking process as well as which type of messages
  * should be sent by each party.  The method {@link
- * #setUseClientMode(boolean)} configures the mode.  Once the initial
- * handshaking has started, an {@code SSLEngine} can not switch
- * between client and server modes, even when performing renegotiations.
+ * #setUseClientMode(boolean)} configures the mode.  Note that the
+ * default mode for a new {@code SSLEngine} is provider-specific.
+ * Applications should set the mode explicitly before invoking other
+ * methods of the {@code SSLEngine}.  Once the initial handshaking has
+ * started, an {@code SSLEngine} can not switch between client and server
+ * modes, even when performing renegotiations.
  * <P>
  * Applications might choose to process delegated tasks in different
  * threads.  When an {@code SSLEngine}
@@ -1098,6 +1101,9 @@ public abstract class SSLEngine {
      * Servers normally authenticate themselves, and clients
      * are not required to do so.
      *
+     * @implNote
+     * The JDK SunJSSE provider implementation default for this mode is false.
+     *
      * @param   mode true if the engine should start its handshaking
      *          in "client" mode
      * @throws  IllegalArgumentException if a mode change is attempted
@@ -1110,6 +1116,10 @@ public abstract class SSLEngine {
     /**
      * Returns true if the engine is set to use client mode when
      * handshaking.
+     *
+     * @implNote
+     * The JDK SunJSSE provider implementation returns false unless
+     * {@link setUseClientMode(boolean)} is used to change the mode to true.
      *
      * @return  true if the engine should do handshaking
      *          in "client" mode

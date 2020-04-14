@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,14 @@ public class SSLContext {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case this factory method should not be used.
      *
+     * @implNote
+     * It is provider-specific if the returned SSLEngine uses client or
+     * server mode by default for the (D)TLS connection. The JDK SunJSSE
+     * provider implementation uses server mode by default.  However, it
+     * is recommended to always set the desired mode explicitly by calling
+     * {@link SSLEngine#setUseClientMode(boolean) SSLEngine.setUseClientMode()}
+     * before invoking other methods of the SSLEngine.
+     *
      * @return  the {@code SSLEngine} object
      * @throws  UnsupportedOperationException if the underlying provider
      *          does not implement the operation.
@@ -381,6 +389,14 @@ public class SSLContext {
      * <P>
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case peerHost needs to be specified.
+     *
+     * @implNote
+     * It is provider-specific if the returned SSLEngine uses client or
+     * server mode by default for the (D)TLS connection. The JDK SunJSSE
+     * provider implementation uses server mode by default.  However, it
+     * is recommended to always set the desired mode explicitly by calling
+     * {@link SSLEngine#setUseClientMode(boolean) SSLEngine.setUseClientMode()}
+     * before invoking other methods of the SSLEngine.
      *
      * @param   peerHost the non-authoritative name of the host
      * @param   peerPort the non-authoritative port

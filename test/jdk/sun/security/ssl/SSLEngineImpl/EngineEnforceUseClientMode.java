@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 4980882 8207250
+ * @bug 4980882 8207250 8237474
  * @summary SSLEngine should enforce setUseClientMode
  * @run main/othervm EngineEnforceUseClientMode
  * @author Brad R. Wetmore
@@ -89,6 +89,11 @@ public class EngineEnforceUseClientMode {
         ssle3 = sslc.createSSLEngine();
         ssle4 = sslc.createSSLEngine();
         ssle5 = sslc.createSSLEngine();
+        //Check default SSLEngine role.
+        if (ssle5.getUseClientMode()) {
+            throw new RuntimeException("Expected default role to be server");
+        }
+
     }
 
     private void runTest() throws Exception {
