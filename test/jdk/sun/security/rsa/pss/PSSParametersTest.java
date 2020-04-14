@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import static javax.crypto.Cipher.PUBLIC_KEY;
 
 /**
  * @test
- * @bug 8146293
+ * @bug 8146293 8242556
  * @summary Test RSASSA-PSS AlgorithmParameters impl of SunRsaSign provider.
  * @run main PSSParametersTest
  */
@@ -41,34 +41,41 @@ public class PSSParametersTest {
      */
     private static final String PROVIDER = "SunRsaSign";
 
-    private static final String ALGO = "RSASSA-PSS";
+    private static final String PSS_ALGO = "RSASSA-PSS";
+    private static final String PSS_OID = "1.2.840.113549.1.1.10";
 
     public static void main(String[] args) throws Exception {
         System.out.println("Testing against DEFAULT parameters");
         test(PSSParameterSpec.DEFAULT);
         System.out.println("Testing against custom parameters");
-        test(new PSSParameterSpec("SHA-512/224", "MGF1", MGF1ParameterSpec.SHA384,
-            100, 1));
+        test(new PSSParameterSpec("SHA-512/224", "MGF1",
+                MGF1ParameterSpec.SHA384, 100, 1));
         System.out.println("Test Passed");
     }
 
-    // test against the given spec by initializing w/ it, generate the DER bytes,
-    // then initialize another instance w/ the DER bytes, retrieve the spec.
-    // compare both spec for equality and throw exception if the comparison failed.
+    // test the given spec by first initializing w/ it, generate the DER
+    // bytes, then initialize w/ the DER bytes, retrieve the spec.
+    // compare both spec for equality and throw exception if the check failed.
     private static void test(PSSParameterSpec spec) throws Exception {
-        AlgorithmParameters params = AlgorithmParameters.getInstance(ALGO, PROVIDER);
-        params.init(spec);
-        byte[] encoded = params.getEncoded();
-        AlgorithmParameters params2 = AlgorithmParameters.getInstance(ALGO, PROVIDER);
-        params2.init(encoded);
-        PSSParameterSpec spec2 = params2.getParameterSpec(PSSParameterSpec.class);
-        if (!isEqual(spec, spec2)) {
-            throw new RuntimeException("Spec check Failed");
+        String ALGORITHMS[] = { PSS_ALGO, PSS_OID };
+        for (String alg : ALGORITHMS) {
+            AlgorithmParameters params = AlgorithmParameters.getInstance
+                    (alg, PROVIDER);
+            params.init(spec);
+            byte[] encoded = params.getEncoded();
+            AlgorithmParameters params2 = AlgorithmParameters.getInstance
+                    (alg, PROVIDER);
+            params2.init(encoded);
+            PSSParameterSpec spec2 = params2.getParameterSpec
+                (PSSParameterSpec.class);
+            if (!isEqual(spec, spec2)) {
+                throw new RuntimeException("Spec check Failed for " +  alg);
+            }
         }
     }
 
-    private static boolean isEqual(PSSParameterSpec spec, PSSParameterSpec spec2)
-        throws Exception {
+    private static boolean isEqual(PSSParameterSpec spec,
+            PSSParameterSpec spec2) throws Exception {
         if (spec == spec2) return true;
         if (spec == null || spec2 == null) return false;
 
@@ -107,8 +114,9 @@ public class PSSParametersTest {
                     ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm().equals
                          (((MGF1ParameterSpec)mgfParams2).getDigestAlgorithm());
                 if (!result) {
-                    System.out.println("Different Digest algo in MGF Parameters: " +
-                        ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm() + " vs " +
+                    System.out.println("Different MGF1 digest algorithms: " +
+                        ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm() +
+                        " vs " +
                         ((MGF1ParameterSpec)mgfParams2).getDigestAlgorithm());
                 }
                 return result;
