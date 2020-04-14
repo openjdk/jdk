@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178982 8220497 8210683
+ * @bug 8178982 8220497 8210683 8241982
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -33,7 +33,9 @@
 
 import javadoc.tester.JavadocTester;
 
+import javax.script.Bindings;
 import javax.script.Invocable;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -44,7 +46,8 @@ import java.io.IOException;
 import java.util.List;
 
 /*
- * Tests for the search feature using Nashorn JavaScript engine.
+ * Tests for the search feature using any available javax.script JavaScript engine.
+ * The test is skipped if no JavaScript engine is available.
  */
 public class TestSearchScript extends JavadocTester {
 
@@ -55,7 +58,15 @@ public class TestSearchScript extends JavadocTester {
 
     private Invocable getEngine() throws ScriptException, IOException, NoSuchMethodException {
         ScriptEngineManager engineManager = new ScriptEngineManager();
-        ScriptEngine engine = engineManager.getEngineByName("nashorn");
+        // Use "js" engine name to use any available JavaScript engine.
+        ScriptEngine engine = engineManager.getEngineByName("js");
+        if (engine == null) {
+            return null;
+        }
+        // For GraalJS set Nashorn compatibility mode via Bindings,
+        // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
+        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+        bindings.put("polyglot.js.nashorn-compat", true);
         engine.eval(new BufferedReader(new FileReader(new File(testSrc, "javadoc-search.js"))));
         Invocable inv = (Invocable) engine;
         inv.invokeFunction("loadIndexFiles", outputDir.getAbsolutePath());
@@ -73,6 +84,11 @@ public class TestSearchScript extends JavadocTester {
         checkExit(Exit.OK);
 
         Invocable inv = getEngine();
+
+        if (inv == null) {
+            out.println("No JavaScript engine available. Test skipped.");
+            return;
+        }
 
         // exact match, case sensitivity
         checkSearch(inv, "mapmodule", List.of("mapmodule"));
@@ -169,6 +185,11 @@ public class TestSearchScript extends JavadocTester {
         checkExit(Exit.OK);
 
         Invocable inv = getEngine();
+
+        if (inv == null) {
+            out.println("No JavaScript engine available. Test skipped.");
+            return;
+        }
 
         // exact match, case sensitvity, left boundaries
         checkSearch(inv, "list", List.of("listpkg", "listpkg.List", "listpkg.ListProvider", "listpkg.MyList",
