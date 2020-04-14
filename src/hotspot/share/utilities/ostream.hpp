@@ -230,11 +230,11 @@ class fileStream : public outputStream {
   ~fileStream();
   bool is_open() const { return _file != NULL; }
   virtual void write(const char* c, size_t len);
-  size_t read(void *data, size_t size, size_t count) { return ::fread(data, size, count, _file); }
+  size_t read(void *data, size_t size, size_t count) { return _file != NULL ? ::fread(data, size, count, _file) : 0; }
   char* readln(char *data, int count);
-  int eof() { return feof(_file); }
+  int eof() { return _file != NULL ? feof(_file) : -1; }
   long fileSize();
-  void rewind() { ::rewind(_file); }
+  void rewind() { if (_file != NULL) ::rewind(_file); }
   void flush();
 };
 

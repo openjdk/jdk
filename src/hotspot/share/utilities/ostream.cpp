@@ -533,8 +533,8 @@ void fileStream::write(const char* s, size_t len) {
   if (_file != NULL)  {
     // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = fwrite(s, 1, len, _file);
+    update_position(s, len);
   }
-  update_position(s, len);
 }
 
 long fileStream::fileSize() {
@@ -551,9 +551,12 @@ long fileStream::fileSize() {
 }
 
 char* fileStream::readln(char *data, int count ) {
-  char * ret = ::fgets(data, count, _file);
-  //Get rid of annoying \n char
-  data[::strlen(data)-1] = '\0';
+  char * ret = NULL;
+  if (_file != NULL) {
+    ret = ::fgets(data, count, _file);
+    //Get rid of annoying \n char
+    data[::strlen(data)-1] = '\0';
+  }
   return ret;
 }
 
@@ -565,15 +568,17 @@ fileStream::~fileStream() {
 }
 
 void fileStream::flush() {
-  fflush(_file);
+  if (_file != NULL) {
+    fflush(_file);
+  }
 }
 
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = ::write(_fd, s, (int)len);
+    update_position(s, len);
   }
-  update_position(s, len);
 }
 
 defaultStream* defaultStream::instance = NULL;
