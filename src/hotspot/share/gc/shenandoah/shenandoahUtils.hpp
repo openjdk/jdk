@@ -60,7 +60,7 @@ private:
   ConcurrentGCTimer* const _timer;
 
 public:
-  ShenandoahPausePhase(const char* title);
+  ShenandoahPausePhase(const char* title, bool log_heap_usage = false);
   ~ShenandoahPausePhase();
 };
 
