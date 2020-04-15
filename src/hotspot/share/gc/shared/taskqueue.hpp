@@ -206,7 +206,9 @@ public:
   }
 
   // Maximum number of elements allowed in the queue.  This is two less
-  // than the actual queue size, for somewhat complicated reasons.
+  // than the actual queue size, so that a full queue can be distinguished
+  // from underflow involving pop_local and concurrent pop_global operations
+  // in GenericTaskQueue.
   uint max_elems() const { return N - 2; }
 
   // Total size of queue.
@@ -267,8 +269,7 @@ public:
 #endif
 
 private:
-  // Slow paths for push, pop_local.  (pop_global has no fast path.)
-  bool push_slow(E t, uint dirty_n_elems);
+  // Slow path for pop_local, dealing with possible conflict with pop_global.
   bool pop_local_slow(uint localBot, Age oldAge);
 
 public:

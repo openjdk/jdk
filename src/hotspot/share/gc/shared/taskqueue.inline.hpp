@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,31 +57,23 @@ inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
   ArrayAllocator<E>::free(const_cast<E*>(_elems), N);
 }
 
-template<class E, MEMFLAGS F, unsigned int N>
-bool GenericTaskQueue<E, F, N>::push_slow(E t, uint dirty_n_elems) {
-  if (dirty_n_elems == N - 1) {
-    // Actually means 0, so do the push.
-    uint localBot = _bottom;
-    // g++ complains if the volatile result of the assignment is
-    // unused, so we cast the volatile away.  We cannot cast directly
-    // to void, because gcc treats that as not using the result of the
-    // assignment.  However, casting to E& means that we trigger an
-    // unused-value warning.  So, we cast the E& to void.
-    (void)const_cast<E&>(_elems[localBot] = t);
-    Atomic::release_store(&_bottom, increment_index(localBot));
-    TASKQUEUE_STATS_ONLY(stats.record_push());
-    return true;
-  }
-  return false;
-}
-
 template<class E, MEMFLAGS F, unsigned int N> inline bool
 GenericTaskQueue<E, F, N>::push(E t) {
   uint localBot = _bottom;
   assert(localBot < N, "_bottom out of range.");
   idx_t top = _age.top();
   uint dirty_n_elems = dirty_size(localBot, top);
-  assert(dirty_n_elems < N, "n_elems out of range.");
+  // A dirty_size of N-1 cannot happen in push.  Considering only push:
+  // (1) dirty_n_elems is initially 0.
+  // (2) push adds an element iff dirty_n_elems < max_elems(), which is N - 2.
+  // (3) only push adding an element can increase dirty_n_elems.
+  // => dirty_n_elems <= N - 2, by induction
+  // => dirty_n_elems < N - 1, invariant
+  //
+  // A pop_global that is concurrent with push cannot produce a state where
+  // dirty_size == N-1.  pop_global only removes an element if dirty_elems > 0,
+  // so can't underflow to -1 (== N-1) with push.
+  assert(dirty_n_elems <= max_elems(), "n_elems out of range.");
   if (dirty_n_elems < max_elems()) {
     // g++ complains if the volatile result of the assignment is
     // unused, so we cast the volatile away.  We cannot cast directly
@@ -92,9 +84,8 @@ GenericTaskQueue<E, F, N>::push(E t) {
     Atomic::release_store(&_bottom, increment_index(localBot));
     TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
-  } else {
-    return push_slow(t, dirty_n_elems);
   }
+  return false;                 // Queue is full.
 }
 
 template <class E, MEMFLAGS F, unsigned int N>
