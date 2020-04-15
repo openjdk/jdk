@@ -1273,7 +1273,7 @@ public class ZipFile implements ZipConstants, Closeable {
             return h;
         }
 
-        private static final int hash_append(int hash, byte b) {
+        private static final int hashAppend(int hash, byte b) {
             return hash * 31 + b;
         }
 
@@ -1492,11 +1492,13 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             int hsh = hashN(name, 0, name.length);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
+            boolean appendSlash = false;
             /*
              * This while loop is an optimization where a double lookup
-             * for name and name+/ is being performed. The name char
-             * array has enough room at the end to try again with a
-             * slash appended if the first table lookup does not succeed.
+             * for name and name+/ is being performed. The name byte
+             * array will be updated with an added slash only if the first
+             * table lookup fails and there is a matching hash value for
+             * name+/.
              */
             while (true) {
                 /*
@@ -1505,6 +1507,11 @@ public class ZipFile implements ZipConstants, Closeable {
                  */
                 while (idx != ZIP_ENDCHAIN) {
                     if (getEntryHash(idx) == hsh) {
+                        if (appendSlash) {
+                            name = Arrays.copyOf(name, name.length + 1);
+                            name[name.length - 1] = '/';
+                            appendSlash = false;
+                        }
                         // The CEN name must match the specfied one
                         int pos = getEntryPos(idx);
                         if (name.length == CENNAM(cen, pos)) {
@@ -1527,11 +1534,11 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (!addSlash  || name.length == 0 || name[name.length - 1] == '/') {
                      return -1;
                 }
-                /* Add slash and try once more */
-                name = Arrays.copyOf(name, name.length + 1);
-                name[name.length - 1] = '/';
-                hsh = hash_append(hsh, (byte)'/');
-                //idx = table[hsh % tablelen];
+                // Add a slash to the hash code
+                hsh = hashAppend(hsh, (byte)'/');
+                // If we find a match on the new hash code, we need to append a
+                // slash when comparing
+                appendSlash = true;
                 idx = table[(hsh & 0x7fffffff) % tablelen];
                 addSlash = false;
             }
