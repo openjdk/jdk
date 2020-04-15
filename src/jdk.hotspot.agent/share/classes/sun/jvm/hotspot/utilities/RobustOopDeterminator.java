@@ -31,6 +31,8 @@ import sun.jvm.hotspot.oops.Metadata;
 import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 /** This class determines to the best of its ability, and in a
     reasonably robust fashion, whether a given pointer is an intact

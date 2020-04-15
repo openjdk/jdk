@@ -29,11 +29,13 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 public class ClassLoaderData extends VMObject {
   static {
-    VM.registerVMInitializedObserver(new java.util.Observer() {
-        public void update(java.util.Observable o, Object data) {
+    VM.registerVMInitializedObserver(new Observer() {
+        public void update(Observable o, Object data) {
           initialize(VM.getVM().getTypeDataBase());
         }
       });

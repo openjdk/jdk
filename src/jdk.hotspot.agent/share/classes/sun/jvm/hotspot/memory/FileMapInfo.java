@@ -30,6 +30,8 @@ import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 public class FileMapInfo {
   private static FileMapHeader headerObj;

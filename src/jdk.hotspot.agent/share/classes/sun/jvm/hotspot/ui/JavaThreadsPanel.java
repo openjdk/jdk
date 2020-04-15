@@ -45,6 +45,8 @@ import sun.jvm.hotspot.ui.action.*;
 
 import com.sun.java.swing.ui.*;
 import com.sun.java.swing.action.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 /**
  * This panel contains a JTable which displays the list of Java

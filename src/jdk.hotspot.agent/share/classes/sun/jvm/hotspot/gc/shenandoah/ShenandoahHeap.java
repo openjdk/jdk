@@ -38,8 +38,8 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.utilities.BitMapInterface;
 
 import java.io.PrintStream;
-import java.util.Observable;
-import java.util.Observer;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 public class ShenandoahHeap extends CollectedHeap {
     static private CIntegerField numRegions;

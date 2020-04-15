@@ -47,6 +47,8 @@ import sun.jvm.hotspot.ui.*;
 import sun.jvm.hotspot.ui.tree.*;
 import sun.jvm.hotspot.ui.classbrowser.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 /** The top-level HotSpot Debugger. FIXME: make this an embeddable
     component! (Among other things, figure out what to do with the
