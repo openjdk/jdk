@@ -166,7 +166,7 @@ public:
 
 void ShenandoahUnload::unload() {
   assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Why we here?");
-  if (!ShenandoahHeap::heap()->is_concurrent_root_in_progress()) {
+  if (!ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
     return;
   }
 

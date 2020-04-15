@@ -149,7 +149,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
   assert (!has_no_alloc_capacity(r), "Performance: should avoid full regions on this path: " SIZE_FORMAT, r->index());
 
-  if (_heap->is_concurrent_root_in_progress() &&
+  if (_heap->is_concurrent_weak_root_in_progress() &&
       r->is_trash()) {
     return NULL;
   }
@@ -337,7 +337,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 }
 
 bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) {
-  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_root_in_progress());
+  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
 }
 
 size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) {

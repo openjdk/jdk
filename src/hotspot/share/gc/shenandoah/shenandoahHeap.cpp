@@ -1233,7 +1233,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_concurrent_root_in_progress() && !_marking_context->is_marked(obj)) {
+      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
@@ -1779,15 +1779,16 @@ void ShenandoahHeap::op_roots() {
       workers()->run_task(&task);
 
       _unloader.unload();
+      set_concurrent_weak_root_in_progress(false);
     }
 
     if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
       ShenandoahConcurrentRootsEvacUpdateTask task(!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
       workers()->run_task(&task);
     }
+    set_concurrent_weak_root_in_progress(false);
+    set_concurrent_root_in_progress(false);
   }
-
-  set_concurrent_root_in_progress(false);
 }
 
 class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -2043,6 +2044,15 @@ void ShenandoahHeap::set_concurrent_root_in_progress(bool in_progress) {
     _concurrent_root_in_progress.set();
   } else {
     _concurrent_root_in_progress.unset();
+  }
+}
+
+void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
+  assert(ShenandoahConcurrentRoots::can_do_concurrent_roots(), "Why set the flag?");
+  if (in_progress) {
+    _concurrent_weak_root_in_progress.set();
+  } else {
+    _concurrent_weak_root_in_progress.unset();
   }
 }
 
@@ -2324,6 +2334,7 @@ void ShenandoahHeap::prepare_concurrent_roots() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
     set_concurrent_root_in_progress(true);
+    set_concurrent_weak_root_in_progress(true);
   }
 }
 

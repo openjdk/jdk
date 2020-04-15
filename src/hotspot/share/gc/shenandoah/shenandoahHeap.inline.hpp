@@ -382,6 +382,10 @@ inline bool ShenandoahHeap::is_concurrent_root_in_progress() const {
   return _concurrent_root_in_progress.is_set();
 }
 
+inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
+  return _concurrent_weak_root_in_progress.is_set();
+}
+
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl) {
   marked_object_iterate(region, cl, region->top());

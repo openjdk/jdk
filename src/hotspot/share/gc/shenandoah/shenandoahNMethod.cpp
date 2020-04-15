@@ -213,7 +213,7 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
       ShenandoahKeepNMethodMetadataAliveClosure<false> cl;
       data->oops_do(&cl);
     }
-  } else if (heap->is_concurrent_root_in_progress()) {
+  } else if (heap->is_concurrent_weak_root_in_progress()) {
     ShenandoahEvacOOMScope evac_scope;
     ShenandoahEvacuateUpdateRootsClosure<> cl;
     data->oops_do(&cl, true /*fix relocation*/);
