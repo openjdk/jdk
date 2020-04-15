@@ -483,7 +483,7 @@ public class HotSpotAgent {
     private void setupDebuggerAlternate(String alternateName) {
 
         try {
-            Class c = Class.forName(alternateName);
+            Class<?> c = Class.forName(alternateName);
             Constructor cons = c.getConstructor();
             debugger = (JVMDebugger) cons.newInstance();
             attachDebugger();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public abstract class ActionManager
 
     protected ActionManager()
     {
-        actions = new HashMap();
+        actions = new HashMap<>();
         addActions();
     }
 
@@ -93,7 +93,7 @@ public abstract class ActionManager
             action.setEnabled(enabled);
     }
 
-    private HashMap actions;
+    private HashMap<String, Action> actions;
     private static ActionUtilities utilities = new ActionUtilities();
     private static ActionManager manager;
 

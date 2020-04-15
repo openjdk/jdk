@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import com.sun.java.swing.action.*;
  * in to different containing frameworks (HSDB).
  */
 public class SAPanel extends JPanel {
-    protected List listeners = new ArrayList();
+    protected List<SAListener> listeners = new ArrayList<>();
 
 
     public SAPanel() {

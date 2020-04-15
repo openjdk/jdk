@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class FinalizerInfo extends Tool {
             OopField nextField =
                 (OopField) k.findField("next", "Ljava/lang/ref/Reference;");
 
-            HashMap map = new HashMap();
+            HashMap<Klass, ObjectHistogramElement> map = new HashMap<>();
             for (;;) {
                 Oop referent = referentField.getValue(head);
 
@@ -114,7 +114,7 @@ public class FinalizerInfo extends Tool {
                 if (!map.containsKey(klass)) {
                     map.put(klass, new ObjectHistogramElement(klass));
                 }
-                ((ObjectHistogramElement)map.get(klass)).updateWith(referent);
+                map.get(klass).updateWith(referent);
 
                 Oop next = nextField.getValue(head);
                 if (next == null || next.equals(head)) break;
@@ -124,11 +124,11 @@ public class FinalizerInfo extends Tool {
             /*
              * Sort results - decending order by total size
              */
-            ArrayList list = new ArrayList();
+            ArrayList<ObjectHistogramElement> list = new ArrayList<>();
             list.addAll(map.values());
-            Collections.sort(list, new Comparator() {
-              public int compare(Object o1, Object o2) {
-                  return ((ObjectHistogramElement)o1).compare((ObjectHistogramElement)o2);
+            Collections.sort(list, new Comparator<>() {
+              public int compare(ObjectHistogramElement o1, ObjectHistogramElement o2) {
+                  return o1.compare(o2);
               }
             });
 

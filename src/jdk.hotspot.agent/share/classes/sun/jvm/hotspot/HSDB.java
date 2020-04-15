@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   private boolean      attached;
   private boolean      argError;
   private JFrame frame;
-  /** List <JMenuItem> */
-  private java.util.List attachMenuItems;
-  /** List <JMenuItem> */
-  private java.util.List detachMenuItems;
+  private java.util.List<JMenuItem> attachMenuItems;
+  private java.util.List<JMenuItem> detachMenuItems;
   private JMenu toolsMenu;
   private JMenuItem showDbgConsoleMenuItem;
   private JMenuItem computeRevPtrsMenuItem;
@@ -155,8 +153,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
 
     agent = new HotSpotAgent();
     workerThread = new WorkerThread();
-    attachMenuItems = new java.util.ArrayList();
-    detachMenuItems = new java.util.ArrayList();
+    attachMenuItems = new java.util.ArrayList<>();
+    detachMenuItems = new java.util.ArrayList<>();
 
 
     JMenuBar menuBar = new JMenuBar();
@@ -875,7 +873,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           // frames in a table and one which finds Java frames and if they
           // are in the table indicates that they were interrupted by a signal.
 
-          Map interruptedFrameMap = new HashMap();
+          Map<sun.jvm.hotspot.runtime.Frame, SignalInfo> interruptedFrameMap = new HashMap<>();
           {
             sun.jvm.hotspot.runtime.Frame tmpFrame = thread.getCurrentFrameGuess();
             RegisterMap tmpMap = thread.newRegisterMap(false);
@@ -1845,9 +1843,9 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     return buf.toString();
   }
 
-  private void setMenuItemsEnabled(java.util.List items, boolean enabled) {
-    for (Iterator iter = items.iterator(); iter.hasNext(); ) {
-      ((JMenuItem) iter.next()).setEnabled(enabled);
+  private void setMenuItemsEnabled(java.util.List<JMenuItem> items, boolean enabled) {
+    for (Iterator<JMenuItem> iter = items.iterator(); iter.hasNext(); ) {
+      iter.next().setEnabled(enabled);
     }
   }
 }

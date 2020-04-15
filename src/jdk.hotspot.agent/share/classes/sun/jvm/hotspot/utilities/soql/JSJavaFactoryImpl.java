@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
          }
       }
       if (res != null) {
-         om.put(oop, new SoftReference(res));
+         om.put(oop, new SoftReference<>(res));
       }
       return res;
    }
@@ -60,7 +60,7 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
           res = new JSJavaTypeArrayKlass((TypeArrayKlass) klass, this);
       }
       if (res != null) {
-         om.put(klass, new SoftReference(res));
+         om.put(klass, new SoftReference<>(res));
       }
       return res;
    }
@@ -68,7 +68,7 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
    public JSJavaMethod newJSJavaMethod(Method method) {
       JSJavaMethod res = new JSJavaMethod(method, this);
       if (res != null) {
-         om.put(method, new SoftReference(res));
+         om.put(method, new SoftReference<>(res));
       }
       return res;
    }
@@ -190,8 +190,7 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
       return res;
    }
 
-   // Map<Oop, SoftReference<JSJavaObject>>
-   private Map om = new HashMap();
+   private Map<Object, SoftReference<?>> om = new HashMap<>();
    private String javaLangString;
    private String javaLangThread;
    private String javaLangClass;

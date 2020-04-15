@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
     private ObjectHistogramToolBar toolbar;
     private StatusBar statusBar;
     private JTable     table;
-    private java.util.List listeners;
+    private java.util.List<Listener> listeners;
 
     public ObjectHistogramPanel(ObjectHistogram histo) {
         dataModel = new ObjectHistogramTableModel(histo);
@@ -263,7 +263,7 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
 
     public void addPanelListener(Listener listener) {
         if (listeners == null) {
-            listeners = new ArrayList();
+            listeners = new ArrayList<>();
         }
         listeners.add(listener);
     }

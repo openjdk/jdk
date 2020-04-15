@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,27 +43,27 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
   ///////////
 
   // Used only during construction
-  private Map lazyTypeMap;
+  private Map<Object, Type> lazyTypeMap;
 
   // Used during construction and at run time for iteration
-  private List types;
+  private List<Type> types;
 
   // Used only during runtime
-  private Map nameToTypeMap;
+  private Map<String, Type> nameToTypeMap;
 
   /////////////
   // Symbols //
   /////////////
 
   // Used only during construction
-  private Map lazySymMap;
+  private Map<Object, BlockSym> lazySymMap;
 
   // List of blocks in increasing order by starting address. These can
   // then be binary searched.
-  private List blocks;
+  private List<BlockSym> blocks;
 
   // Name-to-global symbol table
-  private Map nameToSymMap;
+  private Map<String, GlobalSym> nameToSymMap;
 
   //////////////////
   // Line numbers //
@@ -85,13 +85,13 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
     state   = CONSTRUCTION_STATE;
 
     // Types
-    lazyTypeMap  = new HashMap();
-    types        = new ArrayList();
+    lazyTypeMap  = new HashMap<>();
+    types        = new ArrayList<>();
 
     // Symbols
-    lazySymMap   = new HashMap();
-    blocks       = new ArrayList();
-    nameToSymMap = new HashMap();
+    lazySymMap   = new HashMap<>();
+    blocks       = new ArrayList<>();
+    nameToSymMap = new HashMap<>();
 
     // Line numbers
     lineNumbers  = new BasicLineNumberMapping();
@@ -119,7 +119,7 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
     // Go through all types in lazyTypeMap and types.
     // Resolve all LazyTypes.
     resolveLazyMap(listener);
-    for (ListIterator iter = types.listIterator(); iter.hasNext(); ) {
+    for (ListIterator<Type> iter = types.listIterator(); iter.hasNext(); ) {
       BasicType t = (BasicType) iter.next();
       BasicType t2 = (BasicType) t.resolveTypes(this, listener);
       if (t != t2) {
@@ -137,10 +137,8 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
 
     // Sort blocks in ascending order of starting address (but do not
     // change ordering among blocks with the same starting address)
-    Collections.sort(blocks, new Comparator() {
-        public int compare(Object o1, Object o2) {
-          BlockSym b1 = (BlockSym) o1;
-          BlockSym b2 = (BlockSym) o2;
+    Collections.sort(blocks, new Comparator<>() {
+        public int compare(BlockSym b1, BlockSym b2) {
           Address a1 = b1.getAddress();
           Address a2 = b2.getAddress();
           if (AddressOps.lt(a1, a2)) { return -1; }
@@ -157,11 +155,11 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
       Assert.that(state == RESOLVED_STATE, "wrong state");
     }
     // Move all types to type list
-    for (Iterator iter = lazyTypeMap.values().iterator(); iter.hasNext(); ) {
+    for (Iterator<Type> iter = lazyTypeMap.values().iterator(); iter.hasNext(); ) {
       types.add(iter.next());
     }
     // Build name-to-type map
-    nameToTypeMap = new HashMap();
+    nameToTypeMap = new HashMap<>();
     for (Iterator iter = types.iterator(); iter.hasNext(); ) {
       Type t = (Type) iter.next();
       if (!t.isConst() && !t.isVolatile()) {
@@ -337,8 +335,8 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
   }
 
   private void resolveLazyMap(ResolveListener listener) {
-    for (Iterator iter = lazyTypeMap.entrySet().iterator(); iter.hasNext(); ) {
-      Map.Entry entry = (Map.Entry) iter.next();
+    for (Iterator<Map.Entry<Object, Type>> iter = lazyTypeMap.entrySet().iterator(); iter.hasNext(); ) {
+      Map.Entry<Object, Type> entry = iter.next();
       BasicType t = (BasicType) entry.getValue();
       BasicType t2 = (BasicType) t.resolveTypes(this, listener);
       if (t2 != t) {

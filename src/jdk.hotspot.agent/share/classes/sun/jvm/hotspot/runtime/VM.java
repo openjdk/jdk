@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ import sun.jvm.hotspot.classfile.*;
 
 public class VM {
   private static VM    soleInstance;
-  private static List  vmInitializedObservers = new ArrayList();
-  private List         vmResumedObservers   = new ArrayList();
-  private List         vmSuspendedObservers = new ArrayList();
+  private static List<Observer> vmInitializedObservers = new ArrayList<>();
+  private List<Observer> vmResumedObservers   = new ArrayList<>();
+  private List<Observer> vmSuspendedObservers = new ArrayList<>();
   private TypeDataBase db;
   private boolean      isBigEndian;
   /** This is only present if in a debugging system */
@@ -134,7 +134,7 @@ public class VM {
   private String       vmInternalInfo;
 
   private Flag[] commandLineFlags;
-  private Map flagsMap;
+  private Map<String, Flag> flagsMap;
 
   private static Type intType;
   private static Type uintType;
@@ -998,7 +998,7 @@ public class VM {
 
   public Flag getCommandLineFlag(String name) {
     if (flagsMap == null) {
-      flagsMap = new HashMap();
+      flagsMap = new HashMap<>();
       Flag[] flags = getCommandLineFlags();
       for (int i = 0; i < flags.length; i++) {
         flagsMap.put(flags[i].getName(), flags[i]);
@@ -1035,10 +1035,8 @@ public class VM {
     }
 
     // sort flags by name
-    Arrays.sort(commandLineFlags, new Comparator() {
-        public int compare(Object o1, Object o2) {
-          Flag f1 = (Flag) o1;
-          Flag f2 = (Flag) o2;
+    Arrays.sort(commandLineFlags, new Comparator<>() {
+        public int compare(Flag f1, Flag f2) {
           return f1.getName().compareTo(f2.getName());
         }
       });

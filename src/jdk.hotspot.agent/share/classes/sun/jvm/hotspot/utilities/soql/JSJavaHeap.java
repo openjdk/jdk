@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,7 @@ public class JSJavaHeap extends DefaultScriptObject {
     }
 
     //-- Internals only below this point
-    private static Map fields = new HashMap();
+    private static Map<String, Integer> fields = new HashMap<>();
     private static void addField(String name, int fieldId) {
         fields.put(name, new Integer(fieldId));
     }
@@ -239,7 +239,7 @@ public class JSJavaHeap extends DefaultScriptObject {
         addField("forEachObject", FIELD_FOR_EACH_OBJECT);
         addField("forEachClass", FIELD_FOR_EACH_CLASS);
       try {
-          Class myClass = JSJavaHeap.class;
+          Class<?> myClass = JSJavaHeap.class;
           forEachObjectMethod = myClass.getMethod("forEachObject",
                                 new Class[] { Object[].class });
           forEachClassMethod = myClass.getMethod("forEachClass",

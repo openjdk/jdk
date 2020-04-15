@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,8 +235,8 @@ public class Threads {
 
     // refer to Threads::get_pending_threads
     // Get list of Java threads that are waiting to enter the specified monitor.
-    public List getPendingThreads(ObjectMonitor monitor) {
-        List pendingThreads = new ArrayList();
+    public List<JavaThread> getPendingThreads(ObjectMonitor monitor) {
+        List<JavaThread> pendingThreads = new ArrayList<>();
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
             if (thread.isCompilerThread() || thread.isCodeCacheSweeperThread()) {
@@ -251,8 +251,8 @@ public class Threads {
     }
 
     // Get list of Java threads that have called Object.wait on the specified monitor.
-    public List getWaitingThreads(ObjectMonitor monitor) {
-        List pendingThreads = new ArrayList();
+    public List<JavaThread> getWaitingThreads(ObjectMonitor monitor) {
+        List<JavaThread> pendingThreads = new ArrayList<>();
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
             ObjectMonitor waiting = thread.getCurrentWaitingMonitor();

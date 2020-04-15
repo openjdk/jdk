@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public class IntervalTree extends RBTree {
-  private Comparator endpointComparator;
+  private Comparator<Object> endpointComparator;
 
   /** This constructor takes only one comparator: one which operates
       upon the endpoints of the Intervals this tree will store. It
       constructs an internal "interval comparator" out of this one. */
-  public IntervalTree(Comparator endpointComparator) {
+  public IntervalTree(Comparator<Object> endpointComparator) {
     super(new IntervalComparator(endpointComparator));
     this.endpointComparator = endpointComparator;
   }
@@ -51,8 +51,8 @@ public class IntervalTree extends RBTree {
       intervals were intersected by the given query interval. It is
       guaranteed that these nodes will be returned sorted by
       increasing low endpoint. */
-  public List findAllNodesIntersecting(Interval interval) {
-    List retList = new ArrayList();
+  public List<IntervalNode> findAllNodesIntersecting(Interval interval) {
+    List<IntervalNode> retList = new ArrayList<>();
     searchForIntersectingNodesFrom((IntervalNode) getRoot(), interval, retList);
     return retList;
   }
@@ -108,10 +108,10 @@ public class IntervalTree extends RBTree {
     verifyFromNode(node.getRight());
   }
 
-  static class IntervalComparator implements Comparator {
-    private Comparator endpointComparator;
+  static class IntervalComparator implements Comparator<Object> {
+    private Comparator<Object> endpointComparator;
 
-    public IntervalComparator(Comparator endpointComparator) {
+    public IntervalComparator(Comparator<Object> endpointComparator) {
       this.endpointComparator = endpointComparator;
     }
 
@@ -124,7 +124,7 @@ public class IntervalTree extends RBTree {
 
   private void searchForIntersectingNodesFrom(IntervalNode node,
                                               Interval interval,
-                                              List resultList) {
+                                              List<IntervalNode> resultList) {
     if (node == null) {
       return;
     }

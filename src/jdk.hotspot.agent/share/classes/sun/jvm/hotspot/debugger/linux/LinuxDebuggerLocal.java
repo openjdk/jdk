@@ -43,6 +43,7 @@ import sun.jvm.hotspot.debugger.DebuggerUtilities;
 import sun.jvm.hotspot.debugger.MachineDescription;
 import sun.jvm.hotspot.debugger.NotInHeapException;
 import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.debugger.ProcessInfo;
 import sun.jvm.hotspot.debugger.ReadResult;
 import sun.jvm.hotspot.debugger.ThreadProxy;
 import sun.jvm.hotspot.debugger.UnalignedAddressException;
@@ -77,8 +78,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     private LinuxCDebugger cdbg;
 
     // threadList and loadObjectList are filled by attach0 method
-    private List threadList;
-    private List loadObjectList;
+    private List<ThreadProxy> threadList;
+    private List<LoadObject> loadObjectList;
 
     // PID namespace support
     // It maps the LWPID in the host to the LWPID in the container.
@@ -248,7 +249,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     }
 
     /** From the Debugger interface via JVMDebugger */
-    public List getProcessList() throws DebuggerException {
+    public List<ProcessInfo> getProcessList() throws DebuggerException {
         throw new DebuggerException("getProcessList not implemented yet");
     }
 
@@ -317,8 +318,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
-        threadList = new ArrayList();
-        loadObjectList = new ArrayList();
+        threadList = new ArrayList<>();
+        loadObjectList = new ArrayList<>();
 
         Path proc = Paths.get("/proc", Integer.toString(processID));
         int NSpid = getNamespacePID(Paths.get(proc.toString(), "status"));
@@ -349,8 +350,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(String execName, String coreName) {
         checkAttached();
-        threadList = new ArrayList();
-        loadObjectList = new ArrayList();
+        threadList = new ArrayList<>();
+        loadObjectList = new ArrayList<>();
         attach0(execName, coreName);
         attached = true;
         isCore = true;
@@ -593,13 +594,13 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     }
 
     /** From the LinuxCDebugger interface */
-    public List/*<ThreadProxy>*/ getThreadList() {
+    public List<ThreadProxy> getThreadList() {
       requireAttach();
       return threadList;
     }
 
     /** From the LinuxCDebugger interface */
-    public List/*<LoadObject>*/ getLoadObjectList() {
+    public List<LoadObject> getLoadObjectList() {
       requireAttach();
       return loadObjectList;
     }

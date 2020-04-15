@@ -61,9 +61,9 @@ public class PMap extends Tool {
 
       CDebugger cdbg = dbg.getCDebugger();
       if (cdbg != null) {
-         List l = cdbg.getLoadObjectList();
-         for (Iterator itr = l.iterator() ; itr.hasNext();) {
-            LoadObject lo = (LoadObject) itr.next();
+         List<LoadObject> l = cdbg.getLoadObjectList();
+         for (Iterator<LoadObject> itr = l.iterator() ; itr.hasNext();) {
+            LoadObject lo = itr.next();
             out.print(lo.getBase() + "\t");
             out.print(lo.getSize()/1024 + "K\t");
             out.println(lo.getName());

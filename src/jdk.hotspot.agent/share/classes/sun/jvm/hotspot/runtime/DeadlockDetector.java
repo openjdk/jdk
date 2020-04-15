@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,10 +142,10 @@ public class DeadlockDetector {
     //-- Internals only below this point
     private static Threads threads;
     private static ObjectHeap heap;
-    private static HashMap threadTable;
+    private static HashMap<JavaThread, Integer> threadTable;
 
     private static void createThreadTable() {
-        threadTable = new HashMap();
+        threadTable = new HashMap<>();
         Threads threads = VM.getVM().getThreads();
         for (int i = 0; i < threads.getNumberOfThreads(); i++) {
             JavaThread cur = threads.getJavaThreadAt(i);

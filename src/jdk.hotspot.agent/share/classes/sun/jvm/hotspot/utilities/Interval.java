@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class Interval {
   /** This takes the Interval to compare against as well as a
       Comparator which will be applied to the low and high endpoints
       of the given intervals. */
-  public boolean overlaps(Interval arg, Comparator endpointComparator) {
+  public boolean overlaps(Interval arg, Comparator<Object> endpointComparator) {
     return overlaps(arg.getLowEndpoint(), arg.getHighEndpoint(), endpointComparator);
   }
 
@@ -61,7 +61,7 @@ public class Interval {
       different data structures */
   public boolean overlaps(Object otherLowEndpoint,
                           Object otherHighEndpoint,
-                          Comparator endpointComparator) {
+                          Comparator<Object> endpointComparator) {
     if (endpointComparator.compare(highEndpoint, otherLowEndpoint) <= 0) {
       return false;
     }

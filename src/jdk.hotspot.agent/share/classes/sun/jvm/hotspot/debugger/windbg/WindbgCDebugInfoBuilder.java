@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,13 @@ class WindbgCDebugInfoBuilder
   private DebugVC50SSSegMap segMap;
 
   // Canonicalization of primitive types
-  private Map primIndexToTypeMap;
+  private Map<Integer, BasicType> primIndexToTypeMap;
 
   // Global unnamed enumeration
   // (FIXME: must figure out how to handle nested type descriptions)
   private BasicEnumType unnamedEnum;
 
-  private Stack blockStack;
+  private Stack<BlockSym> blockStack;
   private int   endsToSkip;
 
   private static final int POINTER_SIZE = 4;
@@ -72,8 +72,8 @@ class WindbgCDebugInfoBuilder
 
     segMap = getSegMap();
 
-    primIndexToTypeMap = new HashMap();
-    blockStack = new Stack();
+    primIndexToTypeMap = new HashMap<>();
+    blockStack = new Stack<>();
     endsToSkip = 0;
 
     db = new BasicCDebugInfoDataBase();

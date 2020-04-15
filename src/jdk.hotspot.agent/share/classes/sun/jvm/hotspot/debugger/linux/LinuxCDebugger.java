@@ -49,11 +49,11 @@ class LinuxCDebugger implements CDebugger {
     this.dbg = dbg;
   }
 
-  public List getThreadList() throws DebuggerException {
+  public List<ThreadProxy> getThreadList() throws DebuggerException {
     return dbg.getThreadList();
   }
 
-  public List/*<LoadObject>*/ getLoadObjectList() throws DebuggerException {
+  public List<LoadObject> getLoadObjectList() throws DebuggerException {
     return dbg.getLoadObjectList();
   }
 
@@ -65,7 +65,7 @@ class LinuxCDebugger implements CDebugger {
     /* Typically we have about ten loaded objects here. So no reason to do
       sort/binary search here. Linear search gives us acceptable performance.*/
 
-    List objs = getLoadObjectList();
+    List<LoadObject> objs = getLoadObjectList();
 
     for (int i = 0; i < objs.size(); i++) {
       LoadObject ob = (LoadObject) objs.get(i);

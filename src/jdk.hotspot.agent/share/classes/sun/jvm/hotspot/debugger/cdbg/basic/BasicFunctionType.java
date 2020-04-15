@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 
 public class BasicFunctionType extends BasicType implements FunctionType {
   private Type returnType;
-  private List argumentTypes;
+  private List<Type> argumentTypes;
 
   public BasicFunctionType(String name, int size, Type returnType) {
     this(name, size, returnType, 0);
@@ -51,7 +51,7 @@ public class BasicFunctionType extends BasicType implements FunctionType {
   }
   public void addArgumentType(Type t) {
     if (argumentTypes == null) {
-      argumentTypes = new ArrayList();
+      argumentTypes = new ArrayList<>();
     }
     argumentTypes.add(t);
   }
@@ -60,8 +60,8 @@ public class BasicFunctionType extends BasicType implements FunctionType {
     super.resolveTypes(db, listener);
     returnType = db.resolveType(this, returnType, listener, "resolving function return type");
     if (argumentTypes != null) {
-      for (ListIterator iter = argumentTypes.listIterator(); iter.hasNext(); ) {
-        iter.set(db.resolveType(this, (Type) iter.next(), listener, "resolving function argument types"));
+      for (ListIterator<Type> iter = argumentTypes.listIterator(); iter.hasNext(); ) {
+        iter.set(db.resolveType(this, iter.next(), listener, "resolving function argument types"));
       }
     }
     return this;

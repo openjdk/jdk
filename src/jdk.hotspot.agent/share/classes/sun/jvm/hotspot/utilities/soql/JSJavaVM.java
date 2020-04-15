@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class JSJavaVM extends DefaultScriptObject {
     }
 
     //-- Internals only below this point
-    private static Map fields = new HashMap();
+    private static Map<String, Integer> fields = new HashMap<>();
     private static void addField(String name, int fieldId) {
         fields.put(name, new Integer(fieldId));
     }
@@ -152,7 +152,7 @@ public class JSJavaVM extends DefaultScriptObject {
     private synchronized JSMap getFlags() {
         if (flagsCache == null) {
             VM.Flag[] flags = vm.getCommandLineFlags();
-            Map map = new HashMap();
+            Map<String, String> map = new HashMap<>();
             if (flags != null) {
                 for (int f = 0; f < flags.length; f++) {
                     VM.Flag flag = flags[f];
@@ -174,7 +174,7 @@ public class JSJavaVM extends DefaultScriptObject {
     private synchronized JSMap getSysProps() {
         if (sysPropsCache == null) {
             Properties props = vm.getSystemProperties();
-            Map map = new HashMap();
+            Map<String, String> map = new HashMap<>();
             if (props != null) {
                 Enumeration e = props.propertyNames();
                 while (e.hasMoreElements()) {
@@ -189,7 +189,7 @@ public class JSJavaVM extends DefaultScriptObject {
 
     private synchronized JSList getThreads() {
         if (threadsCache == null) {
-            List threadsList = new ArrayList(0);
+            List<JavaThread> threadsList = new ArrayList<>(0);
             threadsCache = factory.newJSList(threadsList);
             Threads threads = VM.getVM().getThreads();
             for (int i = 0; i < threads.getNumberOfThreads(); i++) {

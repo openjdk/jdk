@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
     }
 
     protected void writeObjectHeader(Oop oop) throws IOException  {
-        refFields = new ArrayList();
+        refFields = new ArrayList<>();
         isArray = oop.isArray();
 
         // generate an edge for instanceof relation
@@ -403,7 +403,7 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
     private static final String ENCODING = "UTF-8";
 
     // reference fields of currently visited object
-    private List/*<OopField>*/ refFields;
+    private List<OopField> refFields;
     // are we writing an array now?
     private boolean isArray;
     private PrintWriter out;

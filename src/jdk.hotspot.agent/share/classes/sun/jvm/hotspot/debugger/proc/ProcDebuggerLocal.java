@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
         return false;
     }
 
-    public List getProcessList() throws DebuggerException {
+    public List<ProcessInfo> getProcessList() throws DebuggerException {
         throw new DebuggerException("Not yet supported");
     }
 
@@ -153,7 +153,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
     (String executableName, String coreFileName) throws DebuggerException {
         checkAttached();
         isCore = true;
-        topFrameCache = new HashMap();
+        topFrameCache = new HashMap<>();
         attach0(executableName, coreFileName);
         attached = true;
         suspended = true;
@@ -439,13 +439,13 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
     }
 
     /** From the ProcDebugger interface */
-    public synchronized List getThreadList() throws DebuggerException {
+    public synchronized List<ThreadProxy> getThreadList() throws DebuggerException {
         requireAttach();
-        List res = null;
+        List<ThreadProxy> res = null;
         if (isCore && (threadListCache != null)) {
             res = threadListCache;
         } else {
-            res = new ArrayList();
+            res = new ArrayList<>();
             fillThreadList0(res);
             if (isCore) {
                 threadListCache = res;
@@ -455,7 +455,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
     }
 
     /** From the ProcDebugger interface */
-    public synchronized List getLoadObjectList() throws DebuggerException {
+    public synchronized List<LoadObject> getLoadObjectList() throws DebuggerException {
         requireAttach();
         if (!suspended) {
             throw new DebuggerException("Process not suspended");
@@ -505,16 +505,16 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
     //
 
     private void updateLoadObjectCache() {
-        List res = new ArrayList();
-        nameToDsoMap = new HashMap();
+        List<LoadObject> res = new ArrayList<>();
+        nameToDsoMap = new HashMap<>();
         fillLoadObjectList0(res);
         loadObjectCache = sortLoadObjects(res);
     }
 
     // sort load objects by base address
-    private static List sortLoadObjects(List in) {
+    private static List<LoadObject> sortLoadObjects(List<LoadObject> in) {
         // sort the list by base address
-        Object[] arr = in.toArray();
+        LoadObject[] arr = in.toArray(new LoadObject[0]);
         Arrays.sort(arr, loadObjectComparator);
         return Arrays.asList(arr);
     }
@@ -614,7 +614,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
 
     // threads, stacks
     private native long[] getThreadIntegerRegisterSet0(long tid) throws DebuggerException;
-    private native void   fillThreadList0(List l) throws DebuggerException;
+    private native void   fillThreadList0(List<ThreadProxy> l) throws DebuggerException;
 
     // fills stack frame list given reg set of the top frame and top frame
     private native ProcCFrame fillCFrameList0(long[] regs) throws DebuggerException;
@@ -629,7 +629,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
     }
 
     // shared objects
-    private native void fillLoadObjectList0(List l) throws DebuggerException;
+    private native void fillLoadObjectList0(List<LoadObject> l) throws DebuggerException;
 
     // helper called by fillLoadObjectList0
     private LoadObject createLoadObject(String fileName, long textsize, long base) {
@@ -689,10 +689,10 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
 
     // Symbol lookup support
     // This is a map of library names to DSOs
-    private Map nameToDsoMap;  // Map<String, SharedObject>
+    private Map<String, SharedObject> nameToDsoMap;
 
     // C/C++ debugging support
-    private List/*<LoadObject>*/ loadObjects;
+    private List<LoadObject> loadObjects;
     private CDebugger cdbg;
 
     // ProcessControl support
@@ -722,7 +722,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
 
     // for core files, we cache load object list, thread list, top frames etc.
     // for processes we cache load object list and sync. it during suspend.
-    private List threadListCache;
-    private List loadObjectCache;
-    private Map  topFrameCache;      // Map<ThreadProxy, CFrame>
+    private List<ThreadProxy> threadListCache;
+    private List<LoadObject> loadObjectCache;
+    private Map<ThreadProxy, CFrame> topFrameCache;
 }

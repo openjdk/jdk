@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class BasicBlockSym extends BasicSym implements BlockSym {
   private long     length;
   private Address  addr;
 
-  private List     locals;
+  private List<LocalSym> locals;
 
   /** Creates a new BlockSym. Parent can be null. */
   public BasicBlockSym(BlockSym parent, long length, Address addr, String name) {
@@ -64,7 +64,7 @@ public class BasicBlockSym extends BasicSym implements BlockSym {
 
   public void addLocal(LocalSym local) {
     if (locals == null) {
-      locals = new ArrayList();
+      locals = new ArrayList<>();
     }
     locals.add(local);
   }

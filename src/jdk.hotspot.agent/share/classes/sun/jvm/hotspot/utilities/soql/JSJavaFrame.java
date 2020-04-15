@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class JSJavaFrame extends DefaultScriptObject {
     }
 
     //-- Internals only below this point
-    private static Map fields = new HashMap();
+    private static Map<String, Integer> fields = new HashMap<>();
     private static void addField(String name, int fieldId) {
         fields.put(name, new Integer(fieldId));
     }
@@ -139,7 +139,7 @@ public class JSJavaFrame extends DefaultScriptObject {
 
     private synchronized JSMap getLocals() {
         if (localsCache == null) {
-            Map map = new HashMap();
+            Map<String, Object> map = new HashMap<>();
             localsCache = factory.newJSMap(map);
             StackValueCollection values = jvf.getLocals();
             Method method = jvf.getMethod();
@@ -150,7 +150,7 @@ public class JSJavaFrame extends DefaultScriptObject {
 
             LocalVariableTableElement[] localVars = method.getLocalVariableTable();
             int bci = getBCI();
-            List visibleVars = new ArrayList(0);
+            List<LocalVariableTableElement> visibleVars = new ArrayList<>(0);
             for (int i = 0; i < localVars.length; i++) {
                 LocalVariableTableElement cur = localVars[i];
                 int startBCI = cur.getStartBCI();

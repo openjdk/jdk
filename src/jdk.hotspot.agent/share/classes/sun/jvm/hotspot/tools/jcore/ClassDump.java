@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class ClassDump extends Tool {
                 String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter",
                                                             "sun.jvm.hotspot.tools.jcore.PackageNameFilter");
                 try {
-                    Class filterClass = Class.forName(filterClassName);
+                    Class<?> filterClass = Class.forName(filterClassName);
                     if (pkgList == null) {
                         classFilter = (ClassFilter) filterClass.newInstance();
                     } else {

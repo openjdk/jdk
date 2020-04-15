@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1427,14 +1427,14 @@ public class COFFFileParser {
             names = new MemoizedObject() {
                 public Object computeValue() {
                   int i = 0;
-                  List data = new ArrayList();
+                  List<String> data = new ArrayList<>();
                   while (i < size) {
                     String s = readCString();
                     data.add(s);
                     i += s.length();
                   }
                   String[] res = new String[data.size()];
-                  res = (String[]) data.toArray(res);
+                  res = data.toArray(res);
                   return res;
                 }
               };
@@ -3775,10 +3775,8 @@ public class COFFFileParser {
         /** This version takes an absolute offset in the file */
         String getAtOffset(int offset) {
           int i = Arrays.binarySearch(strings, new COFFString(null, offset),
-                                      new Comparator() {
-                                          public int compare(Object o1, Object o2) {
-                                            COFFString s1 = (COFFString) o1;
-                                            COFFString s2 = (COFFString) o2;
+                                      new Comparator<>() {
+                                          public int compare(COFFString s1, COFFString s2) {
                                             if (s1.offset == s2.offset) {
                                               return 0;
                                             } else if (s1.offset < s2.offset) {
@@ -3905,14 +3903,14 @@ public class COFFFileParser {
     }
 
     String readCString() throws COFFException {
-      List data = new ArrayList();
+      List<Byte> data = new ArrayList<>();
       byte b = 0;
       while ((b = readByte()) != 0) {
-        data.add(new Byte(b));
+        data.add(b);
       }
       byte[] bytes = new byte[data.size()];
       for (int i = 0; i < data.size(); i++) {
-        bytes[i] = ((Byte) data.get(i)).byteValue();
+        bytes[i] = (data.get(i)).byteValue();
       }
       try {
         return new String(bytes, US_ASCII);

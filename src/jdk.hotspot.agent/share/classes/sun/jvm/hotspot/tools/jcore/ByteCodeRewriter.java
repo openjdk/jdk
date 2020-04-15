@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ public class ByteCodeRewriter
     public static final boolean DEBUG;
 
     static {
-        String debug =  (String) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        String debug = AccessController.doPrivileged(
+            new PrivilegedAction<>() {
+                public String run() {
                     return System.getProperty("sun.jvm.hotspot.tools.jcore.ByteCodeRewriter.DEBUG");
                 }
             }

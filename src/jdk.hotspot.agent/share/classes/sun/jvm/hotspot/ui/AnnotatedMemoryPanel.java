@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class AnnotatedMemoryPanel extends JPanel {
   // Type of this is an IntervalTree indexed by Interval<Address> and
   // with user data of type Annotation
   private IntervalTree annotations =
-    new IntervalTree(new Comparator() {
+    new IntervalTree(new Comparator<>() {
         public int compare(Object o1, Object o2) {
           Address a1 = (Address) o1;
           Address a2 = (Address) o2;
@@ -82,7 +82,7 @@ public class AnnotatedMemoryPanel extends JPanel {
   // This contains the list of currently-visible IntervalNodes, in
   // sorted order by their low endpoint, in the form of a
   // List<Annotation>. These annotations have already been laid out.
-  private java.util.List visibleAnnotations;
+  private java.util.List<Annotation> visibleAnnotations;
   // Darker colors than defaults for better readability
   private static Color[] colors = {
     new Color(0.0f, 0.0f, 0.6f), // blue
@@ -201,7 +201,7 @@ public class AnnotatedMemoryPanel extends JPanel {
     // FIXME: it would be nice to have a more static layout; that is,
     // if something scrolls off the bottom of the screen, other
     // annotations still visible shouldn't change position
-    java.util.List va =
+    java.util.List<IntervalNode> va =
       annotations.findAllNodesIntersecting(new Interval(startAddr.addOffsetTo(-addressSize),
                                                         endAddr.addOffsetTo(2 * addressSize)));
 
@@ -214,12 +214,12 @@ public class AnnotatedMemoryPanel extends JPanel {
       ((Graphics2D) g).setStroke(stroke);
     }
 
-    Stack drawStack = new Stack();
+    Stack<AnnoX> drawStack = new Stack<>();
 
     layoutAnnotations(va, g, curTextX, startAddr, lineHeight);
 
-    for (Iterator iter = visibleAnnotations.iterator(); iter.hasNext(); ) {
-      Annotation anno   = (Annotation) iter.next();
+    for (Iterator<Annotation> iter = visibleAnnotations.iterator(); iter.hasNext(); ) {
+      Annotation anno   = iter.next();
       Interval interval = anno.getInterval();
 
       if (!drawStack.empty()) {
@@ -293,7 +293,7 @@ public class AnnotatedMemoryPanel extends JPanel {
     setLayout(new BorderLayout());
     setupScrollBar(addrValue, addrLow, addrHigh);
     add(scrollBar, BorderLayout.EAST);
-    visibleAnnotations = new ArrayList();
+    visibleAnnotations = new ArrayList<>();
     setBackground(Color.white);
     addHierarchyBoundsListener(new HierarchyBoundsListener() {
         public void ancestorMoved(HierarchyEvent e) {
@@ -438,8 +438,8 @@ public class AnnotatedMemoryPanel extends JPanel {
 
   /** Scrolls the visible annotations by the given Y amount */
   private void scrollAnnotations(int y) {
-    for (Iterator iter = visibleAnnotations.iterator(); iter.hasNext(); ) {
-      Annotation anno = (Annotation) iter.next();
+    for (Iterator<Annotation> iter = visibleAnnotations.iterator(); iter.hasNext(); ) {
+      Annotation anno = iter.next();
       anno.setY(anno.getY() + y);
     }
   }
@@ -448,7 +448,7 @@ public class AnnotatedMemoryPanel extends JPanel {
       a List<IntervalNode>) and lays them out given the current
       visible position and the already-visible annotations. Does not
       perturb the layouts of the currently-visible annotations. */
-  private void layoutAnnotations(java.util.List va,
+  private void layoutAnnotations(java.util.List<IntervalNode> va,
                                  Graphics g,
                                  int x,
                                  Address startAddr,
@@ -490,15 +490,15 @@ public class AnnotatedMemoryPanel extends JPanel {
     // visibleAnnotations list. This reduces the amount of work we do.
     int searchIndex = 0;
     // The new set of annotations
-    java.util.List newAnnos = new ArrayList();
+    java.util.List<Annotation> newAnnos = new ArrayList<>();
 
-    for (Iterator iter = va.iterator(); iter.hasNext(); ) {
+    for (Iterator<IntervalNode> iter = va.iterator(); iter.hasNext(); ) {
       Annotation anno = (Annotation) ((IntervalNode) iter.next()).getData();
 
       // Search forward for this one
       boolean found = false;
       for (int i = searchIndex; i < visibleAnnotations.size(); i++) {
-        Annotation el = (Annotation) visibleAnnotations.get(i);
+        Annotation el = visibleAnnotations.get(i);
         // See whether we can abort the search unsuccessfully because
         // we went forward too far
         if (el.getLowAddress().greaterThan(anno.getLowAddress())) {

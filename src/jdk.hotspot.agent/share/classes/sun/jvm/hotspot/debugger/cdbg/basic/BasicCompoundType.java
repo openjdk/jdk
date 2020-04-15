@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import sun.jvm.hotspot.utilities.Assert;
 
 public class BasicCompoundType extends BasicType implements CompoundType {
   private CompoundTypeKind kind;
-  private List baseClasses;
-  private List fields;
+  private List<BaseClass> baseClasses;
+  private List<Field> fields;
 
   public BasicCompoundType(String name, int size, CompoundTypeKind kind) {
     this(name, size, kind, 0);
@@ -57,7 +57,7 @@ public class BasicCompoundType extends BasicType implements CompoundType {
 
   public void addBaseClass(BaseClass b) {
     if (baseClasses == null) {
-      baseClasses = new ArrayList();
+      baseClasses = new ArrayList<>();
     }
     baseClasses.add(b);
   }
@@ -71,7 +71,7 @@ public class BasicCompoundType extends BasicType implements CompoundType {
 
   public void addField(Field f) {
     if (fields == null) {
-      fields = new ArrayList();
+      fields = new ArrayList<>();
     }
     fields.add(f);
   }

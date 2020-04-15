@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,12 @@ import java.util.Random;
 
 public class RBTree {
   private RBNode root;
-  private Comparator comparator;
+  private Comparator<Object> comparator;
   protected static final boolean DEBUGGING = true;
   protected static final boolean VERBOSE   = true;
   protected static final boolean REALLY_VERBOSE = false;
 
-  public RBTree(Comparator comparator) {
+  public RBTree(Comparator<Object> comparator) {
     this.comparator = comparator;
   }
 
@@ -534,7 +534,7 @@ public class RBTree {
     int treeSize = 10000;
     int maxVal = treeSize;
     System.err.println("Building tree...");
-    RBTree tree = new RBTree(new Comparator() {
+    RBTree tree = new RBTree(new Comparator<>() {
         public int compare(Object o1, Object o2) {
           Integer i1 = (Integer) o1;
           Integer i2 = (Integer) o2;

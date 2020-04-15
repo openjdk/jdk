@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.utilities.*;
 public class BytecodeDisassembler {
    private Method method;
 
-   private static Map bytecode2Class = new HashMap(); // Map<int, Class>
+   private static Map<Integer, Class> bytecode2Class = new HashMap<>();
 
    private static void addBytecodeClass(int bytecode, Class clazz) {
       bytecode2Class.put(new Integer(bytecode), clazz);
@@ -116,7 +116,7 @@ public class BytecodeDisassembler {
          // look for special Bytecode class
          int bci = stream.bci();
          int hotspotcode = method.getBytecodeOrBPAt(bci);
-         Class clazz = getBytecodeClass(javacode);
+         Class<?> clazz = getBytecodeClass(javacode);
          if (clazz == null) {
             // check for fast_(i|a)_access_0
             clazz = getBytecodeClass(hotspotcode);

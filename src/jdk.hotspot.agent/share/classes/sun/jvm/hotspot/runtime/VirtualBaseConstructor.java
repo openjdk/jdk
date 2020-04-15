@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ import sun.jvm.hotspot.HotSpotTypeDataBase;
 
 public class VirtualBaseConstructor<T> extends InstanceConstructor {
   private TypeDataBase db;
-  private HashMap      map; // Map<String, Class>
+  private Map<String, Class<?>> map;
   private Type         baseType;
   private Class        unknownTypeHandler;
 
   public VirtualBaseConstructor(TypeDataBase db, Type baseType, String packageName, Class unknownTypeHandler) {
     this.db = (HotSpotTypeDataBase)db;
-    map     = new HashMap();
+    map     = new HashMap<>();
     this.baseType = baseType;
     this.unknownTypeHandler = unknownTypeHandler;
     if (packageName != null) {

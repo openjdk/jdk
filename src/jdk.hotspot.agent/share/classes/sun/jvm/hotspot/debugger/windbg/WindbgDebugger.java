@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,11 @@ public interface WindbgDebugger extends JVMDebugger {
   public long         getThreadIdFromSysId(long sysId) throws DebuggerException;
   // Support for the CDebugger interface. Retrieves the thread list of
   // the target process as a List of ThreadProxy objects.
-  public List/*<ThreadProxy>*/ getThreadList() throws DebuggerException;
+  public List<ThreadProxy> getThreadList() throws DebuggerException;
 
   // Support for the CDebugger interface. Retrieves a List of the
   // loadobjects in the target process.
-  public List/*<LoadObject>*/ getLoadObjectList() throws DebuggerException;
+  public List<LoadObject> getLoadObjectList() throws DebuggerException;
 
   // NOTE: this interface implicitly contains the following methods:
   // From the Debugger interface via JVMDebugger

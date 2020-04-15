@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class HighPrecisionJScrollBar extends JScrollBar {
   private static final int BIG_RANGE = 10000;
   // Do we need to scale HP values up/down to fit in 0..BIG_RANGE-1?
   private boolean    down;
-  private java.util.List changeListeners = new ArrayList();
+  private java.util.List<ChangeListener> changeListeners = new ArrayList<>();
   // Number of digits after decimal point to use when scaling between
   // high and low precision
   private static final int SCALE = 20;

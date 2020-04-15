@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
 
    public JSJavaInstanceKlass(InstanceKlass kls, JSJavaFactory fac) {
       super(kls, fac);
-      this.instanceFields = new HashMap();
-      this.staticFields = new HashMap();
+      this.instanceFields = new HashMap<>();
+      this.staticFields = new HashMap<>();
    }
 
    public final InstanceKlass getInstanceKlass() {
@@ -159,9 +159,9 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
       if (instanceFieldNames == null) {
          InstanceKlass current = getInstanceKlass();
          while (current != null) {
-            List tmp = current.getImmediateFields();
-            for (Iterator itr = tmp.iterator(); itr.hasNext();) {
-               Field fld = (Field) itr.next();
+            List<Field> tmp = current.getImmediateFields();
+            for (Iterator<Field> itr = tmp.iterator(); itr.hasNext();) {
+               Field fld = itr.next();
                if (!fld.isStatic()) {
                   String name = fld.getID().getName();
                   if (instanceFields.get(name) == null) {
@@ -190,9 +190,9 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
    public String[] getStaticFieldNames() {
       if (staticFieldNames == null) {
          InstanceKlass current = getInstanceKlass();
-         List tmp = current.getImmediateFields();
-         for (Iterator itr = tmp.iterator(); itr.hasNext();) {
-            Field fld = (Field) itr.next();
+         List<Field> tmp = current.getImmediateFields();
+         for (Iterator<Field> itr = tmp.iterator(); itr.hasNext();) {
+            Field fld = itr.next();
             if (fld.isStatic()) {
                staticFields.put(fld.getID().getName(), fld);
             }
@@ -214,7 +214,7 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
    }
 
    //-- Intenals only below this point
-   private static Map fields = new HashMap();
+   private static Map<String, Integer> fields = new HashMap<>();
    private static void addField(String name, int fieldId) {
       fields.put(name, new Integer(fieldId));
    }
@@ -313,9 +313,9 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
       } else {
          InstanceKlass current = getInstanceKlass();
          while (current != null) {
-            List tmp = current.getImmediateFields();
-            for (Iterator itr = tmp.iterator(); itr.hasNext();) {
-               fld = (Field) itr.next();
+            List<Field> tmp = current.getImmediateFields();
+            for (Iterator<Field> itr = tmp.iterator(); itr.hasNext();) {
+               fld = itr.next();
                if (fld.getID().getName().equals(name) && !fld.isStatic()) {
                    instanceFields.put(name, fld);
                    return fld;
@@ -338,9 +338,9 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
          // Direct/indirect super classes and interfaces
          // are not included in search.
          InstanceKlass current = getInstanceKlass();
-         List tmp = current.getImmediateFields();
-         for (Iterator itr = tmp.iterator(); itr.hasNext();) {
-            fld = (Field) itr.next();
+         List<Field> tmp = current.getImmediateFields();
+         for (Iterator<Field> itr = tmp.iterator(); itr.hasNext();) {
+            fld = itr.next();
             if (fld.getID().getName().equals(name) && fld.isStatic()) {
                staticFields.put(name, fld);
                return fld;
@@ -353,10 +353,10 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
 
    private JSList getInterfaces() {
       InstanceKlass ik = getInstanceKlass();
-      List intfs = ik.getDirectImplementedInterfaces();
-      List res = new ArrayList(0);
-      for (Iterator itr = intfs.iterator(); itr.hasNext();) {
-          Klass k = (Klass) itr.next();
+      List<Klass> intfs = ik.getDirectImplementedInterfaces();
+      List<Instance> res = new ArrayList<>(0);
+      for (Iterator<Klass> itr = intfs.iterator(); itr.hasNext();) {
+          Klass k = itr.next();
           res.add(k.getJavaMirror());
       }
       return factory.newJSList(res);
@@ -364,7 +364,7 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
 
    private JSMap getStatics() {
       String[] names = getStaticFieldNames();
-      Map map = new HashMap();
+      Map<String, Object> map = new HashMap<>();
       for (int i=0; i < names.length; i++) {
          try {
             map.put(names[i], getStaticFieldValue(names[i]));
@@ -373,8 +373,8 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
       return factory.newJSMap(map);
   }
 
-   private Map           instanceFields;
-   private Map           staticFields;
+   private Map<String, Field> instanceFields;
+   private Map<String, Field> staticFields;
    private String[]      instanceFieldNames;
    private String[]      staticFieldNames;
    private AccessFlags   accFlags;
