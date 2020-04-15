@@ -75,10 +75,11 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     Universe::verify();
   }
 
-  // Degenerated GC may carry concurrent_root_in_progress flag when upgrading to
+  // Degenerated GC may carry concurrent root flags when upgrading to
   // full GC. We need to reset it before mutators resume.
   if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    heap->set_concurrent_root_in_progress(false);
+    heap->set_concurrent_strong_root_in_progress(false);
+    heap->set_concurrent_weak_root_in_progress(false);
   }
 
   heap->set_full_gc_in_progress(true);

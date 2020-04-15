@@ -248,7 +248,7 @@ public:
       _bs(ShenandoahBarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    assert(_heap->is_concurrent_root_in_progress(), "Only this phase");
+    assert(_heap->is_concurrent_weak_root_in_progress(), "Only this phase");
     if (failed()) {
       return;
     }

@@ -342,8 +342,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Complete marking under STW, and start evacuation
   heap->vmop_entry_final_mark();
 
-  // Evacuate concurrent roots
-  heap->entry_roots();
+  // Process weak roots that might still point to regions that would be broken by cleanup
+  heap->entry_weak_roots();
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.
@@ -352,6 +352,13 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->log_status();
+  }
+
+  // Processing strong roots
+  // This may be skipped if there is nothing to update/evacuate.
+  // If so, strong_root_in_progress would be unset.
+  if (heap->is_concurrent_strong_root_in_progress()) {
+    heap->entry_strong_roots();
   }
 
   // Continue the cycle with evacuation and optional update-refs.

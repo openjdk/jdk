@@ -378,8 +378,8 @@ inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
   return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
 }
 
-inline bool ShenandoahHeap::is_concurrent_root_in_progress() const {
-  return _concurrent_root_in_progress.is_set();
+inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
+  return _concurrent_strong_root_in_progress.is_set();
 }
 
 inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {

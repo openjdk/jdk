@@ -554,14 +554,16 @@ void ShenandoahHeap::print_on(outputStream* st) const {
                proper_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));
 
   st->print("Status: ");
-  if (has_forwarded_objects())               st->print("has forwarded objects, ");
-  if (is_concurrent_mark_in_progress())      st->print("marking, ");
-  if (is_evacuation_in_progress())           st->print("evacuating, ");
-  if (is_update_refs_in_progress())          st->print("updating refs, ");
-  if (is_degenerated_gc_in_progress())       st->print("degenerated gc, ");
-  if (is_full_gc_in_progress())              st->print("full gc, ");
-  if (is_full_gc_move_in_progress())         st->print("full gc move, ");
-  if (is_concurrent_root_in_progress())      st->print("concurrent roots, ");
+  if (has_forwarded_objects())                 st->print("has forwarded objects, ");
+  if (is_concurrent_mark_in_progress())        st->print("marking, ");
+  if (is_evacuation_in_progress())             st->print("evacuating, ");
+  if (is_update_refs_in_progress())            st->print("updating refs, ");
+  if (is_degenerated_gc_in_progress())         st->print("degenerated gc, ");
+  if (is_full_gc_in_progress())                st->print("full gc, ");
+  if (is_full_gc_move_in_progress())           st->print("full gc move, ");
+  if (is_concurrent_weak_root_in_progress())   st->print("concurrent weak roots, ");
+  if (is_concurrent_strong_root_in_progress() &&
+      !is_concurrent_weak_root_in_progress())  st->print("concurrent strong roots, ");
 
   if (cancelled_gc()) {
     st->print("cancelled");
@@ -1631,15 +1633,12 @@ void ShenandoahHeap::op_cleanup() {
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
-  ShenandoahWeakRoots<true /*concurrent*/>      _weak_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
   ShenandoahConcurrentStringDedupRoots          _dedup_roots;
-  bool                                          _include_weak_roots;
 
 public:
-  ShenandoahConcurrentRootsEvacUpdateTask(bool include_weak_roots) :
-    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Roots Task"),
-    _include_weak_roots(include_weak_roots) {
+  ShenandoahConcurrentRootsEvacUpdateTask() :
+    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Strong Roots Task") {
   }
 
   void work(uint worker_id) {
@@ -1649,10 +1648,6 @@ public:
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateOopStorageRootsClosure cl;
       _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
-
-      if (_include_weak_roots) {
-        _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
-      }
     }
 
     {
@@ -1771,24 +1766,24 @@ public:
   }
 };
 
-void ShenandoahHeap::op_roots() {
-  if (is_concurrent_root_in_progress()) {
+void ShenandoahHeap::op_weak_roots() {
+  if (is_concurrent_weak_root_in_progress()) {
+    // Concurrent weak root processing
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task;
+    workers()->run_task(&task);
+
     if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-      // Concurrent weak root processing
-      ShenandoahConcurrentWeakRootsEvacUpdateTask task;
-      workers()->run_task(&task);
-
       _unloader.unload();
-      set_concurrent_weak_root_in_progress(false);
-    }
-
-    if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
-      ShenandoahConcurrentRootsEvacUpdateTask task(!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
-      workers()->run_task(&task);
     }
     set_concurrent_weak_root_in_progress(false);
-    set_concurrent_root_in_progress(false);
   }
+}
+
+void ShenandoahHeap::op_strong_roots() {
+  assert(is_concurrent_strong_root_in_progress(), "Checked by caller");
+  ShenandoahConcurrentRootsEvacUpdateTask task;
+  workers()->run_task(&task);
+  set_concurrent_strong_root_in_progress(false);
 }
 
 class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -2038,12 +2033,12 @@ void ShenandoahHeap::set_evacuation_in_progress(bool in_progress) {
   set_gc_state_mask(EVACUATION, in_progress);
 }
 
-void ShenandoahHeap::set_concurrent_root_in_progress(bool in_progress) {
+void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
   assert(ShenandoahConcurrentRoots::can_do_concurrent_roots(), "Why set the flag?");
   if (in_progress) {
-    _concurrent_root_in_progress.set();
+    _concurrent_strong_root_in_progress.set();
   } else {
-    _concurrent_root_in_progress.unset();
+    _concurrent_strong_root_in_progress.unset();
   }
 }
 
@@ -2333,7 +2328,7 @@ ConcurrentGCTimer* ShenandoahHeap::gc_timer() const {
 void ShenandoahHeap::prepare_concurrent_roots() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
-    set_concurrent_root_in_progress(true);
+    set_concurrent_strong_root_in_progress(!collection_set()->is_empty());
     set_concurrent_weak_root_in_progress(true);
   }
 }
@@ -2841,19 +2836,34 @@ void ShenandoahHeap::entry_updaterefs() {
   op_updaterefs();
 }
 
-void ShenandoahHeap::entry_roots() {
-  static const char* msg = "Concurrent roots processing";
+void ShenandoahHeap::entry_weak_roots() {
+  static const char* msg = "Concurrent weak roots";
   ShenandoahConcurrentPhase gc_phase(msg);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_roots);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_weak_roots);
 
   ShenandoahWorkerScope scope(workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
-                              "concurrent root processing");
+                              "concurrent weak root");
 
   try_inject_alloc_failure();
-  op_roots();
+  op_weak_roots();
+}
+
+void ShenandoahHeap::entry_strong_roots() {
+  static const char* msg = "Concurrent strong roots";
+  ShenandoahConcurrentPhase gc_phase(msg);
+  EventMark em("%s", msg);
+
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_strong_roots);
+
+  ShenandoahWorkerScope scope(workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              "concurrent strong root");
+
+  try_inject_alloc_failure();
+  op_strong_roots();
 }
 
 void ShenandoahHeap::entry_cleanup() {
