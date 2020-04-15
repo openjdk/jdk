@@ -30,6 +30,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -412,15 +413,18 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                    (                   1      << is_final_shift            ),
                    adapter->size_of_parameters());
 
-  if (TraceInvokeDynamic) {
-    ttyLocker ttyl;
-    tty->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method=" PTR_FORMAT " (local signature) ",
-                  invoke_code,
-                  p2i(appendix()),
-                  (has_appendix ? "" : " (unused)"),
-                  p2i(adapter));
-    adapter->print();
-    if (has_appendix)  appendix()->print();
+  LogStream* log_stream = NULL;
+  LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
+  if (lsh_indy.is_enabled()) {
+    ResourceMark rm;
+    log_stream = &lsh_indy;
+    log_stream->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method=" PTR_FORMAT " (local signature) ",
+                         invoke_code,
+                         p2i(appendix()),
+                         (has_appendix ? "" : " (unused)"),
+                         p2i(adapter));
+    adapter->print_on(log_stream);
+    if (has_appendix)  appendix()->print_on(log_stream);
   }
 
   // Method handle invokes and invokedynamic sites use both cp cache words.
@@ -456,9 +460,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // but it is used by is_resolved, method_if_resolved, etc.
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
-  if (TraceInvokeDynamic) {
-    ttyLocker ttyl;
-    this->print(tty, 0);
+
+  if (log_stream != NULL) {
+    this->print(log_stream, 0);
   }
 
   assert(has_appendix == this->has_appendix(), "proper storage of appendix flag");

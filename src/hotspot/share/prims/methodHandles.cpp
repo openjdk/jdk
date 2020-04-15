@@ -32,6 +32,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -228,6 +230,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(m_klass != NULL, "null holder for method handle");
   int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
   int vmindex = Method::invalid_vtable_index;
+  LogTarget(Debug, methodhandles, indy) lt_indy;
 
   switch (info.call_kind()) {
   case CallInfo::itable_call:
@@ -235,22 +238,22 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
     // More importantly, the itable index only works with the method holder.
     assert(m_klass->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
-    if (TraceInvokeDynamic) {
-      ttyLocker ttyl;
+    if (lt_indy.is_enabled()) {
       ResourceMark rm;
-      tty->print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
-            Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
-            vmindex);
-       m->access_flags().print_on(tty);
+      LogStream ls(lt_indy);
+      ls.print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
+                  Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
+                  vmindex);
+       m->access_flags().print_on(&ls);
        if (!m->is_abstract()) {
          if (!m->is_private()) {
-           tty->print("default");
+           ls.print("default");
          }
          else {
-           tty->print("private-intf");
+           ls.print("private-intf");
          }
        }
-       tty->cr();
+       ls.cr();
     }
     break;
 
@@ -282,17 +285,17 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       assert(info.resolved_klass()->is_subtype_of(m_klass_non_interface), "virtual call must be type-safe");
       m_klass = m_klass_non_interface;
     }
-    if (TraceInvokeDynamic) {
-      ttyLocker ttyl;
+    if (lt_indy.is_enabled()) {
       ResourceMark rm;
-      tty->print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
-            Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
-            m_klass->internal_name(), vmindex);
-       m->access_flags().print_on(tty);
+      LogStream ls(lt_indy);
+      ls.print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
+                  Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
+                  m_klass->internal_name(), vmindex);
+       m->access_flags().print_on(&ls);
        if (m->is_default_method()) {
-         tty->print("default");
+         ls.print("default");
        }
-       tty->cr();
+       ls.cr();
     }
     break;
 
@@ -1069,7 +1072,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
 }
 
 void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm, vmIntrinsics::ID iid) {
-  if (TraceMethodHandles) {
+  if (log_is_enabled(Info, methodhandles)) {
     const char* name = vmIntrinsics::name_at(iid);
     if (*name == '_')  name += 1;
     const size_t len = strlen(name) + 50;
@@ -1555,9 +1558,7 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
               "register java.lang.invoke.MethodHandle natives");
   }
 
-  if (TraceInvokeDynamic) {
-    tty->print_cr("MethodHandle support loaded (using LambdaForms)");
-  }
+  log_debug(methodhandles, indy)("MethodHandle support loaded (using LambdaForms)");
 
   MethodHandles::set_enabled(true);
 }

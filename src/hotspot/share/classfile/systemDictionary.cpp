@@ -2456,15 +2456,16 @@ static Method* unpack_method_and_appendix(Handle mname,
     Method* m = java_lang_invoke_MemberName::vmtarget(mname());
     if (m != NULL) {
       oop appendix = appendix_box->obj_at(0);
-      if (TraceMethodHandles) {
-    #ifndef PRODUCT
-        ttyLocker ttyl;
-        tty->print("Linked method=" INTPTR_FORMAT ": ", p2i(m));
-        m->print();
-        if (appendix != NULL) { tty->print("appendix = "); appendix->print(); }
-        tty->cr();
-    #endif //PRODUCT
+      LogTarget(Info, methodhandles) lt;
+      if (lt.develop_is_enabled()) {
+        ResourceMark rm(THREAD);
+        LogStream ls(lt);
+        ls.print("Linked method=" INTPTR_FORMAT ": ", p2i(m));
+        m->print_on(&ls);
+        if (appendix != NULL) { ls.print("appendix = "); appendix->print_on(&ls); }
+        ls.cr();
       }
+
       (*appendix_result) = Handle(THREAD, appendix);
       // the target is stored in the cpCache and if a reference to this
       // MemberName is dropped we need a way to make sure the

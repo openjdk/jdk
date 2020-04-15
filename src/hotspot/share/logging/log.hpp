@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,11 @@ public:
 
   static bool is_enabled() {
     return LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(level);
+  }
+
+  static bool develop_is_enabled() {
+    NOT_PRODUCT(return is_enabled());
+    PRODUCT_ONLY(return false);
   }
 
   static void print(const char* fmt, ...) ATTRIBUTE_PRINTF(1, 2) {

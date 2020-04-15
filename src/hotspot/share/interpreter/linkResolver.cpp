@@ -436,17 +436,16 @@ Method* LinkResolver::lookup_method_in_interfaces(const LinkInfo& cp_info) {
 Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
                                                 Handle *appendix_result_or_null,
                                                 TRAPS) {
+  ResourceMark rm(THREAD);
   Klass* klass = link_info.resolved_klass();
   Symbol* name = link_info.name();
   Symbol* full_signature = link_info.signature();
+  LogTarget(Info, methodhandles) lt_mh;
 
   vmIntrinsics::ID iid = MethodHandles::signature_polymorphic_name_id(name);
-  if (TraceMethodHandles) {
-    ResourceMark rm(THREAD);
-    tty->print_cr("lookup_polymorphic_method iid=%s %s.%s%s",
-                  vmIntrinsics::name_at(iid), klass->external_name(),
-                  name->as_C_string(), full_signature->as_C_string());
-  }
+  log_info(methodhandles)("lookup_polymorphic_method iid=%s %s.%s%s",
+                          vmIntrinsics::name_at(iid), klass->external_name(),
+                          name->as_C_string(), full_signature->as_C_string());
   if ((klass == SystemDictionary::MethodHandle_klass() ||
        klass == SystemDictionary::VarHandle_klass()) &&
       iid != vmIntrinsics::_none) {
@@ -456,13 +455,10 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
       bool keep_last_arg = MethodHandles::is_signature_polymorphic_static(iid);
       TempNewSymbol basic_signature =
         MethodHandles::lookup_basic_type_signature(full_signature, keep_last_arg, CHECK_NULL);
-      if (TraceMethodHandles) {
-        ResourceMark rm(THREAD);
-        tty->print_cr("lookup_polymorphic_method %s %s => basic %s",
-                      name->as_C_string(),
-                      full_signature->as_C_string(),
-                      basic_signature->as_C_string());
-      }
+      log_info(methodhandles)("lookup_polymorphic_method %s %s => basic %s",
+                              name->as_C_string(),
+                              full_signature->as_C_string(),
+                              basic_signature->as_C_string());
       Method* result = SystemDictionary::find_method_handle_intrinsic(iid,
                                                               basic_signature,
                                                               CHECK_NULL);
@@ -470,10 +466,10 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
         assert(result->is_method_handle_intrinsic(), "MH.invokeBasic or MH.linkTo* intrinsic");
         assert(result->intrinsic_id() != vmIntrinsics::_invokeGeneric, "wrong place to find this");
         assert(basic_signature == result->signature(), "predict the result signature");
-        if (TraceMethodHandles) {
-          ttyLocker ttyl;
-          tty->print("lookup_polymorphic_method => intrinsic ");
-          result->print_on(tty);
+        if (lt_mh.is_enabled()) {
+          LogStream ls(lt_mh);
+          ls.print("lookup_polymorphic_method => intrinsic ");
+          result->print_on(&ls);
         }
       }
       return result;
@@ -503,13 +499,12 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
                                                             link_info.current_klass(),
                                                             &appendix,
                                                             CHECK_NULL);
-      if (TraceMethodHandles) {
-        ttyLocker ttyl;
-        tty->print("lookup_polymorphic_method => (via Java) ");
-        result->print_on(tty);
-        tty->print("  lookup_polymorphic_method => appendix = ");
-        if (appendix.is_null())  tty->print_cr("(none)");
-        else                     appendix->print_on(tty);
+      if (lt_mh.is_enabled()) {
+        LogStream ls(lt_mh);
+        ls.print("lookup_polymorphic_method => (via Java) ");
+        result->print_on(&ls);
+        ls.print("  lookup_polymorphic_method => appendix = ");
+        appendix.is_null() ? ls.print_cr("(none)") : appendix->print_on(&ls);
       }
       if (result != NULL) {
 #ifdef ASSERT
@@ -1669,10 +1664,10 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const 
 void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   // This guy is reached from InterpreterRuntime::resolve_invokehandle.
   LinkInfo link_info(pool, index, CHECK);
-  if (TraceMethodHandles) {
+  if (log_is_enabled(Info, methodhandles)) {
     ResourceMark rm(THREAD);
-    tty->print_cr("resolve_invokehandle %s %s", link_info.name()->as_C_string(),
-                  link_info.signature()->as_C_string());
+    log_info(methodhandles)("resolve_invokehandle %s %s", link_info.name()->as_C_string(),
+                            link_info.signature()->as_C_string());
   }
   resolve_handle_call(result, link_info, CHECK);
 }
@@ -1713,8 +1708,10 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 
   resolve_dynamic_call(result, bootstrap_specifier, CHECK);
 
-  if (TraceMethodHandles) {
-    bootstrap_specifier.print_msg_on(tty, "resolve_invokedynamic");
+  LogTarget(Debug, methodhandles, indy) lt_indy;
+  if (lt_indy.is_enabled()) {
+    LogStream ls(lt_indy);
+    bootstrap_specifier.print_msg_on(&ls, "resolve_invokedynamic");
   }
 
   // The returned linkage result is provisional up to the moment
@@ -1735,7 +1732,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   // or any other reference.  The resolved_method as well as the appendix
   // are both recorded together via CallInfo::set_handle.
   SystemDictionary::invoke_bootstrap_method(bootstrap_specifier, THREAD);
-  Exceptions::wrap_dynamic_exception(THREAD);
+  Exceptions::wrap_dynamic_exception(/* is_indy */ true, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
     if (!PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,25 +401,36 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
 // dynamically computed constant uses wrap_dynamic_exception for:
 //    - bootstrap method resolution
 //    - post call to MethodHandleNatives::linkDynamicConstant
-void Exceptions::wrap_dynamic_exception(Thread* THREAD) {
+void Exceptions::wrap_dynamic_exception(bool is_indy, Thread* THREAD) {
   if (THREAD->has_pending_exception()) {
+    bool log_indy = log_is_enabled(Debug, methodhandles, indy) && is_indy;
+    bool log_condy = log_is_enabled(Debug, methodhandles, condy) && !is_indy;
+    LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
+    LogStreamHandle(Debug, methodhandles, condy) lsh_condy;
+    LogStream* ls = NULL;
+    if (log_indy) {
+      ls = &lsh_indy;
+    } else if (log_condy) {
+      ls = &lsh_condy;
+    }
     oop exception = THREAD->pending_exception();
+
     // See the "Linking Exceptions" section for the invokedynamic instruction
     // in JVMS 6.5.
     if (exception->is_a(SystemDictionary::Error_klass())) {
       // Pass through an Error, including BootstrapMethodError, any other form
       // of linkage error, or say ThreadDeath/OutOfMemoryError
-      if (TraceMethodHandles) {
-        tty->print_cr("bootstrap method invocation wraps BSME around " INTPTR_FORMAT, p2i((void *)exception));
-        exception->print();
+      if (ls != NULL) {
+        ls->print_cr("bootstrap method invocation wraps BSME around " INTPTR_FORMAT, p2i((void *)exception));
+        exception->print_on(ls);
       }
       return;
     }
 
     // Otherwise wrap the exception in a BootstrapMethodError
-    if (TraceMethodHandles) {
-      tty->print_cr("[constant/invoke]dynamic throws BSME for " INTPTR_FORMAT, p2i((void *)exception));
-      exception->print();
+    if (ls != NULL) {
+      ls->print_cr("%s throws BSME for " INTPTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i((void *)exception));
+      exception->print_on(ls);
     }
     Handle nested_exception(THREAD, exception);
     THREAD->clear_pending_exception();

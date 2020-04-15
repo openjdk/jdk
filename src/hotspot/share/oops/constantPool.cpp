@@ -32,6 +32,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
@@ -941,7 +943,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       // (invocation of the BSM), of JVMS Section 5.4.3.6 occur within invoke_bootstrap_method()
       // for the bootstrap_specifier created above.
       SystemDictionary::invoke_bootstrap_method(bootstrap_specifier, THREAD);
-      Exceptions::wrap_dynamic_exception(THREAD);
+      Exceptions::wrap_dynamic_exception(/* is_indy */ false, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Resolution failure of the dynamically-computed constant, save_and_throw_exception
         // will check for a LinkageError and store a DynamicConstantInError.
@@ -969,8 +971,10 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
         }
       }
 
-      if (TraceMethodHandles) {
-        bootstrap_specifier.print_msg_on(tty, "resolve_constant_at_impl");
+      LogTarget(Debug, methodhandles, condy) lt_condy;
+      if (lt_condy.is_enabled()) {
+        LogStream ls(lt_condy);
+        bootstrap_specifier.print_msg_on(&ls, "resolve_constant_at_impl");
       }
       break;
     }

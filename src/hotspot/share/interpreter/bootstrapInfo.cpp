@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
     methodHandle method(     THREAD, cpce->f1_as_method());
     Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
     result.set_handle(method, appendix, THREAD);
-    Exceptions::wrap_dynamic_exception(CHECK_false);
+    Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
   } else if (cpce->indy_resolution_failed()) {
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
@@ -81,24 +81,28 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
 // - obtain the NameAndType description for the condy/indy
 // - prepare the BSM's static arguments
 Handle BootstrapInfo::resolve_bsm(TRAPS) {
-  if (_bsm.not_null())  return _bsm;
+  if (_bsm.not_null()) {
+    return _bsm;
+  }
+
+  bool is_indy = is_method_call();
   // The tag at the bootstrap method index must be a valid method handle or a method handle in error.
   // If it is a MethodHandleInError, a resolution error will be thrown which will be wrapped if necessary
   // with a BootstrapMethodError.
   assert(_pool->tag_at(bsm_index()).is_method_handle() ||
          _pool->tag_at(bsm_index()).is_method_handle_in_error(), "MH not present, classfile structural constraint");
   oop bsm_oop = _pool->resolve_possibly_cached_constant_at(bsm_index(), THREAD);
-  Exceptions::wrap_dynamic_exception(CHECK_NH);
+  Exceptions::wrap_dynamic_exception(is_indy, CHECK_NH);
   guarantee(java_lang_invoke_MethodHandle::is_instance(bsm_oop), "classfile must supply a valid BSM");
   _bsm = Handle(THREAD, bsm_oop);
 
   // Obtain NameAndType information
   resolve_bss_name_and_type(THREAD);
-  Exceptions::wrap_dynamic_exception(CHECK_NH);
+  Exceptions::wrap_dynamic_exception(is_indy, CHECK_NH);
 
   // Prepare static arguments
   resolve_args(THREAD);
-  Exceptions::wrap_dynamic_exception(CHECK_NH);
+  Exceptions::wrap_dynamic_exception(is_indy, CHECK_NH);
 
   return _bsm;
 }
@@ -253,7 +257,7 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     st->print_cr("  argument indexes: {%s}", argbuf);
   }
   if (_bsm.not_null()) {
-    st->print("  resolved BSM: "); _bsm->print();
+    st->print("  resolved BSM: "); _bsm->print_on(st);
   }
 
   // How the array of resolved arguments is printed depends highly
@@ -264,7 +268,7 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     objArrayOop static_args = (objArrayOop)_arg_values();
     if (!static_args->is_array()) {
       assert(_argc == 1, "Invalid BSM _arg_values for non-array");
-      st->print("  resolved arg[0]: "); static_args->print();
+      st->print("  resolved arg[0]: "); static_args->print_on(st);
     } else if (static_args->is_objArray()) {
       int lines = 0;
       for (int i = 0; i < _argc; i++) {
@@ -274,7 +278,7 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
             st->print_cr("  resolved arg[%d]: ...", i);
             break;
           }
-          st->print("  resolved arg[%d]: ", i); x->print();
+          st->print("  resolved arg[%d]: ", i); x->print_on(st);
         }
       }
     } else if (static_args->is_typeArray()) {
