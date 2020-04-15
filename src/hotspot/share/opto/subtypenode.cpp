@@ -134,7 +134,14 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     intptr_t con = 0;
     Node* obj = AddPNode::Ideal_base_and_offset(addr, phase, con);
     if (con == oopDesc::klass_offset_in_bytes() && obj != NULL) {
-      assert(phase->type(obj)->isa_oopptr(), "only for oop input");
+#ifdef ASSERT
+      const Type* obj_t = phase->type(obj);
+      if (!obj_t->isa_oopptr() && obj_t != Type::TOP) {
+        obj->dump();
+        obj_t->dump(); tty->cr();
+        fatal("only for oop input");
+      }
+#endif
       set_req(ObjOrSubKlass, obj);
       return this;
     }
@@ -143,7 +150,14 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // AllocateNode might have more accurate klass input
   Node* allocated_klass = AllocateNode::Ideal_klass(obj_or_subklass, phase);
   if (allocated_klass != NULL) {
-    assert(phase->type(obj_or_subklass)->isa_oopptr(), "only for oop input");
+#ifdef ASSERT
+      const Type* obj_or_subklass_t = phase->type(obj_or_subklass);
+      if (!obj_or_subklass_t->isa_oopptr() && obj_or_subklass_t != Type::TOP) {
+        obj_or_subklass->dump();
+        obj_or_subklass_t->dump(); tty->cr();
+        fatal("only for oop input");
+      }
+#endif
     set_req(ObjOrSubKlass, allocated_klass);
     return this;
   }
