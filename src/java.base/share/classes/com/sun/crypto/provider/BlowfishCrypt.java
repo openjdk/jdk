@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,6 @@ final class BlowfishCrypt extends SymmetricCipher
      *
      * @param plain the buffer with the input data to be encrypted
      * @param plainOffset the offset in <code>plain</code>
-     * @param plainLen the length of the input data
      * @param cipher the buffer for the result
      * @param cipherOffset the offset in <code>cipher</code>
      */
@@ -154,7 +153,6 @@ final class BlowfishCrypt extends SymmetricCipher
      *
      * @param cipher the buffer with the input data to be decrypted
      * @param cipherOffset the offset in <code>cipherOffset</code>
-     * @param cipherLen the length of the input data
      * @param plain the buffer for the result
      * @param plainOffset the offset in <code>plain</code>
      */

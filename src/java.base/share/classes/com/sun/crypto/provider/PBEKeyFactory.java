@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
      *
      * @param key the key
      *
-     * @param keySpec the requested format in which the key material shall be
+     * @param keySpecCl the requested format in which the key material shall be
      * returned
      *
      * @return the underlying key specification (key material) in the

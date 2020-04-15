@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,8 +262,6 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @param algorithm the algorithm name
      * @param key the key
      * @param iv the iv
-     * @param tagLenBytes the length of tag in bytes
-     *
      * @exception InvalidKeyException if the given key is inappropriate for
      * initializing this cipher
      */
@@ -279,8 +277,8 @@ final class GaloisCounterMode extends FeedbackCipher {
      *
      * @param decrypting flag indicating encryption or decryption
      * @param algorithm the algorithm name
-     * @param key the key
-     * @param iv the iv
+     * @param keyValue the key
+     * @param ivValue the iv
      * @param tagLenBytes the length of tag in bytes
      *
      * @exception InvalidKeyException if the given key is inappropriate for

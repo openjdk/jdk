@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class BasicChecker extends PKIXCertPathChecker {
      * Constructor that initializes the input parameters.
      *
      * @param anchor the anchor selected to validate the target certificate
-     * @param testDate the time for which the validity of the certificate
+     * @param date the time for which the validity of the certificate
      *        should be determined
      * @param sigProvider the name of the signature provider
      * @param sigOnly true if only signature checking is to be done;

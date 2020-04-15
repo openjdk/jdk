@@ -731,7 +731,7 @@ public class GregorianCalendar extends Calendar {
      * Constructs an empty GregorianCalendar.
      *
      * @param zone    the given time zone
-     * @param aLocale the given locale
+     * @param locale  the given locale
      * @param flag    the flag requesting an empty instance
      */
     GregorianCalendar(TimeZone zone, Locale locale, boolean flag) {

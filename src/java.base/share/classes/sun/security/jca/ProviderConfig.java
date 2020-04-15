@@ -321,7 +321,7 @@ final class ProviderConfig {
         /**
          * Loads the provider with the specified class name.
          *
-         * @param name the name of the provider
+         * @param pn the name of the provider
          * @return the Provider, or null if it cannot be found or loaded
          * @throws ProviderException all other exceptions are ignored
          */
