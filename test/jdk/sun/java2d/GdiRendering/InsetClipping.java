@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * clip shape.  This was a problem with our GDI renderer on Windows, where
  * we would ignore the window insets.
  * @run main InsetClipping
-*/
+ */
 
 /**
  * This test works by setting up a clip area that equals the visible area
@@ -43,10 +43,15 @@
  * test fails.
  */
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-
+import java.awt.Color;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.geom.Area;
+import java.awt.image.BufferedImage;
 
 public class InsetClipping extends Frame {
     BufferedImage image;
@@ -79,6 +84,7 @@ public class InsetClipping extends Frame {
     public static void main(String args[]) {
         InsetClipping clipTest = new InsetClipping();
         clipTest.setSize(300, 300);
+        clipTest.setLocationRelativeTo(null);
         clipTest.setVisible(true);
         while (!painted) {
             try {
@@ -102,12 +108,12 @@ public class InsetClipping extends Frame {
             try {
                 Thread.sleep(2000);
             } catch (Exception e) {}
-            int pixelVal = clientPixels.getRGB(0, 0);
+            int pixelVal = clientPixels.getRGB(2, 2);
             clipTest.dispose();
             if ((new Color(pixelVal)).equals(fillColor)) {
                 System.out.println("Passed");
             } else {
-                throw new Error("Failed: incorrect color in pixel (0, 0)");
+                throw new Error("Failed: incorrect color in pixel (2, 2)");
             }
         } catch (Exception e) {
             System.out.println("Problems creating Robot");
