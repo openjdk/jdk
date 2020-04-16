@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 
 import sun.security.util.PropertyExpander;
@@ -62,12 +63,6 @@ public class KeyStoreUtil {
     private KeyStoreUtil() {
         // this class is not meant to be instantiated
     }
-
-    private static final Collator collator = Collator.getInstance();
-    static {
-        // this is for case insensitive string comparisons
-        collator.setStrength(Collator.PRIMARY);
-    };
 
     /**
      * Returns true if the certificate is self-signed, false otherwise.
@@ -133,7 +128,8 @@ public class KeyStoreUtil {
     }
 
     public static char[] getPassWithModifier(String modifier, String arg,
-                                             java.util.ResourceBundle rb) {
+                                             ResourceBundle rb,
+                                             Collator collator) {
         if (modifier == null) {
             return arg.toCharArray();
         } else if (collator.compare(modifier, "env") == 0) {
