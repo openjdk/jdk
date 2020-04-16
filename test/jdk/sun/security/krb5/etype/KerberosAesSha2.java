@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8014628
+ * @library /test/lib
  * @modules java.base/sun.security.util
  *          java.security.jgss/sun.security.krb5.internal.crypto.dk:+open
  * @summary https://tools.ietf.org/html/rfc8009 Test Vectors
@@ -33,7 +34,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import sun.security.krb5.internal.crypto.dk.AesSha2DkCrypto;
-import sun.security.util.HexDumpEncoder;
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class KerberosAesSha2 {
 
@@ -204,6 +205,6 @@ public class KerberosAesSha2 {
     }
 
     private static void dump(byte[] data) throws Exception {
-        new HexDumpEncoder().encodeBuffer(data, System.err);
+        HexPrinter.simple().dest(System.err).format(data);
     }
 }

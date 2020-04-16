@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8011867
  * @summary Accept unknown PKCS #9 attributes
+ * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  */
@@ -32,10 +33,10 @@
 import java.io.*;
 import java.util.Arrays;
 
-import sun.security.util.HexDumpEncoder;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class UnknownAttribute {
 
@@ -58,7 +59,7 @@ public class UnknownAttribute {
         }
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         p2.derEncode(bout);
-        new HexDumpEncoder().encodeBuffer(bout.toByteArray(), System.err);
+        HexPrinter.simple().dest(System.err).format(bout.toByteArray());
         if (!Arrays.equals(data, bout.toByteArray())) {
             throw new Exception();
         }
