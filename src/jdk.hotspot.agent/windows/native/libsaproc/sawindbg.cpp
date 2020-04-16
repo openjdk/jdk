@@ -728,11 +728,9 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebugger
   CHECK_EXCEPTION_(0);
 
   ULONG bytesRead;
-  COM_VERIFY_OK_(ptrIDebugDataSpaces->ReadVirtual((ULONG64)address, arrayBytes,
-                                                  (ULONG)numBytes, &bytesRead),
-                 "Windbg Error: ReadVirtual failed!", 0);
-
-  if (bytesRead != numBytes) {
+  const HRESULT hr = ptrIDebugDataSpaces->ReadVirtual((ULONG64)address, arrayBytes,
+                                                      (ULONG)numBytes, &bytesRead);
+  if (hr != S_OK || bytesRead != numBytes) {
      return 0;
   }
 
