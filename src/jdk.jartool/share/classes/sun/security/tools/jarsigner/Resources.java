@@ -44,7 +44,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"provider.class.not.found", "Provider \"%s\" not found"},
         {"jarsigner.error.", "jarsigner error: "},
         {"Illegal.option.", "Illegal option: "},
-        {"This.option.is.deprecated", "This option is deprecated: "},
+        {"This.option.is.forremoval", "This option is deprecated and will be removed in a future release: "},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore must be NONE if -storetype is {0}"},
         {".keypass.can.not.be.specified.if.storetype.is.{0}",
@@ -93,10 +93,10 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-tsadigestalg <algorithm>] algorithm of digest data in timestamping request"},
         {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
                 "[-altsigner <class>]        class name of an alternative signing mechanism\n" +
-                "                            (This option has been deprecated.)"},
+                "                            (This option is deprecated and will be removed in a future release.)"},
         {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
                 "[-altsignerpath <pathlist>] location of an alternative signing mechanism\n" +
-                "                            (This option has been deprecated.)"},
+                "                            (This option is deprecated and will be removed in a future release.)"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               include the .SF file inside the signature block"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",

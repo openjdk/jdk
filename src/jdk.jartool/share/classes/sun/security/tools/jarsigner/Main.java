@@ -444,13 +444,13 @@ public class Main {
                 if (++n == args.length) usageNoArg();
                 altSignerClass = args[n];
                 System.err.println(
-                        rb.getString("This.option.is.deprecated") +
+                        rb.getString("This.option.is.forremoval") +
                                 "-altsigner");
             } else if (collator.compare(flags, "-altsignerpath") ==0) {
                 if (++n == args.length) usageNoArg();
                 altSignerClasspath = args[n];
                 System.err.println(
-                        rb.getString("This.option.is.deprecated") +
+                        rb.getString("This.option.is.forremoval") +
                                 "-altsignerpath");
             } else if (collator.compare(flags, "-sectionsonly") ==0) {
                 signManifest = false;
