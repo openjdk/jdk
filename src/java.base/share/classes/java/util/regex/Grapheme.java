@@ -30,21 +30,8 @@ import java.util.Objects;
 final class Grapheme {
 
     /**
-     * Determines if there is an extended  grapheme cluster boundary between two
-     * continuing characters {@code cp1} and {@code cp2}.
-     * <p>
-     * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
-     * for the extended grapheme cluster boundary rules
-     * <p>
-     * Note: this method does not take care of stateful breaking.
-     */
-    static boolean isBoundary(int cp1, int cp2) {
-        return rules[getType(cp1)][getType(cp2)];
-    }
-
-    /**
-     * Look for the next extended grapheme cluster boundary in a CharSequence. It assumes
-     * the start of the char sequence is a boundary.
+     * Look for the next extended grapheme cluster boundary in a CharSequence.
+     * It assumes the start of the char sequence at offset {@code off} is a boundary.
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
@@ -54,21 +41,20 @@ final class Grapheme {
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
      * @param limit limit offset in the src (exclusive)
-     * @return the next possible boundary
+     * @return the next grapheme boundary
      */
     static int nextBoundary(CharSequence src, int off, int limit) {
         Objects.checkFromToIndex(off, limit, src.length());
 
-        int ch0 = Character.codePointAt(src, 0);
-        int ret = Character.charCount(ch0);
-        int ch1;
+        int ch0 = Character.codePointAt(src, off);
+        int ret = off + Character.charCount(ch0);
         // indicates whether gb11 or gb12 is underway
-        int t0 = getGraphemeType(ch0);
+        int t0 = getType(ch0);
         int riCount = t0 == RI ? 1 : 0;
         boolean gb11 = t0 == EXTENDED_PICTOGRAPHIC;
         while (ret < limit) {
-            ch1 = Character.codePointAt(src, ret);
-            int t1 = getGraphemeType(ch1);
+            int ch1 = Character.codePointAt(src, ret);
+            int t1 = getType(ch1);
 
             if (gb11 && t0 == ZWJ && t1 == EXTENDED_PICTOGRAPHIC) {
                 // continue for gb11
@@ -177,7 +163,8 @@ final class Grapheme {
                cp == 0xAA7B || cp == 0xAA7D;
     }
 
-    private static int getGraphemeType(int cp) {
+    @SuppressWarnings("fallthrough")
+    private static int getType(int cp) {
         if (cp < 0x007F) { // ASCII
             if (cp < 32) { // Control characters
                 if (cp == 0x000D)
@@ -188,11 +175,7 @@ final class Grapheme {
             }
             return OTHER;
         }
-        return getType(cp);
-    }
 
-    @SuppressWarnings("fallthrough")
-    private static int getType(int cp) {
         if (EmojiData.isExtendedPictographic(cp)) {
             return EXTENDED_PICTOGRAPHIC;
         }

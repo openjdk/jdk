@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class PatternBench {
     public String flagsString;
 
     public Pattern graphemePattern;
+    public Pattern graphemeBoundaryPattern;
     public Pattern jmodPattern;
     public Pattern jmodCanonicalPattern;
 
@@ -57,7 +58,8 @@ public class PatternBench {
     public void setup() {
         flagsString = "\ud83c\udde6\ud83c\uddec\ud83c\uddec\ud83c\udde6\ud83c\uddfa\ud83c\uddf8\ud83c\uddeb\ud83c\uddf7";
         fileTestString = "META-INF/providers/org.openjdk.foo_hotspot_nodes_PluginFactory_EndLockScopeNode";
-        graphemePattern = Pattern.compile("\\b{g}");
+        graphemePattern = Pattern.compile("\\X");
+        graphemeBoundaryPattern = Pattern.compile("\\b{g}");
 
         String jmodRegex = "^.*(?:(?:_the\\.[^/]*)|(?:_[^/]*\\.marker)|(?:[^/]*\\.diz)|(?:[^/]*\\.debuginfo)|(?:[^/]*\\.dSYM/.*)|(?:[^/]*\\.dSYM)|(?:[^/]*\\.pdb)|(?:[^/]*\\.map))$";
         jmodCanonicalPattern = Pattern.compile(jmodRegex, Pattern.CANON_EQ);
@@ -71,8 +73,15 @@ public class PatternBench {
     @Benchmark
     @Warmup(iterations = 3)
     @Measurement(iterations = 3)
+    public long longStringGraphemeMatches() {
+        return graphemePattern.matcher(flagsString.repeat(3)).results().count();
+    }
+
+    @Benchmark
+    @Warmup(iterations = 3)
+    @Measurement(iterations = 3)
     public int splitFlags() {
-        return graphemePattern.split(flagsString).length;
+        return graphemeBoundaryPattern.split(flagsString).length;
     }
 
     @Benchmark
