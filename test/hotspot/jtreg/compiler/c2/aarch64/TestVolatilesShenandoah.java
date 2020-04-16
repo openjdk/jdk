@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,31 +71,31 @@
  *      TestUnsafeVolatileGAA Shenandoah
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestVolatileLoad ShenandoahTraversal
+ *      TestVolatileLoad ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestVolatileStore ShenandoahTraversal
+ *      TestVolatileStore ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileLoad ShenandoahTraversal
+ *      TestUnsafeVolatileLoad ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileStore ShenandoahTraversal
+ *      TestUnsafeVolatileStore ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileCAS ShenandoahTraversal
+ *      TestUnsafeVolatileCAS ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileWeakCAS ShenandoahTraversal
+ *      TestUnsafeVolatileWeakCAS ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileCAE ShenandoahTraversal
+ *      TestUnsafeVolatileCAE ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileGAS ShenandoahTraversal
+ *      TestUnsafeVolatileGAS ShenandoahIU
  *
  * @run driver compiler.c2.aarch64.TestVolatilesShenandoah
- *      TestUnsafeVolatileGAA ShenandoahTraversal
+ *      TestUnsafeVolatileGAA ShenandoahIU
  *
  */
 
