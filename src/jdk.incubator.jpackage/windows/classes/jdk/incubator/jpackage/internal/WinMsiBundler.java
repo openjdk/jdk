@@ -258,20 +258,7 @@ public class WinMsiBundler  extends AbstractBundler {
                                 PRODUCT_VERSION.getID()));
             }
 
-            // only one mime type per association, at least one file extension
-            List<Map<String, ? super Object>> associations =
-                    FILE_ASSOCIATIONS.fetchFrom(params);
-            if (associations != null) {
-                for (int i = 0; i < associations.size(); i++) {
-                    Map<String, ? super Object> assoc = associations.get(i);
-                    List<String> mimes = FA_CONTENT_TYPE.fetchFrom(assoc);
-                    if (mimes.size() > 1) {
-                        throw new ConfigException(MessageFormat.format(
-                                I18N.getString("error.too-many-content-types-for-file-association"), i),
-                                I18N.getString("error.too-many-content-types-for-file-association.advice"));
-                    }
-                }
-            }
+            FileAssociation.verify(FileAssociation.fetchFrom(params));
 
             return true;
         } catch (RuntimeException re) {

@@ -22,6 +22,8 @@
  */
 
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.List;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -56,12 +58,27 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage with --file-associations
  * @library ../helpers
  * @key jpackagePlatformPackage
+ * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
  * @compile FileAssociationsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
  */
+
+/*
+ * @test
+ * @summary jpackage with --file-associations
+ * @library ../helpers
+ * @key jpackagePlatformPackage
+ * @requires jpackage.test.SQETest != null
+ * @build jdk.jpackage.test.*
+ * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @compile FileAssociationsTest.java
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=FileAssociationsTest.test
+ */
+
 public class FileAssociationsTest {
     @Test
     public static void test() {
@@ -83,5 +100,52 @@ public class FileAssociationsTest {
                 .applyTo(packageTest);
 
         packageTest.run();
+    }
+
+    @Test
+    public static void testNoMime() {
+        final Path propFile = TKit.workDir().resolve("fa.properties");
+
+        PackageTest packageTest = new PackageTest().excludeTypes(PackageType.MAC);
+
+        packageTest.configureHelloApp().addRunOnceInitializer(() -> {
+            TKit.createPropertiesFile(propFile, Map.of(
+                "extension", "foo",
+                "description", "bar"
+            ));
+        }).addInitializer(cmd -> {
+            cmd.addArguments("--file-associations", propFile).saveConsoleOutput(true);
+        }).setExpectedExitCode(1).addBundleVerifier((cmd, result) -> {
+           TKit.assertTextStream(
+                   "No MIME types were specified for File Association number 1")
+                   .apply(result.getOutput().stream());
+           TKit.assertTextStream(
+                   "Advice to fix: Specify MIME type for File Association number 1")
+                   .apply(result.getOutput().stream());
+        }).run();
+    }
+
+    @Test
+    public static void testTooManyMimes() {
+        final Path propFile = TKit.workDir().resolve("fa.properties");
+
+        PackageTest packageTest = new PackageTest().excludeTypes(PackageType.MAC);
+
+        packageTest.configureHelloApp().addRunOnceInitializer(() -> {
+            TKit.createPropertiesFile(propFile, Map.of(
+                "mime-type", "application/x-jpackage-foo, application/x-jpackage-bar",
+                "extension", "foo",
+                "description", "bar"
+            ));
+        }).addInitializer(cmd -> {
+            cmd.addArguments("--file-associations", propFile).saveConsoleOutput(true);
+        }).setExpectedExitCode(1).addBundleVerifier((cmd, result) -> {
+           TKit.assertTextStream(
+                   "More than one MIME types was specified for File Association number 1")
+                   .apply(result.getOutput().stream());
+           TKit.assertTextStream(
+                   "Advice to fix: Specify only one MIME type for File Association number 1")
+                   .apply(result.getOutput().stream());
+        }).run();
     }
 }
