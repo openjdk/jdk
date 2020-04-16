@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class AlignLeftAction extends StateChangeAction
     public static final String VALUE_NAME = "Left Align";
     public static final String VALUE_SMALL_ICON = "text/AlignLeft16.gif";
     public static final String VALUE_LARGE_ICON = "text/AlignLeft24.gif";
-    public static final Integer VALUE_MNEMONIC = new Integer(76);
+    public static final Integer VALUE_MNEMONIC = 76;
     public static final KeyStroke VALUE_ACCELERATOR = KeyStroke.getKeyStroke(76, 2);
     public static final String VALUE_SHORT_DESCRIPTION = "Left Align";
     public static final String VALUE_LONG_DESCRIPTION = "Adjust the placement of text along the left edge";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public abstract class JSJavaScriptEngine extends MapScriptObject {
         if (args.length != 1) return UNDEFINED;
         Object o = args[0];
         if (o != null && o instanceof JSJavaObject) {
-            return new Long(((JSJavaObject)o).getOop().identityHash());
+            return ((JSJavaObject) o).getOop().identityHash();
         } else {
             return UNDEFINED;
         }
@@ -324,7 +324,7 @@ public abstract class JSJavaScriptEngine extends MapScriptObject {
         if (args.length != 1) return UNDEFINED;
         Object o = args[0];
         if (o != null && o instanceof JSJavaObject) {
-            return new Long(((JSJavaObject)o).getOop().getObjectSize());
+            return ((JSJavaObject) o).getOop().getObjectSize();
         } else {
             return UNDEFINED;
         }

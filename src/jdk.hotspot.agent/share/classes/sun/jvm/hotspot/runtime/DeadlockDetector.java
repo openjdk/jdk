@@ -104,7 +104,7 @@ public class DeadlockDetector {
                 }
                 if (dfn(currentThread) < 0) {
                     // First visit to this thread
-                    threadTable.put(currentThread, new Integer(globalDfn++));
+                    threadTable.put(currentThread, globalDfn++);
                 } else if (dfn(currentThread) < thisDfn) {
                     // Thread already visited, and not on a (new) cycle
                     break;
@@ -150,7 +150,7 @@ public class DeadlockDetector {
         for (int i = 0; i < threads.getNumberOfThreads(); i++) {
             JavaThread cur = threads.getJavaThreadAt(i);
             // initialize dfn for each thread to -1
-            threadTable.put(cur, new Integer(-1));
+            threadTable.put(cur, -1);
         }
     }
 

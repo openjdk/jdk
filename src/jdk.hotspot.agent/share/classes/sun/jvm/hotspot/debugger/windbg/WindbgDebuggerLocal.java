@@ -341,7 +341,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
 
   private synchronized void setThreadIntegerRegisterSet(long threadId,
                                                long[] regs) {
-    threadIntegerRegisterSet.put(new Long(threadId), regs);
+    threadIntegerRegisterSet.put(threadId, regs);
   }
 
   private synchronized void addThread(long sysId) {
@@ -351,7 +351,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   public synchronized long[] getThreadIntegerRegisterSet(long threadId)
     throws DebuggerException {
     requireAttach();
-    return (long[]) threadIntegerRegisterSet.get(new Long(threadId));
+    return (long[]) threadIntegerRegisterSet.get(threadId);
   }
 
   public synchronized List<ThreadProxy> getThreadList() throws DebuggerException {

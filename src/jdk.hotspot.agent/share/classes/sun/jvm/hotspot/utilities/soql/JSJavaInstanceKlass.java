@@ -216,7 +216,7 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
    //-- Intenals only below this point
    private static Map<String, Integer> fields = new HashMap<>();
    private static void addField(String name, int fieldId) {
-      fields.put(name, new Integer(fieldId));
+      fields.put(name, fieldId);
    }
 
    private static int getFieldID(String name) {
@@ -255,21 +255,21 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
        if (fd.isObject() || fd.isArray()) {
          return factory.newJSJavaObject(((OopField)fld).getValue(oop));
        } else if (fd.isByte()) {
-          return new Byte(((ByteField)fld).getValue(oop));
+          return ((ByteField) fld).getValue(oop);
        } else if (fd.isChar()) {
           return new String(new char[] { ((CharField)fld).getValue(oop) });
        } else if (fd.isDouble()) {
-          return new Double(((DoubleField)fld).getValue(oop));
+          return ((DoubleField) fld).getValue(oop);
        } else if (fd.isFloat()) {
-          return new Float(((FloatField)fld).getValue(oop));
+          return ((FloatField) fld).getValue(oop);
        } else if (fd.isInt()) {
-          return new Integer(((IntField)fld).getValue(oop));
+          return ((IntField) fld).getValue(oop);
        } else if (fd.isLong()) {
-          return new Long(((LongField)fld).getValue(oop));
+          return ((LongField) fld).getValue(oop);
        } else if (fd.isShort()) {
-          return new Short(((ShortField)fld).getValue(oop));
+          return ((ShortField) fld).getValue(oop);
        } else if (fd.isBoolean()) {
-          return Boolean.valueOf(((BooleanField)fld).getValue(oop));
+          return ((BooleanField) fld).getValue(oop);
        } else {
           if (Assert.ASSERTS_ENABLED) {
              Assert.that(false, "invalid field type for " + name);
@@ -283,21 +283,21 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
        if (fd.isObject() || fd.isArray()) {
          return factory.newJSJavaObject(((OopField)fld).getValue(oop));
        } else if (fd.isByte()) {
-          return new Byte(((ByteField)fld).getValue(oop));
+          return ((ByteField) fld).getValue(oop);
        } else if (fd.isChar()) {
           return new String(new char[] { ((CharField)fld).getValue(oop) });
        } else if (fd.isDouble()) {
-          return new Double(((DoubleField)fld).getValue(oop));
+          return ((DoubleField) fld).getValue(oop);
        } else if (fd.isFloat()) {
-          return new Float(((FloatField)fld).getValue(oop));
+          return ((FloatField) fld).getValue(oop);
        } else if (fd.isInt()) {
-          return new Integer(((IntField)fld).getValue(oop));
+          return ((IntField) fld).getValue(oop);
        } else if (fd.isLong()) {
-          return new Long(((LongField)fld).getValue(oop));
+          return ((LongField) fld).getValue(oop);
        } else if (fd.isShort()) {
-          return new Short(((ShortField)fld).getValue(oop));
+          return ((ShortField) fld).getValue(oop);
        } else if (fd.isBoolean()) {
-          return Boolean.valueOf(((BooleanField)fld).getValue(oop));
+          return ((BooleanField) fld).getValue(oop);
        } else {
           if (Assert.ASSERTS_ENABLED) {
              Assert.that(false, "invalid field type for " + name);

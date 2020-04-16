@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class ClassWriter implements /* imports */ ClassConstants
             int cpConstType = tags.at(ci);
             if(cpConstType == JVM_CONSTANT_Utf8) {
                 Symbol sym = cpool.getSymbolAt(ci);
-                utf8ToIndex.put(sym.asString(), new Short((short) ci));
+                utf8ToIndex.put(sym.asString(), (short) ci);
             }
             else if(cpConstType == JVM_CONSTANT_Long ||
                       cpConstType == JVM_CONSTANT_Double) {
@@ -233,7 +233,7 @@ public class ClassWriter implements /* imports */ ClassConstants
                      dos.writeByte(JVM_CONSTANT_Class);
                      String klassName = cpool.getKlassNameAt(ci).asString();
                      Short s = (Short) utf8ToIndex.get(klassName);
-                     classToIndex.put(klassName, new Short((short)ci));
+                     classToIndex.put(klassName, (short) ci);
                      dos.writeShort(s.shortValue());
                      if (DEBUG) debugMessage("CP[" + ci  + "] = class " + s);
                      break;

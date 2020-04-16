@@ -54,7 +54,7 @@ public class JSJavaVM extends DefaultScriptObject {
         int fieldID = getFieldID(name);
         switch (fieldID) {
         case FIELD_ADDRESS_SIZE:
-            return new Long(getVMBit());
+            return getVMBit();
         case FIELD_BUILD_INFO:
             return vm.getVMInternalInfo();
         case FIELD_CPU:
@@ -121,7 +121,7 @@ public class JSJavaVM extends DefaultScriptObject {
     //-- Internals only below this point
     private static Map<String, Integer> fields = new HashMap<>();
     private static void addField(String name, int fieldId) {
-        fields.put(name, new Integer(fieldId));
+        fields.put(name, fieldId);
     }
 
     private static int getFieldID(String name) {

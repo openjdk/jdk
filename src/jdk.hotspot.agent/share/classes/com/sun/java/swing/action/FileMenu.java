@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class FileMenu extends AbstractAction
 
     public static final String VALUE_COMMAND = "file-menu-command";
     public static final String VALUE_NAME = "File";
-    public static final Integer VALUE_MNEMONIC = new Integer(70);
+    public static final Integer VALUE_MNEMONIC = 70;
     public static final String VALUE_SHORT_DESCRIPTION = "File operations";
     public static final String VALUE_LONG_DESCRIPTION = "File operations";
 

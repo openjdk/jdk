@@ -548,7 +548,7 @@ public class RBTree {
       });
     Random rand = new Random(System.currentTimeMillis());
     for (int i = 0; i < treeSize; i++) {
-      Integer val = new Integer(rand.nextInt(maxVal) + 1);
+      Integer val = rand.nextInt(maxVal) + 1;
       try {
         tree.insertNode(new RBNode(val));
         if ((i > 0) && (i % 100 == 0)) {
@@ -605,7 +605,7 @@ public class RBTree {
       tree.deleteNode(xParent);
 
       // Now create and insert a new value
-      Integer newVal = new Integer(rand.nextInt(maxVal) + 1);
+      Integer newVal = rand.nextInt(maxVal) + 1;
       if (DEBUGGING && VERBOSE) {
         System.err.println("(Inserting value " + newVal + ")");
       }

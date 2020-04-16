@@ -117,19 +117,19 @@ public class ObjectReader {
       if (clz == Boolean.TYPE) {
          return Boolean.FALSE;
       } else if (clz == Character.TYPE) {
-         return new Character(' ');
+         return ' ';
       } else if (clz == Byte.TYPE) {
-         return new Byte((byte) 0);
+         return (byte) 0;
       } else if (clz == Short.TYPE) {
-         return new Short((short) 0);
+         return (short) 0;
       } else if (clz == Integer.TYPE) {
-         return new Integer(0);
+         return 0;
       } else if (clz == Long.TYPE) {
-         return new Long(0L);
+         return 0L;
       } else if (clz == Float.TYPE) {
-         return new Float(0.0f);
+         return 0.0f;
       } else if (clz == Double.TYPE) {
-         return new Double(0.0);
+         return 0.0;
       } else {
          throw new RuntimeException("should not reach here!");
       }
@@ -299,7 +299,7 @@ public class ObjectReader {
 
          Class clz = readClass(kls);
          try {
-            result = clz.newInstance();
+            result = clz.getDeclaredConstructor().newInstance();
          } catch (Exception ex) {
             // no-arg constructor failed to create object. Let us try
             // to call constructors one-by-one with default arguments

@@ -149,7 +149,7 @@ public class WizardDlg extends JDialog
         this.panels = panels;
         panesPanel.removeAll();
         for(int i = 0; i < numCards; i++)
-            panesPanel.add((JPanel)panels.elementAt(i), (new Integer(i)).toString());
+            panesPanel.add((JPanel)panels.elementAt(i), (Integer.valueOf(i)).toString());
 
         validate();
         enableBackNextButtons();

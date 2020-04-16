@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class BackAction extends DelegateAction
     public static final String VALUE_NAME = "< Back";
     public static final String VALUE_SMALL_ICON = null;
     public static final String VALUE_LARGE_ICON = null;
-    public static final Integer VALUE_MNEMONIC = new Integer(66);
+    public static final Integer VALUE_MNEMONIC = 66;
     public static final KeyStroke VALUE_ACCELERATOR = null;
     public static final String VALUE_SHORT_DESCRIPTION = "Select previous item";
     public static final String VALUE_LONG_DESCRIPTION = "Select previous item";

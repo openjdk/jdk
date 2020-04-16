@@ -128,7 +128,7 @@ public class Threads {
                 access = (JavaThreadPDAccess)
                   Class.forName("sun.jvm.hotspot.runtime.linux_" +
                      cpu.toLowerCase() + ".Linux" + cpu.toUpperCase() +
-                     "JavaThreadPDAccess").newInstance();
+                     "JavaThreadPDAccess").getDeclaredConstructor().newInstance();
               } catch (Exception e) {
                 throw new RuntimeException("OS/CPU combination " + os + "/" + cpu +
                                            " not yet supported");

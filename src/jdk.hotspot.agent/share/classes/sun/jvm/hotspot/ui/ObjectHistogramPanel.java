@@ -195,9 +195,9 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
             ObjectHistogramElement el = (ObjectHistogramElement)obj;
             switch (col) {
             case 0:
-                return new Long(el.getSize());
+                return el.getSize();
             case 1:
-                return new Long(el.getCount());
+                return el.getCount();
             case 2:
                 return el.getDescription();
             default:

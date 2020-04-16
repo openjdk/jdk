@@ -143,7 +143,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
         isCore = false;
-        attach0(new Integer(processID).toString());
+        attach0(Integer.toString(processID));
         attached = true;
         suspended = true;
     }

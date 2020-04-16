@@ -84,7 +84,7 @@ public class ClassDump extends Tool {
                 try {
                     Class<?> filterClass = Class.forName(filterClassName);
                     if (pkgList == null) {
-                        classFilter = (ClassFilter) filterClass.newInstance();
+                        classFilter = (ClassFilter) filterClass.getDeclaredConstructor().newInstance();
                     } else {
                         Constructor con = filterClass.getConstructor(String.class);
                         classFilter = (ClassFilter) con.newInstance(pkgList);

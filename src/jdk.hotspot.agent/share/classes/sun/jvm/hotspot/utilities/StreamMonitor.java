@@ -207,7 +207,7 @@ public class StreamMonitor implements Runnable {
             for (Iterator iter = triggers.iterator(); iter.hasNext(); ) {
               Trigger trigger = (Trigger) iter.next();
               if (trigger.matches(str)) {
-                triggersSeen.add(new Integer(trigger.triggerVal));
+                triggersSeen.add(trigger.triggerVal);
               }
             }
           }

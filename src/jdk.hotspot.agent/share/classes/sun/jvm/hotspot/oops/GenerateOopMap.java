@@ -183,7 +183,7 @@ public class GenerateOopMap {
     int jsrs(int i)  { return _jsrs.get(i).intValue(); }
 
     // Update entry
-    void addJsr  (int return_bci)     { _jsrs.add(new Integer(return_bci)); }
+    void addJsr  (int return_bci)     { _jsrs.add(return_bci); }
     void addDelta(int bci, int delta) {
       if (_target_bci > bci) {
         _target_bci += delta;
@@ -192,7 +192,7 @@ public class GenerateOopMap {
       for (int k = 0; k < nofJsrs(); k++) {
         int jsr = jsrs(k);
         if (jsr > bci) {
-          _jsrs.set(k, new Integer(jsr+delta));
+          _jsrs.set(k, jsr + delta);
         }
       }
     }
@@ -1937,7 +1937,7 @@ public class GenerateOopMap {
     //    if (TraceNewOopMapGeneration)
     //      tty.print_cr("Added init vars: %d", localNo);
 
-    Integer local = new Integer(localNo);
+    Integer local = localNo;
 
     // Is it already in the set?
     if (_init_vars.contains(local))

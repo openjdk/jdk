@@ -113,7 +113,7 @@ public class Annotation {
       Rectangle2D bounds = GraphicsUtilities.getStringBounds(s, g);
       width  =  Math.max(width, (int) bounds.getWidth());
       height += (int) bounds.getHeight();
-      heights.add(new Integer((int) bounds.getHeight()));
+      heights.add((int) bounds.getHeight());
     }
   }
 

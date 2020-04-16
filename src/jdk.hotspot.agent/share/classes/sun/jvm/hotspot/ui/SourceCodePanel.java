@@ -95,7 +95,7 @@ public class SourceCodePanel extends JPanel {
           g.drawString(str, width - strWidth - LINE_NO_SPACE, ascent + rowHeight * i);
 
           // Draw breakpoint if necessary
-          if (breakpoints.contains(new Integer(i))) {
+          if (breakpoints.contains(i)) {
             breakpoint.paintIcon(this, g, LINE_NO_SPACE, rowHeight * i);
           }
 
@@ -270,9 +270,9 @@ public class SourceCodePanel extends JPanel {
     highlightedLine = lineNo - 1;
   }
 
-  public void showBreakpointAtLine(int lineNo)  { breakpoints.add(new Integer(lineNo - 1));    repaint(); }
-  public boolean hasBreakpointAtLine(int lineNo){ return breakpoints.contains(new Integer(lineNo - 1));   }
-  public void clearBreakpointAtLine(int lineNo) { breakpoints.remove(new Integer(lineNo - 1)); repaint(); }
+  public void showBreakpointAtLine(int lineNo)  { breakpoints.add(lineNo - 1);    repaint(); }
+  public boolean hasBreakpointAtLine(int lineNo){ return breakpoints.contains(lineNo - 1);   }
+  public void clearBreakpointAtLine(int lineNo) { breakpoints.remove(lineNo - 1); repaint(); }
   public void clearBreakpoints()                { breakpoints.clear();                         repaint(); }
 
   public void setEditorCommands(EditorCommands comm, Editor parent) {

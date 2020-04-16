@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class JSList extends DefaultScriptObject {
 
    public Object get(String name) {
       if (name.equals("length")) {
-         return new Integer(list.size());
+         return list.size();
       } else {
          return super.get(name);
       }
@@ -59,7 +59,7 @@ public class JSList extends DefaultScriptObject {
       final int size = list.size();
       Object[] res = new Object[superIds.length + size];
       for (int i = 0; i < size; i++) {
-          res[i] = new Integer(i);
+          res[i] = i;
       }
       System.arraycopy(superIds, 0, res, size, superIds.length);
       return res;

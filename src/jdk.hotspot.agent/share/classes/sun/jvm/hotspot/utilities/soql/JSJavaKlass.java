@@ -83,7 +83,7 @@ public abstract class JSJavaKlass {
     //-- Internals only below this point
     private static Map<String, Integer> fields = new HashMap<>();
     private static void addField(String name, int fieldId) {
-        fields.put(name, new Integer(fieldId));
+        fields.put(name, fieldId);
     }
 
     private static int getFieldID(String name) {

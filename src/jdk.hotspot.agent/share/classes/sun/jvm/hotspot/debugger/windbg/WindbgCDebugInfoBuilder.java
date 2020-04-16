@@ -664,7 +664,7 @@ class WindbgCDebugInfoBuilder
   }
 
   private void putType(Type t) {
-    db.addType(new Integer(iter.getTypeIndex()), t);
+    db.addType(iter.getTypeIndex(), t);
   }
 
   private Address newAddress(int offset, short segment) {
@@ -682,7 +682,7 @@ class WindbgCDebugInfoBuilder
   }
 
   private BasicType getTypeByIndex(int intIndex) {
-    Integer index = new Integer(intIndex);
+    Integer index = intIndex;
 
     // Handle primitive types here.
     if (intIndex <= 0x0FFF) {
@@ -781,7 +781,7 @@ class WindbgCDebugInfoBuilder
   }
 
   private void addBlock(BlockSym block) {
-    db.addBlock(new Integer(symIter.getOffset()), block);
+    db.addBlock(symIter.getOffset(), block);
     blockStack.push(block);
   }
 
@@ -794,7 +794,7 @@ class WindbgCDebugInfoBuilder
       return null;
     }
 
-    return new LazyBlockSym(new Integer(offset));
+    return new LazyBlockSym(offset);
   }
 
   private int memberAttributeToAccessControl(short memberAttribute) {

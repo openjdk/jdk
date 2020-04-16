@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ public class ObjectListPanel extends SAPanel {
       case 2:
         if (hasArrays) {
           if (oop instanceof Array) {
-            return new Long(((Array) oop).getLength());
+            return ((Array) oop).getLength();
           }
           return null;
         } else {

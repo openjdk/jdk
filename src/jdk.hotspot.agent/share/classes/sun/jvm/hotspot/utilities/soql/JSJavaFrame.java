@@ -49,9 +49,9 @@ public class JSJavaFrame extends DefaultScriptObject {
         case FIELD_METHOD:
             return getMethod();
         case FIELD_BCI:
-            return new Integer(getBCI());
+            return getBCI();
         case FIELD_LINE_NUMBER:
-            return new Integer(getLineNumber());
+            return getLineNumber();
         case FIELD_LOCALS:
             return getLocals();
         case FIELD_THIS_OBJECT:
@@ -102,7 +102,7 @@ public class JSJavaFrame extends DefaultScriptObject {
     //-- Internals only below this point
     private static Map<String, Integer> fields = new HashMap<>();
     private static void addField(String name, int fieldId) {
-        fields.put(name, new Integer(fieldId));
+        fields.put(name, fieldId);
     }
 
     private static int getFieldID(String name) {
@@ -170,21 +170,21 @@ public class JSJavaFrame extends DefaultScriptObject {
                 BasicType variableType = BasicType.charToBasicType(signature.charAt(0));
                 Object value = null;
                 if (variableType == BasicType.T_BOOLEAN) {
-                    value = Boolean.valueOf(values.booleanAt(slot));
+                    value = values.booleanAt(slot);
                 } else if (variableType == BasicType.T_CHAR) {
-                    value = new Character(values.charAt(slot));
+                    value = values.charAt(slot);
                 } else if (variableType == BasicType.T_FLOAT) {
-                    value = new Float(values.floatAt(slot));
+                    value = values.floatAt(slot);
                 } else if (variableType == BasicType.T_DOUBLE) {
-                    value = new Double(values.doubleAt(slot));
+                    value = values.doubleAt(slot);
                 } else if (variableType == BasicType.T_BYTE) {
-                    value = new Byte(values.byteAt(slot));
+                    value = values.byteAt(slot);
                 } else if (variableType == BasicType.T_SHORT) {
-                    value = new Short(values.shortAt(slot));
+                    value = values.shortAt(slot);
                 } else if (variableType == BasicType.T_INT) {
-                    value = new Integer(values.intAt(slot));
+                    value = values.intAt(slot);
                 } else if (variableType == BasicType.T_LONG) {
-                    value = new Long(values.longAt(slot));
+                    value = values.longAt(slot);
                 } else if (variableType == BasicType.T_OBJECT ||
                        variableType == BasicType.T_ARRAY) {
                     handle = values.oopHandleAt(slot);

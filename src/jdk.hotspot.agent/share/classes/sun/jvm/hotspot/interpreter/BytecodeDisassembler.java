@@ -35,11 +35,11 @@ public class BytecodeDisassembler {
    private static Map<Integer, Class> bytecode2Class = new HashMap<>();
 
    private static void addBytecodeClass(int bytecode, Class clazz) {
-      bytecode2Class.put(new Integer(bytecode), clazz);
+      bytecode2Class.put(bytecode, clazz);
    }
 
    private static Class getBytecodeClass(int bytecode) {
-      return (Class) bytecode2Class.get(new Integer(bytecode));
+      return (Class) bytecode2Class.get(bytecode);
    }
 
    static {
@@ -140,7 +140,7 @@ public class BytecodeDisassembler {
 
          Bytecode bytecodeObj = null;
          try {
-            bytecodeObj = (Bytecode)cstr.newInstance(new Object[] { method, new Integer(bci) });
+            bytecodeObj = (Bytecode)cstr.newInstance(new Object[] { method, bci});
          } catch (Exception exp) {
             if (Assert.ASSERTS_ENABLED) {
                Assert.that(false, "Bytecode instance of class "

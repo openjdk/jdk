@@ -65,7 +65,7 @@ public class CStringUtilities {
     do {
       val = (byte) addr.getCIntegerAt(i, 1, false);
       if (val != 0) {
-        data.add(new Byte(val));
+        data.add(val);
       }
       ++i;
     } while (val != 0);

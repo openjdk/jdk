@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public abstract class JSJavaArrayKlass extends JSJavaKlass {
 
    public Object getMetaClassFieldValue(String name) {
       if (name.equals("dimension")) {
-         return new Long(getArrayKlass().getDimension());
+         return getArrayKlass().getDimension();
       } else {
          return super.getMetaClassFieldValue(name);
       }

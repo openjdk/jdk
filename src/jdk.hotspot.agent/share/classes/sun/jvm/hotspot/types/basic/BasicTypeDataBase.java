@@ -468,7 +468,7 @@ public class BasicTypeDataBase implements TypeDataBase {
       throw new RuntimeException("int constant of name \"" + name + "\" already present");
     }
 
-    nameToIntConstantMap.put(name, new Integer(value));
+    nameToIntConstantMap.put(name, value);
   }
 
   /** This method should only be used by the builder of the
@@ -491,7 +491,7 @@ public class BasicTypeDataBase implements TypeDataBase {
       throw new RuntimeException("long constant of name \"" + name + "\" already present");
     }
 
-    nameToLongConstantMap.put(name, new Long(value));
+    nameToLongConstantMap.put(name, value);
   }
 
   /** This method should only be used by the builder of the

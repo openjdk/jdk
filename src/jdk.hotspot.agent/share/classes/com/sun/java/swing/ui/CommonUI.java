@@ -311,14 +311,14 @@ public class CommonUI
     {
         int value = ms.intValue();
         value /= 1000;
-        return new Integer(value);
+        return value;
     }
 
     public static Integer secToMs(Integer sec)
     {
         int value = sec.intValue();
         value *= 1000;
-        return new Integer(value);
+        return value;
     }
 
     public static String stringFromStringArray(String strings[], String delim)

@@ -73,7 +73,7 @@ public class ProcessListPanel extends JPanel {
           case 0:
             return info.getName();
           case 1:
-            return new Integer(info.getPid());
+            return info.getPid();
           default:
             throw new RuntimeException("Index (" + col + ", " + row + ") out of bounds");
           }
