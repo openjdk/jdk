@@ -2072,20 +2072,17 @@ JRT_LEAF(void, SharedRuntime::reguard_yellow_pages())
   (void) JavaThread::current()->reguard_stack();
 JRT_END
 
-
-// Handles the uncommon case in locking, i.e., contention or an inflated lock.
-JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
+void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread) {
   if (!SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
-    if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
+    if (ObjectSynchronizer::quick_enter(obj, thread, lock)) return;
   }
   // NO_ASYNC required because an async exception on the state transition destructor
   // would leave you with the lock held and it would never be released.
   // The normal monitorenter NullPointerException is thrown without acquiring a lock
   // and the model is that an exception implies the method failed.
   JRT_BLOCK_NO_ASYNC
-  oop obj(_obj);
   if (PrintBiasedLockingStatistics) {
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
@@ -2093,42 +2090,23 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, B
   ObjectSynchronizer::enter(h_obj, lock, CHECK);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
   JRT_BLOCK_END
+}
+
+// Handles the uncommon case in locking, i.e., contention or an inflated lock.
+JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread))
+  SharedRuntime::monitor_enter_helper(obj, lock, thread);
 JRT_END
 
+void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread) {
+  assert(JavaThread::current() == thread, "invariant");
+  // Exit must be non-blocking, and therefore no exceptions can be thrown.
+  EXCEPTION_MARK;
+  ObjectSynchronizer::exit(obj, lock, THREAD);
+}
+
 // Handles the uncommon cases of monitor unlocking in compiled code
-JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* _obj, BasicLock* lock, JavaThread * THREAD))
-   oop obj(_obj);
-  assert(JavaThread::current() == THREAD, "invariant");
-  // I'm not convinced we need the code contained by MIGHT_HAVE_PENDING anymore
-  // testing was unable to ever fire the assert that guarded it so I have removed it.
-  assert(!HAS_PENDING_EXCEPTION, "Do we need code below anymore?");
-#undef MIGHT_HAVE_PENDING
-#ifdef MIGHT_HAVE_PENDING
-  // Save and restore any pending_exception around the exception mark.
-  // While the slow_exit must not throw an exception, we could come into
-  // this routine with one set.
-  oop pending_excep = NULL;
-  const char* pending_file;
-  int pending_line;
-  if (HAS_PENDING_EXCEPTION) {
-    pending_excep = PENDING_EXCEPTION;
-    pending_file  = THREAD->exception_file();
-    pending_line  = THREAD->exception_line();
-    CLEAR_PENDING_EXCEPTION;
-  }
-#endif /* MIGHT_HAVE_PENDING */
-
-  {
-    // Exit must be non-blocking, and therefore no exceptions can be thrown.
-    EXCEPTION_MARK;
-    ObjectSynchronizer::exit(obj, lock, THREAD);
-  }
-
-#ifdef MIGHT_HAVE_PENDING
-  if (pending_excep != NULL) {
-    THREAD->set_pending_exception(pending_excep, pending_file, pending_line);
-  }
-#endif /* MIGHT_HAVE_PENDING */
+JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread))
+  SharedRuntime::monitor_exit_helper(obj, lock, thread);
 JRT_END
 
 #ifndef PRODUCT
