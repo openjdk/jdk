@@ -720,13 +720,13 @@ static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
 // is updated as it occurs for every test and some tests are not prepared to handle
 // unexpected output - see 8196739. Instead we only check if the table is up-to-date
 // if the check_globals flag is true, and in addition allow a grace period and only
-// check for stale flags when we hit build 20 (which is far enough into the 6 month
+// check for stale flags when we hit build 25 (which is far enough into the 6 month
 // release cycle that all flag updates should have been processed, whilst still
 // leaving time to make the change before RDP2).
 // We use a gtest to call this, passing true, so that we can detect stale flags before
 // the end of the release cycle.
 
-static const int SPECIAL_FLAG_VALIDATION_BUILD = 20;
+static const int SPECIAL_FLAG_VALIDATION_BUILD = 25;
 
 bool Arguments::verify_special_jvm_flags(bool check_globals) {
   bool success = true;
