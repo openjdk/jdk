@@ -79,7 +79,7 @@ final class DCmdDump extends AbstractDCmd {
                     ", maxage=" + maxAge +
                     ", maxsize=" + maxSize +
                     ", begin=" + begin +
-                    ", end" + end +
+                    ", end=" + end +
                     ", path-to-gc-roots=" + pathToGcRoots);
         }
 

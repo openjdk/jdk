@@ -79,10 +79,10 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", stackdepth=" + stackDepth +
                     ", globalbuffercount=" + globalBufferCount +
                     ", globalbuffersize=" + globalBufferSize +
-                    ", thread_buffer_size" + threadBufferSize +
-                    ", memorysize" + memorySize +
+                    ", thread_buffer_size=" + threadBufferSize +
+                    ", memorysize=" + memorySize +
                     ", maxchunksize=" + maxChunkSize +
-                    ", samplethreads" + sampleThreads);
+                    ", samplethreads=" + sampleThreads);
         }
 
 

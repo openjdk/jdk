@@ -91,9 +91,9 @@ final class DCmdStart extends AbstractDCmd {
                     ", disk=" + disk+
                     ", filename=" + path +
                     ", maxage=" + maxAge +
-                    ", flush=" + flush +
+                    ", flush-interval=" + flush +
                     ", maxsize=" + maxSize +
-                    ", dumponexit =" + dumpOnExit +
+                    ", dumponexit=" + dumpOnExit +
                     ", path-to-gc-roots=" + pathToGcRoots);
         }
         if (name != null) {
