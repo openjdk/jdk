@@ -1,6 +1,0 @@
-SyntaxError:32:Expected an operand but found .
-print(.foo)
-      ^
-SyntaxError:38:Expected an operand but found .
-.bar = 3423;
-^

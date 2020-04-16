@@ -1,3 +1,0 @@
-test/nashorn/script/error/NASHORN-154/literal_mult_getters.js:36:37 Property "foo" already defined
-var obj = { get foo() { return 2; }, get foo() { return 'hello'; } };
-                                     ^

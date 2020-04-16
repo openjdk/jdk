@@ -1,3 +1,0 @@
-test/nashorn/script/error/quotemissing.js:28:14 Missing close quote
-print("hello);
-              ^

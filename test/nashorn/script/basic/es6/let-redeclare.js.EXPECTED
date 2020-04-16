@@ -1,3 +1,0 @@
-SyntaxError: test/nashorn/script/basic/es6/let-redeclare.js#33:4<eval>:2:4 Variable "x" has already been declared
-let x = 2;
-    ^

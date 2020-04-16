@@ -1,4 +1,0 @@
-TypeError: [Date 1970-01-01T00:00:00.000Z] is not a Number
-TypeError: [String hello] is not a Number
-TypeError: [Boolean false] is not a Number
-TypeError: [object Object] is not a Number

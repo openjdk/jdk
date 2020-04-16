@@ -1,2 +1,0 @@
-yes, MyConstructor.prototype is a number
-yes, Object.getPrototypeOf(myObj) is Object.prototype

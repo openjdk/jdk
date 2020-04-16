@@ -1,6 +1,0 @@
-ReferenceError: <function>:1:50 Invalid left hand side for assignment
-/*infloop*/while(((function ()4.)([z1,,], [,,]) - true++))switch(1e+81.x) { default: break; 	 }
-                                                  ^
-SyntaxError: <function>:1:5 Expected l-value but found )
-if(--) y;
-     ^

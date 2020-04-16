@@ -1,3 +1,0 @@
-SyntaxError: test/nashorn/script/basic/es6/const-empty.js#33:4<eval>:2:7 Missing assignment to constant "x"
-const x;
-       ^

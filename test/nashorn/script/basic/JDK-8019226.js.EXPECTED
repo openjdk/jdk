@@ -1,4 +1,0 @@
-Error: failed!
-	at func2 (test/nashorn/script/basic/JDK-8019226.js:33)
-	at func1 (test/nashorn/script/basic/JDK-8019226.js:31)
-	at <program> (test/nashorn/script/basic/JDK-8019226.js:36)

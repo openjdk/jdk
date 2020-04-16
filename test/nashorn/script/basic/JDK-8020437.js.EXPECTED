@@ -1,5 +1,0 @@
-[object Object]
-Error
-	at func (test/nashorn/script/basic/JDK-8020437.js:48)
-	at f (test/nashorn/script/basic/JDK-8020437.js:41)
-	at <program> (test/nashorn/script/basic/JDK-8020437.js:37)

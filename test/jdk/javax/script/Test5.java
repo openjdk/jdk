@@ -25,7 +25,6 @@
  * @test
  * @bug 6249843 6705893
  * @summary Tests engine, global scopes and scope hiding.
- * @modules jdk.scripting.nashorn
  */
 
 import java.io.File;

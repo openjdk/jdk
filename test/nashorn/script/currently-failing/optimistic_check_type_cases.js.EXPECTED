@@ -1,7 +1,0 @@
-global int division by global int: int
-global int modulus by global int: int
-global int addition assignment global int: int
-global int substraction assignment global int: int
-global int multiplication assignment global int: int
-global int division assignment global int: int
-global int modulo assignment global int: int

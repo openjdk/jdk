@@ -1,9 +1,0 @@
-backquote1.js:1:0 Expected an operand but found error
-`ls`
-^
-heredoc1.js:1:10 Expected an operand but found <<
-var str = <<EOF
-          ^
-hashcomment1.js:1:0 Expected an operand but found error
-#comment
-^

@@ -206,19 +206,6 @@ public class RuntimeTest {
                          + resourceVersionActual);
     }
 
-    @Test(dataProvider = "jarFiles")
-    void testJjs(String jar, int mainVer, int helperVer, int resVer)
-            throws Throwable {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jjs");
-        launcher.addToolArg("-cp").addToolArg(jar)
-                .addToolArg(src + "/data/runtimetest/MVJarJJSTestScript.js");
-        ProcessTools.executeCommand(launcher.getCommand())
-                .shouldHaveExitValue(SUCCESS)
-                .shouldContain("Main version: " + mainVer)
-                .shouldContain("Helpers version: " + helperVer)
-                .shouldContain("Resource version: " + resVer);
-    }
-
     private static OutputAnalyzer jar(String... args) throws Throwable {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jar");
         Stream.of(args).forEach(launcher::addToolArg);

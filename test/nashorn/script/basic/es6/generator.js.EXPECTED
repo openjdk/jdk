@@ -1,9 +1,0 @@
-java.lang.RuntimeException: test/nashorn/script/basic/es6/generator.js#34:6<eval>:1:17 ES6 generator is not yet implemented
-function* func() { yield 1; }
-                 ^
-java.lang.RuntimeException: test/nashorn/script/basic/es6/generator.js#34:6<eval>:1:23 ES6 generator is not yet implemented
-({ * generatorMethod() { yield 1; } })
-                       ^
-java.lang.RuntimeException: test/nashorn/script/basic/es6/generator.js#34:6<eval>:1:23 ES6 generator is not yet implemented
-var func = function*() { yield 1; }
-                       ^

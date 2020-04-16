@@ -1,4 +1,0 @@
-In loader, nb1.prop === nb2.prop true
-deepEqual: true, prop: undefined
-In loader, nb1.prop === nb2.prop false
-deepEqual: false, prop: 0

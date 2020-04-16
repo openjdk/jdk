@@ -1,9 +1,0 @@
-{"foo":42}
-[5,6,76,7]
-"hello"
-{"name":"nashorn","versions":["es5.1","es6"]}
-true
-{"x":42,"y":"hello"}
-"my json representation"
-"value from toJSON function"
-{"foo":"HELLO"}

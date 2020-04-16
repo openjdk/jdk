@@ -25,7 +25,6 @@
  * @test
  * @bug 6249843
  * @summary Test exposing a Java object to script
- * @modules jdk.scripting.nashorn
  */
 
 import java.io.File;

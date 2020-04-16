@@ -1,3 +1,0 @@
-test/nashorn/script/error/JDK-8020437-2.js:36:12 Expected ; but found ++
-EOF}); var x++; // syntax error in same line
-            ^

@@ -38,6 +38,7 @@ import tests.JImageGenerator.JLinkTask;
 
 /*
  * @test
+ * @ignore 8242860
  * @bug 8168925
  * @summary MODULES property should be topologically ordered and space-separated list
  * @library ../lib

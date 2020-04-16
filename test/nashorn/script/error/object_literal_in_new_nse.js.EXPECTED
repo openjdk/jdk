@@ -1,9 +1,0 @@
-test/nashorn/script/error/object_literal_in_new_nse.js:31:33 Expected ; but found {
-var r = new java.lang.Runnable() {
-                                 ^
-test/nashorn/script/error/object_literal_in_new_nse.js:32:15 Expected ident but found (
-  run: function() { print("hello"); }
-               ^
-test/nashorn/script/error/object_literal_in_new_nse.js:32:36 Expected eof but found }
-  run: function() { print("hello"); }
-                                    ^

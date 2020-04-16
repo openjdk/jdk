@@ -30,31 +30,22 @@
  */
 module jdk.internal.le {
     exports jdk.internal.org.jline.keymap to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.reader to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.reader.impl to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.reader.impl.completer to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.reader.impl.history to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.terminal.impl to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.terminal to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.utils to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
     exports jdk.internal.org.jline.terminal.spi to
-        jdk.scripting.nashorn.shell,
         jdk.jshell;
 
     uses jdk.internal.org.jline.terminal.spi.JnaSupport;

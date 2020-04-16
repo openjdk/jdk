@@ -102,7 +102,6 @@ static const char* modules[] = {
   "java.base",
   "java.logging",
   "jdk.compiler",
-  "jdk.scripting.nashorn",
   "jdk.internal.vm.ci",
   "jdk.internal.vm.compiler"
 };

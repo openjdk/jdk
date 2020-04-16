@@ -1,3 +1,0 @@
-java.lang.RuntimeException: test/nashorn/script/basic/es6/class.js#33:3<eval>:1:0 ES6 class declarations and expressions are not yet implemented
-class Foo {}
-^

@@ -1,3 +1,0 @@
-test/nashorn/script/error/backquote_string_nse.js:32:0 Expected an operand but found error
-`ls -l`;
-^

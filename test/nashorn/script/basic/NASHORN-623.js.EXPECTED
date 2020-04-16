@@ -1,3 +1,0 @@
-SyntaxError: Invalid JSON: <json>:1:11 Invalid JSON number format
-{ "test" : -xxx }
-           ^

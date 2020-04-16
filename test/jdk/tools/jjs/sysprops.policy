@@ -1,3 +1,0 @@
-grant {
-    permission java.util.PropertyPermission "*", "read";
-};

@@ -1,3 +1,0 @@
-TypeError: RegExp("a|b", "g") is not a function
-TypeError: new String("hello") is not a function
-TypeError: new Object() is not a function

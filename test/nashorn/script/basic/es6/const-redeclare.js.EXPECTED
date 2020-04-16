@@ -1,3 +1,0 @@
-SyntaxError: test/nashorn/script/basic/es6/const-redeclare.js#33:4<eval>:2:6 Variable "x" has already been declared
-const x = 2;
-      ^

@@ -668,12 +668,6 @@ endif
 
 ################################################################################
 
-ifeq ($(MODULE), jdk.scripting.nashorn)
-  include CompileJavaModulesNashorn.gmk
-endif
-
-################################################################################
-
 $(eval $(call IncludeCustomExtension, CompileJavaModules-post.gmk))
 
 ################################################################################

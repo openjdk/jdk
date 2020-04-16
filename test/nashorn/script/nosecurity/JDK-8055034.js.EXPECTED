@@ -1,3 +1,0 @@
-jjs> var x = Object.create(null)jjs> jjs> print('PASSED')PASSED
-jjs> exit(0)
-exit code = 0

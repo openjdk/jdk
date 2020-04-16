@@ -1,4 +1,0 @@
-typeof(p) = object
-hello
-typeof(p) = number
-p = 1
