@@ -553,7 +553,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
           int cpConstType = tags.at(ci);
           if(cpConstType == JVM_CONSTANT_Utf8) {
               Symbol sym = getSymbolAt(ci);
-              utf8ToIndex.put(sym.asString(), new Short((short) ci));
+              utf8ToIndex.put(sym.asString(), (short) ci);
           }
           else if(cpConstType == JVM_CONSTANT_Long ||
                   cpConstType == JVM_CONSTANT_Double) {

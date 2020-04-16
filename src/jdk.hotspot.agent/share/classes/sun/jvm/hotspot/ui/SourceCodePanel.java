@@ -26,6 +26,7 @@ package sun.jvm.hotspot.ui;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.Rectangle2D;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -255,10 +256,12 @@ public class SourceCodePanel extends JPanel {
   public void showLineNumber(int lineNo) {
     try {
       int offset = source.getLineStartOffset(lineNo - 1);
-      Rectangle rect = source.modelToView(offset);
-      if (rect == null) {
+      Rectangle2D rect2d = source.modelToView2D(offset);
+      if (rect2d == null) {
         return;
       }
+      Rectangle rect = new Rectangle((int) rect2d.getX(), (int) rect2d.getY(),
+              (int) rect2d.getWidth(), (int) rect2d.getHeight());
       source.scrollRectToVisible(rect);
     } catch (BadLocationException e) {
       e.printStackTrace();
