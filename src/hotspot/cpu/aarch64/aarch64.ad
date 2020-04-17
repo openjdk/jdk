@@ -2170,15 +2170,6 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const uint Matcher::vector_shift_count_ideal_reg(int size) {
-  switch(size) {
-    case  8: return Op_VecD;
-    case 16: return Op_VecX;
-  }
-  ShouldNotReachHere();
-  return 0;
-}
-
 // AES support not yet implemented
 const bool Matcher::pass_original_key_for_aes() {
   return false;
@@ -2213,7 +2204,7 @@ const bool Matcher::need_masked_shift_count = false;
 // No support for generic vector operands.
 const bool Matcher::supports_generic_vector_operands  = false;
 
-MachOper* Matcher::specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
+MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
   return NULL;
 }
