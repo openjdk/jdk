@@ -413,60 +413,69 @@ void os::Posix::print_uptime_info(outputStream* st) {
   }
 }
 
-
-void os::Posix::print_rlimit_info(outputStream* st) {
-  st->print("rlimit:");
+static void print_rlimit(outputStream* st, const char* msg,
+                         int resource, bool output_k = false) {
   struct rlimit rlim;
 
-  st->print(" STACK ");
-  getrlimit(RLIMIT_STACK, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+  st->print(" %s ", msg);
+  int res = getrlimit(resource, &rlim);
+  if (res == -1) {
+    st->print("could not obtain value");
+  } else {
+    // soft limit
+    if (rlim.rlim_cur == RLIM_INFINITY) { st->print("infinity"); }
+    else {
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024); }
+      else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur)); }
+    }
+    // hard limit
+    st->print("/");
+    if (rlim.rlim_max == RLIM_INFINITY) { st->print("infinity"); }
+    else {
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / 1024); }
+      else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_max)); }
+    }
+  }
+}
 
-  st->print(", CORE ");
-  getrlimit(RLIMIT_CORE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+void os::Posix::print_rlimit_info(outputStream* st) {
+  st->print("rlimit (soft/hard):");
+  print_rlimit(st, "STACK", RLIMIT_STACK, true);
+  print_rlimit(st, ", CORE", RLIMIT_CORE, true);
 
-  // Isn't there on solaris
 #if defined(AIX)
   st->print(", NPROC ");
   st->print("%d", sysconf(_SC_CHILD_MAX));
-  st->print(", THREADS ");
-  getrlimit(RLIMIT_THREADS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
+
+  print_rlimit(st, ", THREADS", RLIMIT_THREADS);
 #elif !defined(SOLARIS)
-  st->print(", NPROC ");
-  getrlimit(RLIMIT_NPROC, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
+  print_rlimit(st, ", NPROC", RLIMIT_NPROC);
 #endif
 
-  st->print(", NOFILE ");
-  getrlimit(RLIMIT_NOFILE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
+  print_rlimit(st, ", NOFILE", RLIMIT_NOFILE);
+  print_rlimit(st, ", AS", RLIMIT_AS, true);
+  print_rlimit(st, ", CPU", RLIMIT_CPU);
+  print_rlimit(st, ", DATA", RLIMIT_DATA, true);
 
-  st->print(", AS ");
-  getrlimit(RLIMIT_AS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+  // maximum size of files that the process may create
+  print_rlimit(st, ", FSIZE", RLIMIT_FSIZE, true);
 
-  st->print(", CPU ");
-  getrlimit(RLIMIT_CPU, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
+#if defined(LINUX) || defined(__APPLE__)
+  // maximum number of bytes of memory that may be locked into RAM
+  // (rounded down to the nearest  multiple of system pagesize)
+  print_rlimit(st, ", MEMLOCK", RLIMIT_MEMLOCK, true);
+#endif
 
-  st->print(", DATA ");
-  getrlimit(RLIMIT_DATA, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+#if defined(SOLARIS)
+  // maximum size of mapped address space of a process in bytes;
+  // if the limit is exceeded, mmap and brk fail
+  print_rlimit(st, ", VMEM", RLIMIT_VMEM, true);
+#endif
 
-  st->print(", FSIZE ");
-  getrlimit(RLIMIT_FSIZE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+  // MacOS; The maximum size (in bytes) to which a process's resident set size may grow.
+#if defined(__APPLE__)
+  print_rlimit(st, ", RSS", RLIMIT_RSS, true);
+#endif
 
   st->cr();
 }
