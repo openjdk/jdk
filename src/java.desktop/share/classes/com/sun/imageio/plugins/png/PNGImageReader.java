@@ -210,11 +210,14 @@ public class PNGImageReader extends ImageReader {
 
     private String readNullTerminatedString(String charset, int maxLen) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int b;
+        int b = 0;
         int count = 0;
         while ((maxLen > count++) && ((b = stream.read()) != 0)) {
             if (b == -1) throw new EOFException();
             baos.write(b);
+        }
+        if (b != 0) {
+            throw new IIOException("Found non null terminated string");
         }
         return new String(baos.toByteArray(), charset);
     }
