@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,15 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -1048,8 +1049,21 @@ public class ZipFile implements ZipConstants, Closeable {
         }
     }
 
+    /**
+     * Returns the versions for which there exists a non-directory
+     * entry that begin with "META-INF/versions/" (case ignored).
+     * This method is used in JarFile, via SharedSecrets, as an
+     * optimization when looking up potentially versioned entries.
+     * Returns an empty array if no versioned entries exist.
+     */
+    private int[] getMetaInfVersions() {
+        synchronized (this) {
+            ensureOpen();
+            return res.zsrc.metaVersions;
+        }
+    }
+
     private static boolean isWindows;
-    private static final JavaLangAccess JLA;
 
     static {
         SharedSecrets.setJavaUtilZipFileAccess(
@@ -1059,8 +1073,12 @@ public class ZipFile implements ZipConstants, Closeable {
                     return zip.res.zsrc.startsWithLoc;
                 }
                 @Override
-                public String[] getMetaInfEntryNames(ZipFile zip) {
-                    return zip.getMetaInfEntryNames();
+                public String[] getMetaInfEntryNames(JarFile jar) {
+                    return ((ZipFile)jar).getMetaInfEntryNames();
+                }
+                @Override
+                public int[] getMetaInfVersions(JarFile jar) {
+                    return ((ZipFile)jar).getMetaInfVersions();
                 }
                 @Override
                 public JarEntry getEntry(ZipFile zip, String name,
@@ -1083,11 +1101,14 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
              }
         );
-        JLA = SharedSecrets.getJavaLangAccess();
         isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 
     private static class Source {
+        // "META-INF/".length()
+        private static final int META_INF_LENGTH = 9;
+        private static final int[] EMPTY_META_VERSIONS = new int[0];
+
         private final Key key;               // the key in files
         private int refs = 1;
 
@@ -1097,6 +1118,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private byte[] comment;              // zip file comment
                                              // list of meta entries in META-INF dir
         private int[] metanames;
+        private int[] metaVersions;          // list of unique versions found in META-INF/versions/
         private final boolean startsWithLoc; // true, if zip file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
@@ -1237,6 +1259,7 @@ public class ZipFile implements ZipConstants, Closeable {
             entries = null;
             table = null;
             metanames = null;
+            metaVersions = EMPTY_META_VERSIONS;
         }
 
         private static final int BUF_SIZE = 8192;
@@ -1424,6 +1447,8 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // list for all meta entries
             ArrayList<Integer> metanamesList = null;
+            // Set of all version numbers seen in META-INF/versions/
+            Set<Integer> metaVersionsSet = null;
 
             // Iterate through the entries in the central directory
             int i = 0;
@@ -1461,6 +1486,17 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (metanamesList == null)
                         metanamesList = new ArrayList<>(4);
                     metanamesList.add(pos);
+
+                    // If this is a versioned entry, parse the version
+                    // and store it for later. This optimizes lookup
+                    // performance in multi-release jar files
+                    int version = getMetaVersion(cen,
+                        pos + CENHDR + META_INF_LENGTH, nlen - META_INF_LENGTH);
+                    if (version > 0) {
+                        if (metaVersionsSet == null)
+                            metaVersionsSet = new TreeSet<>();
+                        metaVersionsSet.add(version);
+                    }
                 }
                 // skip ext and comment
                 pos += (CENHDR + nlen + elen + clen);
@@ -1472,6 +1508,15 @@ public class ZipFile implements ZipConstants, Closeable {
                 for (int j = 0, len = metanames.length; j < len; j++) {
                     metanames[j] = metanamesList.get(j);
                 }
+            }
+            if (metaVersionsSet != null) {
+                metaVersions = new int[metaVersionsSet.size()];
+                int c = 0;
+                for (Integer version : metaVersionsSet) {
+                    metaVersions[c++] = version;
+                }
+            } else {
+                metaVersions = EMPTY_META_VERSIONS;
             }
             if (pos + ENDHDR != cen.length) {
                 zerror("invalid CEN header (bad header size)");
@@ -1550,7 +1595,7 @@ public class ZipFile implements ZipConstants, Closeable {
          */
         private static boolean isMetaName(byte[] name, int off, int len) {
             // Use the "oldest ASCII trick in the book"
-            return len > 9                     // "META-INF/".length()
+            return len > META_INF_LENGTH       // "META-INF/".length()
                 && name[off + len - 1] != '/'  // non-directory
                 && (name[off++] | 0x20) == 'm'
                 && (name[off++] | 0x20) == 'e'
@@ -1561,6 +1606,45 @@ public class ZipFile implements ZipConstants, Closeable {
                 && (name[off++] | 0x20) == 'n'
                 && (name[off++] | 0x20) == 'f'
                 && (name[off]         ) == '/';
+        }
+
+        /*
+         * If the bytes represents a non-directory name beginning
+         * with "versions/", continuing with a positive integer,
+         * followed by a '/', then return that integer value.
+         * Otherwise, return 0
+         */
+        private static int getMetaVersion(byte[] name, int off, int len) {
+            int nend = off + len;
+            if (!(len > 10                         // "versions//".length()
+                    && name[off + len - 1] != '/'  // non-directory
+                    && (name[off++] | 0x20) == 'v'
+                    && (name[off++] | 0x20) == 'e'
+                    && (name[off++] | 0x20) == 'r'
+                    && (name[off++] | 0x20) == 's'
+                    && (name[off++] | 0x20) == 'i'
+                    && (name[off++] | 0x20) == 'o'
+                    && (name[off++] | 0x20) == 'n'
+                    && (name[off++] | 0x20) == 's'
+                    && (name[off++]         ) == '/')) {
+                return 0;
+            }
+            int version = 0;
+            while (off < nend) {
+                final byte c = name[off++];
+                if (c == '/') {
+                    return version;
+                }
+                if (c < '0' || c > '9') {
+                    return 0;
+                }
+                version = version * 10 + c - '0';
+                // Check for overflow and leading zeros
+                if (version <= 0) {
+                    return 0;
+                }
+            }
+            return 0;
         }
 
         /**
