@@ -72,6 +72,12 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (containerMetrics != null) {
             long memSwapLimit = containerMetrics.getMemoryAndSwapLimit();
             long memLimit = containerMetrics.getMemoryLimit();
+            long deltaLimit = memSwapLimit - memLimit;
+            // Return 0 when memSwapLimit == memLimit, which means no swap space is allowed.
+            // And the same for memSwapLimit < memLimit.
+            if (deltaLimit <= 0) {
+                return 0;
+            }
             if (memSwapLimit >= 0 && memLimit >= 0) {
                 for (int attempt = 0; attempt < MAX_ATTEMPTS_NUMBER; attempt++) {
                     long memSwapUsage = containerMetrics.getMemoryAndSwapUsage();
@@ -80,8 +86,12 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                         // We read "memory usage" and "memory and swap usage" not atomically,
                         // and it's possible to get the negative value when subtracting these two.
                         // If this happens just retry the loop for a few iterations.
-                        if ((memSwapUsage - memUsage) >= 0) {
-                            return memSwapLimit - memLimit - (memSwapUsage - memUsage);
+                        long deltaUsage = memSwapUsage - memUsage;
+                        if (deltaUsage >= 0) {
+                            long freeSwap = deltaLimit - deltaUsage;
+                            if (freeSwap >= 0) {
+                                return freeSwap;
+                            }
                         }
                     }
                 }
