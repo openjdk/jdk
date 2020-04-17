@@ -96,7 +96,8 @@ public class EATestBase extends GraalCompilerTest {
             try {
                 long localFieldOffset1 = UNSAFE.objectFieldOffset(EATestBase.TestClassInt.class.getField("x"));
                 // Make the fields 8 byte aligned (Required for testing setLong on Architectures
-                // which does not support unaligned memory access
+                // which does not support unaligned memory access. The code has to be extra careful
+                // because some JDKs do a better job of packing fields.
                 if (localFieldOffset1 % 8 == 0) {
                     fieldOffset1 = localFieldOffset1;
                     fieldOffset2 = UNSAFE.objectFieldOffset(EATestBase.TestClassInt.class.getField("y"));

@@ -50,6 +50,7 @@ class ScopeValue: public ResourceObj {
   virtual bool is_location() const { return false; }
   virtual bool is_object() const { return false; }
   virtual bool is_auto_box() const { return false; }
+  virtual bool is_marker() const { return false; }
   virtual bool is_constant_int() const { return false; }
   virtual bool is_constant_double() const { return false; }
   virtual bool is_constant_long() const { return false; }
@@ -91,6 +92,19 @@ class LocationValue: public ScopeValue {
   void print_on(outputStream* st) const;
 };
 
+// A placeholder value that has no concrete meaning other than helping constructing
+// other values.
+
+class MarkerValue: public ScopeValue {
+public:
+  bool      is_marker() const                { return true; }
+
+  // Serialization of debugging information
+  void write_on(DebugInfoWriteStream* stream);
+
+  // Printing
+  void print_on(outputStream* st) const;
+};
 
 // An ObjectValue describes an object eliminated by escape analysis.
 

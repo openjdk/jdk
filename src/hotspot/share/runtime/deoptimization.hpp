@@ -137,6 +137,11 @@ class Deoptimization : AllStatic {
     Unpack_LIMIT                = 4
   };
 
+#if INCLUDE_JVMCI
+  // Can reconstruct virtualized unsafe large accesses to byte arrays.
+  static const int _support_large_access_byte_array_virtualization = 1;
+#endif
+
   // Make all nmethods that are marked_for_deoptimization not_entrant and deoptimize any live
   // activations using those nmethods.  If an nmethod is passed as an argument then it is
   // marked_for_deoptimization and made not_entrant.  Otherwise a scan of the code cache is done to

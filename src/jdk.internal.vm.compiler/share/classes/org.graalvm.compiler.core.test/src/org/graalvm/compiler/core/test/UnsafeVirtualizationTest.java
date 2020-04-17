@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.core.test;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
@@ -34,6 +33,8 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.extended.RawStoreNode;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.nodes.virtual.VirtualArrayNode;
+import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
@@ -48,36 +49,6 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
 
     private static boolean[] FT = new boolean[]{false, true};
 
-    public static class Base {
-        /*
-         * This padding ensure that the size of the Base class ends up as a multiple of 8, which
-         * makes the first field of the subclass 8-byte aligned.
-         */
-        double padding;
-    }
-
-    public static class A extends Base {
-        int f1;
-        int f2;
-    }
-
-    private static final long AF1Offset;
-    private static final long AF2Offset;
-    static {
-        long o1 = -1;
-        long o2 = -1;
-        try {
-            Field f1 = A.class.getDeclaredField("f1");
-            Field f2 = A.class.getDeclaredField("f2");
-            o1 = UNSAFE.objectFieldOffset(f1);
-            o2 = UNSAFE.objectFieldOffset(f2);
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new AssertionError(e);
-        }
-        AF1Offset = o1;
-        AF2Offset = o2;
-    }
-
     // Side effect to create a deopt point, after possible virtualization.
     static int sideEffectField;
 
@@ -86,68 +57,68 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
     }
 
     public static int unsafeSnippet1(double i1, boolean c) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
         sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
-        return UNSAFE.getInt(a, AF1Offset) + UNSAFE.getInt(a, AF2Offset);
+        return UNSAFE.getInt(a, TestClassInt.fieldOffset1) + UNSAFE.getInt(a, TestClassInt.fieldOffset2);
     }
 
     public static long unsafeSnippet2a(int i1, boolean c) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        a.f1 = i1;
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        a.setFirstField(i1);
         sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
-        return UNSAFE.getLong(a, AF1Offset);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static long unsafeSnippet2b(int i1, boolean c) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        a.f2 = i1;
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        a.setSecondField(i1);
         sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
-        return UNSAFE.getLong(a, AF1Offset);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static long unsafeSnippet3a(int i1, boolean c) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        UNSAFE.putInt(a, AF1Offset, i1);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        UNSAFE.putInt(a, TestClassInt.fieldOffset1, i1);
         sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
-        return UNSAFE.getLong(a, AF1Offset);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static long unsafeSnippet3b(int i1, boolean c) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        UNSAFE.putInt(a, AF2Offset, i1);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        UNSAFE.putInt(a, TestClassInt.fieldOffset2, i1);
         sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
-        return UNSAFE.getLong(a, AF1Offset);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static int unsafeSnippet4(double i1, boolean c) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        UNSAFE.putDouble(a, AF1Offset, i1);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
         sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
-        return UNSAFE.getInt(a, AF1Offset) + UNSAFE.getInt(a, AF2Offset);
+        return UNSAFE.getInt(a, TestClassInt.fieldOffset1) + UNSAFE.getInt(a, TestClassInt.fieldOffset2);
     }
 
     public static int unsafeSnippet5(long i1, boolean c) {
@@ -514,17 +485,22 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
             canonicalizer.apply(graph, context);
         }
         Result r = executeExpected(method, null, args);
-        int readCount = 0;
-        int writeCount = 0;
-        boolean escapeReads = shouldEscapeRead && context.getPlatformConfigurationProvider().canVirtualizeLargeByteArrayAccess();
-        boolean escapeWrites = shouldEscapeWrite && context.getPlatformConfigurationProvider().canVirtualizeLargeByteArrayAccess();
-        if (escapeReads) {
-            readCount = graph.getNodes().filter(RawLoadNode.class).count();
-        }
-        if (escapeWrites) {
-            writeCount = graph.getNodes().filter(RawStoreNode.class).count();
-        }
+        int readCount = graph.getNodes().filter(RawLoadNode.class).count();
+        int writeCount = graph.getNodes().filter(RawStoreNode.class).count();
+
         new PartialEscapePhase(true, true, canonicalizer, null, options).apply(graph, context);
+
+        boolean canVirtualize = true;
+        assert graph.getNodes().filter(VirtualObjectNode.class).count() == 1;
+        VirtualObjectNode virtual = graph.getNodes().filter(VirtualObjectNode.class).first();
+        if (virtual instanceof VirtualArrayNode) {
+            VirtualArrayNode array = (VirtualArrayNode) virtual;
+            if (array.isVirtualByteArray()) {
+                canVirtualize = context.getPlatformConfigurationProvider().canVirtualizeLargeByteArrayAccess();
+            }
+        }
+        boolean escapeReads = shouldEscapeRead && canVirtualize;
+        boolean escapeWrites = shouldEscapeWrite && canVirtualize;
         if (escapeReads) {
             int newCount = graph.getNodes().filter(RawLoadNode.class).count();
             assertTrue(readCount > newCount, "PEA did not escape reads. before: " + readCount + ", after " + newCount);
