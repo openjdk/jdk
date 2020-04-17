@@ -73,6 +73,8 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
+compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java 8242923 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -93,6 +95,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
+runtime/CompactStrings/TestMethodNames.java 8242921 generic-all
 
 #############################################################################
 

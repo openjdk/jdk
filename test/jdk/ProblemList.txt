@@ -911,6 +911,10 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 
 tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
 
+tools/jlink/ModuleNamesOrderTest.java                           8242860 generic-all
+
+
+
 ############################################################################
 
 # jdk_jdi
@@ -928,6 +932,8 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 ############################################################################
 
 # jdk_util
+
+java/util/ServiceLoader/ReloadTest.java                     8242935 generic-all
 
 ############################################################################
 
@@ -959,6 +965,11 @@ javax/script/Test7.java                                         8239361 generic-
 
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
+
+jdk/jfr/api/consumer/TestHiddenMethod.java                  8242933    generic-all
+jdk/jfr/tool/TestPrintJSON.java                             8242934    generic-all
+
+
 
 ############################################################################
 

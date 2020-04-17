@@ -91,7 +91,6 @@ public class CompletenessStressTest extends KullaTesting {
 
     public File[] getDirectoriesToTest() {
         return new File[]{
-                new File(JDK_ROOT_SRC, "nashorn/src"),
                 new File(JDK_ROOT_SRC, "langtools/src"),
                 new File(JDK_ROOT_SRC, "jaxp/src"),
                 new File(JDK_ROOT_SRC, "jaxws/src"),
