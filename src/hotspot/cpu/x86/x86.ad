@@ -5344,7 +5344,7 @@ instruct vpopcountI(vec dst, vec src) %{
 
 // --------------------------------- Bitwise Ternary Logic ----------------------------------
 
-instruct vpternlogdB(vec dst, vec src2, vec src3, immU8 func) %{
+instruct vpternlog(vec dst, vec src2, vec src3, immU8 func) %{
   match(Set dst (MacroLogicV (Binary dst src2) (Binary src3 func)));
   effect(TEMP dst);
   format %{ "vpternlogd $dst,$src2,$src3,$func\t! vector ternary logic" %}
@@ -5355,7 +5355,7 @@ instruct vpternlogdB(vec dst, vec src2, vec src3, immU8 func) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vpternlogdB_mem(vec dst, vec src2, memory src3, immU8 func) %{
+instruct vpternlog_mem(vec dst, vec src2, memory src3, immU8 func) %{
   match(Set dst (MacroLogicV (Binary dst src2) (Binary (LoadVector src3) func)));
   effect(TEMP dst);
   format %{ "vpternlogd $dst,$src2,$src3,$func\t! vector ternary logic" %}

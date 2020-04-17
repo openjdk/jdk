@@ -39,6 +39,47 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 public class TestMacroLogicVector {
+    static boolean booleanFunc1(boolean a, boolean b) {
+        return a & b;
+    }
+
+    static void testSubWordBoolean(boolean[] r, boolean[] a, boolean[] b) {
+        for (int i = 0; i < r.length; i++) {
+            r[i] = booleanFunc1(a[i], b[i]);
+        }
+    }
+    static void verifySubWordBoolean(boolean[] r, boolean[] a, boolean[] b) {
+        for (int i = 0; i < r.length; i++) {
+            boolean expected = booleanFunc1(a[i], b[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(
+                        String.format("at #%d: r=%b, expected = %b = booleanFunc1(%b,%b)",
+                                      i, r[i], expected, a[i], b[i]));
+            }
+        }
+    }
+
+
+    static short charFunc1(char a, char b) {
+        return (short)((a & b) & 1);
+    }
+
+    static void testSubWordChar(short[] r, char[] a, char[] b) {
+        for (int i = 0; i < r.length; i++) {
+            r[i] = charFunc1(a[i], b[i]);
+        }
+    }
+    static void verifySubWordChar(short[] r, char[] a, char[] b) {
+        for (int i = 0; i < r.length; i++) {
+            short expected = charFunc1(a[i], b[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(
+                        String.format("at #%d: r=%d, expected = %d = booleanFunc1(%d,%d)",
+                                      i, r[i], expected, (int)a[i], (int)b[i]));
+            }
+        }
+    }
+
     static int intFunc1(int a, int b, int c) {
         int v1 = (a & b) ^ (a & c) ^ (b & c);
         int v2 = (~a & b) | (~b & c) | (~c & a);
@@ -145,6 +186,28 @@ public class TestMacroLogicVector {
 
     private static final Random R = Utils.getRandomInstance();
 
+    static boolean[] fillBooleanRandom(Callable<boolean[]> factory) {
+        try {
+            boolean[] arr = factory.call();
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = R.nextBoolean();
+            }
+            return arr;
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+    static char[] fillCharRandom(Callable<char[]> factory) {
+        try {
+            char[] arr = factory.call();
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = (char)R.nextInt();
+            }
+            return arr;
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
     static int[] fillIntRandom(Callable<int[]> factory) {
         try {
             int[] arr = factory.call();
@@ -173,6 +236,13 @@ public class TestMacroLogicVector {
     static final int SIZE = 128;
 
     public static void main(String[] args) {
+        boolean[] br = new boolean[SIZE];
+        boolean[] ba = fillBooleanRandom((()-> new boolean[SIZE]));
+        boolean[] bb = fillBooleanRandom((()-> new boolean[SIZE]));
+
+        short[] sr = new short[SIZE];
+        char[] ca = fillCharRandom((()-> new char[SIZE]));
+        char[] cb = fillCharRandom((()-> new char[SIZE]));
 
         int[] r = new int[SIZE];
         int[] a = fillIntRandom(()-> new int[SIZE]);
@@ -188,6 +258,12 @@ public class TestMacroLogicVector {
         long[] cl = fillLongRandom(() -> new long[SIZE]);
 
         for (int i = 0; i < 20_000; i++) {
+            testSubWordBoolean(br, ba, bb);
+            verifySubWordBoolean(br, ba, bb);
+
+            testSubWordChar(sr, ca, cb);
+            verifySubWordChar(sr, ca, cb);
+
             testInt1(r, a, b, c);
             verifyInt1(r, a, b, c);
 
