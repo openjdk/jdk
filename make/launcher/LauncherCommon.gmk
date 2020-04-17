@@ -138,9 +138,9 @@ define SetupBuildLauncherBody
       EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
       CFLAGS := $$(CFLAGS_JDKEXE) \
-          $(LAUNCHER_CFLAGS) \
-          $(VERSION_CFLAGS) \
-          -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
+          $$(LAUNCHER_CFLAGS) \
+          $$(VERSION_CFLAGS) \
+          -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
       CFLAGS_solaris := -KPIC, \
