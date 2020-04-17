@@ -660,6 +660,26 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
     include jdk.disabled.namedCurves
 
 #
+# Legacy algorithms for certification path (CertPath) processing and
+# signed JAR files.
+#
+# In some environments, a certain algorithm or key length may be undesirable
+# but is not yet disabled.
+#
+# Tools such as keytool and jarsigner may emit warnings when these legacy
+# algorithms are used. See the man pages for those tools for more information.
+#
+# The syntax is the same as the "jdk.certpath.disabledAlgorithms" and
+# "jdk.jar.disabledAlgorithms" security properties.
+#
+# Note: This property is currently used by the JDK Reference
+# implementation. It is not guaranteed to be examined and used by other
+# implementations.
+
+jdk.security.legacyAlgorithms=SHA1, \
+    RSA keySize < 2048, DSA keySize < 2048
+
+#
 # Algorithm restrictions for signed JAR files
 #
 # In some environments, certain algorithms or key lengths may be undesirable

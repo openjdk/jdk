@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,12 @@ public class Warning {
                 .shouldNotContain("is self-signed");
 
         run("jarsigner", "a.jar b -digestalg MD5")
-                .shouldContain("-digestalg option is considered a security risk.");
+                .shouldContain("-digestalg option is considered a security risk and is disabled.");
         run("jarsigner", "a.jar b -digestalg MD5 -strict")
                 .shouldHaveExitValue(4)
-                .shouldContain("-digestalg option is considered a security risk.");
+                .shouldContain("-digestalg option is considered a security risk and is disabled.");
         run("jarsigner", "a.jar b -sigalg MD5withRSA")
-                .shouldContain("-sigalg option is considered a security risk");
+                .shouldContain("-sigalg option is considered a security risk and is disabled.");
 
         issueCert("b", "-sigalg MD5withRSA");
         run("jarsigner", "a.jar b")

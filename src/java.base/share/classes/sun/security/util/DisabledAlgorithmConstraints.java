@@ -63,6 +63,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public static final String PROPERTY_CERTPATH_DISABLED_ALGS =
             "jdk.certpath.disabledAlgorithms";
 
+    // Legacy algorithm security property for certificate path and jar
+    public static final String PROPERTY_SECURITY_LEGACY_ALGS =
+            "jdk.security.legacyAlgorithms";
+
     // Disabled algorithm security property for TLS
     public static final String PROPERTY_TLS_DISABLED_ALGS =
             "jdk.tls.disabledAlgorithms";
@@ -948,4 +952,3 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 }
-

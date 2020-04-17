@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ public class NameClash {
         Files.write(Path.of("A"), List.of("A"));
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("A"));
 
-        SecurityTools.jarsigner(common + "a.jar a -digestalg SHA1")
+        SecurityTools.jarsigner(common + "a.jar a -digestalg SHA-256")
                 .shouldHaveExitValue(0);
-        SecurityTools.jarsigner(common + "a.jar b -digestalg SHA-1")
+        SecurityTools.jarsigner(common + "a.jar b -digestalg SHA-256")
                 .shouldHaveExitValue(0);
 
         SecurityTools.jarsigner(common + "-verify -debug -strict a.jar")

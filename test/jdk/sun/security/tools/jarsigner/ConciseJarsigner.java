@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ import java.util.List;
 public class ConciseJarsigner {
 
     static OutputAnalyzer kt(String cmd) throws Exception {
-        // Choose 1024-bit RSA to make sure it runs fine and fast. In
+        // Choose 2048-bit RSA to make sure it runs fine and fast. In
         // fact, every keyalg/keysize combination is OK for this test.
         return SecurityTools.keytool("-storepass changeit -keypass changeit "
-                + "-keystore ks -keyalg rsa -keysize 1024 " + cmd);
+                + "-keystore ks -keyalg rsa -keysize 2048 " + cmd);
     }
 
     static void gencert(String owner, String cmd) throws Exception {
