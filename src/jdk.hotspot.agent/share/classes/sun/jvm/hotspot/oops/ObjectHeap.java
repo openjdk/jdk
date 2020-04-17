@@ -244,13 +244,7 @@ public class ObjectHeap {
         while (handle.lessThan(top)) {
           Oop obj = null;
 
-          try {
-            obj = newOop(handle);
-          } catch (UnknownOopException exp) {
-            if (DEBUG) {
-              throw new RuntimeException(" UnknownOopException  " + exp);
-            }
-          }
+          obj = newOop(handle);
           if (obj == null) {
               throw new UnknownOopException();
           }
@@ -263,11 +257,7 @@ public class ObjectHeap {
 
           handle = handle.addOffsetToAsOopHandle(obj.getObjectSize());
         }
-      }
-      catch (AddressException e) {
-        // This is okay at the top of these regions
-          }
-      catch (UnknownOopException e) {
+      } catch (AddressException | UnknownOopException | WrongTypeException e) {
         // This is okay at the top of these regions
       }
     }
