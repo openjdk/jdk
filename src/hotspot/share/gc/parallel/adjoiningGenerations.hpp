@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 #define SHARE_GC_PARALLEL_ADJOININGGENERATIONS_HPP
 
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
-#include "gc/parallel/asPSOldGen.hpp"
-#include "gc/parallel/asPSYoungGen.hpp"
 
+class PSOldGen;
+class PSYoungGen;
 
 // Contains two generations that both use an AdjoiningVirtualSpaces.
 // The two generations are adjacent in the reserved space for the
@@ -41,12 +41,6 @@
 
 class AdjoiningGenerations : public CHeapObj<mtGC> {
   friend class VMStructs;
- private:
-  // Move boundary up to expand old gen.  Checks are made to
-  // determine if the move can be done with specified limits.
-  void request_old_gen_expansion(size_t desired_change_in_bytes);
-  // Move boundary down to expand young gen.
-  bool request_young_gen_expansion(size_t desired_change_in_bytes);
 
  protected:
    AdjoiningGenerations();
@@ -66,18 +60,11 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
 
   AdjoiningVirtualSpaces* virtual_spaces() { return _virtual_spaces; }
 
-  // Additional space is needed in the old generation.  Check
-  // the available space and attempt to move the boundary if more space
-  // is needed.  The growth is not guaranteed to occur.
-  void adjust_boundary_for_old_gen_needs(size_t desired_change_in_bytes);
-  // Similarly for a growth of the young generation.
-  void adjust_boundary_for_young_gen_needs(size_t eden_size, size_t survivor_size);
-
   // Return the total byte size of the reserved space
   // for the adjoining generations.
-  virtual size_t reserved_byte_size();
+  size_t reserved_byte_size();
 
-  // Return new AdjoiningGenerations instance based on arguments (specifically - whether heap is heterogeneous).
+  // Return new AdjoiningGenerations instance.
   static AdjoiningGenerations* create_adjoining_generations(ReservedSpace rs);
 };
 #endif // SHARE_GC_PARALLEL_ADJOININGGENERATIONS_HPP

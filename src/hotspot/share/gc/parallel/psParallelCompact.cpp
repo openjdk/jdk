@@ -1039,10 +1039,6 @@ void PSParallelCompact::post_compact()
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   bool eden_empty = eden_space->is_empty();
-  if (!eden_empty) {
-    eden_empty = absorb_live_data_from_eden(heap->size_policy(),
-                                            heap->young_gen(), heap->old_gen());
-  }
 
   // Update heap occupancy information which is used as input to the soft ref
   // clearing policy at the next gc.
@@ -1979,95 +1975,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   _gc_tracer.report_dense_prefix(dense_prefix(old_space_id));
   _gc_tracer.report_gc_end(_gc_timer.gc_end(), _gc_timer.time_partitions());
 
-  return true;
-}
-
-bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
-                                             PSYoungGen* young_gen,
-                                             PSOldGen* old_gen) {
-  MutableSpace* const eden_space = young_gen->eden_space();
-  assert(!eden_space->is_empty(), "eden must be non-empty");
-  assert(young_gen->virtual_space()->alignment() ==
-         old_gen->virtual_space()->alignment(), "alignments do not match");
-
-  // We also return false when it's a heterogeneous heap because old generation cannot absorb data from eden
-  // when it is allocated on different memory (example, nv-dimm) than young.
-  if (!(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary) ||
-      ParallelArguments::is_heterogeneous_heap()) {
-    return false;
-  }
-
-  // Both generations must be completely committed.
-  if (young_gen->virtual_space()->uncommitted_size() != 0) {
-    return false;
-  }
-  if (old_gen->virtual_space()->uncommitted_size() != 0) {
-    return false;
-  }
-
-  // Figure out how much to take from eden.  Include the average amount promoted
-  // in the total; otherwise the next young gen GC will simply bail out to a
-  // full GC.
-  const size_t alignment = old_gen->virtual_space()->alignment();
-  const size_t eden_used = eden_space->used_in_bytes();
-  const size_t promoted = (size_t)size_policy->avg_promoted()->padded_average();
-  const size_t absorb_size = align_up(eden_used + promoted, alignment);
-  const size_t eden_capacity = eden_space->capacity_in_bytes();
-
-  if (absorb_size >= eden_capacity) {
-    return false; // Must leave some space in eden.
-  }
-
-  const size_t new_young_size = young_gen->capacity_in_bytes() - absorb_size;
-  if (new_young_size < young_gen->min_gen_size()) {
-    return false; // Respect young gen minimum size.
-  }
-
-  log_trace(gc, ergo, heap)(" absorbing " SIZE_FORMAT "K:  "
-                            "eden " SIZE_FORMAT "K->" SIZE_FORMAT "K "
-                            "from " SIZE_FORMAT "K, to " SIZE_FORMAT "K "
-                            "young_gen " SIZE_FORMAT "K->" SIZE_FORMAT "K ",
-                            absorb_size / K,
-                            eden_capacity / K, (eden_capacity - absorb_size) / K,
-                            young_gen->from_space()->used_in_bytes() / K,
-                            young_gen->to_space()->used_in_bytes() / K,
-                            young_gen->capacity_in_bytes() / K, new_young_size / K);
-
-  // Fill the unused part of the old gen.
-  MutableSpace* const old_space = old_gen->object_space();
-  HeapWord* const unused_start = old_space->top();
-  size_t const unused_words = pointer_delta(old_space->end(), unused_start);
-
-  if (unused_words > 0) {
-    if (unused_words < CollectedHeap::min_fill_size()) {
-      return false;  // If the old gen cannot be filled, must give up.
-    }
-    CollectedHeap::fill_with_objects(unused_start, unused_words);
-  }
-
-  // Take the live data from eden and set both top and end in the old gen to
-  // eden top.  (Need to set end because reset_after_change() mangles the region
-  // from end to virtual_space->high() in debug builds).
-  HeapWord* const new_top = eden_space->top();
-  old_gen->virtual_space()->expand_into(young_gen->virtual_space(),
-                                        absorb_size);
-  young_gen->reset_after_change();
-  old_space->set_top(new_top);
-  old_space->set_end(new_top);
-  old_gen->reset_after_change();
-
-  // Update the object start array for the filler object and the data from eden.
-  ObjectStartArray* const start_array = old_gen->start_array();
-  for (HeapWord* p = unused_start; p < new_top; p += oop(p)->size()) {
-    start_array->allocate_block(p);
-  }
-
-  // Could update the promoted average here, but it is not typically updated at
-  // full GCs and the value to use is unclear.  Something like
-  //
-  // cur_promoted_avg + absorb_size / number_of_scavenges_since_last_full_gc.
-
-  size_policy->set_bytes_absorbed_from_eden(absorb_size);
   return true;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,16 +57,4 @@ void AdjoiningVirtualSpaces::initialize(size_t max_low_byte_size,
     vm_exit_during_initialization("Could not reserve enough space for "
                                   "object heap");
   }
-}
-
-bool AdjoiningVirtualSpaces::adjust_boundary_up(size_t change_in_bytes) {
-  assert(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary, "runtime check");
-  size_t actual_change = low()->expand_into(high(), change_in_bytes);
-  return actual_change != 0;
-}
-
-bool AdjoiningVirtualSpaces::adjust_boundary_down(size_t change_in_bytes) {
-  assert(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary, "runtime check");
-  size_t actual_change = high()->expand_into(low(), change_in_bytes);
-  return actual_change != 0;
 }

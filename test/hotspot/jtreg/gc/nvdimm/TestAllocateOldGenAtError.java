@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,13 +82,8 @@ public class TestAllocateOldGenAtError {
   }
 
   private static void testParallelOld() throws Exception {
-    System.out.println("Testing Parallel GC with UseAdaptiveGCBoundary disabled");
-    OutputAnalyzer output = runTest("-XX:+UseParallelGC -XX:-UseAdaptiveGCBoundary");
-    output.shouldContain("Error occurred during initialization of VM");
-    output.shouldNotHaveExitValue(0);
-
-    System.out.println("Testing Parallel GC with UseAdaptiveGCBoundary enabled");
-    output = runTest("-XX:+UseParallelGC -XX:+UseAdaptiveGCBoundary");
+    System.out.println("Testing Parallel GC");
+    OutputAnalyzer output = runTest("-XX:+UseParallelGC");
     output.shouldContain("Error occurred during initialization of VM");
     output.shouldNotHaveExitValue(0);
   }

@@ -803,8 +803,7 @@ bool PSScavenge::should_attempt_scavenge() {
   return result;
 }
 
-// Adaptive size policy support.  When the young generation/old generation
-// boundary moves, _young_generation_boundary must be reset
+// Adaptive size policy support.
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
   _young_generation_boundary = v;
   if (UseCompressedOops) {

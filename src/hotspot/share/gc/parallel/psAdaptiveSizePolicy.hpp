@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,10 +117,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   uint _young_gen_size_increment_supplement;
   uint _old_gen_size_increment_supplement;
 
-  // The number of bytes absorbed from eden into the old gen by moving the
-  // boundary over live data.
-  size_t _bytes_absorbed_from_eden;
-
  private:
 
   // Accessors
@@ -193,12 +189,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   virtual GCPolicyKind kind() const { return _gc_ps_adaptive_size_policy; }
 
  public:
-  // Use by ASPSYoungGen and ASPSOldGen to limit boundary moving.
-  size_t eden_increment_aligned_up(size_t cur_eden);
-  size_t eden_increment_aligned_down(size_t cur_eden);
-  size_t promo_increment_aligned_up(size_t cur_promo);
-  size_t promo_increment_aligned_down(size_t cur_promo);
-
   virtual size_t eden_increment(size_t cur_eden);
   virtual size_t promo_increment(size_t cur_promo);
 
@@ -372,13 +362,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t live_at_last_full_gc() {
     return _live_at_last_full_gc;
-  }
-
-  size_t bytes_absorbed_from_eden() const { return _bytes_absorbed_from_eden; }
-  void   reset_bytes_absorbed_from_eden() { _bytes_absorbed_from_eden = 0; }
-
-  void set_bytes_absorbed_from_eden(size_t val) {
-    _bytes_absorbed_from_eden = val;
   }
 
   // Update averages that are always used (even

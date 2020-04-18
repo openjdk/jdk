@@ -55,10 +55,6 @@ PSGCAdaptivePolicyCounters::PSGCAdaptivePolicyCounters(const char* name_arg,
     _old_capacity = PerfDataManager::create_variable(SUN_GC, cname,
       PerfData::U_Bytes, (jlong) InitialHeapSize, CHECK);
 
-    cname = PerfDataManager::counter_name(name_space(), "boundaryMoved");
-    _boundary_moved = PerfDataManager::create_variable(SUN_GC, cname,
-      PerfData::U_Bytes, (jlong) 0, CHECK);
-
     cname = PerfDataManager::counter_name(name_space(), "avgPromotedAvg");
     _avg_promoted_avg_counter =
       PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,

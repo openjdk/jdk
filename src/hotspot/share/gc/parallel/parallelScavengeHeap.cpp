@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "gc/parallel/adjoiningGenerations.hpp"
-#include "gc/parallel/adjoiningGenerationsForHeteroHeap.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
@@ -107,10 +106,10 @@ jint ParallelScavengeHeap::initialize() {
                              GCTimeRatio
                              );
 
-  assert(ParallelArguments::is_heterogeneous_heap() || !UseAdaptiveGCBoundary ||
-    (old_gen()->virtual_space()->high_boundary() ==
-     young_gen()->virtual_space()->low_boundary()),
-    "Boundaries must meet");
+  assert(ParallelArguments::is_heterogeneous_heap() ||
+         (old_gen()->virtual_space()->high_boundary() ==
+          young_gen()->virtual_space()->low_boundary()),
+         "Boundaries must meet");
   // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
@@ -689,35 +688,13 @@ PSCardTable* ParallelScavengeHeap::card_table() {
   return static_cast<PSCardTable*>(barrier_set()->card_table());
 }
 
-// Before delegating the resize to the young generation,
-// the reserved space for the young and old generations
-// may be changed to accommodate the desired resize.
 void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
-    size_t survivor_size) {
-  if (UseAdaptiveGCBoundary) {
-    if (size_policy()->bytes_absorbed_from_eden() != 0) {
-      size_policy()->reset_bytes_absorbed_from_eden();
-      return;  // The generation changed size already.
-    }
-    gens()->adjust_boundary_for_young_gen_needs(eden_size, survivor_size);
-  }
-
+                                            size_t survivor_size) {
   // Delegate the resize to the generation.
   _young_gen->resize(eden_size, survivor_size);
 }
 
-// Before delegating the resize to the old generation,
-// the reserved space for the young and old generations
-// may be changed to accommodate the desired resize.
 void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
-  if (UseAdaptiveGCBoundary) {
-    if (size_policy()->bytes_absorbed_from_eden() != 0) {
-      size_policy()->reset_bytes_absorbed_from_eden();
-      return;  // The generation changed size already.
-    }
-    gens()->adjust_boundary_for_old_gen_needs(desired_free_space);
-  }
-
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
 }

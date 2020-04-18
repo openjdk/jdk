@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,7 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
      _change_young_gen_for_maj_pauses(0),
      _old_gen_policy_is_ready(false),
      _young_gen_size_increment_supplement(YoungGenerationSizeSupplement),
-     _old_gen_size_increment_supplement(TenuredGenerationSizeSupplement),
-     _bytes_absorbed_from_eden(0)
+     _old_gen_size_increment_supplement(TenuredGenerationSizeSupplement)
 {
   // Start the timers
   _major_timer.start();
@@ -915,16 +914,6 @@ size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden) {
   return eden_increment(cur_eden, YoungGenerationSizeIncrement);
 }
 
-size_t PSAdaptiveSizePolicy::eden_increment_aligned_up(size_t cur_eden) {
-  size_t result = eden_increment(cur_eden, YoungGenerationSizeIncrement);
-  return align_up(result, _space_alignment);
-}
-
-size_t PSAdaptiveSizePolicy::eden_increment_aligned_down(size_t cur_eden) {
-  size_t result = eden_increment(cur_eden);
-  return align_down(result, _space_alignment);
-}
-
 size_t PSAdaptiveSizePolicy::eden_increment_with_supplement_aligned_up(
   size_t cur_eden) {
   size_t result = eden_increment(cur_eden,
@@ -952,16 +941,6 @@ size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo,
 
 size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo) {
   return promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment_aligned_up(size_t cur_promo) {
-  size_t result =  promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-  return align_up(result, _space_alignment);
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment_aligned_down(size_t cur_promo) {
-  size_t result =  promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-  return align_down(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(

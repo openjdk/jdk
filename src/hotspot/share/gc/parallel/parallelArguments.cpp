@@ -194,18 +194,7 @@ bool ParallelArguments::is_heterogeneous_heap() {
 }
 
 size_t ParallelArguments::heap_reserved_size_bytes() {
-  if (!is_heterogeneous_heap() || !UseAdaptiveGCBoundary) {
-    return MaxHeapSize;
-  }
-
-  // Heterogeneous heap and adaptive size gc boundary
-
-  // This is the size that young gen can grow to, when UseAdaptiveGCBoundary is true.
-  size_t max_yg_size = MaxHeapSize - MinOldSize;
-  // This is the size that old gen can grow to, when UseAdaptiveGCBoundary is true.
-  size_t max_old_size = MaxHeapSize - MinNewSize;
-
-  return max_yg_size + max_old_size;
+  return MaxHeapSize;
 }
 
 size_t ParallelArguments::heap_max_size_bytes() {

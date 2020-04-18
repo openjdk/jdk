@@ -113,8 +113,7 @@ class PSScavenge: AllStatic {
   static void set_survivor_overflow(bool state) {
     _survivor_overflow = state;
   }
-  // Adaptive size policy support.  When the young generation/old generation
-  // boundary moves, _young_generation_boundary must be reset
+  // Adaptive size policy support.
   static void set_young_generation_boundary(HeapWord* v);
 
   // Called by parallelScavengeHeap to init the tenuring threshold
