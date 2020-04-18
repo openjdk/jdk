@@ -26,6 +26,7 @@
 package sun.security.x509;
 
 import java.io.*;
+import java.security.interfaces.RSAKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
@@ -1105,9 +1106,15 @@ public class AlgorithmId implements Serializable, DerEncoder {
         }
     }
 
-    public static PSSParameterSpec getDefaultAlgorithmParameterSpec(
+    public static AlgorithmParameterSpec getDefaultAlgorithmParameterSpec(
             String sigAlg, PrivateKey k) {
         if (sigAlg.equalsIgnoreCase("RSASSA-PSS")) {
+            if (k instanceof RSAKey) {
+                AlgorithmParameterSpec spec = ((RSAKey) k).getParams();
+                if (spec instanceof PSSParameterSpec) {
+                    return spec;
+                }
+            }
             switch (ifcFfcStrength(KeyUtil.getKeySize(k))) {
                 case "SHA256":
                     return PSSParamsHolder.PSS_256_SPEC;
