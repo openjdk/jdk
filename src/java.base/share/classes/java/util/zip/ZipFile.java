@@ -1289,15 +1289,17 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         private static final int hashN(byte[] a, int off, int len) {
+            // Performance optimization: getEntryPos assumes that the hash
+            // of a name remains unchanged when appending a trailing '/'.
+            if (len > 0 && a[off + len - 1] == '/') {
+                len--;
+            }
+
             int h = 1;
             while (len-- > 0) {
                 h = 31 * h + a[off++];
             }
             return h;
-        }
-
-        private static final int hashAppend(int hash, byte b) {
-            return hash * 31 + b;
         }
 
         private static class End {
@@ -1537,56 +1539,41 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             int hsh = hashN(name, 0, name.length);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
-            boolean appendSlash = false;
-            /*
-             * This while loop is an optimization where a double lookup
-             * for name and name+/ is being performed. The name byte
-             * array will be updated with an added slash only if the first
-             * table lookup fails and there is a matching hash value for
-             * name+/.
-             */
-            while (true) {
-                /*
-                 * Search down the target hash chain for a entry whose
-                 * 32 bit hash matches the hashed name.
-                 */
-                while (idx != ZIP_ENDCHAIN) {
-                    if (getEntryHash(idx) == hsh) {
-                        if (appendSlash) {
-                            name = Arrays.copyOf(name, name.length + 1);
-                            name[name.length - 1] = '/';
-                            appendSlash = false;
+
+            // Search down the target hash chain for a entry whose
+            // 32 bit hash matches the hashed name.
+            while (idx != ZIP_ENDCHAIN) {
+                if (getEntryHash(idx) == hsh) {
+                    // The CEN name must match the specfied one
+                    int pos = getEntryPos(idx);
+                    final int nlen = CENNAM(cen, pos);
+                    final int nstart = pos + CENHDR;
+
+                    // If addSlash is true, we're testing for name+/ in
+                    // addition to name, unless name is the empty string
+                    // or already ends with a slash
+                    if (name.length == nlen ||
+                           (addSlash &&
+                            name.length > 0 &&
+                            name.length + 1 == nlen &&
+                            cen[nstart + nlen - 1] == '/' &&
+                            name[name.length - 1] != '/')) {
+                        boolean matched = true;
+                        int nameoff = pos + CENHDR;
+                        for (int i = 0; i < name.length; i++) {
+                            if (name[i] != cen[nameoff++]) {
+                                matched = false;
+                                break;
+                            }
                         }
-                        // The CEN name must match the specfied one
-                        int pos = getEntryPos(idx);
-                        if (name.length == CENNAM(cen, pos)) {
-                            boolean matched = true;
-                            int nameoff = pos + CENHDR;
-                            for (int i = 0; i < name.length; i++) {
-                                if (name[i] != cen[nameoff++]) {
-                                    matched = false;
-                                    break;
-                                }
-                            }
-                            if (matched) {
-                                return pos;
-                            }
-                         }
+                        if (matched) {
+                           return pos;
+                        }
                     }
-                    idx = getEntryNext(idx);
                 }
-                /* If not addSlash, or slash is already there, we are done */
-                if (!addSlash  || name.length == 0 || name[name.length - 1] == '/') {
-                     return -1;
-                }
-                // Add a slash to the hash code
-                hsh = hashAppend(hsh, (byte)'/');
-                // If we find a match on the new hash code, we need to append a
-                // slash when comparing
-                appendSlash = true;
-                idx = table[(hsh & 0x7fffffff) % tablelen];
-                addSlash = false;
+                idx = getEntryNext(idx);
             }
+            return -1;
         }
 
         /**
