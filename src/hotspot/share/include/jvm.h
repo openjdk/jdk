@@ -399,12 +399,11 @@ JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
  *  is_open:      specifies if module is open (currently ignored)
  *  version:      the module version
  *  location:     the module location
- *  packages:     list of packages in the module
- *  num_packages: number of packages in the module
+ *  packages:     array of packages in the module
  */
 JNIEXPORT void JNICALL
 JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
-                 jstring location, const char* const* packages, jsize num_packages);
+                 jstring location, jobjectArray packages);
 
 /*
  * Set the boot loader's unnamed module.
@@ -420,7 +419,7 @@ JVM_SetBootLoaderUnnamedModule(JNIEnv *env, jobject module);
  *  to_module:   module to export the package to
  */
 JNIEXPORT void JNICALL
-JVM_AddModuleExports(JNIEnv *env, jobject from_module, const char* package, jobject to_module);
+JVM_AddModuleExports(JNIEnv *env, jobject from_module, jstring package, jobject to_module);
 
 /*
  * Do an export of a package to all unnamed modules.
@@ -428,7 +427,7 @@ JVM_AddModuleExports(JNIEnv *env, jobject from_module, const char* package, jobj
  *  package:     name of the package to export to all unnamed modules
  */
 JNIEXPORT void JNICALL
-JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, const char* package);
+JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, jstring package);
 
 /*
  * Do an unqualified export of a package.
@@ -436,7 +435,7 @@ JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, const char* p
  *  package:     name of the package to export
  */
 JNIEXPORT void JNICALL
-JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, const char* package);
+JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, jstring package);
 
 /*
  * Add a module to the list of modules that a given module can read.

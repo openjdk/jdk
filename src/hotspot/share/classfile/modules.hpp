@@ -37,23 +37,20 @@ public:
   // define_module defines a module containing the specified packages. It binds the
   // module to its class loader by creating the ModuleEntry record in the
   // ClassLoader's ModuleEntry table, and creates PackageEntry records in the class
-  // loader's PackageEntry table.  As in JVM_DefineClass the jstring format for all
-  // package names must use "/" and not "."
+  // loader's PackageEntry table.  The jstring for all package names will convert "."
+  // to "/"
   //
   //  IllegalArgumentExceptions are thrown for the following :
   // * Module's Class loader is not a subclass of java.lang.ClassLoader
   // * Module's Class loader already has a module with that name
   // * Module's Class loader has already defined types for any of the module's packages
   // * Module_name is syntactically bad
-  // * Packages contains an illegal package name
+  // * Packages contains an illegal package name or a non-String object
   // * A package already exists in another module for this class loader
   // * Module is an unnamed module
-  // * num_packages is negative
-  // * num_packages is non-zero when packages is null
   //  NullPointerExceptions are thrown if module is null.
   static void define_module(jobject module, jboolean is_open, jstring version,
-                            jstring location, const char* const* packages,
-                            jsize num_packages, TRAPS);
+                            jstring location, jobjectArray packages, TRAPS);
 
   // Provides the java.lang.Module for the unnamed module defined
   // to the boot loader.
@@ -67,7 +64,7 @@ public:
 
   // This either does a qualified export of package in module from_module to module
   // to_module or, if to_module is null, does an unqualified export of package.
-  // The format for the package name must use "/' not ".".
+  // Any "." in the package name will be converted to "/"
   //
   // Error conditions causing IlegalArgumentException to be throw :
   // * Module from_module does not exist
@@ -75,10 +72,10 @@ public:
   // * Package is not syntactically correct
   // * Package is not defined for from_module's class loader
   // * Package is not in module from_module.
-  static void add_module_exports(jobject from_module, const char* package, jobject to_module, TRAPS);
+  static void add_module_exports(jobject from_module, jstring package, jobject to_module, TRAPS);
 
   // This does a qualified export of package in module from_module to module
-  // to_module.  The format for the package name must use "/' not ".".
+  // to_module.  Any "." in the package name will be converted to "/"
   //
   // Error conditions causing IlegalArgumentException to be throw :
   // * Module from_module does not exist
@@ -86,7 +83,7 @@ public:
   // * Package is not syntactically correct
   // * Package is not defined for from_module's class loader
   // * Package is not in module from_module.
-  static void add_module_exports_qualified(jobject from_module, const char* package, jobject to_module, TRAPS);
+  static void add_module_exports_qualified(jobject from_module, jstring package, jobject to_module, TRAPS);
 
   // add_reads_module adds module to_module to the list of modules that from_module
   // can read.  If from_module is the same as to_module then this is a no-op.
@@ -111,10 +108,7 @@ public:
   // If either module or package is null then NullPointerException is thrown.
   // If module or package is bad, or module is unnamed, or package is not in
   // module then IllegalArgumentException is thrown.
-  static void add_module_exports_to_all_unnamed(jobject module, const char* package, TRAPS);
-
-  // Return TRUE if package_name is syntactically valid, false otherwise.
-  static bool verify_package_name(const char *package_name);
+  static void add_module_exports_to_all_unnamed(jobject module, jstring package, TRAPS);
 
   // Return TRUE iff package is defined by loader
   static bool is_package_defined(Symbol* package_name, Handle h_loader, TRAPS);

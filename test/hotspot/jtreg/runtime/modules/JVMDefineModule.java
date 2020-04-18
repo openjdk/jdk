@@ -195,16 +195,10 @@ public class JVMDefineModule {
         assertNotNull(m, "Module should not be null");
         ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { });
 
-        // Invalid package name, expect an IAE
+        // Package name with dots, should be okay
         m = ModuleHelper.ModuleObject("moduleFive", cl, new String[] { "your.apackage" });
-        try {
-            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "your.apackage" });
-            throw new RuntimeException("Failed to get expected IAE for your.apackage");
-        } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("Invalid package name")) {
-              throw new RuntimeException("Failed to get expected IAE message for bad package name: " + e.getMessage());
-            }
-        }
+        assertNotNull(m, "Module should not be null");
+        ModuleHelper.DefineModule(m, false, "9.0", "moduleFive", new String[] { "your.apackage" });
 
         // Invalid package name, expect an IAE
         m = ModuleHelper.ModuleObject("moduleSix", cl, new String[] { "foo" }); // Name irrelevant
@@ -280,6 +274,38 @@ public class JVMDefineModule {
         m = ModuleHelper.ModuleObject("moduleEleven", cl, new String[] { "a_package_11" });
         assertNotNull(m, "Module should not be null");
         ModuleHelper.DefineModule(m, false, "9.0", "", new String[] { "a_package_11" });
+
+        // module with very long package names, should be okay
+        String[] longPackageNames = new String[] {
+         "mypackage/mypackage/mypackage/mypackage1",
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage2",
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage/" +
+         "mypackage/mypackage/mypackage/mypackage3"
+        };
+        m = ModuleHelper.ModuleObject("moduleTwelve", cl, longPackageNames);
+        assertNotNull(m, "Module should not be null");
+        ModuleHelper.DefineModule(m, false, "9.0", "moduleTwelve", longPackageNames);
+        // Indirectly test that the package names doesn't get truncated when defined
+        for (int i = 0; i < longPackageNames.length; i++) {
+            ModuleHelper.AddModuleExportsToAllUnnamed(m, longPackageNames[i]);
+        }
     }
 
     static class MyClassLoader extends ClassLoader { }

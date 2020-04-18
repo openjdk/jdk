@@ -31,81 +31,12 @@
 
 #include "java_lang_Module.h"
 
-/*
- * Gets the UTF-8 chars for the string and translates '.' to '/'.  Does no
- * further validation, assumption being that both calling code in
- * java.lang.Module and VM will do deeper validation.
- */
-static char*
-GetInternalPackageName(JNIEnv *env, jstring pkg, char* buf, jsize buf_size)
-{
-    jsize len;
-    jsize unicode_len;
-    char* p;
-    char* utf_str;
-
-    len = (*env)->GetStringUTFLength(env, pkg);
-    unicode_len = (*env)->GetStringLength(env, pkg);
-    if (len >= buf_size) {
-        utf_str = malloc(len + 1);
-        if (utf_str == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-            return NULL;
-        }
-    } else {
-        utf_str = buf;
-    }
-    (*env)->GetStringUTFRegion(env, pkg, 0, unicode_len, utf_str);
-
-    p = utf_str;
-    while (*p != '\0') {
-        if (*p == '.') {
-            *p = '/';
-        }
-        p++;
-    }
-    return utf_str;
-}
-
 JNIEXPORT void JNICALL
 Java_java_lang_Module_defineModule0(JNIEnv *env, jclass cls, jobject module,
                                             jboolean is_open, jstring version,
                                             jstring location, jobjectArray packages)
 {
-    char** pkgs = NULL;
-    jsize num_packages = (*env)->GetArrayLength(env, packages);
-
-    if (num_packages != 0 && (pkgs = calloc(num_packages, sizeof(char*))) == NULL) {
-        JNU_ThrowOutOfMemoryError(env, NULL);
-        return;
-    } else if ((*env)->EnsureLocalCapacity(env, (jint)num_packages) == 0) {
-        jboolean failed = JNI_FALSE;
-        int idx;
-        for (idx = 0; idx < num_packages; idx++) {
-            jstring pkg = (*env)->GetObjectArrayElement(env, packages, idx);
-            char* name = GetInternalPackageName(env, pkg, NULL, 0);
-            if (name != NULL) {
-                pkgs[idx] = name;
-            } else {
-                failed = JNI_TRUE;
-                break;
-            }
-        }
-        if (!failed) {
-            JVM_DefineModule(env, module, is_open, version, location,
-                             (const char* const*)pkgs, num_packages);
-        }
-    }
-
-    if (num_packages > 0) {
-        int idx;
-        for (idx = 0; idx < num_packages; idx++) {
-            if (pkgs[idx] != NULL) {
-                free(pkgs[idx]);
-            }
-        }
-        free(pkgs);
-    }
+    JVM_DefineModule(env, module, is_open, version, location, packages);
 }
 
 JNIEXPORT void JNICALL
@@ -118,61 +49,19 @@ JNIEXPORT void JNICALL
 Java_java_lang_Module_addExports0(JNIEnv *env, jclass cls, jobject from,
                                   jstring pkg, jobject to)
 {
-    char buf[128];
-    char* pkg_name;
-
-    if (pkg == NULL) {
-        JNU_ThrowNullPointerException(env, "package is null");
-        return;
-    }
-
-    pkg_name = GetInternalPackageName(env, pkg, buf, (jsize)sizeof(buf));
-    if (pkg_name != NULL) {
-        JVM_AddModuleExports(env, from, pkg_name, to);
-        if (pkg_name != buf) {
-            free(pkg_name);
-        }
-    }
+    JVM_AddModuleExports(env, from, pkg, to);
 }
 
 JNIEXPORT void JNICALL
 Java_java_lang_Module_addExportsToAll0(JNIEnv *env, jclass cls, jobject from,
                                        jstring pkg)
 {
-    char buf[128];
-    char* pkg_name;
-
-    if (pkg == NULL) {
-        JNU_ThrowNullPointerException(env, "package is null");
-        return;
-    }
-
-    pkg_name = GetInternalPackageName(env, pkg, buf, (jsize)sizeof(buf));
-    if (pkg_name != NULL) {
-        JVM_AddModuleExportsToAll(env, from, pkg_name);
-        if (pkg_name != buf) {
-            free(pkg_name);
-        }
-    }
+    JVM_AddModuleExportsToAll(env, from, pkg);
 }
 
 JNIEXPORT void JNICALL
 Java_java_lang_Module_addExportsToAllUnnamed0(JNIEnv *env, jclass cls,
                                               jobject from, jstring pkg)
 {
-    char buf[128];
-    char* pkg_name;
-
-    if (pkg == NULL) {
-        JNU_ThrowNullPointerException(env, "package is null");
-        return;
-    }
-
-    pkg_name = GetInternalPackageName(env, pkg, buf, (jsize)sizeof(buf));
-    if (pkg_name != NULL) {
-        JVM_AddModuleExportsToAllUnnamed(env, from, pkg_name);
-        if (pkg_name != buf) {
-            free(pkg_name);
-        }
-    }
+    JVM_AddModuleExportsToAllUnnamed(env, from, pkg);
 }
