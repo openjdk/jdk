@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,6 +259,14 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
+    @Override
+    void nullBody(HttpResponse<T> resp, Throwable t) {
+        if (debug.on()) debug.log("nullBody: streamid=%d", streamid);
+        // We should have an END_STREAM data frame waiting in the inputQ.
+        // We need a subscriber to force the scheduler to process it.
+        pendingResponseSubscriber = HttpResponse.BodySubscribers.replacing(null);
+        sched.runOrSchedule();
+    }
 
     // Callback invoked after the Response BodySubscriber has consumed the
     // buffers contained in a DataFrame.
@@ -382,6 +390,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse();
                 if (hframe.getFlag(HeaderFrame.END_STREAM)) {
+                    if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
                     receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
                 }
             }
@@ -688,6 +697,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     /** Sets endStreamReceived. Should be called only once. */
     void setEndStreamReceived() {
+        if (debug.on()) debug.log("setEndStreamReceived: streamid=%d", streamid);
         assert remotelyClosed == false: "Unexpected endStream already set";
         remotelyClosed = true;
         responseReceived();
@@ -1032,14 +1042,24 @@ class Stream<T> extends ExchangeImpl<T> {
     synchronized void requestSent() {
         requestSent = true;
         if (responseReceived) {
+            if (debug.on()) debug.log("requestSent: streamid=%d", streamid);
             close();
+        } else {
+            if (debug.on()) {
+                debug.log("requestSent: streamid=%d but response not received", streamid);
+            }
         }
     }
 
     synchronized void responseReceived() {
         responseReceived = true;
         if (requestSent) {
+            if (debug.on()) debug.log("responseReceived: streamid=%d", streamid);
             close();
+        } else {
+            if (debug.on()) {
+                debug.log("responseReceived: streamid=%d but request not sent", streamid);
+            }
         }
     }
 
@@ -1162,6 +1182,7 @@ class Stream<T> extends ExchangeImpl<T> {
             if (closed) return;
             closed = true;
         }
+        if (debug.on()) debug.log("close stream %d", streamid);
         Log.logTrace("Closing stream {0}", streamid);
         connection.closeStream(streamid);
         Log.logTrace("Stream {0} closed", streamid);
