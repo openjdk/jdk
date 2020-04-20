@@ -667,6 +667,9 @@ public final class SunGraphics2D
             }
         }
 
+        info.nonInvertibleTx =
+            (Math.abs(textAt.getDeterminant()) <= Double.MIN_VALUE);
+
         info.font2D = FontUtilities.getFont2D(font);
 
         int fmhint = fractionalMetricsHint;

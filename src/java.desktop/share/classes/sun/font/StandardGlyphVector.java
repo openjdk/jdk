@@ -876,29 +876,6 @@ public class StandardGlyphVector extends GlyphVector {
         return result;
     }
 
-    /**
-     * !!! not used currently, but might be by getPixelbounds?
-     */
-    public void pixellate(FontRenderContext renderFRC, Point2D loc, Point pxResult) {
-        if (renderFRC == null) {
-            renderFRC = frc;
-        }
-
-        // it is a total pain that you have to copy the transform.
-
-        AffineTransform at = renderFRC.getTransform();
-        at.transform(loc, loc);
-        pxResult.x = (int)loc.getX(); // but must not behave oddly around zero
-        pxResult.y = (int)loc.getY();
-        loc.setLocation(pxResult.x, pxResult.y);
-        try {
-            at.inverseTransform(loc, loc);
-        }
-        catch (NoninvertibleTransformException e) {
-            throw new IllegalArgumentException("must be able to invert frc transform");
-        }
-    }
-
     //////////////////////
     // StandardGlyphVector package private methods
     /////////////////////

@@ -47,6 +47,7 @@ public class FontInfo implements Cloneable {
     public FontStrike fontStrike;
     public double[] devTx;
     public double[] glyphTx;
+    public boolean nonInvertibleTx;
     public int pixelHeight;
     public float originX;
     public float originY;

@@ -213,7 +213,6 @@ public final class GlyphLayout {
         public FontRenderContext key_frc;
 
         public AffineTransform dtx;
-        public AffineTransform invdtx;
         public AffineTransform gtx;
         public Point2D.Float delta;
         public FontStrikeDesc sd;
@@ -229,14 +228,6 @@ public final class GlyphLayout {
             dtx.setTransform(dtx.getScaleX(), dtx.getShearY(),
                              dtx.getShearX(), dtx.getScaleY(),
                              0, 0);
-            if (!dtx.isIdentity()) {
-                try {
-                    invdtx = dtx.createInverse();
-                }
-                catch (NoninvertibleTransformException e) {
-                    throw new InternalError(e);
-                }
-            }
 
             float ptSize = font.getSize2D();
             if (font.isTransformed()) {
@@ -480,10 +471,6 @@ public final class GlyphLayout {
             }
         }
 
-        //        if (txinfo.invdtx != null) {
-        //            _gvdata.adjustPositions(txinfo.invdtx);
-        //        }
-
         // If layout fails (negative glyph count) create an un-laid out GV instead.
         // ie default positions. This will be a lot better than the alternative of
         // a complete blank layout.
@@ -577,10 +564,6 @@ public final class GlyphLayout {
             int[] nindices = new int[size];
             System.arraycopy(_indices, 0, nindices, 0, _count);
             _indices = nindices;
-        }
-
-        public void adjustPositions(AffineTransform invdtx) {
-            invdtx.transform(_positions, 0, _positions, 0, _count);
         }
 
         public StandardGlyphVector createGlyphVector(Font font, FontRenderContext frc, StandardGlyphVector result) {

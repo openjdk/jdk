@@ -44,6 +44,9 @@ public abstract class GlyphListPipe implements TextPipe {
                            double x, double y)
     {
         FontInfo info = sg2d.getFontInfo();
+        if (info.nonInvertibleTx) {
+            return;
+        }
         if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
             SurfaceData.outlineTextRenderer.drawString(sg2d, s, x, y);
             return;
@@ -80,6 +83,9 @@ public abstract class GlyphListPipe implements TextPipe {
                           int ix, int iy)
     {
         FontInfo info = sg2d.getFontInfo();
+        if (info.nonInvertibleTx) {
+            return;
+        }
         float x, y;
         if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
             SurfaceData.outlineTextRenderer.drawChars(
@@ -114,6 +120,9 @@ public abstract class GlyphListPipe implements TextPipe {
     {
         FontRenderContext frc = gv.getFontRenderContext();
         FontInfo info = sg2d.getGVFontInfo(gv.getFont(), frc);
+        if (info.nonInvertibleTx) {
+            return;
+        }
         if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
             SurfaceData.outlineTextRenderer.drawGlyphVector(sg2d, gv, x, y);
             return;
