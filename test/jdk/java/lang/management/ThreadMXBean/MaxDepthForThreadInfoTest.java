@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class MaxDepthForThreadInfoTest {
 
         ThreadInfo[] tinfos = tmxb.getThreadInfo(threadIds, true, true, 0);
         for (ThreadInfo ti : tinfos) {
-            if (ti.getStackTrace().length > 0) {
+            if (ti != null && ti.getStackTrace().length > 0) {
                 ThreadDump.printThreadInfo(ti);
                 throw new RuntimeException("more than requested " +
                         "number of frames dumped");
@@ -56,7 +56,7 @@ public class MaxDepthForThreadInfoTest {
 
         tinfos = tmxb.getThreadInfo(threadIds, true, true, 3);
         for (ThreadInfo ti : tinfos) {
-            if (ti.getStackTrace().length > 3) {
+            if (ti != null && ti.getStackTrace().length > 3) {
                 ThreadDump.printThreadInfo(ti);
                 throw new RuntimeException("more than requested " +
                         "number of frames dumped");
