@@ -23,7 +23,7 @@
 
 /*
  * @test RotatedTextTest
- * @bug 8203485
+ * @bug 8203485 8233006
  * @summary This test verifies that rotated text preserves the width.
  * @run main RotatedTextTest
  */
