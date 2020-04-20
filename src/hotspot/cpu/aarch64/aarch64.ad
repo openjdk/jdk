@@ -1097,9 +1097,9 @@ source %{
     _NO_SPECIAL_PTR_REG_mask = _ALL_REG_mask;
     _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
 
-    // r27 is not allocatable when compressed oops is on, compressed klass
-    // pointers doesn't use r27 after JDK-8234794
-    if (UseCompressedOops) {
+    // r27 is not allocatable when compressed oops is on and heapbase is not
+    // zero, compressed klass pointers doesn't use r27 after JDK-8234794
+    if (UseCompressedOops && CompressedOops::ptrs_base() != NULL) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
@@ -7477,19 +7477,17 @@ instruct storeN(iRegN src, memory4 mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeImmN0(iRegIHeapbase heapbase, immN0 zero, memory4 mem)
+instruct storeImmN0(immN0 zero, memory4 mem)
 %{
   match(Set mem (StoreN mem zero));
-  predicate(CompressedOops::base() == NULL &&
-            CompressedKlassPointers::base() == NULL &&
-            (!needs_releasing_store(n)));
+  predicate(!needs_releasing_store(n));
 
   ins_cost(INSN_COST);
-  format %{ "strw  rheapbase, $mem\t# compressed ptr (rheapbase==0)" %}
+  format %{ "strw  zr, $mem\t# compressed ptr" %}
 
-  ins_encode(aarch64_enc_strw(heapbase, mem));
+  ins_encode(aarch64_enc_strw0(mem));
 
-  ins_pipe(istore_reg_mem);
+  ins_pipe(istore_mem);
 %}
 
 // Store Float
