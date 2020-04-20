@@ -1571,6 +1571,15 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
         CHECK_NULL(sequencedEventConst);
     }
 
+    static jclass windowCls = NULL;
+    if (windowCls == NULL) {
+        jclass windowClsLocal = env->FindClass("java/awt/Window");
+        CHECK_NULL(windowClsLocal);
+        windowCls = (jclass)env->NewGlobalRef(windowClsLocal);
+        env->DeleteLocalRef(windowClsLocal);
+        CHECK_NULL(windowCls);
+    }
+
     if (env->EnsureLocalCapacity(3) < 0) {
         return;
     }
@@ -1581,6 +1590,28 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
         AwtComponent *awtOpposite = AwtComponent::GetComponent(opposite);
         if (awtOpposite != NULL) {
             jOpposite = awtOpposite->GetTarget(env);
+            if ((jOpposite != NULL) &&
+                !env->IsInstanceOf(jOpposite, windowCls)) {
+                env->DeleteLocalRef(jOpposite);
+                jOpposite = NULL;
+
+                HWND parent = AwtComponent::GetTopLevelParentForWindow(opposite);
+                if ((parent != NULL) && (parent != opposite)) {
+                    if (parent == GetHWnd()) {
+                        jOpposite = env->NewLocalRef(target);
+                    } else {
+                        AwtComponent* awtParent = AwtComponent::GetComponent(parent);
+                        if (awtParent != NULL) {
+                            jOpposite = awtParent->GetTarget(env);
+                            if ((jOpposite != NULL) &&
+                                !env->IsInstanceOf(jOpposite, windowCls)) {
+                                env->DeleteLocalRef(jOpposite);
+                                jOpposite = NULL;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     jobject event = env->NewObject(wClassEvent, wEventInitMID, target, id,
