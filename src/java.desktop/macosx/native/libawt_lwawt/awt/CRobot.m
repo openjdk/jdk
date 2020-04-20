@@ -67,6 +67,7 @@ static NSTimeInterval gsLastClickTime;
 // happen with z-order.
 static int gsEventNumber;
 static int* gsButtonEventNumber;
+static NSTimeInterval gNextKeyEventTime;
 
 static inline CGKeyCode GetCGKeyCode(jint javaKeyCode);
 
@@ -82,6 +83,28 @@ CreateJavaException(JNIEnv* env, CGError err)
     NSString* s = [NSString stringWithFormat:@"Robot: CGError: %d", err];
     (*env)->ThrowNew(env, (*env)->FindClass(env, "java/awt/AWTException"),
                      [s UTF8String]);
+}
+
+/**
+ * Saves the "safe moment" when the NEXT event can be posted by the robot safely
+ * and sleeps for some time if the "safe moment" for the CURRENT event is not
+ * reached.
+ *
+ * We need to sleep to give time for the macOS to update the state.
+ *
+ * The "mouse move" events are skipped, because it is not a big issue if we lost
+ * some of them, the latest coordinates are saved in the peer and will be used
+ * for clicks.
+ */
+static inline void autoDelay(BOOL isMove) {
+    if (!isMove){
+        NSTimeInterval now = [[NSDate date] timeIntervalSinceReferenceDate];
+        NSTimeInterval delay = gNextKeyEventTime - now;
+        if (delay > 0) {
+            [NSThread sleepForTimeInterval:delay];
+        }
+    }
+    gNextKeyEventTime = [[NSDate date] timeIntervalSinceReferenceDate] + 0.050;
 }
 
 /*
@@ -119,6 +142,7 @@ Java_sun_lwawt_macosx_CRobot_initRobot
 
             gsClickCount = 0;
             gsLastClickTime = 0;
+            gNextKeyEventTime = 0;
             gsEventNumber = ROBOT_EVENT_NUMBER_START;
 
             gsButtonEventNumber = (int*)SAFE_SIZE_ARRAY_ALLOC(malloc, sizeof(int), gNumberOfButtons);
@@ -145,6 +169,7 @@ Java_sun_lwawt_macosx_CRobot_mouseEvent
  jboolean isButtonsDownState, jboolean isMouseMove)
 {
     JNF_COCOA_ENTER(env);
+    autoDelay(isMouseMove);
 
     // This is the native method called when Robot mouse events occur.
     // The CRobot tracks the mouse position, and which button was
@@ -241,13 +266,18 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CRobot_mouseWheel
 (JNIEnv *env, jobject peer, jint wheelAmt)
 {
+    autoDelay(NO);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        CGEventRef event = CGEventCreateScrollWheelEvent(NULL,
+        CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+        CGEventRef event = CGEventCreateScrollWheelEvent(source,
                                                 kCGScrollEventUnitLine,
                                                 k_JAVA_ROBOT_WHEEL_COUNT, wheelAmt);
         if (event != NULL) {
-            CGEventPost(kCGSessionEventTap, event);
+            CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
+        }
+        if (source != NULL) {
+            CFRelease(source);
         }
     }];
 }
@@ -261,12 +291,17 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CRobot_keyEvent
 (JNIEnv *env, jobject peer, jint javaKeyCode, jboolean keyPressed)
 {
+    autoDelay(NO);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
         CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
-        CGEventRef event = CGEventCreateKeyboardEvent(NULL, keyCode, keyPressed);
+        CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
         if (event != NULL) {
-            CGEventPost(kCGSessionEventTap, event);
+            CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
+        }
+        if (source != NULL) {
+            CFRelease(source);
         }
     }];
 }
@@ -338,12 +373,16 @@ static void PostMouseEvent(const CGPoint point, CGMouseButton button,
                            CGEventType type, int clickCount, int eventNumber)
 {
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        CGEventRef mouseEvent = CGEventCreateMouseEvent(NULL, type, point, button);
+        CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+        CGEventRef mouseEvent = CGEventCreateMouseEvent(source, type, point, button);
         if (mouseEvent != NULL) {
             CGEventSetIntegerValueField(mouseEvent, kCGMouseEventClickState, clickCount);
             CGEventSetIntegerValueField(mouseEvent, kCGMouseEventNumber, eventNumber);
-            CGEventPost(kCGSessionEventTap, mouseEvent);
+            CGEventPost(kCGHIDEventTap, mouseEvent);
             CFRelease(mouseEvent);
+        }
+        if (source != NULL) {
+            CFRelease(source);
         }
     }];
 }

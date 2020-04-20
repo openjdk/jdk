@@ -196,7 +196,7 @@ java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
-java/awt/Toolkit/RealSync/Test.java 6849383 macosx-all,linux-all
+java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8203047 macosx-all
 java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.java 8073636 macosx-all
@@ -223,7 +223,7 @@ java/awt/Mouse/GetMousePositionTest/GetMousePositionWithPopup.java 8196017 windo
 java/awt/Scrollbar/ScrollbarMouseWheelTest/ScrollbarMouseWheelTest.java 8196018 windows-all,linux-all
 java/awt/TrayIcon/ActionCommand/ActionCommand.java 8150540 windows-all
 java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540 windows-all
-java/awt/TrayIcon/ActionEventTest/ActionEventTest.java 8150540 windows-all
+java/awt/TrayIcon/ActionEventTest/ActionEventTest.java 8150540,8242801 windows-all,macosx-all
 java/awt/TrayIcon/ModalityTest/ModalityTest.java 8150540 windows-all,macosx-all
 java/awt/TrayIcon/MouseEventMask/MouseEventMaskTest.java 8150540 windows-all
 java/awt/TrayIcon/MouseMovedTest/MouseMovedTest.java 8150540 windows-all
@@ -541,6 +541,7 @@ java/awt/Window/WindowResizing/DoubleClickTitleBarTest.java 8233557 macosx-all
 java/awt/Window/WindowOwnedByEmbeddedFrameTest/WindowOwnedByEmbeddedFrameTest.java 8233558 macosx-all
 java/awt/Mouse/MouseComboBoxTest/MouseComboBoxTest.java 8233564 macosx-all
 java/awt/Modal/NullModalityDialogTest/NullModalityDialogTest.java 8233565 macosx-all
+java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
 java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.java 8233566 macosx-all
 java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogTest/EnqueueWithDialogTest.java 8233566,6447537 macosx-all,windows-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all

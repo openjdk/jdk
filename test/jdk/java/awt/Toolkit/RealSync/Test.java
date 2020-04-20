@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 6252005
+  @bug 6252005 8242174
   @key headful
   @summary Tests that realSync feature works
   @author denis.mikhalkin: area=awt.toolkit
@@ -31,16 +31,17 @@
   @run main/timeout=6000 Test
 */
 
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.LinkedList;
-import java.util.Collections;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.LinkedList;
+
 import javax.swing.*;
-import java.awt.image.*;
-import javax.imageio.*;
-import java.io.*;
 
 /**
  * Tests various problematic areas and how they are fixed using real-sync API:
