@@ -2661,7 +2661,10 @@ ModuleEntry* InstanceKlass::module() const {
 void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS) {
 
   // ensure java/ packages only loaded by boot or platform builtin loaders
-  check_prohibited_package(name(), loader_data, CHECK);
+  // not needed for shared class since CDS does not archive prohibited classes.
+  if (!is_shared()) {
+    check_prohibited_package(name(), loader_data, CHECK);
+  }
 
   TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() : ClassLoader::package_from_class_name(name());
 
@@ -2712,6 +2715,23 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 }
 
+// Function set_classpath_index checks if the package of the InstanceKlass is in the
+// boot loader's package entry table.  If so, then it sets the classpath_index
+// in the package entry record.
+//
+// The classpath_index field is used to find the entry on the boot loader class
+// path for packages with classes loaded by the boot loader from -Xbootclasspath/a
+// in an unnamed module.  It is also used to indicate (for all packages whose
+// classes are loaded by the boot loader) that at least one of the package's
+// classes has been loaded.
+void InstanceKlass::set_classpath_index(s2 path_index, TRAPS) {
+  if (_package_entry != NULL) {
+    DEBUG_ONLY(PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();)
+    assert(pkg_entry_tbl->lookup_only(_package_entry->name()) == _package_entry, "Should be same");
+    assert(path_index != -1, "Unexpected classpath_index");
+    _package_entry->set_classpath_index(path_index);
+  }
+}
 
 // different versions of is_same_class_package
 

@@ -510,8 +510,15 @@ public:
   PackageEntry* package() const     { return _package_entry; }
   ModuleEntry* module() const;
   bool in_unnamed_package() const   { return (_package_entry == NULL); }
-  void set_package(PackageEntry* p) { _package_entry = p; }
   void set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS);
+  // If the package for the InstanceKlass is in the boot loader's package entry
+  // table then sets the classpath_index field so that
+  // get_system_package() will know to return a non-null value for the
+  // package's location.  And, so that the package will be added to the list of
+  // packages returned by get_system_packages().
+  // For packages whose classes are loaded from the boot loader class path, the
+  // classpath_index indicates which entry on the boot loader class path.
+  void set_classpath_index(s2 path_index, TRAPS);
   bool is_same_class_package(const Klass* class2) const;
   bool is_same_class_package(oop other_class_loader, const Symbol* other_class_name) const;
 
