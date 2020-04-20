@@ -345,7 +345,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.
-  BOOT_JDK_SOURCETARGET="-source 13 -target 13"
+  OLDEST_BOOT_JDK=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \
+      | $TR " " "\n" | $SORT -n | $HEAD -n1`
+  BOOT_JDK_SOURCETARGET="-source $OLDEST_BOOT_JDK -target $OLDEST_BOOT_JDK"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
 
   AC_SUBST(JAVAC_FLAGS)
