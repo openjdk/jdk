@@ -268,6 +268,7 @@ public class ReplToolTesting {
     @BeforeMethod
     public void setUp() {
         prefsMap = new HashMap<>();
+        prefsMap.put("INDENT", "0");
         envvars = new HashMap<>();
         System.setProperty("jshell.test.allow.incomplete.inputs", "true");
     }

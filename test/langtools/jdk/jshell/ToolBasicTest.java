@@ -879,4 +879,15 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
+    public void testIndent() { //8223688
+        prefsMap.remove("INDENT");
+        test(false, new String[]{"--no-startup"},
+                a -> assertCommand(a, "/set indent", "|  /set indent 4"),
+                a -> assertCommand(a, "/set indent 2", "|  Indent level set to: 2"),
+                a -> assertCommand(a, "/set indent", "|  /set indent 2"),
+                a -> assertCommand(a, "/set indent broken", "|  Invalid indent level: broken"),
+                a -> assertCommandOutputContains(a, "/set", "|  /set indent 2")
+        );
+    }
+
 }

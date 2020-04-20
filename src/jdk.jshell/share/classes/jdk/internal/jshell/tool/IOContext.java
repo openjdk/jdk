@@ -56,6 +56,8 @@ abstract class IOContext implements AutoCloseable {
 
     public abstract int readUserInput() throws IOException;
 
+    public void setIndent(int indent) {}
+
     class InputInterruptedException extends Exception {
         private static final long serialVersionUID = 1L;
     }
