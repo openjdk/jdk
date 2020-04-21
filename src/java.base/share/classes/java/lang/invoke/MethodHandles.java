@@ -1631,7 +1631,7 @@ public class MethodHandles {
         }
 
         /**
-         * Creates a class or interface from {@code bytes}
+         * Creates and links a class or interface from {@code bytes}
          * with the same class loader and in the same runtime package and
          * {@linkplain java.security.ProtectionDomain protection domain} as this lookup's
          * {@linkplain #lookupClass() lookup class} as if calling
