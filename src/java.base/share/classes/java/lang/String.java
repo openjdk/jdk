@@ -2888,15 +2888,6 @@ public final class String
     }
 
     /**
-     * {@preview Associated with text blocks, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>text blocks</i>, a preview
-     *           feature of the Java language. Programs can only use this
-     *           method when preview features are enabled. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns a string whose value is this string, with incidental
      * {@linkplain Character#isWhitespace(int) white space} removed from
      * the beginning and end of every line.
@@ -2970,7 +2961,7 @@ public final class String
      * @see String#indent(int)
      * @see Character#isWhitespace(int)
      *
-     * @since 13
+     * @since 15
      *
      */
     public String stripIndent() {
@@ -3011,15 +3002,6 @@ public final class String
     }
 
     /**
-     * {@preview Associated with text blocks, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>text blocks</i>, a preview
-     *           feature of the Java language. Programs can only use this
-     *           method when preview features are enabled. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns a string whose value is this string, with escape sequences
      * translated as if in a string literal.
      * <p>
@@ -3103,7 +3085,7 @@ public final class String
      *
      * @jls 3.10.7 Escape Sequences
      *
-     * @since 13
+     * @since 15
      */
     public String translateEscapes() {
         if (isEmpty()) {
