@@ -65,9 +65,7 @@ void ShenandoahBarrierSetC2State::add_enqueue_barrier(ShenandoahEnqueueBarrierNo
 }
 
 void ShenandoahBarrierSetC2State::remove_enqueue_barrier(ShenandoahEnqueueBarrierNode * n) {
-  if (_enqueue_barriers->contains(n)) {
-    _enqueue_barriers->remove(n);
-  }
+  _enqueue_barriers->remove_if_existing(n);
 }
 
 int ShenandoahBarrierSetC2State::load_reference_barriers_count() const {
