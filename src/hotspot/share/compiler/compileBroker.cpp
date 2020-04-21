@@ -592,7 +592,7 @@ CompilerCounters::CompilerCounters() {
   _compile_type = CompileBroker::no_compile;
 }
 
-#if INCLUDE_JFR
+#if INCLUDE_JFR && COMPILER2_OR_JVMCI
 // It appends new compiler phase names to growable array phase_names(a new CompilerPhaseType mapping
 // in compiler/compilerEvent.cpp) and registers it with its serializer.
 //
@@ -608,6 +608,7 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
     jvmci_phase_names->append("NOT_A_PHASE_NAME");
     CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
     first_registration = false;
+#ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
     GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
@@ -616,9 +617,10 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
     }
     CompilerEvent::PhaseEvent::register_phases(c2_phase_names);
     first_registration = false;
+#endif // COMPILER2
   }
 }
-#endif // INCLUDE_JFR
+#endif // INCLUDE_JFR && COMPILER2_OR_JVMCI
 
 // ------------------------------------------------------------------
 // CompileBroker::compilation_init
