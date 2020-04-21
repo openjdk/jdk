@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@ public class MethodInvoke {
         args_6ref = new Object[]{ new Object(), new Object(),
                 new Object(), new Object(), new Object(), new Object()};
         args_6prim = new Object[]{
-                new Integer(1), new Long(5L),
-                new Double(5.6d), new Float(23.11f),
-                Boolean.TRUE, new Character('d')
+                1, 5L,
+                5.6d, 23.11f,
+                Boolean.TRUE, 'd'
         };
 
         staticMeth_0 = getMethodWithName("staticMethodWithoutParams");
