@@ -17578,7 +17578,7 @@ instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
 instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
   predicate(n->as_Vector()->length() == 2 ||
             n->as_Vector()->length() == 4);
-  match(Set dst (RShiftVS src (LShiftCntV shift)));
+  match(Set dst (RShiftVS src (RShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
@@ -17592,7 +17592,7 @@ instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
 
 instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
   predicate(n->as_Vector()->length() == 8);
-  match(Set dst (RShiftVS src (LShiftCntV shift)));
+  match(Set dst (RShiftVS src (RShiftCntV shift)));
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
