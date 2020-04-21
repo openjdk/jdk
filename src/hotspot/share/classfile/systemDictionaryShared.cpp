@@ -40,6 +40,7 @@
 #include "memory/allocation.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
@@ -1541,3 +1542,52 @@ bool SystemDictionaryShared::empty_dumptime_table() {
   }
   return false;
 }
+
+#if INCLUDE_CDS_JAVA_HEAP
+
+class ArchivedMirrorPatcher {
+  static void update(Klass* k) {
+    if (k->has_raw_archived_mirror()) {
+      oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
+      if (m != NULL) {
+        java_lang_Class::update_archived_mirror_native_pointers(m);
+      }
+    }
+  }
+
+public:
+  static void update_array_klasses(Klass* ak) {
+    while (ak != NULL) {
+      update(ak);
+      ak = ArrayKlass::cast(ak)->higher_dimension();
+    }
+  }
+
+  void do_value(const RunTimeSharedClassInfo* info) {
+    InstanceKlass* ik = info->_klass;
+    update(ik);
+    update_array_klasses(ik->array_klasses());
+  }
+};
+
+void SystemDictionaryShared::update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict) {
+  ArchivedMirrorPatcher patcher;
+  dict->iterate(&patcher);
+}
+
+void SystemDictionaryShared::update_archived_mirror_native_pointers() {
+  if (!HeapShared::open_archive_heap_region_mapped()) {
+    return;
+  }
+  if (MetaspaceShared::relocation_delta() == 0) {
+    return;
+  }
+  update_archived_mirror_native_pointers_for(&_builtin_dictionary);
+  update_archived_mirror_native_pointers_for(&_unregistered_dictionary);
+
+  for (int t = T_BOOLEAN; t <= T_LONG; t++) {
+    Klass* k = Universe::typeArrayKlassObj((BasicType)t);
+    ArchivedMirrorPatcher::update_array_klasses(k);
+  }
+}
+#endif

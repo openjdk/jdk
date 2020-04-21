@@ -101,11 +101,9 @@ runtime/CompactStrings/TestMethodNames.java 8242921 generic-all
 
 # :hotspot_serviceability
 
-serviceability/sa/ClhsdbDumpheap.java 8241158 macosx-x64
-serviceability/sa/ClhsdbScanOops.java#id0 8241158 macosx-x64
-serviceability/sa/ClhsdbScanOops.java#id1 8241158 macosx-x64
+serviceability/sa/ClhsdbScanOops.java#id0 8243210 macosx-x64
+serviceability/sa/ClhsdbScanOops.java#id1 8243210 macosx-x64
 serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
-serviceability/sa/TestHeapDumpForInvokeDynamic.java 8241158 macosx-x64
 serviceability/sa/TestInstanceKlassSize.java 8230664 linux-ppc64le,linux-ppc64
 serviceability/sa/TestInstanceKlassSizeForInterface.java 8230664 linux-ppc64le,linux-ppc64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all

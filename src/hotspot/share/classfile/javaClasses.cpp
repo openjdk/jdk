@@ -1283,16 +1283,16 @@ void java_lang_Class::update_archived_primitive_mirror_native_pointers(oop archi
 }
 
 void java_lang_Class::update_archived_mirror_native_pointers(oop archived_mirror) {
-  if (MetaspaceShared::relocation_delta() != 0) {
-    Klass* k = ((Klass*)archived_mirror->metadata_field(_klass_offset));
-    archived_mirror->metadata_field_put(_klass_offset,
-        (Klass*)(address(k) + MetaspaceShared::relocation_delta()));
+  assert(MetaspaceShared::relocation_delta() != 0, "must be");
 
-    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
-    if (ak != NULL) {
-      archived_mirror->metadata_field_put(_array_klass_offset,
-          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
-    }
+  Klass* k = ((Klass*)archived_mirror->metadata_field(_klass_offset));
+  archived_mirror->metadata_field_put(_klass_offset,
+      (Klass*)(address(k) + MetaspaceShared::relocation_delta()));
+
+  Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
+  if (ak != NULL) {
+    archived_mirror->metadata_field_put(_array_klass_offset,
+        (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
   }
 }
 
@@ -1319,7 +1319,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
   assert(HeapShared::is_archived_object(m), "must be archived mirror object");
-  update_archived_mirror_native_pointers(m);
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
