@@ -132,25 +132,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   char* high_boundary() const { return reserved_high_addr(); }
 };
 
-// A virtual space that grows from high addresses to low addresses.
-class PSVirtualSpaceHighToLow : public PSVirtualSpace {
-  friend class VMStructs;
- public:
-  PSVirtualSpaceHighToLow(ReservedSpace rs, size_t alignment);
-  PSVirtualSpaceHighToLow(ReservedSpace rs);
-
-  virtual bool   expand_by(size_t bytes);
-  virtual bool   shrink_by(size_t bytes);
-  virtual size_t expand_into(PSVirtualSpace* space, size_t bytes);
-
-  virtual void print_space_boundaries_on(outputStream* st) const;
-
-#ifndef PRODUCT
-  // Debugging
-  virtual bool grows_up() const   { return false; }
-#endif
-};
-
 //
 // PSVirtualSpace inlines.
 //

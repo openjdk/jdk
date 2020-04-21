@@ -63,9 +63,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   SoftRefPolicy _soft_ref_policy;
 
-  // Collection of generations that are adjacent in the
-  // space reserved for the heap.
-  AdjoiningGenerations* _gens;
   unsigned int _death_march_count;
 
   GCMemoryManager* _young_manager;
@@ -92,7 +89,6 @@ class ParallelScavengeHeap : public CollectedHeap {
  public:
   ParallelScavengeHeap() :
     CollectedHeap(),
-    _gens(NULL),
     _death_march_count(0),
     _young_manager(NULL),
     _old_manager(NULL),
@@ -134,8 +130,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   CardTableBarrierSet* barrier_set();
   PSCardTable* card_table();
-
-  AdjoiningGenerations* gens() { return _gens; }
 
   // Returns JNI_OK on success
   virtual jint initialize();

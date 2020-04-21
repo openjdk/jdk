@@ -38,21 +38,13 @@
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
-PSOldGen::PSOldGen(ReservedSpace rs, size_t alignment,
-                   size_t initial_size, size_t min_size, size_t max_size,
-                   const char* perf_data_name, int level):
+PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
+                   size_t max_size, const char* perf_data_name, int level):
   _init_gen_size(initial_size), _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
-  initialize(rs, alignment, perf_data_name, level);
+  initialize(rs, GenAlignment, perf_data_name, level);
 }
-
-PSOldGen::PSOldGen(size_t initial_size,
-                   size_t min_size, size_t max_size,
-                   const char* perf_data_name, int level):
-  _init_gen_size(initial_size), _min_gen_size(min_size),
-  _max_gen_size(max_size)
-{}
 
 void PSOldGen::initialize(ReservedSpace rs, size_t alignment,
                           const char* perf_data_name, int level) {
@@ -156,10 +148,6 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
 // reserved size is not 0.
 bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
-}
-
-size_t PSOldGen::contiguous_available() const {
-  return object_space()->free_in_bytes() + virtual_space()->uncommitted_size();
 }
 
 // Allocation. We report all successful allocations to the size policy
@@ -374,21 +362,6 @@ size_t PSOldGen::gen_size_limit() {
   return _max_gen_size;
 }
 
-void PSOldGen::reset_after_change() {
-  ShouldNotReachHere();
-  return;
-}
-
-size_t PSOldGen::available_for_expansion() {
-  ShouldNotReachHere();
-  return 0;
-}
-
-size_t PSOldGen::available_for_contraction() {
-  ShouldNotReachHere();
-  return 0;
-}
-
 void PSOldGen::print() const { print_on(tty);}
 void PSOldGen::print_on(outputStream* st) const {
   st->print(" %-15s", name());
@@ -409,29 +382,10 @@ void PSOldGen::update_counters() {
   }
 }
 
-#ifndef PRODUCT
-
-void PSOldGen::space_invariants() {
-  assert(object_space()->end() == (HeapWord*) virtual_space()->high(),
-    "Space invariant");
-  assert(object_space()->bottom() == (HeapWord*) virtual_space()->low(),
-    "Space invariant");
-  assert(virtual_space()->low_boundary() <= virtual_space()->low(),
-    "Space invariant");
-  assert(virtual_space()->high_boundary() >= virtual_space()->high(),
-    "Space invariant");
-  assert(virtual_space()->low_boundary() == (char*) _reserved.start(),
-    "Space invariant");
-  assert(virtual_space()->high_boundary() == (char*) _reserved.end(),
-    "Space invariant");
-  assert(virtual_space()->committed_size() <= virtual_space()->reserved_size(),
-    "Space invariant");
-}
-#endif
-
 void PSOldGen::verify() {
   object_space()->verify();
 }
+
 class VerifyObjectStartArrayClosure : public ObjectClosure {
   PSOldGen* _old_gen;
   ObjectStartArray* _start_array;

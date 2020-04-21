@@ -94,7 +94,6 @@
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
-#include "gc/parallel/adjoiningGenerations.hpp"
 #endif // INCLUDE_PARALLELGC
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
@@ -607,7 +606,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
   if (UseParallelGC) {
-    return ParallelScavengeHeap::heap()->gens()->virtual_spaces()->alignment();
+    return GenAlignment;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSVirtualSpaceAlignment: Parallel GC is not enabled");
 WB_END

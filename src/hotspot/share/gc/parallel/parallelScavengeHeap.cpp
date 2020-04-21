@@ -24,8 +24,6 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/adjoiningGenerations.hpp"
-#include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -80,18 +78,33 @@ jint ParallelScavengeHeap::initialize() {
   BarrierSet::set_barrier_set(barrier_set);
 
   // Make up the generations
-  // Calculate the maximum size that a generation can grow.  This
-  // includes growth into the other generation.  Note that the
-  // parameter _max_gen_size is kept as the maximum
-  // size of the generation as the boundaries currently stand.
-  // _max_gen_size is still used as that value.
+  assert(MinOldSize <= OldSize && OldSize <= MaxOldSize, "Parameter check");
+  assert(MinNewSize <= NewSize && NewSize <= MaxNewSize, "Parameter check");
+
+  // Layout the reserved space for the generations.
+  // If OldGen is allocated on nv-dimm, we need to split the reservation (this is required for windows).
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, ParallelArguments::is_heterogeneous_heap() /* split */);
+  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
+  assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
+
+  // Create and initialize the generations.
+  _young_gen = new PSYoungGen(
+      young_rs,
+      NewSize,
+      MinNewSize,
+      MaxNewSize);
+  _old_gen = new PSOldGen(
+      old_rs,
+      OldSize,
+      MinOldSize,
+      MaxOldSize,
+      "old", 1);
+
+  assert(young_gen()->gen_size_limit() == young_rs.size(),"Consistency check");
+  assert(old_gen()->gen_size_limit() == old_rs.size(), "Consistency check");
+
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
-
-  _gens = AdjoiningGenerations::create_adjoining_generations(heap_rs);
-
-  _old_gen = _gens->old_gen();
-  _young_gen = _gens->young_gen();
 
   const size_t eden_capacity = _young_gen->eden_space()->capacity_in_bytes();
   const size_t old_capacity = _old_gen->capacity_in_bytes();
