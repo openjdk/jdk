@@ -338,10 +338,14 @@ public class ciMethodData extends ciMetadata implements MethodDataInterface<ciKl
       ProfileData pdata = firstData();
       for ( ; isValid(pdata); pdata = nextData(pdata)) {
         if (pdata instanceof ReceiverTypeData) {
-          count = dumpReplayDataReceiverTypeHelper(out, round, count, (ReceiverTypeData<ciKlass,ciMethod>)pdata);
+          @SuppressWarnings("unchecked")
+          ReceiverTypeData<ciKlass,ciMethod> receiverTypeData = (ReceiverTypeData<ciKlass,ciMethod>)pdata;
+          count = dumpReplayDataReceiverTypeHelper(out, round, count, receiverTypeData);
         }
         if (pdata instanceof CallTypeDataInterface) {
-          count = dumpReplayDataCallTypeHelper(out, round, count, (CallTypeDataInterface<ciKlass>)pdata);
+          @SuppressWarnings("unchecked")
+          CallTypeDataInterface<ciKlass> callTypeData = (CallTypeDataInterface<ciKlass>)pdata;
+          count = dumpReplayDataCallTypeHelper(out, round, count, callTypeData);
         }
       }
       if (parameters != null) {

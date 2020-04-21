@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,19 +34,19 @@ import sun.jvm.hotspot.HotSpotTypeDataBase;
 
 /** Instantiate wrappers for statically typed instances. */
 
-public class StaticBaseConstructor<T> extends InstanceConstructor {
-  private Class staticType;
+public class StaticBaseConstructor<T extends VMObject> extends InstanceConstructor<T> {
+  private Class<T> staticType;
 
   public StaticBaseConstructor(Class<T> t) {
     staticType = t;
   }
 
   /** Instantiate a wrapper using staticType */
-  public VMObject instantiateWrapperFor(Address addr) throws WrongTypeException {
+  public T instantiateWrapperFor(Address addr) throws WrongTypeException {
     if (addr == null) {
       return null;
     }
 
-    return (VMObject) VMObjectFactory.newObject(staticType, addr);
+    return VMObjectFactory.newObject(staticType, addr);
   }
 }

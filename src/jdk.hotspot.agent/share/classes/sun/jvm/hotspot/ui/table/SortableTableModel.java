@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,14 @@ import javax.swing.table.AbstractTableModel;
  * of the list may be sortable by column. The TableModelComparator
  * must be set for sorting to be enabled.
  */
-public abstract class SortableTableModel extends AbstractTableModel {
+public abstract class SortableTableModel<T> extends AbstractTableModel {
 
     private TableModelComparator comparator;
 
     /**
      * All the rows are stored as a List.
      */
-    protected java.util.List elements;
+    protected java.util.List<T> elements;
 
     /**
      * This comparator must be set.

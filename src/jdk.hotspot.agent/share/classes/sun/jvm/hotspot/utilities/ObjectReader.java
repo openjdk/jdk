@@ -297,7 +297,7 @@ public class ObjectReader {
             return getProperties(oop);
          }
 
-         Class clz = readClass(kls);
+         Class<?> clz = readClass(kls);
          try {
             result = clz.getDeclaredConstructor().newInstance();
          } catch (Exception ex) {

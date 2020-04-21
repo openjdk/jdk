@@ -55,7 +55,7 @@ abstract public class Metadata extends VMObject {
   private static VirtualBaseConstructor<Metadata> metadataConstructor;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    metadataConstructor = new VirtualBaseConstructor<Metadata>(db, db.lookupType("Metadata"), null, null);
+    metadataConstructor = new VirtualBaseConstructor<>(db, db.lookupType("Metadata"), null, null);
     // Define an explicit mapping since the C++ and Java type names don't match.
     metadataConstructor.addMapping("Metadata", Metadata.class);
     metadataConstructor.addMapping("Klass", Klass.class);
