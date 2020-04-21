@@ -122,10 +122,8 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
 
   initialize_heap_flags_and_sizes_one_pass();
 
-  const size_t max_page_sz = os::page_size_for_region_aligned(MaxHeapSize, 8);
   const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
-  const size_t min_page_sz = os::page_size_for_region_aligned(MinHeapSize, min_pages);
-  const size_t page_sz = MIN2(max_page_sz, min_page_sz);
+  const size_t page_sz = os::page_size_for_region_aligned(MinHeapSize, min_pages);
 
   // Can a page size be something else than a power of two?
   assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");
