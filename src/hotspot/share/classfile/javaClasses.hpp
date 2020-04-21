@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,6 +265,7 @@ class java_lang_Class : AllStatic {
   static int _component_mirror_offset;
   static int _name_offset;
   static int _source_file_offset;
+  static int _classData_offset;
 
   static bool offsets_computed;
   static int classRedefinedCount_offset;
@@ -276,7 +277,8 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain, TRAPS);
+  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
+                                       Handle classData, TRAPS);
   static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
  public:
   static void allocate_fixup_lists();
@@ -284,7 +286,7 @@ class java_lang_Class : AllStatic {
 
   // Instance creation
   static void create_mirror(Klass* k, Handle class_loader, Handle module,
-                            Handle protection_domain, TRAPS);
+                            Handle protection_domain, Handle classData, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   static void update_archived_primitive_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
@@ -332,6 +334,8 @@ class java_lang_Class : AllStatic {
   static oop  component_mirror(oop java_class);
   static objArrayOop  signers(oop java_class);
   static void set_signers(oop java_class, objArrayOop signers);
+  static oop  class_data(oop java_class);
+  static void set_class_data(oop java_class, oop classData);
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
@@ -1144,16 +1148,20 @@ class java_lang_invoke_MemberName: AllStatic {
 
   // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
   enum {
-    MN_IS_METHOD            = 0x00010000, // method (not constructor)
-    MN_IS_CONSTRUCTOR       = 0x00020000, // constructor
-    MN_IS_FIELD             = 0x00040000, // field
-    MN_IS_TYPE              = 0x00080000, // nested type
-    MN_CALLER_SENSITIVE     = 0x00100000, // @CallerSensitive annotation detected
-    MN_REFERENCE_KIND_SHIFT = 24, // refKind
-    MN_REFERENCE_KIND_MASK  = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
+    MN_IS_METHOD             = 0x00010000, // method (not constructor)
+    MN_IS_CONSTRUCTOR        = 0x00020000, // constructor
+    MN_IS_FIELD              = 0x00040000, // field
+    MN_IS_TYPE               = 0x00080000, // nested type
+    MN_CALLER_SENSITIVE      = 0x00100000, // @CallerSensitive annotation detected
+    MN_REFERENCE_KIND_SHIFT  = 24, // refKind
+    MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
     // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-    MN_SEARCH_SUPERCLASSES  = 0x00100000, // walk super classes
-    MN_SEARCH_INTERFACES    = 0x00200000  // walk implemented interfaces
+    MN_SEARCH_SUPERCLASSES   = 0x00100000, // walk super classes
+    MN_SEARCH_INTERFACES     = 0x00200000, // walk implemented interfaces
+    MN_NESTMATE_CLASS        = 0x00000001,
+    MN_HIDDEN_CLASS          = 0x00000002,
+    MN_STRONG_LOADER_LINK    = 0x00000004,
+    MN_ACCESS_VM_ANNOTATIONS = 0x00000008
   };
 
   // Accessors for code generation:

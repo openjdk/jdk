@@ -79,16 +79,18 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                                                     end_ptr - ptr,
                                                     cfs->source(),
                                                     ClassFileStream::verify);
+      ClassLoadInfo cl_info(protection_domain);
       ClassFileParser parser(stream,
                              class_name,
                              loader_data,
-                             protection_domain,
-                             NULL,
-                             NULL,
+                             &cl_info,
                              ClassFileParser::BROADCAST, // publicity level
                              CHECK_NULL);
-      InstanceKlass* new_ik = parser.create_instance_klass(true /* changed_by_loadhook */,
+      const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
+      InstanceKlass* new_ik = parser.create_instance_klass(true, // changed_by_loadhook
+                                                           *cl_inst_info,  // dynamic_nest_host and classData
                                                            CHECK_NULL);
+
       if (cached_class_file != NULL) {
         new_ik->set_cached_class_file(cached_class_file);
       }
@@ -165,9 +167,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
 InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
-                                                Handle protection_domain,
-                                                const InstanceKlass* unsafe_anonymous_host,
-                                                GrowableArray<Handle>* cp_patches,
+                                                const ClassLoadInfo& cl_info,
                                                 TRAPS) {
   assert(stream != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
@@ -183,12 +183,15 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   // increment counter
   THREAD->statistical_info().incr_define_class_count();
 
-  // Skip this processing for VM anonymous classes
-  if (unsafe_anonymous_host == NULL) {
+  assert(!(cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() != NULL)),
+         "hidden class has an anonymous host");
+
+  // Skip this processing for VM hidden or anonymous classes
+  if (!cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() == NULL)) {
     stream = check_class_file_load_hook(stream,
                                         name,
                                         loader_data,
-                                        protection_domain,
+                                        cl_info.protection_domain(),
                                         &cached_class_file,
                                         CHECK_NULL);
   }
@@ -196,14 +199,12 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   ClassFileParser parser(stream,
                          name,
                          loader_data,
-                         protection_domain,
-                         unsafe_anonymous_host,
-                         cp_patches,
+                         &cl_info,
                          ClassFileParser::BROADCAST, // publicity level
                          CHECK_NULL);
 
-  InstanceKlass* result = parser.create_instance_klass(old_stream != stream, CHECK_NULL);
-  assert(result == parser.create_instance_klass(old_stream != stream, THREAD), "invariant");
+  const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
+  InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
 
   if (result == NULL) {
     return NULL;

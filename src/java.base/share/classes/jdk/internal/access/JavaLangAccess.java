@@ -26,6 +26,9 @@
 package jdk.internal.access;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -146,6 +149,14 @@ public interface JavaLangAccess {
      * Defines a class with the given name to a class loader.
      */
     Class<?> defineClass(ClassLoader cl, String name, byte[] b, ProtectionDomain pd, String source);
+
+    /**
+     * Defines a class with the given name to a class loader with
+     * the given flags and class data.
+     *
+     * @see java.lang.invoke.MethodHandles.Lookup#defineClass
+     */
+    Class<?> defineClass(ClassLoader cl, Class<?> lookup, String name, byte[] b, ProtectionDomain pd, boolean initialize, int flags, Object classData);
 
     /**
      * Returns a class loaded by the bootstrap class loader.
@@ -311,4 +322,21 @@ public interface JavaLangAccess {
      * @param cause set t's cause to new value
      */
     void setCause(Throwable t, Throwable cause);
+
+    /**
+     * Get protection domain of the given Class
+     */
+    ProtectionDomain protectionDomain(Class<?> c);
+
+    /**
+     * Get a method handle of string concat helper method
+     */
+    MethodHandle stringConcatHelper(String name, MethodType methodType);
+
+    /*
+     * Get the class data associated with the given class.
+     * @param c the class
+     * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
+     */
+    Object classData(Class<?> c);
 }

@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
@@ -40,6 +39,7 @@ import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -1157,10 +1157,24 @@ abstract class MethodHandleImpl {
             return restoreToType(bccInvoker.bindTo(vamh), mh, hostClass);
         }
 
-        private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {
+        private static MethodHandle makeInjectedInvoker(Class<?> targetClass) {
             try {
-                Class<?> invokerClass = UNSAFE.defineAnonymousClass(hostClass, INJECTED_INVOKER_TEMPLATE, null);
-                assert checkInjectedInvoker(hostClass, invokerClass);
+                /*
+                 * The invoker class defined to the same class loader as the lookup class
+                 * but in an unnamed package so that the class bytes can be cached and
+                 * reused for any @CSM.
+                 *
+                 * @CSM must be public and exported if called by any module.
+                 */
+                String name = targetClass.getName() + "$$InjectedInvoker";
+                if (targetClass.isHidden()) {
+                    // use the original class name
+                    name = name.replace('/', '_');
+                }
+                Class<?> invokerClass = new Lookup(targetClass)
+                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE)
+                        .defineClass(true);
+                assert checkInjectedInvoker(targetClass, invokerClass);
                 return IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
             } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
@@ -1255,10 +1269,6 @@ abstract class MethodHandleImpl {
             MethodVisitor mv = cw.visitMethod(ACC_STATIC, "invoke_V",
                           "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
                           null, null);
-
-            // Suppress invoker method in stack traces.
-            AnnotationVisitor av0 = mv.visitAnnotation(InvokerBytecodeGenerator.HIDDEN_SIG, true);
-            av0.visitEnd();
 
             mv.visitCode();
             mv.visitVarInsn(ALOAD, 0);

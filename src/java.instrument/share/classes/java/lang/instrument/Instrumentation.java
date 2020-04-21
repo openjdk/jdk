@@ -387,6 +387,9 @@ public interface Instrumentation {
 
     /**
      * Returns an array of all classes currently loaded by the JVM.
+     * The returned array includes all classes and interfaces, including
+     * {@linkplain Class#isHidden hidden classes or interfaces}, and array classes
+     * of all types.
      *
      * @return an array containing all the classes loaded by the JVM, zero-length if there are none
      */
@@ -395,12 +398,21 @@ public interface Instrumentation {
     getAllLoadedClasses();
 
     /**
-     * Returns an array of all classes for which <code>loader</code> is an initiating loader.
-     * If the supplied loader is <code>null</code>, classes initiated by the bootstrap class
-     * loader are returned.
+     * Returns an array of all classes which {@code loader} can find by name
+     * via {@link ClassLoader#loadClass(String, boolean) ClassLoader::loadClass},
+     * {@link Class#forName(String) Class::forName} and bytecode linkage.
+     * That is, all classes for which {@code loader} has been recorded as
+     * an initiating loader. If the supplied {@code loader} is {@code null},
+     * classes that the bootstrap class loader can find by name are returned.
+     * <p>
+     * The returned array does not include {@linkplain Class#isHidden()
+     * hidden classes or interfaces} or array classes whose
+     * {@linkplain Class#componentType() element type} is a
+     * {@linkplain Class#isHidden() hidden class or interface}.
+     * as they cannot be discovered by any class loader.
      *
      * @param loader          the loader whose initiated class list will be returned
-     * @return an array containing all the classes for which loader is an initiating loader,
+     * @return an array containing all classes which {@code loader} can find by name;
      *          zero-length if there are none
      */
     @SuppressWarnings("rawtypes")

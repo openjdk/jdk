@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
- * @modules java.base/jdk.internal.reflect
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -65,6 +66,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import jdk.internal.org.objectweb.asm.*;
 import jdk.internal.reflect.ConstantPool;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
@@ -156,15 +158,26 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
+    private static Class<?> anonClass() throws Exception {
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, "Anon", null, "java/lang/Object", null);
+        FieldVisitor intField = cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "intField", "I", null, 0);
+        intField.visitEnd();
+        cw.visitEnd();
+        return unsafe.defineAnonymousClass(TypeUniverse.class, cw.toByteArray(), null);
+    }
+
     @Test
-    public void getHostClassTest() {
+    public void getHostClassTest() throws Exception {
+        ResolvedJavaType type = metaAccess.lookupJavaType(anonClass());
+        ResolvedJavaType host = type.getHostClass();
+        assertNotNull(host);
         for (Class<?> c : classes) {
-            ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            ResolvedJavaType host = type.getHostClass();
-            if (!type.equals(predicateType)) {
-                assertNull(host);
-            } else {
-                assertNotNull(host);
+            type = metaAccess.lookupJavaType(c);
+            host = type.getHostClass();
+            assertNull(host);
+            if (type.equals(predicateType)) {
+                assertTrue(c.isHidden());
             }
         }
 
@@ -176,9 +189,10 @@ public class TestResolvedJavaType extends TypeUniverse {
         Supplier<Runnable> lambda = () -> () -> System.out.println("run");
         ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
         ResolvedJavaType nestedLambdaType = metaAccess.lookupJavaType(lambda.get().getClass());
-        assertNotNull(lambdaType.getHostClass());
-        assertNotNull(nestedLambdaType.getHostClass());
-        assertEquals(lambdaType.getHostClass(), nestedLambdaType.getHostClass());
+        assertNull(lambdaType.getHostClass());
+        assertTrue(lambda.getClass().isHidden());
+        assertNull(nestedLambdaType.getHostClass());
+        assertTrue(lambda.get().getClass().isHidden());
     }
 
     @Test
@@ -766,8 +780,8 @@ public class TestResolvedJavaType extends TypeUniverse {
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(ConstantPool.class)) && f.getName().equals("constantPoolOop")) {
             return true;
         }
-        if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Class.class)) && f.getName().equals("classLoader")) {
-            return true;
+        if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Class.class))) {
+            return f.getName().equals("classLoader") || f.getName().equals("classData");
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Lookup.class))) {
             return f.getName().equals("allowedModes") || f.getName().equals("lookupClass");

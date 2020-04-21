@@ -66,9 +66,6 @@ public class LambdaTest6<T> {
     private static Set<String> allowedMethods() {
         Set<String> s = new HashSet<>();
         s.add("m");
-        if (Boolean.getBoolean("jdk.internal.lambda.disableEagerInitialization")) {
-            s.add("get$Lambda");
-        }
         return s;
     }
 

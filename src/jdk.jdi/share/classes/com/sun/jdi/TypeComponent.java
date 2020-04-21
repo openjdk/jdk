@@ -58,7 +58,8 @@ public interface TypeComponent extends Mirror, Accessible {
     String name();
 
     /**
-     * Gets the JNI-style signature for this type component. The
+     * Gets the <a href="{@docRoot}/../specs/jni/types.html#type-signatures">
+     * type signature</a> for this type component. The
      * signature is encoded type information as defined
      * in the JNI documentation. It is a convenient, compact format for
      * for manipulating type information internally, not necessarily
@@ -66,7 +67,6 @@ public interface TypeComponent extends Mirror, Accessible {
      * {@link Method#returnTypeName} for ways to help get a more readable
      * representation of the type.
      *
-     * @see <a href="doc-files/signature.html">Type Signatures</a>
      * @return a string containing the signature
      */
     String signature();

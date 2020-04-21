@@ -35,6 +35,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -2175,6 +2177,10 @@ public final class System {
             public Class<?> defineClass(ClassLoader loader, String name, byte[] b, ProtectionDomain pd, String source) {
                 return ClassLoader.defineClass1(loader, name, b, 0, b.length, pd, source);
             }
+            public Class<?> defineClass(ClassLoader loader, Class<?> lookup, String name, byte[] b, ProtectionDomain pd,
+                                        boolean initialize, int flags, Object classData) {
+                return ClassLoader.defineClass0(loader, lookup, name, b, 0, b.length, pd, initialize, flags, classData);
+            }
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);
             }
@@ -2256,6 +2262,18 @@ public final class System {
 
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
+            }
+
+            public ProtectionDomain protectionDomain(Class<?> c) {
+                return c.protectionDomain();
+            }
+
+            public MethodHandle stringConcatHelper(String name, MethodType methodType) {
+                return StringConcatHelper.lookupStatic(name, methodType);
+            }
+
+            public Object classData(Class<?> c) {
+                return c.getClassData();
             }
         });
     }

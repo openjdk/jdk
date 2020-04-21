@@ -48,11 +48,16 @@ VerificationType VerificationType::from_tag(u1 tag) {
 bool VerificationType::resolve_and_check_assignability(InstanceKlass* klass, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object, TRAPS) {
   HandleMark hm(THREAD);
-  Klass* this_class = SystemDictionary::resolve_or_fail(
+  Klass* this_class;
+  if (klass->is_hidden() && klass->name() == name) {
+    this_class = klass;
+  } else {
+    this_class = SystemDictionary::resolve_or_fail(
       name, Handle(THREAD, klass->class_loader()),
       Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-  if (log_is_enabled(Debug, class, resolve)) {
-    Verifier::trace_class_resolution(this_class, klass);
+    if (log_is_enabled(Debug, class, resolve)) {
+      Verifier::trace_class_resolution(this_class, klass);
+    }
   }
 
   if (this_class->is_interface() && (!from_field_is_protected ||
@@ -65,11 +70,16 @@ bool VerificationType::resolve_and_check_assignability(InstanceKlass* klass, Sym
       this_class == SystemDictionary::Cloneable_klass() ||
       this_class == SystemDictionary::Serializable_klass();
   } else if (from_is_object) {
-    Klass* from_class = SystemDictionary::resolve_or_fail(
+    Klass* from_class;
+    if (klass->is_hidden() && klass->name() == from_name) {
+      from_class = klass;
+    } else {
+      from_class = SystemDictionary::resolve_or_fail(
         from_name, Handle(THREAD, klass->class_loader()),
         Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-    if (log_is_enabled(Debug, class, resolve)) {
-      Verifier::trace_class_resolution(from_class, klass);
+      if (log_is_enabled(Debug, class, resolve)) {
+        Verifier::trace_class_resolution(from_class, klass);
+      }
     }
     return from_class->is_subclass_of(this_class);
   }

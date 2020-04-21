@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng ClassLoaderStatsTest
+ * @run testng/othervm --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
  */
 
 import org.testng.annotations.Test;
@@ -39,27 +39,34 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.misc.Unsafe;
+
 public class ClassLoaderStatsTest {
 
+  // Expected output from VM.classloader_stats:
     // ClassLoader         Parent              CLD*               Classes   ChunkSz   BlockSz  Type
-    // 0x00000007c0215928  0x0000000000000000  0x0000000000000000       0         0         0  org.eclipse.osgi.baseadaptor.BaseAdaptor$1
-    // 0x00000007c0009868  0x0000000000000000  0x00007fc52aebcc80       1      6144      3768  sun.reflect.DelegatingClassLoader
-    // 0x00000007c0009868  0x0000000000000000  0x00007fc52b8916d0       1      6144      3688  sun.reflect.DelegatingClassLoader
-    // 0x00000007c0009868  0x00000007c0038ba8  0x00007fc52afb8760       1      6144      3688  sun.reflect.DelegatingClassLoader
-    // 0x00000007c0009868  0x0000000000000000  0x00007fc52afbb1a0       1      6144      3688  sun.reflect.DelegatingClassLoader
-    // 0x0000000000000000  0x0000000000000000  0x00007fc523416070    5019  30060544  29956216  <boot classloader>
-    //                                                                455   1210368    672848   + unsafe anonymous classes
-    // 0x00000007c016b5c8  0x00000007c0038ba8  0x00007fc52a995000       5      8192      5864  org.netbeans.StandardModule$OneModuleClassLoader
-    // 0x00000007c0009868  0x00000007c016b5c8  0x00007fc52ac13640       1      6144      3896  sun.reflect.DelegatingClassLoader
+    // 0x0000000800bd3830  0x000000080037f468  0x00007f001c2ea170       1     10240      4672  ClassLoaderStatsTest$DummyClassLoader
+    //                                                                  1      2048      1080   + unsafe anonymous classes
+    //                                                                  1      2048      1088   + hidden classes
+    // 0x0000000000000000  0x0000000000000000  0x00007f00e852d190    1607   4628480   3931216  <boot class loader>
+    //                                                                 38    124928     85856   + hidden classes
+    // 0x00000008003b5508  0x0000000000000000  0x00007f001c2d4760       1      6144      4040  jdk.internal.reflect.DelegatingClassLoader
+    // 0x000000080037f468  0x000000080037ee80  0x00007f00e868e3f0     228   1368064   1286672  jdk.internal.loader.ClassLoaders$AppClassLoader
     // ...
 
     static Pattern clLine = Pattern.compile("0x\\p{XDigit}*\\s*0x\\p{XDigit}*\\s*0x\\p{XDigit}*\\s*(\\d*)\\s*(\\d*)\\s*(\\d*)\\s*(.*)");
@@ -69,7 +76,7 @@ public class ClassLoaderStatsTest {
 
     public void run(CommandExecutor executor) throws ClassNotFoundException {
 
-        // create a classloader and load our special class
+        // create a classloader and load our special classes
         dummyloader = new DummyClassLoader();
         Class<?> c = Class.forName("TestClass", true, dummyloader);
         if (c.getClassLoader() != dummyloader) {
@@ -82,9 +89,9 @@ public class ClassLoaderStatsTest {
             String line = lines.next();
             Matcher m = clLine.matcher(line);
             if (m.matches()) {
-                // verify that DummyClassLoader has loaded 1 class and 1 anonymous class
+                // verify that DummyClassLoader has loaded 1 class, 1 anonymous class, and 1 hidden class
                 if (m.group(4).equals("ClassLoaderStatsTest$DummyClassLoader")) {
-                    System.out.println("line: " + line);
+                    System.out.println("DummyClassLoader line: " + line);
                     if (!m.group(1).equals("1")) {
                         Assert.fail("Should have loaded 1 class: " + line);
                     }
@@ -92,7 +99,10 @@ public class ClassLoaderStatsTest {
                     checkPositiveInt(m.group(3));
 
                     String next = lines.next();
-                    System.out.println("next: " + next);
+                    System.out.println("DummyClassLoader next: " + next);
+                    if (!next.contains("unsafe anonymous classes")) {
+                        Assert.fail("Should have an anonymous class");
+                    }
                     Matcher m1 = anonLine.matcher(next);
                     m1.matches();
                     if (!m1.group(1).equals("1")) {
@@ -100,6 +110,19 @@ public class ClassLoaderStatsTest {
                     }
                     checkPositiveInt(m1.group(2));
                     checkPositiveInt(m1.group(3));
+
+                    next = lines.next();
+                    System.out.println("DummyClassLoader next: " + next);
+                    if (!next.contains("hidden classes")) {
+                        Assert.fail("Should have a hidden class");
+                    }
+                    Matcher m2 = anonLine.matcher(next);
+                    m2.matches();
+                    if (!m2.group(1).equals("1")) {
+                        Assert.fail("Should have loaded 1 hidden class, but found : " + m2.group(1));
+                    }
+                    checkPositiveInt(m2.group(2));
+                    checkPositiveInt(m2.group(3));
                 }
             }
         }
@@ -117,8 +140,7 @@ public class ClassLoaderStatsTest {
 
         static ByteBuffer readClassFile(String name)
         {
-            File f = new File(System.getProperty("test.classes", "."),
-                              name);
+            File f = new File(System.getProperty("test.classes", "."), name);
             try (FileInputStream fin = new FileInputStream(f);
                  FileChannel fc = fin.getChannel())
             {
@@ -163,10 +185,41 @@ public class ClassLoaderStatsTest {
     }
 }
 
+class HiddenClass { }
+
 class TestClass {
+    private static final String HCName = "HiddenClass.class";
+    private static final String DIR = System.getProperty("test.classes");
+    static Unsafe unsafe = Unsafe.getUnsafe();
+
     static {
-        // force creation of anonymous class (for the lambdaform)
-        Runnable r = () -> System.out.println("Hello");
-        r.run();
+        try {
+            // Create a hidden non-strong class and an anonymous class.
+            byte[] klassBuf = readClassFile(DIR + File.separator + HCName);
+            Class<?> hc = defineHiddenClass(klassBuf);
+            Class ac = unsafe.defineAnonymousClass(TestClass.class, klassBuf, new Object[0]);
+        } catch (Throwable e) {
+            throw new RuntimeException("Unexpected exception in TestClass: " + e.getMessage());
+        }
+    }
+
+
+    static byte[] readClassFile(String classFileName) throws Exception {
+        File classFile = new File(classFileName);
+        try (FileInputStream in = new FileInputStream(classFile);
+             ByteArrayOutputStream out = new ByteArrayOutputStream())
+        {
+            int b;
+            while ((b = in.read()) != -1) {
+                out.write(b);
+            }
+            return out.toByteArray();
+        }
+    }
+
+    static Class<?> defineHiddenClass(byte[] bytes) throws Exception {
+        Lookup lookup = MethodHandles.lookup();
+        Class<?> hc = lookup.defineHiddenClass(bytes, false, NESTMATE).lookupClass();
+        return hc;
     }
 }

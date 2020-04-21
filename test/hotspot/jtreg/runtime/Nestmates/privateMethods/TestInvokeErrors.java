@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,12 @@ public class TestInvokeErrors {
                 m.priv_invoke();
                 throw new Error("Unexpected success invoking MissingNestHost.priv_invoke");
             }
-            catch (NoClassDefFoundError ncdfe) {
-                System.out.println("Got expected exception:" + ncdfe);
+            catch (IllegalAccessError iae) {
+                if (iae.getMessage().contains("java.lang.NoClassDefFoundError: NoSuchClass")) {
+                    System.out.println("Got expected exception:" + iae);
+                } else {
+                    throw new Error("Unexpected exception", iae);
+                }
             }
         }
     }
@@ -105,11 +109,11 @@ public class TestInvokeErrors {
         try {
             Helper.doTest();
         }
-        catch (NoClassDefFoundError ncdfe) {
+        catch (IllegalAccessError iae) {
             if (verifying)
-                System.out.println("Got expected exception:" + ncdfe);
+                System.out.println("Got expected exception:" + iae);
             else
-                throw new Error("Unexpected error loading Helper class with verification disabled");
+                throw new Error("Unexpected error loading Helper class with verification disabled", iae);
         }
     }
 }

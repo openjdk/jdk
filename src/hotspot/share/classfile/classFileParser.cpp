@@ -1092,7 +1092,7 @@ public:
     assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
   }
   // If this annotation name has an ID, report it (or _none).
-  ID annotation_index(const ClassLoaderData* loader_data, const Symbol* name);
+  ID annotation_index(const ClassLoaderData* loader_data, const Symbol* name, bool can_access_vm_annotations);
   // Set the annotation name:
   void set_annotation(ID id) {
     assert((int)id >= 0 && (int)id < (int)_annotation_LIMIT, "oob");
@@ -1225,6 +1225,7 @@ static void parse_annotations(const ConstantPool* const cp,
                               const u1* buffer, int limit,
                               AnnotationCollector* coll,
                               ClassLoaderData* loader_data,
+                              const bool can_access_vm_annotations,
                               TRAPS) {
 
   assert(cp != NULL, "invariant");
@@ -1270,7 +1271,7 @@ static void parse_annotations(const ConstantPool* const cp,
     }
 
     // Here is where parsing particular annotations will take place.
-    AnnotationCollector::ID id = coll->annotation_index(loader_data, aname);
+    AnnotationCollector::ID id = coll->annotation_index(loader_data, aname, can_access_vm_annotations);
     if (AnnotationCollector::_unknown == id)  continue;
     coll->set_annotation(id);
 
@@ -1396,6 +1397,7 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
                           runtime_visible_annotations_length,
                           parsed_annotations,
                           _loader_data,
+                          _can_access_vm_annotations,
                           CHECK);
         cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
@@ -2059,12 +2061,13 @@ void ClassFileParser::throwIllegalSignature(const char* type,
 
 AnnotationCollector::ID
 AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
-                                      const Symbol* name) {
+                                      const Symbol* name,
+                                      const bool can_access_vm_annotations) {
   const vmSymbols::SID sid = vmSymbols::find_sid(name);
   // Privileged code can use all annotations.  Other code silently drops some.
-  const bool privileged = loader_data->is_the_null_class_loader_data() ||
+  const bool privileged = loader_data->is_boot_class_loader_data() ||
                           loader_data->is_platform_class_loader_data() ||
-                          loader_data->is_unsafe_anonymous();
+                          can_access_vm_annotations;
   switch (sid) {
     case vmSymbols::VM_SYMBOL_ENUM_NAME(reflect_CallerSensitive_signature): {
       if (_location != _in_method)  break;  // only allow for methods
@@ -2671,6 +2674,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                           runtime_visible_annotations_length,
                           &parsed_annotations,
                           _loader_data,
+                          _can_access_vm_annotations,
                           CHECK_NULL);
         cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
@@ -2864,6 +2868,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (parsed_annotations.has_any_annotations())
     parsed_annotations.apply_to(methodHandle(THREAD, m));
+
+  if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
+    m->set_hidden(true);
+  }
 
   // Copy annotations
   copy_method_annotations(m->constMethod(),
@@ -3596,6 +3604,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                           runtime_visible_annotations_length,
                           parsed_annotations,
                           _loader_data,
+                          _can_access_vm_annotations,
                           CHECK);
         cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (tag == vmSymbols::tag_runtime_invisible_annotations()) {
@@ -5592,7 +5601,9 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
   }
 }
 
-InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, TRAPS) {
+InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook,
+                                                      const ClassInstanceInfo& cl_inst_info,
+                                                      TRAPS) {
   if (_klass != NULL) {
     return _klass;
   }
@@ -5600,7 +5611,11 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, 
   InstanceKlass* const ik =
     InstanceKlass::allocate_instance_klass(*this, CHECK_NULL);
 
-  fill_instance_klass(ik, changed_by_loadhook, CHECK_NULL);
+  if (is_hidden()) {
+    mangle_hidden_class_name(ik);
+  }
+
+  fill_instance_klass(ik, changed_by_loadhook, cl_inst_info, CHECK_NULL);
 
   assert(_klass == ik, "invariant");
 
@@ -5626,7 +5641,10 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, 
   return ik;
 }
 
-void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loadhook, TRAPS) {
+void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
+                                          bool changed_by_loadhook,
+                                          const ClassInstanceInfo& cl_inst_info,
+                                          TRAPS) {
   assert(ik != NULL, "invariant");
 
   // Set name and CLD before adding to CLD
@@ -5662,6 +5680,11 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // the parser onto the InstanceKlass*
   apply_parsed_class_metadata(ik, _java_fields_count, CHECK);
 
+  // can only set dynamic nest-host after static nest information is set
+  if (cl_inst_info.dynamic_nest_host() != NULL) {
+    ik->set_nest_host(cl_inst_info.dynamic_nest_host(), THREAD);
+  }
+
   // note that is not safe to use the fields in the parser from this point on
   assert(NULL == _cp, "invariant");
   assert(NULL == _fields, "invariant");
@@ -5686,11 +5709,11 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
 
   ik->set_this_class_index(_this_class_index);
 
-  if (is_unsafe_anonymous()) {
+  if (_is_hidden || is_unsafe_anonymous()) {
     // _this_class_index is a CONSTANT_Class entry that refers to this
-    // anonymous class itself. If this class needs to refer to its own methods or
-    // fields, it would use a CONSTANT_MethodRef, etc, which would reference
-    // _this_class_index. However, because this class is anonymous (it's
+    // hidden or anonymous class itself. If this class needs to refer to its own
+    // methods or fields, it would use a CONSTANT_MethodRef, etc, which would reference
+    // _this_class_index. However, because this class is hidden or anonymous (it's
     // not stored in SystemDictionary), _this_class_index cannot be resolved
     // with ConstantPool::klass_at_impl, which does a SystemDictionary lookup.
     // Therefore, we must eagerly resolve _this_class_index now.
@@ -5705,6 +5728,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   if (_unsafe_anonymous_host != NULL) {
     assert (ik->is_unsafe_anonymous(), "should be the same");
     ik->set_unsafe_anonymous_host(_unsafe_anonymous_host);
+  }
+  if (_is_hidden) {
+    ik->set_is_hidden();
   }
 
   // Set PackageEntry for this_klass
@@ -5785,6 +5811,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
                                  Handle(THREAD, _loader_data->class_loader()),
                                  module_handle,
                                  _protection_domain,
+                                 cl_inst_info.class_data(),
                                  CHECK);
 
   assert(_all_mirandas != NULL, "invariant");
@@ -5869,7 +5896,6 @@ void ClassFileParser::update_class_name(Symbol* new_class_name) {
   _class_name->increment_refcount();
 }
 
-
 // For an unsafe anonymous class that is in the unnamed package, move it to its host class's
 // package by prepending its host class's package name to its class name and setting
 // its _class_name field.
@@ -5922,8 +5948,8 @@ void ClassFileParser::fix_unsafe_anonymous_class_name(TRAPS) {
 }
 
 static bool relax_format_check_for(ClassLoaderData* loader_data) {
-  bool trusted = (loader_data->is_the_null_class_loader_data() ||
-                  SystemDictionary::is_platform_class_loader(loader_data->class_loader()));
+  bool trusted = loader_data->is_boot_class_loader_data() ||
+                 loader_data->is_platform_class_loader_data();
   bool need_verify =
     // verifyAll
     (BytecodeVerificationLocal && BytecodeVerificationRemote) ||
@@ -5935,17 +5961,16 @@ static bool relax_format_check_for(ClassLoaderData* loader_data) {
 ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  Symbol* name,
                                  ClassLoaderData* loader_data,
-                                 Handle protection_domain,
-                                 const InstanceKlass* unsafe_anonymous_host,
-                                 GrowableArray<Handle>* cp_patches,
+                                 const ClassLoadInfo* cl_info,
                                  Publicity pub_level,
                                  TRAPS) :
   _stream(stream),
-  _requested_name(name),
   _class_name(NULL),
   _loader_data(loader_data),
-  _unsafe_anonymous_host(unsafe_anonymous_host),
-  _cp_patches(cp_patches),
+  _unsafe_anonymous_host(cl_info->unsafe_anonymous_host()),
+  _cp_patches(cl_info->cp_patches()),
+  _is_hidden(cl_info->is_hidden()),
+  _can_access_vm_annotations(cl_info->can_access_vm_annotations()),
   _num_patched_klasses(0),
   _max_num_patched_klasses(0),
   _orig_cp_size(0),
@@ -5976,7 +6001,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _itable_size(0),
   _num_miranda_methods(0),
   _rt(REF_NONE),
-  _protection_domain(protection_domain),
+  _protection_domain(cl_info->protection_domain()),
   _access_flags(),
   _pub_level(pub_level),
   _bad_constant_seen(0),
@@ -6179,10 +6204,15 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     cp_size, CHECK);
 
   _orig_cp_size = cp_size;
-  if (int(cp_size) + _max_num_patched_klasses > 0xffff) {
-    THROW_MSG(vmSymbols::java_lang_InternalError(), "not enough space for patched classes");
+  if (is_hidden()) { // Add a slot for hidden class name.
+    assert(_max_num_patched_klasses == 0, "Sanity check");
+    cp_size++;
+  } else {
+    if (int(cp_size) + _max_num_patched_klasses > 0xffff) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "not enough space for patched classes");
+    }
+    cp_size += _max_num_patched_klasses;
   }
-  cp_size += _max_num_patched_klasses;
 
   _cp = ConstantPool::allocate(_loader_data,
                                cp_size,
@@ -6233,36 +6263,67 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   Symbol* const class_name_in_cp = cp->klass_name_at(_this_class_index);
   assert(class_name_in_cp != NULL, "class_name can't be null");
 
-  // Update _class_name to reflect the name in the constant pool
-  update_class_name(class_name_in_cp);
-
   // Don't need to check whether this class name is legal or not.
   // It has been checked when constant pool is parsed.
   // However, make sure it is not an array type.
   if (_need_verify) {
-    guarantee_property(_class_name->char_at(0) != JVM_SIGNATURE_ARRAY,
+    guarantee_property(class_name_in_cp->char_at(0) != JVM_SIGNATURE_ARRAY,
                        "Bad class name in class file %s",
                        CHECK);
   }
 
-  // Checks if name in class file matches requested name
-  if (_requested_name != NULL && _requested_name != _class_name) {
-    ResourceMark rm(THREAD);
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_NoClassDefFoundError(),
-      "%s (wrong name: %s)",
-      _class_name->as_C_string(),
-      _requested_name != NULL ? _requested_name->as_C_string() : "NoName"
-    );
-    return;
-  }
+#ifdef ASSERT
+  // Basic sanity checks
+  assert(!(_is_hidden && (_unsafe_anonymous_host != NULL)), "mutually exclusive variants");
 
-  // if this is an anonymous class fix up its name if it's in the unnamed
+  if (_unsafe_anonymous_host != NULL) {
+    assert(_class_name == vmSymbols::unknown_class_name(), "A named anonymous class???");
+  }
+  if (_is_hidden) {
+    assert(_class_name != vmSymbols::unknown_class_name(), "hidden classes should have a special name");
+  }
+#endif
+
+  // Update the _class_name as needed depending on whether this is a named,
+  // un-named, hidden or unsafe-anonymous class.
+
+  if (_is_hidden) {
+    assert(_class_name != NULL, "Unexpected null _class_name");
+#ifdef ASSERT
+    if (_need_verify) {
+      verify_legal_class_name(_class_name, CHECK);
+    }
+#endif
+
+  // NOTE: !_is_hidden does not imply "findable" as it could be an old-style
+  //       "hidden" unsafe-anonymous class
+
+  // If this is an anonymous class fix up its name if it is in the unnamed
   // package.  Otherwise, throw IAE if it is in a different package than
   // its host class.
-  if (_unsafe_anonymous_host != NULL) {
+  } else if (_unsafe_anonymous_host != NULL) {
+    update_class_name(class_name_in_cp);
     fix_unsafe_anonymous_class_name(CHECK);
+
+  } else {
+    // Check if name in class file matches given name
+    if (_class_name != class_name_in_cp) {
+      if (_class_name != vmSymbols::unknown_class_name()) {
+        ResourceMark rm(THREAD);
+        Exceptions::fthrow(THREAD_AND_LOCATION,
+                           vmSymbols::java_lang_NoClassDefFoundError(),
+                           "%s (wrong name: %s)",
+                           class_name_in_cp->as_C_string(),
+                           _class_name->as_C_string()
+                           );
+        return;
+      } else {
+        // The class name was not known by the caller so we set it from
+        // the value in the CP.
+        update_class_name(class_name_in_cp);
+      }
+      // else nothing to do: the expected class name matches what is in the CP
+    }
   }
 
   // Verification prevents us from creating names with dots in them, this
@@ -6287,9 +6348,10 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
         warning("DumpLoadedClassList and CDS are not supported in exploded build");
         DumpLoadedClassList = NULL;
       } else if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
+                 !_is_hidden &&
                  _unsafe_anonymous_host == NULL) {
         // Only dump the classes that can be stored into CDS archive.
-        // Unsafe anonymous classes such as generated LambdaForm classes are also not included.
+        // Hidden and unsafe anonymous classes such as generated LambdaForm classes are also not included.
         oop class_loader = _loader_data->class_loader();
         ResourceMark rm(THREAD);
         bool skip = false;
@@ -6382,6 +6444,35 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
                      CHECK);
 
   // all bytes in stream read and parsed
+}
+
+void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
+  ResourceMark rm;
+  // Construct hidden name from _class_name, "+", and &ik. Note that we can't
+  // use a '/' because that confuses finding the class's package.  Also, can't
+  // use an illegal char such as ';' because that causes serialization issues
+  // and issues with hidden classes that create their own hidden classes.
+  char addr_buf[20];
+  jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
+  size_t new_name_len = _class_name->utf8_length() + 2 + strlen(addr_buf);
+  char* new_name = NEW_RESOURCE_ARRAY(char, new_name_len);
+  jio_snprintf(new_name, new_name_len, "%s+%s",
+               _class_name->as_C_string(), addr_buf);
+  update_class_name(SymbolTable::new_symbol(new_name));
+
+  // Add a Utf8 entry containing the hidden name.
+  assert(_class_name != NULL, "Unexpected null _class_name");
+  int hidden_index = _orig_cp_size; // this is an extra slot we added
+  _cp->symbol_at_put(hidden_index, _class_name);
+
+  // Update this_class_index's slot in the constant pool with the new Utf8 entry.
+  // We have to update the resolved_klass_index and the name_index together
+  // so extract the existing resolved_klass_index first.
+  CPKlassSlot cp_klass_slot = _cp->klass_slot_at(_this_class_index);
+  int resolved_klass_index = cp_klass_slot.resolved_klass_index();
+  _cp->unresolved_klass_at_put(_this_class_index, hidden_index, resolved_klass_index);
+  assert(_cp->klass_slot_at(_this_class_index).name_index() == _orig_cp_size,
+         "Bad name_index");
 }
 
 void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const stream,

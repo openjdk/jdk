@@ -36,7 +36,6 @@ import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
@@ -127,6 +126,9 @@ public class LambdaToMethod extends TreeTranslator {
     /** deduplicate lambda implementation methods */
     private final boolean deduplicateLambdas;
 
+    /** lambda proxy is a dynamic nestmate */
+    private final boolean nestmateLambdas;
+
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
     public static final int FLAG_SERIALIZABLE = 1 << 0;
 
@@ -168,6 +170,7 @@ public class LambdaToMethod extends TreeTranslator {
                 || options.isSet(Option.G_CUSTOM, "vars");
         verboseDeduplication = options.isSet("debug.dumpLambdaToMethodDeduplication");
         deduplicateLambdas = options.getBoolean("deduplicateLambdas", true);
+        nestmateLambdas = Target.instance(context).runtimeUseNestAccess();
     }
     // </editor-fold>
 
@@ -2254,10 +2257,13 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             /**
-             * The VM does not support access across nested classes (8010319).
-             * Were that ever to change, this should be removed.
+             * This method should be called only when target release <= 14
+             * where LambdaMetaFactory does not spin nestmate classes.
+             *
+             * This method should be removed when --release 14 is not supported.
              */
             boolean isPrivateInOtherClass() {
+                assert !nestmateLambdas;
                 return  (tree.sym.flags() & PRIVATE) != 0 &&
                         !types.isSameType(
                               types.erasure(tree.sym.enclClass().asType()),
@@ -2304,7 +2310,7 @@ public class LambdaToMethod extends TreeTranslator {
                         isSuper ||
                         needsVarArgsConversion() ||
                         isArrayOp() ||
-                        isPrivateInOtherClass() ||
+                        (!nestmateLambdas && isPrivateInOtherClass()) ||
                         isProtectedInSuperClassOfEnclosingClassInOtherPackage() ||
                         !receiverAccessible() ||
                         (tree.getMode() == ReferenceMode.NEW &&

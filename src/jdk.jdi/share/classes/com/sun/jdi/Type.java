@@ -138,20 +138,23 @@ package com.sun.jdi;
 public interface Type extends Mirror {
 
     /**
-     * Returns the JNI-style signature for this type.
-     * <p>
-     * For primitive classes
-     * the returned signature is the signature of the corresponding primitive
-     * type; for example, "I" is returned as the signature of the class
-     * represented by {@link java.lang.Integer#TYPE}.
+     * Returns the type signature for this type.  The result is of the same
+     * form as the string returned by {@link Class#descriptorString()}.
+     * The returned string is a type descriptor conforming to JVMS {@jvms 4.3.2}
+     * if this type can be described nominally.  Otherwise, the returned string
+     * is not a type descriptor.
      *
-     * @see <a href="doc-files/signature.html">Type Signatures</a>
-     * @return the string containing the type signature.
+     * @return the type signature
      */
     String signature();
 
     /**
-     * @return a text representation of this type.
+     * Returns the name of this type. The result is of the same form as
+     * the name returned by {@link Class#getName()}.
+     * The returned name may not be a
+     * <a href="${docRoot}/java.base/java/lang/ClassLoader.html#binary-name">binary name</a>.
+     *
+     * @return the name of this type
      */
     String name();
 }

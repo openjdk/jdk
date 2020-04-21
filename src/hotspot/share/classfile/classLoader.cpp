@@ -1257,13 +1257,12 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
+  ClassLoadInfo cl_info(protection_domain);
 
   InstanceKlass* result = KlassFactory::create_from_stream(stream,
                                                            name,
                                                            loader_data,
-                                                           protection_domain,
-                                                           NULL, // unsafe_anonymous_host
-                                                           NULL, // cp_patches
+                                                           cl_info,
                                                            THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (DumpSharedSpaces) {
@@ -1302,8 +1301,8 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
   Arguments::assert_is_dumping_archive();
   assert(stream != NULL, "sanity");
 
-  if (ik->is_unsafe_anonymous()) {
-    // We do not archive unsafe anonymous classes.
+  if (ik->is_hidden() || ik->is_unsafe_anonymous()) {
+    // We do not archive hidden or unsafe anonymous classes.
     return;
   }
 

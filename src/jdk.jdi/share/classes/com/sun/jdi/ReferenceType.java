@@ -84,15 +84,12 @@ public interface ReferenceType
     extends Type, Comparable<ReferenceType>, Accessible
 {
     /**
-     * Gets the fully qualified name of this type. The returned name
-     * is formatted as it might appear in a Java programming langauge
-     * declaration for objects of this type.
-     * <p>
-     * For primitive classes
-     * the returned name is the name of the corresponding primitive
-     * type; for example, "int" is returned as the name of the class
-     * represented by {@link java.lang.Integer#TYPE Integer.TYPE}.
+     * Returns the name of this {@code ReferenceType} object.
+     * The returned name is of the same form as the name returned by
+     * {@link Class#getName()}.
+     *
      * @return a string containing the type name.
+     * @see Class#getName()
      */
     String name();
 

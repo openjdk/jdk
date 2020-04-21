@@ -68,12 +68,14 @@ import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 
 /**
  * A pool of reusable JavacTasks. When a task is no valid anymore, it is returned to the pool,
@@ -252,6 +254,7 @@ public class JavacTaskPool {
             drop(JavacTask.class);
             drop(JavacTrees.class);
             drop(JavacElements.class);
+            drop(PlatformDescription.class);
 
             if (ht.get(Log.logKey) instanceof ReusableLog) {
                 //log already inited - not first round
@@ -266,6 +269,7 @@ public class JavacTaskPool {
                 Annotate.instance(this).newRound();
                 CompileStates.instance(this).clear();
                 MultiTaskListener.instance(this).clear();
+                Options.instance(this).clear();
 
                 //find if any of the roots have redefined java.* classes
                 Symtab syms = Symtab.instance(this);

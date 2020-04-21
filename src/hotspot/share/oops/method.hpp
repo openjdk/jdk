@@ -892,9 +892,10 @@ public:
     _flags = x ? (_flags | _dont_inline) : (_flags & ~_dont_inline);
   }
 
-  bool is_hidden() {
+  bool is_hidden() const {
     return (_flags & _hidden) != 0;
   }
+
   void set_hidden(bool x) {
     _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
   }

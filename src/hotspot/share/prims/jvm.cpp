@@ -989,6 +989,154 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
 }
 
+enum {
+  NESTMATE              = java_lang_invoke_MemberName::MN_NESTMATE_CLASS,
+  HIDDEN_CLASS          = java_lang_invoke_MemberName::MN_HIDDEN_CLASS,
+  STRONG_LOADER_LINK    = java_lang_invoke_MemberName::MN_STRONG_LOADER_LINK,
+  ACCESS_VM_ANNOTATIONS = java_lang_invoke_MemberName::MN_ACCESS_VM_ANNOTATIONS
+};
+
+/*
+ * Define a class with the specified flags that indicates if it's a nestmate,
+ * hidden, or strongly referenced from class loader.
+ */
+static jclass jvm_lookup_define_class(JNIEnv *env, jclass lookup, const char *name,
+                                      const jbyte *buf, jsize len, jobject pd,
+                                      jboolean init, int flags, jobject classData, TRAPS) {
+  assert(THREAD->is_Java_thread(), "must be a JavaThread");
+  JavaThread* jt = (JavaThread*) THREAD;
+  ResourceMark rm(THREAD);
+
+  Klass* lookup_k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(lookup));
+  // Lookup class must be a non-null instance
+  if (lookup_k == NULL) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class is null");
+  }
+  assert(lookup_k->is_instance_klass(), "Lookup class must be an instance klass");
+
+  Handle class_loader (THREAD, lookup_k->class_loader());
+
+  bool is_nestmate = (flags & NESTMATE) == NESTMATE;
+  bool is_hidden = (flags & HIDDEN_CLASS) == HIDDEN_CLASS;
+  bool is_strong = (flags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK;
+  bool vm_annotations = (flags & ACCESS_VM_ANNOTATIONS) == ACCESS_VM_ANNOTATIONS;
+
+  InstanceKlass* host_class = NULL;
+  if (is_nestmate) {
+    host_class = InstanceKlass::cast(lookup_k)->nest_host(CHECK_NULL);
+  }
+
+  log_info(class, nestmates)("LookupDefineClass: %s - %s%s, %s, %s, %s",
+                             name,
+                             is_nestmate ? "with dynamic nest-host " : "non-nestmate",
+                             is_nestmate ? host_class->external_name() : "",
+                             is_hidden ? "hidden" : "not hidden",
+                             is_strong ? "strong" : "weak",
+                             vm_annotations ? "with vm annotations" : "without vm annotation");
+
+  if (!is_hidden) {
+    // classData is only applicable for hidden classes
+    if (classData != NULL) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "classData is only applicable for hidden classes");
+    }
+    if (is_nestmate) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "dynamic nestmate is only applicable for hidden classes");
+    }
+    if (!is_strong) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "an ordinary class must be strongly referenced by its defining loader");
+    }
+    if (vm_annotations) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "vm annotations only allowed for hidden classes");
+    }
+    if (flags != STRONG_LOADER_LINK) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+                  err_msg("invalid flag 0x%x", flags));
+    }
+  }
+
+
+  // Since exceptions can be thrown, class initialization can take place
+  // if name is NULL no check for class name in .class stream has to be made.
+  TempNewSymbol class_name = NULL;
+  if (name != NULL) {
+    const int str_len = (int)strlen(name);
+    if (str_len > Symbol::max_length()) {
+      // It's impossible to create this class;  the name cannot fit
+      // into the constant pool.
+      Exceptions::fthrow(THREAD_AND_LOCATION,
+                         vmSymbols::java_lang_NoClassDefFoundError(),
+                         "Class name exceeds maximum length of %d: %s",
+                         Symbol::max_length(),
+                         name);
+      return 0;
+    }
+    class_name = SymbolTable::new_symbol(name, str_len);
+  }
+
+  Handle protection_domain (THREAD, JNIHandles::resolve(pd));
+  const char* source = is_nestmate ? host_class->external_name() : "__JVM_LookupDefineClass__";
+  ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
+
+  Klass* defined_k;
+  InstanceKlass* ik = NULL;
+  if (!is_hidden) {
+    defined_k = SystemDictionary::resolve_from_stream(class_name,
+                                                      class_loader,
+                                                      protection_domain,
+                                                      &st,
+                                                      CHECK_NULL);
+
+    if (log_is_enabled(Debug, class, resolve) && defined_k != NULL) {
+      trace_class_resolution(defined_k);
+    }
+    ik = InstanceKlass::cast(defined_k);
+  } else { // hidden
+    Handle classData_h(THREAD, JNIHandles::resolve(classData));
+    ClassLoadInfo cl_info(protection_domain,
+                          NULL, // unsafe_anonymous_host
+                          NULL, // cp_patches
+                          host_class,
+                          classData_h,
+                          is_hidden,
+                          is_strong,
+                          vm_annotations);
+    defined_k = SystemDictionary::parse_stream(class_name,
+                                               class_loader,
+                                               &st,
+                                               cl_info,
+                                               CHECK_NULL);
+    if (defined_k == NULL) {
+      THROW_MSG_0(vmSymbols::java_lang_Error(), "Failure to define a hidden class");
+    }
+
+    ik = InstanceKlass::cast(defined_k);
+
+    // The hidden class loader data has been artificially been kept alive to
+    // this point. The mirror and any instances of this class have to keep
+    // it alive afterwards.
+    ik->class_loader_data()->dec_keep_alive();
+
+    if (is_nestmate && log_is_enabled(Debug, class, nestmates)) {
+      ModuleEntry* module = ik->module();
+      const char * module_name = module->is_named() ? module->name()->as_C_string() : UNNAMED_MODULE;
+      log_debug(class, nestmates)("Dynamic nestmate: %s/%s, nest_host %s, %s",
+                                  module_name,
+                                  ik->external_name(),
+                                  host_class->external_name(),
+                                  ik->is_hidden() ? "is hidden" : "is not hidden");
+    }
+  }
+  assert(Reflection::is_same_class_package(lookup_k, defined_k),
+         "lookup class and defined class are in different packages");
+
+  if (init) {
+    ik->initialize(CHECK_NULL);
+  } else {
+    ik->link_class(CHECK_NULL);
+  }
+
+  return (jclass) JNIHandles::make_local(env, defined_k->java_mirror());
+}
 
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
   JVMWrapper("JVM_DefineClass");
@@ -996,6 +1144,29 @@ JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader,
   return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, THREAD);
 JVM_END
 
+/*
+ * Define a class with the specified lookup class.
+ *  lookup:  Lookup class
+ *  name:    the name of the class
+ *  buf:     class bytes
+ *  len:     length of class bytes
+ *  pd:      protection domain
+ *  init:    initialize the class
+ *  flags:   properties of the class
+ *  classData: private static pre-initialized field
+ */
+JVM_ENTRY(jclass, JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte *buf,
+          jsize len, jobject pd, jboolean initialize, int flags, jobject classData))
+  JVMWrapper("JVM_LookupDefineClass");
+
+  if (lookup == NULL) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class is null");
+  }
+
+  assert(buf != NULL, "buf must not be NULL");
+
+  return jvm_lookup_define_class(env, lookup, name, buf, len, pd, initialize, flags, classData, THREAD);
+JVM_END
 
 JVM_ENTRY(jclass, JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source))
   JVMWrapper("JVM_DefineClassWithSource");
@@ -1158,6 +1329,15 @@ JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
   return result;
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
+  JVMWrapper("JVM_IsHiddenClass");
+  oop mirror = JNIHandles::resolve_non_null(cls);
+  if (java_lang_Class::is_primitive(mirror)) {
+    return JNI_FALSE;
+  }
+  Klass* k = java_lang_Class::as_Klass(mirror);
+  return k->is_hidden();
+JVM_END
 
 JVM_ENTRY(jobjectArray, JVM_GetClassSigners(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetClassSigners");
@@ -1425,7 +1605,7 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
     = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))
                           )->compute_enclosing_class(&inner_is_member, CHECK_NULL);
   if (outer_klass == NULL)  return NULL;  // already a top-level class
-  if (!inner_is_member)  return NULL;     // an anonymous class (inside a method)
+  if (!inner_is_member)  return NULL;     // a hidden or unsafe anonymous class (inside a method)
   return (jclass) JNIHandles::make_local(env, outer_klass->java_mirror());
 }
 JVM_END
@@ -1875,8 +2055,7 @@ JVM_ENTRY(jclass, JVM_GetNestHost(JNIEnv* env, jclass current))
   Klass* c = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(current));
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ck = InstanceKlass::cast(c);
-  // Don't post exceptions if validation fails
-  InstanceKlass* host = ck->nest_host(NULL, THREAD);
+  InstanceKlass* host = ck->nest_host(THREAD);
   return (jclass) (host == NULL ? NULL :
                    JNIHandles::make_local(THREAD, host->java_mirror()));
 }
@@ -1886,62 +2065,77 @@ JVM_ENTRY(jobjectArray, JVM_GetNestMembers(JNIEnv* env, jclass current))
 {
   // current is not a primitive or array class
   JVMWrapper("JVM_GetNestMembers");
+  ResourceMark rm(THREAD);
   Klass* c = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(current));
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ck = InstanceKlass::cast(c);
-  // Get the nest host for this nest - throw ICCE if validation fails
-  Symbol* icce = vmSymbols::java_lang_IncompatibleClassChangeError();
-  InstanceKlass* host = ck->nest_host(icce, CHECK_NULL);
+  InstanceKlass* host = ck->nest_host(THREAD);
 
+  log_trace(class, nestmates)("Calling GetNestMembers for type %s with nest-host %s",
+                              ck->external_name(), host->external_name());
   {
     JvmtiVMObjectAllocEventCollector oam;
     Array<u2>* members = host->nest_members();
     int length = members == NULL ? 0 : members->length();
+
+    log_trace(class, nestmates)(" - host has %d listed nest members", length);
+
     // nest host is first in the array so make it one bigger
     objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(),
                                              length + 1, CHECK_NULL);
-    objArrayHandle result (THREAD, r);
+    objArrayHandle result(THREAD, r);
     result->obj_at_put(0, host->java_mirror());
     if (length != 0) {
-      int i;
-      for (i = 0; i < length; i++) {
-         int cp_index = members->at(i);
-         Klass* k = host->constants()->klass_at(cp_index, CHECK_NULL);
-         if (k->is_instance_klass()) {
-           InstanceKlass* nest_host_k =
-             InstanceKlass::cast(k)->nest_host(icce, CHECK_NULL);
-           if (nest_host_k == host) {
-             result->obj_at_put(i+1, k->java_mirror());
-           }
-           else {
-             // k's nest host is legal but it isn't our host so
-             // throw ICCE
-             ResourceMark rm(THREAD);
-             Exceptions::fthrow(THREAD_AND_LOCATION,
-                                icce,
-                                "Nest member %s in %s declares a different nest host of %s",
-                                k->external_name(),
-                                host->external_name(),
-                                nest_host_k->external_name()
-                           );
-             return NULL;
-           }
-         }
-         else {
-           // we have a bad nest member entry - throw ICCE
-           ResourceMark rm(THREAD);
-           Exceptions::fthrow(THREAD_AND_LOCATION,
-                              icce,
-                              "Class %s can not be a nest member of %s",
-                              k->external_name(),
-                              host->external_name()
-                              );
-           return NULL;
-         }
+      int count = 0;
+      for (int i = 0; i < length; i++) {
+        int cp_index = members->at(i);
+        Klass* k = host->constants()->klass_at(cp_index, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+            return NULL; // propagate VMEs
+          }
+          if (log_is_enabled(Trace, class, nestmates)) {
+            stringStream ss;
+            char* target_member_class = host->constants()->klass_name_at(cp_index)->as_C_string();
+            ss.print(" - resolution of nest member %s failed: ", target_member_class);
+            java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
+            log_trace(class, nestmates)("%s", ss.as_string());
+          }
+          CLEAR_PENDING_EXCEPTION;
+          continue;
+        }
+        if (k->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(k);
+          InstanceKlass* nest_host_k = ik->nest_host(CHECK_NULL);
+          if (nest_host_k == host) {
+            result->obj_at_put(count+1, k->java_mirror());
+            count++;
+            log_trace(class, nestmates)(" - [%d] = %s", count, ik->external_name());
+          } else {
+            log_trace(class, nestmates)(" - skipping member %s with different host %s",
+                                        ik->external_name(), nest_host_k->external_name());
+          }
+        } else {
+          log_trace(class, nestmates)(" - skipping member %s that is not an instance class",
+                                      k->external_name());
+        }
+      }
+      if (count < length) {
+        // we had invalid entries so we need to compact the array
+        log_trace(class, nestmates)(" - compacting array from length %d to %d",
+                                    length + 1, count + 1);
+
+        objArrayOop r2 = oopFactory::new_objArray(SystemDictionary::Class_klass(),
+                                                  count + 1, CHECK_NULL);
+        objArrayHandle result2(THREAD, r2);
+        for (int i = 0; i < count + 1; i++) {
+          result2->obj_at_put(i, result->obj_at(i));
+        }
+        return (jobjectArray)JNIHandles::make_local(THREAD, result2());
       }
     }
     else {
-      assert(host == ck, "must be singleton nest");
+      assert(host == ck || ck->is_hidden(), "must be singleton nest or dynamic nestmate");
     }
     return (jobjectArray)JNIHandles::make_local(THREAD, result());
   }

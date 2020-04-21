@@ -42,12 +42,21 @@ import com.sun.jdi.VirtualMachine;
 public interface ClassUnloadEvent extends Event {
 
     /**
-     * Returns the name of the class that has been unloaded.
+     * Returns the {@linkplain com.sun.jdi.Type#name() name of the class}
+     * that has been unloaded. The returned string may not be a
+     * <a href="${docRoot}/java.base/java/lang/ClassLoader.html#binary-name">binary name</a>.
+     *
+     * @see Class#getName()
      */
     public String className();
 
     /**
-     * Returns the JNI-style signature of the class that has been unloaded.
+     * Returns the {@linkplain com.sun.jdi.Type#signature() type signature of the class}
+     * that has been unloaded.  The result is of the same
+     * form as the string returned by {@link Class#descriptorString()}.
+     * If this class can be described nominally, the returned string is a
+     * type descriptor conforming to JVMS {@jvms 4.3.2}; otherwise, the returned string
+     * is not a type descriptor.
      */
     public String classSignature();
 }

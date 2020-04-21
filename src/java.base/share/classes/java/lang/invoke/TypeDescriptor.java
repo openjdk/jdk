@@ -27,19 +27,24 @@ package java.lang.invoke;
 import java.util.List;
 
 /**
- * An entity that has a field or method type descriptor
- *
- * @jvms 4.3.2 Field Descriptors
- * @jvms 4.3.3 Method Descriptors
+ * An entity that has a type descriptor.
  *
  * @since 12
  */
 public interface TypeDescriptor {
     /**
-     * Return the type descriptor string for this instance, which must be either
-     * a field type descriptor (JVMS 4.3.2) or method type descriptor (JVMS 4.3.3).
+     * Returns the descriptor string for this {@code TypeDescriptor} object.
      *
-     * @return the type descriptor
+     * If this {@code TypeDescriptor} object can be described in nominal form,
+     * then this method returns a type descriptor as specified in JVMS {@jvms 4.3}.
+     * The result descriptor string can be used to produce
+     * a {@linkplain java.lang.constant.ConstantDesc nominal descriptor}.
+     *
+     * Otherwise, the result string is not a type descriptor.
+     * No {@linkplain java.lang.constant.ConstantDesc nominal descriptor}
+     * can be produced from the result string.
+     *
+     * @return the descriptor string for this {@code TypeDescriptor} object
      * @jvms 4.3.2 Field Descriptors
      * @jvms 4.3.3 Method Descriptors
      */
@@ -47,7 +52,10 @@ public interface TypeDescriptor {
 
 
     /**
-     * An entity that has a field type descriptor
+     * An entity that has a field type descriptor.
+     * Field descriptors conforming to JVMS {@jvms 4.3.2} can be described
+     * nominally via {@link Class#describeConstable Class::describeConstable};
+     * otherwise they cannot be described nominally.
      *
      * @param <F> the class implementing {@linkplain TypeDescriptor.OfField}
      * @jvms 4.3.2 Field Descriptors
@@ -86,6 +94,9 @@ public interface TypeDescriptor {
 
     /**
      * An entity that has a method type descriptor
+     * Method descriptors conforming to JVMS {@jvms 4.3.3} can be described
+     * nominally via {@link MethodType#describeConstable MethodType::describeConstable};
+     * otherwise they cannot be described nominally.
      *
      * @param <F> the type representing field type descriptors
      * @param <M> the class implementing {@linkplain TypeDescriptor.OfMethod}

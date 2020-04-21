@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -6846,10 +6846,6 @@ class C2 extends C1 implements I2 {
   </category>
 
   <category id="class" label="Class">
-
-    <intro>
-    </intro>
-
     <function id="GetLoadedClasses" jkernel="yes" num="78">
       <synopsis>Get Loaded Classes</synopsis>
       <description>
@@ -6858,9 +6854,26 @@ class C2 extends C1 implements I2 {
         <code>class_count_ptr</code>, and the array itself via
         <code>classes_ptr</code>.
         <p/>
-        Array classes of all types (including arrays of primitive types) are
-        included in the returned list. Primitive classes (for example,
-        <code>java.lang.Integer.TYPE</code>) are <i>not</i> included in this list.
+        A class or interface creation can be triggered by one of the following:
+        <ul>
+        <li>By loading and deriving a class from a <code>class</code> file representation
+            using a class loader (see <vmspec chapter="5.3"/>).</li>
+        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
+            that creates a hidden class or interface from a <code>class</code> file representation.</li>
+        <li>By invoking methods in certain Java SE Platform APIs such as reflection.</li>
+         </ul>
+        <p/>
+        An array class is created directly by the Java virtual machine.  The creation
+        can be triggered by using class loaders or by invoking methods in certain
+        Java SE Platform APIs such as reflection.
+        <p/>
+        The returned list includes all classes and interfaces, including
+        <externallink id="../api/java.base/java/lang/Class.html#isHidden()">
+        hidden classes or interfaces</externallink>,
+        and also array classes of all types
+        (including arrays of primitive types).
+        Primitive classes (for example, <code>java.lang.Integer.TYPE</code>) are
+        <i>not</i> included in the returned list.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6887,15 +6900,27 @@ class C2 extends C1 implements I2 {
     <function id="GetClassLoaderClasses" jkernel="yes" num="79">
       <synopsis>Get Classloader Classes</synopsis>
       <description>
-        Returns an array of those classes for which this class loader has
-        been recorded as an initiating loader. Each
-        class in the returned array was created by this class loader,
+        Returns an array of all classes which this class loader
+        can find by name via 
+        <externallink id="../api/java.base/java/lang/ClassLoader.html#loadClass(java.lang.String,boolean)">ClassLoader::loadClass</externallink>,
+        <externallink id="../api/java.base/java/lang/Class.html#forName(java.lang.String,boolean,java.lang.ClassLoader)">Class::forName</externallink> and bytecode linkage.
+        That is, all classes for which <code>initiating_loader</code>
+        has been recorded as an initiating loader.
+        Each class in the returned array was created by this class loader,
         either by defining it directly or by delegation to another class loader.
         See <vmspec chapter="5.3"/>.
+        <p/>
+        The returned list does not include
+        <externallink id="../api/java.base/java/lang/Class.html#isHidden()">hidden
+        classes or interfaces</externallink> or array classes whose
+        element type is a hidden class or interface as they cannot be discovered
+        by any class loader.
         <p/>
         The number of classes in the array is returned via
         <code>class_count_ptr</code>, and the array itself via
         <code>classes_ptr</code>.
+        <p/>
+        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6931,15 +6956,37 @@ class C2 extends C1 implements I2 {
     <function id="GetClassSignature" phase="start" num="48">
       <synopsis>Get Class Signature</synopsis>
       <description>
-        For the class indicated by <code>klass</code>, return the
-        <externallink id="jni/types.html#type-signatures">JNI
-            type signature</externallink>
-        and the generic signature of the class.
-        For example, <code>java.util.List</code> is <code>"Ljava/util/List;"</code>
-        and <code>int[]</code> is <code>"[I"</code>
-        The returned name for primitive classes
-        is the type signature character of the corresponding primitive type.
-        For example, <code>java.lang.Integer.TYPE</code> is <code>"I"</code>.
+        Return the name and the generic signature of the class indicated by <code>klass</code>.
+        <p/>
+        If the class is a class or interface, then:
+        <ul>
+        <li>If the class or interface is not <externallink id="../api/java.base/java/lang/Class.html#isHidden()">hidden</externallink>,
+          then the returned name is the <externallink id="jni/types.html#type-signatures">
+          JNI type signature</externallink>.
+          For example, java.util.List is "Ljava/util/List;"
+        </li>
+        <li>If the class or interface is <externallink id="../api/java.base/java/lang/Class.html#isHidden()">hidden</externallink>,
+          then the returned name is a string of the form:
+          <code>"L" + N + "." +  S + ";"</code>
+          where <code>N</code> is the binary name encoded in internal form (JVMS 4.2.1)
+          indicated by the <code>class</code> file passed to
+          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
+          and <code>S</code> is an unqualified name.
+          The returned name is not a type descriptor and does not conform to JVMS 4.3.2.
+          For example, com.foo.Foo/AnySuffix is "Lcom/foo/Foo.AnySuffix;"
+        </li>
+        </ul>
+        <p/>
+        If the class indicated by <code>klass</code> represents an array class, then
+        the returned name is a string consisting of one or more "<code>[</code>" characters
+        representing the depth of the array nesting, followed by the class signature
+        of the element type.  For example the class signature of java.lang.String[] is
+        "[Ljava/lang/String;" and that of int[] is "[I".
+        <p/>
+        If the class indicated by <code>klass</code> represents primitive type or <code>void</code>,
+        then the returned name is the <externallink id="jni/types.html#type-signatures">
+        type signature character of the corresponding primitive type</externallink>.
+        For example, java.lang.Integer.TYPE is "I".
       </description>
       <origin>jvmdiClone</origin>
       <capabilities>
@@ -12712,12 +12759,15 @@ myInit() {
   <event label="Class Load"
          id="ClassLoad" const="JVMTI_EVENT_CLASS_LOAD" filtered="thread" phase="start" num="55">
     <description>
-      A class load event is generated when a class is first loaded. The order
-      of class load events generated by a particular thread are guaranteed
-      to match the order of class loading within that thread.
+      A class load event is generated
+      <functionlink id="GetLoadedClasses">when a class or interface is created.</functionlink>.
+      <p/>
       Array class creation does not generate a class load event.
       The creation of a primitive class (for example, java.lang.Integer.TYPE)
       does not generate a class load event.
+      <p/>
+      The order of class load events generated by a particular thread is guaranteed
+      to match the order of class loading within that thread.
       <p/>
       This event is sent at an early stage in loading the class. As
       a result the class should be used carefully.  Note, for example,

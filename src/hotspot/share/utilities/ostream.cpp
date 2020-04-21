@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -368,10 +369,16 @@ void stringStream::reset() {
   zero_terminate();
 }
 
-char* stringStream::as_string() const {
-  char* copy = NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
+char* stringStream::as_string(bool c_heap) const {
+  char* copy = c_heap ?
+    NEW_C_HEAP_ARRAY(char, buffer_pos + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
   strncpy(copy, buffer, buffer_pos);
   copy[buffer_pos] = 0;  // terminating null
+  if (c_heap) {
+    // Need to ensure our content is written to memory before we return
+    // the pointer to it.
+    OrderAccess::storestore();
+  }
   return copy;
 }
 

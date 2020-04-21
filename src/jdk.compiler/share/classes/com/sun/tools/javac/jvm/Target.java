@@ -169,6 +169,14 @@ public enum Target {
         return compareTo(JDK1_11) >= 0;
     }
 
+    /** language runtime uses nest-based access.
+     *  e.g. lambda and string concat spin dynamic proxy class as a nestmate
+     *  of the target class
+     */
+    public boolean runtimeUseNestAccess() {
+        return compareTo(JDK1_15) >= 0;
+    }
+
     /** Does the target VM support virtual private invocations?
      */
     public boolean hasVirtualPrivateInvoke() {

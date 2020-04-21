@@ -850,12 +850,19 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
   ClassFileStream st(class_bytes, class_bytes_length, host_source, ClassFileStream::verify);
 
   Symbol* no_class_name = NULL;
+  ClassLoadInfo cl_info(host_domain,
+                        InstanceKlass::cast(host_klass),
+                        cp_patches,
+                        NULL,     // dynamic_nest_host
+                        Handle(), // classData
+                        false,    // is_hidden
+                        false,    // is_strong_hidden
+                        true);    // can_access_vm_annotations
+
   Klass* anonk = SystemDictionary::parse_stream(no_class_name,
                                                 host_loader,
-                                                host_domain,
                                                 &st,
-                                                InstanceKlass::cast(host_klass),
-                                                cp_patches,
+                                                cl_info,
                                                 CHECK_NULL);
   if (anonk == NULL) {
     return NULL;

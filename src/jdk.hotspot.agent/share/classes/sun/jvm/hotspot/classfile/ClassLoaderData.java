@@ -46,12 +46,14 @@ public class ClassLoaderData extends VMObject {
     classLoaderFieldOffset = type.getAddressField("_class_loader").getOffset();
     nextField = type.getAddressField("_next");
     klassesField = new MetadataField(type.getAddressField("_klasses"), 0);
+    hasClassMirrorHolderField = new CIntField(type.getCIntegerField("_has_class_mirror_holder"), 0);
     dictionaryField = type.getAddressField("_dictionary");
   }
 
   private static long classLoaderFieldOffset;
   private static AddressField nextField;
   private static MetadataField  klassesField;
+  private static CIntField hasClassMirrorHolderField;
   private static AddressField dictionaryField;
 
   public ClassLoaderData(Address addr) {
@@ -74,6 +76,10 @@ public class ClassLoaderData extends VMObject {
     Address addr = getAddress().addOffsetTo(classLoaderFieldOffset);
     VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
     return vmOopHandle.resolve();
+  }
+
+  public boolean gethasClassMirrorHolder() {
+    return hasClassMirrorHolderField.getValue(this) != 0;
   }
 
   public ClassLoaderData next() {

@@ -137,7 +137,6 @@ static traceid method_id(KlassPtr klass, MethodPtr method) {
 
 static traceid cld_id(CldPtr cld, bool leakp) {
   assert(cld != NULL, "invariant");
-  assert(!cld->is_unsafe_anonymous(), "invariant");
   if (leakp) {
     SET_LEAKP(cld);
   } else {
@@ -163,6 +162,7 @@ static ClassLoaderData* get_cld(const Klass* klass) {
   if (klass->is_objArray_klass()) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass();
   }
+  if (klass->is_non_strong_hidden()) return NULL;
   return is_unsafe_anonymous(klass) ?
     InstanceKlass::cast(klass)->unsafe_anonymous_host()->class_loader_data() : klass->class_loader_data();
 }
@@ -188,10 +188,12 @@ static int write_klass(JfrCheckpointWriter* writer, KlassPtr klass, bool leakp) 
   assert(_artifacts != NULL, "invariant");
   assert(klass != NULL, "invariant");
   writer->write(artifact_id(klass));
-  writer->write(cld_id(get_cld(klass), leakp));
+  ClassLoaderData* cld = get_cld(klass);
+  writer->write(cld != NULL ? cld_id(cld, leakp) : 0);
   writer->write(mark_symbol(klass, leakp));
   writer->write(package_id(klass, leakp));
   writer->write(get_flags(klass));
+  writer->write<bool>(klass->is_hidden());
   return 1;
 }
 
@@ -546,7 +548,6 @@ static void clear_modules() {
 
 static int write_classloader(JfrCheckpointWriter* writer, CldPtr cld, bool leakp) {
   assert(cld != NULL, "invariant");
-  assert(!cld->is_unsafe_anonymous(), "invariant");
   // class loader type
   const Klass* class_loader_klass = cld->class_loader_klass();
   if (class_loader_klass == NULL) {
@@ -604,7 +605,7 @@ class CLDCallback : public CLDClosure {
   CLDCallback() {}
   void do_cld(ClassLoaderData* cld) {
     assert(cld != NULL, "invariant");
-    if (cld->is_unsafe_anonymous()) {
+    if (cld->has_class_mirror_holder()) {
       return;
     }
     do_class_loader_data(cld);

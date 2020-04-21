@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8009649 8129962
- * @summary Lambda back-end should generate invokespecial for method handles referring to private instance methods
+ * @bug 8009649 8129962 8238358
+ * @summary Lambda back-end should generate invokevirtual for method handles referring to
+ *          private instance methods as lambda proxy is a nestmate of the target clsas
  * @library /tools/javac/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
@@ -269,14 +270,14 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
             boolean kindOK;
             switch (mh.reference_kind) {
                 case REF_invokeStatic: kindOK = mk2.isStatic(); break;
-                case REF_invokeSpecial: kindOK = !mk2.isStatic(); break;
+                case REF_invokeVirtual: kindOK = !mk2.isStatic() && !mk2.inInterface(); break;
                 case REF_invokeInterface: kindOK = mk2.inInterface(); break;
                 default:
                     kindOK = false;
             }
 
             if (!kindOK) {
-                fail("Bad invoke kind in implementation method handle");
+                fail("Bad invoke kind in implementation method handle: " + mh.reference_kind);
                 return;
             }
 

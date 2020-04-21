@@ -114,7 +114,7 @@ inline traceid JfrTraceId::use(const PackageEntry* package) {
 
 inline traceid JfrTraceId::use(const ClassLoaderData* cld) {
   assert(cld != NULL, "invariant");
-  return cld->is_unsafe_anonymous() ? 0 : set_used_and_get(cld);
+  return cld->has_class_mirror_holder() ? 0 : set_used_and_get(cld);
 }
 
 inline void JfrTraceId::set_leakp(const Klass* klass, const Method* method) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,8 @@ class stringStream : public outputStream {
   size_t      size() const { return buffer_pos; }
   const char* base() const { return buffer; }
   void  reset();
-  char* as_string() const;
+  // copy to a resource, or C-heap, array as requested
+  char* as_string(bool c_heap = false) const;
 };
 
 class fileStream : public outputStream {

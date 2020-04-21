@@ -51,6 +51,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      *         System.out.printf(">>> %s\n", iii.foo(44));
      * }}
      */
+    final MethodHandles.Lookup caller;        // The caller's lookup context
     final Class<?> targetClass;               // The class calling the meta-factory via invokedynamic "class X"
     final MethodType invokedType;             // The type of the invoked method "(CC)II"
     final Class<?> samBase;                   // The type of the returned instance "interface JJ"
@@ -120,6 +121,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                     "Invalid caller: %s",
                     caller.lookupClass().getName()));
         }
+        this.caller = caller;
         this.targetClass = caller.lookupClass();
         this.invokedType = invokedType;
 
@@ -143,8 +145,20 @@ import static sun.invoke.util.Wrapper.isWrapperType;
             case REF_invokeSpecial:
                 // JDK-8172817: should use referenced class here, but we don't know what it was
                 this.implClass = implInfo.getDeclaringClass();
-                this.implKind = REF_invokeSpecial;
                 this.implIsInstanceMethod = true;
+
+                // Classes compiled prior to dynamic nestmate support invokes a private instance
+                // method with REF_invokeSpecial.
+                //
+                // invokespecial should only be used to invoke private nestmate constructors.
+                // The lambda proxy class will be defined as a nestmate of targetClass.
+                // If the method to be invoked is an instance method of targetClass, then
+                // convert to use invokevirtual or invokeinterface.
+                if (targetClass == implClass && !implInfo.getName().equals("<init>")) {
+                    this.implKind = implClass.isInterface() ? REF_invokeInterface : REF_invokeVirtual;
+                } else {
+                    this.implKind = REF_invokeSpecial;
+                }
                 break;
             case REF_invokeStatic:
             case REF_newInvokeSpecial:

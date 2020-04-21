@@ -207,6 +207,66 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     return result;
 }
 
+JNIEXPORT jclass JNICALL
+Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
+                                        jclass cls,
+                                        jobject loader,
+                                        jclass lookup,
+                                        jstring name,
+                                        jbyteArray data,
+                                        jint offset,
+                                        jint length,
+                                        jobject pd,
+                                        jboolean initialize,
+                                        jint flags,
+                                        jobject classData)
+{
+    jbyte *body;
+    char *utfName;
+    jclass result = 0;
+    char buf[128];
+
+    if (data == NULL) {
+        JNU_ThrowNullPointerException(env, 0);
+        return 0;
+    }
+
+    /* Work around 4153825. malloc crashes on Solaris when passed a
+     * negative size.
+     */
+    if (length < 0) {
+        JNU_ThrowArrayIndexOutOfBoundsException(env, 0);
+        return 0;
+    }
+
+    body = (jbyte *)malloc(length);
+    if (body == 0) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return 0;
+    }
+
+    (*env)->GetByteArrayRegion(env, data, offset, length, body);
+
+    if ((*env)->ExceptionOccurred(env))
+        goto free_body;
+
+    if (name != NULL) {
+        utfName = getUTF(env, name, buf, sizeof(buf));
+        if (utfName == NULL) {
+            goto free_body;
+        }
+        fixClassname(utfName);
+    } else {
+        utfName = NULL;
+    }
+
+    return JVM_LookupDefineClass(env, lookup, utfName, body, length, pd, initialize, flags, classData);
+
+ free_body:
+    free(body);
+    return result;
+}
+
 /*
  * Returns NULL if class not found.
  */

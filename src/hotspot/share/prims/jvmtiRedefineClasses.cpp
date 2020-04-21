@@ -150,8 +150,8 @@ bool VM_RedefineClasses::doit_prologue() {
     }
 
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
-    // classes for primitives and arrays and vm unsafe anonymous classes cannot be redefined
-    // check here so following code can assume these classes are InstanceKlass
+    // classes for primitives, arrays, hidden and vm unsafe anonymous classes
+    // cannot be redefined.
     if (!is_modifiable_class(mirror)) {
       _res = JVMTI_ERROR_UNMODIFIABLE_CLASS;
       return false;
@@ -293,8 +293,9 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
     return false;
   }
 
-  // Cannot redefine or retransform an unsafe anonymous class.
-  if (InstanceKlass::cast(k)->is_unsafe_anonymous()) {
+  // Cannot redefine or retransform a hidden or an unsafe anonymous class.
+  if (InstanceKlass::cast(k)->is_hidden() ||
+      InstanceKlass::cast(k)->is_unsafe_anonymous()) {
     return false;
   }
   return true;
@@ -1239,11 +1240,12 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
+    ClassLoadInfo cl_info(protection_domain);
     InstanceKlass* scratch_class = SystemDictionary::parse_stream(
                                                       the_class_sym,
                                                       the_class_loader,
-                                                      protection_domain,
                                                       &st,
+                                                      cl_info,
                                                       THREAD);
     // Clear class_being_redefined just to be sure.
     state->clear_class_being_redefined();

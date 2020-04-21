@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,8 +27,7 @@
  * @summary Test of diagnostic command VM.classloaders
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
+ *          jdk.compiler
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run testng ClassLoaderHierarchyTest
  */
@@ -97,6 +96,7 @@ public class ClassLoaderHierarchyTest {
         output.shouldMatch("Kevin.*TestClassLoader");
         output.shouldMatch("Bill.*TestClassLoader");
         output.shouldContain("TestClass2");
+        output.shouldContain("Hidden Classes:");
     }
 
     static class TestClassLoader extends ClassLoader {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1460,12 +1460,11 @@ static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStre
   Handle pd(THREAD, ik->protection_domain());
   Symbol* const class_name = ik->name();
   const char* const klass_name = class_name != NULL ? class_name->as_C_string() : "";
+  ClassLoadInfo cl_info(pd);
   ClassFileParser new_parser(stream,
                              class_name,
                              cld,
-                             pd,
-                             NULL, // host klass
-                             NULL, // cp_patches
+                             &cl_info,
                              ClassFileParser::INTERNAL, // internal visibility
                              THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -1473,7 +1472,8 @@ static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStre
     CLEAR_PENDING_EXCEPTION;
     return NULL;
   }
-  InstanceKlass* const new_ik = new_parser.create_instance_klass(false, THREAD);
+  const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
+  InstanceKlass* const new_ik = new_parser.create_instance_klass(false, *cl_inst_info, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     log_pending_exception(PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;

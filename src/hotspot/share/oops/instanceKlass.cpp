@@ -31,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/resolutionErrors.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -134,6 +135,7 @@
 
 #endif //  ndef DTRACE_ENABLED
 
+
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {
   assert(class_name != NULL, "invariant");
@@ -153,8 +155,11 @@ static inline bool is_class_loader(const Symbol* class_name,
   return false;
 }
 
-// called to verify that k is a member of this nest
+// private: called to verify that k is a static member of this nest.
+// We know that k is an instance class in the same package and hence the
+// same classloader.
 bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
+  assert(!is_hidden(), "unexpected hidden class");
   if (_nest_members == NULL || _nest_members == Universe::the_empty_short_array()) {
     if (log_is_enabled(Trace, class, nestmates)) {
       ResourceMark rm(THREAD);
@@ -175,7 +180,9 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
   for (int i = 0; i < _nest_members->length(); i++) {
     int cp_index = _nest_members->at(i);
     if (_constants->tag_at(cp_index).is_klass()) {
-      Klass* k2 = _constants->klass_at(cp_index, CHECK_false);
+      Klass* k2 = _constants->klass_at(cp_index, THREAD);
+      assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass()),
+             "Exceptions should not be possible here");
       if (k2 == k) {
         log_trace(class, nestmates)("- class is listed at nest_members[%d] => cp[%d]", i, cp_index);
         return true;
@@ -186,15 +193,14 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
       if (name == k->name()) {
         log_trace(class, nestmates)("- Found it at nest_members[%d] => cp[%d]", i, cp_index);
 
-        // Names match so check actual klass - this may trigger class loading if
-        // it doesn't match (though that should be impossible). But to be safe we
-        // have to check for a compiler thread executing here.
-        if (!THREAD->can_call_java() && !_constants->tag_at(cp_index).is_klass()) {
-          log_trace(class, nestmates)("- validation required resolution in an unsuitable thread");
-          return false;
-        }
-
-        Klass* k2 = _constants->klass_at(cp_index, CHECK_false);
+        // Names match so check actual klass. This may trigger class loading if
+        // it doesn't match though that should be impossible as it means one classloader
+        // has defined two different classes with the same name! A compiler thread won't be
+        // able to perform that loading but we can't exclude the compiler threads from
+        // executing this logic. But it should actually be impossible to trigger loading here.
+        Klass* k2 = _constants->klass_at(cp_index, THREAD);
+        assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass()),
+               "Exceptions should not be possible here");
         if (k2 == k) {
           log_trace(class, nestmates)("- class is listed as a nest member");
           return true;
@@ -213,167 +219,210 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
 }
 
 // Return nest-host class, resolving, validating and saving it if needed.
-// In cases where this is called from a thread that can not do classloading
+// In cases where this is called from a thread that cannot do classloading
 // (such as a native JIT thread) then we simply return NULL, which in turn
 // causes the access check to return false. Such code will retry the access
-// from a more suitable environment later.
-InstanceKlass* InstanceKlass::nest_host(Symbol* validationException, TRAPS) {
+// from a more suitable environment later. Otherwise the _nest_host is always
+// set once this method returns.
+// Any errors from nest-host resolution must be preserved so they can be queried
+// from higher-level access checking code, and reported as part of access checking
+// exceptions.
+// VirtualMachineErrors are propagated with a NULL return.
+// Under any conditions where the _nest_host can be set to non-NULL the resulting
+// value of it and, if applicable, the nest host resolution/validation error,
+// are idempotent.
+InstanceKlass* InstanceKlass::nest_host(TRAPS) {
   InstanceKlass* nest_host_k = _nest_host;
-  if (nest_host_k == NULL) {
-    // need to resolve and save our nest-host class. This could be attempted
-    // concurrently but as the result is idempotent and we don't use the class
-    // then we do not need any synchronization beyond what is implicitly used
-    // during class loading.
-    if (_nest_host_index != 0) { // we have a real nest_host
-      // Before trying to resolve check if we're in a suitable context
-      if (!THREAD->can_call_java() && !_constants->tag_at(_nest_host_index).is_klass()) {
-        if (log_is_enabled(Trace, class, nestmates)) {
-          ResourceMark rm(THREAD);
-          log_trace(class, nestmates)("Rejected resolution of nest-host of %s in unsuitable thread",
-                                      this->external_name());
-        }
-        return NULL;
-      }
+  if (nest_host_k != NULL) {
+    return nest_host_k;
+  }
 
-      if (log_is_enabled(Trace, class, nestmates)) {
-        ResourceMark rm(THREAD);
-        log_trace(class, nestmates)("Resolving nest-host of %s using cp entry for %s",
-                                    this->external_name(),
-                                    _constants->klass_name_at(_nest_host_index)->as_C_string());
-      }
+  ResourceMark rm(THREAD);
 
-      Klass* k = _constants->klass_at(_nest_host_index, THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        Handle exc_h = Handle(THREAD, PENDING_EXCEPTION);
-        if (exc_h->is_a(SystemDictionary::NoClassDefFoundError_klass())) {
-          // throw a new CDNFE with the original as its cause, and a clear msg
-          ResourceMark rm(THREAD);
-          char buf[200];
-          CLEAR_PENDING_EXCEPTION;
-          jio_snprintf(buf, sizeof(buf),
-                       "Unable to load nest-host class (%s) of %s",
-                       _constants->klass_name_at(_nest_host_index)->as_C_string(),
-                       this->external_name());
-          log_trace(class, nestmates)("%s - NoClassDefFoundError", buf);
-          THROW_MSG_CAUSE_NULL(vmSymbols::java_lang_NoClassDefFoundError(), buf, exc_h);
-        }
-        // All other exceptions pass through (OOME, StackOverflowError, LinkageErrors etc).
-        return NULL;
-      }
+  // need to resolve and save our nest-host class.
+  if (_nest_host_index != 0) { // we have a real nest_host
+    // Before trying to resolve check if we're in a suitable context
+    if (!THREAD->can_call_java() && !_constants->tag_at(_nest_host_index).is_klass()) {
+      log_trace(class, nestmates)("Rejected resolution of nest-host of %s in unsuitable thread",
+                                  this->external_name());
+      return NULL; // sentinel to say "try again from a different context"
+    }
 
+    log_trace(class, nestmates)("Resolving nest-host of %s using cp entry for %s",
+                                this->external_name(),
+                                _constants->klass_name_at(_nest_host_index)->as_C_string());
+
+    Klass* k = _constants->klass_at(_nest_host_index, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+        return NULL; // propagate VMEs
+      }
+      stringStream ss;
+      char* target_host_class = _constants->klass_name_at(_nest_host_index)->as_C_string();
+      ss.print("Nest host resolution of %s with host %s failed: ",
+               this->external_name(), target_host_class);
+      java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
+      const char* msg = ss.as_string(true /* on C-heap */);
+      constantPoolHandle cph(THREAD, constants());
+      SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
+      CLEAR_PENDING_EXCEPTION;
+
+      log_trace(class, nestmates)("%s", msg);
+    } else {
       // A valid nest-host is an instance class in the current package that lists this
-      // class as a nest member. If any of these conditions are not met we post the
-      // requested exception type (if any) and return NULL
-
+      // class as a nest member. If any of these conditions are not met the class is
+      // its own nest-host.
       const char* error = NULL;
 
       // JVMS 5.4.4 indicates package check comes first
       if (is_same_class_package(k)) {
-
         // Now check actual membership. We can't be a member if our "host" is
         // not an instance class.
         if (k->is_instance_klass()) {
           nest_host_k = InstanceKlass::cast(k);
+          bool is_member = nest_host_k->has_nest_member(this, THREAD);
+          // exception is rare, perhaps impossible
+          if (!HAS_PENDING_EXCEPTION) {
+            if (is_member) {
+              _nest_host = nest_host_k; // save resolved nest-host value
 
-          bool is_member = nest_host_k->has_nest_member(this, CHECK_NULL);
-          if (is_member) {
-            // save resolved nest-host value
-            _nest_host = nest_host_k;
-
-            if (log_is_enabled(Trace, class, nestmates)) {
-              ResourceMark rm(THREAD);
               log_trace(class, nestmates)("Resolved nest-host of %s to %s",
                                           this->external_name(), k->external_name());
+              return nest_host_k;
+            } else {
+              error = "current type is not listed as a nest member";
             }
-            return nest_host_k;
+          } else {
+            if (PENDING_EXCEPTION->is_a(SystemDictionary::VirtualMachineError_klass())) {
+              return NULL; // propagate VMEs
+            }
+            stringStream ss;
+            ss.print("exception on member check: ");
+            java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
+            error = ss.as_string();
           }
+        } else {
+          error = "host is not an instance class";
         }
-        error = "current type is not listed as a nest member";
       } else {
         error = "types are in different packages";
       }
 
-      if (log_is_enabled(Trace, class, nestmates)) {
-        ResourceMark rm(THREAD);
-        log_trace(class, nestmates)
-          ("Type %s (loader: %s) is not a nest member of "
-           "resolved type %s (loader: %s): %s",
-           this->external_name(),
-           this->class_loader_data()->loader_name_and_id(),
-           k->external_name(),
-           k->class_loader_data()->loader_name_and_id(),
-           error);
+      // something went wrong, so record what and log it
+      {
+        stringStream ss;
+        ss.print("Type %s (loader: %s) is not a nest member of type %s (loader: %s): %s",
+                 this->external_name(),
+                 this->class_loader_data()->loader_name_and_id(),
+                 k->external_name(),
+                 k->class_loader_data()->loader_name_and_id(),
+                 error);
+        const char* msg = ss.as_string(true /* on C-heap */);
+        constantPoolHandle cph(THREAD, constants());
+        SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
+        log_trace(class, nestmates)("%s", msg);
       }
-
-      if (validationException != NULL && THREAD->can_call_java()) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(THREAD_AND_LOCATION,
-                           validationException,
-                           "Type %s (loader: %s) is not a nest member of %s (loader: %s): %s",
-                           this->external_name(),
-                           this->class_loader_data()->loader_name_and_id(),
-                           k->external_name(),
-                           k->class_loader_data()->loader_name_and_id(),
-                           error
-                           );
-      }
-      return NULL;
-    } else {
-      if (log_is_enabled(Trace, class, nestmates)) {
-        ResourceMark rm(THREAD);
-        log_trace(class, nestmates)("Type %s is not part of a nest: setting nest-host to self",
-                                    this->external_name());
-      }
-      // save resolved nest-host value
-      return (_nest_host = this);
     }
+  } else {
+    log_trace(class, nestmates)("Type %s is not part of a nest: setting nest-host to self",
+                                this->external_name());
   }
-  return nest_host_k;
+
+  // Either not in an explicit nest, or else an error occurred, so
+  // the nest-host is set to `this`. Any thread that sees this assignment
+  // will also see any setting of nest_host_error(), if applicable.
+  return (_nest_host = this);
+}
+
+// Dynamic nest member support: set this class's nest host to the given class.
+// This occurs as part of the class definition, as soon as the instanceKlass
+// has been created and doesn't require further resolution. The code:
+//    lookup().defineHiddenClass(bytes_for_X, NESTMATE);
+// results in:
+//    class_of_X.set_nest_host(lookup().lookupClass().getNestHost())
+// If it has an explicit _nest_host_index or _nest_members, these will be ignored.
+// We also know the "host" is a valid nest-host in the same package so we can
+// assert some of those facts.
+void InstanceKlass::set_nest_host(InstanceKlass* host, TRAPS) {
+  assert(is_hidden(), "must be a hidden class");
+  assert(host != NULL, "NULL nest host specified");
+  assert(_nest_host == NULL, "current class has resolved nest-host");
+  assert(nest_host_error(THREAD) == NULL, "unexpected nest host resolution error exists: %s",
+         nest_host_error(THREAD));
+  assert((host->_nest_host == NULL && host->_nest_host_index == 0) ||
+         (host->_nest_host == host), "proposed host is not a valid nest-host");
+  // Can't assert this as package is not set yet:
+  // assert(is_same_class_package(host), "proposed host is in wrong package");
+
+  if (log_is_enabled(Trace, class, nestmates)) {
+    ResourceMark rm(THREAD);
+    const char* msg = "";
+    // a hidden class does not expect a statically defined nest-host
+    if (_nest_host_index > 0) {
+      msg = "(the NestHost attribute in the current class is ignored)";
+    } else if (_nest_members != NULL && _nest_members != Universe::the_empty_short_array()) {
+      msg = "(the NestMembers attribute in the current class is ignored)";
+    }
+    log_trace(class, nestmates)("Injected type %s into the nest of %s %s",
+                                this->external_name(),
+                                host->external_name(),
+                                msg);
+  }
+  // set dynamic nest host
+  _nest_host = host;
+  // Record dependency to keep nest host from being unloaded before this class.
+  ClassLoaderData* this_key = class_loader_data();
+  this_key->record_dependency(host);
 }
 
 // check if 'this' and k are nestmates (same nest_host), or k is our nest_host,
 // or we are k's nest_host - all of which is covered by comparing the two
-// resolved_nest_hosts
+// resolved_nest_hosts.
+// Any exceptions (i.e. VMEs) are propagated.
 bool InstanceKlass::has_nestmate_access_to(InstanceKlass* k, TRAPS) {
 
   assert(this != k, "this should be handled by higher-level code");
 
   // Per JVMS 5.4.4 we first resolve and validate the current class, then
-  // the target class k. Resolution exceptions will be passed on by upper
-  // layers. IncompatibleClassChangeErrors from membership validation failures
-  // will also be passed through.
+  // the target class k.
 
-  Symbol* icce = vmSymbols::java_lang_IncompatibleClassChangeError();
-  InstanceKlass* cur_host = nest_host(icce, CHECK_false);
+  InstanceKlass* cur_host = nest_host(CHECK_false);
   if (cur_host == NULL) {
     return false;
   }
 
-  Klass* k_nest_host = k->nest_host(icce, CHECK_false);
+  Klass* k_nest_host = k->nest_host(CHECK_false);
   if (k_nest_host == NULL) {
     return false;
   }
 
   bool access = (cur_host == k_nest_host);
 
-  if (log_is_enabled(Trace, class, nestmates)) {
-    ResourceMark rm(THREAD);
-    log_trace(class, nestmates)("Class %s does %shave nestmate access to %s",
-                                this->external_name(),
-                                access ? "" : "NOT ",
-                                k->external_name());
-  }
-
+  ResourceMark rm(THREAD);
+  log_trace(class, nestmates)("Class %s does %shave nestmate access to %s",
+                              this->external_name(),
+                              access ? "" : "NOT ",
+                              k->external_name());
   return access;
 }
 
+const char* InstanceKlass::nest_host_error(TRAPS) {
+  if (_nest_host_index == 0) {
+    return NULL;
+  } else {
+    constantPoolHandle cph(THREAD, constants());
+    return SystemDictionary::find_nest_host_error(cph, (int)_nest_host_index);
+  }
+}
+
 InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& parser, TRAPS) {
+  bool is_hidden_or_anonymous = parser.is_hidden() || parser.is_unsafe_anonymous();
   const int size = InstanceKlass::size(parser.vtable_size(),
                                        parser.itable_size(),
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
                                        parser.is_interface(),
                                        parser.is_unsafe_anonymous(),
-                                       should_store_fingerprint(parser.is_unsafe_anonymous()));
+                                       should_store_fingerprint(is_hidden_or_anonymous));
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != NULL, "invariant");
@@ -447,6 +496,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   set_vtable_length(parser.vtable_size());
   set_kind(kind);
   set_access_flags(parser.access_flags());
+  if (parser.is_hidden()) set_is_hidden();
   set_is_unsafe_anonymous(parser.is_unsafe_anonymous());
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
                                                     false));
@@ -2276,7 +2326,7 @@ bool InstanceKlass::supers_have_passed_fingerprint_checks() {
   return true;
 }
 
-bool InstanceKlass::should_store_fingerprint(bool is_unsafe_anonymous) {
+bool InstanceKlass::should_store_fingerprint(bool is_hidden_or_anonymous) {
 #if INCLUDE_AOT
   // We store the fingerprint into the InstanceKlass only in the following 2 cases:
   if (CalculateClassFingerprint) {
@@ -2287,8 +2337,8 @@ bool InstanceKlass::should_store_fingerprint(bool is_unsafe_anonymous) {
     // (2) We are running -Xshare:dump or -XX:ArchiveClassesAtExit to create a shared archive
     return true;
   }
-  if (UseAOT && is_unsafe_anonymous) {
-    // (3) We are using AOT code from a shared library and see an unsafe anonymous class
+  if (UseAOT && is_hidden_or_anonymous) {
+    // (3) We are using AOT code from a shared library and see a hidden or unsafe anonymous class
     return true;
   }
 #endif
@@ -2581,6 +2631,7 @@ void InstanceKlass::release_C_heap_structures() {
 
   // Decrement symbol reference counts associated with the unloaded class.
   if (_name != NULL) _name->decrement_refcount();
+
   // unreference array name derived from this class name (arrays of an unloaded
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
@@ -2631,6 +2682,15 @@ const char* InstanceKlass::signature_name() const {
     dest[dest_index++] = src[src_index++];
   }
 
+  if (is_hidden()) { // Replace the last '+' with a '.'.
+    for (int index = (int)src_length; index > 0; index--) {
+      if (dest[index] == '+') {
+        dest[index] = JVM_SIGNATURE_DOT;
+        break;
+      }
+    }
+  }
+
   // If we have a hash, append it
   for (int hash_index = 0; hash_index < hash_len; ) {
     dest[dest_index++] = hash_buf[hash_index++];
@@ -2647,6 +2707,25 @@ ModuleEntry* InstanceKlass::module() const {
   if (is_unsafe_anonymous()) {
     assert(unsafe_anonymous_host() != NULL, "unsafe anonymous class must have a host class");
     return unsafe_anonymous_host()->module();
+  }
+
+  if (is_hidden() &&
+      in_unnamed_package() &&
+      class_loader_data()->has_class_mirror_holder()) {
+    // For a non-strong hidden class defined to an unnamed package,
+    // its (class held) CLD will not have an unnamed module created for it.
+    // Two choices to find the correct ModuleEntry:
+    // 1. If hidden class is within a nest, use nest host's module
+    // 2. Find the unnamed module off from the class loader
+    // For now option #2 is used since a nest host is not set until
+    // after the instance class is created in jvm_lookup_define_class().
+    if (class_loader_data()->is_boot_class_loader_data()) {
+      return ClassLoaderData::the_null_class_loader_data()->unnamed_module();
+    } else {
+      oop module = java_lang_ClassLoader::unnamedModule(class_loader_data()->class_loader());
+      assert(java_lang_Module::is_instance(module), "Not an instance of java.lang.Module");
+      return java_lang_Module::module_entry(module);
+    }
   }
 
   // Class is in a named package
@@ -2879,7 +2958,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
       *inner_is_member = true;
     }
     if (NULL == outer_klass) {
-      // It may be unsafe anonymous; try for that.
+      // It may be a local or anonymous class; try for that.
       int encl_method_class_idx = enclosing_method_class_index();
       if (encl_method_class_idx != 0) {
         Klass* ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);

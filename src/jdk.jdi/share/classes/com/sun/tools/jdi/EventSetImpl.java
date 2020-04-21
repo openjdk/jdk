@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,8 +426,18 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
 
         public String className() {
             assert classSignature.startsWith("L") && classSignature.endsWith(";");
-            return classSignature.substring(1, classSignature.length()-1)
-                .replace('/', '.');
+
+            // trim leading "L" and trailing ";"
+            String name = classSignature.substring(1, classSignature.length() - 1);
+            int index = name.indexOf(".");  // check if it is a hidden class
+            if (index < 0) {
+                return name.replace('/', '.');
+            }  else {
+                // map the type descriptor from: "L" + N + "." + <suffix> + ";"
+                // to class name: N.replace('/', '.') + "/" + <suffix>
+                return name.substring(0, index).replace('/', '.')
+                        + "/" + name.substring(index + 1);
+            }
         }
 
         public String classSignature() {

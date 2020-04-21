@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
-    // or    "CLD for <anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
+    // or    "CLD for <hidden or anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
 
     ResourceMark rm;
     const char* name = NULL;
@@ -128,8 +128,8 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
       _out->print(" (unloading)");
     }
     _out->print(":");
-    if (cld->is_unsafe_anonymous()) {
-      _out->print(" <anonymous class>, loaded by");
+    if (cld->has_class_mirror_holder()) {
+      _out->print(" <hidden or anonymous class>, loaded by");
     }
     if (name != NULL) {
       _out->print(" \"%s\"", name);

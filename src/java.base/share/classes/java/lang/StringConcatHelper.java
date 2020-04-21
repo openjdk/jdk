@@ -28,6 +28,10 @@ package java.lang;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 /**
  * Helper for string concatenation. These methods are mostly looked up with private lookups
  * from {@link java.lang.invoke.StringConcatFactory}, and used in {@link java.lang.invoke.MethodHandle}
@@ -465,5 +469,14 @@ final class StringConcatHelper {
     static long initialCoder() {
         return String.COMPACT_STRINGS ? LATIN1 : UTF16;
     }
+
+    static MethodHandle lookupStatic(String name, MethodType methodType) {
+        try {
+            return MethodHandles.lookup().findStatic(StringConcatHelper.class, name, methodType);
+        } catch (NoSuchMethodException|IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
+    }
+
 
 }

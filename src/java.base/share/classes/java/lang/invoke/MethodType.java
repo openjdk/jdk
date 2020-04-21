@@ -99,6 +99,36 @@ import static java.lang.invoke.MethodType.fromDescriptor;
  * all classes named in the descriptor must be accessible, and will be loaded.
  * (But the classes need not be initialized, as is the case with a {@code CONSTANT_Class}.)
  * This loading may occur at any time before the {@code MethodType} object is first derived.
+ * <p>
+ * <b><a id="descriptor">Nominal Descriptors</a></b>
+ * <p>
+ * A {@code MethodType} can be described in {@linkplain MethodTypeDesc nominal form}
+ * if and only if all of the parameter types and return type can be described
+ * with a {@link Class#describeConstable() nominal descriptor} represented by
+ * {@link ClassDesc}.  If a method type can be described norminally, then:
+ * <ul>
+ * <li>The method type has a {@link MethodTypeDesc nominal descriptor}
+ *     returned by {@link #describeConstable() MethodType::describeConstable}.</li>
+ * <li>The descriptor string returned by
+ *     {@link #descriptorString() MethodType::descriptorString} or
+ *     {@link #toMethodDescriptorString() MethodType::toMethodDescriptorString}
+ *     for the method type is a method descriptor (JVMS {@jvms 4.3.3}).</li>
+ * </ul>
+ * <p>
+ * If any of the parameter types or return type cannot be described
+ * nominally, i.e. {@link Class#describeConstable() Class::describeConstable}
+ * returns an empty optional for that type,
+ * then the method type cannot be described nominally:
+ * <ul>
+ * <li>The method type has no {@link MethodTypeDesc nominal descriptor} and
+ *     {@link #describeConstable() MethodType::describeConstable} returns
+ *     an empty optional.</li>
+ * <li>The descriptor string returned by
+ *     {@link #descriptorString() MethodType::descriptorString} or
+ *     {@link #toMethodDescriptorString() MethodType::toMethodDescriptorString}
+ *     for the method type is not a type descriptor.</li>
+ * </ul>
+ *
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
@@ -1140,7 +1170,9 @@ class MethodType
     }
 
     /**
-     * Produces a bytecode descriptor representation of the method type.
+     * Returns a descriptor string for the method type.  This method
+     * is equivalent to calling {@link #descriptorString() MethodType::descriptorString}.
+     *
      * <p>
      * Note that this is not a strict inverse of {@link #fromMethodDescriptorString fromMethodDescriptorString}.
      * Two distinct classes which share a common name but have different class loaders
@@ -1150,7 +1182,9 @@ class MethodType
      * generate bytecodes that process method handles and {@code invokedynamic}.
      * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader) fromMethodDescriptorString},
      * because the latter requires a suitable class loader argument.
-     * @return the bytecode type descriptor representation
+     * @return the descriptor string for this method type
+     * @jvms 4.3.3 Method Descriptors
+     * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
      */
     public String toMethodDescriptorString() {
         String desc = methodDescriptor;
@@ -1162,11 +1196,28 @@ class MethodType
     }
 
     /**
-     * Return a field type descriptor string for this type
+     * Returns a descriptor string for this method type.
      *
-     * @return the descriptor string
-     * @jvms 4.3.2 Field Descriptors
+     * <p>
+     * If this method type can be <a href="#descriptor">described nominally</a>,
+     * then the result is a method type descriptor (JVMS {@jvms 4.3.3}).
+     * {@link MethodTypeDesc MethodTypeDesc} for this method type
+     * can be produced by calling {@link MethodTypeDesc#ofDescriptor(String)
+     * MethodTypeDesc::ofDescriptor} with the result descriptor string.
+     * <p>
+     * If this method type cannot be <a href="#descriptor">described nominally</a>
+     * and the result is a string of the form:
+     * <blockquote>{@code "(<parameter-descriptors>)<return-descriptor>"}</blockquote>
+     * where {@code <parameter-descriptors>} is the concatenation of the
+     * {@linkplain Class#descriptorString() descriptor string} of all
+     * of the parameter types and the {@linkplain Class#descriptorString() descriptor string}
+     * of the return type. No {@link java.lang.constant.MethodTypeDesc MethodTypeDesc}
+     * can be produced from the result string.
+     *
+     * @return the descriptor string for this method type
      * @since 12
+     * @jvms 4.3.3 Method Descriptors
+     * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
      */
     @Override
     public String descriptorString() {
@@ -1179,12 +1230,13 @@ class MethodType
     }
 
     /**
-     * Return a nominal descriptor for this instance, if one can be
+     * Returns a nominal descriptor for this instance, if one can be
      * constructed, or an empty {@link Optional} if one cannot be.
      *
      * @return An {@link Optional} containing the resulting nominal descriptor,
      * or an empty {@link Optional} if one cannot be constructed.
      * @since 12
+     * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
      */
     @Override
     public Optional<MethodTypeDesc> describeConstable() {

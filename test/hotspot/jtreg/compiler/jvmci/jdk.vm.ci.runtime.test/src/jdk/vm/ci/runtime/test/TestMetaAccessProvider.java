@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,22 @@ public class TestMetaAccessProvider extends TypeUniverse {
                     metaAccess.encodeDeoptActionAndReason(DEOPT_ACTION, DEOPT_REASON, DEBUG_IDS[3]).asInt()
     };
 
-    private static boolean isUnsafeAnoymous(ResolvedJavaType type) {
+    private static boolean isHiddenClass(Class<?> cls) {
+        if (cls.isHidden()) {
+            return true;
+        }
+
+        // Check array of hidden type.
+        while (cls.getComponentType() != null) {
+            cls = cls.getComponentType();
+        }
+        if (cls.isHidden()) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isUnsafeAnonymous(ResolvedJavaType type) {
         return type.getHostClass() != null;
     }
 
@@ -77,7 +92,7 @@ public class TestMetaAccessProvider extends TypeUniverse {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             assertNotNull(c.toString(), type);
-            if (!isUnsafeAnoymous(type)) {
+            if (!isHiddenClass(c) && !isUnsafeAnonymous(type)) {
                 assertEquals(c.toString(), type.getName(), toInternalName(c.getName()));
                 assertEquals(c.toString(), type.getName(), toInternalName(type.toJavaName()));
                 assertEquals(c.toString(), c.getName(), type.toClassName());
@@ -98,11 +113,11 @@ public class TestMetaAccessProvider extends TypeUniverse {
         ResolvedJavaType[] result = metaAccess.lookupJavaTypes(classes.toArray(new Class<?>[classes.size()]));
         int counter = 0;
         for (Class<?> aClass : classes) {
-            if (!isUnsafeAnoymous(result[counter])) {
+            if (!isHiddenClass(aClass) && !isUnsafeAnonymous(result[counter])) {
                 assertEquals("Unexpected javaType: " + result[counter] + " while expecting of class: " + aClass, result[counter].toClassName(), aClass.getName());
             }
             counter++;
-        }
+         }
     }
 
     @Test(expected = NullPointerException.class)

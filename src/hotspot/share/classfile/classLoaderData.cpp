@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,16 +126,16 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
   _name_and_id = SymbolTable::new_symbol(cl_instance_name_and_id);
 }
 
-ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_unsafe_anonymous) :
+ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
   _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
                             Mutex::_safepoint_check_never)),
-  _unloading(false), _is_unsafe_anonymous(is_unsafe_anonymous),
+  _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true), _accumulated_modified_oops(false),
   // An unsafe anonymous class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the unsafe anonymous class.
   // The null-class-loader should always be kept alive.
-  _keep_alive((is_unsafe_anonymous || h_class_loader.is_null()) ? 1 : 0),
+  _keep_alive((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
   _claim(0),
   _handles(),
   _klasses(NULL), _packages(NULL), _modules(NULL), _unnamed_module(NULL), _dictionary(NULL),
@@ -150,13 +150,13 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_unsafe_anonymous
     initialize_name(h_class_loader);
   }
 
-  if (!is_unsafe_anonymous) {
-    // The holder is initialized later for unsafe anonymous classes, and before calling anything
-    // that call class_loader().
+  if (!has_class_mirror_holder) {
+    // The holder is initialized later for non-strong hidden classes and unsafe anonymous classes,
+    // and before calling anything that call class_loader().
     initialize_holder(h_class_loader);
 
-    // A ClassLoaderData created solely for an unsafe anonymous class should never have a
-    // ModuleEntryTable or PackageEntryTable created for it. The defining package
+    // A ClassLoaderData created solely for a non-strong hidden class or unsafe anonymous class should
+    // never have a ModuleEntryTable or PackageEntryTable created for it. The defining package
     // and module for an unsafe anonymous class will be found in its host class.
     _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
     if (h_class_loader.is_null()) {
@@ -291,20 +291,20 @@ bool ClassLoaderData::try_claim(int claim) {
   }
 }
 
-// Unsafe anonymous classes have their own ClassLoaderData that is marked to keep alive
+// Weak hidden and unsafe anonymous classes have their own ClassLoaderData that is marked to keep alive
 // while the class is being parsed, and if the class appears on the module fixup list.
-// Due to the uniqueness that no other class shares the unsafe anonymous class' name or
-// ClassLoaderData, no other non-GC thread has knowledge of the unsafe anonymous class while
+// Due to the uniqueness that no other class shares the hidden or unsafe anonymous class' name or
+// ClassLoaderData, no other non-GC thread has knowledge of the hidden or unsafe anonymous class while
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
-  if (is_unsafe_anonymous()) {
+  if (has_class_mirror_holder()) {
     assert(_keep_alive > 0, "Invalid keep alive increment count");
     _keep_alive++;
   }
 }
 
 void ClassLoaderData::dec_keep_alive() {
-  if (is_unsafe_anonymous()) {
+  if (has_class_mirror_holder()) {
     assert(_keep_alive > 0, "Invalid keep alive decrement count");
     _keep_alive--;
   }
@@ -410,21 +410,21 @@ void ClassLoaderData::record_dependency(const Klass* k) {
 
   // Do not need to record dependency if the dependency is to a class whose
   // class loader data is never freed.  (i.e. the dependency's class loader
-  // is one of the three builtin class loaders and the dependency is not
-  // unsafe anonymous.)
+  // is one of the three builtin class loaders and the dependency's class
+  // loader data has a ClassLoader holder, not a Class holder.)
   if (to_cld->is_permanent_class_loader_data()) {
     return;
   }
 
   oop to;
-  if (to_cld->is_unsafe_anonymous()) {
-    // Just return if an unsafe anonymous class is attempting to record a dependency
-    // to itself.  (Note that every unsafe anonymous class has its own unique class
+  if (to_cld->has_class_mirror_holder()) {
+    // Just return if a non-strong hidden class or unsafe anonymous class is attempting to record a dependency
+    // to itself.  (Note that every non-strong hidden class or unsafe anonymous class has its own unique class
     // loader data.)
     if (to_cld == from_cld) {
       return;
     }
-    // Unsafe anonymous class dependencies are through the mirror.
+    // Hidden and unsafe anonymous class dependencies are through the mirror.
     to = k->java_mirror();
   } else {
     to = to_cld->class_loader();
@@ -572,7 +572,7 @@ const int _boot_loader_dictionary_size    = 1009;
 const int _default_loader_dictionary_size = 107;
 
 Dictionary* ClassLoaderData::create_dictionary() {
-  assert(!is_unsafe_anonymous(), "unsafe anonymous class loader data do not have a dictionary");
+  assert(!has_class_mirror_holder(), "class mirror holder cld does not have a dictionary");
   int size;
   bool resizable = false;
   if (_the_null_class_loader_data == NULL) {
@@ -618,7 +618,7 @@ oop ClassLoaderData::holder_no_keepalive() const {
 
 // Unloading support
 bool ClassLoaderData::is_alive() const {
-  bool alive = keep_alive()         // null class loader and incomplete unsafe anonymous klasses.
+  bool alive = keep_alive()         // null class loader and incomplete non-strong hidden class or unsafe anonymous class.
       || (_holder.peek() != NULL);  // and not cleaned by the GC weak handle processing.
 
   return alive;
@@ -716,13 +716,13 @@ ClassLoaderData::~ClassLoaderData() {
 
 // Returns true if this class loader data is for the app class loader
 // or a user defined system class loader.  (Note that the class loader
-// data may be unsafe anonymous.)
+// data may have a Class holder.)
 bool ClassLoaderData::is_system_class_loader_data() const {
   return SystemDictionary::is_system_class_loader(class_loader());
 }
 
 // Returns true if this class loader data is for the platform class loader.
-// (Note that the class loader data may be unsafe anonymous.)
+// (Note that the class loader data may have a Class holder.)
 bool ClassLoaderData::is_platform_class_loader_data() const {
   return SystemDictionary::is_platform_class_loader(class_loader());
 }
@@ -730,8 +730,8 @@ bool ClassLoaderData::is_platform_class_loader_data() const {
 // Returns true if the class loader for this class loader data is one of
 // the 3 builtin (boot application/system or platform) class loaders,
 // including a user-defined system class loader.  Note that if the class
-// loader data is for an unsafe anonymous class then it may get freed by a GC
-// even if its class loader is one of these loaders.
+// loader data is for a non-strong hidden class or unsafe anonymous class then it may
+// get freed by a GC even if its class loader is one of these loaders.
 bool ClassLoaderData::is_builtin_class_loader_data() const {
   return (is_boot_class_loader_data() ||
           SystemDictionary::is_system_class_loader(class_loader()) ||
@@ -740,9 +740,9 @@ bool ClassLoaderData::is_builtin_class_loader_data() const {
 
 // Returns true if this class loader data is a class loader data
 // that is not ever freed by a GC.  It must be the CLD for one of the builtin
-// class loaders and not the CLD for an unsafe anonymous class.
+// class loaders and not the CLD for a non-strong hidden class or unsafe anonymous class.
 bool ClassLoaderData::is_permanent_class_loader_data() const {
-  return is_builtin_class_loader_data() && !is_unsafe_anonymous();
+  return is_builtin_class_loader_data() && !has_class_mirror_holder();
 }
 
 ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
@@ -759,8 +759,8 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
       if (this == the_null_class_loader_data()) {
         assert (class_loader() == NULL, "Must be");
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
-      } else if (is_unsafe_anonymous()) {
-        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::UnsafeAnonymousMetaspaceType);
+      } else if (has_class_mirror_holder()) {
+        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ClassMirrorHolderMetaspaceType);
       } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
       } else {
@@ -877,8 +877,8 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
   }
 }
 
-// These CLDs are to contain unsafe anonymous classes used for JSR292
-ClassLoaderData* ClassLoaderData::unsafe_anonymous_class_loader_data(Handle loader) {
+// These CLDs are to contain non-strong hidden classes or unsafe anonymous classes used for JSR292
+ClassLoaderData* ClassLoaderData::has_class_mirror_holder_cld(Handle loader) {
   // Add a new class loader data to the graph.
   return ClassLoaderDataGraph::add(loader, true);
 }
@@ -920,8 +920,8 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
     // loader data: 0xsomeaddr of 'bootstrap'
     out->print("loader data: " INTPTR_FORMAT " of %s", p2i(this), loader_name_and_id());
   }
-  if (is_unsafe_anonymous()) {
-    out->print(" unsafe anonymous");
+  if (_has_class_mirror_holder) {
+    out->print(" has a class holder");
   }
 }
 
@@ -931,7 +931,7 @@ void ClassLoaderData::print_value() const { print_value_on(tty); }
 void ClassLoaderData::print_on(outputStream* out) const {
   out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: %s {",
               p2i(this), p2i(_class_loader.ptr_raw()), loader_name_and_id());
-  if (is_unsafe_anonymous()) out->print(" unsafe anonymous");
+  if (has_class_mirror_holder()) out->print(" has a class holder");
   if (claimed()) out->print(" claimed");
   if (is_unloading()) out->print(" unloading");
   out->print(" metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));
@@ -951,8 +951,8 @@ void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);
   oop cl = class_loader();
 
-  guarantee(this == class_loader_data(cl) || is_unsafe_anonymous(), "Must be the same");
-  guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data() || is_unsafe_anonymous(), "must be");
+  guarantee(this == class_loader_data(cl) || has_class_mirror_holder(), "Must be the same");
+  guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data() || has_class_mirror_holder(), "must be");
 
   // Verify the integrity of the allocated space.
   if (metaspace_or_null() != NULL) {

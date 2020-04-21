@@ -195,7 +195,10 @@ class InstanceKlass: public Klass {
   // that is the nest-host of this class. This data has not been validated.
   jushort _nest_host_index;
 
-  // Resolved nest-host klass: either true nest-host or self if we are not nested.
+  // Resolved nest-host klass: either true nest-host or self if we are not
+  // nested, or an error occurred resolving or validating the nominated
+  // nest-host. Can also be set directly by JDK API's that establish nest
+  // relationships.
   // By always being set it makes nest-member access checks simpler.
   InstanceKlass* _nest_host;
 
@@ -469,6 +472,8 @@ class InstanceKlass: public Klass {
   // nest-host index
   jushort nest_host_index() const { return _nest_host_index; }
   void set_nest_host_index(u2 i)  { _nest_host_index = i; }
+  // dynamic nest member support
+  void set_nest_host(InstanceKlass* host, TRAPS);
 
   // record components
   Array<RecordComponent*>* record_components() const { return _record_components; }
@@ -482,9 +487,13 @@ private:
   bool has_nest_member(InstanceKlass* k, TRAPS) const;
 
 public:
-  // Returns nest-host class, resolving and validating it if needed
-  // Returns NULL if an exception occurs during loading, or validation fails
-  InstanceKlass* nest_host(Symbol* validationException, TRAPS);
+  // Used to construct informative IllegalAccessError messages at a higher level,
+  // if there was an issue resolving or validating the nest host.
+  // Returns NULL if there was no error.
+  const char* nest_host_error(TRAPS);
+  // Returns nest-host class, resolving and validating it if needed.
+  // Returns NULL if resolution is not possible from the calling context.
+  InstanceKlass* nest_host(TRAPS);
   // Check if this klass is a nestmate of k - resolves this nest-host and k's
   bool has_nestmate_access_to(InstanceKlass* k, TRAPS);
 
@@ -819,8 +828,8 @@ public:
   }
   bool supers_have_passed_fingerprint_checks();
 
-  static bool should_store_fingerprint(bool is_unsafe_anonymous);
-  bool should_store_fingerprint() const { return should_store_fingerprint(is_unsafe_anonymous()); }
+  static bool should_store_fingerprint(bool is_hidden_or_anonymous);
+  bool should_store_fingerprint() const { return should_store_fingerprint(is_hidden() || is_unsafe_anonymous()); }
   bool has_stored_fingerprint() const;
   uint64_t get_stored_fingerprint() const;
   void store_fingerprint(uint64_t fingerprint);
