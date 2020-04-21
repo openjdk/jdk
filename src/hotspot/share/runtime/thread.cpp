@@ -4427,6 +4427,16 @@ bool Threads::destroy_vm() {
 
   thread->exit(true);
 
+  // We are no longer on the main thread list but could still be in a
+  // secondary list where another thread may try to interact with us.
+  // So wait until all such interactions are complete before we bring
+  // the VM to the termination safepoint. Normally this would be done
+  // using thread->smr_delete() below where we delete the thread, but
+  // we can't call that after the termination safepoint is active as
+  // we will deadlock on the Threads_lock. Once all interactions are
+  // complete it is safe to directly delete the thread at any time.
+  ThreadsSMRSupport::wait_until_not_protected(thread);
+
   // Stop VM thread.
   {
     // 4945125 The vm thread comes to a safepoint during exit.
@@ -4466,21 +4476,9 @@ bool Threads::destroy_vm() {
   // exit_globals() will delete tty
   exit_globals();
 
-  // We are here after VM_Exit::set_vm_exited() so we can't call
-  // thread->smr_delete() or we will block on the Threads_lock. We
-  // must check that there are no active references to this thread
-  // before attempting to delete it. A thread could be waiting on
-  // _handshake_turn_sem trying to execute a direct handshake with
-  // this thread.
-  if (!ThreadsSMRSupport::is_a_protected_JavaThread(thread)) {
-    delete thread;
-  } else {
-    // Clear value for _thread_key in TLS to prevent, depending
-    // on pthreads implementation, possible execution of
-    // thread-specific destructor in infinite loop at thread
-    // exit.
-    Thread::clear_thread_current();
-  }
+  // Deleting the shutdown thread here is safe. See comment on
+  // wait_until_not_protected() above.
+  delete thread;
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {

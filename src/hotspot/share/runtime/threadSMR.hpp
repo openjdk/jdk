@@ -144,6 +144,7 @@ class ThreadsSMRSupport : AllStatic {
   static ThreadsList* get_java_thread_list();
   static bool is_a_protected_JavaThread(JavaThread *thread);
   static bool is_a_protected_JavaThread_with_lock(JavaThread *thread);
+  static void wait_until_not_protected(JavaThread *thread);
   static bool is_bootstrap_list(ThreadsList* list);
   static void remove_thread(JavaThread *thread);
   static void smr_delete(JavaThread *thread);
