@@ -10885,14 +10885,6 @@ instruct castII(iRegIdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct castLL(iRegLdst dst) %{
-  match(Set dst (CastLL dst));
-  format %{ " -- \t// castLL of $dst" %}
-  size(0);
-  ins_encode( /*empty*/ );
-  ins_pipe(pipe_class_default);
-%}
-
 instruct checkCastPP(iRegPdst dst) %{
   match(Set dst (CheckCastPP dst));
   format %{ " -- \t// checkcastPP of $dst" %}

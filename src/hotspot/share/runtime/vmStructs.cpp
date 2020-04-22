@@ -1583,7 +1583,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(DecodeNKlassNode, TypeNode)                             \
   declare_c2_type(ConstraintCastNode, TypeNode)                           \
   declare_c2_type(CastIINode, ConstraintCastNode)                         \
-  declare_c2_type(CastLLNode, ConstraintCastNode)                         \
   declare_c2_type(CastPPNode, ConstraintCastNode)                         \
   declare_c2_type(CheckCastPPNode, TypeNode)                              \
   declare_c2_type(Conv2BNode, Node)                                       \

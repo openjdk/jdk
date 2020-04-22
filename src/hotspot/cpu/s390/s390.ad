@@ -5434,14 +5434,6 @@ instruct castII(iRegI dst) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct castLL(iRegL dst) %{
-  match(Set dst (CastLL dst));
-  size(0);
-  format %{ "# castLL of $dst" %}
-  ins_encode(/*empty*/);
-  ins_pipe(pipe_class_dummy);
-%}
-
 
 //----------Conditional_store--------------------------------------------------
 // Conditional-store of the updated heap-top.
