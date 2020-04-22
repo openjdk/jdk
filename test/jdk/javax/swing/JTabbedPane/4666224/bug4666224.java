@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,24 @@ public class bug4666224 extends JApplet {
             panel = new JPanel();
             panel.setPreferredSize(new Dimension(200, 300));
             tabPane.addTab("Number Four", panel);
+            panel = new JPanel();
+            panel.setPreferredSize(new Dimension(200, 300));
+            tabPane.addTab("Number Five", panel);
+            panel = new JPanel();
+            panel.setPreferredSize(new Dimension(200, 300));
+            tabPane.addTab("Number Six", panel);
+            panel = new JPanel();
+            panel.setPreferredSize(new Dimension(200, 300));
+            tabPane.addTab("Number Seven", panel);
+            panel = new JPanel();
+            panel.setPreferredSize(new Dimension(200, 300));
+            tabPane.addTab("Number Eight", panel);
+            panel = new JPanel();
+            panel.setPreferredSize(new Dimension(200, 300));
+            tabPane.addTab("Number Nine", panel);
+            panel = new JPanel();
+            panel.setPreferredSize(new Dimension(200, 300));
+            tabPane.addTab("Number Ten", panel);
             mainPanel = new JPanel();
             mainPanel.add(tabPane);
 
@@ -91,6 +109,20 @@ public class bug4666224 extends JApplet {
                 " ",
                     " ON ALL PLATFORMS",
                 "1. Click on any of the tabs, focus indicator is visible",
+                    "2. Lose focus on the window by clicking on some other window ",
+                    "3. Focus indicator should disappear",
+                    "4. Regain focus on the window the focus indicator should reappear." ,
+                    " If focus doesn't behave as above, ",
+                    " press 'Assertion Fail' else press 'Assertion Pass'",
+                },
+                {
+                                " Note : Incase of Assertion failure,user can enter",
+                                " remarks by pressing 'Assertion Fail Remarks ' button",
+                                " ",
+                                " You would see an applet with JTabbedPane. Keep the size of applet variable.",
+                " ",
+                    " ON ALL PLATFORMS",
+                    "1. type 'C' to change the tab layout to WRAP_TAB_LAYOUT ",
                     "2. Lose focus on the window by clicking on some other window ",
                     "3. Focus indicator should disappear",
                     "4. Regain focus on the window the focus indicator should reappear." ,
@@ -143,20 +175,6 @@ public class bug4666224 extends JApplet {
                     " press 'Assertion Fail' else press 'Assertion Pass'",
                 },
 
-                {
-                                " Note : Incase of Assertion failure,user can enter",
-                                " remarks by pressing 'Assertion Fail Remarks ' button",
-                                " ",
-                                " You would see an applet with JTabbedPane. Keep the size of applet variable.",
-                " ",
-                    " ON ALL PLATFORMS",
-                    "1. type 'C' to change the tab layout to WRAP_TAB_LAYOUT ",
-                    "2. Lose focus on the window by clicking on some other window ",
-                    "3. Focus indicator should disappear",
-                    "4. Regain focus on the window the focus indicator should reappear." ,
-                    " If focus doesn't behave as above, ",
-                    " press 'Assertion Fail' else press 'Assertion Pass'",
-                },
 
                 {
                                 " Note : Incase of Assertion failure,user can enter",
