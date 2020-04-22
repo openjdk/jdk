@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         };
         directoryComboBox = tmp2;
         directoryComboBox.putClientProperty( "JComboBox.lightweightKeyboardNavigation", "Lightweight" );
+        directoryComboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
         lookInLabel.setLabelFor(directoryComboBox);
         directoryComboBoxModel = createDirectoryComboBoxModel(fc);
         directoryComboBox.setModel(directoryComboBoxModel);
