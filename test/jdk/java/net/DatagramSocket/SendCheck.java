@@ -182,7 +182,7 @@ public class SendCheck {
         static Sender<IOException> of(MulticastSocket socket, byte ttl) {
             SenderImpl.Send<IOException> send =
                     (pkt) -> socket.send(pkt, ttl);
-            return new SenderImpl<>(socket, send, socket::close, IOE);
+            return new SenderImpl<>(socket, send, socket::close, SE);
         }
 
         static Sender<IOException> of(DatagramChannel socket) {

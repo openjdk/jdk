@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.MulticastSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
@@ -45,15 +45,15 @@ import static org.testng.Assert.assertThrows;
 
 /*
  * @test
- * @bug 8236105 8240533
- * @summary Check that DatagramSocket throws expected
+ * @bug 8243408
+ * @summary Check that MulticastSocket throws expected
  *          Exception when sending a DatagramPacket with port 0
  * @run testng/othervm SendPortZero
  */
 
 public class SendPortZero {
     private InetAddress loopbackAddr, wildcardAddr;
-    private DatagramSocket datagramSocket, datagramSocketAdaptor;
+    private MulticastSocket multicastSocket;
     private DatagramPacket loopbackZeroPkt, wildcardZeroPkt, wildcardValidPkt;
 
     private static final Class<SocketException> SE = SocketException.class;
@@ -62,8 +62,7 @@ public class SendPortZero {
 
     @BeforeTest
     public void setUp() throws IOException {
-        datagramSocket = new DatagramSocket();
-        datagramSocketAdaptor = DatagramChannel.open().socket();
+        multicastSocket = new MulticastSocket();
 
         byte[] buf = "test".getBytes();
 
@@ -98,26 +97,27 @@ public class SendPortZero {
     @DataProvider(name = "data")
     public Object[][] variants() {
         return new Object[][]{
-                { datagramSocket,        loopbackZeroPkt },
-                { datagramSocketAdaptor, loopbackZeroPkt },
+                { multicastSocket,       loopbackZeroPkt }
         };
     }
 
     @Test(dataProvider = "data")
-    public void testSend(DatagramSocket ds, DatagramPacket pkt) {
-        assertThrows(SE, () -> ds.send(pkt));
+    public void testSend(MulticastSocket ms, DatagramPacket pkt) {
+        assertThrows(SE, () -> ms.send(pkt));
+        assertThrows(SE, () -> ms.send(pkt, (byte) 0));
     }
 
     // Check that 0 port check doesn't override security manager check
     @Test(dataProvider = "data")
-    public void testSendWithSecurityManager(DatagramSocket ds,
+    public void testSendWithSecurityManager(MulticastSocket ms,
                                             DatagramPacket pkt) {
         Policy defaultPolicy = Policy.getPolicy();
         try {
             Policy.setPolicy(new NoSendPolicy());
             System.setSecurityManager(new SecurityManager());
 
-            assertThrows(ACE, () -> ds.send(pkt));
+            assertThrows(ACE, () -> ms.send(pkt));
+            assertThrows(ACE, () -> ms.send(pkt, (byte) 0));
         } finally {
             System.setSecurityManager(null);
             Policy.setPolicy(defaultPolicy);
@@ -136,7 +136,6 @@ public class SendPortZero {
 
     @AfterTest
     public void tearDown() {
-        datagramSocket.close();
-        datagramSocketAdaptor.close();
+        multicastSocket.close();
     }
 }

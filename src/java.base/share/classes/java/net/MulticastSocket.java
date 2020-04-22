@@ -797,6 +797,9 @@ public class MulticastSocket extends DatagramSocket {
                             // set the ttl
                             getImpl().setTTL(ttl);
                         }
+                        if (packetPort == 0) {
+                            throw new SocketException("Can't send to port 0");
+                        }
                         // call the datagram method to send
                         getImpl().send(p);
                     } finally {
