@@ -43,7 +43,6 @@ private:
   ShenandoahHeap* const _heap;
 
   size_t                _garbage;
-  size_t                _live_data;
   size_t                _used;
   size_t                _region_count;
 
@@ -78,7 +77,6 @@ public:
   void print_on(outputStream* out) const;
 
   size_t used()      const { return _used; }
-  size_t live_data() const { return _live_data; }
   size_t garbage()   const { return _garbage;   }
   void clear();
 
