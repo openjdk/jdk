@@ -336,7 +336,8 @@ public final class Type {
             }
             if (methodDescriptor.charAt(currentOffset++) == 'L') {
                 // Skip the argument descriptor content.
-                currentOffset = methodDescriptor.indexOf(';', currentOffset) + 1;
+                int semiColumnOffset = methodDescriptor.indexOf(';', currentOffset);
+                currentOffset = Math.max(currentOffset, semiColumnOffset + 1);
             }
             ++numArgumentTypes;
         }
@@ -354,7 +355,8 @@ public final class Type {
             }
             if (methodDescriptor.charAt(currentOffset++) == 'L') {
                 // Skip the argument descriptor content.
-                currentOffset = methodDescriptor.indexOf(';', currentOffset) + 1;
+                int semiColumnOffset = methodDescriptor.indexOf(';', currentOffset);
+                currentOffset = Math.max(currentOffset, semiColumnOffset + 1);
             }
             argumentTypes[currentArgumentTypeIndex++] =
                     getTypeInternal(methodDescriptor, currentArgumentTypeOffset, currentOffset);
@@ -394,19 +396,8 @@ public final class Type {
       * @return the {@link Type} corresponding to the return type of the given method descriptor.
       */
     public static Type getReturnType(final String methodDescriptor) {
-        // Skip the first character, which is always a '('.
-        int currentOffset = 1;
-        // Skip the argument types, one at a each loop iteration.
-        while (methodDescriptor.charAt(currentOffset) != ')') {
-            while (methodDescriptor.charAt(currentOffset) == '[') {
-                currentOffset++;
-            }
-            if (methodDescriptor.charAt(currentOffset++) == 'L') {
-                // Skip the argument descriptor content.
-                currentOffset = methodDescriptor.indexOf(';', currentOffset) + 1;
-            }
-        }
-        return getTypeInternal(methodDescriptor, currentOffset + 1, methodDescriptor.length());
+        return getTypeInternal(
+                methodDescriptor, getReturnTypeOffset(methodDescriptor), methodDescriptor.length());
     }
 
     /**
@@ -417,6 +408,29 @@ public final class Type {
       */
     public static Type getReturnType(final Method method) {
         return getType(method.getReturnType());
+    }
+
+    /**
+      * Returns the start index of the return type of the given method descriptor.
+      *
+      * @param methodDescriptor a method descriptor.
+      * @return the start index of the return type of the given method descriptor.
+      */
+    static int getReturnTypeOffset(final String methodDescriptor) {
+        // Skip the first character, which is always a '('.
+        int currentOffset = 1;
+        // Skip the argument types, one at a each loop iteration.
+        while (methodDescriptor.charAt(currentOffset) != ')') {
+            while (methodDescriptor.charAt(currentOffset) == '[') {
+                currentOffset++;
+            }
+            if (methodDescriptor.charAt(currentOffset++) == 'L') {
+                // Skip the argument descriptor content.
+                int semiColumnOffset = methodDescriptor.indexOf(';', currentOffset);
+                currentOffset = Math.max(currentOffset, semiColumnOffset + 1);
+            }
+        }
+        return currentOffset + 1;
     }
 
     /**
@@ -536,11 +550,7 @@ public final class Type {
         if (sort == OBJECT) {
             return valueBuffer.substring(valueBegin - 1, valueEnd + 1);
         } else if (sort == INTERNAL) {
-            return new StringBuilder()
-                    .append('L')
-                    .append(valueBuffer, valueBegin, valueEnd)
-                    .append(';')
-                    .toString();
+            return 'L' + valueBuffer.substring(valueBegin, valueEnd) + ';';
         } else {
             return valueBuffer.substring(valueBegin, valueEnd);
         }
@@ -662,14 +672,7 @@ public final class Type {
             }
             stringBuilder.append(descriptor);
         } else {
-            stringBuilder.append('L');
-            String name = currentClass.getName();
-            int nameLength = name.length();
-            for (int i = 0; i < nameLength; ++i) {
-                char car = name.charAt(i);
-                stringBuilder.append(car == '.' ? '/' : car);
-            }
-            stringBuilder.append(';');
+            stringBuilder.append('L').append(getInternalName(currentClass)).append(';');
         }
     }
 
@@ -768,7 +771,8 @@ public final class Type {
                 }
                 if (methodDescriptor.charAt(currentOffset++) == 'L') {
                     // Skip the argument descriptor content.
-                    currentOffset = methodDescriptor.indexOf(';', currentOffset) + 1;
+                    int semiColumnOffset = methodDescriptor.indexOf(';', currentOffset);
+                    currentOffset = Math.max(currentOffset, semiColumnOffset + 1);
                 }
                 argumentsSize += 1;
             }

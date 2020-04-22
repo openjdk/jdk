@@ -56,69 +56,73 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-package jdk.internal.org.objectweb.asm.util;
+package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.RecordComponentVisitor;
 import jdk.internal.org.objectweb.asm.TypePath;
 
 /**
- * A {@link FieldVisitor} that prints the fields it visits with a {@link Printer}.
+ * A {@link RecordComponentVisitor} that remaps types with a {@link Remapper}.
  *
- * @author Eric Bruneton
+ * @author Remi Forax
  */
-public final class TraceFieldVisitor extends FieldVisitor {
+public class RecordComponentRemapper extends RecordComponentVisitor {
 
-    /** The printer to convert the visited field into text. */
-    // DontCheck(MemberName): can't be renamed (for backward binary compatibility).
-    public final Printer p;
+    /** The remapper used to remap the types in the visited field. */
+    protected final Remapper remapper;
 
     /**
-      * Constructs a new {@link TraceFieldVisitor}.
+      * Constructs a new {@link RecordComponentRemapper}. <i>Subclasses must not use this
+      * constructor</i>. Instead, they must use the {@link
+      * #RecordComponentRemapper(int,RecordComponentVisitor,Remapper)} version.
       *
-      * @param printer the printer to convert the visited field into text.
+      * @param recordComponentVisitor the record component visitor this remapper must delegate to.
+      * @param remapper the remapper to use to remap the types in the visited record component.
       */
-    public TraceFieldVisitor(final Printer printer) {
-        this(null, printer);
+    public RecordComponentRemapper(
+            final RecordComponentVisitor recordComponentVisitor, final Remapper remapper) {
+        this(/* latest api = */ Opcodes.ASM8, recordComponentVisitor, remapper);
     }
 
     /**
-      * Constructs a new {@link TraceFieldVisitor}.
+      * Constructs a new {@link RecordComponentRemapper}.
       *
-      * @param fieldVisitor the field visitor to which to delegate calls. May be {@literal null}.
-      * @param printer the printer to convert the visited field into text.
+      * @param api the ASM API version supported by this remapper. Must be {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
+      * @param recordComponentVisitor the record component visitor this remapper must delegate to.
+      * @param remapper the remapper to use to remap the types in the visited record component.
       */
-    public TraceFieldVisitor(final FieldVisitor fieldVisitor, final Printer printer) {
-        super(/* latest api = */ Opcodes.ASM8, fieldVisitor);
-        this.p = printer;
+    protected RecordComponentRemapper(
+            final int api, final RecordComponentVisitor recordComponentVisitor, final Remapper remapper) {
+        super(api, recordComponentVisitor);
+        this.remapper = remapper;
     }
 
     @Override
     public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldAnnotation(descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitAnnotation(descriptor, visible), annotationPrinter);
+        AnnotationVisitor annotationVisitor =
+                super.visitAnnotation(remapper.mapDesc(descriptor), visible);
+        return annotationVisitor == null ? null : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
     public AnnotationVisitor visitTypeAnnotation(
             final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldTypeAnnotation(typeRef, typePath, descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitTypeAnnotation(typeRef, typePath, descriptor, visible), annotationPrinter);
+        AnnotationVisitor annotationVisitor =
+                super.visitTypeAnnotation(typeRef, typePath, remapper.mapDesc(descriptor), visible);
+        return annotationVisitor == null ? null : createAnnotationRemapper(annotationVisitor);
     }
 
-    @Override
-    public void visitAttribute(final Attribute attribute) {
-        p.visitFieldAttribute(attribute);
-        super.visitAttribute(attribute);
-    }
-
-    @Override
-    public void visitEnd() {
-        p.visitFieldEnd();
-        super.visitEnd();
+    /**
+      * Constructs a new remapper for annotations. The default implementation of this method returns a
+      * new {@link AnnotationRemapper}.
+      *
+      * @param annotationVisitor the AnnotationVisitor the remapper must delegate to.
+      * @return the newly created remapper.
+      */
+    protected AnnotationVisitor createAnnotationRemapper(final AnnotationVisitor annotationVisitor) {
+        return new AnnotationRemapper(api, annotationVisitor, remapper);
     }
 }

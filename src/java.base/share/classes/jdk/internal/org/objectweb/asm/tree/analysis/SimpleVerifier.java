@@ -124,7 +124,12 @@ public class SimpleVerifier extends BasicVerifier {
             final Type currentSuperClass,
             final List<Type> currentClassInterfaces,
             final boolean isInterface) {
-        this(ASM7, currentClass, currentSuperClass, currentClassInterfaces, isInterface);
+        this(
+                /* latest api = */ ASM8,
+                currentClass,
+                currentSuperClass,
+                currentClassInterfaces,
+                isInterface);
         if (getClass() != SimpleVerifier.class) {
             throw new IllegalStateException();
         }
@@ -136,7 +141,8 @@ public class SimpleVerifier extends BasicVerifier {
       *
       * @param api the ASM API version supported by this verifier. Must be one of {@link
       *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6} or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7}.
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
       * @param currentClass the type of the class to be verified.
       * @param currentSuperClass the type of the super class of the class to be verified.
       * @param currentClassInterfaces the types of the interfaces directly implemented by the class to
@@ -285,7 +291,7 @@ public class SimpleVerifier extends BasicVerifier {
                     type1 = type1.getElementType();
                     type2 = type2.getElementType();
                 }
-                do {
+                while (true) {
                     if (type1 == null || isInterface(type1)) {
                         return newArrayValue(Type.getObjectType("java/lang/Object"), numDimensions);
                     }
@@ -293,7 +299,7 @@ public class SimpleVerifier extends BasicVerifier {
                     if (isAssignableFrom(type1, type2)) {
                         return newArrayValue(type1, numDimensions);
                     }
-                } while (true);
+                }
             }
             return BasicValue.UNINITIALIZED_VALUE;
         }

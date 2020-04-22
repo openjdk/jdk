@@ -83,7 +83,7 @@ public class MethodRemapper extends MethodVisitor {
       * @param remapper the remapper to use to remap the types in the visited method.
       */
     public MethodRemapper(final MethodVisitor methodVisitor, final Remapper remapper) {
-        this(Opcodes.ASM7, methodVisitor, remapper);
+        this(/* latest api = */ Opcodes.ASM8, methodVisitor, remapper);
     }
 
     /**
@@ -91,7 +91,8 @@ public class MethodRemapper extends MethodVisitor {
       *
       * @param api the ASM API version supported by this remapper. Must be one of {@link
       *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}.
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
       * @param methodVisitor the method visitor this remapper must deleted to.
       * @param remapper the remapper to use to remap the types in the visited method.
       */
@@ -106,7 +107,7 @@ public class MethodRemapper extends MethodVisitor {
         AnnotationVisitor annotationVisitor = super.visitAnnotationDefault();
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
@@ -115,7 +116,7 @@ public class MethodRemapper extends MethodVisitor {
                 super.visitAnnotation(remapper.mapDesc(descriptor), visible);
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
@@ -125,7 +126,7 @@ public class MethodRemapper extends MethodVisitor {
                 super.visitTypeAnnotation(typeRef, typePath, remapper.mapDesc(descriptor), visible);
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
@@ -135,7 +136,7 @@ public class MethodRemapper extends MethodVisitor {
                 super.visitParameterAnnotation(parameter, remapper.mapDesc(descriptor), visible);
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
@@ -180,53 +181,24 @@ public class MethodRemapper extends MethodVisitor {
                 remapper.mapDesc(descriptor));
     }
 
-    /**
-      * Deprecated.
-      *
-      * @deprecated use {@link #visitMethodInsn(int, String, String, String, boolean)} instead.
-      */
-    @Deprecated
     @Override
     public void visitMethodInsn(
-            final int opcode, final String owner, final String name, final String descriptor) {
-        if (api >= Opcodes.ASM5) {
-            super.visitMethodInsn(opcode, owner, name, descriptor);
-            return;
-        }
-        doVisitMethodInsn(opcode, owner, name, descriptor, opcode == Opcodes.INVOKEINTERFACE);
-    }
-
-    @Override
-    public void visitMethodInsn(
-            final int opcode,
+            final int opcodeAndSource,
             final String owner,
             final String name,
             final String descriptor,
             final boolean isInterface) {
-        if (api < Opcodes.ASM5) {
-            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+        if (api < Opcodes.ASM5 && (opcodeAndSource & Opcodes.SOURCE_DEPRECATED) == 0) {
+            // Redirect the call to the deprecated version of this method.
+            super.visitMethodInsn(opcodeAndSource, owner, name, descriptor, isInterface);
             return;
         }
-        doVisitMethodInsn(opcode, owner, name, descriptor, isInterface);
-    }
-
-    private void doVisitMethodInsn(
-            final int opcode,
-            final String owner,
-            final String name,
-            final String descriptor,
-            final boolean isInterface) {
-        // Calling super.visitMethodInsn requires to call the correct version depending on this.api
-        // (otherwise infinite loops can occur). To simplify and to make it easier to automatically
-        // remove the backward compatibility code, we inline the code of the overridden method here.
-        if (mv != null) {
-            mv.visitMethodInsn(
-                    opcode,
-                    remapper.mapType(owner),
-                    remapper.mapMethodName(owner, name, descriptor),
-                    remapper.mapMethodDesc(descriptor),
-                    isInterface);
-        }
+        super.visitMethodInsn(
+                opcodeAndSource,
+                remapper.mapType(owner),
+                remapper.mapMethodName(owner, name, descriptor),
+                remapper.mapMethodDesc(descriptor),
+                isInterface);
     }
 
     @Override
@@ -268,7 +240,7 @@ public class MethodRemapper extends MethodVisitor {
                 super.visitInsnAnnotation(typeRef, typePath, remapper.mapDesc(descriptor), visible);
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
@@ -284,7 +256,7 @@ public class MethodRemapper extends MethodVisitor {
                 super.visitTryCatchAnnotation(typeRef, typePath, remapper.mapDesc(descriptor), visible);
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
     }
 
     @Override
@@ -318,6 +290,17 @@ public class MethodRemapper extends MethodVisitor {
                         typeRef, typePath, start, end, index, remapper.mapDesc(descriptor), visible);
         return annotationVisitor == null
                 ? annotationVisitor
-                : new AnnotationRemapper(api, annotationVisitor, remapper);
+                : createAnnotationRemapper(annotationVisitor);
+    }
+
+    /**
+      * Constructs a new remapper for annotations. The default implementation of this method returns a
+      * new {@link AnnotationRemapper}.
+      *
+      * @param annotationVisitor the AnnotationVisitor the remapper must delegate to.
+      * @return the newly created remapper.
+      */
+    protected AnnotationVisitor createAnnotationRemapper(final AnnotationVisitor annotationVisitor) {
+        return new AnnotationRemapper(api, annotationVisitor, remapper);
     }
 }

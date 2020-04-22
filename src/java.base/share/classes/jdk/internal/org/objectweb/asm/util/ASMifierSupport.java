@@ -58,67 +58,25 @@
  */
 package jdk.internal.org.objectweb.asm.util;
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.TypePath;
+import java.util.Map;
+import jdk.internal.org.objectweb.asm.Label;
 
 /**
- * A {@link FieldVisitor} that prints the fields it visits with a {@link Printer}.
+ * An {@link jdk.internal.org.objectweb.asm.Attribute} that can generate the ASM code to create an equivalent
+ * attribute.
  *
- * @author Eric Bruneton
+ * @author Eugene Kuleshov
  */
-public final class TraceFieldVisitor extends FieldVisitor {
-
-    /** The printer to convert the visited field into text. */
-    // DontCheck(MemberName): can't be renamed (for backward binary compatibility).
-    public final Printer p;
+// DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
+public interface ASMifierSupport {
 
     /**
-      * Constructs a new {@link TraceFieldVisitor}.
+      * Generates the ASM code to create an attribute equal to this attribute.
       *
-      * @param printer the printer to convert the visited field into text.
+      * @param outputBuilder where the generated code must be appended.
+      * @param visitorVariableName the name of the visitor variable in the produced code.
+      * @param labelNames the names of the labels in the generated code.
       */
-    public TraceFieldVisitor(final Printer printer) {
-        this(null, printer);
-    }
-
-    /**
-      * Constructs a new {@link TraceFieldVisitor}.
-      *
-      * @param fieldVisitor the field visitor to which to delegate calls. May be {@literal null}.
-      * @param printer the printer to convert the visited field into text.
-      */
-    public TraceFieldVisitor(final FieldVisitor fieldVisitor, final Printer printer) {
-        super(/* latest api = */ Opcodes.ASM8, fieldVisitor);
-        this.p = printer;
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldAnnotation(descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitAnnotation(descriptor, visible), annotationPrinter);
-    }
-
-    @Override
-    public AnnotationVisitor visitTypeAnnotation(
-            final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldTypeAnnotation(typeRef, typePath, descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitTypeAnnotation(typeRef, typePath, descriptor, visible), annotationPrinter);
-    }
-
-    @Override
-    public void visitAttribute(final Attribute attribute) {
-        p.visitFieldAttribute(attribute);
-        super.visitAttribute(attribute);
-    }
-
-    @Override
-    public void visitEnd() {
-        p.visitFieldEnd();
-        super.visitEnd();
-    }
+    void asmify(
+            StringBuilder outputBuilder, String visitorVariableName, Map<Label, String> labelNames);
 }

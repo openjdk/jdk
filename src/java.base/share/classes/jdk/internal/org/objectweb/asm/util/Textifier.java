@@ -59,7 +59,11 @@
 package jdk.internal.org.objectweb.asm.util;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.Handle;
@@ -76,6 +80,11 @@ import jdk.internal.org.objectweb.asm.signature.SignatureReader;
  * @author Eric Bruneton
  */
 public class Textifier extends Printer {
+
+    /** The help message shown when command line arguments are incorrect. */
+    private static final String USAGE =
+            "Prints a disassembled view of the given class.\n"
+                    + "Usage: Textifier [-debug] <fully qualified class name or class file name>";
 
     /** The type of internal names. See {@link #appendDescriptor}. */
     public static final int INTERNAL_NAME = 0;
@@ -95,33 +104,16 @@ public class Textifier extends Printer {
     /** The type of class signatures. See {@link #appendDescriptor}. */
     public static final int CLASS_SIGNATURE = 5;
 
-    /**
-      * Deprecated.
-      *
-      * @deprecated this constant has never been used.
-      */
-    @Deprecated public static final int TYPE_DECLARATION = 6;
-
-    /**
-      * Deprecated.
-      *
-      * @deprecated this constant has never been used.
-      */
-    @Deprecated public static final int CLASS_DECLARATION = 7;
-
-    /**
-      * Deprecated.
-      *
-      * @deprecated this constant has never been used.
-      */
-    @Deprecated public static final int PARAMETERS_DECLARATION = 8;
-
     /** The type of method handle descriptors. See {@link #appendDescriptor}. */
     public static final int HANDLE_DESCRIPTOR = 9;
 
     private static final String CLASS_SUFFIX = ".class";
     private static final String DEPRECATED = "// DEPRECATED\n";
+    private static final String RECORD = "// RECORD\n";
     private static final String INVISIBLE = " // invisible\n";
+
+    private static final List<String> FRAME_TYPES =
+            Collections.unmodifiableList(Arrays.asList("T", "I", "F", "D", "J", "N", "U"));
 
     /** The indentation of class members at depth level 1 (e.g. fields, methods). */
     protected String tab = "  ";
@@ -151,7 +143,7 @@ public class Textifier extends Printer {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public Textifier() {
-        this(Opcodes.ASM7);
+        this(/* latest api = */ Opcodes.ASM8);
         if (getClass() != Textifier.class) {
             throw new IllegalStateException();
         }
@@ -161,7 +153,8 @@ public class Textifier extends Printer {
       * Constructs a new {@link Textifier}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
+      *     Opcodes#ASM8}.
       */
     protected Textifier(final int api) {
         super(api);
@@ -176,10 +169,22 @@ public class Textifier extends Printer {
       * @throws IOException if the class cannot be found, or if an IOException occurs.
       */
     public static void main(final String[] args) throws IOException {
-        String usage =
-                "Prints a disassembled view of the given class.\n"
-                        + "Usage: Textifier [-debug] <fully qualified class name or class file name>";
-        main(usage, new Textifier(), args);
+        main(args, new PrintWriter(System.out, true), new PrintWriter(System.err, true));
+    }
+
+    /**
+      * Prints a disassembled view of the given class to the given output.
+      *
+      * <p>Usage: Textifier [-debug] &lt;binary class name or class file name &gt;
+      *
+      * @param args the command line arguments.
+      * @param output where to print the result.
+      * @param logger where to log errors.
+      * @throws IOException if the class cannot be found, or if an IOException occurs.
+      */
+    static void main(final String[] args, final PrintWriter output, final PrintWriter logger)
+            throws IOException {
+        main(args, USAGE, new Textifier(), output, logger);
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -212,6 +217,9 @@ public class Textifier extends Printer {
                 .append(")\n");
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             stringBuilder.append(DEPRECATED);
+        }
+        if ((access & Opcodes.ACC_RECORD) != 0) {
+            stringBuilder.append(RECORD);
         }
         appendRawAccess(access);
 
@@ -329,6 +337,22 @@ public class Textifier extends Printer {
         text.add(stringBuilder.toString());
     }
 
+    /**
+      * <b>Experimental, use at your own risk.</b>.
+      *
+      * @param permittedSubtype the internal name of a permitted subtype.
+      * @deprecated this API is experimental.
+      */
+    @Override
+    @Deprecated
+    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
+        stringBuilder.setLength(0);
+        stringBuilder.append(tab).append("PERMITTEDSUBTYPE ");
+        appendDescriptor(INTERNAL_NAME, permittedSubtype);
+        stringBuilder.append('\n');
+        text.add(stringBuilder.toString());
+    }
+
     @Override
     public void visitInnerClass(
             final String name, final String outerName, final String innerName, final int access) {
@@ -345,6 +369,28 @@ public class Textifier extends Printer {
         appendDescriptor(INTERNAL_NAME, innerName);
         stringBuilder.append('\n');
         text.add(stringBuilder.toString());
+    }
+
+    @Override
+    public Printer visitRecordComponent(
+            final String name, final String descriptor, final String signature) {
+        stringBuilder.setLength(0);
+        stringBuilder.append(tab).append("RECORDCOMPONENT ");
+        if (signature != null) {
+            stringBuilder.append(tab);
+            appendDescriptor(FIELD_SIGNATURE, signature);
+            stringBuilder.append(tab);
+            appendJavaDeclaration(name, signature);
+        }
+
+        stringBuilder.append(tab);
+
+        appendDescriptor(FIELD_DESCRIPTOR, descriptor);
+        stringBuilder.append(' ').append(name);
+
+        stringBuilder.append('\n');
+        text.add(stringBuilder.toString());
+        return addNewTextifier(null);
     }
 
     @Override
@@ -482,30 +528,20 @@ public class Textifier extends Printer {
     }
 
     @Override
-    public void visitExport(final String export, final int access, final String... modules) {
-        stringBuilder.setLength(0);
-        stringBuilder.append(tab).append("exports ");
-        stringBuilder.append(export);
-        if (modules != null && modules.length > 0) {
-            stringBuilder.append(" to");
-        } else {
-            stringBuilder.append(';');
-        }
-        appendRawAccess(access);
-        if (modules != null && modules.length > 0) {
-            for (int i = 0; i < modules.length; ++i) {
-                stringBuilder.append(tab2).append(modules[i]);
-                stringBuilder.append(i != modules.length - 1 ? ",\n" : ";\n");
-            }
-        }
-        text.add(stringBuilder.toString());
+    public void visitExport(final String packaze, final int access, final String... modules) {
+        visitExportOrOpen("exports ", packaze, access, modules);
     }
 
     @Override
-    public void visitOpen(final String export, final int access, final String... modules) {
+    public void visitOpen(final String packaze, final int access, final String... modules) {
+        visitExportOrOpen("opens ", packaze, access, modules);
+    }
+
+    private void visitExportOrOpen(
+            final String method, final String packaze, final int access, final String... modules) {
         stringBuilder.setLength(0);
-        stringBuilder.append(tab).append("opens ");
-        stringBuilder.append(export);
+        stringBuilder.append(tab).append(method);
+        stringBuilder.append(packaze);
         if (modules != null && modules.length > 0) {
             stringBuilder.append(" to");
         } else {
@@ -713,6 +749,31 @@ public class Textifier extends Printer {
     }
 
     // -----------------------------------------------------------------------------------------------
+    // Record components
+    // -----------------------------------------------------------------------------------------------
+
+    @Override
+    public Textifier visitRecordComponentAnnotation(final String descriptor, final boolean visible) {
+        return visitAnnotation(descriptor, visible);
+    }
+
+    @Override
+    public Printer visitRecordComponentTypeAnnotation(
+            final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
+        return visitTypeAnnotation(typeRef, typePath, descriptor, visible);
+    }
+
+    @Override
+    public void visitRecordComponentAttribute(final Attribute attribute) {
+        visitAttribute(attribute);
+    }
+
+    @Override
+    public void visitRecordComponentEnd() {
+        // Nothing to do.
+    }
+
+    // -----------------------------------------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------------------------------------
 
@@ -796,19 +857,7 @@ public class Textifier extends Printer {
 
     @Override
     public void visitMethodAttribute(final Attribute attribute) {
-        stringBuilder.setLength(0);
-        stringBuilder.append(tab).append("ATTRIBUTE ");
-        appendDescriptor(-1, attribute.type);
-
-        if (attribute instanceof Textifiable) {
-            StringBuffer stringBuffer = new StringBuffer();
-            ((Textifiable) attribute).textify(stringBuffer, labelNames);
-            stringBuilder.append(stringBuffer.toString());
-        } else {
-            stringBuilder.append(" : unknown\n");
-        }
-
-        text.add(stringBuilder.toString());
+        visitAttribute(attribute);
     }
 
     @Override
@@ -904,37 +953,8 @@ public class Textifier extends Printer {
         text.add(stringBuilder.toString());
     }
 
-    /**
-      * Deprecated.
-      *
-      * @deprecated use {@link #visitMethodInsn(int, String, String, String, boolean)} instead.
-      */
-    @Deprecated
     @Override
     public void visitMethodInsn(
-            final int opcode, final String owner, final String name, final String descriptor) {
-        if (api >= Opcodes.ASM5) {
-            super.visitMethodInsn(opcode, owner, name, descriptor);
-            return;
-        }
-        doVisitMethodInsn(opcode, owner, name, descriptor, opcode == Opcodes.INVOKEINTERFACE);
-    }
-
-    @Override
-    public void visitMethodInsn(
-            final int opcode,
-            final String owner,
-            final String name,
-            final String descriptor,
-            final boolean isInterface) {
-        if (api < Opcodes.ASM5) {
-            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-            return;
-        }
-        doVisitMethodInsn(opcode, owner, name, descriptor, isInterface);
-    }
-
-    private void doVisitMethodInsn(
             final int opcode,
             final String owner,
             final String name,
@@ -1261,10 +1281,11 @@ public class Textifier extends Printer {
         stringBuilder.append(tab).append("ATTRIBUTE ");
         appendDescriptor(-1, attribute.type);
 
-        if (attribute instanceof Textifiable) {
-            StringBuffer stringBuffer = new StringBuffer();
-            ((Textifiable) attribute).textify(stringBuffer, null);
-            stringBuilder.append(stringBuffer.toString());
+        if (attribute instanceof TextifierSupport) {
+            if (labelNames == null) {
+                labelNames = new HashMap<>();
+            }
+            ((TextifierSupport) attribute).textify(stringBuilder, labelNames);
         } else {
             stringBuilder.append(" : unknown\n");
         }
@@ -1340,8 +1361,7 @@ public class Textifier extends Printer {
       *
       * @param type the type of 'value'. Must be one of {@link #INTERNAL_NAME}, {@link
       *     #FIELD_DESCRIPTOR}, {@link #FIELD_SIGNATURE}, {@link #METHOD_DESCRIPTOR}, {@link
-      *     #METHOD_SIGNATURE}, {@link #CLASS_SIGNATURE}, {@link #TYPE_DECLARATION}, {@link
-      *     #CLASS_DECLARATION}, {@link #PARAMETERS_DECLARATION} of {@link #HANDLE_DESCRIPTOR}.
+      *     #METHOD_SIGNATURE}, {@link #CLASS_SIGNATURE} or {@link #HANDLE_DESCRIPTOR}.
       * @param value an internal name, type descriptor or a type signature. May be {@literal null}.
       */
     protected void appendDescriptor(final int type, final String value) {
@@ -1384,7 +1404,7 @@ public class Textifier extends Printer {
       */
     protected void appendLabel(final Label label) {
         if (labelNames == null) {
-            labelNames = new HashMap<Label, String>();
+            labelNames = new HashMap<>();
         }
         String name = labelNames.get(label);
         if (name == null) {
@@ -1587,31 +1607,7 @@ public class Textifier extends Printer {
                     appendDescriptor(INTERNAL_NAME, descriptor);
                 }
             } else if (frameTypes[i] instanceof Integer) {
-                switch (((Integer) frameTypes[i]).intValue()) {
-                    case 0:
-                        appendDescriptor(FIELD_DESCRIPTOR, "T");
-                        break;
-                    case 1:
-                        appendDescriptor(FIELD_DESCRIPTOR, "I");
-                        break;
-                    case 2:
-                        appendDescriptor(FIELD_DESCRIPTOR, "F");
-                        break;
-                    case 3:
-                        appendDescriptor(FIELD_DESCRIPTOR, "D");
-                        break;
-                    case 4:
-                        appendDescriptor(FIELD_DESCRIPTOR, "J");
-                        break;
-                    case 5:
-                        appendDescriptor(FIELD_DESCRIPTOR, "N");
-                        break;
-                    case 6:
-                        appendDescriptor(FIELD_DESCRIPTOR, "U");
-                        break;
-                    default:
-                        throw new IllegalArgumentException();
-                }
+                stringBuilder.append(FRAME_TYPES.get(((Integer) frameTypes[i]).intValue()));
             } else {
                 appendLabel((Label) frameTypes[i]);
             }
@@ -1639,6 +1635,6 @@ public class Textifier extends Printer {
       * @return a new {@link Textifier}.
       */
     protected Textifier createTextifier() {
-        return new Textifier();
+        return new Textifier(api);
     }
 }

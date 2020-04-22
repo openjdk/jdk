@@ -100,7 +100,7 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
       * instruction, bit i of the corresponding BitSet in this map is set iff instruction at index i
       * belongs to this subroutine.
       */
-    private final Map<LabelNode, BitSet> subroutinesInsns = new HashMap<LabelNode, BitSet>();
+    private final Map<LabelNode, BitSet> subroutinesInsns = new HashMap<>();
 
     /**
       * The instructions that belong to more that one subroutine. Bit i is set iff instruction at index
@@ -129,7 +129,14 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
             final String descriptor,
             final String signature,
             final String[] exceptions) {
-        this(Opcodes.ASM7, methodVisitor, access, name, descriptor, signature, exceptions);
+        this(
+                /* latest api = */ Opcodes.ASM8,
+                methodVisitor,
+                access,
+                name,
+                descriptor,
+                signature,
+                exceptions);
         if (getClass() != JSRInlinerAdapter.class) {
             throw new IllegalStateException();
         }
@@ -139,7 +146,8 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
       * Constructs a new {@link JSRInlinerAdapter}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
+      *     Opcodes#ASM8}.
       * @param methodVisitor the method visitor to send the resulting inlined method code to, or <code>
       *     null</code>.
       * @param access the method's access flags (see {@link Opcodes}). This parameter also indicates if
@@ -322,14 +330,14 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
       * fully elaborated.
       */
     private void emitCode() {
-        LinkedList<Instantiation> worklist = new LinkedList<Instantiation>();
+        LinkedList<Instantiation> worklist = new LinkedList<>();
         // Create an instantiation of the main "subroutine", which is just the main routine.
         worklist.add(new Instantiation(null, mainSubroutineInsns));
 
         // Emit instantiations of each subroutine we encounter, including the main subroutine.
         InsnList newInstructions = new InsnList();
-        List<TryCatchBlockNode> newTryCatchBlocks = new ArrayList<TryCatchBlockNode>();
-        List<LocalVariableNode> newLocalVariables = new ArrayList<LocalVariableNode>();
+        List<TryCatchBlockNode> newTryCatchBlocks = new ArrayList<>();
+        List<LocalVariableNode> newLocalVariables = new ArrayList<>();
         while (!worklist.isEmpty()) {
             Instantiation instantiation = worklist.removeFirst();
             emitInstantiation(
@@ -486,7 +494,7 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
             this.parent = parent;
             this.subroutineInsns = subroutineInsns;
             this.returnLabel = parent == null ? null : new LabelNode();
-            this.clonedLabels = new HashMap<LabelNode, LabelNode>();
+            this.clonedLabels = new HashMap<>();
 
             // Create a clone of each label in the original code of the subroutine. Note that we collapse
             // labels which point at the same instruction into one.

@@ -60,65 +60,92 @@ package jdk.internal.org.objectweb.asm.util;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.RecordComponentVisitor;
 import jdk.internal.org.objectweb.asm.TypePath;
+import jdk.internal.org.objectweb.asm.TypeReference;
 
 /**
- * A {@link FieldVisitor} that prints the fields it visits with a {@link Printer}.
+ * A {@link RecordComponentVisitor} that checks that its methods are properly used.
  *
  * @author Eric Bruneton
+ * @author Remi Forax
  */
-public final class TraceFieldVisitor extends FieldVisitor {
+public class CheckRecordComponentAdapter extends RecordComponentVisitor {
 
-    /** The printer to convert the visited field into text. */
-    // DontCheck(MemberName): can't be renamed (for backward binary compatibility).
-    public final Printer p;
+    /** Whether the {@link #visitEnd()} method has been called. */
+    private boolean visitEndCalled;
 
     /**
-      * Constructs a new {@link TraceFieldVisitor}.
+      * Constructs a new {@link CheckRecordComponentAdapter}. <i>Subclasses must not use this
+      * constructor</i>. Instead, they must use the {@link #CheckRecordComponentAdapter(int,
+      * RecordComponentVisitor)} version.
       *
-      * @param printer the printer to convert the visited field into text.
+      * @param recordComponentVisitor the record component visitor to which this adapter must delegate
+      *     calls.
+      * @throws IllegalStateException If a subclass calls this constructor.
       */
-    public TraceFieldVisitor(final Printer printer) {
-        this(null, printer);
+    public CheckRecordComponentAdapter(final RecordComponentVisitor recordComponentVisitor) {
+        this(/* latest api =*/ Opcodes.ASM8, recordComponentVisitor);
+        if (getClass() != CheckRecordComponentAdapter.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
-      * Constructs a new {@link TraceFieldVisitor}.
+      * Constructs a new {@link CheckRecordComponentAdapter}.
       *
-      * @param fieldVisitor the field visitor to which to delegate calls. May be {@literal null}.
-      * @param printer the printer to convert the visited field into text.
+      * @param api the ASM API version implemented by this visitor. Must be {@link Opcodes#ASM8}.
+      * @param recordComponentVisitor the record component visitor to which this adapter must delegate
+      *     calls.
       */
-    public TraceFieldVisitor(final FieldVisitor fieldVisitor, final Printer printer) {
-        super(/* latest api = */ Opcodes.ASM8, fieldVisitor);
-        this.p = printer;
+    protected CheckRecordComponentAdapter(
+            final int api, final RecordComponentVisitor recordComponentVisitor) {
+        super(api, recordComponentVisitor);
     }
 
     @Override
     public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldAnnotation(descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitAnnotation(descriptor, visible), annotationPrinter);
+        checkVisitEndNotCalled();
+        // Annotations can only appear in V1_5 or more classes.
+        CheckMethodAdapter.checkDescriptor(Opcodes.V1_5, descriptor, false);
+        return new CheckAnnotationAdapter(super.visitAnnotation(descriptor, visible));
     }
 
     @Override
     public AnnotationVisitor visitTypeAnnotation(
             final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldTypeAnnotation(typeRef, typePath, descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitTypeAnnotation(typeRef, typePath, descriptor, visible), annotationPrinter);
+        checkVisitEndNotCalled();
+        int sort = new TypeReference(typeRef).getSort();
+        if (sort != TypeReference.FIELD) {
+            throw new IllegalArgumentException(
+                    "Invalid type reference sort 0x" + Integer.toHexString(sort));
+        }
+        CheckClassAdapter.checkTypeRef(typeRef);
+        CheckMethodAdapter.checkDescriptor(Opcodes.V1_5, descriptor, false);
+        return new CheckAnnotationAdapter(
+                super.visitTypeAnnotation(typeRef, typePath, descriptor, visible));
     }
 
     @Override
     public void visitAttribute(final Attribute attribute) {
-        p.visitFieldAttribute(attribute);
+        checkVisitEndNotCalled();
+        if (attribute == null) {
+            throw new IllegalArgumentException("Invalid attribute (must not be null)");
+        }
         super.visitAttribute(attribute);
     }
 
     @Override
     public void visitEnd() {
-        p.visitFieldEnd();
+        checkVisitEndNotCalled();
+        visitEndCalled = true;
         super.visitEnd();
+    }
+
+    private void checkVisitEndNotCalled() {
+        if (visitEndCalled) {
+            throw new IllegalStateException("Cannot call a visit method after visitEnd has been called");
+        }
     }
 }

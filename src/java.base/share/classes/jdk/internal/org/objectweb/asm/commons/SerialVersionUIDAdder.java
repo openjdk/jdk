@@ -67,7 +67,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -182,7 +181,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public SerialVersionUIDAdder(final ClassVisitor classVisitor) {
-        this(Opcodes.ASM7, classVisitor);
+        this(/* latest api = */ Opcodes.ASM8, classVisitor);
         if (getClass() != SerialVersionUIDAdder.class) {
             throw new IllegalStateException();
         }
@@ -192,7 +191,8 @@ public class SerialVersionUIDAdder extends ClassVisitor {
       * Constructs a new {@link SerialVersionUIDAdder}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
+      *     Opcodes#ASM8}.
       * @param classVisitor a {@link ClassVisitor} to which this visitor will delegate calls.
       */
     protected SerialVersionUIDAdder(final int api, final ClassVisitor classVisitor) {
@@ -218,11 +218,10 @@ public class SerialVersionUIDAdder extends ClassVisitor {
         if (computeSvuid) {
             this.name = name;
             this.access = access;
-            this.interfaces = new String[interfaces.length];
-            this.svuidFields = new ArrayList<Item>();
-            this.svuidConstructors = new ArrayList<Item>();
-            this.svuidMethods = new ArrayList<Item>();
-            System.arraycopy(interfaces, 0, this.interfaces, 0, interfaces.length);
+            this.interfaces = interfaces.clone();
+            this.svuidFields = new ArrayList<>();
+            this.svuidConstructors = new ArrayList<>();
+            this.svuidMethods = new ArrayList<>();
         }
 
         super.visit(version, access, name, signature, superName, interfaces);
@@ -372,13 +371,10 @@ public class SerialVersionUIDAdder extends ClassVisitor {
       */
     // DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
     protected long computeSVUID() throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = null;
-        DataOutputStream dataOutputStream = null;
         long svuid = 0;
 
-        try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            dataOutputStream = new DataOutputStream(byteArrayOutputStream);
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream)) {
 
             // 1. The class name written using UTF encoding.
             dataOutputStream.writeUTF(name.replace('/', '.'));
@@ -445,10 +441,6 @@ public class SerialVersionUIDAdder extends ClassVisitor {
             for (int i = Math.min(hashBytes.length, 8) - 1; i >= 0; i--) {
                 svuid = (svuid << 8) | (hashBytes[i] & 0xFF);
             }
-        } finally {
-            if (dataOutputStream != null) {
-                dataOutputStream.close();
-            }
         }
 
         return svuid;
@@ -483,18 +475,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
             final boolean dotted)
             throws IOException {
         Item[] items = itemCollection.toArray(new Item[0]);
-        Arrays.sort(
-                items,
-                new Comparator<Item>() {
-                    @Override
-                    public int compare(final Item item1, final Item item2) {
-                        int result = item1.name.compareTo(item2.name);
-                        if (result == 0) {
-                            result = item1.descriptor.compareTo(item2.descriptor);
-                        }
-                        return result;
-                    }
-                });
+        Arrays.sort(items);
         for (Item item : items) {
             dataOutputStream.writeUTF(item.name);
             dataOutputStream.writeInt(item.access);
@@ -506,7 +487,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
     // Inner classes
     // -----------------------------------------------------------------------------------------------
 
-    private static final class Item {
+    private static final class Item implements Comparable<Item> {
 
         final String name;
         final int access;
@@ -516,6 +497,28 @@ public class SerialVersionUIDAdder extends ClassVisitor {
             this.name = name;
             this.access = access;
             this.descriptor = descriptor;
+        }
+
+        @Override
+        public int compareTo(final Item item) {
+            int result = name.compareTo(item.name);
+            if (result == 0) {
+                result = descriptor.compareTo(item.descriptor);
+            }
+            return result;
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            if (other instanceof Item) {
+                return compareTo((Item) other) == 0;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode() ^ descriptor.hashCode();
         }
     }
 }

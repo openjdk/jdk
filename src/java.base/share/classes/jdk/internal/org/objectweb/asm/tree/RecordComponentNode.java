@@ -62,108 +62,71 @@ import java.util.List;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.RecordComponentVisitor;
 import jdk.internal.org.objectweb.asm.TypePath;
 
 /**
- * A node that represents a field.
+ * A node that represents a record component.
  *
- * @author Eric Bruneton
+ * @author Remi Forax
  */
-public class FieldNode extends FieldVisitor {
+public class RecordComponentNode extends RecordComponentVisitor {
 
-    /**
-      * The field's access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). This field also indicates if
-      * the field is synthetic and/or deprecated.
-      */
-    public int access;
-
-    /** The field's name. */
+    /** The record component name. */
     public String name;
 
-    /** The field's descriptor (see {@link jdk.internal.org.objectweb.asm.Type}). */
-    public String desc;
+    /** The record component descriptor (see {@link jdk.internal.org.objectweb.asm.Type}). */
+    public String descriptor;
 
-    /** The field's signature. May be {@literal null}. */
+    /** The record component signature. May be {@literal null}. */
     public String signature;
 
-    /**
-      * The field's initial value. This field, which may be {@literal null} if the field does not have
-      * an initial value, must be an {@link Integer}, a {@link Float}, a {@link Long}, a {@link Double}
-      * or a {@link String}.
-      */
-    public Object value;
-
-    /** The runtime visible annotations of this field. May be {@literal null}. */
+    /** The runtime visible annotations of this record component. May be {@literal null}. */
     public List<AnnotationNode> visibleAnnotations;
 
-    /** The runtime invisible annotations of this field. May be {@literal null}. */
+    /** The runtime invisible annotations of this record component. May be {@literal null}. */
     public List<AnnotationNode> invisibleAnnotations;
 
-    /** The runtime visible type annotations of this field. May be {@literal null}. */
+    /** The runtime visible type annotations of this record component. May be {@literal null}. */
     public List<TypeAnnotationNode> visibleTypeAnnotations;
 
-    /** The runtime invisible type annotations of this field. May be {@literal null}. */
+    /** The runtime invisible type annotations of this record component. May be {@literal null}. */
     public List<TypeAnnotationNode> invisibleTypeAnnotations;
 
-    /** The non standard attributes of this field. * May be {@literal null}. */
+    /** The non standard attributes of this record component. * May be {@literal null}. */
     public List<Attribute> attrs;
 
     /**
-      * Constructs a new {@link FieldNode}. <i>Subclasses must not use this constructor</i>. Instead,
-      * they must use the {@link #FieldNode(int, int, String, String, String, Object)} version.
+      * Constructs a new {@link RecordComponentNode}. <i>Subclasses must not use this constructor</i>.
+      * Instead, they must use the {@link #RecordComponentNode(int, String, String, String)} version.
       *
-      * @param access the field's access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). This parameter
-      *     also indicates if the field is synthetic and/or deprecated.
-      * @param name the field's name.
-      * @param descriptor the field's descriptor (see {@link jdk.internal.org.objectweb.asm.Type}).
-      * @param signature the field's signature.
-      * @param value the field's initial value. This parameter, which may be {@literal null} if the
-      *     field does not have an initial value, must be an {@link Integer}, a {@link Float}, a {@link
-      *     Long}, a {@link Double} or a {@link String}.
+      * @param name the record component name.
+      * @param descriptor the record component descriptor (see {@link jdk.internal.org.objectweb.asm.Type}).
+      * @param signature the record component signature.
       * @throws IllegalStateException If a subclass calls this constructor.
       */
-    public FieldNode(
-            final int access,
-            final String name,
-            final String descriptor,
-            final String signature,
-            final Object value) {
-        this(/* latest api = */ Opcodes.ASM8, access, name, descriptor, signature, value);
-        if (getClass() != FieldNode.class) {
+    public RecordComponentNode(final String name, final String descriptor, final String signature) {
+        this(/* latest api = */ Opcodes.ASM8, name, descriptor, signature);
+        if (getClass() != RecordComponentNode.class) {
             throw new IllegalStateException();
         }
     }
 
     /**
-      * Constructs a new {@link FieldNode}.
+      * Constructs a new {@link RecordComponentNode}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
-      * @param access the field's access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). This parameter
-      *     also indicates if the field is synthetic and/or deprecated.
-      * @param name the field's name.
-      * @param descriptor the field's descriptor (see {@link jdk.internal.org.objectweb.asm.Type}).
-      * @param signature the field's signature.
-      * @param value the field's initial value. This parameter, which may be {@literal null} if the
-      *     field does not have an initial value, must be an {@link Integer}, a {@link Float}, a {@link
-      *     Long}, a {@link Double} or a {@link String}.
+      * @param api the ASM API version implemented by this visitor. Must be {@link Opcodes#ASM8}.
+      * @param name the record component name.
+      * @param descriptor the record component descriptor (see {@link jdk.internal.org.objectweb.asm.Type}).
+      * @param signature the record component signature.
       */
-    public FieldNode(
-            final int api,
-            final int access,
-            final String name,
-            final String descriptor,
-            final String signature,
-            final Object value) {
+    public RecordComponentNode(
+            final int api, final String name, final String descriptor, final String signature) {
         super(api);
-        this.access = access;
         this.name = name;
-        this.desc = descriptor;
+        this.descriptor = descriptor;
         this.signature = signature;
-        this.value = value;
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -208,52 +171,47 @@ public class FieldNode extends FieldVisitor {
     // -----------------------------------------------------------------------------------------------
 
     /**
-      * Checks that this field node is compatible with the given ASM API version. This method checks
-      * that this node, and all its children recursively, do not contain elements that were introduced
-      * in more recent versions of the ASM API than the given version.
+      * Checks that this record component node is compatible with the given ASM API version. This
+      * method checks that this node, and all its children recursively, do not contain elements that
+      * were introduced in more recent versions of the ASM API than the given version.
       *
-      * @param api an ASM API version. Must be one of {@link Opcodes#ASM4}, {@link Opcodes#ASM5},
-      *     {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param api an ASM API version. Must be {@link Opcodes#ASM8}.
       */
     public void check(final int api) {
-        if (api == Opcodes.ASM4) {
-            if (visibleTypeAnnotations != null && !visibleTypeAnnotations.isEmpty()) {
-                throw new UnsupportedClassVersionException();
-            }
-            if (invisibleTypeAnnotations != null && !invisibleTypeAnnotations.isEmpty()) {
-                throw new UnsupportedClassVersionException();
-            }
+        if (api < Opcodes.ASM8) {
+            throw new UnsupportedClassVersionException();
         }
     }
 
     /**
-      * Makes the given class visitor visit this field.
+      * Makes the given class visitor visit this record component.
       *
       * @param classVisitor a class visitor.
       */
     public void accept(final ClassVisitor classVisitor) {
-        FieldVisitor fieldVisitor = classVisitor.visitField(access, name, desc, signature, value);
-        if (fieldVisitor == null) {
+        RecordComponentVisitor recordComponentVisitor =
+                classVisitor.visitRecordComponent(name, descriptor, signature);
+        if (recordComponentVisitor == null) {
             return;
         }
         // Visit the annotations.
         if (visibleAnnotations != null) {
             for (int i = 0, n = visibleAnnotations.size(); i < n; ++i) {
                 AnnotationNode annotation = visibleAnnotations.get(i);
-                annotation.accept(fieldVisitor.visitAnnotation(annotation.desc, true));
+                annotation.accept(recordComponentVisitor.visitAnnotation(annotation.desc, true));
             }
         }
         if (invisibleAnnotations != null) {
             for (int i = 0, n = invisibleAnnotations.size(); i < n; ++i) {
                 AnnotationNode annotation = invisibleAnnotations.get(i);
-                annotation.accept(fieldVisitor.visitAnnotation(annotation.desc, false));
+                annotation.accept(recordComponentVisitor.visitAnnotation(annotation.desc, false));
             }
         }
         if (visibleTypeAnnotations != null) {
             for (int i = 0, n = visibleTypeAnnotations.size(); i < n; ++i) {
                 TypeAnnotationNode typeAnnotation = visibleTypeAnnotations.get(i);
                 typeAnnotation.accept(
-                        fieldVisitor.visitTypeAnnotation(
+                        recordComponentVisitor.visitTypeAnnotation(
                                 typeAnnotation.typeRef, typeAnnotation.typePath, typeAnnotation.desc, true));
             }
         }
@@ -261,16 +219,16 @@ public class FieldNode extends FieldVisitor {
             for (int i = 0, n = invisibleTypeAnnotations.size(); i < n; ++i) {
                 TypeAnnotationNode typeAnnotation = invisibleTypeAnnotations.get(i);
                 typeAnnotation.accept(
-                        fieldVisitor.visitTypeAnnotation(
+                        recordComponentVisitor.visitTypeAnnotation(
                                 typeAnnotation.typeRef, typeAnnotation.typePath, typeAnnotation.desc, false));
             }
         }
         // Visit the non standard attributes.
         if (attrs != null) {
             for (int i = 0, n = attrs.size(); i < n; ++i) {
-                fieldVisitor.visitAttribute(attrs.get(i));
+                recordComponentVisitor.visitAttribute(attrs.get(i));
             }
         }
-        fieldVisitor.visitEnd();
+        recordComponentVisitor.visitEnd();
     }
 }

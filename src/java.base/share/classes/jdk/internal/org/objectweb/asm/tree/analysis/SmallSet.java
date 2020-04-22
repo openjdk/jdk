@@ -118,12 +118,18 @@ final class SmallSet<T> extends AbstractSet<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new IteratorImpl<T>(element1, element2);
+        return new IteratorImpl<>(element1, element2);
     }
 
     @Override
     public int size() {
-        return element1 == null ? 0 : (element2 == null ? 1 : 2);
+        if (element1 == null) {
+            return 0;
+        } else if (element2 == null) {
+            return 1;
+        } else {
+            return 2;
+        }
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -155,7 +161,7 @@ final class SmallSet<T> extends AbstractSet<T> {
         if (otherSet.element2 == null) {
             // If this set also contains exactly one element, we have two distinct elements.
             if (element2 == null) {
-                return new SmallSet<T>(element1, otherSet.element1);
+                return new SmallSet<>(element1, otherSet.element1);
             }
             // If otherSet is included in this set, return this set.
             if (otherSet.element1 == element1 || otherSet.element1 == element2) {
@@ -170,7 +176,7 @@ final class SmallSet<T> extends AbstractSet<T> {
 
         // At this point we know that there are at least 3 distinct elements, so we need a generic set
         // to store the result.
-        HashSet<T> result = new HashSet<T>(4);
+        HashSet<T> result = new HashSet<>(4);
         result.add(element1);
         if (element2 != null) {
             result.add(element2);

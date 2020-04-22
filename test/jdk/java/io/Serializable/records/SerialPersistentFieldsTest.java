@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ public class SerialPersistentFieldsTest {
         final ObjectStreamField[] spf;
         String className;
         SerialPersistentFieldsVisitor(ClassVisitor cv, ObjectStreamField[] spf) {
-            super(ASM7, cv);
+            super(ASM8, cv);
             this.spf = spf;
         }
         @Override

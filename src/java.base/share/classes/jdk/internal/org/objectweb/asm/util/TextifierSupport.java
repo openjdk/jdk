@@ -58,67 +58,21 @@
  */
 package jdk.internal.org.objectweb.asm.util;
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.TypePath;
+import java.util.Map;
+import jdk.internal.org.objectweb.asm.Label;
 
 /**
- * A {@link FieldVisitor} that prints the fields it visits with a {@link Printer}.
+ * An {@link jdk.internal.org.objectweb.asm.Attribute} that can print a readable representation of itself.
  *
- * @author Eric Bruneton
+ * @author Eugene Kuleshov
  */
-public final class TraceFieldVisitor extends FieldVisitor {
-
-    /** The printer to convert the visited field into text. */
-    // DontCheck(MemberName): can't be renamed (for backward binary compatibility).
-    public final Printer p;
+public interface TextifierSupport {
 
     /**
-      * Constructs a new {@link TraceFieldVisitor}.
+      * Generates a human readable representation of this attribute.
       *
-      * @param printer the printer to convert the visited field into text.
+      * @param outputBuilder where the human representation of this attribute must be appended.
+      * @param labelNames the human readable names of the labels.
       */
-    public TraceFieldVisitor(final Printer printer) {
-        this(null, printer);
-    }
-
-    /**
-      * Constructs a new {@link TraceFieldVisitor}.
-      *
-      * @param fieldVisitor the field visitor to which to delegate calls. May be {@literal null}.
-      * @param printer the printer to convert the visited field into text.
-      */
-    public TraceFieldVisitor(final FieldVisitor fieldVisitor, final Printer printer) {
-        super(/* latest api = */ Opcodes.ASM8, fieldVisitor);
-        this.p = printer;
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldAnnotation(descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitAnnotation(descriptor, visible), annotationPrinter);
-    }
-
-    @Override
-    public AnnotationVisitor visitTypeAnnotation(
-            final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-        Printer annotationPrinter = p.visitFieldTypeAnnotation(typeRef, typePath, descriptor, visible);
-        return new TraceAnnotationVisitor(
-                super.visitTypeAnnotation(typeRef, typePath, descriptor, visible), annotationPrinter);
-    }
-
-    @Override
-    public void visitAttribute(final Attribute attribute) {
-        p.visitFieldAttribute(attribute);
-        super.visitAttribute(attribute);
-    }
-
-    @Override
-    public void visitEnd() {
-        p.visitFieldEnd();
-        super.visitEnd();
-    }
+    void textify(StringBuilder outputBuilder, Map<Label, String> labelNames);
 }

@@ -88,7 +88,7 @@ public final class TraceModuleVisitor extends ModuleVisitor {
       * @param printer the printer to convert the visited module into text.
       */
     public TraceModuleVisitor(final ModuleVisitor moduleVisitor, final Printer printer) {
-        super(Opcodes.ASM7, moduleVisitor);
+        super(/* latest api = */ Opcodes.ASM8, moduleVisitor);
         this.p = printer;
     }
 

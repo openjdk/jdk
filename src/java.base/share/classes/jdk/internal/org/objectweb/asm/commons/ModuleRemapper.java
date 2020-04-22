@@ -79,15 +79,16 @@ public class ModuleRemapper extends ModuleVisitor {
       * @param remapper the remapper to use to remap the types in the visited module.
       */
     public ModuleRemapper(final ModuleVisitor moduleVisitor, final Remapper remapper) {
-        this(Opcodes.ASM7, moduleVisitor, remapper);
+        this(/* latest api = */ Opcodes.ASM8, moduleVisitor, remapper);
     }
 
     /**
       * Constructs a new {@link ModuleRemapper}.
       *
       * @param api the ASM API version supported by this remapper. Must be one of {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}.
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
       * @param moduleVisitor the module visitor this remapper must deleted to.
       * @param remapper the remapper to use to remap the types in the visited module.
       */

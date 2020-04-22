@@ -115,7 +115,7 @@ public class ModuleNode extends ModuleVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public ModuleNode(final String name, final int access, final String version) {
-        super(Opcodes.ASM7);
+        super(/* latest api = */ Opcodes.ASM8);
         if (getClass() != ModuleNode.class) {
             throw new IllegalStateException();
         }
@@ -128,8 +128,8 @@ public class ModuleNode extends ModuleVisitor {
     /**
       * Constructs a {@link ModuleNode}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link Opcodes#ASM6}
-      *     or {@link Opcodes#ASM7}.
+      * @param api the ASM API version implemented by this visitor. Must be one of {@link
+      *     Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link Opcodes#ASM8}.
       * @param name the fully qualified name (using dots) of the module.
       * @param access the module access flags, among {@code ACC_OPEN}, {@code ACC_SYNTHETIC} and {@code
       *     ACC_MANDATED}.
@@ -169,7 +169,7 @@ public class ModuleNode extends ModuleVisitor {
     @Override
     public void visitPackage(final String packaze) {
         if (packages == null) {
-            packages = new ArrayList<String>(5);
+            packages = new ArrayList<>(5);
         }
         packages.add(packaze);
     }
@@ -177,7 +177,7 @@ public class ModuleNode extends ModuleVisitor {
     @Override
     public void visitRequire(final String module, final int access, final String version) {
         if (requires == null) {
-            requires = new ArrayList<ModuleRequireNode>(5);
+            requires = new ArrayList<>(5);
         }
         requires.add(new ModuleRequireNode(module, access, version));
     }
@@ -185,7 +185,7 @@ public class ModuleNode extends ModuleVisitor {
     @Override
     public void visitExport(final String packaze, final int access, final String... modules) {
         if (exports == null) {
-            exports = new ArrayList<ModuleExportNode>(5);
+            exports = new ArrayList<>(5);
         }
         exports.add(new ModuleExportNode(packaze, access, Util.asArrayList(modules)));
     }
@@ -193,7 +193,7 @@ public class ModuleNode extends ModuleVisitor {
     @Override
     public void visitOpen(final String packaze, final int access, final String... modules) {
         if (opens == null) {
-            opens = new ArrayList<ModuleOpenNode>(5);
+            opens = new ArrayList<>(5);
         }
         opens.add(new ModuleOpenNode(packaze, access, Util.asArrayList(modules)));
     }
@@ -201,7 +201,7 @@ public class ModuleNode extends ModuleVisitor {
     @Override
     public void visitUse(final String service) {
         if (uses == null) {
-            uses = new ArrayList<String>(5);
+            uses = new ArrayList<>(5);
         }
         uses.add(service);
     }
@@ -209,7 +209,7 @@ public class ModuleNode extends ModuleVisitor {
     @Override
     public void visitProvide(final String service, final String... providers) {
         if (provides == null) {
-            provides = new ArrayList<ModuleProvideNode>(5);
+            provides = new ArrayList<>(5);
         }
         provides.add(new ModuleProvideNode(service, Util.asArrayList(providers)));
     }

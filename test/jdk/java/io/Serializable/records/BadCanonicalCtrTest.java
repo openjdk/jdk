@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public class BadCanonicalCtrTest {
     static class RemoveCanonicalCtrVisitor extends ClassVisitor {
         static final String CTR_NAME = "<init>";
         RemoveCanonicalCtrVisitor(ClassVisitor cv) {
-            super(ASM7, cv);
+            super(ASM8, cv);
         }
         volatile boolean foundCanonicalCtr;
         @Override
@@ -250,7 +250,7 @@ public class BadCanonicalCtrTest {
     /** Replaces whatever <init> method it finds with <init>(Ljava/lang/Object;)V. */
     static class ModifyCanonicalCtrVisitor extends ClassVisitor {
         ModifyCanonicalCtrVisitor(ClassVisitor cv) {
-            super(ASM7, cv);
+            super(ASM8, cv);
         }
         boolean foundCanonicalCtr;
         String className;
