@@ -634,6 +634,7 @@ JAR_CMD:=@JAR@
 JLINK_CMD := @JLINK@
 JMOD_CMD := @JMOD@
 JARSIGNER_CMD:=@JARSIGNER@
+JJS_CMD:=@JJS@
 SJAVAC_SERVER_JAVA_CMD:=@SJAVAC_SERVER_JAVA@
 # These variables are meant to be used. They are defined with = instead of := to make
 # it possible to override only the *_CMD variables.
@@ -646,6 +647,7 @@ JAR=@FIXPATH@ $(JAR_CMD)
 JLINK = @FIXPATH@ $(JLINK_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JMOD = @FIXPATH@ $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
+JJS=@FIXPATH@ $(JJS_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 # A specific java binary with specific options can be used to run
 # the long running background sjavac servers and other long running tasks.
 SJAVAC_SERVER_JAVA=@FIXPATH@ @FIXPATH_DETACH_FLAG@ $(SJAVAC_SERVER_JAVA_CMD) \

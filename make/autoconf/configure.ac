@@ -126,12 +126,11 @@ BASIC_SETUP_DEFAULT_LOG
 
 ###############################################################################
 #
-# Determine OpenJDK variants, options and version numbers.
+# Determine OpenJDK variants and version numbers.
 #
 ###############################################################################
 
 # We need build & target for this.
-JDKOPT_SETUP_JDK_OPTIONS
 JDKOPT_SETUP_JLINK_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
@@ -143,6 +142,14 @@ JDKVER_SETUP_JDK_VERSION_NUMBERS
 
 BOOTJDK_SETUP_BOOT_JDK
 BOOTJDK_SETUP_BUILD_JDK
+
+###############################################################################
+#
+# Determine JDK specific build time options.
+#
+###############################################################################
+
+JDKOPT_SETUP_JDK_OPTIONS
 
 ###############################################################################
 #

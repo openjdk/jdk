@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,3 +66,6 @@ JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
 # By filtering out those JVM args, the bootcycle JVM will use its default
 # settings for CDS.
 JAVA_FLAGS := $(filter-out -XX:SharedArchiveFile% -Xshare%, $(JAVA_FLAGS))
+
+# Pandoc cannot be used without the jjs plugin, which was removed with Nashorn.
+ENABLE_PANDOC := false

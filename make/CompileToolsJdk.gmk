@@ -103,9 +103,8 @@ ifeq ($(ENABLE_PANDOC), true)
       SOURCE_FILES := $(TOPDIR)/make/scripts/pandoc-troff-manpage-filter.sh.template, \
       OUTPUT_FILE := $(PANDOC_TROFF_MANPAGE_FILTER), \
       REPLACEMENTS := \
-          @@BOOT_JDK@@ => $(BOOT_JDK) ; \
+          @@JJS@@ => $(JJS) ; \
           @@TOPDIR@@ => $(TOPDIR) ; \
-          @@JJS_FLAGS@@ => $(addprefix -J, $(JAVA_FLAGS_SMALL)), \
   ))
 
   # Created script must be made executable
@@ -127,9 +126,8 @@ ifeq ($(ENABLE_PANDOC), true)
       SOURCE_FILES := $(TOPDIR)/make/scripts/pandoc-html-manpage-filter.sh.template, \
       OUTPUT_FILE := $(PANDOC_HTML_MANPAGE_FILTER), \
       REPLACEMENTS := \
-          @@BOOT_JDK@@ => $(BOOT_JDK) ; \
+          @@JJS@@ => $(JJS) ; \
           @@TOPDIR@@ => $(TOPDIR) ; \
-          @@JJS_FLAGS@@ => $(addprefix -J, $(JAVA_FLAGS_SMALL)), \
   ))
 
   # Created script must be made executable

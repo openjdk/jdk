@@ -140,7 +140,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
 
   AC_MSG_CHECKING([for pandoc])
-  if test "x$PANDOC" != "x"; then
+  if test "x$ENABLE_PANDOC" = "xtrue"; then
     AC_MSG_RESULT([yes])
   else
     AC_MSG_RESULT([no, cannot generate full docs])

@@ -615,7 +615,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // The prebuilt bootcycle variant modifies the boot jdk argument
             var bootcyclePrebuiltBase = {
                 dependencies: [ name + ".jdk" ],
-                configure_args: "--with-boot-jdk=" + input.get(name + ".jdk", "home_path"),
+                configure_args: [
+                    "--with-boot-jdk=" + input.get(name + ".jdk", "home_path"),
+                    // Full docs do not currently work with bootcycle build
+                    // since Nashorn was removed. This negates the
+                    // --enable-full-docs from the main profile.
+                    "--enable-full-docs=auto",
+                ]
             }
             profiles[bootcyclePrebuiltName] = concatObjects(profiles[name],
                 bootcyclePrebuiltBase);
