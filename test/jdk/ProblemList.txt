@@ -262,7 +262,7 @@ java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 window
 java/awt/image/DrawImage/IncorrectSourceOffset.java 8196086 windows-all
 java/awt/image/DrawImage/IncorrectUnmanagedImageRotatedClip.java 8196087 windows-all
 java/awt/image/MultiResolutionImage/MultiResolutionDrawImageWithTransformTest.java 8198390 generic-all
-java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all
+java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all,windows-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
