@@ -125,18 +125,10 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         }
       }
 
-      // Try to mix the allocation into the mutator view:
-      if (ShenandoahAllowMixedAllocs) {
-        for (size_t c = _mutator_rightmost + 1; c > _mutator_leftmost; c--) {
-          size_t idx = c - 1;
-          if (is_mutator_free(idx)) {
-            HeapWord* result = try_allocate_in(_heap->get_region(idx), req, in_new_region);
-            if (result != NULL) {
-              return result;
-            }
-          }
-        }
-      }
+      // No dice. Do not try to mix mutator and GC allocations, because
+      // URWM moves due to GC allocations would expose unparsable mutator
+      // allocations.
+
       break;
     }
     default:
