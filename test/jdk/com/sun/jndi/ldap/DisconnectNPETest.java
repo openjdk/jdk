@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
@@ -41,6 +40,7 @@ import java.util.Hashtable;
  *          the LDAP directory server sends an (unsolicited)
  *          "Notice of Disconnection", make sure client handle it correctly,
  *          no NPE been thrown.
+ * @library lib/ /test/lib
  * @run main/othervm DisconnectNPETest
  */
 
@@ -49,27 +49,39 @@ public class DisconnectNPETest {
     // case, we set repeat count to 1000 here.
     private static final int REPEAT_COUNT = 1000;
 
+    // "Notice of Disconnection" message
+    private static final byte[] DISCONNECT_MSG = { 0x30, 0x4C, 0x02, 0x01,
+            0x00, 0x78, 0x47, 0x0A, 0x01, 0x34, 0x04, 0x00, 0x04, 0x28,
+            0x55, 0x4E, 0x41, 0x56, 0x41, 0x49, 0x4C, 0x41, 0x42, 0x4C,
+            0x45, 0x3A, 0x20, 0x54, 0x68, 0x65, 0x20, 0x73, 0x65, 0x72,
+            0x76, 0x65, 0x72, 0x20, 0x77, 0x69, 0x6C, 0x6C, 0x20, 0x64,
+            0x69, 0x73, 0x63, 0x6F, 0x6E, 0x6E, 0x65, 0x63, 0x74, 0x21,
+            (byte) 0x8A, 0x16, 0x31, 0x2E, 0x33, 0x2E, 0x36, 0x2E, 0x31,
+            0x2E, 0x34, 0x2E, 0x31, 0x2E, 0x31, 0x34, 0x36, 0x36, 0x2E,
+            0x32, 0x30, 0x30, 0x33, 0x36 };
+    private static final byte[] BIND_RESPONSE = { 0x30, 0x0C, 0x02, 0x01,
+            0x01, 0x61, 0x07, 0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00 };
+
     public static void main(String[] args) throws IOException {
         new DisconnectNPETest().run();
     }
 
     private ServerSocket serverSocket;
     private Hashtable<Object, Object> env;
-    private TestLDAPServer server;
 
     private void initRes() throws IOException {
         serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
-        server = new TestLDAPServer();
-        server.start();
     }
 
     private void initTest() {
         env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, String.format("ldap://%s:%d/",
-                InetAddress.getLoopbackAddress().getHostName(),
-                serverSocket.getLocalPort()));
+        env.put(Context.PROVIDER_URL, URIBuilder.newBuilder()
+                        .scheme("ldap")
+                        .loopback()
+                        .port(serverSocket.getLocalPort())
+                        .buildUnchecked().toString());
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL,
                 "cn=8205330,ou=Client6,ou=Vendor1,o=IMC,c=US");
@@ -80,7 +92,17 @@ public class DisconnectNPETest {
         initRes();
         initTest();
         int count = 0;
-        try {
+        try (var ignore = new BaseLdapServer(serverSocket) {
+            @Override
+            protected void handleRequest(Socket socket, LdapMessage request,
+                    OutputStream out) throws IOException {
+                if (request.getOperation()
+                        == LdapMessage.Operation.BIND_REQUEST) {
+                    out.write(BIND_RESPONSE);
+                    out.write(DISCONNECT_MSG);
+                }
+            }
+        }.start()) {
             while (count < REPEAT_COUNT) {
                 count++;
                 InitialDirContext context = null;
@@ -97,15 +119,7 @@ public class DisconnectNPETest {
             }
         } finally {
             System.out.println("Test count: " + count + "/" + REPEAT_COUNT);
-            cleanupTest();
         }
-    }
-
-    private void cleanupTest() {
-        if (server != null) {
-            server.stopServer();
-        }
-        cleanupClosableRes(serverSocket);
     }
 
     private void cleanupContext(DirContext context) {
@@ -114,79 +128,6 @@ public class DisconnectNPETest {
                 context.close();
             } catch (NamingException e) {
                 // ignore
-            }
-        }
-    }
-
-    private static void cleanupClosableRes(Closeable res) {
-        if (res != null) {
-            try {
-                res.close();
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-    }
-
-    class TestLDAPServer extends Thread {
-        private volatile boolean isRunning;
-
-        TestLDAPServer() {
-            isRunning = true;
-        }
-
-        private void stopServer() {
-            isRunning = false;
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (isRunning) {
-                    Socket clientSocket = serverSocket.accept();
-                    Thread handler = new Thread(
-                            new LDAPServerHandler(clientSocket));
-                    handler.start();
-                }
-            } catch (IOException e) {
-                if (isRunning) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    static class LDAPServerHandler implements Runnable {
-        // "Notice of Disconnection" message
-        private static final byte[] DISCONNECT_MSG = { 0x30, 0x4C, 0x02, 0x01,
-                0x00, 0x78, 0x47, 0x0A, 0x01, 0x34, 0x04, 0x00, 0x04, 0x28,
-                0x55, 0x4E, 0x41, 0x56, 0x41, 0x49, 0x4C, 0x41, 0x42, 0x4C,
-                0x45, 0x3A, 0x20, 0x54, 0x68, 0x65, 0x20, 0x73, 0x65, 0x72,
-                0x76, 0x65, 0x72, 0x20, 0x77, 0x69, 0x6C, 0x6C, 0x20, 0x64,
-                0x69, 0x73, 0x63, 0x6F, 0x6E, 0x6E, 0x65, 0x63, 0x74, 0x21,
-                (byte) 0x8A, 0x16, 0x31, 0x2E, 0x33, 0x2E, 0x36, 0x2E, 0x31,
-                0x2E, 0x34, 0x2E, 0x31, 0x2E, 0x31, 0x34, 0x36, 0x36, 0x2E,
-                0x32, 0x30, 0x30, 0x33, 0x36 };
-        private static final byte[] BIND_RESPONSE = { 0x30, 0x0C, 0x02, 0x01,
-                0x01, 0x61, 0x07, 0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00 };
-        private final Socket clientSocket;
-
-        private LDAPServerHandler(final Socket clientSocket) {
-            this.clientSocket = clientSocket;
-        }
-
-        @Override
-        public void run() {
-            try (clientSocket;
-                    OutputStream out = clientSocket.getOutputStream();
-                    InputStream in = clientSocket.getInputStream()) {
-                if (in.read() > 0) {
-                    in.skip(in.available());
-                    out.write(BIND_RESPONSE);
-                    out.write(DISCONNECT_MSG);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }

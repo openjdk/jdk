@@ -25,14 +25,13 @@
  * @test
  * @bug 6748156
  * @summary add an new JNDI property to control the boolean flag WaitForReply
+ * @library lib/ /test/lib
  */
 
-import java.net.Socket;
-import java.net.ServerSocket;
-import java.io.*;
 import javax.naming.*;
 import javax.naming.directory.*;
 import java.util.Hashtable;
+import jdk.test.lib.net.URIBuilder;
 
 public class NoWaitForReplyTest {
 
@@ -41,13 +40,15 @@ public class NoWaitForReplyTest {
         boolean passed = false;
 
         // start the LDAP server
-        DummyServer ldapServer = new DummyServer();
-        ldapServer.start();
+        var ldapServer = new BaseLdapServer().start();
 
         // Set up the environment for creating the initial context
         Hashtable<Object, Object> env = new Hashtable<>(11);
-        env.put(Context.PROVIDER_URL, "ldap://localhost:" +
-            ldapServer.getPortNumber());
+        env.put(Context.PROVIDER_URL, URIBuilder.newBuilder()
+                .scheme("ldap")
+                .loopback()
+                .port(ldapServer.getPort())
+                .build().toString());
         env.put(Context.INITIAL_CONTEXT_FACTORY,
             "com.sun.jndi.ldap.LdapCtxFactory");
 
@@ -61,7 +62,7 @@ public class NoWaitForReplyTest {
         env.put("java.naming.ldap.version", "3");
 
 
-        try {
+        try (ldapServer) {
 
             // Create initial context
             System.out.println("Client: connecting to the server");
@@ -84,48 +85,11 @@ public class NoWaitForReplyTest {
         } catch (NamingException e) {
             // timeout (ignore)
         }
-        ldapServer.interrupt();
 
         if (!passed) {
             throw new Exception(
                 "Test FAILED: should not have waited until first search reply");
         }
         System.out.println("Test PASSED");
-    }
-
-    static class DummyServer extends Thread {
-
-        private final ServerSocket serverSocket;
-
-        DummyServer() throws IOException {
-            this.serverSocket = new ServerSocket(0);
-            System.out.println("Server: listening on port " + serverSocket.getLocalPort());
-        }
-
-        public int getPortNumber() {
-            return serverSocket.getLocalPort();
-        }
-
-        public void run() {
-            try (Socket socket = serverSocket.accept()) {
-                System.out.println("Server: accepted a connection");
-                InputStream in = socket.getInputStream();
-
-                while (!isInterrupted()) {
-                   in.skip(in.available());
-                }
-
-            } catch (Exception e) {
-                // ignore
-
-            } finally {
-                System.out.println("Server: shutting down");
-                try {
-                    serverSocket.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-        }
     }
 }
