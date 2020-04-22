@@ -28,7 +28,7 @@
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @run main OptionsTest
+ * @run main/othervm OptionsTest
  */
 
 import javadoc.tester.JavadocTester;
