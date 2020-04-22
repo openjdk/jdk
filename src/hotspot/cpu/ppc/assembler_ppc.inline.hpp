@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -776,11 +776,15 @@ inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { e
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
+inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
 inline void Assembler::mtvsrwz( VectorSRegister d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d) | ra(a)); }
+inline void Assembler::mfvsrwz( Register d, VectorSRegister a)               { emit_int32( MFVSRWZ_OPCODE | vsrs(a) | ra(d)); }
 inline void Assembler::xxspltw( VectorSRegister d, VectorSRegister b, int ui2)           { emit_int32( XXSPLTW_OPCODE | vsrt(d) | vsrb(b) | xxsplt_uim(uimm(ui2,2))); }
 inline void Assembler::xxlor(   VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLOR_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxlxor(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLXOR_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxleqv(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLEQV_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xxbrd(   VectorSRegister d, VectorSRegister b)                    { emit_int32( XXBRD_OPCODE | vsrt(d) | vsrb(b) ); }
+inline void Assembler::xxbrw(   VectorSRegister d, VectorSRegister b)                    { emit_int32( XXBRW_OPCODE | vsrt(d) | vsrb(b) ); }
 inline void Assembler::xvdivsp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVDIVSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvdivdp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVDIVDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvabssp( VectorSRegister d, VectorSRegister b)                    { emit_int32( XVABSSP_OPCODE | vsrt(d) | vsrb(b)); }

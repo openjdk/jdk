@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,6 +530,8 @@ class Assembler : public AbstractAssembler {
     XXLXOR_OPCODE  = (60u << OPCODE_SHIFT |  154u << 3),
     XXLEQV_OPCODE  = (60u << OPCODE_SHIFT |  186u << 3),
     XVDIVSP_OPCODE = (60u << OPCODE_SHIFT |   88u << 3),
+    XXBRD_OPCODE   = (60u << OPCODE_SHIFT |  475u << 2 | 23u << 16), // XX2-FORM
+    XXBRW_OPCODE   = (60u << OPCODE_SHIFT |  475u << 2 | 15u << 16), // XX2-FORM
     XVDIVDP_OPCODE = (60u << OPCODE_SHIFT |  120u << 3),
     XVABSSP_OPCODE = (60u << OPCODE_SHIFT |  409u << 2),
     XVABSDP_OPCODE = (60u << OPCODE_SHIFT |  473u << 2),
@@ -2227,11 +2229,15 @@ class Assembler : public AbstractAssembler {
   inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void mtvsrd(   VectorSRegister d, Register a);
+  inline void mfvsrd(   Register        d, VectorSRegister a);
   inline void mtvsrwz(  VectorSRegister d, Register a);
+  inline void mfvsrwz(  Register        d, VectorSRegister a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
   inline void xxlor(    VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxlxor(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxleqv(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxbrd(    VectorSRegister d, VectorSRegister b);
+  inline void xxbrw(    VectorSRegister d, VectorSRegister b);
   inline void xvdivsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvdivdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvabssp(  VectorSRegister d, VectorSRegister b);

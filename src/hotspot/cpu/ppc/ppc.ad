@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+// Copyright (c) 2012, 2020 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -13732,6 +13732,24 @@ instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
+instruct bytes_reverse_int_vec(iRegIdst dst, iRegIsrc src, vecX tmpV) %{
+  match(Set dst (ReverseBytesI src));
+  predicate(UseVectorByteReverseInstructionsPPC64);
+  effect(TEMP tmpV);
+  ins_cost(DEFAULT_COST*3);
+  size(12);
+  format %{ "MTVSRWZ $tmpV, $src\n"
+            "\tXXBRW   $tmpV, $tmpV\n"
+            "\tMFVSRWZ $dst, $tmpV" %}
+
+  ins_encode %{
+    __ mtvsrwz($tmpV$$VectorSRegister, $src$$Register);
+    __ xxbrw($tmpV$$VectorSRegister, $tmpV$$VectorSRegister);
+    __ mfvsrwz($dst$$Register, $tmpV$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct bytes_reverse_long_Ex(iRegLdst dst, iRegLsrc src) %{
   match(Set dst (ReverseBytesL src));
   ins_cost(15*DEFAULT_COST);
@@ -13769,6 +13787,24 @@ instruct bytes_reverse_long_Ex(iRegLdst dst, iRegLsrc src) %{
     orL_reg_reg(tmpL6, tmpL3, tmpL4);   // tmpL6 : |h|g| | |d|c| | |
     orL_reg_reg(dst, tmpL5, tmpL6);     // dst   : |h|g|f|e|d|c|b|a|
   %}
+%}
+
+instruct bytes_reverse_long_vec(iRegLdst dst, iRegLsrc src, vecX tmpV) %{
+  match(Set dst (ReverseBytesL src));
+  predicate(UseVectorByteReverseInstructionsPPC64);
+  effect(TEMP tmpV);
+  ins_cost(DEFAULT_COST*3);
+  size(12);
+  format %{ "MTVSRD  $tmpV, $src\n"
+            "\tXXBRD   $tmpV, $tmpV\n"
+            "\tMFVSRD  $dst, $tmpV" %}
+
+  ins_encode %{
+    __ mtvsrd($tmpV$$VectorSRegister, $src$$Register);
+    __ xxbrd($tmpV$$VectorSRegister, $tmpV$$VectorSRegister);
+    __ mfvsrd($dst$$Register, $tmpV$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{

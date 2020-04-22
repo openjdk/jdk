@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
       FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
+    if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
+      FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+    }
   } else {
     if (UseCountTrailingZerosInstructionsPPC64) {
       warning("UseCountTrailingZerosInstructionsPPC64 specified, but needs at least Power9.");
@@ -149,6 +152,10 @@ void VM_Version::initialize() {
     if (UseCharacterCompareIntrinsics) {
       warning("UseCharacterCompareIntrinsics specified, but needs at least Power9.");
       FLAG_SET_DEFAULT(UseCharacterCompareIntrinsics, false);
+    }
+    if (UseVectorByteReverseInstructionsPPC64) {
+      warning("UseVectorByteReverseInstructionsPPC64 specified, but needs at least Power9.");
+      FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
     }
   }
 #endif
