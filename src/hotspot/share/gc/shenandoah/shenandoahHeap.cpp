@@ -1727,6 +1727,20 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::reset_dead_counter() {
   _dead_counter = 0;
 }
 
+class ShenandoahIsCLDAliveClosure : public CLDClosure {
+public:
+  void do_cld(ClassLoaderData* cld) {
+    cld->is_alive();
+  }
+};
+
+class ShenandoahIsNMethodAliveClosure: public NMethodClosure {
+public:
+  void do_nmethod(nmethod* n) {
+    n->is_unloading();
+  }
+};
+
 // This task not only evacuates/updates marked weak roots, but also "NULL"
 // dead weak roots.
 class ShenandoahConcurrentWeakRootsEvacUpdateTask : public AbstractGangTask {
@@ -1736,37 +1750,72 @@ private:
   ShenandoahWeakRoot<true /*concurrent*/>  _resolved_method_table_roots;
   ShenandoahWeakRoot<true /*concurrent*/>  _vm_roots;
 
+  // Roots related to concurrent class unloading
+  ShenandoahClassLoaderDataRoots<true /* concurrent */, false /* single thread*/>
+                                           _cld_roots;
+  ShenandoahConcurrentNMethodIterator      _nmethod_itr;
+  bool                                     _concurrent_class_unloading;
+
 public:
   ShenandoahConcurrentWeakRootsEvacUpdateTask() :
     AbstractGangTask("Shenandoah Concurrent Weak Root Task"),
     _jni_roots(OopStorageSet::jni_weak(), ShenandoahPhaseTimings::JNIWeakRoots),
     _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
     _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
-    _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
+    _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots),
+    _nmethod_itr(ShenandoahCodeRoots::table()),
+    _concurrent_class_unloading(ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
     StringTable::reset_dead_counter();
     ResolvedMethodTable::reset_dead_counter();
+    if (_concurrent_class_unloading) {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      _nmethod_itr.nmethods_do_begin();
+    }
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
     StringTable::finish_dead_counter();
     ResolvedMethodTable::finish_dead_counter();
+    if (_concurrent_class_unloading) {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      _nmethod_itr.nmethods_do_end();
+    }
   }
 
   void work(uint worker_id) {
-    ShenandoahEvacOOMScope oom;
-    // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
-    // may race against OopStorage::release() calls.
-    ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
-    _jni_roots.oops_do(&cl, worker_id);
-    _vm_roots.oops_do(&cl, worker_id);
+    {
+      ShenandoahEvacOOMScope oom;
+      // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
+      // may race against OopStorage::release() calls.
+      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
+      _jni_roots.oops_do(&cl, worker_id);
+      _vm_roots.oops_do(&cl, worker_id);
 
-    cl.reset_dead_counter();
-    _string_table_roots.oops_do(&cl, worker_id);
-    StringTable::inc_dead_counter(cl.dead_counter());
+      cl.reset_dead_counter();
+      _string_table_roots.oops_do(&cl, worker_id);
+      StringTable::inc_dead_counter(cl.dead_counter());
 
-    cl.reset_dead_counter();
-    _resolved_method_table_roots.oops_do(&cl, worker_id);
-    ResolvedMethodTable::inc_dead_counter(cl.dead_counter());
+      cl.reset_dead_counter();
+      _resolved_method_table_roots.oops_do(&cl, worker_id);
+      ResolvedMethodTable::inc_dead_counter(cl.dead_counter());
+    }
+
+    // If we are going to perform concurrent class unloading later on, we need to
+    // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
+    // can cleanup immediate garbage sooner.
+    if (_concurrent_class_unloading) {
+      // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either NULL the
+      // CLD's holder or evacuate it.
+      ShenandoahIsCLDAliveClosure is_cld_alive;
+      _cld_roots.cld_do(&is_cld_alive);
+
+      // Applies ShenandoahIsNMethodAliveClosure to registered nmethods.
+      // The closure calls nmethod->is_unloading(). The is_unloading
+      // state is cached, therefore, during concurrent class unloading phase,
+      // we will not touch the metadata of unloading nmethods
+      ShenandoahIsNMethodAliveClosure is_nmethod_alive;
+      _nmethod_itr.nmethods_do(&is_nmethod_alive);
+    }
   }
 };
 
@@ -1775,12 +1824,18 @@ void ShenandoahHeap::op_weak_roots() {
     // Concurrent weak root processing
     ShenandoahConcurrentWeakRootsEvacUpdateTask task;
     workers()->run_task(&task);
-
-    if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-      _unloader.unload();
+    if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+      set_concurrent_weak_root_in_progress(false);
     }
-    set_concurrent_weak_root_in_progress(false);
   }
+}
+
+void ShenandoahHeap::op_class_unloading() {
+  assert (is_concurrent_weak_root_in_progress() &&
+          ShenandoahConcurrentRoots::should_do_concurrent_class_unloading(),
+          "Checked by caller");
+  _unloader.unload();
+  set_concurrent_weak_root_in_progress(false);
 }
 
 void ShenandoahHeap::op_strong_roots() {
@@ -2849,6 +2904,21 @@ void ShenandoahHeap::entry_weak_roots() {
 
   try_inject_alloc_failure();
   op_weak_roots();
+}
+
+void ShenandoahHeap::entry_class_unloading() {
+  static const char* msg = "Concurrent class unloading";
+  ShenandoahConcurrentPhase gc_phase(msg);
+  EventMark em("%s", msg);
+
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_class_unloading);
+
+  ShenandoahWorkerScope scope(workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              "concurrent class unloading");
+
+  try_inject_alloc_failure();
+  op_class_unloading();
 }
 
 void ShenandoahHeap::entry_strong_roots() {

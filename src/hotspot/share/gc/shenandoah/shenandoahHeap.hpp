@@ -398,6 +398,7 @@ public:
   void entry_mark();
   void entry_preclean();
   void entry_weak_roots();
+  void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup();
   void entry_evac();
@@ -419,6 +420,7 @@ private:
   void op_mark();
   void op_preclean();
   void op_weak_roots();
+  void op_class_unloading();
   void op_strong_roots();
   void op_cleanup();
   void op_conc_evac();

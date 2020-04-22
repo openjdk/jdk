@@ -137,6 +137,7 @@ class outputStream;
   f(conc_mark,                                      "Concurrent Marking")              \
   f(conc_preclean,                                  "Concurrent Precleaning")          \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
+  f(conc_class_unloading,                           "Concurrent Class Unloading")      \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   f(conc_evac,                                      "Concurrent Evacuation")           \
   f(conc_update_refs,                               "Concurrent Update Refs")          \

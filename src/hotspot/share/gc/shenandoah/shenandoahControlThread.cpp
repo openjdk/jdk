@@ -26,12 +26,13 @@
 
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
@@ -347,7 +348,9 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   heap->vmop_entry_final_mark();
 
   // Process weak roots that might still point to regions that would be broken by cleanup
-  heap->entry_weak_roots();
+  if (heap->is_concurrent_weak_root_in_progress()) {
+    heap->entry_weak_roots();
+  }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.
@@ -356,6 +359,11 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->log_status();
+  }
+
+  // Perform concurrent class unloading
+  if (heap->is_concurrent_weak_root_in_progress()) {
+    heap->entry_class_unloading();
   }
 
   // Processing strong roots
