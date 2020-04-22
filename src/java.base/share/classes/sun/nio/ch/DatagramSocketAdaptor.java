@@ -209,7 +209,6 @@ public class DatagramSocketAdaptor
                     p.setPort(remote.getPort());
                     target = remote;
                 } else {
-                    // throws IllegalArgumentException if port not set
                     target = (InetSocketAddress) p.getSocketAddress();
                 }
             }

@@ -35,6 +35,7 @@ import java.net.InetSocketAddress;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
 public class Constructor {
@@ -115,5 +116,16 @@ public class Constructor {
                 packet.getLength() != length ||
                 packet.getAddress() != LOOPBACK ||
                 packet.getPort() != port), "full constructor failed");
+    }
+
+    @Test
+    public void testDefaultValues() {
+        DatagramPacket packet = new DatagramPacket(buf, 0);
+        assertTrue(packet.getAddress() == null);
+        assertTrue(packet.getPort() == 0);
+
+        DatagramPacket packet1 = new DatagramPacket(buf, 0, 0);
+        assertTrue(packet1.getAddress() == null);
+        assertTrue(packet1.getPort() == 0);
     }
 }

@@ -90,8 +90,6 @@ class DatagramPacket {
      */
     public DatagramPacket(byte buf[], int offset, int length) {
         setData(buf, offset, length);
-        this.address = null;
-        this.port = -1;
     }
 
     /**
@@ -214,7 +212,8 @@ class DatagramPacket {
 
     /**
      * Returns the IP address of the machine to which this datagram is being
-     * sent or from which the datagram was received.
+     * sent or from which the datagram was received, or {@code null} if not
+     * set.
      *
      * @return  the IP address of the machine to which this datagram is being
      *          sent or from which the datagram was received.
@@ -227,7 +226,7 @@ class DatagramPacket {
 
     /**
      * Returns the port number on the remote host to which this datagram is
-     * being sent or from which the datagram was received.
+     * being sent or from which the datagram was received, or 0 if not set.
      *
      * @return  the port number on the remote host to which this datagram is
      *          being sent or from which the datagram was received.
@@ -363,8 +362,10 @@ class DatagramPacket {
     }
 
     /**
-     * Gets the SocketAddress (usually IP address + port number) of the remote
-     * host that this packet is being sent to or is coming from.
+     * Returns the {@link InetSocketAddress#InetSocketAddress(InetAddress, int)
+     * SocketAddress} (usually {@linkplain #getAddress() IP address} +
+     * {@linkplain #getPort() port number}) of the remote host that this packet
+     * is being sent to or is coming from.
      *
      * @return  the {@code SocketAddress}
      *
