@@ -2856,7 +2856,7 @@ If no conflict is found when running the transaction, then the memory
 and register modifications are committed together at the \f[CB]XEND\f[R]
 instruction.
 The \f[CB]XABORT\f[R] instruction can be used to explicitly abort a
-transaction and the \f[CB]XEND\f[R] instruction checks if a set of
+transaction and the \f[CB]XTEST\f[R] instruction checks if a set of
 instructions is being run in a transaction.
 .PP
 A lock on a transaction is inflated when another thread tries to access
