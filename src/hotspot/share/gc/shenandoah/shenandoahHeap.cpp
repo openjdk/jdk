@@ -1524,7 +1524,11 @@ void ShenandoahHeap::op_final_mark() {
       assert_pinned_region_status();
     }
 
-    // Force the threads to reacquire their TLABs outside the collection set.
+    // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
+    // This is needed for two reasons. Strong one: new allocations would be with new freeset,
+    // which would be outside the collection set, so no cset writes would happen there.
+    // Weaker one: new allocations would happen past update watermark, and so less work would
+    // be needed for reference updates (would update the large filler instead).
     {
       ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::retire_tlabs);
       make_parsable(true);
@@ -2449,10 +2453,6 @@ void ShenandoahHeap::op_init_updaterefs() {
 
   {
     ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::init_update_refs_prepare);
-
-    make_parsable(true);
-
-    // Reset iterator.
     _update_refs_iterator.reset();
   }
 
