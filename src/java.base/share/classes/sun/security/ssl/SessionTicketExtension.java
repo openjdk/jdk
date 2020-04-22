@@ -412,6 +412,7 @@ final class SessionTicketExtension {
             if (chc.localSupportedSignAlgs == null) {
                 chc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
+                                chc.sslConfig,
                                 chc.algorithmConstraints, chc.activeProtocols);
             }
 

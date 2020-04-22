@@ -43,6 +43,7 @@ import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
+import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ClientExtensions;
 import sun.security.ssl.SSLExtension.ServerExtensions;
 
@@ -62,6 +63,10 @@ final class SSLConfiguration implements Cloneable {
     boolean                     preferLocalCipherSuites;
     boolean                     enableRetransmissions;
     int                         maximumPacketSize;
+
+    // The configured signature schemes for "signature_algorithms" and
+    // "signature_algorithms_cert" extensions
+    List<SignatureScheme>       signatureSchemes;
 
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
@@ -133,6 +138,9 @@ final class SSLConfiguration implements Cloneable {
         this.enableRetransmissions = sslContext.isDTLS();
         this.maximumPacketSize = 0;         // please reset it explicitly later
 
+        this.signatureSchemes = isClientMode ?
+                CustomizedClientSignatureSchemes.signatureSchemes :
+                CustomizedServerSignatureSchemes.signatureSchemes;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
             if (pv.compareTo(maximumProtocolVersion) > 0) {
@@ -383,6 +391,15 @@ final class SSLConfiguration implements Cloneable {
         return extensions.toArray(new SSLExtension[0]);
     }
 
+    void toggleClientMode() {
+        this.isClientMode ^= true;
+
+        // reset the signature schemes
+        this.signatureSchemes = isClientMode ?
+                CustomizedClientSignatureSchemes.signatureSchemes :
+                CustomizedServerSignatureSchemes.signatureSchemes;
+    }
+
     @Override
     @SuppressWarnings({"unchecked", "CloneDeclaresCloneNotSupported"})
     public Object clone() {
@@ -401,5 +418,73 @@ final class SSLConfiguration implements Cloneable {
         }
 
         return null;    // unlikely
+    }
+
+
+    // lazy initialization holder class idiom for static default parameters
+    //
+    // See Effective Java Second Edition: Item 71.
+    private static final class CustomizedClientSignatureSchemes {
+        private static List<SignatureScheme> signatureSchemes =
+                getCustomizedSignatureScheme("jdk.tls.client.SignatureSchemes");
+    }
+
+    // lazy initialization holder class idiom for static default parameters
+    //
+    // See Effective Java Second Edition: Item 71.
+    private static final class CustomizedServerSignatureSchemes {
+        private static List<SignatureScheme> signatureSchemes =
+                getCustomizedSignatureScheme("jdk.tls.server.SignatureSchemes");
+    }
+
+    /*
+     * Get the customized signature schemes specified by the given
+     * system property.
+     */
+    private static List<SignatureScheme> getCustomizedSignatureScheme(
+            String propertyName) {
+
+        String property = GetPropertyAction.privilegedGetProperty(propertyName);
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+            SSLLogger.fine(
+                    "System property " + propertyName + " is set to '" +
+                    property + "'");
+        }
+        if (property != null && !property.isEmpty()) {
+            // remove double quote marks from beginning/end of the property
+            if (property.length() > 1 && property.charAt(0) == '"' &&
+                    property.charAt(property.length() - 1) == '"') {
+                property = property.substring(1, property.length() - 1);
+            }
+        }
+
+        if (property != null && !property.isEmpty()) {
+            String[] signatureSchemeNames = property.split(",");
+            List<SignatureScheme> signatureSchemes =
+                        new ArrayList<>(signatureSchemeNames.length);
+            for (int i = 0; i < signatureSchemeNames.length; i++) {
+                signatureSchemeNames[i] = signatureSchemeNames[i].trim();
+                if (signatureSchemeNames[i].isEmpty()) {
+                    continue;
+                }
+
+                SignatureScheme scheme =
+                    SignatureScheme.nameOf(signatureSchemeNames[i]);
+                if (scheme != null && scheme.isAvailable) {
+                    signatureSchemes.add(scheme);
+                } else {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                        SSLLogger.fine(
+                                "The current installed providers do not " +
+                                "support signature scheme: " +
+                                signatureSchemeNames[i]);
+                    }
+                }
+            }
+
+            return signatureSchemes;
+        }
+
+        return Collections.emptyList();
     }
 }

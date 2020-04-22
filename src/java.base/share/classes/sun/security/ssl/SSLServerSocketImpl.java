@@ -64,7 +64,6 @@ final class SSLServerSocketImpl extends SSLServerSocket {
         super();
         this.sslContext = sslContext;
         this.sslConfig = new SSLConfiguration(sslContext, false);
-        this.sslConfig.isClientMode = false;
     }
 
     SSLServerSocketImpl(SSLContextImpl sslContext,
@@ -73,7 +72,6 @@ final class SSLServerSocketImpl extends SSLServerSocket {
         super(port, backlog);
         this.sslContext = sslContext;
         this.sslConfig = new SSLConfiguration(sslContext, false);
-        this.sslConfig.isClientMode = false;
     }
 
     SSLServerSocketImpl(SSLContextImpl sslContext,
@@ -82,7 +80,6 @@ final class SSLServerSocketImpl extends SSLServerSocket {
         super(port, backlog, address);
         this.sslContext = sslContext;
         this.sslConfig = new SSLConfiguration(sslContext, false);
-        this.sslConfig.isClientMode = false;
     }
 
     @Override
@@ -210,7 +207,7 @@ final class SSLServerSocketImpl extends SSLServerSocket {
                         sslContext.getDefaultCipherSuites(!useClientMode);
                 }
 
-                sslConfig.isClientMode = useClientMode;
+                sslConfig.toggleClientMode();
             }
         } finally {
             serverSocketLock.unlock();
