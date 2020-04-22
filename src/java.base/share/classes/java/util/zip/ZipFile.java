@@ -335,15 +335,24 @@ public class ZipFile implements ZipConstants, Closeable {
      */
     private ZipEntry getEntry(String name, Function<String, ? extends ZipEntry> func) {
         Objects.requireNonNull(name, "name");
+        ZipEntry entry = null;
         synchronized (this) {
             ensureOpen();
             byte[] bname = zc.getBytes(name);
             int pos = res.zsrc.getEntryPos(bname, true);
             if (pos != -1) {
-                return getZipEntry(name, bname, pos, func);
+                entry = getZipEntry(name, bname, pos, func);
+            } else if (!zc.isUTF8() && !name.isEmpty() && !name.endsWith("/")) {
+                // non-UTF-8 charsets need to lookup again with added slash
+                name = name + '/';
+                bname = zc.getBytes(name);
+                pos = res.zsrc.getEntryPos(bname, false);
+                if (pos != -1) {
+                    entry = getZipEntry(name, bname, pos, func);
+                }
             }
         }
-        return null;
+        return entry;
     }
 
     /**
@@ -716,7 +725,7 @@ public class ZipFile implements ZipConstants, Closeable {
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
             this.inflaterCache = new ArrayDeque<>();
-            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0);
+            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zf.zc);
         }
 
         void clean() {
@@ -807,14 +816,6 @@ public class ZipFile implements ZipConstants, Closeable {
             if (ioe != null) {
                 throw new UncheckedIOException(ioe);
             }
-        }
-
-        CleanableResource(File file, int mode)
-            throws IOException {
-            this.cleanable = null;
-            this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
-            this.inflaterCache = new ArrayDeque<>();
-            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0);
         }
 
     }
@@ -1042,6 +1043,8 @@ public class ZipFile implements ZipConstants, Closeable {
             byte[] cen = zsrc.cen;
             for (int i = 0; i < names.length; i++) {
                 int pos = zsrc.metanames[i];
+                // This will only be invoked on JarFile, which is guaranteed
+                // to use (or be compatible with) UTF-8 encoding.
                 names[i] = new String(cen, pos + CENHDR, CENNAM(cen, pos),
                                       UTF_8.INSTANCE);
             }
@@ -1110,6 +1113,8 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int[] EMPTY_META_VERSIONS = new int[0];
 
         private final Key key;               // the key in files
+        private final ZipCoder zc;           // zip coder used to decode/encode
+
         private int refs = 1;
 
         private RandomAccessFile zfile;      // zfile of the underlying zip file
@@ -1155,22 +1160,28 @@ public class ZipFile implements ZipConstants, Closeable {
         private int tablelen;                // number of hash heads
 
         private static class Key {
-            BasicFileAttributes attrs;
+            final BasicFileAttributes attrs;
             File file;
+            final boolean utf8;
 
-            public Key(File file, BasicFileAttributes attrs) {
+            public Key(File file, BasicFileAttributes attrs, ZipCoder zc) {
                 this.attrs = attrs;
                 this.file = file;
+                this.utf8 = zc.isUTF8();
             }
 
             public int hashCode() {
-                long t = attrs.lastModifiedTime().toMillis();
+                long t = utf8 ? 0 : Long.MAX_VALUE;
+                t += attrs.lastModifiedTime().toMillis();
                 return ((int)(t ^ (t >>> 32))) + file.hashCode();
             }
 
             public boolean equals(Object obj) {
                 if (obj instanceof Key) {
                     Key key = (Key)obj;
+                    if (key.utf8 != utf8) {
+                        return false;
+                    }
                     if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
                         return false;
                     }
@@ -1187,11 +1198,12 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final HashMap<Key, Source> files = new HashMap<>();
 
 
-        static Source get(File file, boolean toDelete) throws IOException {
+        static Source get(File file, boolean toDelete, ZipCoder zc) throws IOException {
             final Key key;
             try {
                 key = new Key(file,
-                        Files.readAttributes(file.toPath(), BasicFileAttributes.class));
+                        Files.readAttributes(file.toPath(), BasicFileAttributes.class),
+                        zc);
             } catch (InvalidPathException ipe) {
                 throw new IOException(ipe);
             }
@@ -1203,7 +1215,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     return src;
                 }
             }
-            src = new Source(key, toDelete);
+            src = new Source(key, toDelete, zc);
 
             synchronized (files) {
                 if (files.containsKey(key)) {    // someone else put in first
@@ -1226,7 +1238,8 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private Source(Key key, boolean toDelete) throws IOException {
+        private Source(Key key, boolean toDelete, ZipCoder zc) throws IOException {
+            this.zc = zc;
             this.key = key;
             if (toDelete) {
                 if (isWindows) {
@@ -1286,20 +1299,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 zfile.seek(pos);
                 return zfile.read(buf, off, len);
             }
-        }
-
-        private static final int hashN(byte[] a, int off, int len) {
-            // Performance optimization: getEntryPos assumes that the hash
-            // of a name remains unchanged when appending a trailing '/'.
-            if (len > 0 && a[off + len - 1] == '/') {
-                len--;
-            }
-
-            int h = 1;
-            while (len-- > 0) {
-                h = 31 * h + a[off++];
-            }
-            return h;
         }
 
         private static class End {
@@ -1411,13 +1410,17 @@ public class ZipFile implements ZipConstants, Closeable {
 
         // Reads zip file central directory.
         private void initCEN(int knownTotal) throws IOException {
+            // Prefer locals for better performance during startup
+            byte[] cen;
+            ZipCoder zc = this.zc;
+
             if (knownTotal == -1) {
                 End end = findEND();
                 if (end.endpos == 0) {
                     locpos = 0;
                     total = 0;
-                    entries  = new int[0];
-                    cen = null;
+                    entries = new int[0];
+                    this.cen = null;
                     return;         // only END header present
                 }
                 if (end.cenlen > end.endpos)
@@ -1430,22 +1433,28 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid END header (bad central directory offset)");
                 }
                 // read in the CEN and END
-                cen = new byte[(int)(end.cenlen + ENDHDR)];
+                cen = this.cen = new byte[(int)(end.cenlen + ENDHDR)];
                 if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
                     zerror("read CEN tables failed");
                 }
                 total = end.centot;
             } else {
+                cen = this.cen;
                 total = knownTotal;
             }
             // hash table for entries
             entries  = new int[total * 3];
-            tablelen = ((total/2) | 1); // Odd -> fewer collisions
-            table    =  new int[tablelen];
+
+            this.tablelen = ((total/2) | 1); // Odd -> fewer collisions
+            int tablelen = this.tablelen;
+
+            this.table = new int[tablelen];
+            int[] table = this.table;
+
             Arrays.fill(table, ZIP_ENDCHAIN);
             int idx = 0;
-            int hash = 0;
-            int next = -1;
+            int hash;
+            int next;
 
             // list for all meta entries
             ArrayList<Integer> metanamesList = null;
@@ -1454,10 +1463,11 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // Iterate through the entries in the central directory
             int i = 0;
-            int hsh = 0;
+            int hsh;
             int pos = 0;
+            int entryPos = CENHDR;
             int limit = cen.length - ENDHDR;
-            while (pos + CENHDR <= limit) {
+            while (entryPos <= limit) {
                 if (i >= total) {
                     // This will only happen if the zip file has an incorrect
                     // ENDTOT field, which usually means it contains more than
@@ -1475,16 +1485,16 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid CEN header (encrypted entry)");
                 if (method != STORED && method != DEFLATED)
                     zerror("invalid CEN header (bad compression method: " + method + ")");
-                if (pos + CENHDR + nlen > limit)
+                if (entryPos + nlen > limit)
                     zerror("invalid CEN header (bad header size)");
                 // Record the CEN offset and the name hash in our hash cell.
-                hash = hashN(cen, pos + CENHDR, nlen);
+                hash = zc.hashN(cen, entryPos, nlen);
                 hsh = (hash & 0x7fffffff) % tablelen;
                 next = table[hsh];
                 table[hsh] = idx;
                 idx = addEntry(idx, hash, next, pos);
                 // Adds name to metanames.
-                if (isMetaName(cen, pos + CENHDR, nlen)) {
+                if (isMetaName(cen, entryPos, nlen)) {
                     if (metanamesList == null)
                         metanamesList = new ArrayList<>(4);
                     metanamesList.add(pos);
@@ -1493,7 +1503,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // and store it for later. This optimizes lookup
                     // performance in multi-release jar files
                     int version = getMetaVersion(cen,
-                        pos + CENHDR + META_INF_LENGTH, nlen - META_INF_LENGTH);
+                        entryPos + META_INF_LENGTH, nlen - META_INF_LENGTH);
                     if (version > 0) {
                         if (metaVersionsSet == null)
                             metaVersionsSet = new TreeSet<>();
@@ -1501,7 +1511,8 @@ public class ZipFile implements ZipConstants, Closeable {
                     }
                 }
                 // skip ext and comment
-                pos += (CENHDR + nlen + elen + clen);
+                pos = entryPos + nlen + elen + clen;
+                entryPos = pos + CENHDR;
                 i++;
             }
             total = i;
@@ -1537,7 +1548,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (total == 0) {
                 return -1;
             }
-            int hsh = hashN(name, 0, name.length);
+            int hsh = zc.hashN(name, 0, name.length);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
 
             // Search down the target hash chain for a entry whose
@@ -1546,20 +1557,22 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (getEntryHash(idx) == hsh) {
                     // The CEN name must match the specfied one
                     int pos = getEntryPos(idx);
+                    byte[] cen = this.cen;
                     final int nlen = CENNAM(cen, pos);
-                    final int nstart = pos + CENHDR;
+                    int nameoff = pos + CENHDR;
 
-                    // If addSlash is true, we're testing for name+/ in
-                    // addition to name, unless name is the empty string
-                    // or already ends with a slash
+                    // If addSlash is true and we're using the UTF-8 zip coder,
+                    // we'll directly test for name+/ in addition to name,
+                    // unless name is the empty string or already ends with a
+                    // slash
                     if (name.length == nlen ||
                            (addSlash &&
+                            zc.isUTF8() &&
                             name.length > 0 &&
                             name.length + 1 == nlen &&
-                            cen[nstart + nlen - 1] == '/' &&
+                            cen[nameoff + nlen - 1] == '/' &&
                             name[name.length - 1] != '/')) {
                         boolean matched = true;
-                        int nameoff = pos + CENHDR;
                         for (int i = 0; i < name.length; i++) {
                             if (name[i] != cen[nameoff++]) {
                                 matched = false;
@@ -1613,7 +1626,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     && (name[off++] | 0x20) == 'o'
                     && (name[off++] | 0x20) == 'n'
                     && (name[off++] | 0x20) == 's'
-                    && (name[off++]         ) == '/')) {
+                    && (name[off++]       ) == '/')) {
                 return 0;
             }
             int version = 0;
