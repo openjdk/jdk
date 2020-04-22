@@ -73,16 +73,17 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
     return;
   }
 
-  guarantee(phase == init_evac ||
-            phase == scan_roots ||
-            phase == update_roots ||
-            phase == final_update_refs_roots ||
-            phase == full_gc_roots ||
-            phase == degen_gc_update_roots ||
-            phase == full_gc_purge_par ||
-            phase == purge_par ||
-            phase == _num_phases,
-            "only in these phases we can add per-thread phase times");
+  assert(phase == init_evac ||
+         phase == scan_roots ||
+         phase == update_roots ||
+         phase == final_update_refs_roots ||
+         phase == full_gc_roots ||
+         phase == degen_gc_update_roots ||
+         phase == full_gc_purge_par ||
+         phase == purge_par ||
+         phase == _num_phases,
+         "Phase should accept accept per-thread phase times: %s", phase_name(phase));
+
   if (phase != _num_phases) {
     double s = 0;
     for (uint i = 1; i < GCParPhasesSentinel; i++) {
