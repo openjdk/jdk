@@ -28,7 +28,6 @@
 #include "code/codeCache.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
-#include "gc/shenandoah/shenandoahNMethod.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -36,6 +35,9 @@
 
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
+class ShenandoahNMethodTable;
+class ShenandoahNMethodTableSnapshot;
+class WorkGang;
 
 class ShenandoahParallelCodeHeapIterator {
   friend class CodeCache;
