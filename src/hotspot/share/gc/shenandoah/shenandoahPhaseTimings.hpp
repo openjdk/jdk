@@ -144,6 +144,9 @@ class outputStream;
   f(full_gc_resize_tlabs,                           "  Resize TLABs")                  \
                                                                                        \
   f(conc_uncommit,                                  "Concurrent Uncommit")             \
+                                                                                       \
+  f(heap_iteration_roots,                           "Heap Iteration")                  \
+  SHENANDOAH_GC_PAR_PHASE_DO(heap_iteration_roots_, "  HI: ", f)                       \
   // end
 
 class ShenandoahPhaseTimings : public CHeapObj<mtGC> {

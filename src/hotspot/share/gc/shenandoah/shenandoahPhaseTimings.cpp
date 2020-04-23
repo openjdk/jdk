@@ -81,18 +81,16 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
          phase == degen_gc_update_roots ||
          phase == full_gc_purge_par ||
          phase == purge_par ||
-         phase == _num_phases,
+         phase == heap_iteration_roots,
          "Phase should accept accept per-thread phase times: %s", phase_name(phase));
 
-  if (phase != _num_phases) {
-    double s = 0;
-    for (uint i = 1; i < GCParPhasesSentinel; i++) {
-      double t = _gc_par_phases[i]->sum();
-      _timing_data[phase + i + 1].add(t); // add to each line in phase
-      s += t;
-    }
-    _timing_data[phase + 1].add(s); // add to total for phase
+  double s = 0;
+  for (uint i = 1; i < GCParPhasesSentinel; i++) {
+    double t = _gc_par_phases[i]->sum();
+    _timing_data[phase + i + 1].add(t); // add to each line in phase
+    s += t;
   }
+  _timing_data[phase + 1].add(s); // add to total for phase
 }
 
 void ShenandoahPhaseTimings::print_on(outputStream* out) const {
