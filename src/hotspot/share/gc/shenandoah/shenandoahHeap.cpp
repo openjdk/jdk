@@ -1655,13 +1655,13 @@ public:
       // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateOopStorageRootsClosure cl;
-      _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+      _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl, worker_id);
     }
 
     {
       ShenandoahEvacuateUpdateRootsClosure<> cl;
       CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
-      _cld_roots.cld_do(&clds);
+      _cld_roots.cld_do(&clds, worker_id);
     }
 
     {
@@ -1811,7 +1811,7 @@ public:
       // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either NULL the
       // CLD's holder or evacuate it.
       ShenandoahIsCLDAliveClosure is_cld_alive;
-      _cld_roots.cld_do(&is_cld_alive);
+      _cld_roots.cld_do(&is_cld_alive, worker_id);
 
       // Applies ShenandoahIsNMethodAliveClosure to registered nmethods.
       // The closure calls nmethod->is_unloading(). The is_unloading
