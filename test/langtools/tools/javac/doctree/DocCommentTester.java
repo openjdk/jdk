@@ -873,22 +873,57 @@ public class DocCommentTester {
                 System.err.println(normRaw.replace(" ", "_"));
                 System.err.println("*** found:");
                 System.err.println(pretty.replace(" ", "_"));
-    //            throw new Error();
             }
         }
 
         /**
          * Normalize white space in places where the tree does not preserve it.
+         * Maintain contents of at-code and at-literal inline tags.
          */
         String normalize(String s) {
-            s = s.trim()
-                    .replaceFirst("\\.\\s*\\n *@", ".\n@")
-                    .replaceAll("\\{@docRoot\\s+\\}", "{@docRoot}")
+            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
+            StringBuilder sb = new StringBuilder();
+            Pattern p = Pattern.compile("\\{@(code|literal)( )?");
+            Matcher m = p.matcher(s2);
+            int start = 0;
+            while (m.find(start)) {
+                sb.append(normalizeFragment(s2.substring(start, m.start())));
+                sb.append(m.group().trim());
+                start = copyLiteral(s2, m.end(), sb);
+            }
+            sb.append(normalizeFragment(s2.substring(start)));
+            return sb.toString();
+        }
+
+        String normalizeFragment(String s) {
+            return s.replaceAll("\\{@docRoot\\s+\\}", "{@docRoot}")
                     .replaceAll("\\{@inheritDoc\\s+\\}", "{@inheritDoc}")
                     .replaceAll("(\\{@value\\s+[^}]+)\\s+(\\})", "$1$2")
-                    .replaceAll("\n[ \t]+@", "\n@")
-                    .replaceAll("(\\{@code)(\\x20)(\\s+.*)", "$1$3");
-            return s;
+                    .replaceAll("\n[ \t]+@", "\n@");
+        }
+
+        int copyLiteral(String s, int start, StringBuilder sb) {
+            int depth = 0;
+            for (int i = start; i < s.length(); i++) {
+                char ch = s.charAt(i);
+                if (i == start && !Character.isWhitespace(ch)) {
+                    sb.append(' ');
+                }
+                switch (ch) {
+                    case '{':
+                        depth++;
+                        break;
+                    case '}':
+                        depth--;
+                        if (depth < 0) {
+                            sb.append(ch);
+                            return i + 1;
+                        }
+                        break;
+                }
+                sb.append(ch);
+            }
+            return s.length();
         }
     }
 }

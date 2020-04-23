@@ -122,9 +122,9 @@ TEXT:some     text
 erroneous2:
 DOC_COMMENT:First sentence.
      *
-     * <p>Description with {@unknownInlineTag }, {@unknownInlineTag text}, {@unknownInlineTag
+     * <p>Description with {@unknownInlineTag }, {@unknownInlineTag text}
      *
-     * @param p1 p {@unknownInlineTag text
+     * @param p1 p {@unknownInlineTag text}
      * @param p2 p <
      * @param p3 p <em
      * @param p4 p <!--
@@ -142,12 +142,11 @@ TEXT:
 TEXT:,!trailing-whitespace!
 UNKNOWN_INLINE_TAG:{@unknownInlineTag text}
 TEXT:text
-TEXT:,!trailing-whitespace!
-ERRONEOUS:{@unknownInlineTag
-PARAM:@param p1 p {@unknownInlineTag text
+PARAM:@param p1 p {@unknownInlineTag text}
 IDENTIFIER:p1
 TEXT:p!trailing-whitespace!
-ERRONEOUS:{@unknownInlineTag text
+UNKNOWN_INLINE_TAG:{@unknownInlineTag text}
+TEXT:text
 PARAM:@param p2 p <
 IDENTIFIER:p2
 TEXT:p!trailing-whitespace!

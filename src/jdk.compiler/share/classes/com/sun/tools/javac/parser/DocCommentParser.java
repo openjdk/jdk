@@ -30,18 +30,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.tools.javac.parser.DocCommentParser.TagParser.Kind;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
-import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEndPosTree;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCReference;
-import com.sun.tools.javac.tree.DCTree.DCStartElement;
 import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.JCTree;
@@ -54,7 +54,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
 import com.sun.tools.javac.util.StringUtils;
 
-import static com.sun.tools.javac.util.LayoutCharacters.*;
+import static com.sun.tools.javac.util.LayoutCharacters.EOI;
 
 /**
  *
@@ -261,7 +261,7 @@ public class DocCommentParser {
     /**
      * Read a series of block tags, including their content.
      * Standard tags parse their content appropriately.
-     * Non-standard tags are represented by {@link UnknownBlockTag}.
+     * Non-standard tags are represented by {@link UnknownBlockTagTree}.
      */
     protected List<DCTree> blockTags() {
         ListBuffer<DCTree> tags = new ListBuffer<>();
@@ -273,7 +273,7 @@ public class DocCommentParser {
     /**
      * Read a single block tag, including its content.
      * Standard tags parse their content appropriately.
-     * Non-standard tags are represented by {@link UnknownBlockTag}.
+     * Non-standard tags are represented by {@link UnknownBlockTagTree}.
      */
     protected DCTree blockTag() {
         int p = bp;
@@ -321,8 +321,8 @@ public class DocCommentParser {
     /**
      * Read a single inline tag, including its content.
      * Standard tags parse their content appropriately.
-     * Non-standard tags are represented by {@link UnknownBlockTag}.
-     * Malformed tags may be returned as {@link Erroneous}.
+     * Non-standard tags are represented by {@link UnknownBlockTagTree}.
+     * Malformed tags may be returned as {@link ErroneousTree}.
      */
     protected DCTree inlineTag() {
         int p = bp - 1;
@@ -409,13 +409,6 @@ public class DocCommentParser {
                     if (--depth == 0) {
                         return m.at(pos).newTextTree(newString(pos, bp));
                     }
-                    newline = false;
-                    lastNonWhite = bp;
-                    break;
-
-                case '@':
-                    if (newline)
-                        break loop;
                     newline = false;
                     lastNonWhite = bp;
                     break;

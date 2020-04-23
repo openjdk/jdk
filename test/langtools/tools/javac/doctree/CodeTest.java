@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614 8241780
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -99,6 +99,42 @@ DocComment[DOC_COMMENT, pos:1
 ]
 */
 
+    /**
+     * {@code
+     * @tag
+     * }
+     */
+    void embedded_at() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Literal[CODE, pos:1, |_@tag|_]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * <pre>{@code
+     *     @Override
+     *     void m() { }
+     * }</pre>
+     */
+    void pre_at_code() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:6, |_____@Override|..._____void_m()_{_}|_]
+  body: 1
+    EndElement[END_ELEMENT, pos:48, pre]
+  block tags: empty
+]
+*/
+
     /** {@code if (a < b) { } */
     void unterminated_1() { }
 /*
@@ -122,14 +158,10 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
     Erroneous[ERRONEOUS, pos:1
       code: compiler.err.dc.unterminated.inline.tag
-      body: {@code_if_(a_<_b)_{_}
+      body: {@code_if_(a_<_b...)_{_}|_@author_jjg
     ]
   body: empty
-  block tags: 1
-    Author[AUTHOR, pos:24
-      name: 1
-        Text[TEXT, pos:32, jjg]
-    ]
+  block tags: empty
 ]
 */
 
