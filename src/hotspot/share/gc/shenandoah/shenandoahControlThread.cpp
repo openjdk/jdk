@@ -354,7 +354,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.
-  heap->entry_cleanup();
+  heap->entry_cleanup_early();
 
   {
     ShenandoahHeapLocker locker(heap->lock());
@@ -389,7 +389,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->vmop_entry_final_updaterefs();
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
-    heap->entry_cleanup();
+    heap->entry_cleanup_complete();
   }
 
   // Cycle is complete

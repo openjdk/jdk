@@ -400,9 +400,10 @@ public:
   void entry_weak_roots();
   void entry_class_unloading();
   void entry_strong_roots();
-  void entry_cleanup();
+  void entry_cleanup_early();
   void entry_evac();
   void entry_updaterefs();
+  void entry_cleanup_complete();
   void entry_uncommit(double shrink_before);
 
 private:
@@ -422,10 +423,11 @@ private:
   void op_weak_roots();
   void op_class_unloading();
   void op_strong_roots();
-  void op_cleanup();
+  void op_cleanup_early();
   void op_conc_evac();
   void op_stw_evac();
   void op_updaterefs();
+  void op_cleanup_complete();
   void op_uncommit(double shrink_before);
 
   // Messages for GC trace events, they have to be immortal for
