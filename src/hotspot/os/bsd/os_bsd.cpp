@@ -141,6 +141,13 @@ static bool check_signals = true;
 static int SR_signum = SIGUSR2;
 sigset_t SR_sigset;
 
+#ifdef __APPLE__
+static const int processor_id_unassigned = -1;
+static const int processor_id_assigning = -2;
+static const int processor_id_map_size = 256;
+static volatile int processor_id_map[processor_id_map_size];
+static volatile int processor_id_next = 0;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // utility functions
@@ -249,6 +256,13 @@ void os::Bsd::initialize_system_info() {
   } else {
     set_processor_count(1);   // fallback
   }
+
+#ifdef __APPLE__
+  // initialize processor id map
+  for (int i = 0; i < processor_id_map_size; i++) {
+    processor_id_map[i] = processor_id_unassigned;
+  }
+#endif
 
   // get physical memory via hw.memsize sysctl (hw.memsize is used
   // since it returns a 64 bit value)
@@ -3196,69 +3210,32 @@ int os::active_processor_count() {
 }
 
 #ifdef __APPLE__
-static volatile int* volatile apic_to_processor_mapping = NULL;
-static volatile int next_processor_id = 0;
-
-static inline volatile int* get_apic_to_processor_mapping() {
-  volatile int* mapping = Atomic::load_acquire(&apic_to_processor_mapping);
-  if (mapping == NULL) {
-    // Calculate possible number space for APIC ids. This space is not necessarily
-    // in the range [0, number_of_processors).
-    uint total_bits = 0;
-    for (uint i = 0;; ++i) {
-      uint eax = 0xb; // Query topology leaf
-      uint ebx;
-      uint ecx = i;
-      uint edx;
-
-      __asm__ ("cpuid\n\t" : "+a" (eax), "+b" (ebx), "+c" (ecx), "+d" (edx) : );
-
-      uint level_type = (ecx >> 8) & 0xFF;
-      if (level_type == 0) {
-        // Invalid level; end of topology
-        break;
-      }
-      uint level_apic_id_shift = eax & ((1u << 5) - 1);
-      total_bits += level_apic_id_shift;
-    }
-
-    uint max_apic_ids = 1u << total_bits;
-    mapping = NEW_C_HEAP_ARRAY(int, max_apic_ids, mtInternal);
-
-    for (uint i = 0; i < max_apic_ids; ++i) {
-      mapping[i] = -1;
-    }
-
-    if (!Atomic::replace_if_null(&apic_to_processor_mapping, mapping)) {
-      FREE_C_HEAP_ARRAY(int, mapping);
-      mapping = Atomic::load_acquire(&apic_to_processor_mapping);
-    }
-  }
-
-  return mapping;
-}
-
 uint os::processor_id() {
-  volatile int* mapping = get_apic_to_processor_mapping();
-
-  uint eax = 0xb;
+  // Get the initial APIC id and return the associated processor id. The initial APIC
+  // id is limited to 8-bits, which means we can have at most 256 unique APIC ids. If
+  // the system has more processors (or the initial APIC ids are discontiguous) the
+  // APIC id will be truncated and more than one processor will potentially share the
+  // same processor id. This is not optimal, but unlikely to happen in practice. Should
+  // this become a real problem we could switch to using x2APIC ids, which are 32-bit
+  // wide. However, note that x2APIC is Intel-specific, and the wider number space
+  // would require a more complicated mapping approach.
+  uint eax = 0x1;
   uint ebx;
   uint ecx = 0;
   uint edx;
 
   __asm__ ("cpuid\n\t" : "+a" (eax), "+b" (ebx), "+c" (ecx), "+d" (edx) : );
 
-  // Map from APIC id to a unique logical processor ID in the expected
-  // [0, num_processors) range.
-
-  uint apic_id = edx;
-  int processor_id = Atomic::load(&mapping[apic_id]);
+  uint apic_id = (ebx >> 24) & (processor_id_map_size - 1);
+  int processor_id = Atomic::load(&processor_id_map[apic_id]);
 
   while (processor_id < 0) {
-    if (Atomic::cmpxchg(&mapping[apic_id], -1, -2) == -1) {
-      Atomic::store(&mapping[apic_id], Atomic::add(&next_processor_id, 1) - 1);
+    // Assign processor id to APIC id
+    processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
+    if (processor_id == processor_id_unassigned) {
+      processor_id = Atomic::fetch_and_add(&processor_id_next, 1) % os::processor_count();
+      Atomic::store(&processor_id_map[apic_id], processor_id);
     }
-    processor_id = Atomic::load(&mapping[apic_id]);
   }
 
   assert(processor_id >= 0 && processor_id < os::processor_count(), "invalid processor id");
