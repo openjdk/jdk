@@ -281,9 +281,10 @@ public final class RequestEngine {
 
     static void setFlushInterval(long millis) {
         // Don't accept shorter interval than 1 s.
-        long interval = millis < 1000 ? 1000  : millis;
+        long interval = millis < 1000 ? 1000 : millis;
+        boolean needNotify = interval < flushInterval;
         flushInterval = interval;
-        if (interval < flushInterval) {
+        if (needNotify) {
             synchronized (JVM.FILE_DELTA_CHANGE) {
                 JVM.FILE_DELTA_CHANGE.notifyAll();
             }
