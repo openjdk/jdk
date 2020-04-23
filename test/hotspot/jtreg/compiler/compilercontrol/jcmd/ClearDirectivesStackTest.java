@@ -66,7 +66,6 @@ public class ClearDirectivesStackTest extends AbstractTestBase {
                     cmdGen.generateCommand(), methodDescriptor,
                     cmdGen.generateCompiler(), Scenario.Type.JCMD,
                     Scenario.JcmdType.ADD);
-            compileCommand.print();
             builder.add(compileCommand);
         }
         // clear the stack

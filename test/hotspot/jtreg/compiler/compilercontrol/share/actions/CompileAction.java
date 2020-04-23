@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,13 @@ public class CompileAction {
      */
     public static void checkCompiled(Executable executable,
                                      State state) {
+        { // Dumping the state being checked
+            System.out.println("Checking expected compilation state: {");
+            System.out.println("  method: " + executable);
+            state.toString().lines()
+                    .map(line -> "  " + line).forEach(System.out::println);
+            System.out.println("}");
+        }
         int first = COMP_LEVELS[0];
         if (first < 4) {
             checkCompilation(executable, first, state.isC1Compilable());
