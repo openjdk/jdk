@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,46 +23,43 @@
  * questions.
  */
 
-#include <algorithm>
-#include <windows.h>
 
-#include "SysInfo.h"
+#include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "FileUtils.h"
-#include "WinFileUtils.h"
-#include "Executor.h"
-#include "Resources.h"
-#include "WinErrorHandling.h"
+#include "ErrorHandling.h"
 
 
-int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd)
-{
-    JP_TRY;
+namespace FileUtils {
 
-    // Create temporary directory where to extract msi file.
-    const auto tempMsiDir = FileUtils::createTempDirectory();
-
-    // Schedule temporary directory for deletion.
-    FileUtils::Deleter cleaner;
-    cleaner.appendRecursiveDirectory(tempMsiDir);
-
-    const auto msiPath = FileUtils::mkpath() << tempMsiDir << L"main.msi";
-
-    // Extract msi file.
-    Resource(L"msi", RT_RCDATA).saveToFile(msiPath);
-
-    // Setup executor to run msiexec
-    Executor msiExecutor(SysInfo::getWIPath());
-    msiExecutor.arg(L"/i").arg(msiPath);
-    const auto args = SysInfo::getCommandArgs();
-    std::for_each(args.begin(), args.end(),
-            [&msiExecutor] (const tstring& arg) {
-        msiExecutor.arg(arg);
-    });
-
-    // Install msi file.
-    return msiExecutor.execAndWaitForExit();
-
-    JP_CATCH_ALL;
-
-    return -1;
+bool isFileExists(const tstring &filePath) {
+    struct stat statBuffer;
+    return (stat(filePath.c_str(), &statBuffer) != -1);
 }
+
+
+tstring toAbsolutePath(const tstring& path) {
+    if (path.empty()) {
+        char buffer[PATH_MAX] = { 0 };
+        char* buf = getcwd(buffer, sizeof(buffer));
+        if (buf) {
+            tstring result(buf);
+            if (result.empty()) {
+                JP_THROW(tstrings::any() << "getcwd() returned empty string");
+            }
+            return result;
+        }
+
+        JP_THROW(tstrings::any() << "getcwd() failed. Error: "
+                << lastCRTError());
+    }
+
+    if (isDirSeparator(path[0])) {
+        return path;
+    }
+
+    return mkpath() << toAbsolutePath("") << path;
+}
+
+} //  namespace FileUtils

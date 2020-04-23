@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,11 @@ public abstract class AbstractAppImageBuilder {
                 // legacy way and the main class string must be
                 // of the format com/foo/Main
                 if (mainJar != null) {
-                    out.println("app.mainjar=" + getCfgAppDir()
+                    out.println("app.classpath=" + getCfgAppDir()
                             + mainJar.toPath().getFileName().toString());
                 }
                 if (mainClass != null) {
-                    out.println("app.mainclass="
-                            + mainClass.replace("\\", "/"));
+                    out.println("app.mainclass=" + mainClass);
                 }
             }
 
@@ -133,26 +132,20 @@ public abstract class AbstractAppImageBuilder {
             out.println("[JavaOptions]");
             List<String> jvmargs = JAVA_OPTIONS.fetchFrom(params);
             for (String arg : jvmargs) {
-                out.println(arg);
+                out.println("java-options=" + arg);
             }
             Path modsDir = getAppModsDir();
 
             if (modsDir != null && modsDir.toFile().exists()) {
-                out.println("--module-path");
-                out.println(getCfgAppDir().replace("\\","/") + "mods");
+                out.println("java-options=" + "--module-path");
+                out.println("java-options=" + getCfgAppDir().replace("\\","/") + "mods");
             }
 
             out.println();
             out.println("[ArgOptions]");
             List<String> args = ARGUMENTS.fetchFrom(params);
             for (String arg : args) {
-                if (arg.endsWith("=") &&
-                        (arg.indexOf("=") == arg.lastIndexOf("="))) {
-                    out.print(arg.substring(0, arg.length() - 1));
-                    out.println("\\=");
-                } else {
-                    out.println(arg);
-                }
+                out.println("arguments=" + arg);
             }
         }
     }

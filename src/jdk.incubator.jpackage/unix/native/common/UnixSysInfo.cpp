@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,46 +23,49 @@
  * questions.
  */
 
-#include <algorithm>
-#include <windows.h>
-
+#include <stdlib.h>
 #include "SysInfo.h"
-#include "FileUtils.h"
-#include "WinFileUtils.h"
-#include "Executor.h"
-#include "Resources.h"
-#include "WinErrorHandling.h"
+#include "UnixSysInfo.h"
+#include "ErrorHandling.h"
 
+namespace SysInfo {
 
-int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd)
-{
-    JP_TRY;
-
-    // Create temporary directory where to extract msi file.
-    const auto tempMsiDir = FileUtils::createTempDirectory();
-
-    // Schedule temporary directory for deletion.
-    FileUtils::Deleter cleaner;
-    cleaner.appendRecursiveDirectory(tempMsiDir);
-
-    const auto msiPath = FileUtils::mkpath() << tempMsiDir << L"main.msi";
-
-    // Extract msi file.
-    Resource(L"msi", RT_RCDATA).saveToFile(msiPath);
-
-    // Setup executor to run msiexec
-    Executor msiExecutor(SysInfo::getWIPath());
-    msiExecutor.arg(L"/i").arg(msiPath);
-    const auto args = SysInfo::getCommandArgs();
-    std::for_each(args.begin(), args.end(),
-            [&msiExecutor] (const tstring& arg) {
-        msiExecutor.arg(arg);
-    });
-
-    // Install msi file.
-    return msiExecutor.execAndWaitForExit();
-
-    JP_CATCH_ALL;
-
-    return -1;
+tstring getEnvVariable(const tstring& name) {
+    char *value = ::getenv(name.c_str());
+    if (!value) {
+        JP_THROW(tstrings::any()    << "getenv("
+                                    << name
+                                    << ") failed. Variable not set");
+    }
+    return tstring(value);
 }
+
+
+tstring getEnvVariable(const std::nothrow_t&, const tstring& name,
+                                                    const tstring& defValue) {
+    char *value = ::getenv(name.c_str());
+    if (value) {
+        return tstring(value);
+    }
+    return defValue;
+}
+
+
+bool isEnvVariableSet(const tstring& name) {
+    return ::getenv(name.c_str()) != 0;
+}
+
+
+tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
+    tstring_array result;
+    for (int i = progNameMode == ExcludeProgramName ? 1 : 0; i < argc; i++) {
+        result.push_back(argv[i]);
+    }
+    return result;
+}
+
+
+int argc = 0;
+char** argv = 0;
+
+} // end of namespace SysInfo

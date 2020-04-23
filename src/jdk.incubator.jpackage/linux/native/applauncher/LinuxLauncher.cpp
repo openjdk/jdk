@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,46 +23,36 @@
  * questions.
  */
 
-#include <algorithm>
-#include <windows.h>
-
-#include "SysInfo.h"
+#include "AppLauncher.h"
 #include "FileUtils.h"
-#include "WinFileUtils.h"
-#include "Executor.h"
-#include "Resources.h"
-#include "WinErrorHandling.h"
+#include "UnixSysInfo.h"
 
 
-int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd)
-{
-    JP_TRY;
+namespace {
 
-    // Create temporary directory where to extract msi file.
-    const auto tempMsiDir = FileUtils::createTempDirectory();
+void launchApp() {
+    setlocale(LC_ALL, "en_US.utf8");
 
-    // Schedule temporary directory for deletion.
-    FileUtils::Deleter cleaner;
-    cleaner.appendRecursiveDirectory(tempMsiDir);
+    const tstring launcherPath = SysInfo::getProcessModulePath();
 
-    const auto msiPath = FileUtils::mkpath() << tempMsiDir << L"main.msi";
+    // Launcher should be in "bin" subdirectory of app image.
+    const tstring appImageRoot = FileUtils::dirname(
+            FileUtils::dirname(launcherPath));
 
-    // Extract msi file.
-    Resource(L"msi", RT_RCDATA).saveToFile(msiPath);
+    AppLauncher()
+        .setImageRoot(appImageRoot)
+        .addJvmLibName(_T("lib/libjli.so"))
+        .setAppDir(FileUtils::mkpath() << appImageRoot << _T("lib/app"))
+        .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
+                << _T("lib/runtime"))
+        .launch();
+}
 
-    // Setup executor to run msiexec
-    Executor msiExecutor(SysInfo::getWIPath());
-    msiExecutor.arg(L"/i").arg(msiPath);
-    const auto args = SysInfo::getCommandArgs();
-    std::for_each(args.begin(), args.end(),
-            [&msiExecutor] (const tstring& arg) {
-        msiExecutor.arg(arg);
-    });
+} // namespace
 
-    // Install msi file.
-    return msiExecutor.execAndWaitForExit();
 
-    JP_CATCH_ALL;
-
-    return -1;
+int main(int argc, char *argv[]) {
+    SysInfo::argc = argc;
+    SysInfo::argv = argv;
+    return AppLauncher::launch(std::nothrow, launchApp);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
 
 public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
-    private static final String LIBRARY_NAME = "libapplauncher.so";
     final static String DEFAULT_ICON = "java32.png";
 
     private final ApplicationLayout appLayout;
@@ -108,11 +107,6 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
         // create the primary launcher
         createLauncherForEntryPoint(params, null);
-
-        // Copy library to the launcher folder
-        try (InputStream is_lib = getResourceAsStream(LIBRARY_NAME)) {
-            writeEntry(is_lib, appLayout.dllDirectory().resolve(LIBRARY_NAME));
-        }
 
         // create the additional launchers, if any
         List<Map<String, ? super Object>> entryPoints

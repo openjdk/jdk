@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
             "jdk.incubator.jpackage.internal.resources.WinResources");
 
     private final static String LIBRARY_NAME = "applauncher.dll";
-    private final static String REDIST_MSVCR = "vcruntimeVS_VER.dll";
-    private final static String REDIST_MSVCP = "msvcpVS_VER.dll";
 
     private final static String TEMPLATE_APP_ICON ="java48.ico";
 
@@ -189,13 +187,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         // copy the jars
         copyApplication(params);
 
-        // copy in the needed libraries
-        try (InputStream is_lib = getResourceAsStream(LIBRARY_NAME)) {
-            Files.copy(is_lib, binDir.resolve(LIBRARY_NAME));
-        }
-
-        copyMSVCDLLs();
-
         // create the additional launcher(s), if any
         List<Map<String, ? super Object>> entryPoints =
                 StandardBundlerParam.ADD_LAUNCHERS.fetchFrom(params);
@@ -208,27 +199,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     @Override
     public void prepareJreFiles(Map<String, ? super Object> params)
         throws IOException {}
-
-    private void copyMSVCDLLs() throws IOException {
-        AtomicReference<IOException> ioe = new AtomicReference<>();
-        try (Stream<Path> files = Files.list(runtimeDir.resolve("bin"))) {
-            files.filter(p -> Pattern.matches(
-                    "^(vcruntime|msvcp|msvcr|ucrtbase|api-ms-win-).*\\.dll$",
-                    p.toFile().getName().toLowerCase()))
-                 .forEach(p -> {
-                    try {
-                        Files.copy(p, binDir.resolve((p.toFile().getName())));
-                    } catch (IOException e) {
-                        ioe.set(e);
-                    }
-                });
-        }
-
-        IOException e = ioe.get();
-        if (e != null) {
-            throw e;
-        }
-    }
 
     private void validateValueAndPut(
             Map<String, String> data, String key,

@@ -23,46 +23,35 @@
  * questions.
  */
 
-#include <algorithm>
-#include <windows.h>
 
-#include "SysInfo.h"
-#include "FileUtils.h"
-#include "WinFileUtils.h"
-#include "Executor.h"
-#include "Resources.h"
-#include "WinErrorHandling.h"
+#ifndef SourceCodePos_h
+#define SourceCodePos_h
 
 
-int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd)
+//
+// Position in source code.
+//
+
+struct SourceCodePos
 {
-    JP_TRY;
+    SourceCodePos(const char* fl, const char* fnc, int l):
+                                                file(fl), func(fnc), lno(l)
+    {
+    }
 
-    // Create temporary directory where to extract msi file.
-    const auto tempMsiDir = FileUtils::createTempDirectory();
+    const char* file;
+    const char* func;
+    int lno;
+};
 
-    // Schedule temporary directory for deletion.
-    FileUtils::Deleter cleaner;
-    cleaner.appendRecursiveDirectory(tempMsiDir);
 
-    const auto msiPath = FileUtils::mkpath() << tempMsiDir << L"main.msi";
+// Initializes SourceCodePos instance with the
+// information from the point of calling.
+#ifdef THIS_FILE
+    #define JP_SOURCE_CODE_POS SourceCodePos(THIS_FILE, __FUNCTION__, __LINE__)
+#else
+    #define JP_SOURCE_CODE_POS SourceCodePos(__FILE__, __FUNCTION__, __LINE__)
+#endif
 
-    // Extract msi file.
-    Resource(L"msi", RT_RCDATA).saveToFile(msiPath);
 
-    // Setup executor to run msiexec
-    Executor msiExecutor(SysInfo::getWIPath());
-    msiExecutor.arg(L"/i").arg(msiPath);
-    const auto args = SysInfo::getCommandArgs();
-    std::for_each(args.begin(), args.end(),
-            [&msiExecutor] (const tstring& arg) {
-        msiExecutor.arg(arg);
-    });
-
-    // Install msi file.
-    return msiExecutor.execAndWaitForExit();
-
-    JP_CATCH_ALL;
-
-    return -1;
-}
+#endif // #ifndef SourceCodePos_h
