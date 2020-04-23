@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 /** <P> A port of the VM's StubQueue. Note that the VM implicitly
     knows the type of the objects contained in each StubQueue because
@@ -53,7 +55,7 @@ public class StubQueue extends VMObject {
 
   // The type of the contained stubs (i.e., InterpreterCodelet,
   // ICStub). Must be a subclass of type Stub.
-  private Class stubType;
+  private Class<?> stubType;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {

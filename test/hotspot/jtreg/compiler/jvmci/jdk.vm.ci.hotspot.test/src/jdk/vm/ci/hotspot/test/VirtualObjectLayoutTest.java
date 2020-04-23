@@ -69,4 +69,9 @@ public class VirtualObjectLayoutTest extends VirtualObjectTestBase {
     public void testFormat() {
         testBase();
     }
+
+    @Test
+    public void testByteArrayFormat() {
+        testByteArray();
+    }
 }

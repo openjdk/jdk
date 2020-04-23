@@ -30,6 +30,7 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.Spliterator;
@@ -758,7 +759,7 @@ public abstract class Buffer {
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
                 @Override
-                public JavaNioAccess.BufferPool getDirectBufferPool() {
+                public BufferPool getDirectBufferPool() {
                     return Bits.BUFFER_POOL;
                 }
 

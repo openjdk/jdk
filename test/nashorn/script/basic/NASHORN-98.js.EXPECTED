@@ -1,6 +1,0 @@
-SyntaxError:32:Expected comma but found decimal
-var x = [ 23 34 ]
-             ^
-SyntaxError:41:Expected comma but found ident
-var x = { foo: 33 bar: 'hello' }
-                  ^

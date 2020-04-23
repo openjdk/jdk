@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ class ClassLoaderDataGraph : public AllStatic {
   static volatile size_t  _num_instance_classes;
   static volatile size_t  _num_array_classes;
 
-  static ClassLoaderData* add_to_graph(Handle class_loader, bool is_unsafe_anonymous);
-  static ClassLoaderData* add(Handle class_loader, bool is_unsafe_anonymous);
+  static ClassLoaderData* add_to_graph(Handle class_loader, bool has_class_mirror_holder);
+  static ClassLoaderData* add(Handle class_loader, bool has_class_mirror_holder);
 
  public:
   static ClassLoaderData* find_or_create(Handle class_loader);
@@ -76,7 +76,7 @@ class ClassLoaderDataGraph : public AllStatic {
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
   // classes that are allocated but not loaded, classes that have errors, and scratch classes
   // for redefinition.  These classes are removed during the next class unloading.
-  // Walking the ClassLoaderDataGraph also includes unsafe anonymous classes.
+  // Walking the ClassLoaderDataGraph also includes hidden and unsafe anonymous classes.
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));

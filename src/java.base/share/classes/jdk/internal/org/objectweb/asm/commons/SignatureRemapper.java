@@ -73,7 +73,7 @@ public class SignatureRemapper extends SignatureVisitor {
 
     private final Remapper remapper;
 
-    private ArrayList<String> classNames = new ArrayList<String>();
+    private ArrayList<String> classNames = new ArrayList<>();
 
     /**
       * Constructs a new {@link SignatureRemapper}. <i>Subclasses must not use this constructor</i>.
@@ -83,15 +83,16 @@ public class SignatureRemapper extends SignatureVisitor {
       * @param remapper the remapper to use to remap the types in the visited signature.
       */
     public SignatureRemapper(final SignatureVisitor signatureVisitor, final Remapper remapper) {
-        this(Opcodes.ASM7, signatureVisitor, remapper);
+        this(/* latest api = */ Opcodes.ASM8, signatureVisitor, remapper);
     }
 
     /**
       * Constructs a new {@link SignatureRemapper}.
       *
       * @param api the ASM API version supported by this remapper. Must be one of {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}.
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5},{@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
       * @param signatureVisitor the signature visitor this remapper must deleted to.
       * @param remapper the remapper to use to remap the types in the visited signature.
       */

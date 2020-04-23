@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 public class HashtableBucket extends VMObject {
   static {
@@ -46,10 +48,10 @@ public class HashtableBucket extends VMObject {
   // Field
   private static AddressField entryField;
 
-  // Accessor - accepts Class<? extends BasicHashtableEntry>
-  public BasicHashtableEntry getEntry(Class clazz) {
+  // Accessor
+  public BasicHashtableEntry getEntry(Class<? extends BasicHashtableEntry> clazz) {
     Address tmp = entryField.getValue(addr);
-    return (BasicHashtableEntry) VMObjectFactory.newObject(clazz, tmp);
+    return VMObjectFactory.newObject(clazz, tmp);
   }
 
   public BasicHashtableEntry entry() {

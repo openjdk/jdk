@@ -31,6 +31,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeterogeneousHeapPolicy.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
@@ -43,7 +44,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
-#include "logging/logStream.hpp"
+#include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -72,10 +73,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _rs_length(0),
   _rs_length_prediction(0),
   _pending_cards_at_gc_start(0),
-  _pending_cards_at_prev_gc_end(0),
-  _total_mutator_refined_cards(0),
-  _total_concurrent_refined_cards(0),
-  _total_concurrent_refinement_time(),
   _bytes_allocated_in_old_since_last_gc(0),
   _initial_mark_to_mixed(),
   _collection_set(NULL),
@@ -432,7 +429,7 @@ void G1Policy::record_full_collection_start() {
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
   _collection_set->clear_candidates();
-  record_concurrent_refinement_data(true /* is_full_collection */);
+  _pending_cards_at_gc_start = 0;
 }
 
 void G1Policy::record_full_collection_end() {
@@ -462,64 +459,62 @@ void G1Policy::record_full_collection_end() {
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_length_prediction();
-  _pending_cards_at_prev_gc_end = _g1h->pending_card_num();
 
   _bytes_allocated_in_old_since_last_gc = 0;
 
   record_pause(FullGC, _full_collection_start_sec, end_sec);
 }
 
-void G1Policy::record_concurrent_refinement_data(bool is_full_collection) {
-  _pending_cards_at_gc_start = _g1h->pending_card_num();
+static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats& stats) {
+  log_debug(gc, refine, stats)
+           ("%s refinement: %.2fms, refined: " SIZE_FORMAT
+            ", precleaned: " SIZE_FORMAT ", dirtied: " SIZE_FORMAT,
+            kind,
+            stats.refinement_time().seconds() * MILLIUNITS,
+            stats.refined_cards(),
+            stats.precleaned_cards(),
+            stats.dirtied_cards());
+}
 
-  // Record info about concurrent refinement thread processing.
+void G1Policy::record_concurrent_refinement_stats() {
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  _pending_cards_at_gc_start = dcqs.num_cards();
+
+  // Collect per-thread stats, mostly from mutator activity.
+  G1ConcurrentRefineStats mut_stats = dcqs.get_and_reset_refinement_stats();
+
+  // Collect specialized concurrent refinement thread stats.
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
-  G1ConcurrentRefine::RefinementStats cr_stats = cr->total_refinement_stats();
+  G1ConcurrentRefineStats cr_stats = cr->get_and_reset_refinement_stats();
 
-  Tickspan cr_time = cr_stats._time - _total_concurrent_refinement_time;
-  _total_concurrent_refinement_time = cr_stats._time;
+  G1ConcurrentRefineStats total_stats = mut_stats + cr_stats;
 
-  size_t cr_cards = cr_stats._cards - _total_concurrent_refined_cards;
-  _total_concurrent_refined_cards = cr_stats._cards;
+  log_refinement_stats("Mutator", mut_stats);
+  log_refinement_stats("Concurrent", cr_stats);
+  log_refinement_stats("Total", total_stats);
 
-  // Don't update rate if full collection.  We could be in an implicit full
-  // collection after a non-full collection failure, in which case there
-  // wasn't any mutator/cr-thread activity since last recording.  And if
-  // we're in an explicit full collection, the time since the last GC can
-  // be arbitrarily short, so not a very good sample.  Similarly, don't
-  // update the rate if the current sample is empty or time is zero.
-  if (!is_full_collection && (cr_cards > 0) && (cr_time > Tickspan())) {
-    double rate = cr_cards / (cr_time.seconds() * MILLIUNITS);
+  // Record the rate at which cards were refined.
+  // Don't update the rate if the current sample is empty or time is zero.
+  Tickspan refinement_time = total_stats.refinement_time();
+  size_t refined_cards = total_stats.refined_cards();
+  if ((refined_cards > 0) && (refinement_time > Tickspan())) {
+    double rate = refined_cards / (refinement_time.seconds() * MILLIUNITS);
     _analytics->report_concurrent_refine_rate_ms(rate);
+    log_debug(gc, refine, stats)("Concurrent refinement rate: %.2f cards/ms", rate);
   }
 
-  // Record info about mutator thread processing.
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  size_t mut_total_cards = dcqs.total_mutator_refined_cards();
-  size_t mut_cards = mut_total_cards - _total_mutator_refined_cards;
-  _total_mutator_refined_cards = mut_total_cards;
-
   // Record mutator's card logging rate.
-  // Don't update if full collection; see above.
-  if (!is_full_collection) {
-    size_t total_cards = _pending_cards_at_gc_start + cr_cards + mut_cards;
-    assert(_pending_cards_at_prev_gc_end <= total_cards,
-           "untracked cards: last pending: " SIZE_FORMAT
-           ", pending: " SIZE_FORMAT ", conc refine: " SIZE_FORMAT
-           ", mut refine:" SIZE_FORMAT,
-           _pending_cards_at_prev_gc_end, _pending_cards_at_gc_start,
-           cr_cards, mut_cards);
-    size_t logged_cards = total_cards - _pending_cards_at_prev_gc_end;
-    double logging_start_time = _analytics->prev_collection_pause_end_ms();
-    double logging_end_time = Ticks::now().seconds() * MILLIUNITS;
-    double logging_time = logging_end_time - logging_start_time;
-    // Unlike above for conc-refine rate, here we should not require a
-    // non-empty sample, since an application could go some time with only
-    // young-gen or filtered out writes.  But we'll ignore unusually short
-    // sample periods, as they may just pollute the predictions.
-    if (logging_time > 1.0) {   // Require > 1ms sample time.
-      _analytics->report_logged_cards_rate_ms(logged_cards / logging_time);
-    }
+  double mut_start_time = _analytics->prev_collection_pause_end_ms();
+  double mut_end_time = phase_times()->cur_collection_start_sec() * MILLIUNITS;
+  double mut_time = mut_end_time - mut_start_time;
+  // Unlike above for conc-refine rate, here we should not require a
+  // non-empty sample, since an application could go some time with only
+  // young-gen or filtered out writes.  But we'll ignore unusually short
+  // sample periods, as they may just pollute the predictions.
+  if (mut_time > 1.0) {   // Require > 1ms sample time.
+    double dirtied_rate = total_stats.dirtied_cards() / mut_time;
+    _analytics->report_dirtied_cards_rate_ms(dirtied_rate);
+    log_debug(gc, refine, stats)("Generate dirty cards rate: %.2f cards/ms", dirtied_rate);
   }
 }
 
@@ -536,7 +531,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);
 
-  record_concurrent_refinement_data(false /* is_full_collection */);
+  record_concurrent_refinement_stats();
 
   _collection_set->reset_bytes_used_before();
 
@@ -830,7 +825,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     scan_logged_cards_time_goal_ms -= merge_hcc_time_ms;
   }
 
-  _pending_cards_at_prev_gc_end = _g1h->pending_card_num();
   double const logged_cards_time = logged_cards_processing_time();
 
   log_debug(gc, ergo, refine)("Concurrent refinement times: Logged Cards Scan time goal: %1.2fms Logged Cards Scan time: %1.2fms HCC time: %1.2fms",

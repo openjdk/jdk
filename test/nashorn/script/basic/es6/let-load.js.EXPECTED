@@ -1,9 +1,0 @@
-top level function
-block function
-print local defs: 20 30
-imported var: 1
-imported let: 2
-imported const: 3
-top level function
-ReferenceError: "block" is not defined
-TypeError: Assignment to constant "c"

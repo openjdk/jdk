@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,8 @@ import sun.jvm.hotspot.utilities.*;
 
 public class Annotation {
   private Interval interval;
-  // List<String>
-  private java.util.List strings;
-  // List<Integer>
-  private java.util.List heights;
+  private java.util.List<String> strings;
+  private java.util.List<Integer> heights;
   private Color baseColor;
   private int width;
   private int height;
@@ -53,8 +51,8 @@ public class Annotation {
   public Annotation(Address lowAddress,
                     Address highAddress,
                     String s) {
-    strings = new ArrayList();
-    heights = new ArrayList();
+    strings = new ArrayList<>();
+    heights = new ArrayList<>();
     for (StringTokenizer tok = new StringTokenizer(s, "\n"); tok.hasMoreTokens(); ) {
       strings.add(tok.nextToken());
     }
@@ -115,7 +113,7 @@ public class Annotation {
       Rectangle2D bounds = GraphicsUtilities.getStringBounds(s, g);
       width  =  Math.max(width, (int) bounds.getWidth());
       height += (int) bounds.getHeight();
-      heights.add(new Integer((int) bounds.getHeight()));
+      heights.add((int) bounds.getHeight());
     }
   }
 

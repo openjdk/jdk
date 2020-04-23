@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.Random;
 
 /*
  * @test
+ * @key randomness
  * @bug 8016304
  * @summary Make sure no deadlock is reported for this program which has no deadlocks.
  * @modules java.base/jdk.internal.misc
@@ -48,8 +49,9 @@ public class TestFalseDeadLock {
     public static void main(String[] args) throws Exception {
         bean = ManagementFactory.getThreadMXBean();
         Thread[] threads = new Thread[500];
+        Random random = Utils.getRandomInstance();
         for (int i = 0; i < threads.length; i++) {
-            Test t = new Test();
+            Test t = new Test(random.nextLong());
             threads[i] = new Thread(t);
             threads[i].start();
         }
@@ -67,8 +69,12 @@ public class TestFalseDeadLock {
     }
 
     public static class Test implements Runnable {
+        private final long seed;
+        public Test(long seed) {
+            this.seed = seed;
+        }
         public void run() {
-            Random r = Utils.getRandomInstance();
+            Random r = new Random(seed);
             while (running) {
                 try {
                     synchronized (this) {

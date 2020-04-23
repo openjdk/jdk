@@ -172,6 +172,21 @@ public interface ClassWriter {
     Content getMemberTreeHeader();
 
     /**
+     * Returns a list to be used for the list of summaries for members of a given kind.
+     *
+     * @return a list to be used for the list of summaries for members of a given kind
+     */
+    Content getSummariesList();
+
+    /**
+     * Returns an item for the list of summaries for members of a given kind.
+     *
+     * @param content content for the item
+     * @return an item for the list of summaries for members of a given kind
+     */
+    Content getSummariesListItem(Content content);
+
+    /**
      * Returns a list to be used for the list of details for members of a given kind.
      *
      * @return a list to be used for the list of details for members of a given kind

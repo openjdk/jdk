@@ -237,11 +237,7 @@ int LinearScan::allocate_spill_slot(bool double_word) {
 
   int result = spill_slot + LinearScan::nof_regs + frame_map()->argcount();
 
-  // the class OopMapValue uses only 11 bits for storing the name of the
-  // oop location. So a stack slot bigger than 2^11 leads to an overflow
-  // that is not reported in product builds. Prevent this by checking the
-  // spill slot here (altough this value and the later used location name
-  // are slightly different)
+  // if too many slots used, bailout compilation.
   if (result > 2000) {
     bailout("too many stack slots used");
   }

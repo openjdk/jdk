@@ -1,9 +1,0 @@
-java.lang.RuntimeException: test/nashorn/script/basic/es6/super.js#34:8<eval>:1:10 ES6 super keyword is not yet implemented
-({ meth() { x = super.x } })
-          ^
-java.lang.RuntimeException: test/nashorn/script/basic/es6/super.js#34:8<eval>:1:10 ES6 super keyword is not yet implemented
-({ meth() { x = super.x() } })
-          ^
-java.lang.RuntimeException: test/nashorn/script/basic/es6/super.js#34:8<eval>:1:10 ES6 super keyword is not yet implemented
-({ meth() { x = super['x'] } })
-          ^

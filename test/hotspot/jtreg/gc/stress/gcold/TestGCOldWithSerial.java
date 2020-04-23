@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithSerial
- * @key gc
- * @library /
+ * @key gc randomness
+ * @library / /test/lib
  * @requires vm.gc.Serial
  * @summary Stress the Serial GC by trying to make old objects more likely to be garbage than young objects.
  * @run main/othervm -Xmx384M -XX:+UseSerialGC gc.stress.gcold.TestGCOldWithSerial 50 1 20 10 10000

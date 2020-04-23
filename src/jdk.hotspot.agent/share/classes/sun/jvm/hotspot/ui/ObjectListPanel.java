@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.jvm.hotspot.ui.tree.*;
 public class ObjectListPanel extends SAPanel {
   private ObjectListTableModel dataModel;
   private JTable             table;
-  private java.util.List     elements;
+  private java.util.List<Oop> elements;
   private HeapProgressThunk  thunk;
   private boolean            checkedForArrays;
   private boolean            hasArrays;
@@ -55,7 +55,7 @@ public class ObjectListPanel extends SAPanel {
 
   /** Takes a List<Oop> in constructor, and an optional
       HeapProgressThunk used if computing liveness */
-  public ObjectListPanel(java.util.List els,
+  public ObjectListPanel(java.util.List<Oop> els,
                          HeapProgressThunk thunk) {
     super();
 
@@ -120,7 +120,7 @@ public class ObjectListPanel extends SAPanel {
   // Internals only below this point
   //
 
-  private static class AddressWrapper implements Comparable {
+  private static class AddressWrapper implements Comparable<AddressWrapper> {
     private Address address;
 
     private AddressWrapper(Address address) {
@@ -131,8 +131,7 @@ public class ObjectListPanel extends SAPanel {
       return address.toString();
     }
 
-    public int compareTo(Object o) {
-      AddressWrapper wrapper = (AddressWrapper) o;
+    public int compareTo(AddressWrapper wrapper) {
       Address addr = wrapper.address;
       if (AddressOps.lessThan(address, addr)) return -1;
       if (AddressOps.greaterThan(address, addr)) return 1;
@@ -140,7 +139,7 @@ public class ObjectListPanel extends SAPanel {
     }
   }
 
-  private class ObjectListTableModel extends SortableTableModel {
+  private class ObjectListTableModel extends SortableTableModel<Oop> {
     public ObjectListTableModel() {
       // Set the rows
       this.elements = ObjectListPanel.this.elements;
@@ -180,7 +179,7 @@ public class ObjectListPanel extends SAPanel {
       return getValueForColumn(oop, col);
     }
 
-    public Object getValueForColumn(Oop oop, int col) {
+    public Comparable<?> getValueForColumn(Oop oop, int col) {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
       switch (col) {
@@ -192,7 +191,7 @@ public class ObjectListPanel extends SAPanel {
       case 2:
         if (hasArrays) {
           if (oop instanceof Array) {
-            return new Long(((Array) oop).getLength());
+            return ((Array) oop).getLength();
           }
           return null;
         } else {
@@ -241,7 +240,7 @@ public class ObjectListPanel extends SAPanel {
        * @param obj Object that was passed for Comparator
        * @param column the column to retrieve
        */
-      public Object getValueForColumn(Object obj, int column) {
+      public Comparable<?> getValueForColumn(Object obj, int column) {
         ObjectListTableModel omodel = (ObjectListTableModel)model;
         return omodel.getValueForColumn((Oop) obj, column);
       }
@@ -254,7 +253,7 @@ public class ObjectListPanel extends SAPanel {
       return;
     }
 
-    Oop oop = (Oop) elements.get(i);
+    Oop oop = elements.get(i);
 
     for (Iterator iter = listeners.iterator(); iter.hasNext(); ) {
       SAListener listener = (SAListener) iter.next();
@@ -311,7 +310,7 @@ public class ObjectListPanel extends SAPanel {
       return;
     }
 
-    Oop oop = (Oop) elements.get(i);
+    Oop oop = elements.get(i);
     LivenessPathList list = LivenessAnalysis.computeAllLivenessPaths(oop);
     if (list == null) {
       return; // dead object

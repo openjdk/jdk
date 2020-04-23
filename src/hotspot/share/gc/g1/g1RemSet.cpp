@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -910,9 +910,6 @@ void G1RemSet::prepare_region_for_scan(HeapRegion* region) {
 }
 
 void G1RemSet::prepare_for_scan_heap_roots() {
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  dcqs.concatenate_logs();
-
   _scan_state->prepare();
 }
 

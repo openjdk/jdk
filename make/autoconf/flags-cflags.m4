@@ -641,6 +641,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # Where does this really belong??
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     PICFLAG="-fPIC"
+    PIEFLAG="-fPIE"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     PICFLAG="-KPIC"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -854,18 +855,27 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # Check if compiler supports -fmacro-prefix-map. If so, use that to make
-    # the __FILE__ macro resolve to paths relative to the workspace root.
-    workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
-    FILE_MACRO_CFLAGS="-fmacro-prefix-map=${workspace_root_trailing_slash}="
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
-        PREFIX: $3,
-        IF_FALSE: [
-            FILE_MACRO_CFLAGS=
-        ]
-    )
+  # Prevent the __FILE__ macro from generating absolute paths into the built
+  # binaries. Depending on toolchain, different mitigations are possible.
+  # * GCC and Clang of new enough versions have -fmacro-prefix-map.
+  # * For most other toolchains, supplying all source files and -I flags as
+  #   relative paths fixes the issue.
+  FILE_MACRO_CFLAGS=
+  if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      # Check if compiler supports -fmacro-prefix-map. If so, use that to make
+      # the __FILE__ macro resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      FILE_MACRO_CFLAGS="-fmacro-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
+          PREFIX: $3,
+          IF_FALSE: [
+              FILE_MACRO_CFLAGS=
+          ]
+      )
+    fi
   fi
+  AC_SUBST(FILE_MACRO_CFLAGS)
 
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
@@ -894,10 +904,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   $2JVM_CFLAGS="$CFLAGS_JVM_COMMON ${$1_CFLAGS_JVM} ${$2EXTRA_CXXFLAGS}"
 
-  $2CFLAGS_JDKEXE="$CFLAGS_JDK_COMMON $CFLAGS_JDK_COMMON_CONLY ${$1_CFLAGS_JDK}"
-  $2CXXFLAGS_JDKEXE="$CFLAGS_JDK_COMMON $CFLAGS_JDK_COMMON_CXXONLY ${$1_CFLAGS_JDK}"
-  $2CFLAGS_JDKLIB="${$2CFLAGS_JDKEXE} $JDK_PICFLAG ${$1_CFLAGS_CPU_JDK_LIBONLY}"
-  $2CXXFLAGS_JDKLIB="${$2CXXFLAGS_JDKEXE} $JDK_PICFLAG ${$1_CFLAGS_CPU_JDK_LIBONLY}"
+  $2CFLAGS_JDKEXE="$CFLAGS_JDK_COMMON $CFLAGS_JDK_COMMON_CONLY ${$1_CFLAGS_JDK} $PIEFLAG"
+  $2CXXFLAGS_JDKEXE="$CFLAGS_JDK_COMMON $CFLAGS_JDK_COMMON_CXXONLY ${$1_CFLAGS_JDK} $PIEFLAG"
+  $2CFLAGS_JDKLIB="$CFLAGS_JDK_COMMON $CFLAGS_JDK_COMMON_CONLY ${$1_CFLAGS_JDK} \
+      $JDK_PICFLAG ${$1_CFLAGS_CPU_JDK_LIBONLY}"
+  $2CXXFLAGS_JDKLIB="$CFLAGS_JDK_COMMON $CFLAGS_JDK_COMMON_CXXONLY ${$1_CFLAGS_JDK} \
+      $JDK_PICFLAG ${$1_CFLAGS_CPU_JDK_LIBONLY}"
 
   AC_SUBST($2JVM_CFLAGS)
   AC_SUBST($2CFLAGS_JDKLIB)

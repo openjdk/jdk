@@ -1077,7 +1077,7 @@ public final class ProcessBuilder
      * Start a new Process using an explicit array of redirects.
      * See {@link #start} for details of starting each Process.
      *
-     * @param redirect array of redirects for stdin, stdout, stderr
+     * @param redirects array of redirects for stdin, stdout, stderr
      * @return the new Process
      * @throws IOException if an I/O error occurs
      */

@@ -248,7 +248,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 }
 
  ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
-   ShenandoahRootProcessor(ShenandoahPhaseTimings::_num_phases),
+   ShenandoahRootProcessor(ShenandoahPhaseTimings::heap_iteration_roots),
    _thread_roots(false /*is par*/) {
  }
 

@@ -721,10 +721,19 @@ class Field extends AccessibleObject implements Member {
      * the underlying field is inaccessible, the method throws an
      * {@code IllegalAccessException}.
      *
-     * <p>If the underlying field is final, the method throws an
-     * {@code IllegalAccessException} unless {@code setAccessible(true)}
-     * has succeeded for this {@code Field} object
-     * and the field is non-static. Setting a final field in this way
+     * <p>If the underlying field is final, this {@code Field} object has
+     * <em>write</em> access if and only if the following conditions are met:
+     * <ul>
+     * <li>{@link #setAccessible(boolean) setAccessible(true)} has succeeded for
+     *     this {@code Field} object;</li>
+     * <li>the field is non-static; and</li>
+     * <li>the field's declaring class is not a {@linkplain Class#isHidden()
+     *     hidden class}.</li>
+     * </ul>
+     * If any of the above checks is not met, this method throws an
+     * {@code IllegalAccessException}.
+     *
+     * <p> Setting a final field in this way
      * is meaningful only during deserialization or reconstruction of
      * instances of classes with blank final fields, before they are
      * made available for access by other parts of a program. Use in
@@ -756,7 +765,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -791,7 +801,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -827,7 +838,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -863,7 +875,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -899,7 +912,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -935,7 +949,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -971,7 +986,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -1007,7 +1023,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
@@ -1043,7 +1060,8 @@ class Field extends AccessibleObject implements Member {
      *
      * @throws    IllegalAccessException    if this {@code Field} object
      *              is enforcing Java language access control and the underlying
-     *              field is either inaccessible or final.
+     *              field is either inaccessible or final;
+     *              or if this {@code Field} object has no write access.
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),

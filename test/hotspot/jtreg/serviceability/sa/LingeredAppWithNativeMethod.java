@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  * questions.
  */
 
+import java.util.Random;
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Utils;
 
 public class LingeredAppWithNativeMethod extends LingeredApp {
 
     public static final String THREAD_NAME = "NoFramePointerJNIFib";
     private static final int UPPER_BOUND = 55;
     private static final int LOWER_BOUND = 40;
+    private static final Random RNG = Utils.getRandomInstance();
 
     static {
         // JNI library compiled with no frame pointer info
@@ -43,9 +46,9 @@ public class LingeredAppWithNativeMethod extends LingeredApp {
         // Results of fibonacci calculation from JNI are
         // reported via callback(). That's where the process
         // of calculating fibonacci restarts.
-        int num = (int) (Math.random() * UPPER_BOUND);
+        int num = (int) (RNG.nextDouble() * UPPER_BOUND);
         while (num < LOWER_BOUND) {
-            num = (int) (Math.random() * UPPER_BOUND);
+            num = (int) (RNG.nextDouble() * UPPER_BOUND);
         }
         System.out.print("fib(" + num + ") = ");
         callJNI(this, num);

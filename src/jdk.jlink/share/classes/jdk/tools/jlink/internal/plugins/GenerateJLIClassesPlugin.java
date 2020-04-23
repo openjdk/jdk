@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,14 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
-import jdk.internal.access.SharedSecrets;
+
 import jdk.internal.access.JavaLangInvokeAccess;
-import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.internal.access.SharedSecrets;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
  * Plugin to generate java.lang.invoke classes.
@@ -289,7 +290,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         return out.build();
     }
 
-    @SuppressWarnings("unchecked")
     private void generateBMHClass(String types, ResourcePoolBuilder out) {
         try {
             // Generate class

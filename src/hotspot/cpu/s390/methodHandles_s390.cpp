@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
@@ -616,7 +617,7 @@ void trace_method_handle_stub(const char* adaptername,
 }
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
-  if (!TraceMethodHandles) { return; }
+  if (!log_is_enabled(Info, methodhandles)) { return; }
 
   // If arg registers are contiguous, we can use STMG/LMG.
   assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == RegisterImpl::number_of_arg_registers, "Oops");

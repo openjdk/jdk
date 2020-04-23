@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class NewInstance {
      * Performs Class.newInstance on the same class over and over again. That it is the same class is not provable at
      * compile time. The class is protected.
      */
+    @SuppressWarnings("deprecation")
     @Benchmark
     public void threeSameProtected(Blackhole bh) throws IllegalAccessException, InstantiationException {
         for (Class<?> cl : sameProtectedClasses) {
@@ -71,6 +72,7 @@ public class NewInstance {
      * Performs Class.newInstance on three different classes, just allocating one instance of one class at a time. The
      * classes are all protected.
      */
+    @SuppressWarnings("deprecation")
     @Benchmark
     public void threeDifferentProtected(Blackhole bh) throws IllegalAccessException, InstantiationException {
         for (Class<?> cl : differentProtectedClasses) {
@@ -82,6 +84,7 @@ public class NewInstance {
      * Performs Class.newInstance on the same class over and over again. That it is the same class is not provable at
      * compile time. The class is public.
      */
+    @SuppressWarnings("deprecation")
     @Benchmark
     public void threeSamePublic(Blackhole bh) throws IllegalAccessException, InstantiationException {
         for (Class<?> cl : samePublicClasses) {
@@ -93,6 +96,7 @@ public class NewInstance {
      * Performs Class.newInstance on three different classes, just allocating one instance of one class at a time. The
      * classes are all public.
      */
+    @SuppressWarnings("deprecation")
     @Benchmark
     public void threeDifferentPublic(Blackhole bh) throws IllegalAccessException, InstantiationException {
         for (Class<?> cl : differentPublicClasses) {
@@ -104,6 +108,7 @@ public class NewInstance {
      * Performs Class.newInstance on three different classes, just allocating one instance of one class at a time. The
      * classes are all public.
      */
+    @SuppressWarnings("deprecation")
     @Benchmark
     public void threeDifferentPublicConstant(Blackhole bh) throws IllegalAccessException, InstantiationException {
         bh.consume(Apub.class.newInstance());
@@ -111,6 +116,7 @@ public class NewInstance {
         bh.consume(Cpub.class.newInstance());
     }
 
+    @SuppressWarnings("deprecation")
     @Benchmark
     public void threeDifferentPublicFinal(Blackhole bh) throws IllegalAccessException, InstantiationException {
         for (Class<?> cl : differentPublicClassesConstant) {

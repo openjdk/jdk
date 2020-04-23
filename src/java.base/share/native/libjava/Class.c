@@ -61,6 +61,7 @@ static JNINativeMethod methods[] = {
     {"getSigners",       "()[" OBJ,         (void *)&JVM_GetClassSigners},
     {"setSigners",       "([" OBJ ")V",     (void *)&JVM_SetClassSigners},
     {"isArray",          "()Z",             (void *)&JVM_IsArrayClass},
+    {"isHidden",         "()Z",             (void *)&JVM_IsHiddenClass},
     {"isPrimitive",      "()Z",             (void *)&JVM_IsPrimitiveClass},
     {"getModifiers",     "()I",             (void *)&JVM_GetClassModifiers},
     {"getDeclaredFields0","(Z)[" FLD,       (void *)&JVM_GetClassDeclaredFields},

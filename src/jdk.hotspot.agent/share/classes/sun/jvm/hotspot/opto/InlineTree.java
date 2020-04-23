@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.utilities.GrowableArray;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 public class InlineTree extends VMObject {
   static {
@@ -55,7 +57,7 @@ public class InlineTree extends VMObject {
   private static AddressField callerTreeField;
   private static AddressField subtreesField;
 
-  private static StaticBaseConstructor inlineTreeConstructor = new StaticBaseConstructor<InlineTree>(InlineTree.class);
+  private static StaticBaseConstructor<InlineTree> inlineTreeConstructor = new StaticBaseConstructor<>(InlineTree.class);
 
   public InlineTree(Address addr) {
     super(addr);

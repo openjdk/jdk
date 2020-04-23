@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ public interface CDebugger {
       ThreadProxy objects. Do not mutate this list. Throws
       DebuggerException if the target process is not suspended (via
       ProcessControl) or if the fetch failed for some other reason. */
-  public List/*<ThreadProxy>*/ getThreadList() throws DebuggerException;
+  public List<ThreadProxy> getThreadList() throws DebuggerException;
 
   /** Return a list of LoadObjects in the target process. Do not
       mutate this list. Throws DebuggerException if the target process
       is not suspended (via ProcessControl) or if the fetch failed for
       some other reason. */
-  public List/*<LoadObject>*/ getLoadObjectList() throws DebuggerException;
+  public List<LoadObject> getLoadObjectList() throws DebuggerException;
 
   /** Fetch the loadobject containing the current program counter.
       Returns null if the PC was outside the ranges of all loadobjects

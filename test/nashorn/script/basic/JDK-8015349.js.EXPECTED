@@ -1,9 +1,0 @@
-'abc'.lastIndexOf('a', 4) = 0
-'abc'.lastIndexOf('b', Infinity) = 1
-'abc'.lastIndexOf('a', -1) = 0
-'abc'.lastIndexOf('a', -Infinity) = 0
-'oracle'.lastIndexOf('u') = -1
-'hello'.lastIndexOf('l') = 3
-'hello'.lastIndexOf('l', 2) = 2
-'hello'.lastIndexOf('l', 3) = 3
-'hello'.lastIndexOf('l', 1) = -1

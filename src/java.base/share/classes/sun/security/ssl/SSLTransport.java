@@ -173,12 +173,24 @@ interface SSLTransport {
 
             if (plainText == null) {
                 plainText = Plaintext.PLAINTEXT_NULL;
-            } else {
-                // Fill the destination buffers.
-                if ((dsts != null) && (dstsLength > 0) &&
-                        (plainText.contentType ==
-                            ContentType.APPLICATION_DATA.id)) {
+            } else if (plainText.contentType ==
+                            ContentType.APPLICATION_DATA.id) {
+                // check handshake status
+                //
+                // Note that JDK does not support 0-RTT yet.  Otherwise, it is
+                // needed to check early_data.
+                if (!context.isNegotiated) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
+                        SSLLogger.warning("unexpected application data " +
+                            "before handshake completion");
+                    }
 
+                    throw context.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Receiving application data before handshake complete");
+                }
+
+                // Fill the destination buffers.
+                if ((dsts != null) && (dstsLength > 0)) {
                     ByteBuffer fragment = plainText.fragment;
                     int remains = fragment.remaining();
 

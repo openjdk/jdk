@@ -81,7 +81,7 @@ public class Method {
     private static final Map<String, String> PRIMITIVE_TYPE_DESCRIPTORS;
 
     static {
-        HashMap<String, String> descriptors = new HashMap<String, String>();
+        HashMap<String, String> descriptors = new HashMap<>();
         descriptors.put("void", "V");
         descriptors.put("byte", "B");
         descriptors.put("char", "C");

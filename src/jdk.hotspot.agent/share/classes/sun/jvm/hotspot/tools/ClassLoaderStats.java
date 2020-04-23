@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class ClassLoaderStats extends Tool {
    private static class LoaderData {
       long     numClasses;
       long     classSize;
-      List     classDetail = new ArrayList(); // List<ClassData>
+      List<ClassData> classDetail = new ArrayList<>();
    }
 
    public void run() {
@@ -81,7 +81,7 @@ public class ClassLoaderStats extends Tool {
    private void printClassLoaderStatistics() {
       final PrintStream out = System.out;
       final PrintStream err = System.err;
-      final Map loaderMap = new HashMap();
+      final Map<Oop, LoaderData> loaderMap = new HashMap<>();
       // loader data for bootstrap class loader
       final LoaderData bootstrapLoaderData = new LoaderData();
       if (verbose) {

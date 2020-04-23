@@ -356,7 +356,6 @@ jdk_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/jdk/jtreg/native
 jdk_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jdk/ProblemList.txt
 jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
 langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
-nashorn_JTREG_PROBLEM_LIST += $(TOPDIR)/test/nashorn/ProblemList.txt
 hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
 
 langtools_JTREG_MAX_MEM := 768m

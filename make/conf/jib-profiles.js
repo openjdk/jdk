@@ -381,8 +381,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "13";
-    common.boot_jdk_build_number = "33";
+    common.boot_jdk_version = "14";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -615,7 +615,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // The prebuilt bootcycle variant modifies the boot jdk argument
             var bootcyclePrebuiltBase = {
                 dependencies: [ name + ".jdk" ],
-                configure_args: "--with-boot-jdk=" + input.get(name + ".jdk", "home_path"),
+                configure_args: [
+                    "--with-boot-jdk=" + input.get(name + ".jdk", "home_path"),
+                    // Full docs do not currently work with bootcycle build
+                    // since Nashorn was removed. This negates the
+                    // --enable-full-docs from the main profile.
+                    "--enable-full-docs=auto",
+                ]
             }
             profiles[bootcyclePrebuiltName] = concatObjects(profiles[name],
                 bootcyclePrebuiltBase);
@@ -1009,16 +1015,16 @@ var getJibProfilesDependencies = function (input, common) {
         : input.get("gnumake", "install_path") + "/bin");
 
     if (input.build_cpu == 'aarch64') {
-	boot_jdk = {
+        boot_jdk = {
             organization: common.organization,
             ext: "tar.gz",
             module: "jdk-linux_aarch64",
             revision: "13+1.0",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-	}
+        }
     } else {
-	boot_jdk = {
+        boot_jdk = {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
@@ -1027,7 +1033,12 @@ var getJibProfilesDependencies = function (input, common) {
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-	}
+        }
+    }
+    if (input.build_cpu == 'sparcv9') {
+        boot_jdk.file = "bundles/openjdk/GPL/" + boot_jdk_platform
+            + "/openjdk-" + common.boot_jdk_version + "_"
+            + boot_jdk_platform + "_bin" + boot_jdk_ext;
     }
 
     var dependencies = {

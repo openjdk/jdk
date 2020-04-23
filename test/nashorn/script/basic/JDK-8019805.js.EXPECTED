@@ -1,3 +1,0 @@
-SyntaxError:32:for each can only be used with for..in
-for each(var v=0;false;);
-                ^

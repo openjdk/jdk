@@ -25,7 +25,7 @@ package gc.epsilon;
 
 /**
  * @test TestRefArrays
- * @key gc
+ * @key gc randomness
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon is able to allocate arrays, and does not corrupt their state
  * @library /test/lib
@@ -44,16 +44,15 @@ package gc.epsilon;
  */
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestRefArrays {
-
-  static long SEED = Long.getLong("seed", System.nanoTime());
   static int COUNT = Integer.getInteger("count", 1000); // ~500 MB allocation
 
   static MyObject[][] arr;
 
   public static void main(String[] args) throws Exception {
-    Random r = new Random(SEED);
+    Random r = Utils.getRandomInstance();
 
     arr = new MyObject[COUNT * 100][];
     for (int c = 0; c < COUNT; c++) {
@@ -63,7 +62,7 @@ public class TestRefArrays {
       }
     }
 
-    r = new Random(SEED);
+    r = new Random(Utils.SEED);
     for (int c = 0; c < COUNT; c++) {
       MyObject[] b = arr[c];
       if (b.length != (c * 100)) {

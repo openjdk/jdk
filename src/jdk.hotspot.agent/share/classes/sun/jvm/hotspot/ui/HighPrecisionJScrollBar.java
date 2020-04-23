@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class HighPrecisionJScrollBar extends JScrollBar {
   private static final int BIG_RANGE = 10000;
   // Do we need to scale HP values up/down to fit in 0..BIG_RANGE-1?
   private boolean    down;
-  private java.util.List changeListeners = new ArrayList();
+  private java.util.List<ChangeListener> changeListeners = new ArrayList<>();
   // Number of digits after decimal point to use when scaling between
   // high and low precision
   private static final int SCALE = 20;
@@ -260,10 +260,10 @@ public class HighPrecisionJScrollBar extends JScrollBar {
     BigInteger range2 = new BigInteger(Integer.toString(BIG_RANGE));
     if (rangeHP.compareTo(range2) >= 0 ) {
       down = true;
-      scaleFactor = new BigDecimal(rangeHP, SCALE).divide(new BigDecimal(range2, SCALE), BigDecimal.ROUND_DOWN).max(new BigDecimal(BigInteger.ONE));
+      scaleFactor = new BigDecimal(rangeHP, SCALE).divide(new BigDecimal(range2, SCALE), RoundingMode.DOWN).max(new BigDecimal(BigInteger.ONE));
     } else {
       down = false;
-      scaleFactor = new BigDecimal(range2, SCALE).divide(new BigDecimal(rangeHP, SCALE), BigDecimal.ROUND_DOWN).max(new BigDecimal(BigInteger.ONE));
+      scaleFactor = new BigDecimal(range2, SCALE).divide(new BigDecimal(rangeHP, SCALE), RoundingMode.DOWN).max(new BigDecimal(BigInteger.ONE));
     }
     // FIXME: should put in original scaling algorithm (shifting by
     // number of bits) as alternative when scale between low and high
@@ -288,12 +288,12 @@ public class HighPrecisionJScrollBar extends JScrollBar {
   private BigInteger scaleToHP(int i) {
     BigDecimal ib = new BigDecimal(Integer.toString(i));
     if (down) return ib.multiply(getScaleFactor()).toBigInteger();
-    else return ib.divide(getScaleFactor(), BigDecimal.ROUND_DOWN).toBigInteger();
+    else return ib.divide(getScaleFactor(), RoundingMode.DOWN).toBigInteger();
   }
 
   private int scaleToUnderlying(BigInteger i) {
     BigDecimal d = new BigDecimal(i);
-    if (down) return d.divide(getScaleFactor(), BigDecimal.ROUND_DOWN).intValue();
+    if (down) return d.divide(getScaleFactor(), RoundingMode.DOWN).intValue();
     else return d.multiply(getScaleFactor()).intValue();
   }
 

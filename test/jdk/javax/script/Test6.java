@@ -26,7 +26,6 @@
  * @bug 6249843 6705893
  * @summary Test basic script compilation. Value eval'ed from
  * compiled and interpreted scripts should be same.
- * @modules jdk.scripting.nashorn
  */
 
 import java.io.File;

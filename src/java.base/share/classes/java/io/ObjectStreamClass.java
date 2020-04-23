@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,6 +886,17 @@ public class ObjectStreamClass implements Serializable {
     }
 
     /**
+     * Throws InvalidClassException if not initialized.
+     * To be called in cases where an uninitialized class descriptor indicates
+     * a problem in the serialization stream.
+     */
+    final void checkInitialized() throws InvalidClassException {
+        if (!initialized) {
+            throw new InvalidClassException("Class descriptor should be initialized");
+        }
+    }
+
+    /**
      * Throws an InvalidClassException if object instances referencing this
      * class descriptor should not be allowed to deserialize.  This method does
      * not apply to deserialization of enum constants.
@@ -1150,6 +1161,10 @@ public class ObjectStreamClass implements Serializable {
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
                 throw new InternalError(ex);
+            } catch (InstantiationError err) {
+                var ex = new InstantiationException();
+                ex.initCause(err);
+                throw ex;
             }
         } else {
             throw new UnsupportedOperationException();

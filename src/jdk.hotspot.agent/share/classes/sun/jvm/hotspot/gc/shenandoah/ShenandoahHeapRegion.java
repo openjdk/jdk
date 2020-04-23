@@ -39,8 +39,8 @@ import sun.jvm.hotspot.utilities.AddressOps;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 
 public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvider {

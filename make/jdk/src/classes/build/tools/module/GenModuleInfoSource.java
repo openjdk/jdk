@@ -59,11 +59,14 @@ import static java.util.stream.Collectors.*;
  */
 public class GenModuleInfoSource {
     private final static String USAGE =
-        "Usage: GenModuleInfoSource -o <output file> \n" +
-        "  --source-file <module-info-java>\n" +
-        "  --modules <module-name>[,<module-name>...]\n" +
-        "  <module-info.java.extra> ...\n";
+            "Usage: GenModuleInfoSource \n" +
+                    " [-d]\n" +
+                    " -o <output file>\n" +
+                    "  --source-file <module-info-java>\n" +
+                    "  --modules <module-name>[,<module-name>...]\n" +
+                    "  <module-info.java.extra> ...\n";
 
+    static boolean debug = false;
     static boolean verbose = false;
     public static void main(String... args) throws Exception {
         Path outfile = null;
@@ -75,6 +78,9 @@ public class GenModuleInfoSource {
             String option = args[i];
             String arg = i+1 < args.length ? args[i+1] : null;
             switch (option) {
+                case "-d":
+                    debug = true;
+                    break;
                 case "-o":
                     outfile = Paths.get(arg);
                     i++;
@@ -148,10 +154,12 @@ public class GenModuleInfoSource {
             for (String l : lines) {
                 writer.println(l);
                 if (l.trim().startsWith("module ")) {
-                    // print URI rather than file path to avoid escape
-                    writer.format("    // source file: %s%n", sourceFile.toUri());
-                    for (Path file: extraFiles) {
-                        writer.format("    //              %s%n", file.toUri());
+                    if (debug) {
+                        // print URI rather than file path to avoid escape
+                        writer.format("    // source file: %s%n", sourceFile.toUri());
+                        for (Path file : extraFiles) {
+                            writer.format("    //              %s%n", file.toUri());
+                        }
                     }
                     break;
                 }

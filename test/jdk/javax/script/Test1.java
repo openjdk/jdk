@@ -26,7 +26,6 @@
  * @bug 6249843 6705893
  * @summary Create JavaScript engine and execute a simple script.
  * Tests script engine discovery mechanism.
- * @modules jdk.scripting.nashorn
  */
 
 import java.io.File;

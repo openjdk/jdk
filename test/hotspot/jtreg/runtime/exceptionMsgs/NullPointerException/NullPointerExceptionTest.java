@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @key randomness
  * @summary Test extended NullPointerException message for
  *   classfiles generated with debug information. In this case the name
  *   of the variable containing the array is printed.
@@ -36,6 +37,7 @@
  */
 /**
  * @test
+ * @key randomness
  * @summary Test extended NullPointerException message for class
  *   files generated without debugging information. The message lists
  *   detailed information about the entity that is null.
@@ -53,11 +55,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 import static java.lang.invoke.MethodHandles.lookup;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -89,6 +93,7 @@ public class NullPointerExceptionTest {
     ArrayList<String> names = new ArrayList<>();
     ArrayList<String> curr;
     static boolean hasDebugInfo = false;
+    static final Random rng = Utils.getRandomInstance();
 
     static {
         staticArray       = new int[1][][][];
@@ -1421,9 +1426,9 @@ public class NullPointerExceptionTest {
             // is null. Make sure we don't print the wrong value.
             String s = null;
             @SuppressWarnings("unused")
-            byte[] val = (Math.random() < 0.5 ? s : (new String[1])[0]).getBytes();
+            byte[] val = (rng.nextDouble() < 0.5 ? s : (new String[1])[0]).getBytes();
         } catch (NullPointerException e) {
-            checkMessage(e, "byte[] val = (Math.random() < 0.5 ? s : (new String[1])[0]).getBytes();", e.getMessage(),
+            checkMessage(e, "byte[] val = (rng.nextDouble() < 0.5 ? s : (new String[1])[0]).getBytes();", e.getMessage(),
                          "Cannot invoke \"String.getBytes()\"");
         }
 
@@ -1435,9 +1440,9 @@ public class NullPointerExceptionTest {
             int[][] b = new int[2][];
             long index = 0;
             @SuppressWarnings("unused")
-            int val = (Math.random() < 0.5 ? a[(int)index] : b[(int)index])[13];
+            int val = (rng.nextDouble() < 0.5 ? a[(int)index] : b[(int)index])[13];
         } catch (NullPointerException e) {
-            checkMessage(e, "int val = (Math.random() < 0.5 ? a[(int)index] : b[(int)index])[13]", e.getMessage(),
+            checkMessage(e, "int val = (rng.nextDouble() < 0.5 ? a[(int)index] : b[(int)index])[13]", e.getMessage(),
                          "Cannot load from int array");
         }
 
@@ -1448,18 +1453,18 @@ public class NullPointerExceptionTest {
             int[][] a = new int[1][];
             int[][] b = new int[2][];
             long index = 0;
-            int val = (Math.random() < 0.5 ? a : b)[(int)index][13];
+            int val = (rng.nextDouble() < 0.5 ? a : b)[(int)index][13];
         } catch (NullPointerException e) {
-            checkMessage(e, "int val = (Math.random() < 0.5 ? a : b)[(int)index][13]", e.getMessage(),
+            checkMessage(e, "int val = (rng.nextDouble() < 0.5 ? a : b)[(int)index][13]", e.getMessage(),
                          "Cannot load from int array because \"<array>[...]\" is null");
         }
 
         try {
             C c1 = new C();
             C c2 = new C();
-            (Math.random() < 0.5 ? c1 : c2).to_d.num = 77;
+            (rng.nextDouble() < 0.5 ? c1 : c2).to_d.num = 77;
         } catch (NullPointerException e) {
-            checkMessage(e, "(Math.random() < 0.5 ? c1 : c2).to_d.num = 77;", e.getMessage(),
+            checkMessage(e, "(rng.nextDouble() < 0.5 ? c1 : c2).to_d.num = 77;", e.getMessage(),
                          "Cannot assign field \"num\" because \"to_d\" is null");
         }
 

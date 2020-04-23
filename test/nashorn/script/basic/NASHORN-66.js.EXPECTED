@@ -1,2 +1,0 @@
-typeof Date() is string
-typeof new Date() is object

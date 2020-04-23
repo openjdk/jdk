@@ -59,12 +59,17 @@ ifeq ($(call isTargetOs, windows), true)
       FILES := $(MSVCR_DLL), \
       MACRO := copy-and-chmod))
 
+  $(eval $(call SetupCopyFiles,COPY_VCRUNTIME_1, \
+      DEST := $(LIB_DST_DIR), \
+      FILES := $(VCRUNTIME_1_DLL), \
+      MACRO := copy-and-chmod))
+
   $(eval $(call SetupCopyFiles,COPY_MSVCP, \
       DEST := $(LIB_DST_DIR), \
       FILES := $(MSVCP_DLL), \
       MACRO := copy-and-chmod))
 
-  TARGETS += $(COPY_MSVCR) $(COPY_MSVCP)
+  TARGETS += $(COPY_MSVCR) $(COPY_VCRUNTIME_1) $(COPY_MSVCP)
 
   ifneq ($(UCRT_DLL_DIR), )
     $(eval $(call SetupCopyFiles, COPY_UCRT_DLLS, \

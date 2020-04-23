@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ final class HttpsClient extends HttpClient
      * Use New to get new HttpsClient. This constructor is meant to be
      * used only by New method. New properly checks for URL spoofing.
      *
-     * @param URL https URL with which a connection must be established
+     * @param url https URL with which a connection must be established
      */
     private HttpsClient(SSLSocketFactory sf, URL url)
     throws IOException

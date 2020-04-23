@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ import static sun.security.provider.SunEntries.createAliasesWithOid;
  *
  * - Diffie-Hellman Key Agreement
  *
- * - HMAC-MD5, HMAC-SHA1, HMAC-SHA-224, HMAC-SHA-256, HMAC-SHA-384, HMAC-SHA-512
+ * - HMAC-MD5, HMAC-SHA1, HMAC with SHA2 family and SHA3 family of digests
  *
  */
 
@@ -178,6 +178,18 @@ public final class SunJCE extends Provider {
         List<String> macSHA256Aliases = createAliasesWithOid(macOidBase + "9");
         List<String> macSHA384Aliases = createAliasesWithOid(macOidBase + "10");
         List<String> macSHA512Aliases = createAliasesWithOid(macOidBase + "11");
+        List<String> macSHA512_224Aliases = createAliasesWithOid(macOidBase + "12");
+        List<String> macSHA512_256Aliases = createAliasesWithOid(macOidBase + "13");
+
+        String nistHashAlgsOidBase = "2.16.840.1.101.3.4.2.";
+        List<String> macSHA3_224Aliases =
+            createAliasesWithOid(nistHashAlgsOidBase + "13");
+        List<String> macSHA3_256Aliases =
+            createAliasesWithOid(nistHashAlgsOidBase + "14");
+        List<String> macSHA3_384Aliases =
+            createAliasesWithOid(nistHashAlgsOidBase + "15");
+        List<String> macSHA3_512Aliases =
+            createAliasesWithOid(nistHashAlgsOidBase + "16");
 
         // reuse attribute map and reset before each reuse
         HashMap<String, String> attrs = new HashMap<>(3);
@@ -409,17 +421,36 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.HmacSHA1KeyGenerator",
                 macSHA1Aliases, null);
         ps("KeyGenerator", "HmacSHA224",
-                "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA224",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA224",
                 macSHA224Aliases, null);
         ps("KeyGenerator", "HmacSHA256",
-                "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA256",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA256",
                 macSHA256Aliases, null);
         ps("KeyGenerator", "HmacSHA384",
-                "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA384",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA384",
                 macSHA384Aliases, null);
         ps("KeyGenerator", "HmacSHA512",
-                "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA512",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA512",
                 macSHA512Aliases, null);
+        ps("KeyGenerator", "HmacSHA512/224",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA512_224",
+                macSHA512_224Aliases, null);
+        ps("KeyGenerator", "HmacSHA512/256",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA512_256",
+                macSHA512_256Aliases, null);
+
+        ps("KeyGenerator", "HmacSHA3-224",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_224",
+                macSHA3_224Aliases, null);
+        ps("KeyGenerator", "HmacSHA3-256",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_256",
+                macSHA3_256Aliases, null);
+        ps("KeyGenerator", "HmacSHA3-384",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_384",
+                macSHA3_384Aliases, null);
+        ps("KeyGenerator", "HmacSHA3-512",
+                "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_512",
+                macSHA3_512Aliases, null);
 
         ps("KeyPairGenerator", "DiffieHellman",
                 "com.sun.crypto.provider.DHKeyPairGenerator",
@@ -678,13 +709,26 @@ public final class SunJCE extends Provider {
                 macSHA384Aliases, attrs);
         ps("Mac", "HmacSHA512", "com.sun.crypto.provider.HmacCore$HmacSHA512",
                 macSHA512Aliases, attrs);
-        // TODO: aliases with OIDs
         ps("Mac", "HmacSHA512/224",
                 "com.sun.crypto.provider.HmacCore$HmacSHA512_224",
-                null, attrs);
+                macSHA512_224Aliases, attrs);
         ps("Mac", "HmacSHA512/256",
                 "com.sun.crypto.provider.HmacCore$HmacSHA512_256",
-                null, attrs);
+                macSHA512_256Aliases, attrs);
+
+        ps("Mac", "HmacSHA3-224",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_224",
+                macSHA3_224Aliases, attrs);
+        ps("Mac", "HmacSHA3-256",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_256",
+                macSHA3_256Aliases, attrs);
+        ps("Mac", "HmacSHA3-384",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_384",
+                macSHA3_384Aliases, attrs);
+        ps("Mac", "HmacSHA3-512",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_512",
+                macSHA3_512Aliases, attrs);
+
         ps("Mac", "HmacPBESHA1",
                 "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA1",
                 null, attrs);

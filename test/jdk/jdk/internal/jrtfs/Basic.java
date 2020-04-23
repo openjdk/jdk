@@ -607,7 +607,6 @@ public class Basic {
             { "java.lang" },
             { "java.util" },
             { "java.nio"  },
-            { "jdk.nashorn.api.scripting" }
         };
     }
 
@@ -632,7 +631,6 @@ public class Basic {
             { "/packages/javax/java.xml"  },
             { "/packages/javax/java.management"  },
             { "/packages/java.util/java.base" },
-            { "/packages/jdk.nashorn.api.scripting/jdk.scripting.nashorn" },
         };
     }
 
@@ -651,7 +649,6 @@ public class Basic {
         return new Object[][] {
             { "java.base" },
             { "java.sql" },
-            { "jdk.scripting.nashorn" },
         };
     }
 
@@ -668,7 +665,6 @@ public class Basic {
         return new Object[][] {
             { "/modules/java.base/java/lang" },
             { "/modules/java.base/java/util/Vector.class" },
-            { "/modules/jdk.scripting.nashorn/jdk/nashorn" },
             { "/packages/java.lang/java.base/java/lang" },
             { "/packages/java.util/java.base/java/util/Vector.class" },
         };

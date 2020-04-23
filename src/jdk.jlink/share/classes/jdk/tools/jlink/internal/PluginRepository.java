@@ -114,7 +114,6 @@ public final class PluginRepository {
             ModuleLayer pluginsLayer) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(pluginsLayer);
-        @SuppressWarnings("unchecked")
         T provider = null;
         List<T> javaProviders = getPlugins(clazz, pluginsLayer);
         for(T factory : javaProviders) {

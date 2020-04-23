@@ -38,7 +38,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   friend class ParallelScavengeHeap;
   friend class AdjoiningGenerations;
 
- protected:
+ private:
   MemRegion                _reserved;          // Used for simple containment tests
   PSVirtualSpace*          _virtual_space;     // Controls mapping and unmapping of virtual mem
   ObjectStartArray         _start_array;       // Keeps track of where objects start in a 512b block
@@ -110,24 +110,20 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void post_resize();
 
- public:
-  // Initialize the generation.
-  PSOldGen(ReservedSpace rs, size_t alignment,
-           size_t initial_size, size_t min_size, size_t max_size,
-           const char* perf_data_name, int level);
-
-  PSOldGen(size_t initial_size, size_t min_size, size_t max_size,
-           const char* perf_data_name, int level);
-
-  virtual void initialize(ReservedSpace rs, size_t alignment,
+  void initialize(ReservedSpace rs, size_t alignment,
                   const char* perf_data_name, int level);
   void initialize_virtual_space(ReservedSpace rs, size_t alignment);
-  virtual void initialize_work(const char* perf_data_name, int level);
-  virtual void initialize_performance_counters(const char* perf_data_name, int level);
+  void initialize_work(const char* perf_data_name, int level);
+  void initialize_performance_counters(const char* perf_data_name, int level);
 
-  MemRegion reserved() const                { return _reserved; }
-  virtual size_t max_gen_size()             { return _max_gen_size; }
-  size_t min_gen_size()                     { return _min_gen_size; }
+ public:
+  // Initialize the generation.
+  PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
+           size_t max_size, const char* perf_data_name, int level);
+
+  MemRegion reserved() const    { return _reserved; }
+  virtual size_t max_gen_size() { return _max_gen_size; }
+  size_t min_gen_size()         { return _min_gen_size; }
 
   // Returns limit on the maximum size of the generation.  This
   // is the same as _max_gen_size for PSOldGen but need not be
@@ -158,9 +154,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   size_t used_in_words() const            { return object_space()->used_in_words(); }
   size_t free_in_words() const            { return object_space()->free_in_words(); }
 
-  // Includes uncommitted memory
-  size_t contiguous_available() const;
-
   bool is_maximal_no_gc() const {
     return virtual_space()->uncommitted_size() == 0;
   }
@@ -177,26 +170,17 @@ class PSOldGen : public CHeapObj<mtGC> {
   void object_iterate(ObjectClosure* cl) { object_space()->object_iterate(cl); }
 
   // Debugging - do not use for time critical operations
-  virtual void print() const;
+  void print() const;
   virtual void print_on(outputStream* st) const;
 
   void verify();
   void verify_object_start_array();
 
-  // These should not used
-  virtual void reset_after_change();
-
-  // These should not used
-  virtual size_t available_for_expansion();
-  virtual size_t available_for_contraction();
-
-  void space_invariants() PRODUCT_RETURN;
-
   // Performance Counter support
   void update_counters();
 
   // Printing support
-  virtual const char* name() const { return "ParOldGen"; }
+  const char* name() const { return "ParOldGen"; }
 
   // Debugging support
   // Save the tops of all spaces for later use during mangling.

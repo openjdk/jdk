@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,7 +702,9 @@ public class Indify {
                     args = jvm.args(3);  // array, index, value
                     if (args.get(0) instanceof List &&
                         args.get(1) instanceof Integer) {
-                        ((List<Object>)args.get(0)).set( (Integer)args.get(1), args.get(2) );
+                        @SuppressWarnings("unchecked")
+                        List<Object> arg0 = (List<Object>)args.get(0);
+                        arg0.set( (Integer)args.get(1), args.get(2) );
                     }
                     args.clear();
                     break;
@@ -869,7 +871,7 @@ public class Indify {
                         if (patternMark != 'I')  break decode;
                         if ("invokeWithArguments".equals(intrinsic))
                             flattenVarargs(args);
-                        bsmArgs = new ArrayList(args);
+                        bsmArgs = new ArrayList<>(args);
                         args.clear(); args.add("invokeGeneric");
                         continue;
                     case "Integer.valueOf":
@@ -970,8 +972,10 @@ public class Indify {
 
         private void flattenVarargs(List<Object> args) {
             int size = args.size();
-            if (size > 0 && args.get(size-1) instanceof List)
-                args.addAll((List<Object>) args.remove(size-1));
+            if (size > 0 && args.get(size - 1) instanceof List) {
+                List<?> removedArg = (List<?>) args.remove(size - 1);
+                args.addAll(removedArg);
+            }
         }
 
         private boolean isConstant(Object x, int tag) {
@@ -1032,6 +1036,7 @@ public class Indify {
                 extraArgs.addAll(args.subList(argi, args.size() - 1));
                 Object lastArg = args.get(args.size() - 1);
                 if (lastArg instanceof List) {
+                    @SuppressWarnings("unchecked")
                     List<Object> lastArgs = (List<Object>) lastArg;
                     removeEmptyJVMSlots(lastArgs);
                     extraArgs.addAll(lastArgs);
@@ -1098,7 +1103,9 @@ public class Indify {
                 } catch (IOException ex) { throw new InternalError(); }
                 bsms.item = specs;
             }
-            return (List<Object[]>) bsms.item;
+            @SuppressWarnings("unchecked")
+            List<Object[]> specs = (List<Object[]>) bsms.item;
+            return specs;
         }
     }
 
@@ -1168,7 +1175,7 @@ public class Indify {
             data = in.readUTF();
         } else if (Chunk.class.isAssignableFrom(dataClass)) {
             T obj;
-            try { obj = dataClass.newInstance(); }
+            try { obj = dataClass.getDeclaredConstructor().newInstance(); }
                 catch (Exception ex) { throw new RuntimeException(ex); }
             ((Chunk)obj).readFrom(in);
             data = obj;
@@ -1317,7 +1324,7 @@ public class Indify {
                 readConstant(in);
             }
         }
-        public <T> Constant<T> addConstant(byte tag, T item) {
+        public <T> Constant addConstant(byte tag, T item) {
             Constant<T> con = new Constant<>(size(), tag, item);
             int idx = indexOf(con);
             if (idx >= 0)  return get(idx);
@@ -1339,7 +1346,7 @@ public class Indify {
                 arg = in.readInt(); break;
             case CONSTANT_Long:
             case CONSTANT_Double:
-                add(new Constant(index, tag, in.readLong()));
+                add(new Constant<>(index, tag, in.readLong()));
                 add(null);
                 return;
             case CONSTANT_Class:
@@ -1362,7 +1369,7 @@ public class Indify {
             default:
                 throw new InternalError("bad CP tag "+tag);
             }
-            add(new Constant(index, tag, arg));
+            add(new Constant<>(index, tag, arg));
         }
 
         // Access:

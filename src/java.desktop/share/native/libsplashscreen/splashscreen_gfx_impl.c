@@ -206,7 +206,7 @@ initRect(ImageRect * pRect, int x, int y, int width, int height, int jump,
     int depthBytes = format->depthBytes;
 
     pRect->pBits = pBits;
-    INCPN(byte_t, pRect->pBits, y * stride + x * depthBytes);
+    INCPN(byte_t, pRect->pBits, (intptr_t) y * stride + x * depthBytes);
     pRect->numLines = height;
     pRect->numSamples = width;
     pRect->stride = stride * jump;

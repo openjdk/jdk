@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,7 +316,7 @@ public class IPAddressUtil {
      * If the address already has a scope-id or if the address is not local, ipv6
      * or link local, then the original address is returned.
      *
-     * @param addr
+     * @param address
      * @exception SocketException if the given ipv6 link local address is found
      *            on more than one local interface
      * @return

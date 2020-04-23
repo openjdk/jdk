@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import sun.invoke.util.Wrapper;
 
@@ -137,6 +139,15 @@ class MethodHandleNatives {
             REF_newInvokeSpecial        = 8,
             REF_invokeInterface         = 9,
             REF_LIMIT                  = 10;
+
+        /**
+         * Flags for Lookup.ClassOptions
+         */
+        static final int
+            NESTMATE_CLASS            = 0x00000001,
+            HIDDEN_CLASS              = 0x00000002,
+            STRONG_LOADER_LINK        = 0x00000004,
+            ACCESS_VM_ANNOTATIONS     = 0x00000008;
     }
 
     static boolean refKindIsValid(int refKind) {
@@ -658,5 +669,14 @@ class MethodHandleNatives {
         if (symbolicRef.isStatic() || symbolicRef.isPrivate())  return false;
         return (definingClass.isAssignableFrom(symbolicRefClass) ||  // Msym overrides Mdef
                 symbolicRefClass.isInterface());                     // Mdef implements Msym
+    }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    /*
+     * A convenient method for LambdaForms to get the class data of a given class.
+     * LambdaForms cannot use condy via MethodHandles.classData
+     */
+    static Object classData(Class<?> c) {
+        return JLA.classData(c);
     }
 }

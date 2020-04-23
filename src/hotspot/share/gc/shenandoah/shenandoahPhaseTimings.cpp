@@ -73,25 +73,24 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
     return;
   }
 
-  guarantee(phase == init_evac ||
-            phase == scan_roots ||
-            phase == update_roots ||
-            phase == final_update_refs_roots ||
-            phase == full_gc_roots ||
-            phase == degen_gc_update_roots ||
-            phase == full_gc_purge_par ||
-            phase == purge_par ||
-            phase == _num_phases,
-            "only in these phases we can add per-thread phase times");
-  if (phase != _num_phases) {
-    double s = 0;
-    for (uint i = 1; i < GCParPhasesSentinel; i++) {
-      double t = _gc_par_phases[i]->sum();
-      _timing_data[phase + i + 1].add(t); // add to each line in phase
-      s += t;
-    }
-    _timing_data[phase + 1].add(s); // add to total for phase
+  assert(phase == init_evac ||
+         phase == scan_roots ||
+         phase == update_roots ||
+         phase == final_update_refs_roots ||
+         phase == full_gc_roots ||
+         phase == degen_gc_update_roots ||
+         phase == full_gc_purge_par ||
+         phase == purge_par ||
+         phase == heap_iteration_roots,
+         "Phase should accept accept per-thread phase times: %s", phase_name(phase));
+
+  double s = 0;
+  for (uint i = 1; i < GCParPhasesSentinel; i++) {
+    double t = _gc_par_phases[i]->sum();
+    _timing_data[phase + i + 1].add(t); // add to each line in phase
+    s += t;
   }
+  _timing_data[phase + 1].add(s); // add to total for phase
 }
 
 void ShenandoahPhaseTimings::print_on(outputStream* out) const {

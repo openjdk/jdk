@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,15 @@ void MetaspaceTracer::send_allocation_failure_event(ClassLoaderData *cld,
   E event;
   if (event.should_commit()) {
     event.set_classLoader(cld);
-    if (cld->is_unsafe_anonymous()) {
-      event.set_unsafeAnonymousClassLoader(true);
-    } else {
-      event.set_unsafeAnonymousClassLoader(false);
+    event.set_unsafeAnonymousClassLoader(false); // initialize these
+    event.set_hiddenClassLoader(false);
+    if (cld->has_class_mirror_holder()) {
+      assert(cld->klasses() != NULL, "unexpected NULL for cld->klasses()");
+      if (cld->klasses()->is_non_strong_hidden()) {
+        event.set_hiddenClassLoader(true);
+      } else {
+        event.set_unsafeAnonymousClassLoader(true);
+      }
     }
     event.set_size(word_size * BytesPerWord);
     event.set_metadataType((u1) mdtype);

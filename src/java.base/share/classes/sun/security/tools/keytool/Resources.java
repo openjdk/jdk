@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,8 +459,10 @@ public class Resources extends java.util.ListResourceBundle {
         {"alias.in.cacerts", "Issuer <%s> in cacerts"},
         {"alias.in.keystore", "Issuer <%s>"},
         {"with.weak", "%s (weak)"},
+        {"with.disabled", "%s (disabled)"},
         {"key.bit", "%1$d-bit %2$s key"},
         {"key.bit.weak", "%1$d-bit %2$s key (weak)"},
+        {"key.bit.disabled", "%1$d-bit %2$s key (disabled)"},
         {"unknown.size.1", "%s key of unknown size"},
         {".PATTERN.printX509Cert.with.weak",
                 "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignature algorithm name: {7}\nSubject Public Key Algorithm: {8}\nVersion: {9}"},
@@ -468,8 +470,10 @@ public class Resources extends java.util.ListResourceBundle {
                 "PKCS #10 Certificate Request (Version 1.0)\n" +
                         "Subject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignature algorithm: %4$s\n"},
         {"verified.by.s.in.s.weak", "Verified by %1$s in %2$s with a %3$s"},
-        {"whose.sigalg.risk", "%1$s uses the %2$s signature algorithm which is considered a security risk."},
-        {"whose.key.risk", "%1$s uses a %2$s which is considered a security risk."},
+        {"whose.sigalg.disabled", "%1$s uses the %2$s signature algorithm which is considered a security risk and is disabled."},
+        {"whose.sigalg.weak", "%1$s uses the %2$s signature algorithm which is considered a security risk. This algorithm will be disabled in a future update."},
+        {"whose.key.disabled", "%1$s uses a %2$s which is considered a security risk and is disabled."},
+        {"whose.key.weak", "%1$s uses a %2$s which is considered a security risk. This key size will be disabled in a future update."},
         {"jks.storetype.warning", "The %1$s keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\"."},
         {"migrate.keystore.warning", "Migrated \"%1$s\" to %4$s. The %2$s keystore is backed up as \"%3$s\"."},
         {"backup.keystore.warning", "The original keystore \"%1$s\" is backed up as \"%3$s\"..."},

@@ -1,6 +1,0 @@
-SyntaxError: Invalid JSON: <json>:1:12 Trailing comma is not allowed in JSON
-{ "a": 333, }
-            ^
-SyntaxError: Invalid JSON: <json>:1:8 Trailing comma is not allowed in JSON
-[ 4343, ]
-        ^

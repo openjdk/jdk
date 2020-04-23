@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,6 +389,21 @@ JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
                           const char *source);
 
 /*
+ * Define a class with the specified lookup class.
+ *  lookup:  Lookup class
+ *  name:    the name of the class
+ *  buf:     class bytes
+ *  len:     length of class bytes
+ *  pd:      protection domain
+ *  init:    initialize the class
+ *  flags:   properties of the class
+ *  classData: private static pre-initialized field; may be null
+ */
+JNIEXPORT jclass JNICALL
+JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte *buf,
+                      jsize len, jobject pd, jboolean init, int flags, jobject classData);
+
+/*
  * Module support funcions
  */
 
@@ -399,12 +414,11 @@ JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
  *  is_open:      specifies if module is open (currently ignored)
  *  version:      the module version
  *  location:     the module location
- *  packages:     list of packages in the module
- *  num_packages: number of packages in the module
+ *  packages:     array of packages in the module
  */
 JNIEXPORT void JNICALL
 JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
-                 jstring location, const char* const* packages, jsize num_packages);
+                 jstring location, jobjectArray packages);
 
 /*
  * Set the boot loader's unnamed module.
@@ -420,7 +434,7 @@ JVM_SetBootLoaderUnnamedModule(JNIEnv *env, jobject module);
  *  to_module:   module to export the package to
  */
 JNIEXPORT void JNICALL
-JVM_AddModuleExports(JNIEnv *env, jobject from_module, const char* package, jobject to_module);
+JVM_AddModuleExports(JNIEnv *env, jobject from_module, jstring package, jobject to_module);
 
 /*
  * Do an export of a package to all unnamed modules.
@@ -428,7 +442,7 @@ JVM_AddModuleExports(JNIEnv *env, jobject from_module, const char* package, jobj
  *  package:     name of the package to export to all unnamed modules
  */
 JNIEXPORT void JNICALL
-JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, const char* package);
+JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, jstring package);
 
 /*
  * Do an unqualified export of a package.
@@ -436,7 +450,7 @@ JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, const char* p
  *  package:     name of the package to export
  */
 JNIEXPORT void JNICALL
-JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, const char* package);
+JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, jstring package);
 
 /*
  * Add a module to the list of modules that a given module can read.
@@ -473,6 +487,9 @@ JVM_IsArrayClass(JNIEnv *env, jclass cls);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsPrimitiveClass(JNIEnv *env, jclass cls);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsHiddenClass(JNIEnv *env, jclass cls);
 
 JNIEXPORT jint JNICALL
 JVM_GetClassModifiers(JNIEnv *env, jclass cls);

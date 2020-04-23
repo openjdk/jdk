@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 // Superclass for symbol and string tables.
 
@@ -63,13 +65,13 @@ public class BasicHashtable extends VMObject {
     }
     Address tmp = bucketsField.getValue(addr);
     tmp = tmp.addOffsetTo(i * bucketSize);
-    HashtableBucket bucket = (HashtableBucket) VMObjectFactory.newObject(
+    HashtableBucket bucket = VMObjectFactory.newObject(
                                               HashtableBucket.class, tmp);
     return bucket.getEntry(getHashtableEntryClass());
   }
 
   // derived class may return Class<? extends BasicHashtableEntry>
-  protected Class getHashtableEntryClass() {
+  protected Class<? extends BasicHashtableEntry> getHashtableEntryClass() {
     return BasicHashtableEntry.class;
   }
 

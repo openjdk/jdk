@@ -27,6 +27,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
@@ -39,11 +40,10 @@ import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.expectThrows;
 
-
 /*
  * @test
  * @bug 8236105
- * @summary check that DatagramSocket, MulticastSocket,
+ * @summary Check that DatagramSocket, MulticastSocket,
  *          DatagramSocketAdaptor and DatagramChannel all
  *          throw expected Execption when passed a DatagramPacket
  *          with invalid details
@@ -51,8 +51,9 @@ import static org.testng.Assert.expectThrows;
  */
 
 public class SendCheck {
+    private InetAddress loopbackAddr, wildcardAddr;
     static final Class<IOException> IOE = IOException.class;
-    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<SocketException> SE = SocketException.class;
 
     static final byte[] buf = {0, 1, 2};
     static DatagramSocket socket;
@@ -100,85 +101,69 @@ public class SendCheck {
     }
 
     @DataProvider(name = "packets")
-    static Object[][] providerIO() throws IOException {
-        var wildcard = new InetSocketAddress(0);
+    Object[][] providerIO() throws IOException {
+        loopbackAddr = InetAddress.getLoopbackAddress();
+        wildcardAddr = new InetSocketAddress(0).getAddress();
 
-        /*
-        Commented until JDK-8236852 is fixed
-
-        // loopback w/port 0 -- DC, DSA, MS, DS throws IO
+        // loopback addr with no port set
         var pkt1 = new DatagramPacket(buf, 0, buf.length);
-        pkt1.setAddress(InetAddress.getLoopbackAddress());
-        pkt1.setPort(0);
-         */
+        pkt1.setAddress(loopbackAddr);
 
-        /*
-        Commented until JDK-8236852 is fixed
-
-        // wildcard w/port 0 -- DC, DSA, MS, DS throws IO
+        // wildcard addr with no port set
         var pkt2 = new DatagramPacket(buf, 0, buf.length);
-        pkt2.setAddress(wildcard.getAddress());
-        pkt2.setPort(0);
-        */
-
-        // loopback w/port -1 -- DC, DSA, MS, DS throws IAE
-        var pkt3 = new DatagramPacket(buf, 0, buf.length);
-        pkt3.setAddress(InetAddress.getLoopbackAddress());
-
-        // wildcard w/port -1 -- DC, DSA, MS, DS throws IAE
-        var pkt4 = new DatagramPacket(buf, 0, buf.length);
-        pkt4.setAddress(wildcard.getAddress());
+        pkt2.setAddress(wildcardAddr);
 
         /*
         Commented until JDK-8236807 is fixed
 
-        // wildcard addr w/valid port -- DS, MS throws IO ; DC, DSA doesn't throw
-        var pkt5 = new DatagramPacket(buf, 0, buf.length);
-        var addr1 = wildcard.getAddress();
-        pkt5.setAddress(addr1);
-        pkt5.setPort(socket.getLocalPort());
+        // wildcard addr w/valid port
+        var pkt3 = new DatagramPacket(buf, 0, buf.length);
+        pkt3.setAddress(wildcardAddr);
+        pkt3.setPort(socket.getLocalPort());
         */
 
-        // PKTS 3 & 4: invalid port -1
-        List<Packet> iaePackets = List.of(Packet.of(pkt3), Packet.of(pkt4));
+        List<Packet> Packets = List.of(Packet.of(pkt1), Packet.of(pkt2));
 
         List<Sender> senders = List.of(
                 Sender.of(new DatagramSocket(null)),
                 Sender.of(new MulticastSocket(null), (byte) 0),
                 Sender.of(DatagramChannel.open()),
-                Sender.of(DatagramChannel.open().socket())
+                Sender.of(DatagramChannel.open().socket()),
+                Sender.of((MulticastSocket)
+                        DatagramChannel.open().socket(), (byte) 0)
         );
 
         List<Object[]> testcases = new ArrayList<>();
-        for (var p : iaePackets) {
-            addTestCaseFor(testcases, senders, p, IAE);
+        for (var packet : Packets) {
+            addTestCaseFor(testcases, senders, packet);
         }
 
         return testcases.toArray(new Object[0][0]);
     }
 
     static void addTestCaseFor(List<Object[]> testcases,
-                               List<Sender> senders, Packet p,
-                               Class<? extends Throwable> exception) {
+                               List<Sender> senders, Packet p) {
         for (var s : senders) {
-            Object[] testcase = new Object[]{s, p, exception};
+            Object[] testcase = new Object[]{s, p, s.expectedException()};
             testcases.add(testcase);
         }
     }
 
     @Test(dataProvider = "packets")
-    public static void channelSendCheck(Sender<IOException> sender,
+    public static void sendCheck(Sender<IOException> sender,
                                         Packet packet,
                                         Class<? extends Throwable> exception) {
         DatagramPacket pkt = packet.packet;
         if (exception != null) {
             Throwable t = expectThrows(exception, () -> sender.send(pkt));
-            System.out.printf("%s got expected exception %s%n", packet.toString(), t);
+            System.out.printf("%s got expected exception %s%n",
+                    packet.toString(), t);
         } else {
             try {
                 sender.send(pkt);
-            } catch (IOException x) {
-                throw new AssertionError("Unexpected exception for " + sender + " / " + packet, x);
+            } catch (IOException e) {
+                throw new AssertionError("Unexpected exception for "
+                        + sender + " / " + packet, e);
             }
         }
     }
@@ -188,21 +173,23 @@ public class SendCheck {
 
         void close() throws E;
 
+        Class<? extends E> expectedException();
+
         static Sender<IOException> of(DatagramSocket socket) {
-            return new SenderImpl<>(socket, socket::send, socket::close);
+            return new SenderImpl<>(socket, socket::send, socket::close, SE);
         }
 
         static Sender<IOException> of(MulticastSocket socket, byte ttl) {
             SenderImpl.Send<IOException> send =
                     (pkt) -> socket.send(pkt, ttl);
-            return new SenderImpl<>(socket, send, socket::close);
+            return new SenderImpl<>(socket, send, socket::close, SE);
         }
 
         static Sender<IOException> of(DatagramChannel socket) {
             SenderImpl.Send<IOException> send =
                     (pkt) -> socket.send(ByteBuffer.wrap(pkt.getData()),
                             pkt.getSocketAddress());
-            return new SenderImpl<>(socket, send, socket::close);
+            return new SenderImpl<>(socket, send, socket::close, SE);
         }
     }
 
@@ -220,11 +207,14 @@ public class SendCheck {
         private final Send<E> send;
         private final Closer<E> closer;
         private final Object socket;
+        private final Class<? extends E> expectedException;
 
-        public SenderImpl(Object socket, Send<E> send, Closer<E> closer) {
+        public SenderImpl(Object socket, Send<E> send, Closer<E> closer,
+                          Class<? extends E> expectedException) {
             this.socket = socket;
             this.send = send;
             this.closer = closer;
+            this.expectedException = expectedException;
         }
 
         @Override
@@ -235,6 +225,11 @@ public class SendCheck {
         @Override
         public void close() throws E {
             closer.close();
+        }
+
+        @Override
+        public Class<? extends E> expectedException() {
+            return expectedException;
         }
 
         @Override

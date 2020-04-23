@@ -436,17 +436,16 @@ Method* LinkResolver::lookup_method_in_interfaces(const LinkInfo& cp_info) {
 Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
                                                 Handle *appendix_result_or_null,
                                                 TRAPS) {
+  ResourceMark rm(THREAD);
   Klass* klass = link_info.resolved_klass();
   Symbol* name = link_info.name();
   Symbol* full_signature = link_info.signature();
+  LogTarget(Info, methodhandles) lt_mh;
 
   vmIntrinsics::ID iid = MethodHandles::signature_polymorphic_name_id(name);
-  if (TraceMethodHandles) {
-    ResourceMark rm(THREAD);
-    tty->print_cr("lookup_polymorphic_method iid=%s %s.%s%s",
-                  vmIntrinsics::name_at(iid), klass->external_name(),
-                  name->as_C_string(), full_signature->as_C_string());
-  }
+  log_info(methodhandles)("lookup_polymorphic_method iid=%s %s.%s%s",
+                          vmIntrinsics::name_at(iid), klass->external_name(),
+                          name->as_C_string(), full_signature->as_C_string());
   if ((klass == SystemDictionary::MethodHandle_klass() ||
        klass == SystemDictionary::VarHandle_klass()) &&
       iid != vmIntrinsics::_none) {
@@ -456,13 +455,10 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
       bool keep_last_arg = MethodHandles::is_signature_polymorphic_static(iid);
       TempNewSymbol basic_signature =
         MethodHandles::lookup_basic_type_signature(full_signature, keep_last_arg, CHECK_NULL);
-      if (TraceMethodHandles) {
-        ResourceMark rm(THREAD);
-        tty->print_cr("lookup_polymorphic_method %s %s => basic %s",
-                      name->as_C_string(),
-                      full_signature->as_C_string(),
-                      basic_signature->as_C_string());
-      }
+      log_info(methodhandles)("lookup_polymorphic_method %s %s => basic %s",
+                              name->as_C_string(),
+                              full_signature->as_C_string(),
+                              basic_signature->as_C_string());
       Method* result = SystemDictionary::find_method_handle_intrinsic(iid,
                                                               basic_signature,
                                                               CHECK_NULL);
@@ -470,10 +466,10 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
         assert(result->is_method_handle_intrinsic(), "MH.invokeBasic or MH.linkTo* intrinsic");
         assert(result->intrinsic_id() != vmIntrinsics::_invokeGeneric, "wrong place to find this");
         assert(basic_signature == result->signature(), "predict the result signature");
-        if (TraceMethodHandles) {
-          ttyLocker ttyl;
-          tty->print("lookup_polymorphic_method => intrinsic ");
-          result->print_on(tty);
+        if (lt_mh.is_enabled()) {
+          LogStream ls(lt_mh);
+          ls.print("lookup_polymorphic_method => intrinsic ");
+          result->print_on(&ls);
         }
       }
       return result;
@@ -503,13 +499,12 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
                                                             link_info.current_klass(),
                                                             &appendix,
                                                             CHECK_NULL);
-      if (TraceMethodHandles) {
-        ttyLocker ttyl;
-        tty->print("lookup_polymorphic_method => (via Java) ");
-        result->print_on(tty);
-        tty->print("  lookup_polymorphic_method => appendix = ");
-        if (appendix.is_null())  tty->print_cr("(none)");
-        else                     appendix->print_on(tty);
+      if (lt_mh.is_enabled()) {
+        LogStream ls(lt_mh);
+        ls.print("lookup_polymorphic_method => (via Java) ");
+        result->print_on(&ls);
+        ls.print("  lookup_polymorphic_method => appendix = ");
+        appendix.is_null() ? ls.print_cr("(none)") : appendix->print_on(&ls);
       }
       if (result != NULL) {
 #ifdef ASSERT
@@ -538,6 +533,21 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
     }
   }
   return NULL;
+}
+
+static void print_nest_host_error_on(stringStream* ss, Klass* ref_klass, Klass* sel_klass, TRAPS) {
+  assert(ref_klass->is_instance_klass(), "must be");
+  assert(sel_klass->is_instance_klass(), "must be");
+  InstanceKlass* ref_ik = InstanceKlass::cast(ref_klass);
+  InstanceKlass* sel_ik = InstanceKlass::cast(sel_klass);
+  const char* nest_host_error_1 = ref_ik->nest_host_error(THREAD);
+  const char* nest_host_error_2 = sel_ik->nest_host_error(THREAD);
+  if (nest_host_error_1 != NULL || nest_host_error_2 != NULL) {
+    ss->print(", (%s%s%s)",
+              (nest_host_error_1 != NULL) ? nest_host_error_1 : "",
+              (nest_host_error_1 != NULL && nest_host_error_2 != NULL) ? ", " : "",
+              (nest_host_error_2 != NULL) ? nest_host_error_2 : "");
+  }
 }
 
 void LinkResolver::check_method_accessability(Klass* ref_klass,
@@ -572,24 +582,34 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
                                                      sel_klass,
                                                      flags,
                                                      true, false, CHECK);
-  // Any existing exceptions that may have been thrown, for example LinkageErrors
-  // from nest-host resolution, have been allowed to propagate.
+  // Any existing exceptions that may have been thrown
+  // have been allowed to propagate.
   if (!can_access) {
     ResourceMark rm(THREAD);
+    stringStream ss;
     bool same_module = (sel_klass->module() == ref_klass->module());
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_IllegalAccessError(),
-      "class %s tried to access %s%s%smethod '%s' (%s%s%s)",
-      ref_klass->external_name(),
-      sel_method->is_abstract()  ? "abstract "  : "",
-      sel_method->is_protected() ? "protected " : "",
-      sel_method->is_private()   ? "private "   : "",
-      sel_method->external_name(),
-      (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
-      (same_module) ? "" : "; ",
-      (same_module) ? "" : sel_klass->class_in_module_of_loader()
-    );
+    ss.print("class %s tried to access %s%s%smethod '%s' (%s%s%s)",
+             ref_klass->external_name(),
+             sel_method->is_abstract()  ? "abstract "  : "",
+             sel_method->is_protected() ? "protected " : "",
+             sel_method->is_private()   ? "private "   : "",
+             sel_method->external_name(),
+             (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
+             (same_module) ? "" : "; ",
+             (same_module) ? "" : sel_klass->class_in_module_of_loader()
+             );
+
+    // For private access see if there was a problem with nest host
+    // resolution, and if so report that as part of the message.
+    if (sel_method->is_private()) {
+      print_nest_host_error_on(&ss, ref_klass, sel_klass, THREAD);
+    }
+
+    Exceptions::fthrow(THREAD_AND_LOCATION,
+                       vmSymbols::java_lang_IllegalAccessError(),
+                       "%s",
+                       ss.as_string()
+                       );
     return;
   }
 }
@@ -908,19 +928,27 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
   if (!can_access) {
     bool same_module = (sel_klass->module() == ref_klass->module());
     ResourceMark rm(THREAD);
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_IllegalAccessError(),
-      "class %s tried to access %s%sfield %s.%s (%s%s%s)",
-      ref_klass->external_name(),
-      fd.is_protected() ? "protected " : "",
-      fd.is_private()   ? "private "   : "",
-      sel_klass->external_name(),
-      fd.name()->as_C_string(),
-      (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
-      (same_module) ? "" : "; ",
-      (same_module) ? "" : sel_klass->class_in_module_of_loader()
-    );
+    stringStream ss;
+    ss.print("class %s tried to access %s%sfield %s.%s (%s%s%s)",
+             ref_klass->external_name(),
+             fd.is_protected() ? "protected " : "",
+             fd.is_private()   ? "private "   : "",
+             sel_klass->external_name(),
+             fd.name()->as_C_string(),
+             (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
+             (same_module) ? "" : "; ",
+             (same_module) ? "" : sel_klass->class_in_module_of_loader()
+             );
+    // For private access see if there was a problem with nest host
+    // resolution, and if so report that as part of the message.
+    if (fd.is_private()) {
+      print_nest_host_error_on(&ss, ref_klass, sel_klass, THREAD);
+    }
+    Exceptions::fthrow(THREAD_AND_LOCATION,
+                       vmSymbols::java_lang_IllegalAccessError(),
+                       "%s",
+                       ss.as_string()
+                       );
     return;
   }
 }
@@ -1669,10 +1697,10 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const 
 void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   // This guy is reached from InterpreterRuntime::resolve_invokehandle.
   LinkInfo link_info(pool, index, CHECK);
-  if (TraceMethodHandles) {
+  if (log_is_enabled(Info, methodhandles)) {
     ResourceMark rm(THREAD);
-    tty->print_cr("resolve_invokehandle %s %s", link_info.name()->as_C_string(),
-                  link_info.signature()->as_C_string());
+    log_info(methodhandles)("resolve_invokehandle %s %s", link_info.name()->as_C_string(),
+                            link_info.signature()->as_C_string());
   }
   resolve_handle_call(result, link_info, CHECK);
 }
@@ -1713,8 +1741,10 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 
   resolve_dynamic_call(result, bootstrap_specifier, CHECK);
 
-  if (TraceMethodHandles) {
-    bootstrap_specifier.print_msg_on(tty, "resolve_invokedynamic");
+  LogTarget(Debug, methodhandles, indy) lt_indy;
+  if (lt_indy.is_enabled()) {
+    LogStream ls(lt_indy);
+    bootstrap_specifier.print_msg_on(&ls, "resolve_invokedynamic");
   }
 
   // The returned linkage result is provisional up to the moment
@@ -1735,7 +1765,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   // or any other reference.  The resolved_method as well as the appendix
   // are both recorded together via CallInfo::set_handle.
   SystemDictionary::invoke_bootstrap_method(bootstrap_specifier, THREAD);
-  Exceptions::wrap_dynamic_exception(THREAD);
+  Exceptions::wrap_dynamic_exception(/* is_indy */ true, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
     if (!PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {

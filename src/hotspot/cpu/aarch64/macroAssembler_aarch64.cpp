@@ -2185,6 +2185,10 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 #if 0
   assert (UseCompressedOops || UseCompressedClassPointers, "should be compressed");
   assert (Universe::heap() != NULL, "java heap should be initialized");
+  if (!UseCompressedOops || Universe::ptr_base() == NULL) {
+    // rheapbase is allocated as general register
+    return;
+  }
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1

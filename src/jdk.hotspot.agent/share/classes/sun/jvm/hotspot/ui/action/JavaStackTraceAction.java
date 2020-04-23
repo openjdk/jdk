@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class JavaStackTraceAction extends DelegateAction {
     public static final String VALUE_NAME = "Show Java stack trace";
     public static final String VALUE_SMALL_ICON = "general/History16.gif";
     public static final String VALUE_LARGE_ICON = "general/History24.gif";
-    public static final Integer VALUE_MNEMONIC = new Integer('J');
+    public static final Integer VALUE_MNEMONIC = (int) 'J';
     public static final String VALUE_SHORT_DESCRIPTION = "Show Java stack trace for selected thread";
     public static final String VALUE_LONG_DESCRIPTION = VALUE_SHORT_DESCRIPTION;
 

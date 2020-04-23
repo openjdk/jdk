@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
@@ -34,7 +35,6 @@ import jtreg.SkippedException;
  * @summary Test clhsdb pmap command
  * @requires vm.hasSA
  * @library /test/lib
- * @requires os.family != "mac"
  * @run main/othervm ClhsdbPmap
  */
 
@@ -52,8 +52,13 @@ public class ClhsdbPmap {
             List<String> cmds = List.of("pmap");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
-            expStrMap.put("pmap",
+            if (Platform.isOSX()) {
+                expStrMap.put("pmap",
+                    List.of("Not available on Mac OS X"));
+            } else {
+                expStrMap.put("pmap",
                     List.of("jvm", "java", "net", "nio", "jimage", "zip"));
+            }
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (SkippedException se) {

@@ -35,7 +35,7 @@ class UnsafeFieldAccessorFactory {
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isVolatile = Modifier.isVolatile(field.getModifiers());
         boolean isQualified = isFinal || isVolatile;
-        boolean isReadOnly = isFinal && (isStatic || !override);
+        boolean isReadOnly = isFinal && (isStatic || !override || field.getDeclaringClass().isHidden());
         if (isStatic) {
             // This code path does not guarantee that the field's
             // declaring class has been initialized, but it must be

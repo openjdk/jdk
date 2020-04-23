@@ -188,8 +188,6 @@ public class Start {
 
         // let doclet print usage information
         if (docletClass != null) {
-            String name = doclet.getName();
-            messager.notice("main.doclet.usage.header", name);
             showDocletOptions(kind == ToolOption.Kind.EXTENDED
                     ? Option.Kind.EXTENDED
                     : Option.Kind.STANDARD);
@@ -252,6 +250,13 @@ public class Start {
     }
 
     private void showDocletOptions(Option.Kind kind) {
+        String name = doclet.getName();
+        Set<? extends Option> options = getSupportedOptionsOf(doclet);
+        if (options.isEmpty()) {
+            return;
+        }
+        messager.notice("main.doclet.usage.header", name);
+
         Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
@@ -262,7 +267,7 @@ public class Start {
             }
         };
 
-        doclet.getSupportedOptions().stream()
+        options.stream()
                 .filter(opt -> opt.getKind() == kind)
                 .sorted(comp)
                 .forEach(this::showDocletOption);
@@ -577,7 +582,7 @@ public class Start {
     int handleDocletOption(int idx, List<String> args, boolean isToolOption)
             throws OptionException {
         if (docletOptions == null) {
-            docletOptions = doclet.getSupportedOptions();
+            docletOptions = getSupportedOptionsOf(doclet);
         }
         String arg = args.get(idx);
         String argBase, argVal;
@@ -621,6 +626,11 @@ public class Start {
             throw new OptionException(ERROR, this::showUsage, text);
         }
         return idx;
+    }
+
+    private static Set<? extends Option> getSupportedOptionsOf(Doclet doclet) {
+        Set<? extends Option> options = doclet.getSupportedOptions();
+        return options == null ? Set.of() : options;
     }
 
     /**

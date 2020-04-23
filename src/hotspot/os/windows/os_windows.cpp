@@ -4143,7 +4143,7 @@ static void file_attribute_data_to_stat(struct stat* sbuf, WIN32_FILE_ATTRIBUTE_
 
 static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
   // Get required buffer size to convert to Unicode
-  int unicode_path_len = MultiByteToWideChar(CP_THREAD_ACP,
+  int unicode_path_len = MultiByteToWideChar(CP_ACP,
                                              MB_ERR_INVALID_CHARS,
                                              char_path, -1,
                                              NULL, 0);
@@ -4153,7 +4153,7 @@ static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
 
   *unicode_path = NEW_C_HEAP_ARRAY(WCHAR, unicode_path_len, mtInternal);
 
-  int result = MultiByteToWideChar(CP_THREAD_ACP,
+  int result = MultiByteToWideChar(CP_ACP,
                                    MB_ERR_INVALID_CHARS,
                                    char_path, -1,
                                    *unicode_path, unicode_path_len);

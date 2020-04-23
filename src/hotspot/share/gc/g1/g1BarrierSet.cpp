@@ -157,5 +157,5 @@ void G1BarrierSet::on_thread_detach(Thread* thread) {
   // Flush any deferred card marks.
   CardTableBarrierSet::on_thread_detach(thread);
   G1ThreadLocalData::satb_mark_queue(thread).flush();
-  G1ThreadLocalData::dirty_card_queue(thread).flush();
+  G1ThreadLocalData::dirty_card_queue(thread).on_thread_detach();
 }

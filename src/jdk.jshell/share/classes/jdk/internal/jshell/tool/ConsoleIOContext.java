@@ -25,7 +25,6 @@
 
 package jdk.internal.jshell.tool;
 
-
 import jdk.jshell.SourceCodeAnalysis.Documentation;
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
@@ -146,13 +145,34 @@ class ConsoleIOContext extends IOContext {
                 completionState.actionCount++;
                 return super.readBinding(keys, local);
             }
+            @Override
+            protected boolean insertCloseParen() {
+                Object oldIndent = getVariable(INDENTATION);
+                try {
+                    setVariable(INDENTATION, 0);
+                    return super.insertCloseParen();
+                } finally {
+                    setVariable(INDENTATION, oldIndent);
+                }
+            }
+            @Override
+            protected boolean insertCloseSquare() {
+                Object oldIndent = getVariable(INDENTATION);
+                try {
+                    setVariable(INDENTATION, 0);
+                    return super.insertCloseSquare();
+                } finally {
+                    setVariable(INDENTATION, oldIndent);
+                }
+            }
         };
 
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
 
         reader.setParser((line, cursor, context) -> {
             if (!allowIncompleteInputs && !repl.isComplete(line)) {
-                throw new EOFError(cursor, cursor, line);
+                int pendingBraces = countPendingOpenBraces(line);
+                throw new EOFError(cursor, cursor, line, null, pendingBraces, null);
             }
             return new ArgumentLine(line, cursor);
         });
@@ -281,6 +301,11 @@ class ConsoleIOContext extends IOContext {
         }
 
         return count;
+    }
+
+    @Override
+    public void setIndent(int indent) {
+        in.variable(LineReader.INDENTATION, indent);
     }
 
     private static final String FIXES_SHORTCUT = "\033\133\132"; //Shift-TAB
@@ -935,6 +960,25 @@ class ConsoleIOContext extends IOContext {
             }
         }
         return inputBytes[inputBytesPointer++];
+    }
+
+    private int countPendingOpenBraces(String code) {
+        int pendingBraces = 0;
+        com.sun.tools.javac.util.Context ctx =
+                new com.sun.tools.javac.util.Context();
+        com.sun.tools.javac.parser.ScannerFactory scannerFactory =
+                com.sun.tools.javac.parser.ScannerFactory.instance(ctx);
+        com.sun.tools.javac.parser.Scanner scanner =
+                scannerFactory.newScanner(code, false);
+
+        while (true) {
+            switch (scanner.token().kind) {
+                case LBRACE: pendingBraces++; break;
+                case RBRACE: pendingBraces--; break;
+                case EOF: return pendingBraces;
+            }
+            scanner.nextToken();
+        }
     }
 
     /**

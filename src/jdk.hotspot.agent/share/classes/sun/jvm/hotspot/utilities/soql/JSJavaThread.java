@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class JSJavaThread extends JSJavaInstance {
 
     private synchronized JSList getFrames() {
         if (framesCache == null) {
-            final List list = new ArrayList(0);
+            final List<JavaVFrame> list = new ArrayList<>(0);
             if (jthread != null) {
                 JavaVFrame jvf = jthread.getLastJavaVFrameDbg();
                 while (jvf != null) {
@@ -112,9 +112,9 @@ public class JSJavaThread extends JSJavaInstance {
 
     private synchronized JSList getOwnedMonitors() {
         if (monitorsCache == null) {
-            final List ownedMonitors = new ArrayList(0);
+            final List<Oop> ownedMonitors = new ArrayList<>(0);
             if (jthread != null) {
-                List lockedObjects = new ArrayList(); // List<OopHandle>
+                List<OopHandle> lockedObjects = new ArrayList<>();
 
                 ObjectMonitor waitingMonitor = jthread.getCurrentWaitingMonitor();
                 OopHandle waitingObj = null;
@@ -132,9 +132,9 @@ public class JSJavaThread extends JSJavaInstance {
 
                 JavaVFrame frame = jthread.getLastJavaVFrameDbg();
                 while (frame != null) {
-                    List frameMonitors = frame.getMonitors();  // List<MonitorInfo>
-                    for (Iterator miItr = frameMonitors.iterator(); miItr.hasNext(); ) {
-                        MonitorInfo mi = (MonitorInfo) miItr.next();
+                    List<MonitorInfo> frameMonitors = frame.getMonitors();
+                    for (Iterator<MonitorInfo> miItr = frameMonitors.iterator(); miItr.hasNext(); ) {
+                        MonitorInfo mi = miItr.next();
 
                         if (mi.eliminated() && frame.isCompiledFrame()) {
                           continue; // skip eliminated monitor

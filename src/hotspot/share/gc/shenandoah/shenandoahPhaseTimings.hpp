@@ -57,8 +57,7 @@ class outputStream;
   // end
 
 #define SHENANDOAH_GC_PHASE_DO(f)                                                      \
-  f(total_pause_gross,                              "Total Pauses (G)")                \
-  f(total_pause,                                    "Total Pauses (N)")                \
+  f(conc_reset,                                     "Concurrent Reset")                \
                                                                                        \
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
@@ -67,6 +66,9 @@ class outputStream;
   f(scan_roots,                                     "  Scan Roots")                    \
   SHENANDOAH_GC_PAR_PHASE_DO(scan_,                 "    S: ", f)                      \
   f(resize_tlabs,                                   "  Resize TLABs")                  \
+                                                                                       \
+  f(conc_mark,                                      "Concurrent Marking")              \
+  f(conc_preclean,                                  "Concurrent Precleaning")          \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
@@ -87,10 +89,17 @@ class outputStream;
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_GC_PAR_PHASE_DO(evac_,                 "    E: ", f)                      \
                                                                                        \
+  f(conc_weak_roots,                                "Concurrent Weak Roots")           \
+  f(conc_cleanup_early,                             "Concurrent Cleanup")              \
+  f(conc_class_unloading,                           "Concurrent Class Unloading")      \
+  f(conc_strong_roots,                              "Concurrent Strong Roots")         \
+  f(conc_evac,                                      "Concurrent Evacuation")           \
+                                                                                       \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
   f(init_update_refs_retire_gclabs,                 "  Retire GCLABs")                 \
-  f(init_update_refs_prepare,                       "  Prepare")                       \
+                                                                                       \
+  f(conc_update_refs,                               "Concurrent Update Refs")          \
                                                                                        \
   f(final_update_refs_gross,                        "Pause Final Update Refs (G)")     \
   f(final_update_refs,                              "Pause Final Update Refs (N)")     \
@@ -100,6 +109,8 @@ class outputStream;
   f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
+                                                                                       \
+  f(conc_cleanup_complete,                          "Concurrent Cleanup")              \
                                                                                        \
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
@@ -132,20 +143,10 @@ class outputStream;
   f(full_gc_copy_objects_rebuild,                   "    Rebuild Region Sets")         \
   f(full_gc_resize_tlabs,                           "  Resize TLABs")                  \
                                                                                        \
-  /* Longer concurrent phases at the end */                                            \
-  f(conc_reset,                                     "Concurrent Reset")                \
-  f(conc_mark,                                      "Concurrent Marking")              \
-  f(conc_preclean,                                  "Concurrent Precleaning")          \
-  f(conc_roots,                                     "Concurrent Roots")                \
-  f(conc_evac,                                      "Concurrent Evacuation")           \
-  f(conc_update_refs,                               "Concurrent Update Refs")          \
-  f(conc_cleanup,                                   "Concurrent Cleanup")              \
-                                                                                       \
   f(conc_uncommit,                                  "Concurrent Uncommit")             \
                                                                                        \
-  /* Unclassified */                                                                   \
-  f(pause_other,                                    "Pause Other")                     \
-  f(conc_other,                                     "Concurrent Other")                \
+  f(heap_iteration_roots,                           "Heap Iteration")                  \
+  SHENANDOAH_GC_PAR_PHASE_DO(heap_iteration_roots_, "  HI: ", f)                       \
   // end
 
 class ShenandoahPhaseTimings : public CHeapObj<mtGC> {

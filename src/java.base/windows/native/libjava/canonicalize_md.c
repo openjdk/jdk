@@ -334,7 +334,7 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
     int ret = -1;
 
     /* Get required buffer size to convert to Unicode */
-    wpath_len = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    wpath_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                     orig, -1, NULL, 0);
     if (wpath_len == 0) {
         goto finish;
@@ -344,7 +344,7 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
         goto finish;
     }
 
-    if (MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                             orig, -1, wpath, wpath_len) == 0) {
         goto finish;
     }
@@ -357,7 +357,7 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
         goto finish;
     }
 
-    if (WideCharToMultiByte(CP_THREAD_ACP, 0,
+    if (WideCharToMultiByte(CP_ACP, 0,
                             wresult, -1, out, len, NULL, NULL) == 0) {
         goto finish;
     }

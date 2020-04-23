@@ -596,7 +596,6 @@ class LShiftCntVNode : public VectorNode {
  public:
   LShiftCntVNode(Node* cnt, const TypeVect* vt) : VectorNode(cnt,vt) {}
   virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Matcher::vector_shift_count_ideal_reg(vect_type()->length_in_bytes()); }
 };
 
 //------------------------------RShiftCntVNode---------------------------------
@@ -605,9 +604,7 @@ class RShiftCntVNode : public VectorNode {
  public:
   RShiftCntVNode(Node* cnt, const TypeVect* vt) : VectorNode(cnt,vt) {}
   virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Matcher::vector_shift_count_ideal_reg(vect_type()->length_in_bytes()); }
 };
-
 
 //------------------------------AndVNode---------------------------------------
 // Vector and integer

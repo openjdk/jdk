@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithShenandoah
- * @key gc
- * @key stress
- * @library /
+ * @key gc stress randomness
+ * @library / /test/lib
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
@@ -54,9 +53,8 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithShenandoah
- * @key gc
- * @key stress
- * @library /
+ * @key gc stress randomness
+ * @library / /test/lib
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
@@ -90,9 +88,8 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithShenandoah
- * @key gc
- * @key stress
- * @library /
+ * @key gc stress randomness
+ * @library / /test/lib
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *

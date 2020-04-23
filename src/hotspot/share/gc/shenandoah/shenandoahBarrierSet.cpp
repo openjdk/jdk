@@ -193,7 +193,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_ad
   }
 
   ShenandoahMarkingContext* const marking_context = _heap->marking_context();
-  if (_heap->is_concurrent_root_in_progress() && !marking_context->is_marked(obj)) {
+  if (_heap->is_concurrent_weak_root_in_progress() && !marking_context->is_marked(obj)) {
     Thread* thr = Thread::current();
     if (thr->is_Java_thread()) {
       return NULL;

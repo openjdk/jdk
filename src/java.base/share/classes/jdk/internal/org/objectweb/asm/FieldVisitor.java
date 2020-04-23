@@ -69,18 +69,20 @@ public abstract class FieldVisitor {
 
     /**
       * The ASM API version implemented by this visitor. The value of this field must be one of {@link
-      * Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
+      * Opcodes#ASM8}.
       */
     protected final int api;
 
-    /** The field visitor to which this visitor must delegate method calls. May be null. */
+    /** The field visitor to which this visitor must delegate method calls. May be {@literal null}. */
     protected FieldVisitor fv;
 
     /**
       * Constructs a new {@link FieldVisitor}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
+      *     Opcodes#ASM8}.
       */
     public FieldVisitor(final int api) {
         this(api, null);
@@ -90,13 +92,23 @@ public abstract class FieldVisitor {
       * Constructs a new {@link FieldVisitor}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
+      *     Opcodes#ASM8}.
       * @param fieldVisitor the field visitor to which this visitor must delegate method calls. May be
       *     null.
       */
+    @SuppressWarnings("deprecation")
     public FieldVisitor(final int api, final FieldVisitor fieldVisitor) {
-        if (api != Opcodes.ASM6 && api != Opcodes.ASM5 && api != Opcodes.ASM4 && api != Opcodes.ASM7) {
-            throw new IllegalArgumentException();
+        if (api != Opcodes.ASM8
+                && api != Opcodes.ASM7
+                && api != Opcodes.ASM6
+                && api != Opcodes.ASM5
+                && api != Opcodes.ASM4
+                && api != Opcodes.ASM9_EXPERIMENTAL) {
+            throw new IllegalArgumentException("Unsupported api " + api);
+        }
+        if (api == Opcodes.ASM9_EXPERIMENTAL) {
+            Constants.checkAsmExperimental(this);
         }
         this.api = api;
         this.fv = fieldVisitor;

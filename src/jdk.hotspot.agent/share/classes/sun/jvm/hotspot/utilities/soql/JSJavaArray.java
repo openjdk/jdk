@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public abstract class JSJavaArray extends JSJavaObject {
 
    public Object get(String name) {
       if (name.equals("length")) {
-         return new Integer((int)getArray().getLength());
+         return (int) getArray().getLength();
       } else {
          return super.get(name);
       }
@@ -62,7 +62,7 @@ public abstract class JSJavaArray extends JSJavaObject {
       final int len = (int) getArray().getLength();
       Object[] res = new Object[superFields.length + len];
       for (int i = 0; i < len; i++) {
-          res[i] = new Integer(i);
+          res[i] = i;
       }
       System.arraycopy(superFields, 0, res, len, superFields.length);
       return  res;

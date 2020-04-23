@@ -123,6 +123,7 @@ public enum HtmlStyle {
     subNavList,
     subTitle,
     summary,
+    summaryList,
     systemPropertiesSummary,
     tabEnd,
     tableTab,

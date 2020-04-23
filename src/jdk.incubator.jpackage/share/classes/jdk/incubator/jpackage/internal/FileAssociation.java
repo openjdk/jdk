@@ -27,6 +27,7 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
@@ -36,6 +37,29 @@ final class FileAssociation {
         if (extensions.isEmpty()) {
             Log.error(I18N.getString(
                     "message.creating-association-with-null-extension"));
+        }
+    }
+
+    static void verify(List<FileAssociation> associations) throws ConfigException {
+        // only one mime type per association, at least one file extention
+        int assocIdx = 0;
+        for (var assoc : associations) {
+            ++assocIdx;
+            if (assoc.mimeTypes.isEmpty()) {
+                String msgKey = "error.no-content-types-for-file-association";
+                throw new ConfigException(
+                        MessageFormat.format(I18N.getString(msgKey), assocIdx),
+                        MessageFormat.format(I18N.getString(msgKey + ".advice"), assocIdx));
+            }
+
+            if (assoc.mimeTypes.size() > 1) {
+                String msgKey = "error.too-many-content-types-for-file-association";
+                throw new ConfigException(
+                        MessageFormat.format(I18N.getString(msgKey), assocIdx),
+                        MessageFormat.format(I18N.getString(msgKey + ".advice"), assocIdx));
+            }
+
+            assoc.verify();
         }
     }
 

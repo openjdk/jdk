@@ -211,10 +211,6 @@
   diagnostic(bool, ShenandoahElasticTLAB, true,                             \
           "Use Elastic TLABs with Shenandoah")                              \
                                                                             \
-  diagnostic(bool, ShenandoahAllowMixedAllocs, true,                        \
-          "Allow mixing mutator and collector allocations into a single "   \
-          "region. Some heuristics enable/disable it for their needs")      \
-                                                                            \
   experimental(uintx, ShenandoahEvacReserve, 5,                             \
           "How much of heap to reserve for evacuations. Larger values make "\
           "GC evacuate more live objects on every cycle, while leaving "    \

@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -368,10 +369,16 @@ void stringStream::reset() {
   zero_terminate();
 }
 
-char* stringStream::as_string() const {
-  char* copy = NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
+char* stringStream::as_string(bool c_heap) const {
+  char* copy = c_heap ?
+    NEW_C_HEAP_ARRAY(char, buffer_pos + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
   strncpy(copy, buffer, buffer_pos);
   copy[buffer_pos] = 0;  // terminating null
+  if (c_heap) {
+    // Need to ensure our content is written to memory before we return
+    // the pointer to it.
+    OrderAccess::storestore();
+  }
   return copy;
 }
 
@@ -533,8 +540,8 @@ void fileStream::write(const char* s, size_t len) {
   if (_file != NULL)  {
     // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = fwrite(s, 1, len, _file);
+    update_position(s, len);
   }
-  update_position(s, len);
 }
 
 long fileStream::fileSize() {
@@ -551,9 +558,12 @@ long fileStream::fileSize() {
 }
 
 char* fileStream::readln(char *data, int count ) {
-  char * ret = ::fgets(data, count, _file);
-  //Get rid of annoying \n char
-  data[::strlen(data)-1] = '\0';
+  char * ret = NULL;
+  if (_file != NULL) {
+    ret = ::fgets(data, count, _file);
+    //Get rid of annoying \n char
+    data[::strlen(data)-1] = '\0';
+  }
   return ret;
 }
 
@@ -565,15 +575,17 @@ fileStream::~fileStream() {
 }
 
 void fileStream::flush() {
-  fflush(_file);
+  if (_file != NULL) {
+    fflush(_file);
+  }
 }
 
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = ::write(_fd, s, (int)len);
+    update_position(s, len);
   }
-  update_position(s, len);
 }
 
 defaultStream* defaultStream::instance = NULL;

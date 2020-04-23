@@ -55,8 +55,8 @@ public interface LinuxDebugger extends JVMDebugger {
   public Address      findLibPtrByAddress(Address pc);
 
   // For LinuxCDebugger
-  public List         getThreadList();
-  public List         getLoadObjectList();
+  public List<ThreadProxy> getThreadList();
+  public List<LoadObject> getLoadObjectList();
   public ClosestSymbol lookup(long address);
   public String demangle(String sym);
 

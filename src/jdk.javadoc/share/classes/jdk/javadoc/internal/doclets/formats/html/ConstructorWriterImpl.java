@@ -99,9 +99,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.constructorSummary,
-                SectionName.CONSTRUCTOR_SUMMARY, memberSummaryTree, memberTree);
+    public void addSummary(Content summariesList, Content content) {
+        writer.addSummary(HtmlStyle.constructorSummary,
+                SectionName.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
 
     @Override

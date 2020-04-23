@@ -1054,10 +1054,11 @@ void G1CollectedHeap::abort_refinement() {
     _hot_card_cache->reset_hot_cache();
   }
 
-  // Discard all remembered set updates.
+  // Discard all remembered set updates and reset refinement statistics.
   G1BarrierSet::dirty_card_queue_set().abandon_logs();
   assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
          "DCQS should be empty");
+  concurrent_refine()->get_and_reset_refinement_stats();
 }
 
 void G1CollectedHeap::verify_after_full_collection() {
@@ -2684,9 +2685,22 @@ void G1CollectedHeap::gc_prologue(bool full) {
   }
 
   // Fill TLAB's and such
-  double start = os::elapsedTime();
-  ensure_parsability(true);
-  phase_times()->record_prepare_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
+  {
+    Ticks start = Ticks::now();
+    ensure_parsability(true);
+    Tickspan dt = Ticks::now() - start;
+    phase_times()->record_prepare_tlab_time_ms(dt.seconds() * MILLIUNITS);
+  }
+
+  if (!full) {
+    // Flush dirty card queues to qset, so later phases don't need to account
+    // for partially filled per-thread queues and such.  Not needed for full
+    // collections, which ignore those logs.
+    Ticks start = Ticks::now();
+    G1BarrierSet::dirty_card_queue_set().concatenate_logs();
+    Tickspan dt = Ticks::now() - start;
+    phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
+  }
 }
 
 void G1CollectedHeap::gc_epilogue(bool full) {
@@ -2757,20 +2771,6 @@ void G1CollectedHeap::do_concurrent_mark() {
     _cm_thread->set_started();
     CGC_lock->notify();
   }
-}
-
-size_t G1CollectedHeap::pending_card_num() {
-  struct CountCardsClosure : public ThreadClosure {
-    size_t _cards;
-    CountCardsClosure() : _cards(0) {}
-    virtual void do_thread(Thread* t) {
-      _cards += G1ThreadLocalData::dirty_card_queue(t).size();
-    }
-  } count_from_threads;
-  Threads::threads_do(&count_from_threads);
-
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  return dcqs.num_cards() + count_from_threads._cards;
 }
 
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const {

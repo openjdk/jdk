@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import sun.jvm.hotspot.utilities.*;
 public class RevPtrsTreeNodeAdapter extends FieldTreeNodeAdapter {
   private static FieldIdentifier fid = new NamedFieldIdentifier("_revPtrs");
 
-  private List children;
+  private List<LivenessPathElement> children;
 
   public RevPtrsTreeNodeAdapter(Oop oop) {
     this(oop, false);
@@ -52,7 +52,7 @@ public class RevPtrsTreeNodeAdapter extends FieldTreeNodeAdapter {
   }
 
   public SimpleTreeNode getChild(int index) {
-    LivenessPathElement lpe = (LivenessPathElement)children.get(index);
+    LivenessPathElement lpe = children.get(index);
     IndexableFieldIdentifier ifid = new IndexableFieldIdentifier(index);
     Oop oop = lpe.getObj();
     if (oop != null) {

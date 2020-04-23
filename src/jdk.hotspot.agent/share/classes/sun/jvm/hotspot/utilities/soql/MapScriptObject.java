@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ import javax.script.Invocable;
  */
 public class MapScriptObject implements ScriptObject {
   // map to store the properties
-  private Map map;
+  private Map<Object, Object> map;
 
   public MapScriptObject() {
-    this(new HashMap());
+    this(new HashMap<>());
   }
 
-  public MapScriptObject(Map map) {
+  public MapScriptObject(Map<Object, Object> map) {
     // make it synchronized
     this.map = Collections.synchronizedMap(map);
   }

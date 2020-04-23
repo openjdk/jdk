@@ -96,9 +96,7 @@ public class MethodInsnNode extends AbstractInsnNode {
       *     jdk.internal.org.objectweb.asm.Type#getInternalName()}).
       * @param name the method's name.
       * @param descriptor the method's descriptor (see {@link jdk.internal.org.objectweb.asm.Type}).
-      * @deprecated use {@link #MethodInsnNode(int, String, String, String, boolean)} instead.
       */
-    @Deprecated
     public MethodInsnNode(
             final int opcode, final String owner, final String name, final String descriptor) {
         this(opcode, owner, name, descriptor, opcode == Opcodes.INVOKEINTERFACE);

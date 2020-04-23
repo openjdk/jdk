@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,8 @@ public class TestOldObjectsOnNvdimm {
         }
         Collections.addAll(testOpts, common_options);
 
-        // Test with G1 GC
         runTest("-XX:+UseG1GC");
-        // Test with ParallelOld GC
-        runTest("-XX:+UseParallelGC -XX:-UseAdaptiveGCBoundary");
-        runTest("-XX:+UseParallelGC -XX:+UseAdaptiveGCBoundary");
+        runTest("-XX:+UseParallelGC");
     }
 
     private static void runTest(String... extraFlags) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class PStack extends Tool {
 
    public void run(PrintStream out, Debugger dbg) {
       if (PlatformInfo.getOS().equals("darwin")) {
-        out.println("Not available on Darwin");
+        out.println("Not available on Mac OS X");
         return;
       }
 
@@ -79,10 +79,10 @@ public class PStack extends Tool {
             out.println("can't print deadlock information: " + exp.getMessage());
          }
 
-         List l = cdbg.getThreadList();
+         List<ThreadProxy> l = cdbg.getThreadList();
          final boolean cdbgCanDemangle = cdbg.canDemangle();
-         for (Iterator itr = l.iterator() ; itr.hasNext();) {
-            ThreadProxy th = (ThreadProxy) itr.next();
+         for (Iterator<ThreadProxy> itr = l.iterator() ; itr.hasNext();) {
+            ThreadProxy th = itr.next();
             try {
                CFrame f = cdbg.topFrameForThread(th);
                out.print("----------------- ");
@@ -199,20 +199,20 @@ public class PStack extends Tool {
    }
 
    // -- Internals only below this point
-   private Map jframeCache; // Map<ThreadProxy, JavaVFrame[]>
-   private Map proxyToThread; // Map<ThreadProxy, JavaThread>
+   private Map<ThreadProxy, JavaVFrame[]> jframeCache;
+   private Map<ThreadProxy, JavaThread> proxyToThread;
    private PrintStream out;
    private boolean verbose;
    private boolean concurrentLocks;
 
    private void initJFrameCache() {
       // cache frames for subsequent reference
-      jframeCache = new HashMap();
-      proxyToThread = new HashMap();
+      jframeCache = new HashMap<>();
+      proxyToThread = new HashMap<>();
       Threads threads = VM.getVM().getThreads();
       for (int i = 0; i < threads.getNumberOfThreads(); i++) {
          JavaThread cur = threads.getJavaThreadAt(i);
-         List tmp = new ArrayList(10);
+         List<JavaVFrame> tmp = new ArrayList<>(10);
          try {
             for (JavaVFrame vf = cur.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
                tmp.add(vf);
@@ -239,7 +239,7 @@ public class PStack extends Tool {
       }
       JavaVFrame[] jvframes = (JavaVFrame[]) jframeCache.get(th);
       if (jvframes == null) return null; // not a java thread
-      List names = new ArrayList(10);
+      List<String> names = new ArrayList<>(10);
       for (int fCount = 0; fCount < jvframes.length; fCount++) {
          JavaVFrame vf = jvframes[fCount];
          Frame f = vf.getFrame();

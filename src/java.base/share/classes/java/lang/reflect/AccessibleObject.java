@@ -176,6 +176,12 @@ public class AccessibleObject implements AnnotatedElement {
      * to the caller and the package containing the declaring class is not open
      * to the caller's module. </p>
      *
+     * <p> This method cannot be used to enable {@linkplain Field#set <em>write</em>}
+     * access to a final field declared in a {@linkplain Class#isHidden() hidden class},
+     * since such fields are not modifiable.  The {@code accessible} flag when
+     * {@code true} suppresses Java language access control checks to only
+     * enable {@linkplain Field#get <em>read</em>} access to such fields.
+     *
      * <p> If there is a security manager, its
      * {@code checkPermission} method is first called with a
      * {@code ReflectPermission("suppressAccessChecks")} permission.

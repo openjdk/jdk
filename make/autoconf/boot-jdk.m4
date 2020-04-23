@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -345,7 +345,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.
-  BOOT_JDK_SOURCETARGET="-source 13 -target 13"
+  OLDEST_BOOT_JDK=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \
+      | $TR " " "\n" | $SORT -n | $HEAD -n1`
+  BOOT_JDK_SOURCETARGET="-source $OLDEST_BOOT_JDK -target $OLDEST_BOOT_JDK"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
 
   AC_SUBST(JAVAC_FLAGS)
@@ -379,6 +381,21 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     BOOTJDK_USE_LOCAL_CDS=false
     AC_MSG_RESULT([no, -XX:SharedArchiveFile not supported])
   fi
+
+  # Check for jjs in bootjdk
+  UTIL_SETUP_TOOL(JJS,
+  [
+    AC_MSG_CHECKING([for jjs in Boot JDK])
+    JJS=$BOOT_JDK/bin/jjs
+    if test ! -x $JJS; then
+      AC_MSG_RESULT(not found)
+      JJS=""
+      AC_MSG_NOTICE([Cannot use pandoc without jjs])
+      ENABLE_PANDOC=false
+    fi
+    AC_MSG_RESULT(ok)
+    AC_SUBST(JJS)
+  ])
 ])
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.*;
 
 public class LivenessPathList {
   public LivenessPathList() {
-    list = new ArrayList();
+    list = new ArrayList<>();
   }
 
   public int size() {
@@ -49,5 +49,5 @@ public class LivenessPathList {
     list.remove(path);
   }
 
-  private ArrayList list;
+  private ArrayList<LivenessPath> list;
 }

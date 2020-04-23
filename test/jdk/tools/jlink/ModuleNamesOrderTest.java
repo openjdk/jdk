@@ -47,8 +47,7 @@ import tests.JImageGenerator.JLinkTask;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- *          jdk.scripting.nashorn
- *          jdk.scripting.nashorn.shell
+ *          jdk.jshell
  *
  * @build tests.*
  * @run main ModuleNamesOrderTest
@@ -104,18 +103,16 @@ public class ModuleNamesOrderTest {
     private static void testDependences(Helper helper) throws IOException {
         Path outputDir = helper.createNewImageDir("test");
         List<String> modules = modulesProperty(outputDir, helper.defaultModulePath(),
-            "jdk.scripting.nashorn");
+            "jdk.jshell");
         String last = modules.get(modules.size()-1);
-        if (!last.equals("jdk.scripting.nashorn")) {
+        if (!last.equals("jdk.jshell")) {
             throw new AssertionError("Unexpected MODULES value: " + modules);
         }
 
         checkDependency(modules, "java.logging", "java.base");
-        checkDependency(modules, "jdk.dynalink", "java.logging");
-        checkDependency(modules, "java.scripting", "java.base");
-        checkDependency(modules, "jdk.scripting.nashorn", "java.logging");
-        checkDependency(modules, "jdk.scripting.nashorn", "jdk.dynalink");
-        checkDependency(modules, "jdk.scripting.nashorn", "java.scripting");
+        checkDependency(modules, "jdk.compiler", "java.compiler");
+        checkDependency(modules, "jdk.jshell", "java.logging");
+        checkDependency(modules, "jdk.jshell", "jdk.compiler");
     }
 
     /*
@@ -124,10 +121,10 @@ public class ModuleNamesOrderTest {
     private static void testModulesOrder(Helper helper) throws IOException {
         Path image1 = helper.createNewImageDir("test1");
         List<String> modules1 = modulesProperty(image1, helper.defaultModulePath(),
-            "jdk.scripting.nashorn", "jdk.scripting.nashorn.shell");
+            "jdk.jshell");
         Path image2 = helper.createNewImageDir("test2");
         List<String> modules2 = modulesProperty(image2, helper.defaultModulePath(),
-            "jdk.scripting.nashorn.shell", "jdk.scripting.nashorn");
+            "jdk.jshell");
         if (!modules1.equals(modules2)) {
             throw new AssertionError("MODULES should be a stable order: " +
                 modules1 + " vs " + modules2);

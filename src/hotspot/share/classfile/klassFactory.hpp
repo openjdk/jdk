@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 class ClassFileStream;
 class ClassLoaderData;
+class ClassLoadInfo;
 template <typename>
 class GrowableArray;
 class Klass;
@@ -71,9 +72,7 @@ class KlassFactory : AllStatic {
   static InstanceKlass* create_from_stream(ClassFileStream* stream,
                                            Symbol* name,
                                            ClassLoaderData* loader_data,
-                                           Handle protection_domain,
-                                           const InstanceKlass* unsafe_anonymous_host,
-                                           GrowableArray<Handle>* cp_patches,
+                                           const ClassLoadInfo& cl_info,
                                            TRAPS);
  public:
   static InstanceKlass* check_shared_class_file_load_hook(

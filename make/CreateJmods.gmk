@@ -177,6 +177,11 @@ else # not java.base
         JMOD_FLAGS += --exclude '$(notdir $(MSVCR_DLL))'
       endif
     endif
+    ifneq ($(VCRUNTIME_1_DLL), )
+      ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(VCRUNTIME_1_DLL))), )
+        JMOD_FLAGS += --exclude '$(notdir $(VCRUNTIME_1_DLL))'
+      endif
+    endif
     ifneq ($(MSVCP_DLL), )
       ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCP_DLL))), )
         JMOD_FLAGS += --exclude '$(notdir $(MSVCP_DLL))'

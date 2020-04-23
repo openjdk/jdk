@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,25 @@
 
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.*;
-import java.nio.charset.*;
-import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
-import jdk.tools.jlink.plugin.*;
-import jdk.internal.org.objectweb.asm.*;
+import java.util.Map;
 
-import static java.lang.System.out;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
  * Base plugin to update a static field in java.lang.VersionProps
+ *
+ * Fields to be updated must not be final such that values are not constant
+ * replaced at compile time and initialization code is generated.
+ * We assume that the initialization code only has ldcs, method calls and
+ * field instructions.
  */
 abstract class VersionPropsPlugin implements Plugin {
 
@@ -113,6 +120,7 @@ abstract class VersionPropsPlugin implements Plugin {
 
         cr.accept(new ClassVisitor(Opcodes.ASM7, cw) {
 
+                @Override
                 public MethodVisitor visitMethod(int access,
                                                  String name,
                                                  String desc,
@@ -127,7 +135,33 @@ abstract class VersionPropsPlugin implements Plugin {
                                                                    sig,
                                                                    xs))
                             {
+                                private Object pendingLDC = null;
 
+                                private void flushPendingLDC() {
+                                    if (pendingLDC != null) {
+                                        super.visitLdcInsn(pendingLDC);
+                                        pendingLDC = null;
+                                    }
+                                }
+
+                                @Override
+                                public void visitLdcInsn(Object value) {
+                                    flushPendingLDC();
+                                    pendingLDC = value;
+                                }
+
+                                @Override
+                                public void visitMethodInsn(int opcode,
+                                                            String owner,
+                                                            String name,
+                                                            String descriptor,
+                                                            boolean isInterface) {
+                                    flushPendingLDC();
+                                    super.visitMethodInsn(opcode, owner, name,
+                                                          descriptor, isInterface);
+                                }
+
+                                @Override
                                 public void visitFieldInsn(int opcode,
                                                            String owner,
                                                            String name,
@@ -136,11 +170,21 @@ abstract class VersionPropsPlugin implements Plugin {
                                     if (opcode == Opcodes.PUTSTATIC
                                         && name.equals(field))
                                     {
-                                        // Discard the original value
-                                        super.visitInsn(Opcodes.POP);
-                                        // Load the value that we want
+                                        // assert that there is a pending ldc
+                                        // for the old value
+                                        if (pendingLDC == null) {
+                                            throw new AssertionError("No load " +
+                                                "instruction found for field " + field +
+                                                " in static initializer of " +
+                                                VERSION_PROPS_CLASS);
+                                        }
+                                        // forget about it
+                                        pendingLDC = null;
+                                        // and add an ldc for the new value
                                         super.visitLdcInsn(value);
                                         redefined = true;
+                                    } else {
+                                        flushPendingLDC();
                                     }
                                     super.visitFieldInsn(opcode, owner,
                                                          name, desc);

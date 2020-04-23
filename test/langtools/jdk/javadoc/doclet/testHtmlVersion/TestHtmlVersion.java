@@ -101,7 +101,7 @@ public class TestHtmlVersion extends JavadocTester {
         // No package description
         checkOutput("pkg1/package-summary.html", true,
                 "<section class=\"summary\">\n"
-                + "<ul class=\"block-list\">\n"
+                + "<ul class=\"summary-list\">\n"
                 + "<li>\n"
                 + "<div class=\"type-summary\">\n<table>\n"
                 + "<caption><span>Class Summary</span><span class=\"tab-end\">&nbsp;</span></caption>");

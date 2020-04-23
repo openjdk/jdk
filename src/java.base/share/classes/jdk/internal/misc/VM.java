@@ -27,9 +27,15 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import jdk.internal.access.SharedSecrets;
+
+import sun.nio.ch.FileChannelImpl;
 
 public class VM {
 
@@ -414,4 +420,34 @@ public class VM {
      * object class in the archived graph.
      */
     public static native void initializeFromArchive(Class<?> c);
+
+    /**
+     * Provides access to information on buffer usage.
+     */
+    public interface BufferPool {
+        String getName();
+        long getCount();
+        long getTotalCapacity();
+        long getMemoryUsed();
+    }
+
+    private static class BufferPoolsHolder {
+        static final List<BufferPool> BUFFER_POOLS;
+
+        static {
+            ArrayList<BufferPool> bufferPools = new ArrayList<>(3);
+            bufferPools.add(SharedSecrets.getJavaNioAccess().getDirectBufferPool());
+            bufferPools.add(FileChannelImpl.getMappedBufferPool());
+            bufferPools.add(FileChannelImpl.getSyncMappedBufferPool());
+
+            BUFFER_POOLS = Collections.unmodifiableList(bufferPools);
+        }
+    }
+
+    /**
+     * @return the list of buffer pools.
+     */
+    public static List<BufferPool> getBufferPools() {
+        return BufferPoolsHolder.BUFFER_POOLS;
+    }
 }

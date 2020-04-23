@@ -98,7 +98,10 @@ public class JShellHeapDumpTest {
     public static void printStackTraces(String file) throws IOException {
         try {
             String output = HprofReader.getStack(file, 0);
-            if (!output.contains("JShellToolProvider")) {
+            // We only require JShellToolProvider to be in the output if we did the
+            // short sleep. If we did not, the java process may not have executed far
+            // enough along to even start the main thread.
+            if (doSleep && !output.contains("JShellToolProvider")) {
                 throw new RuntimeException("'JShellToolProvider' missing from stdout/stderr");
             }
         } catch (Exception ex) {

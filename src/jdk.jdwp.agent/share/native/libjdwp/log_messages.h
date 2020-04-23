@@ -33,15 +33,10 @@ void finish_logging();
 
 #define LOG_NULL ((void)0)
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #ifdef JDWP_LOGGING
 
     #define _LOG(flavor,args) \
-                (log_message_begin(flavor,THIS_FILE,__LINE__), \
+                (log_message_begin(flavor,__FILE__,__LINE__), \
                  log_message_end args)
 
     #define LOG_TEST(flag)  (gdata->log_flags & (flag))

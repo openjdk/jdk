@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
  * tool by supplying an alternative implementation of
  * {@link com.sun.jarsigner.ContentSigner}.
  *
- * The classes in this package have been deprecated. New classes should not be
- * added to this package. Use the {@link jdk.security.jarsigner.JarSigner} API
- * to sign JAR files.
+ * The classes in this package have been deprecated and will be removed in
+ * a future release. New classes should not be added to this package.
+ * Use the {@link jdk.security.jarsigner.JarSigner} API to sign JAR files.
  */
 
 package com.sun.jarsigner;

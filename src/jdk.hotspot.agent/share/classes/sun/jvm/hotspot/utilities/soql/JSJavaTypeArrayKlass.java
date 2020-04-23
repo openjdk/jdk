@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,21 +73,21 @@ public class JSJavaTypeArrayKlass extends JSJavaArrayKlass {
       int type = (int) getTypeArrayKlass().getElementType();
       switch (type) {
          case TypeArrayKlass.T_BOOLEAN:
-            return Boolean.valueOf(typeArr.getBooleanAt(index));
+            return typeArr.getBooleanAt(index);
          case TypeArrayKlass.T_CHAR:
             return new String(new char[] { typeArr.getCharAt(index) });
          case TypeArrayKlass.T_FLOAT:
-            return new Float(typeArr.getFloatAt(index));
+            return typeArr.getFloatAt(index);
          case TypeArrayKlass.T_DOUBLE:
-            return new Double(typeArr.getDoubleAt(index));
+            return typeArr.getDoubleAt(index);
          case TypeArrayKlass.T_BYTE:
-            return new Byte(typeArr.getByteAt(index));
+            return typeArr.getByteAt(index);
          case TypeArrayKlass.T_SHORT:
-            return new Short(typeArr.getShortAt(index));
+            return typeArr.getShortAt(index);
          case TypeArrayKlass.T_INT:
-            return new Integer(typeArr.getIntAt(index));
+            return typeArr.getIntAt(index);
          case TypeArrayKlass.T_LONG:
-            return new Long(typeArr.getLongAt(index));
+            return typeArr.getLongAt(index);
          default:
             if (Assert.ASSERTS_ENABLED) {
                Assert.that(false, "Unknown primitive array type");

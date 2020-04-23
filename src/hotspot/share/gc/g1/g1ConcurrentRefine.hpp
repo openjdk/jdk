@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTREFINE_HPP
 #define SHARE_GC_G1_G1CONCURRENTREFINE_HPP
 
+#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
@@ -119,13 +120,9 @@ public:
   // Adjust refinement thresholds based on work done during the pause and the goal time.
   void adjust(double logged_cards_scan_time, size_t processed_logged_cards, double goal_ms);
 
-  struct RefinementStats {
-    Tickspan _time;
-    size_t _cards;
-    RefinementStats(Tickspan time, size_t cards) : _time(time), _cards(cards) {}
-  };
-
-  RefinementStats total_refinement_stats() const;
+  // Return total of concurrent refinement stats for the
+  // ConcurrentRefineThreads.  Also reset the stats for the threads.
+  G1ConcurrentRefineStats get_and_reset_refinement_stats();
 
   // Cards in the dirty card queue set.
   size_t activation_threshold(uint worker_id) const;
@@ -133,8 +130,8 @@ public:
 
   // Perform a single refinement step; called by the refinement
   // threads.  Returns true if there was refinement work available.
-  // Increments *total_refined_cards.
-  bool do_refinement_step(uint worker_id, size_t* total_refined_cards);
+  // Updates stats.
+  bool do_refinement_step(uint worker_id, G1ConcurrentRefineStats* stats);
 
   // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);

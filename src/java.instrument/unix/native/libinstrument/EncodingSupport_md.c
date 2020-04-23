@@ -33,13 +33,8 @@
 
 /* Routines to convert back and forth between Platform Encoding and UTF-8 */
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 /* Error and assert macros */
-#define UTF_ERROR(m) utfError(THIS_FILE, __LINE__,  m)
+#define UTF_ERROR(m) utfError(__FILE__, __LINE__,  m)
 #define UTF_ASSERT(x) ( (x)==0 ? UTF_ERROR("ASSERT ERROR " #x) : (void)0 )
 #define UTF_DEBUG(x)
 

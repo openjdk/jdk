@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
@@ -264,7 +265,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     DEBUG_ONLY(param_size = noreg);
   }
 
-  if (TraceMethodHandles) {
+  if (log_is_enabled(Info, methodhandles)) {
     if (tmp_mh != noreg) {
       __ mr(R23_method_handle, tmp_mh);  // make stub happy
     }
@@ -545,7 +546,7 @@ void trace_method_handle_stub(const char* adaptername,
 }
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
-  if (!TraceMethodHandles) return;
+  if (!log_is_enabled(Info, methodhandles)) return;
 
   BLOCK_COMMENT("trace_method_handle {");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import sun.jvm.hotspot.memory.Dictionary;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 // An InstanceKlass is the VM level representation of a Java class.
 
@@ -682,14 +684,14 @@ public class InstanceKlass extends Klass {
   public Field[] getStaticFields() {
     U2Array fields = getFields();
     int length = getJavaFieldsCount();
-    ArrayList result = new ArrayList();
+    ArrayList<Field> result = new ArrayList<>();
     for (int index = 0; index < length; index++) {
       Field f = newField(index);
       if (f.isStatic()) {
         result.add(f);
       }
     }
-    return (Field[])result.toArray(new Field[result.size()]);
+    return result.toArray(new Field[result.size()]);
   }
 
   public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
@@ -784,11 +786,11 @@ public class InstanceKlass extends Klass {
         Inherited fields are not included.
         Return an empty list if there are no fields declared in this class.
         Only designed for use in a debugging system. */
-    public List getImmediateFields() {
+    public List<Field> getImmediateFields() {
         // A list of Fields for each field declared in this class/interface,
         // not including inherited fields.
         int length = getJavaFieldsCount();
-        List immediateFields = new ArrayList(length);
+        List<Field> immediateFields = new ArrayList<>(length);
         for (int index = 0; index < length; index++) {
             immediateFields.add(getFieldByIndex(index));
         }
@@ -802,10 +804,10 @@ public class InstanceKlass extends Klass {
         the same name.
         Return an empty list if there are no fields.
         Only designed for use in a debugging system. */
-    public List getAllFields() {
+    public List<Field> getAllFields() {
         // Contains a Field for each field in this class, including immediate
         // fields and inherited fields.
-        List  allFields = getImmediateFields();
+        List<Field> allFields = getImmediateFields();
 
         // transitiveInterfaces contains all interfaces implemented
         // by this class and its superclass chain with no duplicates.
@@ -838,13 +840,13 @@ public class InstanceKlass extends Klass {
         Return an empty list if there are none, or if this isn't a class/
         interface.
     */
-    public List getImmediateMethods() {
+    public List<Method> getImmediateMethods() {
       // Contains a Method for each method declared in this class/interface
       // not including inherited methods.
 
       MethodArray methods = getMethods();
       int length = methods.length();
-      Object[] tmp = new Object[length];
+      Method[] tmp = new Method[length];
 
       IntArray methodOrdering = getMethodOrdering();
       if (methodOrdering.length() != length) {
@@ -865,13 +867,13 @@ public class InstanceKlass extends Klass {
     /** Return a List containing an SA InstanceKlass for each
         interface named in this class's 'implements' clause.
     */
-    public List getDirectImplementedInterfaces() {
+    public List<Klass> getDirectImplementedInterfaces() {
         // Contains an InstanceKlass for each interface in this classes
         // 'implements' clause.
 
         KlassArray interfaces = getLocalInterfaces();
         int length = interfaces.length();
-        List directImplementedInterfaces = new ArrayList(length);
+        List<Klass> directImplementedInterfaces = new ArrayList<>(length);
 
         for (int index = 0; index < length; index ++) {
             directImplementedInterfaces.add(interfaces.getAt(index));

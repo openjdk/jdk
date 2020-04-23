@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,8 @@ class stringStream : public outputStream {
   size_t      size() const { return buffer_pos; }
   const char* base() const { return buffer; }
   void  reset();
-  char* as_string() const;
+  // copy to a resource, or C-heap, array as requested
+  char* as_string(bool c_heap = false) const;
 };
 
 class fileStream : public outputStream {
@@ -230,11 +231,11 @@ class fileStream : public outputStream {
   ~fileStream();
   bool is_open() const { return _file != NULL; }
   virtual void write(const char* c, size_t len);
-  size_t read(void *data, size_t size, size_t count) { return ::fread(data, size, count, _file); }
+  size_t read(void *data, size_t size, size_t count) { return _file != NULL ? ::fread(data, size, count, _file) : 0; }
   char* readln(char *data, int count);
-  int eof() { return feof(_file); }
+  int eof() { return _file != NULL ? feof(_file) : -1; }
   long fileSize();
-  void rewind() { ::rewind(_file); }
+  void rewind() { if (_file != NULL) ::rewind(_file); }
   void flush();
 };
 

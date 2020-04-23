@@ -101,7 +101,7 @@ public class SignatureWriter extends SignatureVisitor {
 
     /** Constructs a new {@link SignatureWriter}. */
     public SignatureWriter() {
-        super(Opcodes.ASM7);
+        super(/* latest api =*/ Opcodes.ASM8);
     }
 
     // -----------------------------------------------------------------------------------------------

@@ -532,7 +532,7 @@ private:
 public:
   ParallelSPCleanupTask(uint num_workers, DeflateMonitorCounters* counters) :
     AbstractGangTask("Parallel Safepoint Cleanup"),
-    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
+    _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
     _cleanup_threads_cl(ParallelSPCleanupThreadClosure(counters)),
     _num_workers(num_workers),
     _counters(counters) {}

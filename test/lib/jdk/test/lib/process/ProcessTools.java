@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -392,6 +394,18 @@ public final class ProcessTools {
             output = new OutputAnalyzer(p, cs);
             p.waitFor();
 
+            {   // Dumping the process output to a separate file
+                var fileName = String.format("pid-%d-output.log", p.pid());
+                var processOutput = getProcessLog(pb, output);
+                AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                    Files.writeString(Path.of(fileName), processOutput);
+                    return null;
+                });
+                System.out.printf(
+                        "Output and diagnostic info for process %d " +
+                                "was saved into '%s'%n", p.pid(), fileName);
+            }
+
             return output;
         } catch (Throwable t) {
             if (p != null) {
@@ -526,8 +540,12 @@ public final class ProcessTools {
         String currentLibPath = pb.environment().get(libPathVar);
 
         String newLibPath = jvmLibDir;
+        if (Platform.isWindows()) {
+            String libDir = Platform.libDir().toString();
+            newLibPath = newLibPath + File.pathSeparator + libDir;
+        }
         if ( (currentLibPath != null) && !currentLibPath.isEmpty() ) {
-            newLibPath = currentLibPath + File.pathSeparator + jvmLibDir;
+            newLibPath = newLibPath + File.pathSeparator + currentLibPath;
         }
 
         pb.environment().put(libPathVar, newLibPath);

@@ -105,7 +105,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   // start index of that set, or G1_NO_HRM_INDEX.
   uint find_contiguous_allow_expand(uint num_regions);
 
-  void guarantee_contiguous_range(uint start, uint num_regions) ;
+  void assert_contiguous_range(uint start, uint num_regions) NOT_DEBUG_RETURN;
 
   // Finds the next sequence of unavailable regions starting from start_idx. Returns the
   // length of the sequence found. If this result is zero, no such sequence could be found,

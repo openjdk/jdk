@@ -177,8 +177,7 @@ ctw_3 = \
   applications/ctw/modules/jdk_compiler.java \
   applications/ctw/modules/jdk_internal_vm_compiler.java \
   applications/ctw/modules/jdk_localedata.java \
-  applications/ctw/modules/jdk_localedata_2.java \
-  applications/ctw/modules/jdk_scripting_nashorn.java \
+  applications/ctw/modules/jdk_localedata_2.java
 
 tier1_gc = \
   :tier1_gc_1 \

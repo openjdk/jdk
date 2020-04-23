@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class MemoryAction extends DelegateAction {
     // XXX - note: these icons are temporary. Should create custom icons.
     public static final String VALUE_SMALL_ICON = "development/Server16.gif";
     public static final String VALUE_LARGE_ICON = "development/Server24.gif";
-    public static final Integer VALUE_MNEMONIC = new Integer('M');
+    public static final Integer VALUE_MNEMONIC = (int) 'M';
     public static final String VALUE_SHORT_DESCRIPTION = "Show Stack Memory";
     public static final String VALUE_LONG_DESCRIPTION = "Show the stack memory for the current thread";
 

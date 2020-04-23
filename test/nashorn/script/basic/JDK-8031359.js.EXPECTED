@@ -1,6 +1,0 @@
-func called with hello
-func called with HELLO
-compose called with hello
-func called with h
-I am func2: hello
-This is my andThen!

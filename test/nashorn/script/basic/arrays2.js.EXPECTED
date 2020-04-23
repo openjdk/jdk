@@ -1,7 +1,0 @@
-Array.prototype.length = 0
-Array.prototype.slice.prototype = undefined
-true
-1
-1
-0
-1

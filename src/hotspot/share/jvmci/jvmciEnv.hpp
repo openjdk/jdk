@@ -262,7 +262,8 @@ public:
   char* as_utf8_string(JVMCIObject str, char* buf, int buflen);
 
   JVMCIObject create_string(Symbol* str, JVMCI_TRAPS) {
-    return create_string(str->as_C_string(), JVMCI_CHECK_(JVMCIObject()));
+    JVMCIObject s = create_string(str->as_C_string(), JVMCI_CHECK_(JVMCIObject()));
+    return s;
   }
 
   JVMCIObject create_string(const char* str, JVMCI_TRAPS);

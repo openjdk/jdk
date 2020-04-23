@@ -110,25 +110,25 @@ public class JLinkTest {
         }
 
         {
-            // No --module-path specified. $JAVA_HOME/jmods should be assumed.
-            // The following should succeed as it uses only system modules.
-            String imageDir = "bug818977-no-modulepath";
-            JImageGenerator.getJLinkTask()
-                    .output(helper.createNewImageDir(imageDir))
-                    .addMods("jdk.scripting.nashorn")
-                    .call().assertSuccess();
+             // No --module-path specified. $JAVA_HOME/jmods should be assumed.
+             // The following should succeed as it uses only system modules.
+             String imageDir = "bug818977-no-modulepath";
+             JImageGenerator.getJLinkTask()
+                     .output(helper.createNewImageDir(imageDir))
+                     .addMods("jdk.jshell")
+                     .call().assertSuccess();
         }
 
         {
-            // invalid --module-path specified. java.base not found it it.
-            // $JAVA_HOME/jmods should be added automatically.
-            // The following should succeed as it uses only system modules.
-            String imageDir = "bug8189777-invalid-modulepath";
-            JImageGenerator.getJLinkTask()
-                    .modulePath("does_not_exist_path")
-                    .output(helper.createNewImageDir(imageDir))
-                    .addMods("jdk.scripting.nashorn")
-                    .call().assertSuccess();
+             // invalid --module-path specified. java.base not found it it.
+             // $JAVA_HOME/jmods should be added automatically.
+             // The following should succeed as it uses only system modules.
+             String imageDir = "bug8189777-invalid-modulepath";
+             JImageGenerator.getJLinkTask()
+                     .modulePath("does_not_exist_path")
+                     .output(helper.createNewImageDir(imageDir))
+                     .addMods("jdk.jshell")
+                     .call().assertSuccess();
         }
 
         {

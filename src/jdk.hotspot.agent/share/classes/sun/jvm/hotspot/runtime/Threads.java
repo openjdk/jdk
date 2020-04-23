@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import sun.jvm.hotspot.runtime.linux_sparc.LinuxSPARCJavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_x86.BsdX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 class ThreadsList extends VMObject {
     private static AddressField  threadsField;
@@ -126,7 +128,7 @@ public class Threads {
                 access = (JavaThreadPDAccess)
                   Class.forName("sun.jvm.hotspot.runtime.linux_" +
                      cpu.toLowerCase() + ".Linux" + cpu.toUpperCase() +
-                     "JavaThreadPDAccess").newInstance();
+                     "JavaThreadPDAccess").getDeclaredConstructor().newInstance();
               } catch (Exception e) {
                 throw new RuntimeException("OS/CPU combination " + os + "/" + cpu +
                                            " not yet supported");
@@ -235,8 +237,8 @@ public class Threads {
 
     // refer to Threads::get_pending_threads
     // Get list of Java threads that are waiting to enter the specified monitor.
-    public List getPendingThreads(ObjectMonitor monitor) {
-        List pendingThreads = new ArrayList();
+    public List<JavaThread> getPendingThreads(ObjectMonitor monitor) {
+        List<JavaThread> pendingThreads = new ArrayList<>();
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
             if (thread.isCompilerThread() || thread.isCodeCacheSweeperThread()) {
@@ -251,8 +253,8 @@ public class Threads {
     }
 
     // Get list of Java threads that have called Object.wait on the specified monitor.
-    public List getWaitingThreads(ObjectMonitor monitor) {
-        List pendingThreads = new ArrayList();
+    public List<JavaThread> getWaitingThreads(ObjectMonitor monitor) {
+        List<JavaThread> pendingThreads = new ArrayList<>();
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
             ObjectMonitor waiting = thread.getCurrentWaitingMonitor();

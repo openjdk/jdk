@@ -54,6 +54,7 @@ public class Filtering {
         return new Object[][]{
             { AccessibleObject.class, "override" },
             { Class.class, "classLoader" },
+            { Class.class, "classData" },
             { ClassLoader.class, "parent" },
             { Field.class, "clazz" },
             { Field.class, "modifiers" },

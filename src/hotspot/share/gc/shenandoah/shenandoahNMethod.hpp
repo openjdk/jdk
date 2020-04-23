@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,14 +83,40 @@ private:
 
 class ShenandoahNMethodTable;
 
+// ShenandoahNMethodList holds registered nmethod data. The list is reference counted.
+class ShenandoahNMethodList : public CHeapObj<mtGC> {
+private:
+  ShenandoahNMethod** _list;
+  const int           _size;
+  uint                _ref_count;
+
+private:
+  ~ShenandoahNMethodList();
+
+public:
+  ShenandoahNMethodList(int size);
+
+  // Reference counting with CoceCache_lock held
+  ShenandoahNMethodList* acquire();
+  void release();
+
+  // Transfer content from other list to 'this' list, up to the limit
+  void transfer(ShenandoahNMethodList* const other, int limit);
+
+  inline int size() const;
+  inline ShenandoahNMethod** list() const;
+  inline ShenandoahNMethod* at(int index) const;
+  inline void set(int index, ShenandoahNMethod* snm);
+};
+
 // An opaque snapshot of current nmethod table for iteration
 class ShenandoahNMethodTableSnapshot : public CHeapObj<mtGC> {
   friend class ShenandoahNMethodTable;
 private:
   ShenandoahHeap* const       _heap;
-  ShenandoahNMethodTable*     _table;
-  ShenandoahNMethod** const   _array;
-  const int                   _length;
+  ShenandoahNMethodList*      _list;
+  /* snapshot iteration limit */
+  int                         _limit;
 
   shenandoah_padding(0);
   volatile size_t       _claimed;
@@ -98,6 +124,7 @@ private:
 
 public:
   ShenandoahNMethodTableSnapshot(ShenandoahNMethodTable* table);
+  ~ShenandoahNMethodTableSnapshot();
 
   template<bool CSET_FILTER>
   void parallel_blobs_do(CodeBlobClosure *f);
@@ -112,12 +139,12 @@ private:
     minSize = 1024
   };
 
-  ShenandoahHeap* const _heap;
-  ShenandoahNMethod**   _array;
-  int                   _size;
-  int                   _index;
-  ShenandoahLock        _lock;
-  bool                  _iteration_in_progress;
+  ShenandoahHeap* const  _heap;
+  ShenandoahNMethodList* _list;
+
+  int                    _index;
+  ShenandoahLock         _lock;
+  int                    _itr_cnt;
 
 public:
   ShenandoahNMethodTable();
@@ -140,8 +167,8 @@ private:
   void rebuild(int size);
 
   bool is_full() const {
-    assert(_index <= _size, "Sanity");
-    return _index == _size;
+    assert(_index <= _list->size(), "Sanity");
+    return _index == _list->size();
   }
 
   ShenandoahNMethod* at(int index) const;

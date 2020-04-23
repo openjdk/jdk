@@ -78,8 +78,8 @@ public class ObjectReader {
 
    public ObjectReader(ClassLoader cl) {
       this.cl = cl;
-      this.oopToObjMap = new HashMap();
-      this.fieldMap = new HashMap();
+      this.oopToObjMap = new HashMap<>();
+      this.fieldMap = new HashMap<>();
    }
 
    public ObjectReader() {
@@ -117,19 +117,19 @@ public class ObjectReader {
       if (clz == Boolean.TYPE) {
          return Boolean.FALSE;
       } else if (clz == Character.TYPE) {
-         return new Character(' ');
+         return ' ';
       } else if (clz == Byte.TYPE) {
-         return new Byte((byte) 0);
+         return (byte) 0;
       } else if (clz == Short.TYPE) {
-         return new Short((short) 0);
+         return (short) 0;
       } else if (clz == Integer.TYPE) {
-         return new Integer(0);
+         return 0;
       } else if (clz == Long.TYPE) {
-         return new Long(0L);
+         return 0L;
       } else if (clz == Float.TYPE) {
-         return new Float(0.0f);
+         return 0.0f;
       } else if (clz == Double.TYPE) {
-         return new Double(0.0);
+         return 0.0;
       } else {
          throw new RuntimeException("should not reach here!");
       }
@@ -168,7 +168,7 @@ public class ObjectReader {
       return javaUtilProperties;
    }
 
-   private void setHashtableEntry(java.util.Hashtable p, Oop oop) {
+   private void setHashtableEntry(java.util.Hashtable<Object, Object> p, Oop oop) {
       InstanceKlass ik = (InstanceKlass)oop.getKlass();
       OopField keyField = (OopField)ik.findField("key", "Ljava/lang/Object;");
       OopField valueField = (OopField)ik.findField("value", "Ljava/lang/Object;");
@@ -229,7 +229,7 @@ public class ObjectReader {
          debugPrintln("Could not find field of [Ljava/util/Hashtable$Entry;");
          return null;
       }
-      java.util.Hashtable table = new java.util.Hashtable();
+      java.util.Hashtable<Object, Object> table = new java.util.Hashtable<>();
       ObjArray kvs = (ObjArray)tableField.getValue(oop);
       long size = kvs.getLength();
       debugPrintln("Hashtable$Entry Size = " + size);
@@ -297,9 +297,9 @@ public class ObjectReader {
             return getProperties(oop);
          }
 
-         Class clz = readClass(kls);
+         Class<?> clz = readClass(kls);
          try {
-            result = clz.newInstance();
+            result = clz.getDeclaredConstructor().newInstance();
          } catch (Exception ex) {
             // no-arg constructor failed to create object. Let us try
             // to call constructors one-by-one with default arguments
@@ -653,7 +653,7 @@ public class ObjectReader {
             throws NoSuchMethodException, ClassNotFoundException {
       java.lang.reflect.Method result = (java.lang.reflect.Method) getFromObjTable(m);
       if (result == null) {
-         Class clz = readClass((InstanceKlass)m.getMethodHolder());
+         Class<?> clz = readClass(m.getMethodHolder());
          String name = m.getName().asString();
          Class[] paramTypes = getParamTypes(m.getSignature());
          result = clz.getMethod(name, paramTypes);
@@ -666,7 +666,7 @@ public class ObjectReader {
             throws NoSuchMethodException, ClassNotFoundException {
       java.lang.reflect.Constructor result = (java.lang.reflect.Constructor) getFromObjTable(m);
       if (result == null) {
-         Class clz = readClass((InstanceKlass)m.getMethodHolder());
+         Class<?> clz = readClass(m.getMethodHolder());
          String name = m.getName().asString();
          Class[] paramTypes = getParamTypes(m.getSignature());
          result = clz.getDeclaredConstructor(paramTypes);
@@ -693,8 +693,8 @@ public class ObjectReader {
    }
 
    protected final ClassLoader cl;
-   protected Map   oopToObjMap; // Map<Oop, Object>
-   protected Map   fieldMap;    // Map<sun.jvm.hotspot.oops.Field, java.lang.reflect.Field>
+   protected Map<Object, Object> oopToObjMap;
+   protected Map<sun.jvm.hotspot.oops.Field, java.lang.reflect.Field> fieldMap;
 
    protected void putIntoObjTable(Oop oop, Object obj) {
       oopToObjMap.put(oop, obj);
@@ -713,7 +713,7 @@ public class ObjectReader {
    }
 
    protected class SignatureParser extends SignatureIterator {
-      protected Vector tmp = new Vector(); // Vector<Class>
+      protected Vector<Class<?>> tmp = new Vector<>();
 
       public SignatureParser(Symbol s) {
          super(s);

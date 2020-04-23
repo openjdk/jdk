@@ -251,6 +251,23 @@ LoadMSVCRT()
             }
         }
 #endif /* MSVCR_DLL_NAME */
+#ifdef VCRUNTIME_1_DLL_NAME
+        if (GetJREPath(crtpath, MAXPATHLEN)) {
+            if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
+                    JLI_StrLen(VCRUNTIME_1_DLL_NAME) >= MAXPATHLEN) {
+                JLI_ReportErrorMessage(JRE_ERROR11);
+                return JNI_FALSE;
+            }
+            (void)JLI_StrCat(crtpath, "\\bin\\" VCRUNTIME_1_DLL_NAME);   /* Add crt dll */
+            JLI_TraceLauncher("CRT path is %s\n", crtpath);
+            if (_access(crtpath, 0) == 0) {
+                if (LoadLibrary(crtpath) == 0) {
+                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    return JNI_FALSE;
+                }
+            }
+        }
+#endif /* VCRUNTIME_1_DLL_NAME */
 #ifdef MSVCP_DLL_NAME
         if (GetJREPath(crtpath, MAXPATHLEN)) {
             if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
@@ -504,7 +521,7 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
      * Get required buffer size to convert to Unicode.
      * The return value includes the terminating null character.
      */
-    unicode_path_len = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    unicode_path_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                            path, -1, NULL, 0);
     if (unicode_path_len == 0) {
         return EINVAL;
@@ -518,7 +535,7 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
     }
 
     wcsncpy(*wpath, prefix, prefix_len);
-    if (MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                             path, -1, &((*wpath)[prefix_len]), (int)wpath_len) == 0) {
         JLI_MemFree(*wpath);
         *wpath = NULL;

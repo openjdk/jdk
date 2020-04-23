@@ -448,6 +448,7 @@ final class PreSharedKeyExtension {
         if (shc.localSupportedSignAlgs == null) {
             shc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
+                            shc.sslConfig,
                             shc.algorithmConstraints, shc.activeProtocols);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_prepare_tlab_time_ms;
   double _cur_resize_tlab_time_ms;
 
+  double _cur_concatenate_dirty_card_logs_time_ms;
+
   double _cur_derived_pointer_table_update_time_ms;
 
   double _cur_clear_ct_time_ms;
@@ -250,6 +252,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_resize_tlab_time_ms(double ms) {
     _cur_resize_tlab_time_ms = ms;
+  }
+
+  void record_concatenate_dirty_card_logs_time_ms(double ms) {
+    _cur_concatenate_dirty_card_logs_time_ms = ms;
   }
 
   void record_derived_pointer_table_update_time(double ms) {

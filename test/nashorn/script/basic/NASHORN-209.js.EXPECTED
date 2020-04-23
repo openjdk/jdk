@@ -1,6 +1,0 @@
-obj.in = 11
-obj.class = hello
-obj.try = false
-obj.typeof = 456
-obj.instanceof = world
-catch called

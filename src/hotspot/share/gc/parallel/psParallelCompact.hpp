@@ -1123,12 +1123,6 @@ class PSParallelCompact : AllStatic {
   static void enqueue_dense_prefix_tasks(TaskQueue& task_queue,
                                          uint parallel_gc_threads);
 
-  // If objects are left in eden after a collection, try to move the boundary
-  // and absorb them into the old gen.  Returns true if eden was emptied.
-  static bool absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
-                                         PSYoungGen* young_gen,
-                                         PSOldGen* old_gen);
-
   // Reset time since last full gc
   static void reset_millis_since_last_gc();
 

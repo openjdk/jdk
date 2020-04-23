@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class InspectAction extends DelegateAction {
     public static final String VALUE_NAME = "Inspect Thread...";
     public static final String VALUE_SMALL_ICON = "general/ZoomIn16.gif";
     public static final String VALUE_LARGE_ICON = "general/ZoomIn24.gif";
-    public static final Integer VALUE_MNEMONIC = new Integer('T');
+    public static final Integer VALUE_MNEMONIC = (int) 'T';
     public static final String VALUE_SHORT_DESCRIPTION = "Inspect selected thread";
     public static final String VALUE_LONG_DESCRIPTION = "Open an inspector on the selected thread";
 

@@ -78,11 +78,6 @@ import javax.net.ssl.SSLSessionContext;
 final class SSLSessionImpl extends ExtendedSSLSession {
 
     /*
-     * we only really need a single null session
-     */
-    static final SSLSessionImpl         nullSession = new SSLSessionImpl();
-
-    /*
      * The state of a single session, as described in section 7.1
      * of the SSLv3 spec.
      */
@@ -153,7 +148,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * be used either by a client or by a server, as a connection is
      * first opened and before handshaking begins.
      */
-    private SSLSessionImpl() {
+    SSLSessionImpl() {
         this.protocolVersion = ProtocolVersion.NONE;
         this.cipherSuite = CipherSuite.C_NULL;
         this.sessionId = new SessionId(false, null);
@@ -322,13 +317,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.protocolVersion =
                 ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
 
-        if (protocolVersion.useTLS13PlusSpec()) {
-            this.sessionId = new SessionId(false, null);
-        } else {
-            // The CH session id may reset this if it's provided
-            this.sessionId = new SessionId(true,
-                    hc.sslContext.getSecureRandom());
-        }
+        // The CH session id may reset this if it's provided
+        this.sessionId = new SessionId(true,
+                hc.sslContext.getSecureRandom());
 
         this.cipherSuite =
                 CipherSuite.valueOf(Short.toUnsignedInt(buf.getShort()));
@@ -401,8 +392,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             identificationProtocol = null;
         } else {
             b = new byte[i];
-            identificationProtocol =
-                    buf.get(b, 0, i).asCharBuffer().toString();
+            buf.get(b);
+            identificationProtocol = new String(b);
         }
 
         // SNI
@@ -457,7 +448,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             this.host = new String();
         } else {
             b = new byte[i];
-            this.host = buf.get(b).toString();
+            buf.get(b, 0, i);
+            this.host = new String(b);
         }
         this.port = Short.toUnsignedInt(buf.getShort());
 
@@ -505,7 +497,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // Length of pre-shared key algorithm  (one byte)
                 i = buf.get();
                 b = new byte[i];
-                String alg = buf.get(b, 0, i).asCharBuffer().toString();
+                buf.get(b, 0 , i);
+                String alg = new String(b);
                 // Get length of encoding
                 i = Short.toUnsignedInt(buf.getShort());
                 // Get encoding
@@ -632,8 +625,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // List of SNIServerName
         hos.putInt16(requestedServerNames.size());
         if (requestedServerNames.size() > 0) {
-            for (SNIServerName host : requestedServerNames) {
-                b = host.getEncoded();
+            for (SNIServerName sn : requestedServerNames) {
+                b = sn.getEncoded();
                 hos.putInt8(b.length);
                 hos.write(b, 0, b.length);
             }
@@ -1222,15 +1215,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public void invalidate() {
         sessionLock.lock();
         try {
-            //
-            // Can't invalidate the NULL session -- this would be
-            // attempted when we get a handshaking error on a brand
-            // new connection, with no "real" session yet.
-            //
-            if (this == nullSession) {
-                return;
-            }
-
             if (context != null) {
                 context.remove(sessionId);
                 context = null;

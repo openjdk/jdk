@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,11 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
-import java.io.Writer;
 import java.lang.module.ModuleDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
@@ -55,16 +51,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import static java.util.stream.Collectors.*;
 
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
-import jdk.tools.jlink.plugin.PluginException;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toSet;
 
 /**
  *
@@ -441,13 +440,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.copy(in, dstFile);
     }
 
-    private void writeSymEntry(Path dstFile, Path target) throws IOException {
-        Objects.requireNonNull(dstFile);
-        Objects.requireNonNull(target);
-        Files.createDirectories(Objects.requireNonNull(dstFile.getParent()));
-        Files.createLink(dstFile, target);
-    }
-
     /*
      * Create a symbolic link to the given target if the target platform
      * supports symbolic link; otherwise, it will create a tiny file
@@ -512,13 +504,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
             Files.setPosixFilePermissions(file, perms);
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
-        }
-    }
-
-    private static void createUtf8File(File file, String content) throws IOException {
-        try (OutputStream fout = new FileOutputStream(file);
-                Writer output = new OutputStreamWriter(fout, "UTF-8")) {
-            output.write(content);
         }
     }
 

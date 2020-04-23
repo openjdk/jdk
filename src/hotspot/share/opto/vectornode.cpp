@@ -774,12 +774,13 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   return false;
 }
 
-MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* v1, Node* v2, Node* v3,
+MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,
                                       uint truth_table, const TypeVect* vt) {
   assert(truth_table <= 0xFF, "invalid");
-  assert(v1->bottom_type() == vt, "mismatch");
-  assert(v2->bottom_type() == vt, "mismatch");
-  assert(v3->bottom_type() == vt, "mismatch");
+  assert(in1->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
+  assert(in2->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
+  assert(in3->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   Node* fn = gvn.intcon(truth_table);
-  return new MacroLogicVNode(v1, v2, v3, fn, vt);
+  return new MacroLogicVNode(in1, in2, in3, fn, vt);
 }
+

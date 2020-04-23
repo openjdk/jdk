@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package jdk.tools.jlink.internal;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,10 +35,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.internal.module.ModulePath;
+import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.builder.ImageBuilder;
 
 /**
  * API to call jlink.

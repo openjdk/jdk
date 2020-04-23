@@ -181,4 +181,9 @@ public class Options {
         for (Runnable r: listeners)
             r.run();
     }
+
+    public void clear() {
+        values.clear();
+        listeners = List.nil();
+    }
 }

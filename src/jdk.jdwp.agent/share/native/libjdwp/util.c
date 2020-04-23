@@ -992,6 +992,10 @@ convertSignatureToClassname(char *convert)
         char c = *p;
         if (c == '/') {
             *(p-1) = '.';
+        } else if (c == '.') {
+            // class signature of a hidden class is "Ljava/lang/Foo.1234;"
+            // map to "java.lang.Foo/1234"
+            *(p-1) = '/';
         } else {
             *(p-1) = c;
         }

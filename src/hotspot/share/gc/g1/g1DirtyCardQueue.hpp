@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -38,6 +39,8 @@ class Thread;
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class G1DirtyCardQueue: public PtrQueue {
+  G1ConcurrentRefineStats* _refinement_stats;
+
 protected:
   virtual void handle_completed_buffer();
 
@@ -49,9 +52,17 @@ public:
   ~G1DirtyCardQueue();
 
   // Process queue entries and release resources.
-  void flush() { flush_impl(); }
+  void flush();
 
   inline G1DirtyCardQueueSet* dirty_card_qset() const;
+
+  G1ConcurrentRefineStats* refinement_stats() const {
+    return _refinement_stats;
+  }
+
+  // To be called by the barrier set's on_thread_detach, to notify this
+  // object of the corresponding state change of its owning thread.
+  void on_thread_detach();
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
@@ -215,9 +226,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   volatile size_t _padded_max_cards;
   static const size_t MaxCardsUnlimited = SIZE_MAX;
 
-  // Array of cumulative dirty cards refined by mutator threads.
-  // Array has an entry per id in _free_ids.
-  size_t* _mutator_refined_cards_counters;
+  G1ConcurrentRefineStats _detached_refinement_stats;
 
   // Verify _num_cards == sum of cards in the completed queue.
   void verify_num_cards() const NOT_DEBUG_RETURN;
@@ -241,9 +250,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // is a pending yield request.  The node's index is updated to exclude
   // the processed elements, e.g. up to the element before processing
   // stopped, or one past the last element if the entire buffer was
-  // processed. Increments *total_refined_cards by the number of cards
-  // processed and removed from the buffer.
-  bool refine_buffer(BufferNode* node, uint worker_id, size_t* total_refined_cards);
+  // processed. Updates stats.
+  bool refine_buffer(BufferNode* node,
+                     uint worker_id,
+                     G1ConcurrentRefineStats* stats);
 
   // Deal with buffer after a call to refine_buffer.  If fully processed,
   // deallocate the buffer.  Otherwise, record it as paused.
@@ -296,26 +306,23 @@ public:
   // Enqueue the buffer, and optionally perform refinement by the mutator.
   // Mutator refinement is only done by Java threads, and only if there
   // are more than max_cards (possibly padded) cards in the completed
-  // buffers.
+  // buffers.  Updates stats.
   //
   // Mutator refinement, if performed, stops processing a buffer if
   // SuspendibleThreadSet::should_yield(), recording the incompletely
   // processed buffer for later processing of the remainder.
-  void handle_completed_buffer(BufferNode* node);
+  void handle_completed_buffer(BufferNode* node, G1ConcurrentRefineStats* stats);
 
   // If there are more than stop_at cards in the completed buffers, pop
   // a buffer, refine its contents, and return true.  Otherwise return
-  // false.
+  // false.  Updates stats.
   //
   // Stops processing a buffer if SuspendibleThreadSet::should_yield(),
   // recording the incompletely processed buffer for later processing of
   // the remainder.
-  //
-  // Increments *total_refined_cards by the number of cards processed and
-  // removed from the buffer.
   bool refine_completed_buffer_concurrently(uint worker_id,
                                             size_t stop_at,
-                                            size_t* total_refined_cards);
+                                            G1ConcurrentRefineStats* stats);
 
   // If a full collection is happening, reset partial logs, and release
   // completed ones: the full collection will make them all irrelevant.
@@ -323,6 +330,14 @@ public:
 
   // If any threads have partial logs, add them to the global list of logs.
   void concatenate_logs();
+
+  // Return the total of mutator refinement stats for all threads.
+  // Also resets the stats for the threads.
+  // precondition: at safepoint.
+  G1ConcurrentRefineStats get_and_reset_refinement_stats();
+
+  // Accumulate refinement stats from threads that are detaching.
+  void record_detached_refinement_stats(G1ConcurrentRefineStats* stats);
 
   // Threshold for mutator threads to also do refinement when there
   // are concurrent refinement threads.
@@ -336,9 +351,6 @@ public:
 
   // Discard artificial increase of mutator refinement threshold.
   void discard_max_cards_padding();
-
-  // Total dirty cards refined by mutator threads.
-  size_t total_mutator_refined_cards() const;
 };
 
 inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {

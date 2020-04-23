@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class IntegerDuplicateProblem {
         Random rand = new Random(0x30052012);
 
         for (int i = 0; i < data.length; i++) {
-            data[i] = new Integer(rand.nextInt());
+            data[i] = rand.nextInt();
         }
     }
 

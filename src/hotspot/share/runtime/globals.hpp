@@ -2298,9 +2298,6 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
                                                                             \
-  develop(bool, TraceMethodHandles, false,                                  \
-          "trace internal method handle operations")                        \
-                                                                            \
   diagnostic(bool, VerifyMethodHandles, trueInDebug,                        \
           "perform extra checks when constructing method handles")          \
                                                                             \
@@ -2312,9 +2309,6 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   diagnostic(bool, FoldStableValues, true,                                  \
           "Optimize loads from stable fields (marked w/ @Stable)")          \
-                                                                            \
-  develop(bool, TraceInvokeDynamic, false,                                  \
-          "trace internal invoke dynamic operations")                       \
                                                                             \
   diagnostic(int, UseBootstrapCallInfo, 1,                                  \
           "0: when resolving InDy or ConDy, force all BSM arguments to be " \

@@ -71,8 +71,14 @@ final class Util {
 
     private Util() {}
 
+    static <T> List<T> add(final List<T> list, final T element) {
+        List<T> newList = list == null ? new ArrayList<>(1) : list;
+        newList.add(element);
+        return newList;
+    }
+
     static <T> List<T> asArrayList(final int length) {
-        List<T> list = new ArrayList<T>(length);
+        List<T> list = new ArrayList<>(length);
         for (int i = 0; i < length; ++i) {
             list.add(null);
         }
@@ -81,9 +87,9 @@ final class Util {
 
     static <T> List<T> asArrayList(final T[] array) {
         if (array == null) {
-            return new ArrayList<T>();
+            return new ArrayList<>();
         }
-        ArrayList<T> list = new ArrayList<T>(array.length);
+        ArrayList<T> list = new ArrayList<>(array.length);
         for (T t : array) {
             list.add(t);
         }
@@ -92,9 +98,9 @@ final class Util {
 
     static List<Byte> asArrayList(final byte[] byteArray) {
         if (byteArray == null) {
-            return new ArrayList<Byte>();
+            return new ArrayList<>();
         }
-        ArrayList<Byte> byteList = new ArrayList<Byte>(byteArray.length);
+        ArrayList<Byte> byteList = new ArrayList<>(byteArray.length);
         for (byte b : byteArray) {
             byteList.add(b);
         }
@@ -103,9 +109,9 @@ final class Util {
 
     static List<Boolean> asArrayList(final boolean[] booleanArray) {
         if (booleanArray == null) {
-            return new ArrayList<Boolean>();
+            return new ArrayList<>();
         }
-        ArrayList<Boolean> booleanList = new ArrayList<Boolean>(booleanArray.length);
+        ArrayList<Boolean> booleanList = new ArrayList<>(booleanArray.length);
         for (boolean b : booleanArray) {
             booleanList.add(b);
         }
@@ -114,9 +120,9 @@ final class Util {
 
     static List<Short> asArrayList(final short[] shortArray) {
         if (shortArray == null) {
-            return new ArrayList<Short>();
+            return new ArrayList<>();
         }
-        ArrayList<Short> shortList = new ArrayList<Short>(shortArray.length);
+        ArrayList<Short> shortList = new ArrayList<>(shortArray.length);
         for (short s : shortArray) {
             shortList.add(s);
         }
@@ -125,9 +131,9 @@ final class Util {
 
     static List<Character> asArrayList(final char[] charArray) {
         if (charArray == null) {
-            return new ArrayList<Character>();
+            return new ArrayList<>();
         }
-        ArrayList<Character> charList = new ArrayList<Character>(charArray.length);
+        ArrayList<Character> charList = new ArrayList<>(charArray.length);
         for (char c : charArray) {
             charList.add(c);
         }
@@ -136,9 +142,9 @@ final class Util {
 
     static List<Integer> asArrayList(final int[] intArray) {
         if (intArray == null) {
-            return new ArrayList<Integer>();
+            return new ArrayList<>();
         }
-        ArrayList<Integer> intList = new ArrayList<Integer>(intArray.length);
+        ArrayList<Integer> intList = new ArrayList<>(intArray.length);
         for (int i : intArray) {
             intList.add(i);
         }
@@ -147,9 +153,9 @@ final class Util {
 
     static List<Float> asArrayList(final float[] floatArray) {
         if (floatArray == null) {
-            return new ArrayList<Float>();
+            return new ArrayList<>();
         }
-        ArrayList<Float> floatList = new ArrayList<Float>(floatArray.length);
+        ArrayList<Float> floatList = new ArrayList<>(floatArray.length);
         for (float f : floatArray) {
             floatList.add(f);
         }
@@ -158,9 +164,9 @@ final class Util {
 
     static List<Long> asArrayList(final long[] longArray) {
         if (longArray == null) {
-            return new ArrayList<Long>();
+            return new ArrayList<>();
         }
-        ArrayList<Long> longList = new ArrayList<Long>(longArray.length);
+        ArrayList<Long> longList = new ArrayList<>(longArray.length);
         for (long l : longArray) {
             longList.add(l);
         }
@@ -169,9 +175,9 @@ final class Util {
 
     static List<Double> asArrayList(final double[] doubleArray) {
         if (doubleArray == null) {
-            return new ArrayList<Double>();
+            return new ArrayList<>();
         }
-        ArrayList<Double> doubleList = new ArrayList<Double>(doubleArray.length);
+        ArrayList<Double> doubleList = new ArrayList<>(doubleArray.length);
         for (double d : doubleArray) {
             doubleList.add(d);
         }
@@ -179,7 +185,7 @@ final class Util {
     }
 
     static <T> List<T> asArrayList(final int length, final T[] array) {
-        List<T> list = new ArrayList<T>(length);
+        List<T> list = new ArrayList<>(length);
         for (int i = 0; i < length; ++i) {
             list.add(array[i]); // NOPMD(UseArraysAsList): we convert a part of the array.
         }

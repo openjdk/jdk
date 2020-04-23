@@ -97,6 +97,7 @@ void HeapShared::fixup_mapped_heap_regions() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
   mapinfo->fixup_mapped_heap_regions();
   set_archive_heap_region_fixed();
+  SystemDictionaryShared::update_archived_mirror_native_pointers();
 }
 
 unsigned HeapShared::oop_hash(oop const& p) {

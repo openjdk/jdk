@@ -86,6 +86,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_SUBST(TOPDIR)
   AC_SUBST(CONFIGURE_START_DIR)
 
+  if test "x$CUSTOM_ROOT" != x; then
+    WORKSPACE_ROOT="${CUSTOM_ROOT}"
+  else
+    WORKSPACE_ROOT="${TOPDIR}"
+  fi
+  AC_SUBST(WORKSPACE_ROOT)
+
   # We can only call UTIL_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   UTIL_FIXUP_PATH(CONFIGURE_START_DIR)
   UTIL_FIXUP_PATH(TOPDIR)
@@ -141,6 +148,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_LIB])
       # Corresponds to --with-msvcr-dll
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
+      # Corresponds to --with-vcruntime-1-dll
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VCRUNTIME_1_DLL])
       # Corresponds to --with-msvcp-dll
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
       # Corresponds to --with-ucrt-dll-dir
@@ -313,11 +322,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       AC_MSG_RESULT([in build directory with custom name])
     fi
 
-    if test "x$CUSTOM_ROOT" != x; then
-      WORKSPACE_ROOT="${CUSTOM_ROOT}"
-    else
-      WORKSPACE_ROOT="${TOPDIR}"
-    fi
     OUTPUTDIR="${WORKSPACE_ROOT}/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUTDIR"
     if test ! -d "$OUTPUTDIR"; then
@@ -374,7 +378,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(SPEC)
   AC_SUBST(CONF_NAME)
   AC_SUBST(OUTPUTDIR)
-  AC_SUBST(WORKSPACE_ROOT)
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.

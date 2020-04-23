@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8012929
+ * @bug 8012929 8243074
  * @summary Trees.getElement should work not only for declaration trees, but also for use-trees
  * @modules jdk.compiler
  * @build TestGetElementReference
@@ -55,11 +55,12 @@ public class TestGetElementReference {
             Integer.toString(Runtime.getRuntime().version().feature());
 
     public static void main(String... args) throws IOException {
-        analyze("TestGetElementReferenceData.java");
-        analyze("mod/module-info.java", "mod/api/pkg/Api.java");
+        analyze(false, "TestGetElementReferenceData.java");
+        analyze(false, "mod/module-info.java", "mod/api/pkg/Api.java");
+        analyze(true, "TestGetElementReferenceDataWithErrors.java");
     }
 
-    private static void analyze(String... fileNames) throws IOException {
+    private static void analyze(boolean allowErrors, String... fileNames) throws IOException {
         try (StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
             List<JavaFileObject> files = new ArrayList<>();
             for (String fileName : fileNames) {
@@ -78,9 +79,11 @@ public class TestGetElementReference {
 
             ct.analyze();
 
-            for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
-                if (d.getKind() == Diagnostic.Kind.ERROR) {
-                    throw new IllegalStateException("Should have been attributed without errors: " + diagnostics.getDiagnostics());
+            if (!allowErrors) {
+                for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
+                    if (d.getKind() == Diagnostic.Kind.ERROR) {
+                        throw new IllegalStateException("Should have been attributed without errors: " + diagnostics.getDiagnostics());
+                    }
                 }
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@ import sun.jvm.hotspot.debugger.*;
 
 // a comparator used to sort LoadObjects by base address
 
-public class LoadObjectComparator implements Comparator {
-   public int compare(Object o1, Object o2) {
-      LoadObject lo1 = (LoadObject) o1;
-      LoadObject lo2 = (LoadObject) o2;
+public class LoadObjectComparator implements Comparator<LoadObject> {
+   public int compare(LoadObject lo1, LoadObject lo2) {
       Address base1 = lo1.getBase();
       Address base2 = lo2.getBase();
       long diff = base1.minus(base2);

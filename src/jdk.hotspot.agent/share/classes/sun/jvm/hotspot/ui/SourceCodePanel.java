@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package sun.jvm.hotspot.ui;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.Rectangle2D;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -50,7 +51,7 @@ public class SourceCodePanel extends JPanel {
   private static Icon breakpoint;
   // State
   private int highlightedLine = -1;
-  private Set/*<Integer>*/ breakpoints = new HashSet(); // Zero-based lines internally
+  private Set<Integer> breakpoints = new HashSet<>(); // Zero-based lines internally
   // Parent Editor container and EditorCommands object for setting breakpoints
   private EditorCommands comm;
   private Editor parent;
@@ -95,7 +96,7 @@ public class SourceCodePanel extends JPanel {
           g.drawString(str, width - strWidth - LINE_NO_SPACE, ascent + rowHeight * i);
 
           // Draw breakpoint if necessary
-          if (breakpoints.contains(new Integer(i))) {
+          if (breakpoints.contains(i)) {
             breakpoint.paintIcon(this, g, LINE_NO_SPACE, rowHeight * i);
           }
 
@@ -255,10 +256,12 @@ public class SourceCodePanel extends JPanel {
   public void showLineNumber(int lineNo) {
     try {
       int offset = source.getLineStartOffset(lineNo - 1);
-      Rectangle rect = source.modelToView(offset);
-      if (rect == null) {
+      Rectangle2D rect2d = source.modelToView2D(offset);
+      if (rect2d == null) {
         return;
       }
+      Rectangle rect = new Rectangle((int) rect2d.getX(), (int) rect2d.getY(),
+              (int) rect2d.getWidth(), (int) rect2d.getHeight());
       source.scrollRectToVisible(rect);
     } catch (BadLocationException e) {
       e.printStackTrace();
@@ -270,9 +273,9 @@ public class SourceCodePanel extends JPanel {
     highlightedLine = lineNo - 1;
   }
 
-  public void showBreakpointAtLine(int lineNo)  { breakpoints.add(new Integer(lineNo - 1));    repaint(); }
-  public boolean hasBreakpointAtLine(int lineNo){ return breakpoints.contains(new Integer(lineNo - 1));   }
-  public void clearBreakpointAtLine(int lineNo) { breakpoints.remove(new Integer(lineNo - 1)); repaint(); }
+  public void showBreakpointAtLine(int lineNo)  { breakpoints.add(lineNo - 1);    repaint(); }
+  public boolean hasBreakpointAtLine(int lineNo){ return breakpoints.contains(lineNo - 1);   }
+  public void clearBreakpointAtLine(int lineNo) { breakpoints.remove(lineNo - 1); repaint(); }
   public void clearBreakpoints()                { breakpoints.clear();                         repaint(); }
 
   public void setEditorCommands(EditorCommands comm, Editor parent) {

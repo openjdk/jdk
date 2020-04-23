@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
   /** Provide a snapshot of the list of currently-running processes in
       the form of a List of ProcessInfo objects. Must only be called
       if hasProcessList(), above, returns true. */
-  public List getProcessList() throws DebuggerException;
+  public List<ProcessInfo> getProcessList() throws DebuggerException;
 
   /** If an error occurs during attachment (i.e., "no such process"),
       the thrown DebuggerException will contain a description of the

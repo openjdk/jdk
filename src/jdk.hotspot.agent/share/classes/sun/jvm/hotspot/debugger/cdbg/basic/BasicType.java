@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ public abstract class BasicType implements Type, CVAttributes {
   private int    size;
   private int    cvAttributes;
   // Types keep a list of const/volatile qualified variants of themselves
-  private List   cvVariants;
+  private List<Type> cvVariants;
 
   protected BasicType(String name, int size) {
     this(name, size, 0);
@@ -83,8 +83,8 @@ public abstract class BasicType implements Type, CVAttributes {
 
   Type resolveTypes(BasicCDebugInfoDataBase db, ResolveListener listener) {
     if (cvVariants != null) {
-      for (ListIterator iter = cvVariants.listIterator(); iter.hasNext(); ) {
-        iter.set(db.resolveType(this, (BasicType) iter.next(), listener, "resolving const/var variants"));
+      for (ListIterator<Type> iter = cvVariants.listIterator(); iter.hasNext(); ) {
+        iter.set(db.resolveType(this, iter.next(), listener, "resolving const/var variants"));
       }
     }
     return this;
@@ -110,7 +110,7 @@ public abstract class BasicType implements Type, CVAttributes {
   protected abstract Type createCVVariant(int cvAttributes);
   protected Type          findCVVariant(int cvAttributes) {
     if (cvVariants != null) {
-      for (Iterator iter = cvVariants.iterator(); iter.hasNext(); ) {
+      for (Iterator<Type> iter = cvVariants.iterator(); iter.hasNext(); ) {
         BasicType t = (BasicType) iter.next();
         if (t.getCVAttributes() == cvAttributes) return t;
       }
@@ -119,7 +119,7 @@ public abstract class BasicType implements Type, CVAttributes {
   }
   protected void addCVVariant(Type t) {
     if (cvVariants == null) {
-      cvVariants = new ArrayList();
+      cvVariants = new ArrayList<>();
     }
     cvVariants.add(t);
   }

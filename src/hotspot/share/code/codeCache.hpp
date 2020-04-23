@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,8 +278,8 @@ class CodeCache : AllStatic {
   static int  mark_dependents_for_evol_deoptimization();
   static void mark_all_nmethods_for_evol_deoptimization();
   static void flush_evol_dependents();
-  static void old_nmethods_do(MetadataClosure* f);
-  static void unregister_old_nmethod(CompiledMethod* c);
+  static void old_nmethods_do(MetadataClosure* f) NOT_JVMTI_RETURN;
+  static void unregister_old_nmethod(CompiledMethod* c) NOT_JVMTI_RETURN;
 
   // Support for fullspeed debugging
   static void flush_dependents_on_method(const methodHandle& dependee);

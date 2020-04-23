@@ -30,6 +30,7 @@
 
 // Forward Decl.
 class G1ConcurrentRefine;
+class G1ConcurrentRefineStats;
 
 // One or more G1 Concurrent Refinement Threads may be active if concurrent
 // refinement is in progress.
@@ -40,8 +41,7 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
 
-  Tickspan _total_refinement_time;
-  size_t _total_refined_cards;
+  G1ConcurrentRefineStats* _refinement_stats;
 
   uint _worker_id;
 
@@ -71,12 +71,14 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
 
 public:
   G1ConcurrentRefineThread(G1ConcurrentRefine* cg1r, uint worker_id);
+  virtual ~G1ConcurrentRefineThread();
 
   // Activate this thread.
   void activate();
 
-  Tickspan total_refinement_time() const { return _total_refinement_time; }
-  size_t total_refined_cards() const { return _total_refined_cards; }
+  G1ConcurrentRefineStats* refinement_stats() const {
+    return _refinement_stats;
+  }
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }

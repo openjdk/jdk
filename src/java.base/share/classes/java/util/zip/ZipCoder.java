@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,17 @@ import sun.nio.cs.UTF_8;
 /**
  * Utility class for zipfile name and comment decoding and encoding
  */
-
 class ZipCoder {
 
     private static final jdk.internal.access.JavaLangAccess JLA =
         jdk.internal.access.SharedSecrets.getJavaLangAccess();
 
-    static final class UTF8 extends ZipCoder {
+    static final class UTF8ZipCoder extends ZipCoder {
 
-        UTF8(Charset utf8) {
+        // Encoding/decoding is stateless, so make it singleton.
+        static final ZipCoder INSTANCE = new UTF8ZipCoder(UTF_8.INSTANCE);
+
+        private UTF8ZipCoder(Charset utf8) {
             super(utf8);
         }
 
@@ -64,14 +66,28 @@ class ZipCoder {
         byte[] getBytes(String s) {
             return JLA.getBytesUTF8NoRepl(s);
         }
-    }
 
-    // UTF_8.ArrayEn/Decoder is stateless, so make it singleton.
-    private static ZipCoder utf8 = new UTF8(UTF_8.INSTANCE);
+        @Override
+        int hashN(byte[] a, int off, int len) {
+            // Performance optimization: when UTF8-encoded, ZipFile.getEntryPos
+            // assume that the hash of a name remains unchanged when appending a
+            // trailing '/', which allows lookups to avoid rehashing
+            int end = off + len;
+            if (len > 0 && a[end - 1] == '/') {
+                end--;
+            }
+
+            int h = 1;
+            for (int i = off; i < end; i++) {
+                h = 31 * h + a[i];
+            }
+            return h;
+        }
+    }
 
     public static ZipCoder get(Charset charset) {
         if (charset == UTF_8.INSTANCE)
-            return utf8;
+            return UTF8ZipCoder.INSTANCE;
         return new ZipCoder(charset);
     }
 
@@ -109,19 +125,27 @@ class ZipCoder {
 
     // assume invoked only if "this" is not utf8
     byte[] getBytesUTF8(String s) {
-        return utf8.getBytes(s);
+        return UTF8ZipCoder.INSTANCE.getBytes(s);
     }
 
     String toStringUTF8(byte[] ba, int len) {
-        return utf8.toString(ba, 0, len);
+        return UTF8ZipCoder.INSTANCE.toString(ba, 0, len);
     }
 
     String toStringUTF8(byte[] ba, int off, int len) {
-        return utf8.toString(ba, off, len);
+        return UTF8ZipCoder.INSTANCE.toString(ba, off, len);
     }
 
     boolean isUTF8() {
         return false;
+    }
+
+    int hashN(byte[] a, int off, int len) {
+        int h = 1;
+        while (len-- > 0) {
+            h = 31 * h + a[off++];
+        }
+        return h;
     }
 
     private Charset cs;
@@ -132,7 +156,7 @@ class ZipCoder {
         this.cs = cs;
     }
 
-    protected CharsetDecoder decoder() {
+    private CharsetDecoder decoder() {
         if (dec == null) {
             dec = cs.newDecoder()
               .onMalformedInput(CodingErrorAction.REPORT)
@@ -141,7 +165,7 @@ class ZipCoder {
         return dec;
     }
 
-    protected CharsetEncoder encoder() {
+    private CharsetEncoder encoder() {
         if (enc == null) {
             enc = cs.newEncoder()
               .onMalformedInput(CodingErrorAction.REPORT)

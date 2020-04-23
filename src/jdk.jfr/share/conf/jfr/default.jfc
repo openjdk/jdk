@@ -768,6 +768,10 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.DirectBufferStatistics">
+      <setting name="enabled">true</setting>
+      <setting name="period">5 s</setting>
+    </event>
 
 
 

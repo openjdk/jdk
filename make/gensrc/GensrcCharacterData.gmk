@@ -38,6 +38,7 @@ define SetupCharacterData
 	$$(call LogInfo, Generating $1.java)
 	$$(call MakeDir, $$(@D))
 	$(TOOL_GENERATECHARACTER) $2 \
+	    $(if $(call equals, $(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), true), -d) \
 	    -template $(CHARACTERDATA)/$1.java.template \
 	    -spec $(UNICODEDATA)/UnicodeData.txt \
 	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \

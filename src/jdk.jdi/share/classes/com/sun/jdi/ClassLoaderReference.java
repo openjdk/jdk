@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,26 +42,35 @@ import java.util.List;
 public interface ClassLoaderReference extends ObjectReference {
 
     /**
-     * Returns a list of all loaded classes that were defined by this
-     * class loader. No ordering of this list guaranteed.
-     * <P>
-     * The returned list will include reference types
-     * loaded at least to the point of preparation and
-     * types (like array) for which preparation is
-     * not defined.
+     * Returns a list of all classes defined by this class loader.
+     * No ordering of this list guaranteed.
+     * The returned list will include all reference types, including
+     * {@linkplain Class#isHidden hidden classes or interfaces}, loaded
+     * at least to the point of preparation, and types (like array)
+     * for which preparation is not defined.
      *
-     * @return a List of {@link ReferenceType} objects mirroring types
-     * loaded by this class loader. The list has length 0 if no types
+     * @return a {@code List} of {@link ReferenceType} objects mirroring types
+     * defined by this class loader. The list has length 0 if no types
      * have been defined by this classloader.
      */
     List<ReferenceType> definedClasses();
 
     /**
-     * Returns a list of all classes for which this class loader has
-     * been recorded as the initiating loader in the target VM.
-     * The list contains ReferenceTypes defined directly by this loader
-     * (as returned by {@link #definedClasses}) and any types for which
-     * loading was delegated by this class loader to another class loader.
+     * Returns a list of all classes which this class loader
+     * can find by name via {@link ClassLoader#loadClass(String, boolean)
+     * ClassLoader::loadClass}, {@link Class#forName(String) Class::forName}
+     * and bytecode linkage in the target VM.  That is, all classes for
+     * which this class loader has been recorded as an initiating loader.
+     * <p>
+     * Each class in the returned list was created by this class loader
+     * either by defining it directly or by delegation to another class loader
+     * (see JVMS {@jvms 5.3}).
+     * <p>
+     * The returned list does not include {@linkplain Class#isHidden()
+     * hidden classes or interfaces} or array classes whose
+     * {@linkplain ArrayType#componentType() element type} is a
+     * {@linkplain Class#isHidden() hidden class or interface}.
+     * as they cannot be discovered by any class loader
      * <p>
      * The visible class list has useful properties with respect to
      * the type namespace. A particular type name will occur at most
@@ -70,11 +79,6 @@ public interface ClassLoaderReference extends ObjectReference {
      * this class loader must be resolved to that single type.
      * <p>
      * No ordering of the returned list is guaranteed.
-     * <p>
-     * See
-     * <cite>The Java&trade; Virtual Machine Specification</cite>,
-     * section 5.3 - Creation and Loading
-     * for more information on the initiating classloader.
      * <p>
      * Note that unlike {@link #definedClasses()}
      * and {@link VirtualMachine#allClasses()},
@@ -85,9 +89,12 @@ public interface ClassLoaderReference extends ObjectReference {
      * Use {@link ReferenceType#isPrepared()} to determine if
      * a reference type is prepared.
      *
-     * @return a List of {@link ReferenceType} objects mirroring classes
-     * initiated by this class loader. The list has length 0 if no classes
-     * are visible to this classloader.
+     * @return a {@code List} of {@link ReferenceType} objects mirroring
+     * classes which this class loader can find by name. The list
+     * has length 0 if no classes are visible to this classloader.
+     *
+     * @see <a href="{@docRoot}/../specs/jvmti/jvmti.html#GetClassLoaderClasses">
+     *     JVM TI GetClassLoaderClasses</a>
      */
     List<ReferenceType> visibleClasses();
 }

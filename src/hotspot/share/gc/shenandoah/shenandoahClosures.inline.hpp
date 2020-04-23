@@ -88,7 +88,9 @@ ShenandoahEvacuateUpdateRootsClosure<MO>::ShenandoahEvacuateUpdateRootsClosure()
 template <DecoratorSet MO>
 template <class T>
 void ShenandoahEvacuateUpdateRootsClosure<MO>::do_oop_work(T* p) {
-  assert(_heap->is_concurrent_root_in_progress(), "Only do this when evacuation is in progress");
+  assert(_heap->is_concurrent_weak_root_in_progress() ||
+         _heap->is_concurrent_strong_root_in_progress(),
+         "Only do this in root processing phase");
 
   T o = RawAccess<>::oop_load(p);
   if (! CompressedOops::is_null(o)) {
@@ -119,7 +121,9 @@ ShenandoahEvacUpdateOopStorageRootsClosure::ShenandoahEvacUpdateOopStorageRootsC
 }
 
 void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(oop* p) {
-  assert(_heap->is_concurrent_root_in_progress(), "Only do this when evacuation is in progress");
+  assert(_heap->is_concurrent_weak_root_in_progress() ||
+         _heap->is_concurrent_strong_root_in_progress(),
+         "Only do this in root processing phase");
 
   oop obj = RawAccess<>::oop_load(p);
   if (! CompressedOops::is_null(obj)) {

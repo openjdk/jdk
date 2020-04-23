@@ -70,6 +70,7 @@ public class JhsdbThreadInfoTest {
             out.shouldMatch("   java.lang.Thread.State: .+");
             out.shouldMatch("   JavaThread state: _thread_.+");
 
+            out.shouldNotContain(" prio=0 ");
             out.shouldNotContain("   java.lang.Thread.State: UNKNOWN");
 
             // stderr should be empty except for VM warnings.
@@ -85,10 +86,8 @@ public class JhsdbThreadInfoTest {
             }
 
             System.out.println("Test Completed");
-        } catch (InterruptedException ie) {
-            throw new Error("Problem awaiting the child process: " + ie, ie);
-        } catch (Exception attachE) {
-            throw new Error("Couldn't start jhsdb, attach to LingeredApp or match ThreadName: " + attachE);
+        } catch (Exception ex) {
+            throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             LingeredApp.stopApp(app);
         }

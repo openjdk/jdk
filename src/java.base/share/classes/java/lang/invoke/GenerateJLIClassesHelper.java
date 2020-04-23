@@ -196,24 +196,20 @@ class GenerateJLIClassesHelper {
     private static byte[] generateCodeBytesForLFs(String className,
             String[] names, LambdaForm[] forms) {
 
+
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
         cw.visit(Opcodes.V1_8, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
                 className, null, InvokerBytecodeGenerator.INVOKER_SUPER_NAME, null);
         cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
 
         for (int i = 0; i < forms.length; i++) {
-            addMethod(className, names[i], forms[i],
-                    forms[i].methodType(), cw);
+            InvokerBytecodeGenerator g
+                = new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType());
+            g.setClassWriter(cw);
+            g.addMethod();
         }
-        return cw.toByteArray();
-    }
 
-    private static void addMethod(String className, String methodName, LambdaForm form,
-            MethodType type, ClassWriter cw) {
-        InvokerBytecodeGenerator g
-                = new InvokerBytecodeGenerator(className, methodName, form, type);
-        g.setClassWriter(cw);
-        g.addMethod();
+        return cw.toByteArray();
     }
 
     private static LambdaForm makeReinvokerFor(MethodType type) {

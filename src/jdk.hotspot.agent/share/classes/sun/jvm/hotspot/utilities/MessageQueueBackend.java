@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ public class MessageQueueBackend {
   private MessageQueueImpl rightLeftQueue;
 
   public MessageQueueBackend() {
-    LinkedList leftRightPipe = new LinkedList();
-    LinkedList rightLeftPipe = new LinkedList();
+    LinkedList<Object> leftRightPipe = new LinkedList<>();
+    LinkedList<Object> rightLeftPipe = new LinkedList<>();
     leftRightQueue = new MessageQueueImpl(rightLeftPipe, leftRightPipe);
     rightLeftQueue = new MessageQueueImpl(leftRightPipe, rightLeftPipe);
   }
@@ -53,10 +53,10 @@ public class MessageQueueBackend {
   }
 
   private class MessageQueueImpl implements MessageQueue {
-    private LinkedList readList;
-    private LinkedList writeList;
+    private LinkedList<Object> readList;
+    private LinkedList<Object> writeList;
 
-    public MessageQueueImpl(LinkedList listToReadFrom, LinkedList listToWriteTo) {
+    public MessageQueueImpl(LinkedList<Object> listToReadFrom, LinkedList<Object> listToWriteTo) {
       readList = listToReadFrom;
       writeList = listToWriteTo;
     }

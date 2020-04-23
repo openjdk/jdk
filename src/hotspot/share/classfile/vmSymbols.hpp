@@ -884,6 +884,8 @@
    do_name(     isArray_name,                                    "isArray")                                             \
   do_intrinsic(_isPrimitive,              java_lang_Class,        isPrimitive_name, void_boolean_signature,      F_RN)  \
    do_name(     isPrimitive_name,                                "isPrimitive")                                         \
+  do_intrinsic(_isHidden,                 java_lang_Class,        isHidden_name, void_boolean_signature,         F_RN)  \
+   do_name(     isHidden_name,                                   "isHidden")                                            \
   do_intrinsic(_getSuperclass,            java_lang_Class,        getSuperclass_name, void_class_signature,      F_RN)  \
    do_name(     getSuperclass_name,                              "getSuperclass")                                       \
   do_intrinsic(_Class_cast,               java_lang_Class,        Class_cast_name, object_object_signature,      F_R)   \

@@ -1,3 +1,0 @@
-source
-flags
-TypeError: Cannot supply flags when constructing one RegExp from another

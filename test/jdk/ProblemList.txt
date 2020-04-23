@@ -926,6 +926,8 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
+java/util/ServiceLoader/ReloadTest.java                     8242935 generic-all
+
 ############################################################################
 
 # jdk_instrument
@@ -935,7 +937,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 # svc_tools
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-ppc64,linux-ppc64le
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231634,8230731,8001227 generic-all,windows-all
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231634 generic-all
 
 
 ############################################################################
@@ -956,6 +958,11 @@ javax/script/Test7.java                                         8239361 generic-
 
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
+
+jdk/jfr/api/consumer/TestHiddenMethod.java                  8242933    generic-all
+jdk/jfr/tool/TestPrintJSON.java                             8242934    generic-all
+
+
 
 ############################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,22 +168,22 @@ public class GenerateOopMap {
   static class RetTableEntry {
     private static int _init_nof_jsrs; // Default size of jsrs list
     private int _target_bci;           // Target PC address of jump (bytecode index)
-    private List/*<int>*/ _jsrs;       // List of return addresses  (bytecode index)
+    private List<Integer> _jsrs;       // List of return addresses  (bytecode index)
     private RetTableEntry _next;       // Link to next entry
 
     RetTableEntry(int target, RetTableEntry next) {
       _target_bci = target;
-      _jsrs = new ArrayList(_init_nof_jsrs);
+      _jsrs = new ArrayList<>(_init_nof_jsrs);
       _next = next;
     }
 
     // Query
     int targetBci()  { return _target_bci; }
     int nofJsrs()    { return _jsrs.size(); }
-    int jsrs(int i)  { return ((Integer) _jsrs.get(i)).intValue(); }
+    int jsrs(int i)  { return _jsrs.get(i).intValue(); }
 
     // Update entry
-    void addJsr  (int return_bci)     { _jsrs.add(new Integer(return_bci)); }
+    void addJsr  (int return_bci)     { _jsrs.add(return_bci); }
     void addDelta(int bci, int delta) {
       if (_target_bci > bci) {
         _target_bci += delta;
@@ -192,7 +192,7 @@ public class GenerateOopMap {
       for (int k = 0; k < nofJsrs(); k++) {
         int jsr = jsrs(k);
         if (jsr > bci) {
-          _jsrs.set(k, new Integer(jsr+delta));
+          _jsrs.set(k, jsr + delta);
         }
       }
     }
@@ -1926,18 +1926,18 @@ public class GenerateOopMap {
   }
 
   // Initvars
-  List/*<Integer>*/ _init_vars;
+  List<Integer> _init_vars;
 
   void  initializeVars                      () {
     for (int k = 0; k < _init_vars.size(); k++)
-      _state.get(((Integer) _init_vars.get(k)).intValue()).set(CellTypeState.makeSlotRef(k));
+      _state.get((_init_vars.get(k)).intValue()).set(CellTypeState.makeSlotRef(k));
   }
 
   void  addToRefInitSet                     (int localNo) {
     //    if (TraceNewOopMapGeneration)
     //      tty.print_cr("Added init vars: %d", localNo);
 
-    Integer local = new Integer(localNo);
+    Integer local = localNo;
 
     // Is it already in the set?
     if (_init_vars.contains(local))
@@ -2155,7 +2155,7 @@ public class GenerateOopMap {
     _max_stack      = (int) method().getMaxStack();
     _has_exceptions = (method().hasExceptionTable());
     _nof_refval_conflicts = 0;
-    _init_vars      = new ArrayList(5);  // There are seldom more than 5 init_vars
+    _init_vars      = new ArrayList<>(5);  // There are seldom more than 5 init_vars
     _report_result  = false;
     _report_result_for_send = false;
     _report_for_exit_bci = -1;
@@ -2314,5 +2314,5 @@ public class GenerateOopMap {
                                            CellTypeStateList vars,
                                            CellTypeStateList stack,
                                            int stackTop)                  { throw new RuntimeException("ShouldNotReachHere"); }
-  public void fillInitVars                (List/*<Integer>*/ init_vars)   { throw new RuntimeException("ShouldNotReachHere"); }
+  public void fillInitVars                (List<Integer> init_vars)       { throw new RuntimeException("ShouldNotReachHere"); }
 }

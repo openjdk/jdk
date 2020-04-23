@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _prev_collection_pause_end_ms(0.0),
     _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
     _concurrent_refine_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _logged_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _dirtied_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _young_card_merge_to_scan_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
     _mixed_card_merge_to_scan_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
     _young_cost_per_card_scan_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -107,7 +107,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   // Start with inverse of maximum STW cost.
   _concurrent_refine_rate_ms_seq->add(1/cost_per_logged_card_ms_defaults[0]);
   // Some applications have very low rates for logging cards.
-  _logged_cards_rate_ms_seq->add(0.0);
+  _dirtied_cards_rate_ms_seq->add(0.0);
   _young_card_merge_to_scan_ratio_seq->add(young_card_merge_to_scan_ratio_defaults[index]);
   _young_cost_per_card_scan_ms_seq->add(young_only_cost_per_card_scan_ms_defaults[index]);
 
@@ -168,8 +168,8 @@ void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
   _concurrent_refine_rate_ms_seq->add(cards_per_ms);
 }
 
-void G1Analytics::report_logged_cards_rate_ms(double cards_per_ms) {
-  _logged_cards_rate_ms_seq->add(cards_per_ms);
+void G1Analytics::report_dirtied_cards_rate_ms(double cards_per_ms) {
+  _dirtied_cards_rate_ms_seq->add(cards_per_ms);
 }
 
 void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_gc) {
@@ -236,8 +236,8 @@ double G1Analytics::predict_concurrent_refine_rate_ms() const {
   return predict_zero_bounded(_concurrent_refine_rate_ms_seq);
 }
 
-double G1Analytics::predict_logged_cards_rate_ms() const {
-  return predict_zero_bounded(_logged_cards_rate_ms_seq);
+double G1Analytics::predict_dirtied_cards_rate_ms() const {
+  return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
 }
 
 double G1Analytics::predict_young_card_merge_to_scan_ratio() const {

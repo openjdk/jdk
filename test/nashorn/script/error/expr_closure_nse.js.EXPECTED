@@ -1,3 +1,0 @@
-test/nashorn/script/error/expr_closure_nse.js:31:19 Expected { but found x
-function square(x) x*x;
-                   ^

@@ -89,7 +89,7 @@ final class TransportContext implements ConnectionContext {
     // Called by SSLEngineImpl
     TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             InputRecord inputRecord, OutputRecord outputRecord) {
-        this(sslContext, transport, new SSLConfiguration(sslContext, true),
+        this(sslContext, transport, new SSLConfiguration(sslContext, false),
                 inputRecord, outputRecord, true);
     }
 
@@ -130,7 +130,7 @@ final class TransportContext implements ConnectionContext {
         this.isUnsureMode = isUnsureMode;
 
         // initial security parameters
-        this.conSession = SSLSessionImpl.nullSession;
+        this.conSession = new SSLSessionImpl();
         this.protocolVersion = this.sslConfig.maximumProtocolVersion;
         this.clientVerifyData = emptyByteArray;
         this.serverVerifyData = emptyByteArray;
@@ -164,12 +164,13 @@ final class TransportContext implements ConnectionContext {
                                             " message: " +
                                             SSLHandshake.nameOf(type));
                         }
-                        if (type == SSLHandshake.KEY_UPDATE.id &&
-                                !protocolVersion.useTLS13PlusSpec()) {
+
+                        if (!PostHandshakeContext.isConsumable(this, type)) {
                             throw fatal(Alert.UNEXPECTED_MESSAGE,
                                     "Unexpected post-handshake message: " +
                                     SSLHandshake.nameOf(type));
                         }
+
                         handshakeContext = new PostHandshakeContext(this);
                     } else {
                         handshakeContext = sslConfig.isClientMode ?
@@ -426,7 +427,7 @@ final class TransportContext implements ConnectionContext {
                         sslContext.getDefaultCipherSuites(!useClientMode);
             }
 
-            sslConfig.isClientMode = useClientMode;
+            sslConfig.toggleClientMode();
         }
 
         isUnsureMode = false;

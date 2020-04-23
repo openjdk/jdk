@@ -26,12 +26,13 @@
 
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
@@ -48,6 +49,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _degen_point(ShenandoahHeap::_degenerated_outside_cycle),
   _allocs_seen(0) {
 
+  reset_gc_id();
   create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
@@ -173,6 +175,9 @@ void ShenandoahControlThread::run_service() {
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
+      // GC is starting, bump the internal ID
+      update_gc_id();
+
       heap->reset_bytes_allocated_since_gc_start();
 
       // Use default constructor to snapshot the Metaspace state before GC.
@@ -342,16 +347,30 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Complete marking under STW, and start evacuation
   heap->vmop_entry_final_mark();
 
-  // Evacuate concurrent roots
-  heap->entry_roots();
+  // Process weak roots that might still point to regions that would be broken by cleanup
+  if (heap->is_concurrent_weak_root_in_progress()) {
+    heap->entry_weak_roots();
+  }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.
-  heap->entry_cleanup();
+  heap->entry_cleanup_early();
 
   {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->log_status();
+  }
+
+  // Perform concurrent class unloading
+  if (heap->is_concurrent_weak_root_in_progress()) {
+    heap->entry_class_unloading();
+  }
+
+  // Processing strong roots
+  // This may be skipped if there is nothing to update/evacuate.
+  // If so, strong_root_in_progress would be unset.
+  if (heap->is_concurrent_strong_root_in_progress()) {
+    heap->entry_strong_roots();
   }
 
   // Continue the cycle with evacuation and optional update-refs.
@@ -370,7 +389,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->vmop_entry_final_updaterefs();
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
-    heap->entry_cleanup();
+    heap->entry_cleanup_complete();
   }
 
   // Cycle is complete
@@ -467,10 +486,20 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
-  _requested_gc_cause = cause;
-  _gc_requested.set();
+  // Make sure we have at least one complete GC cycle before unblocking
+  // from the explicit GC request.
+  //
+  // This is especially important for weak references cleanup and/or native
+  // resources (e.g. DirectByteBuffers) machinery: when explicit GC request
+  // comes very late in the already running cycle, it would miss lots of new
+  // opportunities for cleanup that were made available before the caller
+  // requested the GC.
+  size_t required_gc_id = get_gc_id() + 1;
+
   MonitorLocker ml(&_gc_waiters_lock);
-  while (_gc_requested.is_set()) {
+  while (get_gc_id() < required_gc_id) {
+    _gc_requested.set();
+    _requested_gc_cause = cause;
     ml.wait();
   }
 }
@@ -564,6 +593,18 @@ void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
 
 void ShenandoahControlThread::set_forced_counters_update(bool value) {
   _force_counters_update.set_cond(value);
+}
+
+void ShenandoahControlThread::reset_gc_id() {
+  Atomic::store(&_gc_id, (size_t)0);
+}
+
+void ShenandoahControlThread::update_gc_id() {
+  Atomic::inc(&_gc_id);
+}
+
+size_t ShenandoahControlThread::get_gc_id() {
+  return Atomic::load(&_gc_id);
 }
 
 void ShenandoahControlThread::print() const {

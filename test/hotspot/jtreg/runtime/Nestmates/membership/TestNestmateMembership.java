@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -697,8 +697,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "class TestNestmateMembership$CallerNoHost tried to access " +
-            "private method 'void TestNestmateMembership$Target.m()'";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "method 'void TestNestmateMembership$Target.m()'";
         try {
             CallerNoHost.invokeTarget();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -720,19 +720,21 @@ public class TestNestmateMembership {
     static void test_SelfHostInvoke() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
         String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member)";
         try {
             Caller.invokeTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetSelfHost with modifiers \"private static\"";
         try {
             Caller.invokeTargetSelfHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
         msg = "no such method: TestNestmateMembership$TargetSelfHost.m()void/invokeStatic";
@@ -745,43 +747,42 @@ public class TestNestmateMembership {
         }
 
         msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.invokeTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.invokeTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
 
     static void test_MissingHostInvoke() throws Throwable {
         System.out.println("Testing for nest-host class that does not exist");
-        String msg = "Unable to load nest-host class (NoTargetMissingHost) of " +
-            "TestNestmateMembership$TargetMissingHost";
-        String cause_msg = "NoTargetMissingHost";
+        String msg = "Nest host resolution of TestNestmateMembership$TargetMissingHost with host" +
+            " NoTargetMissingHost failed: java.lang.NoClassDefFoundError: NoTargetMissingHost";
         try {
             Caller.invokeTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class" +
+            " TestNestmateMembership$TargetMissingHost with modifiers \"private static\"";
         try {
             Caller.invokeTargetMissingHostReflectively();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessException expected) {
+            check_expected(expected, msg);
         }
         msg = "no such method: TestNestmateMembership$TargetMissingHost.m()void/invokeStatic";
         try {
@@ -800,44 +801,42 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of " +
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
+        msg = "Nest host resolution of TestNestmateMembership$CallerMissingHost with host" +
+            " NoCallerMissingHost failed: java.lang.NoClassDefFoundError: NoCallerMissingHost";
         try {
             CallerMissingHost.invokeTarget();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of "+
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
         try {
             CallerMissingHost.invokeTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
     }
 
     static void test_NotInstanceHostInvoke() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
         String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             Caller.invokeTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class "+
+            "TestNestmateMembership$TargetNotInstanceHost with modifiers \"private static\"";
         try {
             Caller.invokeTargetNotInstanceHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
         msg = "no such method: TestNestmateMembership$TargetNotInstanceHost.m()void/invokeStatic";
@@ -849,42 +848,42 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a " +
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             CallerNotInstanceHost.invokeTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.invokeTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
 
     static void test_NotOurHostInvoke() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
-        String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+        String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a " +
+            "nest member of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.invokeTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotOurHost with modifiers \"private static\"";
         try {
             Caller.invokeTargetNotOurHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
         msg = "no such method: TestNestmateMembership$TargetNotOurHost.m()void/invokeStatic";
@@ -897,21 +896,19 @@ public class TestNestmateMembership {
         }
 
         msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.invokeTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.invokeTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -919,19 +916,19 @@ public class TestNestmateMembership {
     static void test_WrongPackageHostInvoke() {
         System.out.println("Testing for nest-host and nest-member in different packages");
         String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
-            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
+            "type P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doInvoke();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         try {
             P2.PackagedNestHost2.Member.doInvoke();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -953,9 +950,9 @@ public class TestNestmateMembership {
             "method 'void TestNestmateMembership$TargetNoHost.<init>()'";
         try {
             Caller.newTargetNoHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$Caller cannot access a member of class " +
@@ -980,18 +977,18 @@ public class TestNestmateMembership {
             "method 'void TestNestmateMembership$Target.<init>()'";
         try {
             CallerNoHost.newTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
             "method 'void TestNestmateMembership$TargetNoHost.<init>()'";
         try {
             CallerNoHost.newTargetNoHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -999,19 +996,21 @@ public class TestNestmateMembership {
     static void test_SelfHostConstruct() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
         String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.newTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetSelfHost with modifiers \"private\"";
         try {
             Caller.newTargetSelfHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
         msg = "no such constructor: TestNestmateMembership$TargetSelfHost.<init>()void/newInvokeSpecial";
@@ -1024,43 +1023,42 @@ public class TestNestmateMembership {
         }
 
         msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.newTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.newTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
 
     static void test_MissingHostConstruct() throws Throwable {
         System.out.println("Testing for nest-host class that does not exist");
-        String msg = "Unable to load nest-host class (NoTargetMissingHost) of " +
-            "TestNestmateMembership$TargetMissingHost";
-        String cause_msg = "NoTargetMissingHost";
+        String msg = "Nest host resolution of TestNestmateMembership$TargetMissingHost with " +
+            "host NoTargetMissingHost failed: java.lang.NoClassDefFoundError: NoTargetMissingHost";
         try {
             Caller.newTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetMissingHost with modifiers \"private\"";
         try {
             Caller.newTargetMissingHostReflectively();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessException expected) {
+            check_expected(expected, msg);
         }
         msg = "no such constructor: TestNestmateMembership$TargetMissingHost.<init>()void/newInvokeSpecial";
         try {
@@ -1071,44 +1069,42 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of " +
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
+        msg = "Nest host resolution of TestNestmateMembership$CallerMissingHost with host " +
+            "NoCallerMissingHost failed: java.lang.NoClassDefFoundError: NoCallerMissingHost";
         try {
             CallerMissingHost.newTarget();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of "+
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
         try {
             CallerMissingHost.newTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
     }
 
     static void test_NotInstanceHostConstruct() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
         String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             Caller.newTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotInstanceHost with modifiers \"private\"";
         try {
             Caller.newTargetNotInstanceHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
         msg = "no such constructor: TestNestmateMembership$TargetNotInstanceHost.<init>()void/newInvokeSpecial";
@@ -1121,21 +1117,19 @@ public class TestNestmateMembership {
         }
 
         msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             CallerNotInstanceHost.newTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.newTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1143,19 +1137,21 @@ public class TestNestmateMembership {
     static void test_NotOurHostConstruct() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
         String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.newTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotOurHost with modifiers \"private\"";
         try {
             Caller.newTargetNotOurHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
         msg = "no such constructor: TestNestmateMembership$TargetNotOurHost.<init>()void/newInvokeSpecial";
@@ -1168,21 +1164,21 @@ public class TestNestmateMembership {
         }
 
         msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.newTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.newTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1190,19 +1186,19 @@ public class TestNestmateMembership {
     static void test_WrongPackageHostConstruct() {
         System.out.println("Testing for nest-host and nest-member in different packages");
         String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
-            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
+            "type P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doConstruct();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         try {
             P2.PackagedNestHost2.Member.doConstruct();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1224,9 +1220,9 @@ public class TestNestmateMembership {
             "field TestNestmateMembership$TargetNoHost.f";
         try {
             Caller.getFieldTargetNoHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$Caller cannot access a member of class " +
@@ -1251,18 +1247,18 @@ public class TestNestmateMembership {
             "field TestNestmateMembership$Target.f";
         try {
             CallerNoHost.getFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
             "field TestNestmateMembership$TargetNoHost.f";
         try {
             CallerNoHost.getFieldTargetNoHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1270,140 +1266,143 @@ public class TestNestmateMembership {
     static void test_SelfHostGetField() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
         String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.getFieldTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetSelfHost with modifiers \"private static\"";
         try {
             Caller.getFieldTargetSelfHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetSelfHost.f/int/getStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.getFieldTargetSelfHostMH();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
 
         msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.getFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.getFieldTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
 
     static void test_MissingHostGetField() throws Throwable {
         System.out.println("Testing for nest-host class that does not exist");
-        String msg = "Unable to load nest-host class (NoTargetMissingHost) of " +
-            "TestNestmateMembership$TargetMissingHost";
-        String cause_msg = "NoTargetMissingHost";
+        String msg = "Nest host resolution of TestNestmateMembership$TargetMissingHost with " +
+            "host NoTargetMissingHost failed: java.lang.NoClassDefFoundError: NoTargetMissingHost";
         try {
             Caller.getFieldTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetMissingHost with modifiers \"private static\"";
         try {
             Caller.getFieldTargetMissingHostReflectively();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessException expected) {
+            check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetMissingHost.f/int/getStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.getFieldTargetMissingHostMH();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessException expected) {
+            check_expected(expected, msg);
         }
 
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of " +
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
+        msg = "Nest host resolution of TestNestmateMembership$CallerMissingHost with " +
+            "host NoCallerMissingHost failed: java.lang.NoClassDefFoundError: NoCallerMissingHost";
         try {
             CallerMissingHost.getFieldTarget();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of "+
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
         try {
             CallerMissingHost.getFieldTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
     }
 
     static void test_NotInstanceHostGetField() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
         String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             Caller.getFieldTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotInstanceHost with modifiers \"private static\"";
         try {
             Caller.getFieldTargetNotInstanceHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetNotInstanceHost.f/int/getStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.getFieldTargetNotInstanceHostMH();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
 
         msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             CallerNotInstanceHost.getFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.getFieldTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1411,45 +1410,47 @@ public class TestNestmateMembership {
     static void test_NotOurHostGetField() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
         String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.getFieldTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotOurHost with modifiers \"private static\"";
         try {
             Caller.getFieldTargetNotOurHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetNotOurHost.f/int/getStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.getFieldTargetNotOurHostMH();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
 
         msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.getFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.getFieldTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1457,19 +1458,19 @@ public class TestNestmateMembership {
     static void test_WrongPackageHostGetField() {
         System.out.println("Testing for nest-host and nest-member in different packages");
         String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
-            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
+            "type P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doGetField();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         try {
             P2.PackagedNestHost2.Member.doGetField();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1489,9 +1490,9 @@ public class TestNestmateMembership {
             "field TestNestmateMembership$TargetNoHost.f";
         try {
             Caller.putFieldTargetNoHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$Caller cannot access a member of class " +
@@ -1516,18 +1517,18 @@ public class TestNestmateMembership {
             "field TestNestmateMembership$Target.f";
         try {
             CallerNoHost.putFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
             "field TestNestmateMembership$TargetNoHost.f";
         try {
             CallerNoHost.putFieldTargetNoHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1535,140 +1536,142 @@ public class TestNestmateMembership {
     static void test_SelfHostPutField() throws Throwable {
         System.out.println("Testing for class that lists itself as nest-host");
         String msg = "Type TestNestmateMembership$TargetSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$TargetSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.putFieldTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetSelfHost with modifiers \"private static\"";
         try {
             Caller.putFieldTargetSelfHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetSelfHost.f/int/putStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.putFieldTargetSelfHostMH();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
 
         msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
+            " of type TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.putFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerSelfHost (loader: 'app') is not a nest member" +
-            " of TestNestmateMembership$CallerSelfHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerSelfHost.putFieldTargetSelfHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
 
     static void test_MissingHostPutField() throws Throwable {
         System.out.println("Testing for nest-host class that does not exist");
-        String msg = "Unable to load nest-host class (NoTargetMissingHost) of " +
-            "TestNestmateMembership$TargetMissingHost";
-        String cause_msg = "NoTargetMissingHost";
+        String msg = "Nest host resolution of TestNestmateMembership$TargetMissingHost with " +
+            "host NoTargetMissingHost failed: java.lang.NoClassDefFoundError: NoTargetMissingHost";
         try {
             Caller.putFieldTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetMissingHost with modifiers \"private static\"";
         try {
             Caller.putFieldTargetMissingHostReflectively();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessException expected) {
+            check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetMissingHost.f/int/putStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.putFieldTargetMissingHostMH();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessException expected) {
+            check_expected(expected, msg);
         }
-
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of " +
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
+        msg = "Nest host resolution of TestNestmateMembership$CallerMissingHost with host " +
+            "NoCallerMissingHost failed: java.lang.NoClassDefFoundError: NoCallerMissingHost";
         try {
             CallerMissingHost.putFieldTarget();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
-        msg = "Unable to load nest-host class (NoCallerMissingHost) of "+
-            "TestNestmateMembership$CallerMissingHost";
-        cause_msg = "NoCallerMissingHost";
         try {
             CallerMissingHost.putFieldTargetMissingHost();
-            throw new Error("Missing NoClassDefFoundError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (NoClassDefFoundError expected) {
-            check_expected(expected, msg, cause_msg);
+        catch (IllegalAccessError expected) {
+            check_expected(expected, msg);
         }
     }
 
     static void test_NotInstanceHostPutField() throws Throwable {
         System.out.println("Testing for nest-host class that is not an instance class");
         String msg = "Type TestNestmateMembership$TargetNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             Caller.putFieldTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotInstanceHost with modifiers \"private static\"";
         try {
             Caller.putFieldTargetNotInstanceHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetNotInstanceHost.f/int/putStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.putFieldTargetNotInstanceHostMH();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
 
         msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
+            "nest member of type [LInvalidNestHost; (loader: 'app'): host is not an instance class";
         try {
             CallerNotInstanceHost.putFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotInstanceHost (loader: 'app') is not a "+
-            "nest member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotInstanceHost.putFieldTargetNotInstanceHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1676,45 +1679,46 @@ public class TestNestmateMembership {
     static void test_NotOurHostPutField() throws Throwable {
         System.out.println("Testing for nest-host class that does not list us in its nest");
         String msg = "Type TestNestmateMembership$TargetNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             Caller.putFieldTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
+        msg = "class TestNestmateMembership$Caller cannot access a member of class " +
+            "TestNestmateMembership$TargetNotOurHost with modifiers \"private static\"";
         try {
             Caller.putFieldTargetNotOurHostReflectively();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
+        msg = "member is private: TestNestmateMembership$TargetNotOurHost.f/int/putStatic, " +
+            "from class TestNestmateMembership$Caller";
         try {
             Caller.putFieldTargetNotOurHostMH();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessException: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessException expected) {
             check_expected(expected, msg);
         }
-
         msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
+            " of type InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.putFieldTarget();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "Type TestNestmateMembership$CallerNotOurHost (loader: 'app') is not a nest member" +
-            " of InvalidNestHost (loader: 'app'): current type is not listed as a nest member";
         try {
             CallerNotOurHost.putFieldTargetNotOurHost();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1722,19 +1726,19 @@ public class TestNestmateMembership {
     static void test_WrongPackageHostPutField() {
         System.out.println("Testing for nest-host and nest-member in different packages");
         String msg = "Type P2.PackagedNestHost2$Member (loader: 'app') is not a nest member of " +
-            "P1.PackagedNestHost (loader: 'app'): types are in different packages";
+            "type P1.PackagedNestHost (loader: 'app'): types are in different packages";
         try {
             P1.PackagedNestHost.doPutField();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
         try {
             P2.PackagedNestHost2.Member.doPutField();
-            throw new Error("Missing IncompatibleClassChangeError: " + msg);
+            throw new Error("Missing IllegalAccessError: " + msg);
         }
-        catch (IncompatibleClassChangeError expected) {
+        catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
     }
@@ -1745,31 +1749,8 @@ public class TestNestmateMembership {
         if (!expected.getMessage().contains(msg)) {
             throw new Error("Wrong " + expected.getClass().getSimpleName() +": \"" +
                             expected.getMessage() + "\" does not contain \"" +
-                            msg + "\"");
+                            msg + "\"", expected);
         }
         System.out.println("OK - got expected exception: " + expected);
     }
-
-    static void check_expected(Throwable expected, String msg, String cause_msg) {
-        if (!expected.getMessage().contains(msg)) {
-            throw new Error("Wrong " + expected.getClass().getSimpleName() +": \"" +
-                            expected.getMessage() + "\" does not contain \"" +
-                            msg + "\"");
-        }
-        Throwable cause = expected.getCause();
-        if (cause instanceof NoClassDefFoundError) {
-            if (!cause.getMessage().contains(cause_msg)) {
-                throw new Error(expected.getClass().getSimpleName() +
-                                " has wrong cause " + cause.getClass().getSimpleName() +": \"" +
-                                cause.getMessage() + "\" does not contain \"" +
-                                cause_msg + "\"");
-            }
-        }
-        else throw new Error(expected.getClass().getSimpleName() +
-                             " has wrong cause " + cause.getClass().getSimpleName());
-
-        System.out.println("OK - got expected exception: " + expected +
-                           " with cause " + cause);
-    }
-
 }

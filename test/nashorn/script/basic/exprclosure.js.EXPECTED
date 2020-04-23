@@ -1,4 +1,0 @@
-function(x) x*x
-625
-function fun(x) x * (x + 1) / 2
-55

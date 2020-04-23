@@ -32,11 +32,6 @@
 #import "CoreTextSupport.h"
 #include "fontscalerdefs.h"
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 @implementation AWTStrike
 
 static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
@@ -107,7 +102,7 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
 #define AWT_FONT_CLEANUP_FINISH                                         \
     if (_fontThrowJavaException == YES) {                               \
         char s[512];                                                    \
-        sprintf(s, "%s-%s:%d", THIS_FILE, __FUNCTION__, __LINE__);       \
+        sprintf(s, "%s-%s:%d", __FILE__, __FUNCTION__, __LINE__);       \
         [JNFException raise:env as:kRuntimeException reason:s];         \
     }
 

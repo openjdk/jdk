@@ -1,7 +1,0 @@
-escape is function with arity 1
-unescape is function with arity 1
-This%20is%20great%21
-What%20is%20going%20on%20here%3F%3F
-%uFFFF%uFFFE%u1FFF
-This is great!
-What is going on here??

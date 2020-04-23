@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
      * @param ruleFile       the name of the rule data file
      * @param ruleData       the rule data loaded from the rule data file
      * @param dictionaryFile the name of the dictionary file
-     * @param dictionartData the dictionary data loaded from the dictionary file
+     * @param dictionaryData the dictionary data loaded from the dictionary file
      * @throws MissingResourceException if rule data or dictionary initialization failed
      */
     public DictionaryBasedBreakIterator(String ruleFile, byte[] ruleData,

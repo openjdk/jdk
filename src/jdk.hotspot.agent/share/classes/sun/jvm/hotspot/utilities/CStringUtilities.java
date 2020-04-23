@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,13 @@ public class CStringUtilities {
       return null;
     }
 
-    List data = new ArrayList();
+    List<Byte> data = new ArrayList<>();
     byte val = 0;
     long i = 0;
     do {
       val = (byte) addr.getCIntegerAt(i, 1, false);
       if (val != 0) {
-        data.add(new Byte(val));
+        data.add(val);
       }
       ++i;
     } while (val != 0);
@@ -73,7 +73,7 @@ public class CStringUtilities {
     // Convert to byte[] and from there to String
     byte[] bytes = new byte[data.size()];
     for (i = 0; i < data.size(); ++i) {
-      bytes[(int) i] = ((Byte) data.get((int) i)).byteValue();
+      bytes[(int) i] = data.get((int) i).byteValue();
     }
     // FIXME: When we switch to use JDK 6 to build SA,
     // we can change the following to just return:

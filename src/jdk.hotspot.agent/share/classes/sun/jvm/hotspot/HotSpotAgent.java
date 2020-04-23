@@ -483,7 +483,7 @@ public class HotSpotAgent {
     private void setupDebuggerAlternate(String alternateName) {
 
         try {
-            Class c = Class.forName(alternateName);
+            Class<?> c = Class.forName(alternateName);
             Constructor cons = c.getConstructor();
             debugger = (JVMDebugger) cons.newInstance();
             attachDebugger();
@@ -626,7 +626,7 @@ public class HotSpotAgent {
           try {
             machDesc = (MachineDescription)
               Class.forName("sun.jvm.hotspot.debugger.MachineDescription" +
-                            cpu.toUpperCase()).newInstance();
+                            cpu.toUpperCase()).getDeclaredConstructor().newInstance();
           } catch (Exception e) {
             throw new DebuggerException("Linux not supported on machine type " + cpu);
           }

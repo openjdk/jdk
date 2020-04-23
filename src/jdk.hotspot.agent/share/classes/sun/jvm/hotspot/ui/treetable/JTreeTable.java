@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,14 +440,14 @@ public class JTreeTable extends JTable {
                 // selection remaining the same. To avoid this, we
                 // only dispatch when the modifiers are 0 (or the left mouse
                 // button).
-                if (me.getModifiers() == 0 ||
-                    me.getModifiers() == InputEvent.BUTTON1_MASK) {
+                if (me.getModifiersEx() == 0 ||
+                    me.getModifiersEx() == InputEvent.BUTTON1_DOWN_MASK) {
                     for (int counter = getColumnCount() - 1; counter >= 0;
                          counter--) {
                         if (getColumnClass(counter) == TreeTableModel.class) {
                             MouseEvent newME = new MouseEvent
                                   (JTreeTable.this.tree, me.getID(),
-                                   me.getWhen(), me.getModifiers(),
+                                   me.getWhen(), me.getModifiersEx(),
                                    me.getX() - getCellRect(0, counter, true).x,
                                    me.getY(), me.getClickCount(),
                                    me.isPopupTrigger());

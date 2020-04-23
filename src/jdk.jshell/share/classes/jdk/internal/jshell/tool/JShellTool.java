@@ -230,15 +230,17 @@ public class JShellTool implements MessageHandler {
 
     static final String STARTUP_KEY  = "STARTUP";
     static final String EDITOR_KEY   = "EDITOR";
-    static final String FEEDBACK_KEY = "FEEDBACK";
     static final String MODE_KEY     = "MODE";
+    static final String FEEDBACK_KEY = "FEEDBACK";
     static final String REPLAY_RESTORE_KEY = "REPLAY_RESTORE";
+    public static final String INDENT_KEY   = "INDENT";
 
     static final Pattern BUILTIN_FILE_PATTERN = Pattern.compile("\\w+");
     static final String BUILTIN_FILE_PATH_FORMAT = "/jdk/jshell/tool/resources/%s.jsh";
     static final String INT_PREFIX = "int $$exit$$ = ";
 
     static final int OUTPUT_WIDTH = 72;
+    static final int DEFAULT_INDENT = 4;
 
     // match anything followed by whitespace
     private static final Pattern OPTION_PRE_PATTERN =
@@ -910,6 +912,12 @@ public class JShellTool implements MessageHandler {
         }
     }
 
+    private String indent() {
+        String indentValue = prefs.get(INDENT_KEY);
+        if (indentValue == null) indentValue = Integer.toString(DEFAULT_INDENT);
+        return indentValue;
+    }
+
     /**
      * The entry point into the JShell tool.
      *
@@ -968,6 +976,14 @@ public class JShellTool implements MessageHandler {
             Runtime.getRuntime().addShutdownHook(shutdownHook);
             // execute from user input
             try (IOContext in = new ConsoleIOContext(this, cmdin, console)) {
+                int indent;
+                try {
+                    String indentValue = indent();
+                    indent = Integer.parseInt(indentValue);
+                } catch (NumberFormatException ex) {
+                    indent = DEFAULT_INDENT;
+                }
+                in.setIndent(indent);
                 while (regenerateOnDeath) {
                     if (!live) {
                         resetState();
@@ -1830,7 +1846,8 @@ public class JShellTool implements MessageHandler {
                                 SET_MODE_OPTIONS_COMPLETION_PROVIDER)),
                         "prompt", feedback.modeCompletions(),
                         "editor", fileCompletions(Files::isExecutable),
-                        "start", FILE_COMPLETION_PROVIDER),
+                        "start", FILE_COMPLETION_PROVIDER,
+                        "indent", EMPTY_COMPLETION_PROVIDER),
                         STARTSWITH_MATCHER)));
         registerCommand(new Command("/?",
                 "help.quest",
@@ -1941,7 +1958,7 @@ public class JShellTool implements MessageHandler {
     // --- Command implementations ---
 
     private static final String[] SET_SUBCOMMANDS = new String[]{
-        "format", "truncation", "feedback", "mode", "prompt", "editor", "start"};
+        "format", "truncation", "feedback", "mode", "prompt", "editor", "start", "indent"};
 
     final boolean cmdSet(String arg) {
         String cmd = "/set";
@@ -1958,6 +1975,7 @@ public class JShellTool implements MessageHandler {
             case "_blank": {
                 // show top-level settings
                 new SetEditor().set();
+                showIndent();
                 showSetStart();
                 setFeedback(this, at); // no args so shows feedback setting
                 hardmsg("jshell.msg.set.show.mode.settings");
@@ -1978,6 +1996,23 @@ public class JShellTool implements MessageHandler {
                 return new SetEditor(at).set();
             case "start":
                 return setStart(at);
+            case "indent":
+                String value = at.next();
+                if (value != null) {
+                    try {
+                        int indent = Integer.parseInt(value);
+                        String indentValue = Integer.toString(indent);
+                        prefs.put(INDENT_KEY, indentValue);
+                        input.setIndent(indent);
+                        fluffmsg("jshell.msg.set.indent.set", indentValue);
+                    } catch (NumberFormatException ex) {
+                        errormsg("jshell.err.invalid.indent", value);
+                        return false;
+                    }
+                } else {
+                    showIndent();
+                }
+                return true;
             default:
                 errormsg("jshell.err.arg", cmd, at.val());
                 return false;
@@ -2250,6 +2285,10 @@ public class JShellTool implements MessageHandler {
             sb.append(startup.showDetail());
         }
         hard(sb.toString());
+    }
+
+    private void showIndent() {
+        hard("/set indent %s", indent());
     }
 
     boolean cmdDebug(String arg) {

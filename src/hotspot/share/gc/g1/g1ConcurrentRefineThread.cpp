@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -36,8 +37,7 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
   ConcurrentGCThread(),
   _vtime_start(0.0),
   _vtime_accum(0.0),
-  _total_refinement_time(),
-  _total_refined_cards(0),
+  _refinement_stats(new G1ConcurrentRefineStats()),
   _worker_id(worker_id),
   _notifier(new Semaphore(0)),
   _should_notify(true),
@@ -46,6 +46,11 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
   // set name
   set_name("G1 Refine#%d", worker_id);
   create_and_start();
+}
+
+G1ConcurrentRefineThread::~G1ConcurrentRefineThread() {
+  delete _refinement_stats;
+  delete _notifier;
 }
 
 void G1ConcurrentRefineThread::wait_for_completed_buffers() {
@@ -103,32 +108,35 @@ void G1ConcurrentRefineThread::run_service() {
                           _worker_id, _cr->activation_threshold(_worker_id),
                           G1BarrierSet::dirty_card_queue_set().num_cards());
 
-    size_t start_total_refined_cards = _total_refined_cards; // For logging.
+    // For logging.
+    G1ConcurrentRefineStats start_stats = *_refinement_stats;
+    G1ConcurrentRefineStats total_stats; // Accumulate over activation.
 
     {
       SuspendibleThreadSetJoiner sts_join;
 
       while (!should_terminate()) {
         if (sts_join.should_yield()) {
+          // Accumulate changed stats before possible GC that resets stats.
+          total_stats += *_refinement_stats - start_stats;
           sts_join.yield();
+          // Reinitialize baseline stats after safepoint.
+          start_stats = *_refinement_stats;
           continue;             // Re-check for termination after yield delay.
         }
 
-        Ticks start_time = Ticks::now();
-        bool more_work = _cr->do_refinement_step(_worker_id, &_total_refined_cards);
-        _total_refinement_time += (Ticks::now() - start_time);
-
+        bool more_work = _cr->do_refinement_step(_worker_id, _refinement_stats);
         if (maybe_deactivate(more_work)) break;
       }
     }
 
+    total_stats += *_refinement_stats - start_stats;
     log_debug(gc, refine)("Deactivated worker %d, off threshold: " SIZE_FORMAT
-                          ", current: " SIZE_FORMAT ", refined cards: "
-                          SIZE_FORMAT ", total refined cards: " SIZE_FORMAT,
+                          ", current: " SIZE_FORMAT
+                          ", refined cards: " SIZE_FORMAT,
                           _worker_id, _cr->deactivation_threshold(_worker_id),
                           G1BarrierSet::dirty_card_queue_set().num_cards(),
-                          _total_refined_cards - start_total_refined_cards,
-                          _total_refined_cards);
+                          total_stats.refined_cards());
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - _vtime_start);

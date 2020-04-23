@@ -82,6 +82,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, remset, tracking)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ref)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ref, start)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, refine, stats)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, reloc)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, symboltable)) \

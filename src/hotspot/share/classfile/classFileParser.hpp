@@ -37,6 +37,8 @@ template <typename T>
 class Array;
 class ClassFileStream;
 class ClassLoaderData;
+class ClassLoadInfo;
+class ClassInstanceInfo;
 class CompressedLineNumberWriteStream;
 class ConstMethod;
 class FieldInfo;
@@ -109,11 +111,12 @@ class ClassFileParser {
   typedef void unsafe_u2;
 
   const ClassFileStream* _stream; // Actual input stream
-  const Symbol* _requested_name;
   Symbol* _class_name;
   mutable ClassLoaderData* _loader_data;
   const InstanceKlass* _unsafe_anonymous_host;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
+  const bool _is_hidden;
+  const bool _can_access_vm_annotations;
   int _num_patched_klasses;
   int _max_num_patched_klasses;
   int _orig_cp_size;
@@ -201,6 +204,8 @@ class ClassFileParser {
 
   void parse_stream(const ClassFileStream* const stream, TRAPS);
 
+  void mangle_hidden_class_name(InstanceKlass* const ik);
+
   void post_process_parsed_stream(const ClassFileStream* const stream,
                                   ConstantPool* cp,
                                   TRAPS);
@@ -208,7 +213,9 @@ class ClassFileParser {
   void prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host, TRAPS);
   void fix_unsafe_anonymous_class_name(TRAPS);
 
-  void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH, TRAPS);
+  void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH,
+                           const ClassInstanceInfo& cl_inst_info, TRAPS);
+
   void set_klass(InstanceKlass* instance);
 
   void set_class_bad_constant_seen(short bad_constant);
@@ -527,21 +534,19 @@ class ClassFileParser {
                      FieldLayoutInfo* info,
                      TRAPS);
 
-   void update_class_name(Symbol* new_name);
+  void update_class_name(Symbol* new_name);
 
  public:
   ClassFileParser(ClassFileStream* stream,
                   Symbol* name,
                   ClassLoaderData* loader_data,
-                  Handle protection_domain,
-                  const InstanceKlass* unsafe_anonymous_host,
-                  GrowableArray<Handle>* cp_patches,
+                  const ClassLoadInfo* cl_info,
                   Publicity pub_level,
                   TRAPS);
 
   ~ClassFileParser();
 
-  InstanceKlass* create_instance_klass(bool cf_changed_in_CFLH, TRAPS);
+  InstanceKlass* create_instance_klass(bool cf_changed_in_CFLH, const ClassInstanceInfo& cl_inst_info, TRAPS);
 
   const ClassFileStream* clone_stream() const;
 
@@ -557,6 +562,7 @@ class ClassFileParser {
   u2 this_class_index() const { return _this_class_index; }
 
   bool is_unsafe_anonymous() const { return _unsafe_anonymous_host != NULL; }
+  bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
 
   const InstanceKlass* unsafe_anonymous_host() const { return _unsafe_anonymous_host; }

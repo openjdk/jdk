@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
                              jlong time_queued, jlong time_started) {
   if (!short_form) {
     // Print current time
-    st->print("%7d ", (int)st->time_stamp().milliseconds());
+    st->print("%7d ", (int)tty->time_stamp().milliseconds());
     if (Verbose && time_queued != 0) {
       // Print time in queue and time being processed by compiler thread
       jlong now = os::elapsed_counter();

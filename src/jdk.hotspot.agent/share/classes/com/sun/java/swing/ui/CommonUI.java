@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,30 +176,30 @@ public class CommonUI
         return createCheckBox(text, -1, null, false);
     }
 
-    public static JComboBox createComboBox(Object items[], ActionListener listener, boolean editable)
+    public static JComboBox<Object> createComboBox(Object items[], ActionListener listener, boolean editable)
     {
-        JComboBox comboBox = new JComboBox(items);
+        JComboBox<Object> comboBox = new JComboBox<>(items);
         if(listener != null)
             comboBox.addActionListener(listener);
         comboBox.setEditable(editable);
         return comboBox;
     }
 
-    public static JComboBox createComboBox(Object items[], boolean editable)
+    public static JComboBox<Object> createComboBox(Object items[], boolean editable)
     {
         return createComboBox(items, null, editable);
     }
 
-    public static JComboBox createComboBox(Vector items, ActionListener listener, boolean editable)
+    public static JComboBox<Object> createComboBox(Vector<Object> items, ActionListener listener, boolean editable)
     {
-        JComboBox comboBox = new JComboBox(items);
+        JComboBox<Object> comboBox = new JComboBox<>(items);
         if(listener != null)
             comboBox.addActionListener(listener);
         comboBox.setEditable(editable);
         return comboBox;
     }
 
-    public static JComboBox createComboBox(Vector items, boolean editable)
+    public static JComboBox<Object> createComboBox(Vector<Object> items, boolean editable)
     {
         return createComboBox(items, null, editable);
     }
@@ -311,14 +311,14 @@ public class CommonUI
     {
         int value = ms.intValue();
         value /= 1000;
-        return new Integer(value);
+        return value;
     }
 
     public static Integer secToMs(Integer sec)
     {
         int value = sec.intValue();
         value *= 1000;
-        return new Integer(value);
+        return value;
     }
 
     public static String stringFromStringArray(String strings[], String delim)

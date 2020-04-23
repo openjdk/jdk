@@ -62,12 +62,12 @@ public class PasteAndMeasurementsUITest extends UITesting {
             inputSink.write("void test1() {\nSystem.err.println(1);\n}\n" + //LOC +
                             "void test2() {\nSystem.err.println(1);\n}\n"/* + LOC + LOC + LOC + LOC + LOC*/);
             waitOutput(out,       "void test1\\(\\)\u001B\\[2D\u001B\\[2C \\{\n" +
-                            CONTINUATION_PROMPT + "System.err.println\\(1\\)\u001B\\[3D\u001B\\[3C;\n" +
-                            CONTINUATION_PROMPT + "\\}\u001B\\[2A\u001B\\[12C\n\n\u001B\\[C\n" +
+                            CONTINUATION_PROMPT + "    System.err.println\\(1\\)\u001B\\[3D\u001B\\[3C;\n" +
+                            CONTINUATION_PROMPT + "    \\}\u001B\\[2A\u001B\\[8C\n\n\u001B\\[K\\}\n" +
                             "\u001B\\[\\?2004l\\|  created method test1\\(\\)\n" +
                             "\u001B\\[\\?2004h" + PROMPT + "void test2\\(\\)\u001B\\[2D\u001B\\[2C \\{\n" +
-                            CONTINUATION_PROMPT + "System.err.println\\(1\\)\u001B\\[3D\u001B\\[3C;\n" +
-                            CONTINUATION_PROMPT + "\\}\u001B\\[2A\u001B\\[12C\n\n\u001B\\[C\n" +
+                            CONTINUATION_PROMPT + "    System.err.println\\(1\\)\u001B\\[3D\u001B\\[3C;\n" +
+                            CONTINUATION_PROMPT + "    \\}\u001B\\[2A\u001B\\[8C\n\n\u001B\\[K\\}\n" +
                             "\u001B\\[\\?2004l\\|  created method test2\\(\\)\n" +
                             "\u001B\\[\\?2004h" + PROMPT);
         });

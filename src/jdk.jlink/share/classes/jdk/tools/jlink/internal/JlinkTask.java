@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,6 @@ public class JlinkTask {
             // So, clear previous values, if any.
             task.options.modulePath.clear();
             String[] dirs = arg.split(File.pathSeparator);
-            int i = 0;
             Arrays.stream(dirs)
                   .map(Paths::get)
                   .forEach(task.options.modulePath::add);
@@ -731,36 +730,6 @@ public class JlinkTask {
             sb.append(c).append(" ");
         }
 
-        return sb.toString();
-    }
-
-    private static String getBomHeader() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("#").append(new Date()).append("\n");
-        sb.append("#Please DO NOT Modify this file").append("\n");
-        return sb.toString();
-    }
-
-    private String genBOMContent() throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getBomHeader());
-        StringBuilder command = new StringBuilder();
-        for (String c : optionsHelper.getInputCommand()) {
-            command.append(c).append(" ");
-        }
-        sb.append("command").append(" = ").append(command);
-        sb.append("\n");
-
-        return sb.toString();
-    }
-
-    private static String genBOMContent(JlinkConfiguration config,
-            PluginsConfiguration plugins)
-            throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getBomHeader());
-        sb.append(config);
-        sb.append(plugins);
         return sb.toString();
     }
 

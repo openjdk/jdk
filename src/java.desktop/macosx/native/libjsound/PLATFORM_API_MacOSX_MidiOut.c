@@ -26,11 +26,6 @@
 //#define USE_ERROR
 //#define USE_TRACE
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #if USE_PLATFORM_MIDI_OUT == TRUE
 
 #include "PLATFORM_API_MacOSX_MidiUtils.h"
@@ -133,7 +128,7 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg, UINT
                 case 0xF7:
                     // System exclusive
                     fprintf(stderr, "%s: %d->internal error: sysex message status=0x%X while sending short message\n",
-                            THIS_FILE, __LINE__, data[0]);
+                            __FILE__, __LINE__, data[0]);
                     byteIsInvalid = TRUE;
                     break;
 
@@ -159,7 +154,7 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg, UINT
                 default:
                     // Invalid message
                     fprintf(stderr, "%s: %d->Invalid message: message status=0x%X while sending short message\n",
-                            THIS_FILE, __LINE__, data[0]);
+                            __FILE__, __LINE__, data[0]);
                     byteIsInvalid = TRUE;
                     break;
             }
@@ -169,7 +164,7 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg, UINT
         default:
             // This can't happen, but handle it anyway.
             fprintf(stderr, "%s: %d->Invalid message: message status=0x%X while sending short message\n",
-                    THIS_FILE, __LINE__, data[0]);
+                    __FILE__, __LINE__, data[0]);
             byteIsInvalid = TRUE;
             break;
     }

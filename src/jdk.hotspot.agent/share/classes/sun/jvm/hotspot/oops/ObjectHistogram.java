@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@ import java.util.*;
 
 public class ObjectHistogram implements HeapVisitor {
 
-  public ObjectHistogram() { map = new HashMap(); }
+  public ObjectHistogram() { map = new HashMap<>(); }
 
-  private HashMap map;
+  private HashMap<Klass, ObjectHistogramElement> map;
 
   public void prologue(long size) {}
 
   public boolean doObj(Oop obj) {
     Klass klass = obj.getKlass();
     if (!map.containsKey(klass)) map.put(klass, new ObjectHistogramElement(klass));
-    ((ObjectHistogramElement) map.get(klass)).updateWith(obj);
+    map.get(klass).updateWith(obj);
         return false;
   }
 
@@ -46,13 +46,13 @@ public class ObjectHistogram implements HeapVisitor {
 
   /** Call this after the iteration is complete to obtain the
       ObjectHistogramElements in descending order of total heap size
-      consumed in the form of a List<ObjectHistogramElement>. */
-  public List getElements() {
-    List list = new ArrayList();
+      consumed. */
+  public List<ObjectHistogramElement> getElements() {
+    List<ObjectHistogramElement> list = new ArrayList<>();
     list.addAll(map.values());
-    Collections.sort(list, new Comparator() {
-      public int compare(Object o1, Object o2) {
-        return ((ObjectHistogramElement) o1).compare((ObjectHistogramElement) o2);
+    Collections.sort(list, new Comparator<>() {
+      public int compare(ObjectHistogramElement o1, ObjectHistogramElement o2) {
+        return o1.compare(o2);
       }
     });
     return list;
@@ -61,14 +61,14 @@ public class ObjectHistogram implements HeapVisitor {
   public void print() { printOn(System.out); }
 
   public void printOn(PrintStream tty) {
-    List list = getElements();
+    List<ObjectHistogramElement> list = getElements();
     ObjectHistogramElement.titleOn(tty);
-    Iterator iterator = list.listIterator();
+    Iterator<ObjectHistogramElement> iterator = list.listIterator();
     int num=0;
     int totalCount=0;
     int totalSize=0;
     while (iterator.hasNext()) {
-      ObjectHistogramElement el = (ObjectHistogramElement) iterator.next();
+      ObjectHistogramElement el = iterator.next();
       num++;
       totalCount+=el.getCount();
       totalSize+=el.getSize();

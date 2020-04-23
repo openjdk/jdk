@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -39,6 +40,18 @@ void ResolutionErrorTable::add_entry(int index, unsigned int hash,
   assert(!pool.is_null() && error != NULL, "adding NULL obj");
 
   ResolutionErrorEntry* entry = new_entry(hash, pool(), cp_index, error, message);
+  add_entry(index, entry);
+}
+
+// add new entry to the table
+void ResolutionErrorTable::add_entry(int index, unsigned int hash,
+                                     const constantPoolHandle& pool, int cp_index,
+                                     const char* message)
+{
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  assert(!pool.is_null() && message != NULL, "adding NULL obj");
+
+  ResolutionErrorEntry* entry = new_entry(hash, pool(), cp_index, message);
   add_entry(index, entry);
 }
 
@@ -59,9 +72,10 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(int index, unsigned int h
 }
 
 void ResolutionErrorEntry::set_error(Symbol* e) {
-  assert(e != NULL, "must set a value");
   _error = e;
-  _error->increment_refcount();
+  if (_error != NULL) {
+    _error->increment_refcount();
+  }
 }
 
 void ResolutionErrorEntry::set_message(Symbol* c) {
@@ -69,6 +83,10 @@ void ResolutionErrorEntry::set_message(Symbol* c) {
   if (_message != NULL) {
     _message->increment_refcount();
   }
+}
+
+void ResolutionErrorEntry::set_nest_host_error(const char* message) {
+  _nest_host_error = message;
 }
 
 // create new error entry
@@ -80,16 +98,34 @@ ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, ConstantPool* po
   entry->set_cp_index(cp_index);
   entry->set_error(error);
   entry->set_message(message);
+  entry->set_nest_host_error(NULL);
+
+  return entry;
+}
+
+// create new nest host error entry
+ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, ConstantPool* pool,
+                                                      int cp_index, const char* message)
+{
+  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<ConstantPool*, mtClass>::new_entry(hash, pool);
+  entry->set_cp_index(cp_index);
+  entry->set_nest_host_error(message);
+  entry->set_error(NULL);
+  entry->set_message(NULL);
 
   return entry;
 }
 
 void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
   // decrement error refcount
-  assert(entry->error() != NULL, "error should be set");
-  entry->error()->decrement_refcount();
+  if (entry->error() != NULL) {
+    entry->error()->decrement_refcount();
+  }
   if (entry->message() != NULL) {
     entry->message()->decrement_refcount();
+  }
+  if (entry->nest_host_error() != NULL) {
+    FREE_C_HEAP_ARRAY(char, entry->nest_host_error());
   }
   Hashtable<ConstantPool*, mtClass>::free_entry(entry);
 }

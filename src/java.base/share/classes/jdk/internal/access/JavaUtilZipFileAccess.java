@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,17 @@
 
 package jdk.internal.access;
 
-import java.io.IOException;
 import java.util.Enumeration;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 public interface JavaUtilZipFileAccess {
     public boolean startsWithLocHeader(ZipFile zip);
-    public String[] getMetaInfEntryNames(ZipFile zip);
+    public String[] getMetaInfEntryNames(JarFile zip);
+    public int[] getMetaInfVersions(JarFile zip);
     public JarEntry getEntry(ZipFile zip, String name, Function<String, JarEntry> func);
     public Enumeration<JarEntry> entries(ZipFile zip, Function<String, JarEntry> func);
     public Stream<JarEntry> stream(ZipFile zip, Function<String, JarEntry> func);

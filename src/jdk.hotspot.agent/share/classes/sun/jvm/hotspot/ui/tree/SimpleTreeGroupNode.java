@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ import java.util.*;
     of graph */
 
 public class SimpleTreeGroupNode implements SimpleTreeNode {
-  private List children;
+  private List<SimpleTreeNode> children;
 
   public SimpleTreeGroupNode() {
-    children = new ArrayList();
+    children = new ArrayList<>();
   }
 
   public int getChildCount() { return children.size(); }

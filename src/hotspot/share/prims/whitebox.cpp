@@ -94,7 +94,6 @@
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
-#include "gc/parallel/adjoiningGenerations.hpp"
 #endif // INCLUDE_PARALLELGC
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
@@ -607,7 +606,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
   if (UseParallelGC) {
-    return ParallelScavengeHeap::heap()->gens()->virtual_spaces()->alignment();
+    return GenAlignment;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSVirtualSpaceAlignment: Parallel GC is not enabled");
 WB_END
@@ -1716,52 +1715,19 @@ WB_END
 
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
                                 jstring version, jstring location, jobjectArray packages))
-  ResourceMark rm(THREAD);
-
-  objArrayOop packages_oop = objArrayOop(JNIHandles::resolve(packages));
-  objArrayHandle packages_h(THREAD, packages_oop);
-  int num_packages = (packages_h == NULL ? 0 : packages_h->length());
-
-  char** pkgs = NULL;
-  if (num_packages > 0) {
-    pkgs = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char*, num_packages);
-    for (int x = 0; x < num_packages; x++) {
-      oop pkg_str = packages_h->obj_at(x);
-      if (pkg_str == NULL || !pkg_str->is_a(SystemDictionary::String_klass())) {
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                  err_msg("Bad package name"));
-      }
-      pkgs[x] = java_lang_String::as_utf8_string(pkg_str);
-    }
-  }
-  Modules::define_module(module, is_open, version, location, (const char* const*)pkgs, num_packages, CHECK);
+  Modules::define_module(module, is_open, version, location, packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  Modules::add_module_exports_qualified(from_module, package_name, to_module, CHECK);
+  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  Modules::add_module_exports_to_all_unnamed(module, package_name, CHECK);
+  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  Modules::add_module_exports(module, package_name, NULL, CHECK);
+  Modules::add_module_exports(module, package, NULL, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))

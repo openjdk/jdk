@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
@@ -274,7 +275,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
   // O4_first_arg_addr is live!
 
-  if (TraceMethodHandles) {
+  if (log_is_enabled(Info, methodhandles)) {
     if (O0_mh != noreg)
       __ mov(O0_mh, G3_method_handle);  // make stub happy
     trace_method_handle_interpreter_entry(_masm, iid);
@@ -576,7 +577,7 @@ void trace_method_handle_stub(const char* adaptername,
 }
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
-  if (!TraceMethodHandles)  return;
+  if (!log_is_enabled(Info, methodhandles))  return;
   BLOCK_COMMENT("trace_method_handle {");
   // save: Gargs, O5_savedSP
   __ save_frame(16); // need space for saving required FPU state

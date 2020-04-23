@@ -525,6 +525,7 @@ public class Flow {
                     if (!l.head.hasTag(METHODDEF) &&
                         (TreeInfo.flags(l.head) & STATIC) != 0) {
                         scanDef(l.head);
+                        clearPendingExits(false);
                     }
                 }
 
@@ -533,6 +534,7 @@ public class Flow {
                     if (!l.head.hasTag(METHODDEF) &&
                         (TreeInfo.flags(l.head) & STATIC) == 0) {
                         scanDef(l.head);
+                        clearPendingExits(false);
                     }
                 }
 
@@ -565,16 +567,20 @@ public class Flow {
                 if (alive == Liveness.ALIVE && !tree.sym.type.getReturnType().hasTag(VOID))
                     log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
 
-                List<PendingExit> exits = pendingExits.toList();
-                pendingExits = new ListBuffer<>();
-                while (exits.nonEmpty()) {
-                    PendingExit exit = exits.head;
-                    exits = exits.tail;
-                    Assert.check(exit.tree.hasTag(RETURN) ||
-                                    log.hasErrorOn(exit.tree.pos()));
-                }
+                clearPendingExits(true);
             } finally {
                 lint = lintPrev;
+            }
+        }
+
+        private void clearPendingExits(boolean inMethod) {
+            List<PendingExit> exits = pendingExits.toList();
+            pendingExits = new ListBuffer<>();
+            while (exits.nonEmpty()) {
+                PendingExit exit = exits.head;
+                exits = exits.tail;
+                Assert.check((inMethod && exit.tree.hasTag(RETURN)) ||
+                                log.hasErrorOn(exit.tree.pos()));
             }
         }
 
@@ -932,20 +938,23 @@ public class Flow {
             for (PendingExit exit = pendingExits.next();
                  exit != null;
                  exit = pendingExits.next()) {
-                Assert.check(exit instanceof ThrownPendingExit);
-                ThrownPendingExit thrownExit = (ThrownPendingExit) exit;
-                if (classDef != null &&
-                    classDef.pos == exit.tree.pos) {
-                    log.error(exit.tree.pos(),
-                              Errors.UnreportedExceptionDefaultConstructor(thrownExit.thrown));
-                } else if (exit.tree.hasTag(VARDEF) &&
-                        ((JCVariableDecl)exit.tree).sym.isResourceVariable()) {
-                    log.error(exit.tree.pos(),
-                              Errors.UnreportedExceptionImplicitClose(thrownExit.thrown,
-                                                                      ((JCVariableDecl)exit.tree).sym.name));
+                if (exit instanceof ThrownPendingExit) {
+                    ThrownPendingExit thrownExit = (ThrownPendingExit) exit;
+                    if (classDef != null &&
+                        classDef.pos == exit.tree.pos) {
+                        log.error(exit.tree.pos(),
+                                  Errors.UnreportedExceptionDefaultConstructor(thrownExit.thrown));
+                    } else if (exit.tree.hasTag(VARDEF) &&
+                            ((JCVariableDecl)exit.tree).sym.isResourceVariable()) {
+                        log.error(exit.tree.pos(),
+                                  Errors.UnreportedExceptionImplicitClose(thrownExit.thrown,
+                                                                          ((JCVariableDecl)exit.tree).sym.name));
+                    } else {
+                        log.error(exit.tree.pos(),
+                                  Errors.UnreportedExceptionNeedToCatchOrThrow(thrownExit.thrown));
+                    }
                 } else {
-                    log.error(exit.tree.pos(),
-                              Errors.UnreportedExceptionNeedToCatchOrThrow(thrownExit.thrown));
+                    Assert.check(log.hasErrorOn(exit.tree.pos()));
                 }
             }
         }
@@ -1992,6 +2001,7 @@ public class Flow {
                         if (!l.head.hasTag(METHODDEF) &&
                             (TreeInfo.flags(l.head) & STATIC) != 0) {
                             scan(l.head);
+                            clearPendingExits(false);
                         }
                     }
 
@@ -2013,6 +2023,7 @@ public class Flow {
                         if (!l.head.hasTag(METHODDEF) &&
                             (TreeInfo.flags(l.head) & STATIC) == 0) {
                             scan(l.head);
+                            clearPendingExits(false);
                         }
                     }
 
@@ -2120,22 +2131,7 @@ public class Flow {
                             }
                         }
                     }
-                    List<PendingExit> exits = pendingExits.toList();
-                    pendingExits = new ListBuffer<>();
-                    while (exits.nonEmpty()) {
-                        PendingExit exit = exits.head;
-                        exits = exits.tail;
-                        Assert.check(exit.tree.hasTag(RETURN) ||
-                                         log.hasErrorOn(exit.tree.pos()),
-                                     exit.tree);
-                        if (isInitialConstructor) {
-                            Assert.check(exit instanceof AssignPendingExit);
-                            inits.assign(((AssignPendingExit) exit).exit_inits);
-                            for (int i = firstadr; i < nextadr; i++) {
-                                checkInit(exit.tree.pos(), vardecls[i].sym);
-                            }
-                        }
-                    }
+                    clearPendingExits(true);
                 } finally {
                     inits.assign(initsPrev);
                     uninits.assign(uninitsPrev);
@@ -2149,6 +2145,24 @@ public class Flow {
             }
         }
 
+        private void clearPendingExits(boolean inMethod) {
+            List<PendingExit> exits = pendingExits.toList();
+            pendingExits = new ListBuffer<>();
+            while (exits.nonEmpty()) {
+                PendingExit exit = exits.head;
+                exits = exits.tail;
+                Assert.check((inMethod && exit.tree.hasTag(RETURN)) ||
+                                 log.hasErrorOn(exit.tree.pos()),
+                             exit.tree);
+                if (inMethod && isInitialConstructor) {
+                    Assert.check(exit instanceof AssignPendingExit);
+                    inits.assign(((AssignPendingExit) exit).exit_inits);
+                    for (int i = firstadr; i < nextadr; i++) {
+                        checkInit(exit.tree.pos(), vardecls[i].sym);
+                    }
+                }
+            }
+        }
         protected void initParam(JCVariableDecl def) {
             inits.incl(def.sym.adr);
             uninits.excl(def.sym.adr);

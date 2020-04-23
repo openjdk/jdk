@@ -1,3 +1,0 @@
-test/nashorn/script/error/JDK-8008814-2.js:32:2 In strict mode, function declarations can only occur at program or function body level. You should use a function expression here instead.
-  function g() {
-  ^

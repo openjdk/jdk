@@ -82,11 +82,14 @@ public class Headers implements Map<String,List<String>> {
             char[] b = key.toCharArray();
             if (b[0] >= 'a' && b[0] <= 'z') {
                 b[0] = (char)(b[0] - ('a' - 'A'));
-            }
+            } else if (b[0] == '\r' || b[0] == '\n')
+                throw new IllegalArgumentException("illegal character in key");
+
             for (int i=1; i<len; i++) {
                 if (b[i] >= 'A' && b[i] <= 'Z') {
                     b[i] = (char) (b[i] + ('a' - 'A'));
-                }
+                } else if (b[i] == '\r' || b[i] == '\n')
+                    throw new IllegalArgumentException("illegal character in key");
             }
             return new String(b);
         }
@@ -128,6 +131,8 @@ public class Headers implements Map<String,List<String>> {
         }
 
         public List<String> put(String key, List<String> value) {
+            for (String v : value)
+                checkValue(v);
             return map.put (normalize(key), value);
         }
 
@@ -139,6 +144,7 @@ public class Headers implements Map<String,List<String>> {
          * @param value the header value to add to the header
          */
         public void add (String key, String value) {
+            checkValue(value);
             String k = normalize(key);
             List<String> l = map.get(k);
             if (l == null) {
@@ -146,6 +152,30 @@ public class Headers implements Map<String,List<String>> {
                 map.put(k,l);
             }
             l.add (value);
+        }
+
+        private static void checkValue(String value) {
+            int len = value.length();
+            for (int i=0; i<len; i++) {
+                char c = value.charAt(i);
+                if (c == '\r') {
+                    // is allowed if it is followed by \n and a whitespace char
+                    if (i >= len - 2) {
+                        throw new IllegalArgumentException("Illegal CR found in header");
+                    }
+                    char c1 = value.charAt(i+1);
+                    char c2 = value.charAt(i+2);
+                    if (c1 != '\n') {
+                        throw new IllegalArgumentException("Illegal char found after CR in header");
+                    }
+                    if (c2 != ' ' && c2 != '\t') {
+                        throw new IllegalArgumentException("No whitespace found after CRLF in header");
+                    }
+                    i+=2;
+                } else if (c == '\n') {
+                    throw new IllegalArgumentException("Illegal LF found in header");
+                }
+            }
         }
 
         /**

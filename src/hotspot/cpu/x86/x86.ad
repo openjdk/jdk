@@ -1490,7 +1490,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 // x86 supports generic vector operands: vec and legVec.
 const bool Matcher::supports_generic_vector_operands = true;
 
-MachOper* Matcher::specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
+MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);
   if (!VM_Version::supports_avx512vlbwdq() && // KNL
@@ -1628,11 +1628,6 @@ const uint Matcher::vector_ideal_reg(int size) {
   }
   ShouldNotReachHere();
   return 0;
-}
-
-// Only lowest bits of xmm reg are used for vector shift count.
-const uint Matcher::vector_shift_count_ideal_reg(int size) {
-  return Op_VecS;
 }
 
 // x86 supports misaligned vectors store/load.
@@ -5344,7 +5339,7 @@ instruct vpopcountI(vec dst, vec src) %{
 
 // --------------------------------- Bitwise Ternary Logic ----------------------------------
 
-instruct vpternlogdB(vec dst, vec src2, vec src3, immU8 func) %{
+instruct vpternlog(vec dst, vec src2, vec src3, immU8 func) %{
   match(Set dst (MacroLogicV (Binary dst src2) (Binary src3 func)));
   effect(TEMP dst);
   format %{ "vpternlogd $dst,$src2,$src3,$func\t! vector ternary logic" %}
@@ -5355,7 +5350,7 @@ instruct vpternlogdB(vec dst, vec src2, vec src3, immU8 func) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vpternlogdB_mem(vec dst, vec src2, memory src3, immU8 func) %{
+instruct vpternlog_mem(vec dst, vec src2, memory src3, immU8 func) %{
   match(Set dst (MacroLogicV (Binary dst src2) (Binary (LoadVector src3) func)));
   effect(TEMP dst);
   format %{ "vpternlogd $dst,$src2,$src3,$func\t! vector ternary logic" %}

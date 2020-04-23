@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class CompiledVFrame extends JavaVFrame {
   public StackValueCollection getLocals() {
     if (getScope() == null)
       return new StackValueCollection();
-    List scvList = getScope().getLocals();
+    List<ScopeValue> scvList = getScope().getLocals();
     if (scvList == null)
       return new StackValueCollection();
 
@@ -104,7 +104,7 @@ public class CompiledVFrame extends JavaVFrame {
     int length = scvList.size();
     StackValueCollection result = new StackValueCollection(length);
     for( int i = 0; i < length; i++ )
-      result.add( createStackValue((ScopeValue) scvList.get(i)) );
+      result.add( createStackValue(scvList.get(i)) );
 
     return result;
   }
@@ -112,7 +112,7 @@ public class CompiledVFrame extends JavaVFrame {
   public StackValueCollection getExpressions() {
     if (getScope() == null)
       return new StackValueCollection();
-    List scvList = getScope().getExpressions();
+    List<ScopeValue> scvList = getScope().getExpressions();
     if (scvList == null)
       return new StackValueCollection();
 
@@ -121,23 +121,22 @@ public class CompiledVFrame extends JavaVFrame {
     int length = scvList.size();
     StackValueCollection result = new StackValueCollection(length);
     for( int i = 0; i < length; i++ )
-      result.add( createStackValue((ScopeValue) scvList.get(i)) );
+      result.add( createStackValue(scvList.get(i)) );
 
     return result;
   }
 
-  /** Returns List<MonitorInfo> */
   public List<MonitorInfo> getMonitors() {
     if (getScope() == null) {
       return new ArrayList<>();
     }
-    List monitors = getScope().getMonitors();
+    List<MonitorValue> monitors = getScope().getMonitors();
     if (monitors == null) {
       return new ArrayList<>();
     }
     List<MonitorInfo> result = new ArrayList<>(monitors.size());
     for (int i = 0; i < monitors.size(); i++) {
-      MonitorValue mv = (MonitorValue) monitors.get(i);
+      MonitorValue mv = monitors.get(i);
       ScopeValue ov = mv.owner();
       StackValue ownerSV = createStackValue(ov); // it is an oop
       if (ov.isObject()) { // The owner object was scalar replaced

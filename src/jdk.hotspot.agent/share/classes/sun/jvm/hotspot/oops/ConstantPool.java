@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 // A ConstantPool is an oop containing class constants
 // as described in the class file
@@ -539,7 +541,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   public void writeBytes(OutputStream os) throws IOException {
           // Map between any modified UTF-8 and it's constant pool index.
-          Map utf8ToIndex = new HashMap();
+          Map<String, Short> utf8ToIndex = new HashMap<>();
       DataOutputStream dos = new DataOutputStream(os);
       U1Array tags = getTags();
       int len = (int)getLength();
@@ -551,7 +553,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
           int cpConstType = tags.at(ci);
           if(cpConstType == JVM_CONSTANT_Utf8) {
               Symbol sym = getSymbolAt(ci);
-              utf8ToIndex.put(sym.asString(), new Short((short) ci));
+              utf8ToIndex.put(sym.asString(), (short) ci);
           }
           else if(cpConstType == JVM_CONSTANT_Long ||
                   cpConstType == JVM_CONSTANT_Double) {

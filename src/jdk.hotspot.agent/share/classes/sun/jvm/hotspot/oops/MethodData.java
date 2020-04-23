@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 // A MethodData provides interpreter profiling information
 
@@ -521,10 +523,14 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
       ProfileData pdata = firstData();
       for ( ; isValid(pdata); pdata = nextData(pdata)) {
         if (pdata instanceof ReceiverTypeData) {
-          count = dumpReplayDataReceiverTypeHelper(out, round, count, (ReceiverTypeData<Klass,Method>)pdata);
+          @SuppressWarnings("unchecked")
+          ReceiverTypeData<Klass,Method> receiverTypeData = (ReceiverTypeData<Klass,Method>)pdata;
+          count = dumpReplayDataReceiverTypeHelper(out, round, count, receiverTypeData);
         }
         if (pdata instanceof CallTypeDataInterface) {
-          count = dumpReplayDataCallTypeHelper(out, round, count, (CallTypeDataInterface<Klass>)pdata);
+          @SuppressWarnings("unchecked")
+          CallTypeDataInterface<Klass> callTypeData = (CallTypeDataInterface<Klass>)pdata;
+          count = dumpReplayDataCallTypeHelper(out, round, count, callTypeData);
         }
       }
       if (parameters != null) {

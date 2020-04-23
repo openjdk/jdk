@@ -1,9 +1,0 @@
-SyntaxError: test/nashorn/script/basic/es6/const-redeclare-extra.js#36:8<eval>:3:8 Variable "x" has already been declared
-    var x = {};
-        ^
-SyntaxError: test/nashorn/script/basic/es6/const-redeclare-extra.js#36:8<eval>:3:10 Variable "x" has already been declared
-    const x = {};
-          ^
-SyntaxError: test/nashorn/script/basic/es6/const-redeclare-extra.js#36:8<eval>:3:10 Variable "x" has already been declared
-    const x = 5;
-          ^

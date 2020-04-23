@@ -35,7 +35,7 @@
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
-PSYoungGen::PSYoungGen(size_t initial_size, size_t min_size, size_t max_size) :
+PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, size_t max_size) :
   _reserved(),
   _virtual_space(NULL),
   _eden_space(NULL),
@@ -48,7 +48,9 @@ PSYoungGen::PSYoungGen(size_t initial_size, size_t min_size, size_t max_size) :
   _eden_counters(NULL),
   _from_counters(NULL),
   _to_counters(NULL)
-{}
+{
+  initialize(rs, GenAlignment);
+}
 
 void PSYoungGen::initialize_virtual_space(ReservedSpace rs, size_t alignment) {
   assert(_init_gen_size != 0, "Should have a finite size");
@@ -711,16 +713,6 @@ void PSYoungGen::print_on(outputStream* st) const {
   st->print("  to  "); to_space()->print_on(st);
 }
 
-size_t PSYoungGen::available_for_expansion() {
-  ShouldNotReachHere();
-  return 0;
-}
-
-size_t PSYoungGen::available_for_contraction() {
-  ShouldNotReachHere();
-  return 0;
-}
-
 size_t PSYoungGen::available_to_min_gen() {
   assert(virtual_space()->committed_size() >= min_gen_size(), "Invariant");
   return virtual_space()->committed_size() - min_gen_size();
@@ -771,10 +763,6 @@ size_t PSYoungGen::limit_gen_shrink(size_t bytes) {
   // to maintain the minimum young gen size
   bytes = MIN3(bytes, available_to_min_gen(), available_to_live());
   return align_down(bytes, virtual_space()->alignment());
-}
-
-void PSYoungGen::reset_after_change() {
-  ShouldNotReachHere();
 }
 
 void PSYoungGen::reset_survivors_after_shrink() {

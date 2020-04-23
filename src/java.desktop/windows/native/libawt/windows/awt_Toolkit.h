@@ -133,29 +133,24 @@ class CriticalSection {
 // Macros for using CriticalSection objects that help trace
 // lock/unlock actions
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #define CRITICAL_SECTION_ENTER(cs) { \
     J2dTraceLn4(J2D_TRACE_VERBOSE2, \
                 "CS.Wait:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), THIS_FILE, __LINE__); \
+                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
     (cs).Enter(); \
     J2dTraceLn4(J2D_TRACE_VERBOSE2, \
                 "CS.Enter: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), THIS_FILE, __LINE__); \
+                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
 }
 
 #define CRITICAL_SECTION_LEAVE(cs) { \
     J2dTraceLn4(J2D_TRACE_VERBOSE2, \
                 "CS.Leave: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), THIS_FILE, __LINE__); \
+                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
     (cs).Leave(); \
     J2dTraceLn4(J2D_TRACE_VERBOSE2, \
                 "CS.Left:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), THIS_FILE, __LINE__); \
+                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
 }
 
 // Redefine WinAPI values related to touch input, if OS < Windows 7.

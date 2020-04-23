@@ -55,7 +55,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         validateInstallDir(LINUX_INSTALL_DIR.fetchFrom(params));
 
-        validateFileAssociations(FILE_ASSOCIATIONS.fetchFrom(params));
+        FileAssociation.verify(FileAssociation.fetchFrom(params));
 
         // If package name has some restrictions, the string converter will
         // throw an exception if invalid
@@ -310,31 +310,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         if (!valid) {
             throw new ConfigException(MessageFormat.format(I18N.getString(
                     "error.invalid-install-dir"), installDir), null);
-        }
-    }
-
-    private static void validateFileAssociations(
-            List<Map<String, ? super Object>> associations) throws
-            ConfigException {
-        // only one mime type per association, at least one file extention
-        int assocIdx = 0;
-        for (var assoc : associations) {
-            ++assocIdx;
-            List<String> mimes = FA_CONTENT_TYPE.fetchFrom(assoc);
-            if (mimes == null || mimes.isEmpty()) {
-                String msgKey = "error.no-content-types-for-file-association";
-                throw new ConfigException(
-                        MessageFormat.format(I18N.getString(msgKey), assocIdx),
-                        I18N.getString(msgKey + ".advise"));
-
-            }
-
-            if (mimes.size() > 1) {
-                String msgKey = "error.too-many-content-types-for-file-association";
-                throw new ConfigException(
-                        MessageFormat.format(I18N.getString(msgKey), assocIdx),
-                        I18N.getString(msgKey + ".advise"));
-            }
         }
     }
 

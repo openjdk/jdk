@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8132497
+ * @bug 4313887 6838333 8132497 8242292
  * @summary Unit test for java.nio.file.FileSystem
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
@@ -91,6 +91,21 @@ public class Basic {
         }
     }
 
+    static void checkIAE() throws IOException {
+        URI absoluteUri = Path.of("foo.bar").toUri();
+        URI relativeUri = URI.create(absoluteUri.getSchemeSpecificPart());
+        System.out.println(relativeUri);
+        try {
+            FileSystem fs = FileSystems.getFileSystem(relativeUri);
+            throw new RuntimeException("IllegalArgumentException expected");
+        } catch (IllegalArgumentException iae) {
+            System.out.println("Expected IllegalArgumentException caught: "
+                + "\"" + iae.getMessage() + "\"");
+        } catch (Exception e) {
+            throw new RuntimeException("IllegalArgumentException expected", e);
+        }
+    }
+
     public static void main(String[] args)
         throws IOException, URISyntaxException {
         String os = System.getProperty("os.name");
@@ -121,6 +136,10 @@ public class Basic {
             checkSupported(fs, "posix", "unix", "owner");
         if (os.equals("Windows"))
             checkSupported(fs, "owner", "dos", "acl", "user");
+
+        // sanity check throwing of IllegalArgumentException by
+        // FileSystems.getFileSystem(URI) if the URI scheme is null
+        checkIAE();
 
         // sanity check non-throwing of UnsupportedOperationException by
         // FileSystems.newFileSystem(URI, ..)

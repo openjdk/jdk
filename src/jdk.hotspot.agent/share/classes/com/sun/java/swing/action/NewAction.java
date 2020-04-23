@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class NewAction extends DelegateAction
     public static final String VALUE_NAME = "New";
     public static final String VALUE_SMALL_ICON = "general/New16.gif";
     public static final String VALUE_LARGE_ICON = "general/New24.gif";
-    public static final Integer VALUE_MNEMONIC = new Integer(78);
+    public static final Integer VALUE_MNEMONIC = 78;
     public static final KeyStroke VALUE_ACCELERATOR = KeyStroke.getKeyStroke(78, 2);
     public static final String VALUE_SHORT_DESCRIPTION = "Create a new object.";
     public static final String VALUE_LONG_DESCRIPTION = "Create a new object.";

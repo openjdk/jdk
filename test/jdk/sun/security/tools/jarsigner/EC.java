@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class EC {
         gencert("x", "-alias ca -validity 300");
 
         js("a.jar a -debug -strict").shouldHaveExitValue(0);
-        js("a.jar b -debug -strict -sigalg SHA1withECDSA").shouldHaveExitValue(0);
+        js("a.jar b -debug -strict -sigalg SHA256withECDSA").shouldHaveExitValue(0);
         js("a.jar c -debug -strict -sigalg SHA512withECDSA").shouldHaveExitValue(0);
 
         js("-verify a.jar a -debug -strict").shouldHaveExitValue(0);

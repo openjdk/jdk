@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ public class BasicType implements Type {
   private boolean isOopType;
   // These are only the fields defined in this class, not any of this
   // class's superclasses.
-  private Map nameToFieldMap = new HashMap();
-  private List fieldList = new LinkedList();
+  private Map<String, Field> nameToFieldMap = new HashMap<>();
+  private List<Field> fieldList = new LinkedList<>();
   // Superclass, or null if none. Primitive types do not have any
   // inheritance relationship.
   private Type superclass;

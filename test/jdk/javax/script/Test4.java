@@ -25,7 +25,6 @@
  * @test
  * @bug 6249843 6705893
  * @summary Test script functions implementing Java interface
- * @modules jdk.scripting.nashorn
  */
 
 import java.io.File;

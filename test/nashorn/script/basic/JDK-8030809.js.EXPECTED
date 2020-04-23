@@ -1,4 +1,0 @@
-Error
-	at <anonymous> (test/nashorn/script/basic/JDK-8030809.js:33)
-	at func (test/nashorn/script/basic/JDK-8030809.js:32)
-	at <program> (test/nashorn/script/basic/JDK-8030809.js:38)

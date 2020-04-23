@@ -26,6 +26,7 @@ import java.util.List;
 
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.Executor.Result;
 
 public class SigningBase {
 
@@ -68,37 +69,43 @@ public class SigningBase {
         }
     }
 
-    private static List<String> spctlResult(Path target, String type) {
-        List<String> result = new Executor()
+    private static Result spctlResult(Path target, String type) {
+        Result result = new Executor()
                 .setExecutable("/usr/sbin/spctl")
                 .addArguments("-vvv", "--assess", "--type", type,
                         target.toString())
-                // on Catalina, the exit code can be 3, meaning not notarized
                 .saveOutput()
-                .executeWithoutExitCodeCheck()
-                .getOutput();
+                .executeWithoutExitCodeCheck();
 
+        // allow exit code 3 for not being notarized
+        if (result.getExitCode() != 3) {
+            result.assertExitCodeIsZero();
+        }
         return result;
     }
 
-    private static void verifySpctlResult(List<String> result, Path target, String type) {
-        result.stream().forEachOrdered(TKit::trace);
+    private static void verifySpctlResult(List<String> output, Path target,
+            String type, int exitCode) {
+        output.stream().forEachOrdered(TKit::trace);
         String lookupString;
-/* on Catalina, spctl may return 3 and say:
- *   target: rejected
- *   source=Unnotarized DEV_NAME
- * so we must skip these two checks
-        lookupString = target.toString() + ": accepted";
-        checkString(result, lookupString);
-        lookupString = "source=" + DEV_NAME;
-        checkString(result, lookupString);
- */
+
+        if (exitCode == 0) {
+            lookupString = target.toString() + ": accepted";
+            checkString(output, lookupString);
+            lookupString = "source=" + DEV_NAME;
+            checkString(output, lookupString);
+        } else if (exitCode == 3) {
+            // allow failure purely for not being notarized
+            lookupString = target.toString() + ": rejected";
+            checkString(output, lookupString);
+        }
+
         if (type.equals("install")) {
             lookupString = "origin=" + INSTALLER_CERT;
         } else {
             lookupString = "origin=" + APP_CERT;
         }
-        checkString(result, lookupString);
+        checkString(output, lookupString);
     }
 
     private static List<String> pkgutilResult(Path target) {
@@ -125,8 +132,10 @@ public class SigningBase {
     }
 
     public static void verifySpctl(Path target, String type) {
-        List<String> result = spctlResult(target, type);
-        verifySpctlResult(result, target, type);
+        Result result = spctlResult(target, type);
+        List<String> output = result.getOutput();
+
+        verifySpctlResult(output, target, type, result.getExitCode());
     }
 
     public static void verifyPkgutil(Path target) {

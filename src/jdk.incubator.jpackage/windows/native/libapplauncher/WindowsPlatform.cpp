@@ -404,12 +404,12 @@ WideString Platform::MultibyteStringToWideString(const char* value) {
         return result;
     }
 
-    count = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+    count = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                 value, -1, NULL, 0);
 
     if (count > 0) {
         result.data = new wchar_t[count];
-        result.length = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+        result.length = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                                             value, -1, result.data, (int)count);
         if (result.length == 0) {
             delete[] result.data;

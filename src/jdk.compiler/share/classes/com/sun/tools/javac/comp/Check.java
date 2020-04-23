@@ -2145,8 +2145,10 @@ public class Check {
                     .tsym.members().findFirst(names.equals);
             MethodSymbol hashCodeAtObject = (MethodSymbol)syms.objectType
                     .tsym.members().findFirst(names.hashCode);
-            boolean overridesEquals = types.implementation(equalsAtObject,
-                someClass, false, equalsHasCodeFilter).owner == someClass;
+            MethodSymbol equalsImpl = types.implementation(equalsAtObject,
+                    someClass, false, equalsHasCodeFilter);
+            boolean overridesEquals = equalsImpl != null &&
+                                      equalsImpl.owner == someClass;
             boolean overridesHashCode = types.implementation(hashCodeAtObject,
                 someClass, false, equalsHasCodeFilter) != hashCodeAtObject;
 

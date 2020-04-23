@@ -71,6 +71,7 @@ extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" f
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // queue shared by
                                                  // non-Java threads.
+extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
 extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools.

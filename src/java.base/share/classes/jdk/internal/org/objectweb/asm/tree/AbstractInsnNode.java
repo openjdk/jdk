@@ -270,7 +270,7 @@ public abstract class AbstractInsnNode {
       */
     protected final AbstractInsnNode cloneAnnotations(final AbstractInsnNode insnNode) {
         if (insnNode.visibleTypeAnnotations != null) {
-            this.visibleTypeAnnotations = new ArrayList<TypeAnnotationNode>();
+            this.visibleTypeAnnotations = new ArrayList<>();
             for (int i = 0, n = insnNode.visibleTypeAnnotations.size(); i < n; ++i) {
                 TypeAnnotationNode sourceAnnotation = insnNode.visibleTypeAnnotations.get(i);
                 TypeAnnotationNode cloneAnnotation =
@@ -281,7 +281,7 @@ public abstract class AbstractInsnNode {
             }
         }
         if (insnNode.invisibleTypeAnnotations != null) {
-            this.invisibleTypeAnnotations = new ArrayList<TypeAnnotationNode>();
+            this.invisibleTypeAnnotations = new ArrayList<>();
             for (int i = 0, n = insnNode.invisibleTypeAnnotations.size(); i < n; ++i) {
                 TypeAnnotationNode sourceAnnotation = insnNode.invisibleTypeAnnotations.get(i);
                 TypeAnnotationNode cloneAnnotation =

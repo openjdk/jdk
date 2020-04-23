@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,12 @@ public class Main {
     }
 
     public static class JlinkToolProvider implements ToolProvider {
+        @Override
         public String name() {
             return "jlink";
         }
 
+        @Override
         public int run(PrintWriter out, PrintWriter err, String... args) {
             return Main.run(out, err, args);
         }

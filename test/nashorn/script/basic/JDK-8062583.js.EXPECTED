@@ -1,8 +1,0 @@
-true
-false
-CustomError
-	at <program> (test/nashorn/script/basic/JDK-8062583.js:40)
-test/nashorn/script/basic/JDK-8062583.js:40:4 CustomError
-CustomError
-	at <program> (test/nashorn/script/basic/JDK-8062583.js:49)
-test/nashorn/script/basic/JDK-8062583.js:49 CustomError

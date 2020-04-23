@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,20 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 
 public class ConcurrentLocksPrinter {
-    private Map locksMap = new HashMap(); // <JavaThread, List<Oop>>
+    private Map<JavaThread, List<Oop>> locksMap = new HashMap<>();
 
     public ConcurrentLocksPrinter() {
         fillLocks();
     }
 
     public void print(JavaThread jthread, PrintStream tty) {
-        List locks = (List) locksMap.get(jthread);
+        List<Oop> locks = locksMap.get(jthread);
         tty.println("Locked ownable synchronizers:");
         if (locks == null || locks.isEmpty()) {
             tty.println("    - None");
         } else {
-            for (Iterator itr = locks.iterator(); itr.hasNext();) {
-                Oop oop = (Oop) itr.next();
+            for (Iterator<Oop> itr = locks.iterator(); itr.hasNext();) {
+                Oop oop = itr.next();
                 tty.println("    - <" + oop.getHandle() + ">, (a " +
                        oop.getKlass().getName().asString() + ")");
             }
@@ -71,9 +71,9 @@ public class ConcurrentLocksPrinter {
                     public boolean doObj(Oop oop) {
                         JavaThread thread = getOwnerThread(oop);
                         if (thread != null) {
-                            List locks = (List) locksMap.get(thread);
+                            List<Oop> locks = locksMap.get(thread);
                             if (locks == null) {
-                                locks = new LinkedList();
+                                locks = new LinkedList<>();
                                 locksMap.put(thread, locks);
                             }
                             locks.add(oop);

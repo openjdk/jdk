@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ public:
   void add_allocated()                  { _bits = ALLOCATED; }
   void set_union(const ArgumentMap &am)     { _bits |= am._bits; }
   void set_difference(const ArgumentMap &am) { _bits &=  ~am._bits; }
-  void operator=(const ArgumentMap &am) { _bits = am._bits; }
   bool operator==(const ArgumentMap &am) { return _bits == am._bits; }
   bool operator!=(const ArgumentMap &am) { return _bits != am._bits; }
 };

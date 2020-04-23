@@ -34,6 +34,7 @@ import sun.security.util.SignatureFileVerifier;
 import sun.security.x509.AlgorithmId;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URL;
@@ -841,14 +842,14 @@ public final class JarSigner {
         signer.update(content);
         byte[] signature = signer.sign();
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         ContentSigner signingMechanism = null;
         if (altSigner != null) {
             signingMechanism = loadSigningMechanism(altSigner,
                     altSignerPath);
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         ContentSignerParameters params =
                 new JarSignerParameters(null, tsaUrl, tSAPolicyID,
                         tSADigestAlg, signature,
@@ -1058,9 +1059,14 @@ public final class JarSigner {
      * Try to load the specified signing mechanism.
      * The URL class loader is used.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     private ContentSigner loadSigningMechanism(String signerClassName,
                                                String signerClassPath) {
+
+        // If there is no signerClassPath provided, search from here
+        if (signerClassPath == null) {
+            signerClassPath = ".";
+        }
 
         // construct class loader
         String cpString;   // make sure env.class.path defaults to dot
@@ -1077,10 +1083,11 @@ public final class JarSigner {
         try {
             // attempt to find signer
             Class<?> signerClass = appClassLoader.loadClass(signerClassName);
-            Object signer = signerClass.newInstance();
+            Object signer = signerClass.getDeclaredConstructor().newInstance();
             return (ContentSigner) signer;
         } catch (ClassNotFoundException|InstantiationException|
-                IllegalAccessException|ClassCastException e) {
+                IllegalAccessException|ClassCastException|
+                NoSuchMethodException| InvocationTargetException e) {
             throw new IllegalArgumentException(
                     "Invalid altSigner or altSignerPath", e);
         }
@@ -1174,7 +1181,7 @@ public final class JarSigner {
         }
 
         // Generates the PKCS#7 content of block file
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         public byte[] generateBlock(ContentSignerParameters params,
                                     boolean externalSF,
                                     ContentSigner signingMechanism)
@@ -1192,7 +1199,7 @@ public final class JarSigner {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     class JarSignerParameters implements ContentSignerParameters {
 
         private String[] args;

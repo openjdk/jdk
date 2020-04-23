@@ -182,9 +182,9 @@ public class CommandCompletionTest extends ReplToolTesting {
                 a -> assertCompletion(a, "/help /s|", false,
                 "/save ", "/set "),
                 a -> assertCompletion(a, "/help /set |", false,
-                "editor", "feedback", "format", "mode", "prompt", "start", "truncation"),
+                "editor", "feedback", "format", "indent", "mode", "prompt", "start", "truncation"),
                 a -> assertCompletion(a, "/help set |", false,
-                "editor", "feedback", "format", "mode", "prompt", "start", "truncation"),
+                "editor", "feedback", "format", "indent", "mode", "prompt", "start", "truncation"),
                 a -> assertCompletion(a, "/help /edit |", false),
                 a -> assertCompletion(a, "/help dr|", false,
                 "drop ")
@@ -354,7 +354,7 @@ public class CommandCompletionTest extends ReplToolTesting {
         String[] modesWithOptions = Stream.concat(Arrays.stream(options), Arrays.stream(modes)).sorted().toArray(String[]::new);
         test(false, new String[] {"--no-startup"},
                 a -> assertCompletion(a, "/se|", false, "/set "),
-                a -> assertCompletion(a, "/set |", false, "editor ", "feedback ", "format ", "mode ", "prompt ", "start ", "truncation "),
+                a -> assertCompletion(a, "/set |", false, "editor ", "feedback ", "format ", "indent ", "mode ", "prompt ", "start ", "truncation "),
 
                 // /set editor
                 a -> assertCompletion(a, "/set e|", false, "editor "),

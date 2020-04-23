@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import sun.jvm.hotspot.ui.action.*;
 
 import com.sun.java.swing.ui.*;
 import com.sun.java.swing.action.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
 
 /**
  * This panel contains a JTable which displays the list of Java
@@ -56,7 +58,7 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
     private JavaThreadsTableModel dataModel;
     private StatusBar statusBar;
     private JTable     threadTable;
-    private java.util.List<CachedThread> cachedThreads = new ArrayList();
+    private java.util.List<CachedThread> cachedThreads = new ArrayList<>();
     private static AddressField crashThread;
 
 
@@ -265,9 +267,9 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
     private class JavaThreadsTableModel extends AbstractTableModel {
         private String[] columnNames = { "OS Thread ID", "Java Thread Name" };
 
-        private java.util.List elements;
+        private java.util.List<CachedThread> elements;
 
-        public JavaThreadsTableModel(java.util.List threads) {
+        public JavaThreadsTableModel(java.util.List<CachedThread> threads) {
             this.elements = threads;
         }
 
@@ -303,16 +305,16 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
         }
 
         private CachedThread getRow(int row) {
-            return (CachedThread)elements.get(row);
+            return elements.get(row);
         }
 
         private String threadIDAt(int index) {
-            return ((CachedThread) cachedThreads.get(index)).getThreadID();
+            return cachedThreads.get(index).getThreadID();
         }
 
         private String threadNameAt(int index) {
             try {
-                return ((CachedThread) cachedThreads.get(index)).getThreadName();
+                return cachedThreads.get(index).getThreadName();
             } catch (AddressException e) {
                 return "<Error: AddressException>";
             } catch (NullPointerException e) {

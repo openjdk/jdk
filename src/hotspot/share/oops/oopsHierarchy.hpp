@@ -126,6 +126,7 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
    class type##Oop : public oop {                                          \
      public:                                                               \
        type##Oop() : oop() {}                                              \
+       type##Oop(const type##Oop& o) : oop(o) {}                           \
        type##Oop(const oop& o) : oop(o) {}                                 \
        type##Oop(const volatile oop& o) : oop(o) {}                        \
        type##Oop(const void* p) : oop(p) {}                                \

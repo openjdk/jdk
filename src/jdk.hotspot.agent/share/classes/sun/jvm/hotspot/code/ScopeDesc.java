@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public class ScopeDesc {
   private int     expressionsDecodeOffset;
   private int     monitorsDecodeOffset;
   /** Scalar replaced bjects pool */
-  private List    objects; // ArrayList<ScopeValue>
+  private List<ObjectValue> objects;
 
-  private ScopeDesc(NMethod code, int decodeOffset, List objects, boolean reexecute) {
+  private ScopeDesc(NMethod code, int decodeOffset, List<ObjectValue> objects, boolean reexecute) {
     this.code = code;
     this.decodeOffset = decodeOffset;
     this.objects      = objects;
@@ -93,22 +93,22 @@ public class ScopeDesc {
   public boolean getReexecute() { return reexecute;}
 
   /** Returns a List&lt;ScopeValue&gt; */
-  public List getLocals() {
+  public List<ScopeValue> getLocals() {
     return decodeScopeValues(localsDecodeOffset);
   }
 
   /** Returns a List&lt;ScopeValue&gt; */
-  public List getExpressions() {
+  public List<ScopeValue> getExpressions() {
     return decodeScopeValues(expressionsDecodeOffset);
   }
 
   /** Returns a List&lt;MonitorValue&gt; */
-  public List getMonitors() {
+  public List<MonitorValue> getMonitors() {
     return decodeMonitorValues(monitorsDecodeOffset);
   }
 
   /** Returns a List&lt;ObjectValue&gt; */
-  public List getObjects() {
+  public List<ObjectValue> getObjects() {
     return objects;
   }
 
@@ -166,13 +166,13 @@ public class ScopeDesc {
   }
 
   /** Returns a List&lt;ScopeValue&gt; or null if no values were present */
-  private List decodeScopeValues(int decodeOffset) {
+  private List<ScopeValue> decodeScopeValues(int decodeOffset) {
     if (decodeOffset == DebugInformationRecorder.SERIALIZED_NULL) {
       return null;
     }
     DebugInfoReadStream stream = streamAt(decodeOffset);
     int length = stream.readInt();
-    List res = new ArrayList(length);
+    List<ScopeValue> res = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
       res.add(ScopeValue.readFrom(stream));
     }
@@ -180,13 +180,13 @@ public class ScopeDesc {
   }
 
   /** Returns a List&lt;MonitorValue&gt; or null if no values were present */
-  private List decodeMonitorValues(int decodeOffset) {
+  private List<MonitorValue> decodeMonitorValues(int decodeOffset) {
     if (decodeOffset == DebugInformationRecorder.SERIALIZED_NULL) {
       return null;
     }
     DebugInfoReadStream stream = streamAt(decodeOffset);
     int length = stream.readInt();
-    List res = new ArrayList(length);
+    List<MonitorValue> res = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
       res.add(new MonitorValue(stream));
     }
@@ -194,11 +194,11 @@ public class ScopeDesc {
   }
 
   /** Returns a List&lt;ObjectValue&gt; or null if no values were present */
-  private List decodeObjectValues(int decodeOffset) {
+  private List<ObjectValue> decodeObjectValues(int decodeOffset) {
     if (decodeOffset == DebugInformationRecorder.SERIALIZED_NULL) {
       return null;
     }
-    List res = new ArrayList();
+    List<ObjectValue> res = new ArrayList<>();
     DebugInfoReadStream stream = new DebugInfoReadStream(code, decodeOffset, res);
     int length = stream.readInt();
     for (int i = 0; i < length; i++) {

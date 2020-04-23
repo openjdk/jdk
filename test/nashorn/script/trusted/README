@@ -1,4 +1,0 @@
-This directory contains tests that need AllPermission to run.
-
-Scripts that need to create classloaders, need to reflectively access
-declared members of other classes etc. should go here.

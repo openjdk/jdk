@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,10 @@ void G1RemSetSummary::update() {
       G1ConcurrentRefineThread* crt = static_cast<G1ConcurrentRefineThread*>(t);
       _summary->set_rs_thread_vtime(_counter, crt->vtime_accum());
       _counter++;
-      _summary->_total_concurrent_refined_cards += crt->total_refined_cards();
     }
   } collector(this);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   g1h->concurrent_refine()->threads_do(&collector);
-  _total_mutator_refined_cards = G1BarrierSet::dirty_card_queue_set().total_mutator_refined_cards();
   _num_coarsenings = HeapRegionRemSet::n_coarsenings();
 
   set_sampling_thread_vtime(g1h->sampling_thread()->vtime_accum());
@@ -71,8 +69,6 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
 }
 
 G1RemSetSummary::G1RemSetSummary(bool should_update) :
-  _total_mutator_refined_cards(0),
-  _total_concurrent_refined_cards(0),
   _num_coarsenings(0),
   _num_vtimes(G1ConcurrentRefine::max_num_threads()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
@@ -93,9 +89,6 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _total_mutator_refined_cards = other->total_mutator_refined_cards();
-  _total_concurrent_refined_cards = other->total_concurrent_refined_cards();
-
   _num_coarsenings = other->num_coarsenings();
 
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
@@ -106,9 +99,6 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
-
-  _total_mutator_refined_cards = other->total_mutator_refined_cards() - _total_mutator_refined_cards;
-  _total_concurrent_refined_cards = other->total_concurrent_refined_cards() - _total_concurrent_refined_cards;
 
   _num_coarsenings = other->num_coarsenings() - _num_coarsenings;
 
@@ -330,14 +320,6 @@ public:
 };
 
 void G1RemSetSummary::print_on(outputStream* out) {
-  out->print_cr(" Recent concurrent refinement statistics");
-  out->print_cr("  Of " SIZE_FORMAT " refined cards:", total_refined_cards());
-  out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) by concurrent refinement threads.",
-                total_concurrent_refined_cards(),
-                percent_of(total_concurrent_refined_cards(), total_refined_cards()));
-  out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) by mutator threads.",
-                total_mutator_refined_cards(),
-                percent_of(total_mutator_refined_cards(), total_refined_cards()));
   out->print_cr("  Did " SIZE_FORMAT " coarsenings.", num_coarsenings());
   out->print_cr("  Concurrent refinement threads times (s)");
   out->print("     ");

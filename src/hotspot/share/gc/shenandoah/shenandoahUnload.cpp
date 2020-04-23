@@ -79,7 +79,7 @@ class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
   virtual bool is_unloading(CompiledMethod* method) const {
     nmethod* const nm = method->as_nmethod();
-    assert(ShenandoahHeap::heap()->is_concurrent_root_in_progress(), "Only for this phase");
+    assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahReentrantLocker locker(data->lock());
     ShenandoahIsUnloadingOopClosure cl;
@@ -166,7 +166,7 @@ public:
 
 void ShenandoahUnload::unload() {
   assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Why we here?");
-  if (!ShenandoahHeap::heap()->is_concurrent_root_in_progress()) {
+  if (!ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
     return;
   }
 

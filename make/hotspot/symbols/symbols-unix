@@ -142,6 +142,7 @@ JVM_Interrupt
 JVM_InvokeMethod
 JVM_IsArrayClass
 JVM_IsConstructorIx
+JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPrimitiveClass
 JVM_IsRecord
@@ -151,6 +152,7 @@ JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadLibrary
+JVM_LookupDefineClass
 JVM_MaxMemory
 JVM_MaxObjectInspectionAge
 JVM_MonitorNotify

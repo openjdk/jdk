@@ -602,6 +602,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_isInterface:
   case vmIntrinsics::_isArray:
   case vmIntrinsics::_isPrimitive:
+  case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
   case vmIntrinsics::_getClassAccessFlags:
   case vmIntrinsics::_floatToRawIntBits:

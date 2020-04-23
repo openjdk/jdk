@@ -53,7 +53,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   PerfVariable* _avg_base_footprint;
   PerfVariable* _live_at_last_full_gc_counter;
   PerfVariable* _old_capacity;
-  PerfVariable* _boundary_moved;
 
   PerfVariable* _change_old_gen_for_min_pauses;
   PerfVariable* _change_young_gen_for_maj_pauses_counter;
@@ -84,9 +83,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   }
   inline void update_old_promo_size(size_t old_size) {
     _old_promo_size->set_value(old_size);
-  }
-  inline void update_boundary_moved(int size_in_bytes) {
-    _boundary_moved->set_value(size_in_bytes);
   }
   inline void update_avg_promoted_avg() {
     _avg_promoted_avg_counter->set_value(

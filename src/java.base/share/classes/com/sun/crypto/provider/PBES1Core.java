@@ -92,7 +92,7 @@ final class PBES1Core {
      * Sets the padding mechanism of this cipher. This algorithm only uses
      * PKCS #5 padding.
      *
-     * @param padding the padding mechanism
+     * @param paddingScheme the padding mechanism
      *
      * @exception NoSuchPaddingException if the requested padding mechanism
      * is invalid

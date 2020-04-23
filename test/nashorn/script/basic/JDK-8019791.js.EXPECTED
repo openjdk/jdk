@@ -1,6 +1,0 @@
-SyntaxError:33:Expected ; but found ~
-"" ~ ""
-   ^
-SyntaxError:41:Expected ) but found ~
-function() { if (1~0) return 0; return 1 }
-                  ^

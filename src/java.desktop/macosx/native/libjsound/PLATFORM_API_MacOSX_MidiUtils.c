@@ -42,11 +42,6 @@
 //#define USE_ERROR
 //#define USE_TRACE
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 #if (USE_PLATFORM_MIDI_IN == TRUE) || (USE_PLATFORM_MIDI_OUT == TRUE)
 
 #include "PLATFORM_API_MacOSX_MidiUtils.h"
@@ -322,7 +317,7 @@ static void processMessagesForPacket(const MIDIPacket* packet, MacMidiDeviceHand
                             packedMsg = pendingMessageStatus | pendingData[0] << 8;
                         } else {
                             fprintf(stderr, "%s: %d->internal error: pendingMessageStatus=0x%X, pendingDataLength=%d\n",
-                                    THIS_FILE, __LINE__, pendingMessageStatus, pendingDataLength);
+                                    __FILE__, __LINE__, pendingMessageStatus, pendingDataLength);
                             byteIsInvalid = TRUE;
                         }
                         pendingDataLength = 0;

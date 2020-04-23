@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
   }
 
   /** Unimplemented in this class (remote remoteDebugger should already be attached) */
-  public List getProcessList() throws DebuggerException {
+  public List<ProcessInfo> getProcessList() throws DebuggerException {
     throw new DebuggerException("Should not be called on RemoteDebuggerClient");
   }
 

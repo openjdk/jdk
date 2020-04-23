@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -59,7 +60,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
     cls = *cls_ptr;
   }
 
-  if (!cld->is_unsafe_anonymous()) {
+  if (!cld->has_class_mirror_holder()) {
     cls->_cld = cld;
   }
 
@@ -71,8 +72,20 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
 
   ClassStatsClosure csc;
   cld->classes_do(&csc);
-  if(cld->is_unsafe_anonymous()) {
-    cls->_anon_classes_count += csc._num_classes;
+  bool is_hidden = false;
+  if(cld->has_class_mirror_holder()) {
+    // if cld has a class holder then it must be either hidden or unsafe anonymous.
+    Klass* k = cld->klasses();
+    // if it's an array class then need to see if bottom class is hidden.
+    if (k->is_array_klass()) {
+      k = ObjArrayKlass::cast(k)->bottom_klass();
+    }
+    is_hidden = k->is_hidden();
+    if (is_hidden) {
+      cls->_hidden_classes_count += csc._num_classes;
+    } else {
+      cls->_anon_classes_count += csc._num_classes;
+    }
   } else {
     cls->_classes_count = csc._num_classes;
   }
@@ -80,9 +93,14 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
 
   ClassLoaderMetaspace* ms = cld->metaspace_or_null();
   if (ms != NULL) {
-    if(cld->is_unsafe_anonymous()) {
-      cls->_anon_chunk_sz += ms->allocated_chunks_bytes();
-      cls->_anon_block_sz += ms->allocated_blocks_bytes();
+    if(cld->has_class_mirror_holder()) {
+      if (is_hidden) {
+        cls->_hidden_chunk_sz += ms->allocated_chunks_bytes();
+        cls->_hidden_block_sz += ms->allocated_blocks_bytes();
+      } else {
+        cls->_anon_chunk_sz += ms->allocated_chunks_bytes();
+        cls->_anon_block_sz += ms->allocated_blocks_bytes();
+      }
     } else {
       cls->_chunk_sz = ms->allocated_chunks_bytes();
       cls->_block_sz = ms->allocated_blocks_bytes();
@@ -120,6 +138,12 @@ bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats* const& 
         "", "", "",
         cls->_anon_classes_count,
         cls->_anon_chunk_sz, cls->_anon_block_sz);
+  }
+  if (cls->_hidden_classes_count > 0) {
+    _out->print_cr(SPACE SPACE SPACE "                                    " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "   + hidden classes",
+        "", "", "",
+        cls->_hidden_classes_count,
+        cls->_hidden_chunk_sz, cls->_hidden_block_sz);
   }
   return true;
 }

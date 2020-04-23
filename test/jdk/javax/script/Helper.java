@@ -30,12 +30,6 @@ public class Helper {
     private Helper() {}; // Don't instantiate
 
     public static ScriptEngine getJsEngine(ScriptEngineManager m) {
-        ScriptEngine e  = m.getEngineByName("nashorn");
-        if (e == null &&
-            System.getProperty("java.runtime.name").startsWith("Java(TM)")) {
-            // A js engine is requied for Sun's product JDK
-            throw new RuntimeException("no js engine found");
-        }
-        return e;
+        return m.getEngineByName("nashorn");
     }
 }

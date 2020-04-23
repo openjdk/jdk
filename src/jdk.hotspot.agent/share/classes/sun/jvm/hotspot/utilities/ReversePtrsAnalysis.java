@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class ReversePtrsAnalysis {
     // Root of work list for objects to be visited.  A simple
     // stack for saving new objects to be analyzed.
 
-    final Stack workList = new Stack();
+    final Stack<Oop> workList = new Stack<>();
 
     // Next object to be visited.
     Oop next = obj;

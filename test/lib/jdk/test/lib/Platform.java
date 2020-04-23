@@ -325,19 +325,22 @@ public class Platform {
     }
 
     /**
+     * Returns absolute path to directory containing shared libraries in the tested JDK.
+     */
+    public static Path libDir() {
+        Path dir = Paths.get(testJdk);
+        if (Platform.isWindows()) {
+            return dir.resolve("bin").toAbsolutePath();
+        } else {
+            return dir.resolve("lib").toAbsolutePath();
+        }
+    }
+
+    /**
      * Returns absolute path to directory containing JVM shared library.
      */
     public static Path jvmLibDir() {
-        Path dir = Paths.get(testJdk);
-        if (Platform.isWindows()) {
-            return dir.resolve("bin")
-                .resolve(variant())
-                .toAbsolutePath();
-        } else {
-            return dir.resolve("lib")
-                .resolve(variant())
-                .toAbsolutePath();
-        }
+        return libDir().resolve(variant());
     }
 
     private static String variant() {

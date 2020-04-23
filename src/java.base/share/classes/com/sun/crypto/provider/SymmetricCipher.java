@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.InvalidKeyException;
 
 /**
  * This abstract class represents the core of all block ciphers. It allows to
- * intialize the cipher and encrypt/decrypt single blocks. Larger quantities
+ * initialize the cipher and encrypt/decrypt single blocks. Larger quantities
  * are handled by modes, which are subclasses of FeedbackCipher.
  *
  * @author Gigi Ankeny

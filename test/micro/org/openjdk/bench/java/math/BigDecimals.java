@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -142,7 +143,7 @@ public class BigDecimals {
     @OperationsPerInvocation(TEST_SIZE)
     public void testSetScale(Blackhole bh) {
         for (BigDecimal s : bigDecimals) {
-            bh.consume(s.setScale(2, BigDecimal.ROUND_HALF_UP));
+            bh.consume(s.setScale(2, RoundingMode.HALF_UP));
         }
     }
 
@@ -152,7 +153,7 @@ public class BigDecimals {
     public void testSetScaleVarious(Blackhole bh) {
         for (int scale = 0; scale < 50; scale++) {
             for (BigDecimal s : bigDecimals) {
-                bh.consume(s.setScale(scale, BigDecimal.ROUND_HALF_UP));
+                bh.consume(s.setScale(scale, RoundingMode.HALF_UP));
             }
         }
     }

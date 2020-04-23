@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,14 @@ import sun.jvm.hotspot.oops.*;
 
 public class FindObjectByType implements HeapVisitor {
   private Klass type;
-  private List results = new ArrayList();
+  private List<Oop> results = new ArrayList<>();
 
   public FindObjectByType(Klass type) {
     this.type = type;
   }
 
   /** Returns a List of Oops */
-  public List getResults() {
+  public List<Oop> getResults() {
     return results;
   }
 

@@ -214,7 +214,6 @@ jvmtiError
 JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject* module_ptr) {
   JavaThread* THREAD = JavaThread::current(); // pass to macros
   ResourceMark rm(THREAD);
-
   Handle h_loader (THREAD, JNIHandles::resolve(class_loader));
   // Check that loader is a subclass of java.lang.ClassLoader.
   if (h_loader.not_null() && !java_lang_ClassLoader::is_subclass(h_loader->klass())) {
@@ -1201,21 +1200,19 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
 jvmtiError
 JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count_ptr, jobject** owned_monitors_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  JavaThread* calling_thread = JavaThread::current();
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
 
   // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a vm-safepoint-op for safety.
-  if (java_thread == calling_thread) {
-    err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
+  // thread. All other usage needs to use a direct handshake for safety.
+  if (java_thread == JavaThread::current()) {
+    err = get_owned_monitors(java_thread, owned_monitors_list);
   } else {
-    // JVMTI get monitors info at safepoint. Do not require target thread to
-    // be suspended.
-    VM_GetOwnedMonitorInfo op(this, calling_thread, java_thread, owned_monitors_list);
-    VMThread::execute(&op);
+    // get owned monitors info with handshake
+    GetOwnedMonitorInfoClosure op(this, owned_monitors_list);
+    Handshake::execute_direct(&op, java_thread);
     err = op.result();
   }
   jint owned_monitor_count = owned_monitors_list->length();
@@ -1247,21 +1244,19 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
 jvmtiError
 JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_info_count_ptr, jvmtiMonitorStackDepthInfo** monitor_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  JavaThread* calling_thread  = JavaThread::current();
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
          new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
 
   // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a vm-safepoint-op for safety.
-  if (java_thread == calling_thread) {
-    err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
+  // thread. All other usage needs to use a direct handshake for safety.
+  if (java_thread == JavaThread::current()) {
+    err = get_owned_monitors(java_thread, owned_monitors_list);
   } else {
-    // JVMTI get owned monitors info at safepoint. Do not require target thread to
-    // be suspended.
-    VM_GetOwnedMonitorInfo op(this, calling_thread, java_thread, owned_monitors_list);
-    VMThread::execute(&op);
+    // get owned monitors info with handshake
+    GetOwnedMonitorInfoClosure op(this, owned_monitors_list);
+    Handshake::execute_direct(&op, java_thread);
     err = op.result();
   }
 
@@ -1296,16 +1291,15 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
 jvmtiError
 JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  JavaThread* calling_thread  = JavaThread::current();
 
   // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a vm-safepoint-op for safety.
-  if (java_thread == calling_thread) {
-    err = get_current_contended_monitor(calling_thread, java_thread, monitor_ptr);
+  // thread. All other usage needs to use a direct handshake for safety.
+  if (java_thread == JavaThread::current()) {
+    err = get_current_contended_monitor(java_thread, monitor_ptr);
   } else {
-    // get contended monitor information at safepoint.
-    VM_GetCurrentContendedMonitor op(this, calling_thread, java_thread, monitor_ptr);
-    VMThread::execute(&op);
+    // get contended monitor information with handshake
+    GetCurrentContendedMonitorClosure op(this, monitor_ptr);
+    Handshake::execute_direct(&op, java_thread);
     err = op.result();
   }
   return err;

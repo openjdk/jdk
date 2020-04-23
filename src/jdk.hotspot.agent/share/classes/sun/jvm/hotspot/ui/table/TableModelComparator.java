@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.swing.event.TableModelEvent;
 /**
  * A comparator which compares rows in a table model
  */
-public abstract class TableModelComparator implements Comparator {
+public abstract class TableModelComparator implements Comparator<Object> {
 
     private boolean ascending;
     protected TableModel model;
@@ -81,8 +81,10 @@ public abstract class TableModelComparator implements Comparator {
     public int compare(Object row1, Object row2) {
         for (int i = 0; i < columns.length; i++) {
 
-            Object o1 = getValueForColumn(row1, columns[i]);
-            Object o2 = getValueForColumn(row2, columns[i]);
+            @SuppressWarnings("unchecked")
+            Comparable<Object> o1 = (Comparable<Object>) getValueForColumn(row1, columns[i]);
+            @SuppressWarnings("unchecked")
+            Comparable<Object> o2 = (Comparable<Object>) getValueForColumn(row2, columns[i]);
 
             // If both values are null, return 0.
             if (o1 == null && o2 == null) {
@@ -93,19 +95,7 @@ public abstract class TableModelComparator implements Comparator {
                 return 1;
             }
 
-            int result = 0;
-
-            if (o1 instanceof Comparable) {
-                Comparable c1 = (Comparable)o1;
-                Comparable c2 = (Comparable)o2;
-
-                result = c1.compareTo(c2);
-            }
-
-            // XXX Should have some sort of provision for determininte
-            // if there is another way of comparing the objects.
-            // Perhaps we should add the requirement that all table
-            // values be Compabable.
+            int result = o1.compareTo(o2);
 
             if (result != 0) {
                 return ascending ? result : -result;
@@ -121,6 +111,6 @@ public abstract class TableModelComparator implements Comparator {
      * @param obj Row object that was passed into Comparator.
      * @param column the column to retrieve
      */
-    public abstract Object getValueForColumn(Object obj, int column);
+    public abstract Comparable<?> getValueForColumn(Object obj, int column);
 
 }

@@ -1231,10 +1231,14 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     public static class RootPackageSymbol extends PackageSymbol {
         public final MissingInfoHandler missingInfoHandler;
+        public final boolean allowPrivateInvokeVirtual;
 
-        public RootPackageSymbol(Name name, Symbol owner, MissingInfoHandler missingInfoHandler) {
+        public RootPackageSymbol(Name name, Symbol owner,
+                                 MissingInfoHandler missingInfoHandler,
+                                 boolean allowPrivateInvokeVirtual) {
             super(name, owner);
             this.missingInfoHandler = missingInfoHandler;
+            this.allowPrivateInvokeVirtual = allowPrivateInvokeVirtual;
         }
 
     }
@@ -2311,7 +2315,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 } else {
                     if (refSym.isStatic()) {
                         return ClassFile.REF_invokeStatic;
-                    } else if ((refSym.flags() & PRIVATE) != 0) {
+                    } else if ((refSym.flags() & PRIVATE) != 0 && !allowPrivateInvokeVirtual()) {
                         return ClassFile.REF_invokeSpecial;
                     } else if (refSym.enclClass().isInterface()) {
                         return ClassFile.REF_invokeInterface;
@@ -2322,6 +2326,13 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             }
         }
 
+        private boolean allowPrivateInvokeVirtual() {
+            Symbol rootPack = this;
+            while (rootPack != null && !(rootPack instanceof RootPackageSymbol)) {
+                rootPack = rootPack.owner;
+            }
+            return rootPack != null && ((RootPackageSymbol) rootPack).allowPrivateInvokeVirtual;
+        }
         @Override
         public int poolTag() {
             return ClassFile.CONSTANT_MethodHandle;

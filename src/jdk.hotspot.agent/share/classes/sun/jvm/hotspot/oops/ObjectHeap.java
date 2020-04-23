@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public class ObjectHeap {
       extremely low level (stepping word-by-word) to provide the
       ability to do very low-level debugging */
   public void iterateRaw(RawHeapVisitor visitor) {
-    List liveRegions = collectLiveRegions();
+    List<Address> liveRegions = collectLiveRegions();
 
     // Summarize size
     long totalSize = 0;
@@ -223,7 +223,7 @@ public class ObjectHeap {
         });
   }
 
-  private void iterateLiveRegions(List liveRegions, HeapVisitor visitor, ObjectFilter of) {
+  private void iterateLiveRegions(List<Address> liveRegions, HeapVisitor visitor, ObjectFilter of) {
     // Summarize size
     long totalSize = 0;
     for (int i = 0; i < liveRegions.size(); i += 2) {
@@ -244,13 +244,7 @@ public class ObjectHeap {
         while (handle.lessThan(top)) {
           Oop obj = null;
 
-          try {
-            obj = newOop(handle);
-          } catch (UnknownOopException exp) {
-            if (DEBUG) {
-              throw new RuntimeException(" UnknownOopException  " + exp);
-            }
-          }
+          obj = newOop(handle);
           if (obj == null) {
               throw new UnknownOopException();
           }
@@ -263,11 +257,7 @@ public class ObjectHeap {
 
           handle = handle.addOffsetToAsOopHandle(obj.getObjectSize());
         }
-      }
-      catch (AddressException e) {
-        // This is okay at the top of these regions
-          }
-      catch (UnknownOopException e) {
+      } catch (AddressException | UnknownOopException | WrongTypeException e) {
         // This is okay at the top of these regions
       }
     }

@@ -1465,8 +1465,6 @@ public:
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const;
-
-  size_t pending_card_num();
 };
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {

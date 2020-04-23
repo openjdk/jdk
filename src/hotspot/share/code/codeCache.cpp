@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1036,7 +1036,7 @@ bool CodeCache::is_far_target(address target) {
 #endif
 }
 
-#ifdef INCLUDE_JVMTI
+#if INCLUDE_JVMTI
 // RedefineClasses support for unloading nmethods that are dependent on "old" methods.
 // We don't really expect this table to grow very large.  If it does, it can become a hashtable.
 static GrowableArray<CompiledMethod*>* old_compiled_method_table = NULL;

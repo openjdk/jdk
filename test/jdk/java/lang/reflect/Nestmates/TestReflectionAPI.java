@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public class TestReflectionAPI {
                           HostWithDuplicateMembers.Member2.class },
                   true);
 
-        // Hosts with "bad" members
+        // Hosts with only "bad" members
         Class<?>[] bad = {
             HostOfMemberNoHost.class,
             HostOfMemberMissingHost.class,
@@ -184,44 +184,7 @@ public class TestReflectionAPI {
             HostOfMemberNotInstanceHost.class,
             HostOfMemberMalformedHost.class,
         };
-        Class<?>[] exceptions = {
-            IncompatibleClassChangeError.class,
-            NoClassDefFoundError.class,
-            IncompatibleClassChangeError.class,
-            IncompatibleClassChangeError.class,
-            ClassFormatError.class,
-        };
-        String[] messages = {
-            "Nest member HostOfMemberNoHost$MemberNoHost in HostOfMemberNoHost " +
-            "declares a different nest host of HostOfMemberNoHost$MemberNoHost",
-            "Unable to load nest-host class (NestHost) of " +
-            "HostOfMemberMissingHost$MemberMissingHost",
-            "Type HostOfMemberNotOurHost$MemberNotOurHost (loader: 'app') is not a nest member " +
-            "of InvalidNestHost (loader: 'app'): current type is not listed as a nest member",
-            "Type HostOfMemberNotInstanceHost$MemberNotInstanceHost (loader: 'app') is not a nest " +
-            "member of [LInvalidNestHost; (loader: 'app'): current type is not listed as a nest member",
-            "Incompatible magic value 3735928559 in class file MalformedHost",
-        };
-        for (int i = 0; i < bad.length; i++) {
-            try {
-                bad[i].getNestMembers();
-                throw new Error("getNestMembers() succeeded for class " +
-                               bad[i].getName());
-            } catch (LinkageError e) {
-                checkException(e, messages[i], exceptions[i]);
-            }
-        }
-    }
-
-    static void checkException(Throwable actual, String msg, Class<?> expected) {
-        if (!actual.getClass().equals(expected))
-            throw new Error("Unexpected exception: got " + actual.getClass().getName()
-                            + " but expected " + expected.getName());
-        if (!actual.getMessage().contains(msg))
-            throw new Error("Wrong " + actual.getClass().getSimpleName() +": \"" +
-                            actual.getMessage() + "\" does not contain \"" +
-                            msg + "\"");
-        System.out.println("OK - got expected exception: " + actual);
+        checkSingletonNests(bad);
     }
 
     static void checkHost(Class<?> target, Class<?> expected) {

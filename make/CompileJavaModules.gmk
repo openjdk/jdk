@@ -303,8 +303,8 @@ jdk.compiler_CLEAN_FILES += $(wildcard \
 
 ################################################################################
 
-jdk.hotspot.agent_DISABLED_WARNINGS += deprecation rawtypes serial unchecked \
-    cast static overrides fallthrough
+jdk.hotspot.agent_DISABLED_WARNINGS += rawtypes serial cast static overrides \
+    fallthrough
 jdk.hotspot.agent_COPY += .gif .png sa.js .properties
 
 ################################################################################
@@ -664,12 +664,6 @@ ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
   # Add this dependency to avoid a race between compiling module-info.java and
   # importing the classes.
   $($(MODULE)_COMPILE_TARGET): $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker
-endif
-
-################################################################################
-
-ifeq ($(MODULE), jdk.scripting.nashorn)
-  include CompileJavaModulesNashorn.gmk
 endif
 
 ################################################################################

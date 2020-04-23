@@ -127,13 +127,8 @@ public class JVMAddModuleExports {
         ModuleHelper.AddModuleExports(from_module, "x/apackage", to_module);
         ModuleHelper.AddModuleExports(from_module, "x/apackage", to_module);
 
-        // Export a package, using '.' instead of '/'
-        try {
-            ModuleHelper.AddModuleExports(from_module, "x.apackage", to_module);
-            throw new RuntimeException("Failed to get the expected IAE");
-        } catch(IllegalArgumentException e) {
-            // Expected
-        }
+        // Export the same package, using '.' instead of '/'
+        ModuleHelper.AddModuleExports(from_module, "x.apackage", to_module);
 
         // Export a package to the unnamed module and then to a specific module.
         // The qualified export should be ignored.

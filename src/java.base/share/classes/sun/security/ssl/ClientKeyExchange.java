@@ -90,6 +90,16 @@ final class ClientKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             // clean up this consumer
             shc.handshakeConsumers.remove(SSLHandshake.CLIENT_KEY_EXCHANGE.id);
+
+            // Check for an unprocessed client Certificate message.  If that
+            // handshake consumer is still present then that expected message
+            // was not sent.
+            if (shc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected ClientKeyExchange handshake message.");
+            }
+
             SSLKeyExchange ke = SSLKeyExchange.valueOf(
                     shc.negotiatedCipherSuite.keyExchange,
                     shc.negotiatedProtocol);

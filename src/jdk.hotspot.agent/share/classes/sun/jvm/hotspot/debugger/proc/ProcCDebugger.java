@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@ class ProcCDebugger implements CDebugger {
     this.dbg = dbg;
   }
 
-  public List getThreadList() throws DebuggerException {
+  public List<ThreadProxy> getThreadList() throws DebuggerException {
     return dbg.getThreadList();
   }
 
-  public List/*<LoadObject>*/ getLoadObjectList() throws DebuggerException {
+  public List<LoadObject> getLoadObjectList() throws DebuggerException {
     return dbg.getLoadObjectList();
   }
 
@@ -49,7 +49,7 @@ class ProcCDebugger implements CDebugger {
     if (pc == null) {
       return null;
     }
-    List objs = getLoadObjectList();
+    List<LoadObject> objs = getLoadObjectList();
     Object[] arr = objs.toArray();
     // load objects are sorted by base address, do binary search
     int mid  = -1;

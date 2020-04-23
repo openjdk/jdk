@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,8 +352,11 @@ final class KeyProtector {
 
     /**
      * Unseals the sealed key.
+     *
+     * @param maxLength Maximum possible length of so.
+     *                  If bigger, must be illegal.
      */
-    Key unseal(SealedObject so)
+    Key unseal(SealedObject so, int maxLength)
         throws NoSuchAlgorithmException, UnrecoverableKeyException {
         SecretKey sKey = null;
         try {
@@ -389,7 +392,7 @@ final class KeyProtector {
                                                       SunJCE.getInstance(),
                                                       "PBEWithMD5AndTripleDES");
             cipher.init(Cipher.DECRYPT_MODE, sKey, params);
-            return soForKeyProtector.getKey(cipher);
+            return soForKeyProtector.getKey(cipher, maxLength);
         } catch (NoSuchAlgorithmException ex) {
             // Note: this catch needed to be here because of the
             // later catch of GeneralSecurityException
