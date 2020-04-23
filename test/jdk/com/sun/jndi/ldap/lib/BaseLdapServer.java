@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static java.lang.System.Logger.Level.INFO;
  *
  *     * beforeAcceptingConnections
  *     * beforeConnectionHandled
- *     * handleRequest
+ *     * handleRequest (or handleRequestEx)
  *
  * Instances of this class are safe for use by multiple threads.
  */
@@ -127,6 +127,7 @@ public class BaseLdapServer implements Closeable {
         // No need to close socket's streams separately, they will be closed
         // automatically when `socket.close()` is called
         beforeConnectionHandled(socket);
+        ConnWrapper connWrapper = new ConnWrapper(socket);
         try (socket) {
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
@@ -160,7 +161,13 @@ public class BaseLdapServer implements Closeable {
                             "bytes received {0}, expected {1}", buffer.size(), msgLen);
                     continue;
                 }
-                handleRequest(socket, new LdapMessage(request), out);
+                handleRequestEx(socket, new LdapMessage(request), out, connWrapper);
+                if (connWrapper.updateRequired()) {
+                    var wrapper = connWrapper.getWrapper();
+                    in = wrapper.getInputStream();
+                    out = wrapper.getOutputStream();
+                    connWrapper.clearFlag();
+                }
             }
         } catch (Throwable t) {
             if (!isRunning()) {
@@ -168,6 +175,10 @@ public class BaseLdapServer implements Closeable {
             } else {
                 t.printStackTrace();
             }
+        }
+
+        if (connWrapper.getWrapper() != null) {
+            closeSilently(connWrapper.getWrapper());
         }
     }
 
@@ -191,6 +202,40 @@ public class BaseLdapServer implements Closeable {
         logger().log(INFO, "Discarding message {0} from {1}. "
                              + "Override {2}.handleRequest to change this behavior.",
                      request, socket, getClass().getName());
+    }
+
+    /*
+     * Called after an LDAP request has been read in `handleConnection()`.
+     *
+     * Override to customize the behavior if you want to handle starttls
+     * extended op, otherwise override handleRequest method instead.
+     *
+     * This is extended handleRequest method which provide possibility to
+     * wrap current socket connection, that's necessary to handle starttls
+     * extended request, here is sample code about how to wrap current socket
+     *
+     * switch (request.getOperation()) {
+     *     ......
+     *     case EXTENDED_REQUEST:
+     *         if (new String(request.getMessage()).endsWith(STARTTLS_REQ_OID)) {
+     *             out.write(STARTTLS_RESPONSE);
+     *             SSLSocket sslSocket = (SSLSocket) sslSocketFactory
+     *                     .createSocket(socket, null, socket.getLocalPort(),
+     *                             false);
+     *             sslSocket.setUseClientMode(false);
+     *             connWrapper.setWrapper(sslSocket);
+     *         }
+     *         break;
+     *     ......
+     * }
+     */
+    protected void handleRequestEx(Socket socket,
+            LdapMessage request,
+            OutputStream out,
+            ConnWrapper connWrapper)
+            throws IOException {
+        // by default, just call handleRequest to keep compatibility
+        handleRequest(socket, request, out);
     }
 
     /*
@@ -285,5 +330,37 @@ public class BaseLdapServer implements Closeable {
         try {
             resource.close();
         } catch (IOException ignored) { }
+    }
+
+    /*
+     * To be used for handling starttls extended request
+     */
+    protected class ConnWrapper {
+        private Socket original;
+        private Socket wrapper;
+        private boolean flag = false;
+
+        public ConnWrapper(Socket socket) {
+            original = socket;
+        }
+
+        public Socket getWrapper() {
+            return wrapper;
+        }
+
+        public void setWrapper(Socket wrapper) {
+            if (wrapper != null && wrapper != original) {
+                this.wrapper = wrapper;
+                flag = true;
+            }
+        }
+
+        public boolean updateRequired() {
+            return flag;
+        }
+
+        public void clearFlag() {
+            flag = false;
+        }
     }
 }
