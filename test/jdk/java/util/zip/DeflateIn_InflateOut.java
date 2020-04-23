@@ -41,12 +41,29 @@ public class DeflateIn_InflateOut {
     private static ByteArrayOutputStream baos;
     private static InflaterOutputStream ios;
 
-    private static void reset() {
+    private static Inflater reset(byte[] dict) {
         bais = new ByteArrayInputStream(data);
-        dis = new DeflaterInputStream(bais);
+        if (dict == null) {
+            dis = new DeflaterInputStream(bais);
+        } else {
+            Deflater def = new Deflater();
+            def.setDictionary(dict);
+            dis = new DeflaterInputStream(bais, def);
+        }
 
         baos = new ByteArrayOutputStream();
-        ios = new InflaterOutputStream(baos);
+        if (dict == null) {
+            ios = new InflaterOutputStream(baos);
+            return null;
+        } else {
+            Inflater inf = new Inflater();
+            ios = new InflaterOutputStream(baos, inf);
+            return inf;
+        }
+    }
+
+    private static void reset() {
+        reset(null);
     }
 
     /** Check byte arrays read/write. */
@@ -214,6 +231,44 @@ public class DeflateIn_InflateOut {
         check(numNotSkipped + numSkipBytes == numReadable);
     }
 
+    /** Check "needsDictionary()". */
+    private static void NeedsDictionary() throws Throwable {
+        byte[] dict = {1, 2, 3, 4};
+        Adler32 adler32 = new Adler32();
+        adler32.update(dict);
+        long checksum = adler32.getValue();
+        byte[] buf = new byte[512];
+
+        Inflater inf = reset(dict);
+        check(dis.available() == 1);
+        boolean dictSet = false;
+        for (;;) {
+            int len = dis.read(buf, 0, buf.length);
+            if (len < 0) {
+                break;
+            } else {
+                try {
+                    ios.write(buf, 0, len);
+                    if (dictSet == false) {
+                        check(false, "Must throw ZipException without dictionary");
+                        return;
+                    }
+                } catch (ZipException ze) {
+                    check(dictSet == false, "Dictonary must be set only once");
+                    check(checksum == inf.getAdler(), "Incorrect dictionary");
+                    inf.setDictionary(dict);
+                    // After setting the dictionary, we have to flush the
+                    // InflaterOutputStream now in order to consume all the
+                    // pending input data from the last, failed call to "write()".
+                    ios.flush();
+                    dictSet = true;
+                }
+            }
+        }
+        check(dis.available() == 0);
+        ios.close();
+        check(Arrays.equals(data, baos.toByteArray()));
+    }
 
     public static void realMain(String[] args) throws Throwable {
         new Random(new Date().getTime()).nextBytes(data);
@@ -227,15 +282,24 @@ public class DeflateIn_InflateOut {
         ByteReadByteWrite();
 
         SkipBytes();
+
+        NeedsDictionary();
     }
 
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
     static void pass() {passed++;}
-    static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
+    static void fail() { fail(null); }
+    static void fail(String msg) {
+        failed++;
+        if (msg != null) {
+            System.err.println(msg);
+        }
+        Thread.dumpStack();
+    }
     static void unexpected(Throwable t) {failed++; t.printStackTrace();}
     static void check(boolean cond) {if (cond) pass(); else fail();}
+    static void check(boolean cond, String msg) {if (cond) pass(); else fail(msg);}
     static void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
