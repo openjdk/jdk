@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,28 @@ class PatternReferenceTypeSpec implements ReferenceTypeSpec {
     }
 
     private void checkClassName(String className) throws ClassNotFoundException {
+        int slashIdx = className.indexOf("/");
+
+        // Slash is present in hidden class names only. It looks like p.Foo/0x1234.
+        if (slashIdx != -1) {
+            // A hidden class name is ending with a slash following by a suffix.
+            int lastSlashIdx = className.lastIndexOf("/");
+            int lastDotIdx = className.lastIndexOf(".");
+
+            // There must be just one slash with a following suffix but no dots.
+            if (slashIdx != lastSlashIdx || lastDotIdx > slashIdx || slashIdx + 1 == className.length()) {
+                throw new ClassNotFoundException();
+            }
+            // Check prefix and suffix separately.
+            String[] parts = className.split("/");
+            assert parts.length == 2;
+            className = parts[0];
+            String hcSuffix = parts[1];
+            if (!isUnqualifiedName(hcSuffix)) {
+                throw new ClassNotFoundException();
+            }
+        }
+
         // Do stricter checking of class name validity on deferred
         //  because if the name is invalid, it will
         // never match a future loaded class, and we'll be silent
@@ -116,6 +138,14 @@ class PatternReferenceTypeSpec implements ReferenceTypeSpec {
                 throw new ClassNotFoundException();
             }
         }
+    }
+
+    private boolean isUnqualifiedName(String s) {
+        if (s.length() == 0) {
+            return false;
+        }
+        // unqualified names should have no characters: ".;/["
+        return !s.matches("[.;/\091]*"); // \091 is '['
     }
 
     private boolean isJavaIdentifier(String s) {
