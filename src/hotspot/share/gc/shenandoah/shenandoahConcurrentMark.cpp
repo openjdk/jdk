@@ -315,7 +315,7 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
 
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(root_phase == ShenandoahPhaseTimings::full_gc_roots ||
+  assert(root_phase == ShenandoahPhaseTimings::full_gc_update_roots ||
          root_phase == ShenandoahPhaseTimings::degen_gc_update_roots,
          "Only for these phases");
 
@@ -413,8 +413,6 @@ void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, Refere
 void ShenandoahConcurrentMark::mark_from_roots() {
   WorkGang* workers = _heap->workers();
   uint nworkers = workers->active_workers();
-
-  ShenandoahGCPhase conc_mark_phase(ShenandoahPhaseTimings::conc_mark);
 
   if (_heap->process_references()) {
     ReferenceProcessor* rp = _heap->ref_processor();

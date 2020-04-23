@@ -77,10 +77,14 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
          phase == scan_roots ||
          phase == update_roots ||
          phase == final_update_refs_roots ||
-         phase == full_gc_roots ||
+         phase == full_gc_scan_roots ||
+         phase == full_gc_update_roots ||
+         phase == full_gc_adjust_roots ||
          phase == degen_gc_update_roots ||
-         phase == full_gc_purge_par ||
-         phase == purge_par ||
+         phase == full_gc_purge_class_unload ||
+         phase == full_gc_purge_weak_par ||
+         phase == purge_class_unload ||
+         phase == purge_weak_par ||
          phase == heap_iteration_roots,
          "Phase should accept accept per-thread phase times: %s", phase_name(phase));
 
