@@ -86,7 +86,7 @@ DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
     delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
     ignored-qualifiers  missing-field-initializers implicit-fallthrough \
     empty-body strict-overflow sequence-point maybe-uninitialized \
-    misleading-indentation cast-function-type invalid-offsetof
+    misleading-indentation cast-function-type
 
 ifeq ($(call check-jvm-feature, zero), true)
   DISABLED_WARNINGS_gcc += return-type switch clobbered
@@ -95,8 +95,7 @@ endif
 DISABLED_WARNINGS_clang := tautological-compare \
     undefined-var-template sometimes-uninitialized unknown-pragmas \
     delete-non-virtual-dtor missing-braces char-subscripts \
-    ignored-qualifiers missing-field-initializers mismatched-tags \
-    invalid-offsetof
+    ignored-qualifiers missing-field-initializers mismatched-tags
 
 DISABLED_WARNINGS_solstudio := labelnotused hidef w_novirtualdescr inlafteruse \
     unknownpragma doubunder w_enumnotused w_toomanyenumnotused \
