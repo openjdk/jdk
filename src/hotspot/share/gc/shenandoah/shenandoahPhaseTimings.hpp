@@ -90,7 +90,6 @@ class outputStream;
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
   f(init_update_refs_retire_gclabs,                 "  Retire GCLABs")                 \
-  f(init_update_refs_prepare,                       "  Prepare")                       \
                                                                                        \
   f(final_update_refs_gross,                        "Pause Final Update Refs (G)")     \
   f(final_update_refs,                              "Pause Final Update Refs (N)")     \
