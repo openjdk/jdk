@@ -287,12 +287,14 @@ void ZPageAllocator::increase_used(size_t size, bool relocation) {
 }
 
 void ZPageAllocator::decrease_used(size_t size, bool reclaimed) {
+  // Only pages explicitly released with the reclaimed flag set
+  // counts as reclaimed bytes. This flag is true when we release
+  // a page after relocation, and is false when we release a page
+  // to undo an allocation.
   if (reclaimed) {
-    // Only pages explicitly released with the reclaimed flag set
-    // counts as reclaimed bytes. This flag is typically true when
-    // a worker releases a page after relocation, and is typically
-    // false when we release a page to undo an allocation.
     _reclaimed += size;
+  } else {
+    _allocated -= size;
   }
   _used -= size;
   if (_used < _used_low) {
