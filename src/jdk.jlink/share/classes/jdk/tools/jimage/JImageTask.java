@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,6 @@ class JImageTask {
     private static final int EXIT_OK = 0;        // No errors.
     private static final int EXIT_ERROR = 1;     // Completed but reported errors.
     private static final int EXIT_CMDERR = 2;    // Bad command-line arguments and/or switches.
-    private static final int EXIT_SYSERR = 3;    // System error or resource exhaustion.
     private static final int EXIT_ABNORMAL = 4;  // Terminated abnormally.
 
     int run(String[] args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,30 +28,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.jimage.decompressor.Decompressor;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleTarget;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.builder.ImageBuilder;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
-import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 /**
  * Plugins Stack. Plugins entry point to apply transformations onto resources

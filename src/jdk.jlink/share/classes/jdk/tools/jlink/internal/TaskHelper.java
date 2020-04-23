@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,6 @@ public final class TaskHelper {
 
     public static final String JLINK_BUNDLE = "jdk.tools.jlink.resources.jlink";
     public static final String JIMAGE_BUNDLE = "jdk.tools.jimage.resources.jimage";
-
-    private static final String DEFAULTS_PROPERTY = "jdk.jlink.defaults";
 
     public final class BadArgs extends Exception {
 
@@ -206,16 +204,17 @@ public final class TaskHelper {
     }
 
     private static class PluginOption extends Option<PluginsHelper> {
-        public PluginOption(boolean hasArg,
-                Processing<PluginsHelper> processing, boolean hidden, String name, String shortname) {
+        public PluginOption(boolean hasArg, Processing<PluginsHelper> processing,
+                            boolean hidden, String name, String shortname) {
             super(hasArg, processing, hidden, name, shortname, false);
         }
 
-        public PluginOption(boolean hasArg,
-                Processing<PluginsHelper> processing, boolean hidden, String name) {
+        public PluginOption(boolean hasArg, Processing<PluginsHelper> processing,
+                            boolean hidden, String name) {
             super(hasArg, processing, hidden, name, "", false);
         }
 
+        @Override
         public String resourcePrefix() {
             return "plugin.opt.";
         }
@@ -510,24 +509,8 @@ public final class TaskHelper {
             this.options = options;
         }
 
-        private boolean hasArgument(String optionName) throws BadArgs {
-            Option<?> opt = getOption(optionName);
-            if (opt == null) {
-                opt = pluginOptions.getOption(optionName);
-                if (opt == null) {
-                    throw new BadArgs("err.unknown.option", optionName).
-                            showUsage(true);
-                }
-            }
-            return opt.hasArg;
-        }
-
         public boolean shouldListPlugins() {
             return pluginOptions.listPlugins;
-        }
-
-        private String getPluginsPath(String[] args) throws BadArgs {
-            return null;
         }
 
         /**

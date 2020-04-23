@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,6 +442,7 @@ public final class SystemModulesPlugin implements Plugin {
                                                  int flags,
                                                  String version) {
                     return new ModuleVisitor(Opcodes.ASM7) {
+                        @Override
                         public void visitPackage(String pn) {
                             packages.add(pn);
                         }
@@ -1708,6 +1709,7 @@ public final class SystemModulesPlugin implements Plugin {
             /**
              * Loads an Enum field.
              */
+            @Override
             void visitElement(T t, MethodVisitor mv) {
                 mv.visitFieldInsn(GETSTATIC, className, t.toString(),
                                   "L" + className + ";");

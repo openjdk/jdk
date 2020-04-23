@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.PluginException;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 /**
  *
@@ -103,7 +103,6 @@ public final class ExcludeVMPlugin implements Plugin {
      */
     private List<ResourcePoolEntry> getVMs(ResourcePoolModule javaBase, String[] jvmlibs) {
         List<ResourcePoolEntry> ret = javaBase.entries().filter((t) -> {
-            String path = t.path();
             for (String jvmlib : jvmlibs) {
                 if (t.path().endsWith("/" + jvmlib)) {
                     return true;
