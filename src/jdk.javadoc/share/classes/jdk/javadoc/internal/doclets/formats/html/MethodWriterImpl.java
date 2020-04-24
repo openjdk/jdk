@@ -191,10 +191,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        return new Table(HtmlStyle.memberSummary)
+        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
+                .setId("method-summary-table")
                 .setDefaultTab(resources.getText("doclet.All_Methods"))
                 .addTab(resources.getText("doclet.Static_Methods"), utils::isStatic)
                 .addTab(resources.getText("doclet.Instance_Methods"), e -> !utils.isStatic(e))

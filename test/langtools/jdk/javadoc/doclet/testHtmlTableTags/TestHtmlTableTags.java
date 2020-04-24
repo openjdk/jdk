@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688 8008164 8162363 8169819 8183037 8182765 8184205
+ * @bug      6786688 8008164 8162363 8169819 8183037 8182765 8184205 8242649
  * @summary  HTML tables should have table summary, caption and table headers.
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -65,70 +65,70 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableTag() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"type-summary\">\n<table>",
-                "<div class=\"type-summary\">\n<table>");
+                "<div class=\"type-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"type-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<div class=\"type-summary\">\n<table>",
-                "<div class=\"type-summary\">\n<table>");
+                "<div class=\"type-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"type-summary\">\n<table class=\"summary-table\">");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<div class=\"member-summary\">\n<table>",
-                "<div class=\"member-summary\">\n<table>");
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/C2.html", true,
-                "<div class=\"member-summary\">\n<table>",
-                "<div class=\"member-summary\">\n<table>");
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<div class=\"member-summary\">\n<table>");
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/C3.html", true,
-                "<div class=\"member-summary\">\n<table>");
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/C4.html", true,
-                "<div class=\"member-summary\">\n<table>");
+                "<div class=\"member-summary\">\n<table class=\"summary-table\">");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg1/class-use/C1.html", true,
-                "<div class=\"use-summary\">\n<table>",
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/class-use/C2.html", true,
-                "<div class=\"use-summary\">\n<table>",
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
-                "<div class=\"use-summary\">\n<table>",
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         checkOutput("pkg2/package-use.html", true,
-                "<div class=\"use-summary\">\n<table>",
-                "<div class=\"use-summary\">\n<table>");
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">",
+                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<div class=\"deprecated-summary\" id=\"field\">\n<table>",
-                "<div class=\"deprecated-summary\" id=\"method\">\n<table>");
+                "<div class=\"deprecated-summary\" id=\"field\">\n<table class=\"summary-table\">",
+                "<div class=\"deprecated-summary\" id=\"method\">\n<table class=\"summary-table\">");
 
         // Constant values
         checkOutput("constant-values.html", true,
-                "<div class=\"constants-summary\">\n<table>");
+                "<div class=\"constants-summary\">\n<table class=\"summary-table\">");
 
         // Overview Summary
         checkOutput("index.html", true,
-                "<div class=\"overview-summary\">\n<table>");
+                "<div class=\"overview-summary\" id=\"all-packages-table\">\n<table class=\"summary-table\">");
     }
 
     /*
@@ -239,7 +239,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
         // Overview Summary
         checkOutput("index.html", true,
-                "<div class=\"overview-summary\">\n"
+                "<div class=\"overview-summary\" id=\"all-packages\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">");
     }
 
@@ -249,110 +249,97 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableCaptions() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<caption><span>Class Summary</span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
-                "<caption><span>Interface Summary</span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>");
+                "<caption><span>Class Summary</span></caption>",
+                "<caption><span>Interface Summary</span></caption>");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<caption><span>Enum Summary</span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
-                "<caption><span>Annotation Types Summary</span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>");
+                "<caption><span>Enum Summary</span></caption>",
+                "<caption><span>Annotation Types Summary</span></caption>");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<caption><span>Fields</span><span class=\"tab-end\">&nbsp;</span></caption>",
-                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                "<caption><span>Fields</span></caption>",
+                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
                 + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"table-tab\" onclick=\"show(8);\">"
                 + "Concrete Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
                 + " id=\"t6\" class=\"table-tab\" onclick=\"show(32);\">Deprecated Methods</button></div>\n");
 
         checkOutput("pkg2/C2.html", true,
-                "<caption><span>Nested Classes</span><span class=\"tab-end\">&nbsp;</span></caption>",
-                "<caption><span>Constructors</span><span class=\"tab-end\">&nbsp;</span></caption>");
+                "<caption><span>Nested Classes</span></caption>",
+                "<caption><span>Constructors</span></caption>");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<caption><span>Enum Constants</span><span class=\"tab-end\">&nbsp;</span></caption>");
+                "<caption><span>Enum Constants</span></caption>");
 
         checkOutput("pkg2/C3.html", true,
-                "<caption><span>Required Elements</span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>");
+                "<caption><span>Required Elements</span></caption>");
 
         checkOutput("pkg2/C4.html", true,
-                "<caption><span>Optional Elements</span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>");
+                "<caption><span>Optional Elements</span></caption>");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
                 "<caption><span>Packages that use <a href=\"../I1.html\" "
-                + "title=\"interface in pkg1\">I1</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>");
+                + "title=\"interface in pkg1\">I1</a></span></caption>");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 "<caption><span>Fields in <a href=\"../../pkg2/package-summary.html\">"
                 + "pkg2</a> declared as <a href=\"../C1.html\" "
-                + "title=\"class in pkg1\">C1</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>",
+                + "title=\"class in pkg1\">C1</a></span></caption>",
                 "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">"
                 + "pkg2</a> that return <a href=\"../C1.html\" "
-                + "title=\"class in pkg1\">C1</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>");
+                + "title=\"class in pkg1\">C1</a></span></caption>");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 "<caption><span>Fields in <a href=\"../../pkg1/package-summary.html\">"
                 + "pkg1</a> declared as <a href=\"../C2.html\" "
-                + "title=\"class in pkg2\">C2</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "title=\"class in pkg2\">C2</a></span></caption>",
                 "<caption><span>Methods in <a href=\"../../pkg1/package-summary.html\">"
                 + "pkg1</a> that return <a href=\"../C2.html\" "
-                + "title=\"class in pkg2\">C2</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>");
+                + "title=\"class in pkg2\">C2</a></span></caption>");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 "<caption><span>Methods in <a href=\"../package-summary.html\">"
                 + "pkg2</a> that return <a href=\"../C2.ModalExclusionType.html\" "
                 + "title=\"enum in pkg2\">C2.ModalExclusionType</a></span>"
-                + "<span class=\"tab-end\">&nbsp;</span></caption>");
+                + "</caption>");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 "<caption><span>Packages that use <a href=\"package-summary.html\">"
-                + "pkg1</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "pkg1</a></span></caption>",
                 "<caption><span>Classes in <a href=\"package-summary.html\">"
                 + "pkg1</a> used by <a href=\"package-summary.html\">pkg1</a>"
-                + "</span><span class=\"tab-end\">&nbsp;</span></caption>");
+                + "</span></caption>");
 
         checkOutput("pkg2/package-use.html", true,
                 "<caption><span>Packages that use <a href=\"package-summary.html\">"
-                + "pkg2</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "pkg2</a></span></caption>",
                 "<caption><span>Classes in <a href=\"package-summary.html\">"
                 + "pkg2</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>"
-                + "</span><span class=\"tab-end\">&nbsp;</span></caption>");
+                + "</span></caption>");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<caption><span>Fields</span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
-                "<caption><span>Methods</span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>");
+                "<caption><span>Fields</span></caption>",
+                "<caption><span>Methods</span></caption>");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 "<caption><span>pkg1.<a href=\"pkg1/C1.html\" title=\"class in pkg1\">"
-                + "C1</a></span><span class=\"tab-end\">&nbsp;</span></caption>");
+                + "C1</a></span></caption>");
 
         // Overview Summary
         checkOutput("index.html", true,
-                "<caption><span>Packages</span><span class=\"tab-end\">&nbsp;</span></caption>");
+                "<caption><span>Packages</span></caption>");
     }
 
     /*

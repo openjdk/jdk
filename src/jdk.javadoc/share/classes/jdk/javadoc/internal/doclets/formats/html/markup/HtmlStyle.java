@@ -46,18 +46,11 @@ import java.util.regex.Pattern;
  */
 public enum HtmlStyle {
     aboutLanguage,
-    activeTableTab,
-    altColor,
     block,
     blockList,
     bottomNav,
     circle,
     classUses,
-    colConstructorName,
-    colDeprecatedItemName,
-    colFirst,
-    colLast,
-    colSecond,
     constantsSummary,
     constructorDetails,
     constructorSummary,
@@ -110,7 +103,6 @@ public enum HtmlStyle {
     propertySummary,
     providesSummary,
     requiresSummary,
-    rowColor,
     searchTagLink,
     searchTagResult,
     serializedPackageContainer,
@@ -125,8 +117,6 @@ public enum HtmlStyle {
     summary,
     summaryList,
     systemPropertiesSummary,
-    tabEnd,
-    tableTab,
     title,
     topNav,
     typeNameLabel,
@@ -135,6 +125,93 @@ public enum HtmlStyle {
     useSummary,
     usesSummary,
     verticalSeparator,
+
+    //<editor-fold desc="tables">
+    // The following constants are used for "summary" and "details" tables.
+    // Most tables are summary tables, meaning that, in part, they provide links to details elsewhere.
+    // A module page has details tables containing the details of the directives.
+
+    /**
+     * The class of a {@code table} element used to present details of a program element.
+     */
+    detailsTable,
+
+    /**
+     * The class of a {@code table} element used to present a summary of the enclosed
+     * elements of a program element.  A {@code summaryTable} typically references
+     * items in a corresponding {@link #detailsList}.
+     */
+    summaryTable,
+
+    /**
+     * The class of the "tab" that indicates the currently displayed contents of a table.
+     * This is used when the table provides filtered views.
+     */
+    activeTableTab,
+
+    /**
+     * The class of a "tab" that indicates an alternate view of the contents of a table.
+     * This is used when the table provides filtered views.
+     */
+    tableTab,
+
+    /**
+     * The class of the {@code div} element that contains the tabs used to select
+     * the contents of the associated table to be displayed.
+     */
+    tableTabs,
+
+    /**
+     * The class of the cells in a table column used to display the name
+     * of a constructor.
+     */
+    colConstructorName,
+
+    /**
+     * The class of the cells in a table column used to display the name
+     * of a deprecated item.
+     */
+    colDeprecatedItemName,
+
+    /**
+     * The class of the first column of cells in a table.
+     * This is typically the "type and modifiers" column, where the type is
+     * the type of a field or the return type of a method.
+     */
+    colFirst,
+
+    /**
+     * The class of the last column of cells in a table.
+     * This is typically the "description" column, where the description is
+     * the first sentence of the elemen ts documentation comment.
+     */
+    colLast,
+
+    /**
+     * The class of the second column of cells in a table.
+     * This is typically the column that defines the name of a field or the
+     * name and parameters of a method.
+     */
+    colSecond,
+
+    /**
+     * A class used to provide the background for the rows of a table,
+     * to provide a "striped" effect. This class and {@link #rowColor}
+     * are used on alternating rows.
+     * The classes are applied dynamically when table "tabs" are used
+     * to filter the set of rows to be displayed
+     */
+    altColor,
+
+    /**
+     * A class used to provide the background for the rows of a table,
+     * to provide a "striped" effect. This class and {@link #altColor}
+     * are used on alternating rows.
+     * The classes are applied dynamically when table "tabs" are used
+     * to filter the set of rows to be displayed
+     */
+    rowColor,
+    //</editor-fold>
 
     //<editor-fold desc="documentation comments">
     // The following constants are used for the components used to present the content

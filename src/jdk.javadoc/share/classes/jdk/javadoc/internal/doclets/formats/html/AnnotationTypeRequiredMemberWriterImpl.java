@@ -164,7 +164,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        return new Table(HtmlStyle.memberSummary)
+        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
                 .setCaption(getCaption())
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)

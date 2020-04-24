@@ -134,8 +134,8 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void addSystemProperties(Content content) {
         Map<String, List<SearchIndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = new StringContent(", ");
-        Table table = new Table(HtmlStyle.systemPropertiesSummary)
-                .setCaption(getTableCaption(contents.systemPropertiesSummaryLabel))
+        Table table = new Table(HtmlStyle.systemPropertiesSummary, HtmlStyle.summaryTable)
+                .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (Entry<String, List<SearchIndexItem>> entry : searchIndexMap.entrySet()) {

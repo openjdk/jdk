@@ -196,7 +196,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             rowScopeColumn = 0;
         }
 
-        return new Table(HtmlStyle.memberSummary)
+        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(rowScopeColumn)

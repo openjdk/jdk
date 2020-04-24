@@ -118,21 +118,18 @@ public class TestStylesheet extends JavadocTester {
                 + "    border: none;\n"
                 + "    height:16px;\n"
                 + "}",
-                ".overview-summary [role=tablist] button, .member-summary [role=tablist] button,\n"
-                + ".type-summary [role=tablist] button, .packages-summary [role=tablist] button {\n"
+                "div.table-tabs > button {\n"
                 + "   border: none;\n"
                 + "   cursor: pointer;\n"
                 + "   padding: 5px 12px 7px 12px;\n"
                 + "   font-weight: bold;\n"
                 + "   margin-right: 3px;\n"
-                + "}",
-                ".overview-summary [role=tablist] .active-table-tab, .member-summary [role=tablist] .active-table-tab,\n"
-                + ".type-summary [role=tablist] .active-table-tab, .packages-summary [role=tablist] .active-table-tab {\n"
+                + "}\n"
+                + "div.table-tabs > button.active-table-tab {\n"
                 + "   background: #F8981D;\n"
                 + "   color: #253441;\n"
-                + "}",
-                ".overview-summary [role=tablist] .table-tab, .member-summary [role=tablist] .table-tab,\n"
-                + ".type-summary [role=tablist] .table-tab, .packages-summary [role=tablist] .table-tab {\n"
+                + "}\n"
+                + "div.table-tabs > button.table-tab {\n"
                 + "   background: #4D7A97;\n"
                 + "   color: #FFFFFF;\n"
                 + "}",

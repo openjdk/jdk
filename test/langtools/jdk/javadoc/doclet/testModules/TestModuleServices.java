@@ -197,8 +197,8 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"uses-summary\">\n<table>\n" +
-                "<caption><span>Uses</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<div class=\"uses-summary\">\n<table class=\"details-table\">\n" +
+                "<caption><span>Uses</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
@@ -240,8 +240,8 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"uses-summary\">\n<table>\n" +
-                "<caption><span>Uses</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<div class=\"uses-summary\">\n<table class=\"details-table\">\n" +
+                "<caption><span>Uses</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
@@ -309,8 +309,8 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"provides-summary\">\n<table>\n" +
-                "<caption><span>Provides</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<div class=\"provides-summary\">\n<table class=\"details-table\">\n" +
+                "<caption><span>Provides</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
@@ -355,8 +355,8 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"provides-summary\">\n<table>\n" +
-                "<caption><span>Provides</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<div class=\"provides-summary\">\n<table class=\"details-table\">\n" +
+                "<caption><span>Provides</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
@@ -400,8 +400,8 @@ public class TestModuleServices extends JavadocTester {
                 "<h2>Services</h2>");
 
         checkOutput("m/module-summary.html", true,
-                "<div class=\"provides-summary\">\n<table>\n" +
-                "<caption><span>Provides</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<div class=\"provides-summary\">\n<table class=\"details-table\">\n" +
+                "<caption><span>Provides</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Type</th>\n" +
@@ -416,8 +416,8 @@ public class TestModuleServices extends JavadocTester {
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>",
-                "<div class=\"uses-summary\">\n<table>\n" +
-                "<caption><span>Uses</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<div class=\"uses-summary\">\n<table class=\"details-table\">\n" +
+                "<caption><span>Uses</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Type</th>\n" +

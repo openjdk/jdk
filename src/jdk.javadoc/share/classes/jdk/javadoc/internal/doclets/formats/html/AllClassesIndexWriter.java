@@ -120,10 +120,11 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addContents(Content content) {
-        Table table = new Table(HtmlStyle.typeSummary)
+        Table table = new Table(HtmlStyle.typeSummary, HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setId("all-classes-table")
                 .setDefaultTab(resources.getText("doclet.All_Classes"))
                 .addTab(resources.interfaceSummary, utils::isInterface)
                 .addTab(resources.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))

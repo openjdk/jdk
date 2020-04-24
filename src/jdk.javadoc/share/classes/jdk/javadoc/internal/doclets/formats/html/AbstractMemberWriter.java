@@ -328,7 +328,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         List<? extends Element> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            Table useTable = new Table(HtmlStyle.useSummary)
+            Table useTable = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
                     .setCaption(heading)
                     .setRowScopeColumn(1)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);

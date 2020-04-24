@@ -414,26 +414,26 @@ public class TestModulePackages extends JavadocTester {
         if (kinds.length > 1) {
             Set<TabKind> kindSet = Set.of(kinds);
             StringBuilder sb = new StringBuilder();
-            sb.append("<div role=\"tablist\" aria-orientation=\"horizontal\">"
+            sb.append("<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\">"
                         + "<button role=\"tab\" aria-selected=\"true\""
-                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"0\""
+                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"0\""
                         + " onkeydown=\"switchTab(event)\""
                         + " id=\"t0\" class=\"active-table-tab\">All Packages</button>");
             if (kindSet.contains(TabKind.EXPORTS)) {
                 sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"-1\""
+                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"-1\""
                         + " onkeydown=\"switchTab(event)\" id=\"t1\" class=\"table-tab\""
                         + " onclick=\"show(1);\">Exports</button>");
             }
             if (kindSet.contains(TabKind.OPENS)) {
                 sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"-1\""
+                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"-1\""
                         + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
                         + " onclick=\"show(2);\">Opens</button>");
             }
             if (kindSet.contains(TabKind.CONCEALED)) {
                 sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"packages-summary_tabpanel\" tabindex=\"-1\" "
+                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"-1\" "
                         + "onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" "
                         + "onclick=\"show(4);\">Concealed</button>");
             }
@@ -442,10 +442,7 @@ public class TestModulePackages extends JavadocTester {
         } else {
             TabKind k = kinds[0];
             String name = k.toString().charAt(0) + k.toString().substring(1).toLowerCase();
-            expect = "<caption>"
-                        + "<span>" + name + "</span>"
-                        + "<span class=\"tab-end\">&nbsp;</span>"
-                        + "</caption>";
+            expect = "<caption><span>" + name + "</span></caption>";
         }
 
         checkOutput(moduleName + "/module-summary.html", true, expect);

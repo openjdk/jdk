@@ -74,8 +74,8 @@ public class TestSystemPropertyPage extends JavadocTester {
                 "<h1>System Properties</h1>\n" +
                 "</div>",
 
-                "<table>\n" +
-                "<caption><span>System Properties Summary</span><span class=\"tab-end\">&nbsp;</span></caption>\n" +
+                "<table class=\"summary-table\">\n" +
+                "<caption><span>System Properties Summary</span></caption>\n" +
                 "<thead>\n" +
                 "<tr>\n" +
                 "<th class=\"col-first\" scope=\"col\">Property</th>\n" +
