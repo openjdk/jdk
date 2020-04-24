@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,49 @@
  * questions.
  */
 
-#ifndef VERSIONINFOSWAP_H
-#define VERSIONINFOSWAP_H
+#ifndef JNIUTILS_H
+#define JNIUTILS_H
 
-#include "ByteBuffer.h"
-#include <map>
+#include "jni.h"
+#include "tstrings.h"
 
-using namespace std;
 
-class VersionInfoSwap {
-public:
-    VersionInfoSwap(wstring executableProperties, wstring launcher);
+namespace jni {
 
-    bool PatchExecutable();
+struct JniObjWithEnv {
+    JniObjWithEnv(): env(0), obj(0) {
 
-private:
-    wstring m_executableProperties;
-    wstring m_launcher;
+    }
 
-    map<wstring, wstring> m_props;
+    JniObjWithEnv(JNIEnv *env, jobject obj) : env(env), obj(obj) {
+    }
 
-    bool LoadFromPropertyFile();
-    bool CreateNewResource(ByteBuffer *buf);
-    bool UpdateResource(LPVOID lpResLock, DWORD size);
-    bool FillFixedFileInfo(VS_FIXEDFILEINFO *fxi);
+    bool operator == (const JniObjWithEnv& other) const {
+        return env == other.env && obj == other.obj;
+    }
+
+    bool operator != (const JniObjWithEnv& other) const {
+        return ! operator == (other);
+    }
+
+    JNIEnv *env;
+    jobject obj;
+
+    struct LocalRefDeleter {
+        typedef JniObjWithEnv pointer;
+
+        void operator()(pointer v);
+    };
 };
 
-#endif // VERSIONINFOSWAP_H
+typedef std::unique_ptr<JniObjWithEnv, JniObjWithEnv::LocalRefDeleter> LocalRef;
 
+tstring toUnicodeString(JNIEnv *env, jstring val);
+
+jstring toJString(JNIEnv *env, const tstring& val);
+
+tstring_array toUnicodeStringArray(JNIEnv *env, jobjectArray val);
+
+} // namespace jni
+
+#endif // JNIUTILS_H

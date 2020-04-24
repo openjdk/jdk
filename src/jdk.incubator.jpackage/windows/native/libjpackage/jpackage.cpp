@@ -23,59 +23,107 @@
  * questions.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <windows.h>
-
 #include "ResourceEditor.h"
-#include "WinErrorHandling.h"
+#include "ErrorHandling.h"
 #include "IconSwap.h"
-#include "VersionInfoSwap.h"
-#include "Utils.h"
-
-using namespace std;
+#include "VersionInfo.h"
+#include "JniUtils.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
     /*
-     * Class:     jdk_incubator_jpackage_internal_WindowsAppImageBuilder
+     * Class:     jdk_incubator_jpackage_internal_ExecutableRebrander
+     * Method:    lockResource
+     * Signature: (Ljava/lang/String;)J
+     */
+    JNIEXPORT jlong JNICALL
+        Java_jdk_incubator_jpackage_internal_ExecutableRebrander_lockResource(
+            JNIEnv *pEnv, jclass c, jstring jExecutable) {
+
+        JP_TRY;
+
+        const std::wstring executable = jni::toUnicodeString(pEnv, jExecutable);
+
+        return reinterpret_cast<jlong>(
+                ResourceEditor::FileLock(executable).ownHandle(false).get());
+
+        JP_CATCH_ALL;
+
+        return 0;
+    }
+
+    /*
+     * Class:     jdk_incubator_jpackage_internal_ExecutableRebrander
+     * Method:    unlockResource
+     * Signature: (J;)V
+     */
+    JNIEXPORT void JNICALL
+        Java_jdk_incubator_jpackage_internal_ExecutableRebrander_unlockResource(
+            JNIEnv *pEnv, jclass c, jlong jResourceLock) {
+
+        JP_TRY;
+        ResourceEditor::FileLock(
+                reinterpret_cast<HANDLE>(jResourceLock)).ownHandle(true);
+        JP_CATCH_ALL;
+    }
+
+    /*
+     * Class:     jdk_incubator_jpackage_internal_ExecutableRebrander
      * Method:    iconSwap
-     * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+     * Signature: (J;Ljava/lang/String;)I
      */
     JNIEXPORT jint JNICALL
-            Java_jdk_incubator_jpackage_internal_WindowsAppImageBuilder_iconSwap(
-            JNIEnv *pEnv, jclass c, jstring jIconTarget, jstring jLauncher) {
-        wstring iconTarget = GetStringFromJString(pEnv, jIconTarget);
-        wstring launcher = GetStringFromJString(pEnv, jLauncher);
+            Java_jdk_incubator_jpackage_internal_ExecutableRebrander_iconSwap(
+            JNIEnv *pEnv, jclass c, jlong jResourceLock, jstring jIconTarget) {
 
-        if (ChangeIcon(iconTarget, launcher)) {
+        JP_TRY;
+
+        const ResourceEditor::FileLock lock(reinterpret_cast<HANDLE>(jResourceLock));
+
+        const std::wstring iconTarget = jni::toUnicodeString(pEnv, jIconTarget);
+
+        if (ChangeIcon(lock.get(), iconTarget)) {
             return 0;
         }
+
+        JP_CATCH_ALL;
 
         return 1;
     }
 
     /*
-     * Class:     jdk_incubator_jpackage_internal_WindowsAppImageBuilder
+     * Class:     jdk_incubator_jpackage_internal_ExecutableRebrander
      * Method:    versionSwap
-     * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+     * Signature: (J;[Ljava/lang/String;)I
      */
     JNIEXPORT jint JNICALL
-            Java_jdk_incubator_jpackage_internal_WindowsAppImageBuilder_versionSwap(
-            JNIEnv *pEnv, jclass c, jstring jExecutableProperties,
-            jstring jLauncher) {
+            Java_jdk_incubator_jpackage_internal_ExecutableRebrander_versionSwap(
+            JNIEnv *pEnv, jclass c, jlong jResourceLock,
+            jobjectArray jExecutableProperties) {
 
-        wstring executableProperties = GetStringFromJString(pEnv,
+        JP_TRY;
+
+        const tstring_array props = jni::toUnicodeStringArray(pEnv,
                 jExecutableProperties);
-        wstring launcher = GetStringFromJString(pEnv, jLauncher);
 
-        VersionInfoSwap vs(executableProperties, launcher);
-        if (vs.PatchExecutable()) {
-            return 0;
+        VersionInfo vi;
+
+        tstring_array::const_iterator it = props.begin();
+        tstring_array::const_iterator end = props.end();
+        for (; it != end; ++it) {
+            const tstring name = *it;
+            const tstring value = *++it;
+            vi.setProperty(name, value);
         }
+
+        const ResourceEditor::FileLock lock(reinterpret_cast<HANDLE>(jResourceLock));
+        vi.apply(lock);
+
+        return 0;
+
+        JP_CATCH_ALL;
 
         return 1;
     }
@@ -83,20 +131,17 @@ extern "C" {
     /*
      * Class:     jdk_incubator_jpackage_internal_WinExeBundler
      * Method:    embedMSI
-     * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+     * Signature: (J;Ljava/lang/String;)I
      */
     JNIEXPORT jint JNICALL Java_jdk_incubator_jpackage_internal_WinExeBundler_embedMSI(
-            JNIEnv *pEnv, jclass c, jstring jexePath, jstring jmsiPath) {
-
-        const wstring exePath = GetStringFromJString(pEnv, jexePath);
-        const wstring msiPath = GetStringFromJString(pEnv, jmsiPath);
+            JNIEnv *pEnv, jclass c, jlong jResourceLock, jstring jmsiPath) {
 
         JP_TRY;
 
-        ResourceEditor()
-            .id(L"msi")
-            .type(RT_RCDATA)
-            .apply(ResourceEditor::FileLock(exePath), msiPath);
+        const std::wstring msiPath = jni::toUnicodeString(pEnv, jmsiPath);
+
+        const ResourceEditor::FileLock lock(reinterpret_cast<HANDLE>(jResourceLock));
+        ResourceEditor().id(L"msi").type(RT_RCDATA).apply(lock, msiPath);
 
         return 0;
 

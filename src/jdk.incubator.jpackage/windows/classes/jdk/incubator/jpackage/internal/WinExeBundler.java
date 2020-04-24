@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class WinExeBundler extends AbstractBundler {
 
     @Override
     public String getName() {
-        return getString("exe.bundler.name");
+        return I18N.getString("exe.bundler.name");
     }
 
     @Override
@@ -117,48 +117,45 @@ public class WinExeBundler extends AbstractBundler {
             .setEnvironmentVariable("JpMsiFile", msi.getAbsolutePath().toString())
             .run(params);
 
-            return buildEXE(msi, outdir);
+            return buildEXE(params, msi, outdir);
         } catch (IOException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
     }
 
-    private File buildEXE(File msi, File outdir)
-            throws IOException {
+    private File buildEXE(Map<String, ? super Object> params, File msi,
+            File outdir) throws IOException {
 
         Log.verbose(MessageFormat.format(
-                getString("message.outputting-to-location"),
+                I18N.getString("message.outputting-to-location"),
                 outdir.getAbsolutePath()));
 
         // Copy template msi wrapper next to msi file
-        String exePath = msi.getAbsolutePath();
-        exePath = exePath.substring(0, exePath.lastIndexOf('.')) + ".exe";
+        final Path exePath = IOUtils.replaceSuffix(msi.toPath(), ".exe");
         try (InputStream is = OverridableResource.readDefault(EXE_WRAPPER_NAME)) {
-            Files.copy(is, Path.of(exePath));
+            Files.copy(is, exePath);
         }
-        // Embed msi in msi wrapper exe.
-        embedMSI(exePath, msi.getAbsolutePath());
+
+        new ExecutableRebrander().addAction((resourceLock) -> {
+            // Embed msi in msi wrapper exe.
+            embedMSI(resourceLock, msi.getAbsolutePath());
+        }).rebrandInstaller(params, exePath);
 
         Path dstExePath = Paths.get(outdir.getAbsolutePath(),
-                Path.of(exePath).getFileName().toString());
+                exePath.getFileName().toString());
         Files.deleteIfExists(dstExePath);
 
-        Files.copy(Path.of(exePath), dstExePath);
+        Files.copy(exePath, dstExePath);
 
         Log.verbose(MessageFormat.format(
-                getString("message.output-location"),
+                I18N.getString("message.output-location"),
                 outdir.getAbsolutePath()));
 
         return dstExePath.toFile();
     }
 
-    private static String getString(String key)
-            throws MissingResourceException {
-        return I18N.getString(key);
-    }
-
     private final WinMsiBundler msiBundler = new WinMsiBundler();
 
-    private static native int embedMSI(String exePath, String msiPath);
+    private static native int embedMSI(long resourceLock, String msiPath);
 }

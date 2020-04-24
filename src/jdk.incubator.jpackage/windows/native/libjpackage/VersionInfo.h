@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,40 @@
  * questions.
  */
 
-#ifndef BYTEBUFFER_H
-#define BYTEBUFFER_H
+#ifndef VERSIONINFO_H
+#define VERSIONINFO_H
 
-#include <windows.h>
-#include <vector>
+#include <map>
 #include <string>
+#include "ResourceEditor.h"
 
-using namespace std;
 
-class ByteBuffer {
+class VersionInfo {
 public:
-    ByteBuffer();
-    ~ByteBuffer();
+    VersionInfo();
 
-    LPBYTE getPtr();
-    size_t getPos();
+    VersionInfo& setProperty(const std::wstring& id, const std::wstring& value);
 
-    void AppendString(wstring str);
-    void AppendWORD(WORD word);
-    void AppendBytes(BYTE* ptr, size_t len);
+    /**
+     * Replaces existing VS_VERSIONINFO structure in the file locked
+     * with the passed in ResourceEditor::FileLock instance with data
+     * configured for this instance.
+     */
+    const VersionInfo& apply(const ResourceEditor::FileLock& fileLock) const;
 
-    void ReplaceWORD(size_t offset, WORD word);
-    void ReplaceBytes(size_t offset, BYTE* ptr, size_t len);
-
-    void Align(size_t bytesNumber);
+    VersionInfo& apply(const ResourceEditor::FileLock& fileLock) {
+        static_cast<const VersionInfo&>(*this).apply(fileLock);
+        return *this;
+    }
 
 private:
-    vector<BYTE> buffer;
+    void fillBuffer(std::ostream& buf) const;
+
+    VS_FIXEDFILEINFO createFIXEDFILEINFO() const;
+
+    typedef std::map<std::wstring, std::wstring> PropertyMap;
+
+    PropertyMap props;
 };
 
-#endif // BYTEBUFFER_H
-
+#endif // #ifndef VERSIONINFO_H
