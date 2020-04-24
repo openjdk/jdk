@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,109 +21,41 @@
 
 ##### Summary #####
 This test is used to check the interop compatibility on JSSE among different
-JDK releases. The oldest version supported by the test is JDK 7. Some of Java
-source files, JdkUtils.java, Server.java, and Client.java, use only JDK 7-compliant
-language features and APIs, in order to allowing different JDK releases can load
-and run associated classes.
-
-##### Output #####
-The test can generate a report at $JTREG_WORKDIR/scratch/report.html to display
-the key information for each case. It also outputs all of details on both of
-server and client sides to a separated file at $JTREG_WORKDIR/scratch/test.html.
-
-##### Report Columns #####
-No.
-    A sequence number. It contains a hyper link to the corresponding details
-    in $JTREG_WORKDIR/scratch/test.html.
-
-ServerJDK
-    The version of the JDK that acts as server.
-
-ClientJDK
-    The version of the JDK that acts as client.
-
-Protocol
-    The TLS protocol version.
-
-CipherSuite
-    The only enabled cipher suite on both of server and client.
-
-ClientAuth
-    If the client authentication is checked, the value is "Y"; otherwise, "N".
-
-SNI
-    If the SNI is checked, the value is "Y"; otherwise, "N".
-
-ALPN
-    If the ALPN is checked, the value is "Y"; otherwise, "N".
-
-Status
-    It indicates the communication status for a test case.
-    There are three status:
-    SUCCESS: Communication succeed as expected.
-    UNEXPECTED_SUCCESS: Communication succeed as unexpected.
-    FAIL: Communication fails with unexpected failure.
-    EXPECTED_FAIL: Communication fails with expected failure.
-    Please note that, if a case finishes as status UNEXPECTED_SUCCESS or FAIL,
-    that means the case fails. Any failed case results in the test goes to fail.
+JDK releases. The oldest version supported by the test is JDK 8. Some of Java
+source files, like JdkInfoUtils.java, JdkProcServer.java and JdkProcClient.java,
+use only JDK 8-compliant language features and APIs, in order to allowing
+different JDK releases can load and run associated classes.
 
 ##### Usage #####
 jtreg [-options] \
-    [-Ddebug=<true|false>] \
-    [-DfullCases=<true|false>] \
-    [-DfullCipherSuites=<true|false>] \
-    [-DjdkListFile=</path/to/jdkListFile>] \
+    [-Dtest.debug=<true|false>] \
+    [-Dtest.jdk.list.file=</path/to/jdkListFile>] \
     $JDK_WORKSPACE/test/jdk/javax/net/ssl/compatibility/Compatibility.java
 
 Besides the common jtreg options, like -jdk, this test introduces some more
 properties:
-debug
+test.debug
     It indicates if the test enable -Djavax.net.debug=all. This is a boolean
     property, and the default value is false.
     It is not mandatory.
 
-fullCases
-    It indicates if testing the full or mandatory set of parameter values.
-    Every parameter provides a mandatory value set that must be covered.
-    For more details about the parameter value sets, please see Parameter.java.
-    This is a boolean property, and the default value is false.
-    It is not mandatory.
-
-fullCipherSuites
-    It indicates if testing the full or mandatory set of cipher suites.
-    For more details about the specific cipher suite sets, see CipherSuite in
-    Parameter.java.
-    This is a boolean property, and the default value is false.
-    It is not mandatory.
-
-jdkListFile
+test.jdk.list.file
     It indicate the path of a file, which lists the absolute paths of different
     JDK builds. If no this property, the current testing JDK, specified by JTREG
     option -jdk, is used as the testing JDK.
     It is not mandatory.
 
 ##### Usage Examples #####
-Example 1
-$ jtreg -jdk:/path/to/latest/jdk \
-    $JDK_WS/jdk/test/javax/net/ssl/compatibility/Compatibility.java
-This example doesn't specify any property introduced by the test. That means
-it uses the current testing JDK, namely /path/to/latest/jdk, as server and
-client. It doesn't output any debug log, and tests only mandatory parameter
-value sets.
-
-Example 2
 $ cat /path/to/jdkList
-/path/to/jdk7
 /path/to/jdk8
 /path/to/jdk9
 /path/to/jdk10
 
 $ jtreg -jdk:/path/to/latest/jdk \
     -Ddebug=true \
-    -DfullCipherSuites=true \
-    -DjdkListFile=/path/to/jdkList \
+    -Dtest.jdk.list.file=/path/to/jdkList \
     $JDK_WS/jdk/test/javax/net/ssl/compatibility/Compatibility.java
 The above example uses a file "/path/to/jdkList" to contain the paths of local
-different JDK builds through 7 to 10. The execution uses each of JDK builds as
+different JDK builds through 8 to 10. The execution uses each of JDK builds as
 server and client respectively. And it enables SSL debug flag, and tests the
 full parameter value set.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,30 @@
  */
 
 /*
- * Test case result status.
+ * A tuple for carrying certificates.
  */
-public enum Status {
+public class CertTuple {
 
-    SUCCESS, UNEXPECTED_SUCCESS, FAIL, EXPECTED_FAIL, TIMEOUT;
+    // Trusted CAs
+    public final Cert[] trustedCerts;
+
+    // End entity certificates
+    public final Cert[] endEntityCerts;
+
+    public CertTuple(Cert[] trustedCerts, Cert[] endEntityCerts) {
+        this.trustedCerts = trustedCerts;
+        this.endEntityCerts = endEntityCerts;
+    }
+
+    public CertTuple(Cert trustedCert, Cert endEntityCert) {
+        this.trustedCerts = new Cert[] { trustedCert };
+        this.endEntityCerts = new Cert[] { endEntityCert };
+    }
+
+    @Override
+    public String toString() {
+        return Utilities.join(Utilities.PARAM_DELIMITER,
+                "trustedCerts=" + Utilities.join(trustedCerts),
+                "endEntityCerts=" + Utilities.join(endEntityCerts));
+    }
 }

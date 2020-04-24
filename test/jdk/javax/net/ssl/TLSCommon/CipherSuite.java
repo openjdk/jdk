@@ -161,7 +161,7 @@ public enum CipherSuite {
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA(
             0x0039, KeyExAlgorithm.DHE_RSA, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_DHE_DSS_WITH_AES_256_CBC_SHA(
-            0x0038, KeyExAlgorithm.DHE_DSS, Protocol.TLSV1_2, Protocol.TLSV1_2),
+            0x0038, KeyExAlgorithm.DHE_DSS, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_RSA_WITH_AES_256_CBC_SHA(
             0x0035, KeyExAlgorithm.RSA, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_DH_anon_WITH_AES_128_CBC_SHA(
@@ -169,7 +169,7 @@ public enum CipherSuite {
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA(
             0x0033, KeyExAlgorithm.DHE_RSA, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_DHE_DSS_WITH_AES_128_CBC_SHA(
-            0x0032, KeyExAlgorithm.DHE_DSS, Protocol.TLSV1_2, Protocol.TLSV1_2),
+            0x0032, KeyExAlgorithm.DHE_DSS, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_RSA_WITH_AES_128_CBC_SHA(
             0x002F, KeyExAlgorithm.RSA, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_KRB5_WITH_3DES_EDE_CBC_MD5(

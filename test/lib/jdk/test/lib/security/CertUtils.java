@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,39 @@ public class CertUtils {
             "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgajTO2cTGJdOUawrQ\n" +
             "XqGfGuX6AEevTXQY0hlVHAVx516hRANCAASzxOGY/xeL1oGQHdY98dF+WmTq7jj/\n" +
             "00gfgiJFKZsHuOaAIfes/nSLM1G9rh8ohlQnS88JL3MGvispVyj1nqpX";
+
+    /*
+     * This EC-key certificate is singed by the above RSA CA, namely RSA_CERT.
+     *
+     * Version: 3 (0x2)
+     * Serial Number:
+     *     6a:5e:bb:97:3c:f8:0a:0d:ef:0a:ca:72:0b:6d:7f:b5:e0:af:b2:86
+     * Signature Algorithm: sha256WithRSAEncryption
+     * Issuer: CN = localhost
+     * Validity
+     *      Not Before: Apr 14 08:14:04 2020 GMT
+     *      Not After : Apr 12 08:14:04 2030 GMT
+     * Subject: CN = localhost
+     */
+    public static final String ECRSA_CERT =
+            "-----BEGIN CERTIFICATE-----\n" +
+            "MIICLTCCARWgAwIBAgIUal67lzz4Cg3vCspyC21/teCvsoYwDQYJKoZIhvcNAQEL\n" +
+            "BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTIwMDQxNDA4MTQwNFoXDTMwMDQx\n" +
+            "MjA4MTQwNFowFDESMBAGA1UEAwwJbG9jYWxob3N0MFkwEwYHKoZIzj0CAQYIKoZI\n" +
+            "zj0DAQcDQgAEZOIGqyJHpWFhyiRbZACdNBYHvXTzWVWMC10RW8vfxiOPAZBlPzqn\n" +
+            "d2X6/bGhSN1EkrMl8YlJTAKvZcGaaKFUHKNCMEAwHQYDVR0OBBYEFCl9FR9xeNjc\n" +
+            "5+Zkg/Rrk7JpTKnFMB8GA1UdIwQYMBaAFG2c8J0rzOu1Agd54OX0xnC9uLqlMA0G\n" +
+            "CSqGSIb3DQEBCwUAA4IBAQCPcwr88n/vjsHPByiF28P2cEZ02JdQH0FQVe+6Xw7t\n" +
+            "Rn62aTAmS3kaHovXXrFpDpwgz+BMtGSNVTeR7zFttAZLyYb6w6rD8tCfZqHqOTC8\n" +
+            "ctCHz7D2QnsH3tdSV1J7A8N3+P8t4cmCs1AED92yLhy9sumXBvZ2ZskpUtcA5nZB\n" +
+            "djTvyJ3F74835w0s2FzWPnTULvBmit2Z94b22QyZLkFhThUpMBlu2LmXosLrdfji\n" +
+            "xVcV68tpQ1nk1o9tE4V7h4/SjYVaDM1fmlaY+eM3XcbK30mVyktty5ScuOMhLpb6\n" +
+            "RFP/QKvmQ/2l4+rj/epV84ImDuEAhkBGOU6vo4X4l1Du\n" +
+            "-----END CERTIFICATE-----";
+    public static final String ECRSA_KEY =
+            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgldlJrkmEDVtzh4r9\n" +
+            "NO8Yn/89mZuBhKPasVgpRjKQxRyhRANCAARk4garIkelYWHKJFtkAJ00Fge9dPNZ\n" +
+            "VYwLXRFby9/GI48BkGU/Oqd3Zfr9saFI3USSsyXxiUlMAq9lwZpooVQc";
 
     /*
      * Version: 3 (0x2)

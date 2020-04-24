@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,16 +30,28 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * Utilities for executing java process.
+ * Utilities for process operations.
  */
-public class ProcessUtils {
+public class ProcUtils {
 
-    private static final String TEST_CLASSES = System.getProperty("test.classes");
+    /*
+     * Executes java program.
+     * After the program finishes, it returns OutputAnalyzer.
+     */
+    public static OutputAnalyzer java(Path javaPath, Class<?> clazz,
+            Map<String, String> props) {
+        ProcessBuilder pb = createProcessBuilder(javaPath, clazz, props);
+        try {
+            return ProcessTools.executeCommand(pb);
+        } catch (Throwable e) {
+            throw new RuntimeException("Executes java program failed!", e);
+        }
+    }
 
-    public static OutputAnalyzer java(String jdkPath, Map<String, String> props,
-            Class<?> clazz) {
+    private static ProcessBuilder createProcessBuilder(Path javaPath,
+            Class<?> clazz, Map<String, String> props) {
         List<String> cmds = new ArrayList<>();
-        cmds.add(jdkPath + "/bin/java");
+        cmds.add(javaPath.toString());
 
         if (props != null) {
             for (Map.Entry<String, String> prop : props.entrySet()) {
@@ -47,13 +60,10 @@ public class ProcessUtils {
         }
 
         cmds.add("-cp");
-        cmds.add(TEST_CLASSES);
+        cmds.add(System.getProperty("test.class.path"));
         cmds.add(clazz.getName());
-        try {
-            return ProcessTools.executeCommand(
-                    cmds.toArray(new String[cmds.size()]));
-        } catch (Throwable e) {
-            throw new RuntimeException("Execute command failed: " + cmds, e);
-        }
+        ProcessBuilder pb = new ProcessBuilder(cmds);
+        pb.redirectErrorStream(true);
+        return pb;
     }
 }

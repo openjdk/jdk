@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import javax.net.ssl.SSLParameters;
 /*
  * This class is used for returning some specific JDK information.
  */
-public class JdkUtils {
+public class JdkInfoUtils {
 
     public static final String JAVA_RUNTIME_VERSION = "javaRuntimeVersion";
     public static final String SUPPORTED_PROTOCOLS = "supportedProtocols";
@@ -48,21 +48,21 @@ public class JdkUtils {
             throws NoSuchAlgorithmException {
         String[] protocols = SSLContext.getDefault()
                 .createSSLEngine().getSupportedProtocols();
-        return Utils.join(Utils.VALUE_DELIMITER, protocols).toString();
+        return Utilities.join(Utilities.VALUE_DELIMITER, protocols).toString();
     }
 
     private static String enabledProtocols()
             throws NoSuchAlgorithmException {
         String[] protocols = SSLContext.getDefault()
                 .createSSLEngine().getEnabledProtocols();
-        return Utils.join(Utils.VALUE_DELIMITER, protocols).toString();
+        return Utilities.join(Utilities.VALUE_DELIMITER, protocols).toString();
     }
 
     private static String supportedCipherSuites()
             throws NoSuchAlgorithmException {
         String[] supportedCipherSuites = SSLContext.getDefault()
                 .createSSLEngine().getSupportedCipherSuites();
-        return Utils.join(Utils.VALUE_DELIMITER, supportedCipherSuites)
+        return Utilities.join(Utilities.VALUE_DELIMITER, supportedCipherSuites)
                 .toString();
     }
 
@@ -70,7 +70,7 @@ public class JdkUtils {
             throws NoSuchAlgorithmException {
         String[] enabledCipherSuites = SSLContext.getDefault()
                 .createSSLEngine().getEnabledCipherSuites();
-        return Utils.join(Utils.VALUE_DELIMITER, enabledCipherSuites)
+        return Utilities.join(Utilities.VALUE_DELIMITER, enabledCipherSuites)
                 .toString();
     }
 
@@ -97,7 +97,7 @@ public class JdkUtils {
     }
 
     public static void main(String[] args) throws NoSuchAlgorithmException {
-        System.out.print(Utils.join(Utils.PARAM_DELIMITER,
+        System.out.print(Utilities.join(Utilities.PARAM_DELIMITER,
                 attr(JAVA_RUNTIME_VERSION, javaRuntimeVersion()),
                 attr(SUPPORTED_PROTOCOLS, supportedProtocols()),
                 attr(ENABLED_PROTOCOLS, enabledProtocols()),
