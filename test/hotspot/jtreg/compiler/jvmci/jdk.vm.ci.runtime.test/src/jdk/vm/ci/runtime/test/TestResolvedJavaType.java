@@ -919,6 +919,13 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void getSourceFileNameTest() {
+        Class<?> c = Object.class;
+        ResolvedJavaType type = metaAccess.lookupJavaType(c);
+        assertEquals(type.getSourceFileName(), "Object.java");
+    }
+
+    @Test
     public void memberClassesTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
@@ -1020,7 +1027,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         "getObjectHub",
         "hasFinalizableSubclass",
         "hasFinalizer",
-        "getSourceFileName",
         "isLocal",
         "isJavaLangObject",
         "isMember",

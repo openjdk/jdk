@@ -65,6 +65,20 @@ ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, T
   return new (loader_data, size, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
+void ConstantPool::copy_fields(const ConstantPool* orig) {
+  // Preserve dynamic constant information from the original pool
+  if (orig->has_dynamic_constant()) {
+    set_has_dynamic_constant();
+  }
+
+  // Copy class version
+  set_major_version(orig->major_version());
+  set_minor_version(orig->minor_version());
+
+  set_source_file_name_index(orig->source_file_name_index());
+  set_generic_signature_index(orig->generic_signature_index());
+}
+
 #ifdef ASSERT
 
 // MetaspaceObj allocation invariant is calloc equivalent memory

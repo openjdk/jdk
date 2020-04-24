@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @bug 8226374
+ * @bug 8226374 8242929
  * @library /javax/net/ssl/templates
  * @summary Restrict signature algorithms and named groups
  * @run main/othervm RestrictNamedGroup x25519
- * @run main/othervm RestrictNamedGroup x448
- * @run main/othervm RestrictNamedGroup secp256r1
- * @run main/othervm RestrictNamedGroup secp384r1
- * @run main/othervm RestrictNamedGroup secp521r1
- * @run main/othervm RestrictNamedGroup ffdhe2048
- * @run main/othervm RestrictNamedGroup ffdhe3072
+ * @run main/othervm RestrictNamedGroup X448
+ * @run main/othervm RestrictNamedGroup secP256r1
+ * @run main/othervm RestrictNamedGroup SECP384r1
+ * @run main/othervm RestrictNamedGroup SECP521R1
+ * @run main/othervm RestrictNamedGroup ffDhe2048
+ * @run main/othervm RestrictNamedGroup FFDHE3072
  * @run main/othervm RestrictNamedGroup ffdhe4096
  * @run main/othervm RestrictNamedGroup ffdhe6144
  * @run main/othervm RestrictNamedGroup ffdhe8192
@@ -88,6 +88,7 @@ public class RestrictNamedGroup extends SSLSocketTemplate {
      * Run the test case.
      */
     public static void main(String[] args) throws Exception {
+        // Named group is set as per run argument with no change in it's alphabet
         Security.setProperty("jdk.tls.disabledAlgorithms", args[0]);
         System.setProperty("jdk.tls.namedGroups", args[0]);
 

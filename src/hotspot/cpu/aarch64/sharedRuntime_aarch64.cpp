@@ -170,12 +170,12 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
-#if COMPILER2_OR_JVMCI
-  __ pop_CPU_state(restore_vectors);
-  __ leave();
-#else
+#if !COMPILER2_OR_JVMCI
   assert(!restore_vectors, "vectors are generated only by C2 and JVMCI");
 #endif
+  __ pop_CPU_state(restore_vectors);
+  __ leave();
+
 }
 
 void RegisterSaver::restore_result_registers(MacroAssembler* masm) {

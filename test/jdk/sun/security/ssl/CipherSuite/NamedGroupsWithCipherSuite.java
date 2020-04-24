@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,17 @@ import javax.net.ssl.SSLSocket;
 
 /*
   * @test
-  * @bug 8224650
+  * @bug 8224650 8242929
   * @library /javax/net/ssl/templates
   *          /javax/net/ssl/TLSCommon
   * @summary Test TLS ciphersuite with each individual supported group
   * @run main/othervm NamedGroupsWithCipherSuite x25519
-  * @run main/othervm NamedGroupsWithCipherSuite x448
+  * @run main/othervm NamedGroupsWithCipherSuite X448
   * @run main/othervm NamedGroupsWithCipherSuite secp256r1
-  * @run main/othervm NamedGroupsWithCipherSuite secp384r1
-  * @run main/othervm NamedGroupsWithCipherSuite secp521r1
-  * @run main/othervm NamedGroupsWithCipherSuite ffdhe2048
-  * @run main/othervm NamedGroupsWithCipherSuite ffdhe3072
+  * @run main/othervm NamedGroupsWithCipherSuite secP384r1
+  * @run main/othervm NamedGroupsWithCipherSuite SECP521R1
+  * @run main/othervm NamedGroupsWithCipherSuite ffDhe2048
+  * @run main/othervm NamedGroupsWithCipherSuite FFDHE3072
   * @run main/othervm NamedGroupsWithCipherSuite ffdhe4096
   * @run main/othervm NamedGroupsWithCipherSuite ffdhe6144
   * @run main/othervm NamedGroupsWithCipherSuite ffdhe8192
@@ -135,19 +135,23 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
 
     public static void main(String[] args) throws Exception {
         String namedGroup = args[0];
-
+        // Named group is set as per run argument with no change in it's alphabet
         System.setProperty("jdk.tls.namedGroups", namedGroup);
         System.out.println("NamedGroup: " + namedGroup);
 
         for (Protocol protocol : PROTOCOLS) {
             for (CipherSuite cipherSuite : CIPHER_SUITES) {
+                // Named group converted to lower case just
+                // to satisfy Test condition
                 if (cipherSuite.supportedByProtocol(protocol)
-                        && groupSupportdByCipher(namedGroup, cipherSuite)) {
+                        && groupSupportdByCipher(namedGroup.toLowerCase(),
+                                cipherSuite)) {
                     System.out.printf("Protocol: %s, cipher suite: %s%n",
                             protocol, cipherSuite);
-
+                    // Named group converted to lower case just
+                    // to satisfy Test condition
                     new NamedGroupsWithCipherSuite(protocol.name,
-                            cipherSuite.name(), namedGroup).run();
+                            cipherSuite.name(), namedGroup.toLowerCase()).run();
                 }
             }
         }

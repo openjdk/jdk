@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,6 +21,7 @@
  * questions.
  */
 
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -32,7 +32,9 @@ import java.util.Map;
  */
 public class JdkInfo {
 
-    public final String jdkPath;
+    public static final JdkInfo DEFAULT = new JdkInfo(Jdk.DEFAULT.getPath());
+
+    public final Path javaPath;
 
     public final String version;
     public final String supportedProtocols;
@@ -42,16 +44,16 @@ public class JdkInfo {
     public final boolean supportsSNI;
     public final boolean supportsALPN;
 
-    public JdkInfo(String jdkPath) {
-        this.jdkPath = jdkPath;
+    public JdkInfo(Path javaPath) {
+        this.javaPath = javaPath;
 
-        String output = jdkAttributes(jdkPath);
+        String output = jdkAttributes(javaPath);
         if (output == null || output.trim().isEmpty()) {
             throw new RuntimeException(
-                    "Cannot determine the JDK attributes: " + jdkPath);
+                    "Cannot determine the JDK attributes: " + javaPath);
         }
 
-        String[] attributes = Utils.split(output, Utils.PARAM_DELIMITER);
+        String[] attributes = Utilities.split(output, Utilities.PARAM_DELIMITER);
         version = attributes[0].replaceAll(".*=", "");
         supportedProtocols = attributes[1].replaceAll(".*=", "");
         enabledProtocols = attributes[2].replaceAll(".*=", "");
@@ -62,10 +64,10 @@ public class JdkInfo {
     }
 
     // Determines the specific attributes for the specified JDK.
-    private static String jdkAttributes(String jdkPath) {
+    private static String jdkAttributes(Path javaPath) {
         Map<String, String> props = new LinkedHashMap<>();
-        props.put("java.security.properties", Utils.SECURITY_PROPERTIES_FILE);
-        return ProcessUtils.java(jdkPath, props, JdkUtils.class).getOutput();
+        props.put("java.security.properties", Utils.SEC_PROPS_FILE);
+        return ProcUtils.java(javaPath, JdkInfoUtils.class, props).getOutput();
     }
 
     @Override

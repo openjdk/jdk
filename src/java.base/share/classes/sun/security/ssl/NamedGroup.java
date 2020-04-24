@@ -350,7 +350,7 @@ enum NamedGroup {
 
     static NamedGroup nameOf(String name) {
         for (NamedGroup group : NamedGroup.values()) {
-            if (group.name.equals(name)) {
+            if (group.name.equalsIgnoreCase(name)) {
                 return group;
             }
         }

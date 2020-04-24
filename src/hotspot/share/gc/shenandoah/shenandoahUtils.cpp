@@ -132,7 +132,9 @@ bool ShenandoahGCPhase::is_root_work_phase() {
     case ShenandoahPhaseTimings::init_evac:
     case ShenandoahPhaseTimings::final_update_refs_roots:
     case ShenandoahPhaseTimings::degen_gc_update_roots:
-    case ShenandoahPhaseTimings::full_gc_roots:
+    case ShenandoahPhaseTimings::full_gc_scan_roots:
+    case ShenandoahPhaseTimings::full_gc_update_roots:
+    case ShenandoahPhaseTimings::full_gc_adjust_roots:
       return true;
     default:
       return false;

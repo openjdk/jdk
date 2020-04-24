@@ -235,7 +235,11 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define FORMAT64_MODIFIER "ll"
 #endif // _LP64
 
-#define offset_of(klass,field) offsetof(klass,field)
+// gcc warns about applying offsetof() to non-POD object or calculating
+// offset directly when base address is NULL. Use 16 to get around the
+// warning. The -Wno-invalid-offsetof option could be used to suppress
+// this warning, but we instead just avoid the use of offsetof().
+#define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
 
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"

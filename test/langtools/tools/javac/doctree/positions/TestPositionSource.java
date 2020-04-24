@@ -73,9 +73,9 @@ public class TestPositionSource {
 
     /**First sentence.
      *
-     * <p>Description with {@unknownInlineTag }, {@unknownInlineTag text}, {@unknownInlineTag
+     * <p>Description with {@unknownInlineTag }, {@unknownInlineTag text}
      *
-     * @param p1 p {@unknownInlineTag text
+     * @param p1 p {@unknownInlineTag text}
      * @param p2 p <
      * @param p3 p <em
      * @param p4 p <!--

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jpackage.test;
 
 import java.io.FileOutputStream;
@@ -733,10 +736,10 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         return args.stream().map(v -> {
             String str = v;
-            // Escape quotes.
-            str = str.replace("\"", "\\\"");
             // Escape backslashes.
             str = str.replace("\\", "\\\\");
+            // Escape quotes.
+            str = str.replace("\"", "\\\"");
             // If value contains whitespace characters, put the value in quotes
             if (whitespaceRegexp.matcher(str).find()) {
                 str = "\"" + str + "\"";

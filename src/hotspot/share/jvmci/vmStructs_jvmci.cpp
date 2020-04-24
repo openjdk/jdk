@@ -116,7 +116,8 @@
   nonstatic_field(ConstantPool,                _tags,                                  Array<u1>*)                                   \
   nonstatic_field(ConstantPool,                _pool_holder,                           InstanceKlass*)                               \
   nonstatic_field(ConstantPool,                _length,                                int)                                          \
-  nonstatic_field(ConstantPool,                _flags,                                 int)                                          \
+  nonstatic_field(ConstantPool,                _flags,                                 u2)                                           \
+  nonstatic_field(ConstantPool,                _source_file_name_index,                u2)                                           \
                                                                                                                                      \
   nonstatic_field(ConstMethod,                 _constants,                             ConstantPool*)                                \
   nonstatic_field(ConstMethod,                 _flags,                                 u2)                                           \
@@ -155,10 +156,9 @@
                                                                                                                                      \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
-  nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
   nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
-  nonstatic_field(InstanceKlass,               _misc_flags,                                   u4)                                    \
+  nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \

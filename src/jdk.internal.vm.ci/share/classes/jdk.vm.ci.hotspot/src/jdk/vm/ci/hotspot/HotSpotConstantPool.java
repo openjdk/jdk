@@ -799,6 +799,14 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return false;
     }
 
+    public String getSourceFileName() {
+        final int sourceFileNameIndex = UNSAFE.getChar(getMetaspaceConstantPool() + config().constantPoolSourceFileNameIndexOffset);
+        if (sourceFileNameIndex == 0) {
+            return null;
+        }
+        return lookupUtf8(sourceFileNameIndex);
+    }
+
     @Override
     public String toString() {
         HotSpotResolvedObjectType holder = getHolder();

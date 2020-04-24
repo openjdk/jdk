@@ -442,7 +442,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
       ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
     } else {
       // normal
-      ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_misc_kind_other);
+      ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_kind_other);
     }
   } else {
     // reference
@@ -483,15 +483,15 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id) :
   Klass(id),
   _nest_members(NULL),
-  _nest_host_index(0),
   _nest_host(NULL),
   _record_components(NULL),
   _static_field_size(parser.static_field_size()),
   _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
   _itable_len(parser.itable_size()),
-  _init_thread(NULL),
+  _nest_host_index(0),
   _init_state(allocated),
-  _reference_type(parser.reference_type())
+  _reference_type(parser.reference_type()),
+  _init_thread(NULL)
 {
   set_vtable_length(parser.vtable_size());
   set_kind(kind);

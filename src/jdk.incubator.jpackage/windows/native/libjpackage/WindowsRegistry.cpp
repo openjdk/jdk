@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include <jni.h>
 
 #include "Utils.h"
+
+#pragma comment(lib, "advapi32")
 
 // Max value name size per MSDN plus NULL
 #define VALUE_NAME_SIZE 16384

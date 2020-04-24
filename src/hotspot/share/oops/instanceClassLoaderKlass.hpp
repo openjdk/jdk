@@ -43,7 +43,7 @@ public:
   static const KlassID ID = InstanceClassLoaderKlassID;
 
 private:
-  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_class_loader, ID) {}
+  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_class_loader, ID) {}
 
 public:
   InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }

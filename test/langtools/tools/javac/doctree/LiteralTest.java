@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614  8241780
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -99,6 +99,21 @@ DocComment[DOC_COMMENT, pos:1
 ]
 */
 
+    /**
+     * {@literal
+     * @tag
+     * }
+     */
+    void embedded_at() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Literal[LITERAL, pos:1, |_@tag|_]
+  body: empty
+  block tags: empty
+]
+*/
+
 
     /** {@literal if (a < b) { } */
     void unterminated_1() { }
@@ -123,14 +138,10 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
     Erroneous[ERRONEOUS, pos:1
       code: compiler.err.dc.unterminated.inline.tag
-      body: {@literal_if_(a_<_b)_{_}
+      body: {@literal_if_(a_...<_b)_{_}|_@author_jjg
     ]
   body: empty
-  block tags: 1
-    Author[AUTHOR, pos:27
-      name: 1
-        Text[TEXT, pos:35, jjg]
-    ]
+  block tags: empty
 ]
 */
 

@@ -16619,6 +16619,35 @@ instruct vsub2D(vecX dst, vecX src1, vecX src2)
 
 // --------------------------------- MUL --------------------------------------
 
+instruct vmul8B(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8);
+  match(Set dst (MulVB src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "mulv  $dst,$src1,$src2\t# vector (8B)" %}
+  ins_encode %{
+    __ mulv(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmul64);
+%}
+
+instruct vmul16B(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (MulVB src1 src2));
+  ins_cost(INSN_COST);
+  format %{ "mulv  $dst,$src1,$src2\t# vector (16B)" %}
+  ins_encode %{
+    __ mulv(as_FloatRegister($dst$$reg), __ T16B,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmul128);
+%}
+
 instruct vmul4S(vecD dst, vecD src1, vecD src2)
 %{
   predicate(n->as_Vector()->length() == 2 ||

@@ -817,12 +817,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public String getSourceFileName() {
-        HotSpotVMConfig config = config();
-        final int sourceFileNameIndex = UNSAFE.getChar(getMetaspaceKlass() + config.instanceKlassSourceFileNameIndexOffset);
-        if (sourceFileNameIndex == 0) {
-            return null;
+        if (isArray()) {
+            throw new JVMCIError("Cannot call getSourceFileName() on an array klass type: %s", this);
         }
-        return getConstantPool().lookupUtf8(sourceFileNameIndex);
+        return getConstantPool().getSourceFileName();
     }
 
     @Override
