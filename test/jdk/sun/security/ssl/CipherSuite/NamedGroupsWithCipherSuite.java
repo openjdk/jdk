@@ -81,13 +81,13 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
     private SSLSocketTemplate.Cert[] endEntityCerts = END_ENTITY_CERTS;
 
     NamedGroupsWithCipherSuite(
-            String protocol,
-            String cipher,
+            Protocol protocol,
+            CipherSuite cipher,
             String namedGroup) {
-        this.protocol = protocol;
-        this.cipher = cipher;
+        this.protocol = protocol.name;
+        this.cipher = cipher.name();
 
-        if (cipher.startsWith("TLS_ECDHE_ECDSA")) {
+        if (cipher.keyExAlgorithm == KeyExAlgorithm.ECDHE_ECDSA) {
             switch (namedGroup) {
             case "secp256r1":
                 trustedCerts = new SSLSocketTemplate.Cert[] {
@@ -107,6 +107,12 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
                 endEntityCerts = new SSLSocketTemplate.Cert[] {
                         SSLSocketTemplate.Cert.EE_ECDSA_SECP521R1 };
             }
+        } else if (protocol.id < Protocol.TLSV1_2.id
+                && cipher.keyExAlgorithm == KeyExAlgorithm.DHE_DSS) {
+            trustedCerts = new SSLSocketTemplate.Cert[] {
+                    SSLSocketTemplate.Cert.CA_DSA_1024 };
+            endEntityCerts = new SSLSocketTemplate.Cert[] {
+                    SSLSocketTemplate.Cert.EE_DSA_1024 };
         }
     }
 
@@ -150,8 +156,8 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
                             protocol, cipherSuite);
                     // Named group converted to lower case just
                     // to satisfy Test condition
-                    new NamedGroupsWithCipherSuite(protocol.name,
-                            cipherSuite.name(), namedGroup.toLowerCase()).run();
+                    new NamedGroupsWithCipherSuite(protocol,
+                            cipherSuite, namedGroup.toLowerCase()).run();
                 }
             }
         }
