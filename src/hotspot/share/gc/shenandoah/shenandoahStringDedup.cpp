@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,18 +77,13 @@ void ShenandoahStringDedup::parallel_oops_do(BoolObjectClosure* is_alive, OopClo
   assert(is_enabled(), "String deduplication not enabled");
 
   StringDedupUnlinkOrOopsDoClosure sd_cl(is_alive, cl);
-  if (ShenandoahGCPhase::is_root_work_phase()) {
-    {
-      ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
-      StringDedupQueue::unlink_or_oops_do(&sd_cl);
-    }
-
-    {
-      ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
-      StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
-    }
-  } else {
+  {
+    ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
     StringDedupQueue::unlink_or_oops_do(&sd_cl);
+  }
+
+  {
+    ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
     StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
   }
 }
