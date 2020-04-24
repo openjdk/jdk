@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,10 @@ public:
   bool is_correct_type(HeapRegion* hr) { return hr->is_free(); }
   const char* get_description() { return "Free Regions"; }
 };
+
+HeapRegionRange::HeapRegionRange(uint start, uint end) : _start(start), _end(end) {
+  assert(start <= end, "Invariant");
+}
 
 HeapRegionManager::HeapRegionManager() :
   _bot_mapper(NULL),
@@ -282,19 +286,21 @@ uint HeapRegionManager::expand_at(uint start, uint num_regions, WorkGang* pretou
     return 0;
   }
 
-  uint cur = start;
-  uint idx_last_found = 0;
-  uint num_last_found = 0;
-
+  uint offset = start;
   uint expanded = 0;
 
-  while (expanded < num_regions &&
-         (num_last_found = find_unavailable_from_idx(cur, &idx_last_found)) > 0) {
-    uint to_expand = MIN2(num_regions - expanded, num_last_found);
-    make_regions_available(idx_last_found, to_expand, pretouch_workers);
+  do {
+    HeapRegionRange regions = find_unavailable_from_idx(offset);
+    if (regions.length() == 0) {
+      // No more unavailable regions.
+      break;
+    }
+
+    uint to_expand = MIN2(num_regions - expanded, regions.length());
+    make_regions_available(regions.start(), to_expand, pretouch_workers);
     expanded += to_expand;
-    cur = idx_last_found + num_last_found + 1;
-  }
+    offset = regions.end();
+  } while (expanded < num_regions);
 
   verify_optional();
   return expanded;
@@ -429,32 +435,24 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
   }
 }
 
-uint HeapRegionManager::find_unavailable_from_idx(uint start_idx, uint* res_idx) const {
-  guarantee(res_idx != NULL, "checking");
-  guarantee(start_idx <= (max_length() + 1), "checking");
+HeapRegionRange HeapRegionManager::find_unavailable_from_idx(uint index) const {
+  guarantee(index <= max_length(), "checking");
 
-  uint num_regions = 0;
+  // Find first unavailable region from offset.
+  BitMap::idx_t start = _available_map.get_next_zero_offset(index);
+  if (start == _available_map.size()) {
+    // No unavailable regions found.
+    return HeapRegionRange(max_length(), max_length());
+  }
 
-  uint cur = start_idx;
-  while (cur < max_length() && is_available(cur)) {
-    cur++;
-  }
-  if (cur == max_length()) {
-    return num_regions;
-  }
-  *res_idx = cur;
-  while (cur < max_length() && !is_available(cur)) {
-    cur++;
-  }
-  num_regions = cur - *res_idx;
-#ifdef ASSERT
-  for (uint i = *res_idx; i < (*res_idx + num_regions); i++) {
-    assert(!is_available(i), "just checking");
-  }
-  assert(cur == max_length() || num_regions == 0 || is_available(cur),
-         "The region at the current position %u must be available or at the end of the heap.", cur);
-#endif
-  return num_regions;
+  // The end of the range is the next available region.
+  BitMap::idx_t end = _available_map.get_next_one_offset(start);
+
+  assert(!_available_map.at(start), "Found region (" SIZE_FORMAT ") is not unavailable", start);
+  assert(!_available_map.at(end - 1), "Last region (" SIZE_FORMAT ") in range is not unavailable", end - 1);
+  assert(end == _available_map.size() || _available_map.at(end), "Region (" SIZE_FORMAT ") is not available", end);
+
+  return HeapRegionRange((uint) start, (uint) end);
 }
 
 uint HeapRegionManager::find_highest_free(bool* expanded) {
