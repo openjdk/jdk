@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,11 @@ class outputStream;
   SHENANDOAH_GC_PAR_PHASE_DO(heap_iteration_roots_, "  HI: ", f)                       \
   // end
 
+typedef WorkerDataArray<double> ShenandoahWorkerData;
+
 class ShenandoahPhaseTimings : public CHeapObj<mtGC> {
+  friend class ShenandoahGCPhase;
+  friend class ShenandoahWorkerTimingsTracker;
 public:
 #define GC_PHASE_DECLARE_ENUM(type, title)   type,
 
@@ -174,39 +178,54 @@ public:
 #undef GC_PHASE_DECLARE_ENUM
 
 private:
-  HdrSeq              _timing_data[_num_phases];
+  size_t              _max_workers;
+  double              _cycle_data[_num_phases];
+  HdrSeq              _global_data[_num_phases];
   static const char*  _phase_names[_num_phases];
 
-  WorkerDataArray<double>*   _gc_par_phases[ShenandoahPhaseTimings::GCParPhasesSentinel];
+  Phase                 _current_worker_phase;
+  ShenandoahWorkerData* _worker_data[_num_phases];
   ShenandoahCollectorPolicy* _policy;
+
+  static bool is_worker_phase(Phase phase);
+  Phase current_worker_phase() { return _current_worker_phase; }
+
+  ShenandoahWorkerData* worker_data(Phase phase, GCParPhases par_phase);
+  Phase worker_par_phase(Phase phase, GCParPhases par_phase);
+
+  void set_cycle_data(Phase phase, double time);
 
 public:
   ShenandoahPhaseTimings();
 
   void record_phase_time(Phase phase, double time);
-  void record_worker_time(GCParPhases phase, uint worker_id, double time);
 
   void record_workers_start(Phase phase);
   void record_workers_end(Phase phase);
+
+  void flush_par_workers_to_cycle();
+  void flush_cycle_to_global();
 
   static const char* phase_name(Phase phase) {
     assert(phase >= 0 && phase < _num_phases, "Out of bound");
     return _phase_names[phase];
   }
 
-  void print_on(outputStream* out) const;
+  void print_cycle_on(outputStream* out) const;
+  void print_global_on(outputStream* out) const;
 };
 
 class ShenandoahWorkerTimingsTracker : public StackObj {
 private:
-  ShenandoahPhaseTimings::GCParPhases const _phase;
-  ShenandoahPhaseTimings* const _timings;
+  ShenandoahPhaseTimings*             const _timings;
+  ShenandoahPhaseTimings::Phase       const _phase;
+  ShenandoahPhaseTimings::GCParPhases const _par_phase;
   uint const _worker_id;
 
   double _start_time;
   EventGCPhaseParallel _event;
 public:
-  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::GCParPhases phase, uint worker_id);
+  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::GCParPhases par_phase, uint worker_id);
   ~ShenandoahWorkerTimingsTracker();
 };
 
