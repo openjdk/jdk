@@ -205,9 +205,6 @@ class InstanceKlass: public Klass {
   // Specified as UTF-8 string without terminating zero byte in the classfile,
   // it is stored in the instanceklass as a NULL-terminated UTF-8 string
   const char*     _source_debug_extension;
-  // Array name derived from this class which needs unreferencing
-  // if this class is unloaded.
-  Symbol*         _array_name;
 
   // Number of heapOopSize words used by non-static fields in this klass
   // (including inherited fields but after header_size()).
@@ -734,10 +731,6 @@ public:
   const char* source_debug_extension() const { return _source_debug_extension; }
   void set_source_debug_extension(const char* array, int length);
 
-  // symbol unloading support (refcount already added)
-  Symbol* array_name()                     { return _array_name; }
-  void set_array_name(Symbol* name)        { assert(_array_name == NULL  || name == NULL, "name already created"); _array_name = name; }
-
   // nonstatic oop-map blocks
   static int nonstatic_oop_map_size(unsigned int oop_map_count) {
     return oop_map_count * OopMapBlock::size_in_words();
@@ -1193,7 +1186,8 @@ public:
 
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
-  static void release_C_heap_structures(InstanceKlass* ik);
+
+  virtual void release_C_heap_structures();
 
   // Naming
   const char* signature_name() const;
@@ -1304,7 +1298,7 @@ private:
                                   PrivateLookupMode private_mode);
 
   // Free CHeap allocated fields.
-  void release_C_heap_structures();
+  void release_C_heap_structures_internal();
 
 #if INCLUDE_JVMTI
   // RedefineClasses support

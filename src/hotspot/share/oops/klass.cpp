@@ -94,6 +94,10 @@ bool Klass::is_subclass_of(const Klass* k) const {
   return false;
 }
 
+void Klass::release_C_heap_structures() {
+  if (_name != NULL) _name->decrement_refcount();
+}
+
 bool Klass::search_secondary_supers(Klass* k) const {
   // Put some extra logic here out-of-line, before the search proper.
   // This cuts down the size of the inline method.

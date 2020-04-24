@@ -640,8 +640,8 @@ public:
     } else {
       assert(k->is_instance_klass(), "Must be");
       _instance_class_released ++;
-      InstanceKlass::release_C_heap_structures(InstanceKlass::cast(k));
     }
+    k->release_C_heap_structures();
   }
 };
 
@@ -869,7 +869,7 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
     } else if (m->is_klass()) {
       InstanceKlass* ik = (InstanceKlass*)m;
       // also releases ik->constants() C heap memory
-      InstanceKlass::release_C_heap_structures(ik);
+      ik->release_C_heap_structures();
       // Remove the class so unloading events aren't triggered for
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
