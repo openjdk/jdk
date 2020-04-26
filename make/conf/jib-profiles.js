@@ -1019,7 +1019,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "jdk-linux_aarch64",
-            revision: "13+1.0",
+            revision: "14+1.0",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
         }
