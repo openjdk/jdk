@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,30 +475,33 @@ public interface DataLine extends Line {
         }
 
         /**
-         * Obtains a textual description of the data line info.
+         * Returns a string representation of the info object.
          *
-         * @return a string description
+         * @return a string representation of the info object
          */
         @Override
         public String toString() {
-
-            StringBuilder sb = new StringBuilder();
-
-            if ( (formats.length == 1) && (formats[0] != null) ) {
-                sb.append(" supporting format " + formats[0]);
-            } else if (getFormats().length > 1) {
-                sb.append(" supporting " + getFormats().length + " audio formats");
+            String format = "";
+            AudioFormat[] formats = getFormats();
+            if (formats.length == 1 && formats[0] != null) {
+                format = " supporting format " + formats[0];
+            } else if (formats.length > 1) {
+                format = " supporting " + formats.length + " audio formats";
             }
 
-            if ( (minBufferSize != AudioSystem.NOT_SPECIFIED) && (maxBufferSize != AudioSystem.NOT_SPECIFIED) ) {
-                sb.append(", and buffers of " + minBufferSize + " to " + maxBufferSize + " bytes");
-            } else if ( (minBufferSize != AudioSystem.NOT_SPECIFIED) && (minBufferSize > 0) ) {
-                sb.append(", and buffers of at least " + minBufferSize + " bytes");
-            } else if (maxBufferSize != AudioSystem.NOT_SPECIFIED) {
-                sb.append(", and buffers of up to " + minBufferSize + " bytes");
+            String buffers = "";
+            int min = getMinBufferSize();
+            int max = getMaxBufferSize();
+            if (min != AudioSystem.NOT_SPECIFIED
+                    && max != AudioSystem.NOT_SPECIFIED) {
+                buffers = ", and buffers of " + min + " to " + max + " bytes";
+            } else if (min > 0) {
+                buffers = ", and buffers of at least " + min + " bytes";
+            } else if (max != AudioSystem.NOT_SPECIFIED) {
+                buffers = ", and buffers of up to " + max + " bytes";
             }
 
-            return new String(super.toString() + sb);
+            return String.format("%s%s%s", super.toString(), format, buffers);
         }
     }
 }

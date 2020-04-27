@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,83 +448,47 @@ public class AudioFormat {
     }
 
     /**
-     * Returns a string that describes the format, such as: "PCM SIGNED 22050 Hz
-     * 16 bit mono big-endian". The contents of the string may vary between
-     * implementations of Java Sound.
+     * Returns a string that describes the audio format, such as: "PCM SIGNED
+     * 22050 Hz 16 bit mono big-endian". The contents of the string may vary
+     * between implementations of Java Sound.
      *
-     * @return a string that describes the format parameters
+     * @return a string representation of the audio format
      */
     @Override
     public String toString() {
-        String sEncoding = "";
-        if (getEncoding() != null) {
-            sEncoding = getEncoding().toString() + " ";
-        }
+        String sampleRate = getSampleRate() == AudioSystem.NOT_SPECIFIED ?
+                "unknown sample rate" : getSampleRate() + " Hz";
 
-        String sSampleRate;
-        if (getSampleRate() == (float) AudioSystem.NOT_SPECIFIED) {
-            sSampleRate = "unknown sample rate, ";
-        } else {
-            sSampleRate = "" + getSampleRate() + " Hz, ";
-        }
+        String sampleSize = getSampleSizeInBits() == AudioSystem.NOT_SPECIFIED ?
+                "unknown bits per sample" : getSampleSizeInBits() + " bit";
 
-        String sSampleSizeInBits;
-        if (getSampleSizeInBits() == (float) AudioSystem.NOT_SPECIFIED) {
-            sSampleSizeInBits = "unknown bits per sample, ";
-        } else {
-            sSampleSizeInBits = "" + getSampleSizeInBits() + " bit, ";
-        }
+        String channels = switch (getChannels()) {
+            case 1 -> "mono";
+            case 2 -> "stereo";
+            case AudioSystem.NOT_SPECIFIED -> "unknown number of channels";
+            default -> getChannels() + " channels";
+        };
 
-        String sChannels;
-        if (getChannels() == 1) {
-            sChannels = "mono, ";
-        } else
-            if (getChannels() == 2) {
-                sChannels = "stereo, ";
-            } else {
-                if (getChannels() == AudioSystem.NOT_SPECIFIED) {
-                    sChannels = " unknown number of channels, ";
-                } else {
-                    sChannels = ""+getChannels()+" channels, ";
-                }
-            }
+        String frameSize = getFrameSize() == AudioSystem.NOT_SPECIFIED ?
+                "unknown frame size" : getFrameSize() + " bytes/frame";
 
-        String sFrameSize;
-        if (getFrameSize() == (float) AudioSystem.NOT_SPECIFIED) {
-            sFrameSize = "unknown frame size, ";
-        } else {
-            sFrameSize = "" + getFrameSize()+ " bytes/frame, ";
-        }
-
-        String sFrameRate = "";
+        String frameRate = "";
         if (Math.abs(getSampleRate() - getFrameRate()) > 0.00001) {
-            if (getFrameRate() == (float) AudioSystem.NOT_SPECIFIED) {
-                sFrameRate = "unknown frame rate, ";
-            } else {
-                sFrameRate = getFrameRate() + " frames/second, ";
-            }
+            frameRate = getFrameRate() == AudioSystem.NOT_SPECIFIED ?
+                ", unknown frame rate":", " + getFrameRate() + " frames/second";
         }
 
-        String sEndian = "";
+        String bigEndian = "";
         if ((getEncoding().equals(Encoding.PCM_SIGNED)
              || getEncoding().equals(Encoding.PCM_UNSIGNED))
             && ((getSampleSizeInBits() > 8)
                 || (getSampleSizeInBits() == AudioSystem.NOT_SPECIFIED))) {
-            if (isBigEndian()) {
-                sEndian = "big-endian";
-            } else {
-                sEndian = "little-endian";
-            }
+            bigEndian = isBigEndian() ? ", big-endian" : ", little-endian";
         }
 
-        return sEncoding
-            + sSampleRate
-            + sSampleSizeInBits
-            + sChannels
-            + sFrameSize
-            + sFrameRate
-            + sEndian;
-
+        return String.format("%s %s, %s, %s, %s%s%s", getEncoding(),
+                             sampleRate, sampleSize, channels, frameSize,
+                             frameRate, bigEndian);
     }
 
     /**
@@ -630,13 +594,12 @@ public class AudioFormat {
         }
 
         /**
-         * Provides the {@code String} representation of the encoding. This
-         * {@code String} is the same name that was passed to the constructor.
+         * Returns encoding's name as the string representation of the encoding.
          * For the predefined encodings, the name is similar to the encoding's
          * variable (field) name. For example, {@code PCM_SIGNED.toString()}
          * returns the name "PCM_SIGNED".
          *
-         * @return the encoding name
+         * @return a string representation of the encoding
          */
         @Override
         public final String toString() {

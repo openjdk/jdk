@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,13 +349,13 @@ public interface Mixer extends Line {
         }
 
         /**
-         * Provides a string representation of the mixer info.
+         * Returns a string representation of the info object.
          *
-         * @return a string describing the info object
+         * @return a string representation of the info object
          */
         @Override
         public final String toString() {
-            return (name + ", version " + version);
+            return String.format("%s, version %s", name, version);
         }
     }
 }

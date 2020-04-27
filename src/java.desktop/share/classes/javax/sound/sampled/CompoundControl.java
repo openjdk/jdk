@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package javax.sound.sampled;
+
+import java.util.StringJoiner;
 
 /**
  * A {@code CompoundControl}, such as a graphic equalizer, provides control over
@@ -61,25 +63,18 @@ public abstract class CompoundControl extends Control {
     }
 
     /**
-     * Provides a string representation of the control.
+     * Returns a string representation of the compound control.
      *
-     * @return a string description
+     * @return a string representation of the compound control
      */
     @Override
     public String toString() {
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < controls.length; i++) {
-            if (i != 0) {
-                sb.append(", ");
-                if ((i + 1) == controls.length) {
-                    sb.append("and ");
-                }
-            }
-            sb.append(controls[i].getType());
+        StringJoiner controls = new StringJoiner(", ", "[", "]");
+        for (Control control : getMemberControls()) {
+            controls.add(control.getType().toString());
         }
-
-        return new String(getType() + " Control containing " + sb + " Controls.");
+        return String.format("%s containing %s controls", super.toString(),
+                             controls);
     }
 
     /**

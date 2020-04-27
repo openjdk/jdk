@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,21 +269,21 @@ public class ReverbType {
     }
 
     /**
-     * Provides a {@code String} representation of the reverb type, including
-     * its name and its parameter settings. The exact contents of the string may
-     * vary between implementations of Java Sound.
+     * Returns a string representation of the reverb type, including its name
+     * and its parameter settings. The exact contents of the string may vary
+     * between implementations of Java Sound.
      *
-     * @return reverberation type name and description
+     * @return a string representation of the reverb type
      */
     @Override
     public final String toString() {
-
-        //$$fb2001-07-20: fix for bug 4385060: The "name" attribute of class "ReverbType" is not accessible.
-        //return (super.toString() + ", early reflection delay " + earlyReflectionDelay +
-        return (name + ", early reflection delay " + earlyReflectionDelay +
-                " ns, early reflection intensity " + earlyReflectionIntensity +
-                " dB, late deflection delay " + lateReflectionDelay +
-                " ns, late reflection intensity " + lateReflectionIntensity +
-                " dB, decay time " +  decayTime);
+        return String.format("%s, early reflection delay %d ns, " +
+                             "early reflection intensity %s dB, " +
+                             "late deflection delay %d ns, " +
+                             "late reflection intensity %s dB, decay time %d",
+                             getName(), earlyReflectionDelay,
+                             earlyReflectionIntensity,
+                             lateReflectionDelay, lateReflectionIntensity,
+                             decayTime);
     }
 }

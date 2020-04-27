@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,22 +140,13 @@ public class LineEvent extends EventObject {
     }
 
     /**
-     * Obtains a string representation of the event. The contents of the string
-     * may vary between implementations of Java Sound.
+     * Returns a string representation of the event.
      *
-     * @return a string describing the event
+     * @return a string representation of the event
      */
     @Override
     public String toString() {
-        String sType = "";
-        if (type != null) sType = type.toString()+" ";
-        String sLine;
-        if (getLine() == null) {
-            sLine = "null";
-        } else {
-            sLine = getLine().toString();
-        }
-        return new String(sType + "event from line " + sLine);
+        return String.format("%s event from line %s", type, getLine());
     }
 
     /**
@@ -207,9 +198,9 @@ public class LineEvent extends EventObject {
         }
 
         /**
-         * Returns the type name as the string representation.
+         * Returns type's name as the string representation of the event type.
          *
-         * @return the type name as the string representation
+         * @return a string representation of the event type
          */
         @Override
         public String toString() {

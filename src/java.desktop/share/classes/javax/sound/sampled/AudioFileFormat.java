@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,33 +262,25 @@ public class AudioFileFormat {
     }
 
     /**
-     * Provides a string representation of the file format.
+     * Returns a string representation of the audio file format.
      *
-     * @return the file format as a string
+     * @return a string representation of the audio file format
      */
     @Override
     public String toString() {
-
-        StringBuffer buf = new StringBuffer();
-
+        String str = "Unknown file format";
         //$$fb2002-11-01: fix for 4672864: AudioFileFormat.toString() throws unexpected NullPointerException
-        if (type != null) {
-            buf.append(type.toString() + " (." + type.getExtension() + ") file");
-        } else {
-            buf.append("unknown file format");
+        if (getType() != null) {
+            str = getType() + " (." + getType().getExtension() + ") file";
         }
-
-        if (byteLength != AudioSystem.NOT_SPECIFIED) {
-            buf.append(", byte length: " + byteLength);
+        if (getByteLength() != AudioSystem.NOT_SPECIFIED) {
+            str += ", byte length: " + getByteLength();
         }
-
-        buf.append(", data format: " + format);
-
-        if (frameLength != AudioSystem.NOT_SPECIFIED) {
-            buf.append(", frame length: " + frameLength);
+        str += ", data format: " + getFormat();
+        if (getFrameLength() != AudioSystem.NOT_SPECIFIED) {
+            str += ", frame length: " + getFrameLength();
         }
-
-        return new String(buf);
+        return str;
     }
 
     /**
@@ -376,10 +368,9 @@ public class AudioFileFormat {
         }
 
         /**
-         * Provides the file type's name as the {@code String} representation of
-         * the file type.
+         * Returns type's name as the string representation of the file type.
          *
-         * @return the file type's name
+         * @return a string representation of the file type
          */
         @Override
         public final String toString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,13 +199,14 @@ public interface Port extends Line {
         }
 
         /**
-         * Provides a {@code String} representation of the port.
+         * Returns a string representation of the info object.
          *
-         * @return a string that describes the port
+         * @return a string representation of the info object
          */
         @Override
         public final String toString() {
-            return (name + ((isSource == true) ? " source" : " target") + " port");
+            return String.format("%s %s port", getName(),
+                                 isSource() ? "source" : "target");
         }
     }
 }
