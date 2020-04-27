@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,21 +89,36 @@ public class CustomQueryTest {
 
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        mbs.registerMBean(new Count(), countName);
-        int mbeanCount = mbs.getMBeanCount();
-        QueryExp query = new IncrQuery();
-        Set<ObjectName> names = mbs.queryNames(null, query);
-        assertEquals(mbeanCount, names.size());
-        assertEquals(mbeanCount, mbs.getAttribute(countName, "Count"));
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream oout = new ObjectOutputStream(bout);
-        oout.writeObject(query);
-        oout.close();
-        ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
-        ObjectInputStream oin = new ObjectInputStream(bin);
-        query = (QueryExp) oin.readObject();
-        names = mbs.queryNames(null, query);
-        assertEquals(mbeanCount * 2, mbs.getAttribute(countName, "Count"));
+        boolean isSecondAttempt = false;
+        // The test may fail if some new MBean is registered while the test
+        // is running (e.g. Graal MBean). In this case just retry the test.
+        while (true) {
+            mbs.registerMBean(new Count(), countName);
+            int mbeanCount = mbs.getMBeanCount();
+            QueryExp query = new IncrQuery();
+            Set<ObjectName> names = mbs.queryNames(null, query);
+            assertEquals(mbeanCount, names.size());
+            assertEquals(mbeanCount, mbs.getAttribute(countName, "Count"));
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            ObjectOutputStream oout = new ObjectOutputStream(bout);
+            oout.writeObject(query);
+            oout.close();
+            ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
+            ObjectInputStream oin = new ObjectInputStream(bin);
+            query = (QueryExp) oin.readObject();
+            names = mbs.queryNames(null, query);
+            int counterCount = (int)mbs.getAttribute(countName, "Count");
+            if (mbeanCount * 2 == counterCount) {
+                break;
+            }
+            if (isSecondAttempt) {
+                assertEquals(mbeanCount * 2, counterCount);
+                break;
+            }
+            isSecondAttempt = true;
+            System.out.println("New MBean was registered. Retrying...");
+            mbs.unregisterMBean(countName);
+        }
     }
 
     private static void assertEquals(Object expected, Object actual)

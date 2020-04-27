@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.Stream;
 import javax.management.*;
 import javax.management.openmbean.*;
 import javax.management.relation.*;
@@ -70,33 +71,52 @@ public class GenericTest {
         check("ArrayList<MBeanServer> findMBeanServer", mbsList1.size() == 1);
         check("ArrayList findMBeanServer", mbsList1.equals(mbsList2));
 
-        Set<ObjectName> names1 =
-            checked(mbs.queryNames(null, null), ObjectName.class);
-        Set names2 = mbs.queryNames(null, null);
-        Set<ObjectName> names3 =
-            checked(((MBeanServerConnection) mbs).queryNames(null, null),
-                    ObjectName.class);
-        check("Set<ObjectName> MBeanServer.queryNames", names1.size() >= 1);
-        check("Set MBeanServer.queryNames", names2.size() >= 1);
-        check("Set<ObjectName> MBeanServerConnection.queryNames",
-              names3.size() >= 1);
-        check("queryNames sets same",
-              names1.equals(names2) && names2.equals(names3));
+        boolean isSecondAttempt = false;
+        Set<ObjectName> names1 = null;
+        while (true) {
+            names1 = checked(mbs.queryNames(null, null), ObjectName.class);
+            Set names2 = mbs.queryNames(null, null);
+            Set<ObjectName> names3 =
+                    checked(((MBeanServerConnection) mbs).queryNames(null, null),
+                            ObjectName.class);
+            // If new MBean (e.g. Graal MBean) is registered while the test is running, names1,
+            // names2, and names3 will have different sizes. Repeat the test in this case.
+            if (sameSize(names1, names2, names3) || isSecondAttempt) {
+                check("Set<ObjectName> MBeanServer.queryNames", names1.size() >= 1);
+                check("Set MBeanServer.queryNames", names2.size() >= 1);
+                check("Set<ObjectName> MBeanServerConnection.queryNames",
+                        names3.size() >= 1);
+                check("queryNames sets same",
+                        names1.equals(names2) && names2.equals(names3));
+                break;
+            }
+            isSecondAttempt = true;
+            System.out.println("queryNames sets have different size, retrying...");
+        }
 
-        Set<ObjectInstance> mbeans1 =
-            checked(mbs.queryMBeans(null, null), ObjectInstance.class);
-        Set mbeans2 = mbs.queryMBeans(null, null);
-        Set<ObjectInstance> mbeans3 =
-            checked(((MBeanServerConnection) mbs).queryMBeans(null, null),
-                    ObjectInstance.class);
-        check("Set<ObjectInstsance> MBeanServer.queryMBeans",
-              mbeans1.size() >= 1);
-        check("Set MBeanServer.queryMBeans", mbeans2.size() >= 1);
-        check("Set<ObjectInstsance> MBeanServerConnection.queryMBeans",
-              mbeans3.size() >= 1);
-        check("queryMBeans sets same",
-              mbeans1.equals(mbeans2) && mbeans2.equals(mbeans3));
-
+        isSecondAttempt = false;
+        while (true) {
+            Set<ObjectInstance> mbeans1 =
+                    checked(mbs.queryMBeans(null, null), ObjectInstance.class);
+            Set mbeans2 = mbs.queryMBeans(null, null);
+            Set<ObjectInstance> mbeans3 =
+                    checked(((MBeanServerConnection) mbs).queryMBeans(null, null),
+                            ObjectInstance.class);
+            // If new MBean (e.g. Graal MBean) is registered while the test is running, mbeans1,
+            // mbeans2, and mbeans3 will have different sizes. Repeat the test in this case.
+            if (sameSize(mbeans1, mbeans2, mbeans3) || isSecondAttempt) {
+                check("Set<ObjectInstance> MBeanServer.queryMBeans",
+                        mbeans1.size() >= 1);
+                check("Set MBeanServer.queryMBeans", mbeans2.size() >= 1);
+                check("Set<ObjectInstance> MBeanServerConnection.queryMBeans",
+                        mbeans3.size() >= 1);
+                check("queryMBeans sets same",
+                        mbeans1.equals(mbeans2) && mbeans2.equals(mbeans3));
+                break;
+            }
+            isSecondAttempt = true;
+            System.out.println("queryMBeans sets have different size, retrying...");
+        }
 
         AttributeChangeNotificationFilter acnf =
             new AttributeChangeNotificationFilter();
@@ -481,5 +501,9 @@ public class GenericTest {
             System.out.println("FAILED: " + what);
             failures++;
         }
+    }
+
+    private static boolean sameSize(Set ... sets) {
+        return Stream.of(sets).map(s -> s.size()).distinct().count() == 1;
     }
 }
