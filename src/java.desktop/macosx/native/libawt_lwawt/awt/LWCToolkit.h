@@ -39,6 +39,8 @@ extern int gNumberOfButtons;
 extern jint* gButtonDownMasks;
 
 @interface AWTToolkit : NSObject { }
++ (BOOL) inDoDragDropLoop;
++ (void) setInDoDragDropLoop:(BOOL)val;
 + (long) getEventCount;
 + (void) eventCountPlusPlus;
 + (jint) scrollStateWithEvent: (NSEvent*) event;

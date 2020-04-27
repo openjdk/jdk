@@ -37,6 +37,7 @@
 #import "CDragSource.h"
 #import "DnDUtilities.h"
 #import "ThreadUtilities.h"
+#import "LWCToolkit.h"
 
 
 // When sIsJavaDragging is true Java drag gesture has been recognized and a drag is/has been initialized.
@@ -511,9 +512,9 @@ static BOOL                sNeedsEnter;
     fDragKeyModifiers = [DnDUtilities extractJavaExtKeyModifiersFromJavaExtModifiers:fModifiers];
     fDragMouseModifiers = [DnDUtilities extractJavaExtMouseModifiersFromJavaExtModifiers:fModifiers];
 
-    sNeedsEnter = YES;
-
     @try {
+        sNeedsEnter = YES;
+        AWTToolkit.inDoDragDropLoop = YES;
         // Data dragging:
         if (isFileDrag == FALSE) {
             [view dragImage:dragImage at:dragOrigin offset:dragOffset event:dragEvent pasteboard:pb source:view slideBack:YES];
@@ -561,6 +562,7 @@ static BOOL                sNeedsEnter;
         JNFCallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
     } @finally {
         sNeedsEnter = NO;
+        AWTToolkit.inDoDragDropLoop = NO;
     }
 
     // We have to do this, otherwise AppKit doesn't know we're finished dragging. Yup, it's that bad.
@@ -607,7 +609,7 @@ static BOOL                sNeedsEnter;
 
 - (void)draggedImage:(NSImage *)image beganAt:(NSPoint)screenPoint {
     DLog4(@"[CDragSource draggedImage beganAt]: (%f, %f) %@\n", screenPoint.x, screenPoint.y, self);
-
+    [AWTToolkit eventCountPlusPlus];
     // Initialize static variables:
     sDragOperation = NSDragOperationNone;
     sDraggingLocation = screenPoint;
@@ -615,7 +617,7 @@ static BOOL                sNeedsEnter;
 
 - (void)draggedImage:(NSImage *)image endedAt:(NSPoint)screenPoint operation:(NSDragOperation)operation {
     DLog4(@"[CDragSource draggedImage endedAt:]: (%f, %f) %@\n", screenPoint.x, screenPoint.y, self);
-
+    [AWTToolkit eventCountPlusPlus];
     sDraggingLocation = screenPoint;
     sDragOperation = operation;
 }
@@ -625,6 +627,7 @@ static BOOL                sNeedsEnter;
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
 JNF_COCOA_ENTER(env);
+    [AWTToolkit eventCountPlusPlus];
     // There are two things we would be interested in:
     // a) mouse pointer has moved
     // b) drag actions (key modifiers) have changed
