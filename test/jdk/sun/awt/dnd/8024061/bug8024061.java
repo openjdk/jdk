@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,17 @@
  * @bug 8024061
  * @summary Checks that no exception is thrown if dragGestureRecognized
  *          takes a while to complete.
- * @library /test/lib
- * @build jdk.test.lib.Platform
- * @run main bug8024061
  */
-import java.awt.*;
+
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Robot;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -49,15 +55,15 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.InputEvent;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.*;
-
-import jdk.test.lib.Platform;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 /**
  * If dragGestureRecognized() takes a while to complete and if user performs a drag quickly,
@@ -107,19 +113,13 @@ public class bug8024061 {
         content.add(panel2);
 
         frame.pack();
-
+        frame.setLocationRelativeTo(null);
         DropObject drop = new DropObject();
         drop.place(panel1, new Point(10, 10));
         frame.setVisible(true);
     }
 
     public static void main(String[] args) throws AWTException, InvocationTargetException, InterruptedException {
-        if (!Platform.isLinux() && !Platform.isSolaris()) {
-            System.out.println("This test is for Linux and Solaris only... " +
-                               "skipping!");
-            return;
-        }
-
         final bug8024061[] dnd = {null};
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -166,7 +166,7 @@ public class bug8024061 {
                 throw new RuntimeException("Timed out waiting for dragEnter()");
             }
         } finally {
-            SwingUtilities.invokeLater(frame::dispose);
+            SwingUtilities.invokeAndWait(frame::dispose);
         }
     }
 

@@ -125,7 +125,7 @@ ULONG __stdcall AwtDropTarget::Release() {
     return (ULONG)refs;
 }
 
-void ScaleDown(POINT &cp, HWND m_window) {
+static void ScaleDown(POINT &cp, HWND m_window) {
     int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(m_window);
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice* device = devices->GetDevice(screen);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,11 @@
  * questions.
  */
 
+import java.awt.Color;
 import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.datatransfer.StringSelection;
@@ -29,8 +33,9 @@ import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragSource;
-import java.awt.dnd.DragSourceAdapter;
+import java.awt.dnd.DragSourceDragEvent;
 import java.awt.dnd.DragSourceDropEvent;
+import java.awt.dnd.DragSourceEvent;
 import java.awt.dnd.DragSourceListener;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
@@ -42,7 +47,7 @@ import test.java.awt.regtesthelpers.Util;
 /**
  * @test
  * @key headful
- * @bug 4955110
+ * @bug 4955110 8238575
  * @summary tests that DragSourceDragEvent.getDropAction() accords to its new
  *          spec (does not depend on the user drop action)
  * @library ../../regtesthelpers
@@ -53,26 +58,56 @@ import test.java.awt.regtesthelpers.Util;
 public final class Button2DragTest {
 
     private volatile boolean dropSuccess;
+    private volatile boolean locationValid = true;
 
     private static Frame frame;
 
     public static void main(final String[] args) {
-        Button2DragTest test = new Button2DragTest();
-        try {
-            test.run();
-        } finally {
-            if (frame != null) {
+        var lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        for (GraphicsDevice device : lge.getScreenDevices()) {
+            Button2DragTest test = new Button2DragTest();
+            frame = new Frame(device.getDefaultConfiguration());
+            try {
+                test.run();
+            } finally {
                 frame.dispose();
             }
         }
     }
 
     public void run() {
-        frame = new Frame();
+        final DragSourceListener dragSourceListener = new DragSourceListener() {
+            private void checkLocation(DragSourceEvent dsde) {
+                if (!frame.getBounds().contains(dsde.getLocation())) {
+                    System.err.println("Expected in" + frame.getBounds());
+                    System.err.println("Actual" + dsde.getLocation());
+                    locationValid = false;
+                }
+            }
 
-        final DragSourceListener dragSourceListener = new DragSourceAdapter() {
-            public void dragDropEnd(DragSourceDropEvent e) {
-                dropSuccess = e.getDropSuccess();
+            @Override
+            public void dragEnter(DragSourceDragEvent dsde) {
+                checkLocation(dsde);
+            }
+
+            @Override
+            public void dragOver(DragSourceDragEvent dsde) {
+                checkLocation(dsde);
+            }
+
+            @Override
+            public void dropActionChanged(DragSourceDragEvent dsde) {
+                checkLocation(dsde);
+            }
+
+            @Override
+            public void dragExit(DragSourceEvent dse) {
+                checkLocation(dse);
+            }
+
+            public void dragDropEnd(DragSourceDropEvent dsde) {
+                checkLocation(dsde);
+                dropSuccess = dsde.getDropSuccess();
                 System.err.println("Drop was successful: " + dropSuccess);
             }
         };
@@ -93,11 +128,9 @@ public final class Button2DragTest {
         };
         new DropTarget(frame, dropTargetListener);
 
-        //What would normally go into main() will probably go here.
-        //Use System.out.println for diagnostic messages that you want
-        //to read after the test is done.
+        frame.setBackground(Color.GREEN);
         frame.setUndecorated(true);
-        frame.setBounds(100, 100, 200, 200);
+        frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
@@ -115,11 +148,8 @@ public final class Button2DragTest {
         Util.waitForIdle(robot);
         robot.delay(500);
 
-        if (dropSuccess) {
-            System.err.println("test passed");
-        } else {
+        if (!dropSuccess || !locationValid) {
             throw new RuntimeException("test failed: drop was not successful");
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,20 +127,20 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
         static int __cdecl _compar(const void *, const void *);
 
         static void call_dSCenter(JNIEnv* env, jobject self, jint targetActions,
-                                  jint modifiers, jint x, jint y);
+                                  jint modifiers, POINT pt);
         static void call_dSCmotion(JNIEnv* env, jobject self,
                                    jint targetActions, jint modifiers,
-                                   jint x, jint y);
+                                   POINT pt);
         static void call_dSCchanged(JNIEnv* env, jobject self,
                                     jint targetActions, jint modifiers,
-                                    jint x, jint y);
+                                    POINT pt);
         static void call_dSCmouseMoved(JNIEnv* env, jobject self,
                                        jint targetActions, jint modifiers,
-                                       jint x, jint y);
-        static void call_dSCexit(JNIEnv* env, jobject self, jint x, jint y);
+                                       POINT pt);
+        static void call_dSCexit(JNIEnv* env, jobject self, POINT pt);
         static void call_dSCddfinished(JNIEnv* env, jobject self,
                                        jboolean success, jint operations,
-                                       jint x, jint y);
+                                       POINT pt);
     protected:
 
         class ADSIEnumFormatEtc : public virtual IEnumFORMATETC {
@@ -254,8 +254,8 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
         jobject         m_transferable;
         jobject         m_formatMap;
 
-        POINT           m_dragPoint;
-        POINT           m_dropPoint;
+        POINT           m_dragPoint; // device space (pixels)
+        POINT           m_dropPoint; // device space (pixels)
         BOOL            m_fNC;
         BOOL            m_bRestoreNodropCustomCursor;//CR 6480706 - MS Bug on hold
 
