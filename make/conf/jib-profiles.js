@@ -464,7 +464,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "aarch64",
             build_cpu: "x64",
-            dependencies: ["devkit", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
             ],
@@ -474,7 +474,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "arm",
             build_cpu: "x64",
-            dependencies: ["devkit", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit"],
             configure_args: [
                 "--openjdk-target=arm-linux-gnueabihf", "--with-freetype=bundled",
                 "--with-abi-profile=arm-vfp-hflt", "--disable-warnings-as-errors"
@@ -485,7 +485,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "ppc64le",
             build_cpu: "x64",
-            dependencies: ["devkit", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit"],
             configure_args: [
                 "--openjdk-target=ppc64le-linux-gnu", "--with-freetype=bundled",
                 "--disable-warnings-as-errors"
@@ -496,7 +496,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "s390x",
             build_cpu: "x64",
-            dependencies: ["devkit", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit"],
             configure_args: [
                 "--openjdk-target=s390x-linux-gnu", "--with-freetype=bundled",
                 "--disable-warnings-as-errors"
