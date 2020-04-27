@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6683472 6687298
+ * @bug 6683472 6687298 8197797
  * @summary Transformed fonts using drawString and TextLayout should be in
  *          the same position.
  */
