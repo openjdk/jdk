@@ -29,7 +29,7 @@ package gc;
  * @requires vm.gc != "Z" & os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main gc.TestAllocateHeapAt
+ * @run driver gc.TestAllocateHeapAt
  */
 
 import jdk.test.lib.JDKToolFinder;
@@ -40,28 +40,15 @@ import java.util.Collections;
 
 public class TestAllocateHeapAt {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList<>();
-
-    String testVmOptsStr = System.getProperty("test.java.opts");
-    if (!testVmOptsStr.isEmpty()) {
-      String[] testVmOpts = testVmOptsStr.split(" ");
-      Collections.addAll(vmOpts, testVmOpts);
-    }
     String test_dir = System.getProperty("test.dir", ".");
-    Collections.addAll(vmOpts, new String[] {"-XX:AllocateHeapAt=" + test_dir,
-                                             "-Xlog:gc+heap=info",
-                                             "-Xmx32m",
-                                             "-Xms32m",
-                                             "-version"});
+    String[] flags = {
+        "-XX:AllocateHeapAt=" + test_dir,
+        "-Xlog:gc+heap=info",
+        "-Xmx32m",
+        "-Xms32m",
+        "-version"};
 
-    System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
-    for (int i = 0; i < vmOpts.size(); i += 1) {
-      System.out.print(" " + vmOpts.get(i));
-    }
-    System.out.println();
-
-    ProcessBuilder pb =
-      ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());

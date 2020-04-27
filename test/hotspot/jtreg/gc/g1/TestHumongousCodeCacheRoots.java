@@ -33,10 +33,10 @@ package gc.g1;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Humongous objects may have references from the code cache
- * @run main gc.g1.TestHumongousCodeCacheRoots
-*/
+ * @run driver gc.g1.TestHumongousCodeCacheRoots
+ */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -92,10 +92,9 @@ public class TestHumongousCodeCacheRoots {
    * @param vmargs Arguments to the VM to run
    * @param classname Name of the class to run
    * @param arguments Arguments to the class
-   * @param useTestDotJavaDotOpts Use test.java.opts as part of the VM argument string
    * @return The OutputAnalyzer with the results for the invocation.
    */
-  public static OutputAnalyzer runWhiteBoxTest(String[] vmargs, String classname, String[] arguments, boolean useTestDotJavaDotOpts) throws Exception {
+  public static OutputAnalyzer runWhiteBoxTest(String[] vmargs, String classname, String[] arguments) throws Exception {
     ArrayList<String> finalargs = new ArrayList<String>();
 
     String[] whiteboxOpts = new String[] {
@@ -104,22 +103,12 @@ public class TestHumongousCodeCacheRoots {
       "-cp", System.getProperty("java.class.path"),
     };
 
-    if (useTestDotJavaDotOpts) {
-      // System.getProperty("test.java.opts") is '' if no options is set,
-      // we need to skip such a result
-      String[] externalVMOpts = new String[0];
-      if (System.getProperty("test.java.opts") != null && System.getProperty("test.java.opts").length() != 0) {
-        externalVMOpts = System.getProperty("test.java.opts").split(" ");
-      }
-      finalargs.addAll(Arrays.asList(externalVMOpts));
-    }
-
     finalargs.addAll(Arrays.asList(vmargs));
     finalargs.addAll(Arrays.asList(whiteboxOpts));
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(new String[0]));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(String[]::new));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     return output;
@@ -133,8 +122,7 @@ public class TestHumongousCodeCacheRoots {
       "-XX:+G1VerifyHeapRegionCodeRoots", "-XX:+VerifyAfterGC", // make sure that verification is run
     };
 
-    runWhiteBoxTest(baseArguments, TestHumongousCodeCacheRootsHelper.class.getName(),
-      new String[] {}, false);
+    runWhiteBoxTest(baseArguments, TestHumongousCodeCacheRootsHelper.class.getName(), new String[] { });
   }
 }
 

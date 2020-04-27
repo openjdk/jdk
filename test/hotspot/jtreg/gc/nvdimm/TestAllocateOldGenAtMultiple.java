@@ -31,7 +31,7 @@ package gc.nvdimm;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires vm.bits == "64"
- * @run main gc.nvdimm.TestAllocateOldGenAtMultiple -XX:+UseG1GC
+ * @run driver gc.nvdimm.TestAllocateOldGenAtMultiple
  */
 
 import jdk.test.lib.JDKToolFinder;
@@ -42,49 +42,29 @@ import java.util.Collections;
 
 public class TestAllocateOldGenAtMultiple {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList<>();
-    String[] testVmOpts = null;
-
+    ArrayList<String> flags = new ArrayList<>();
     String test_dir = System.getProperty("test.dir", ".");
 
-    String testVmOptsStr = System.getProperty("test.java.opts");
-    if (!testVmOptsStr.isEmpty()) {
-      testVmOpts = testVmOptsStr.split(" ");
-    }
-
-    // Extra options for each of the sub-tests
-    String[] extraOptsList = new String[] {
-      "-Xmx32m -Xms32m -XX:+UseCompressedOops",     // 1. With compressedoops enabled.
-      "-Xmx32m -Xms32m -XX:-UseCompressedOops",     // 2. With compressedoops disabled.
-      "-Xmx32m -Xms32m -XX:HeapBaseMinAddress=3g",  // 3. With user specified HeapBaseMinAddress.
-      "-Xmx4g -Xms4g",                              // 4. With larger heap size (UnscaledNarrowOop not possible).
-      "-Xmx4g -Xms4g -XX:+UseLargePages",           // 5. Set UseLargePages.
-      "-Xmx4g -Xms4g -XX:+UseNUMA"                  // 6. Set UseNUMA.
+    // Extra flags for each of the sub-tests
+    String[][] extraFlagsList = {
+      {"-Xmx32m", "-Xms32m", "-XX:+UseCompressedOops"},     // 1. With compressedoops enabled.
+      {"-Xmx32m", "-Xms32m", "-XX:-UseCompressedOops"},     // 2. With compressedoops disabled.
+      {"-Xmx32m", "-Xms32m", "-XX:HeapBaseMinAddress=3g"},  // 3. With user specified HeapBaseMinAddress.
+      {"-Xmx4g",  "-Xms4g"},                                // 4. With larger heap size (UnscaledNarrowOop not possible).
+      {"-Xmx4g",  "-Xms4g",  "-XX:+UseLargePages"},         // 5. Set UseLargePages.
+      {"-Xmx4g",  "-Xms4g",  "-XX:+UseNUMA"}                // 6. Set UseNUMA.
     };
 
-    for(String extraOpts : extraOptsList) {
-      vmOpts.clear();
-      if(testVmOpts != null) {
-        Collections.addAll(vmOpts, testVmOpts);
-      }
-      // Add extra options specific to the sub-test.
-      String[] extraOptsArray = extraOpts.split(" ");
-      if(extraOptsArray != null) {
-        Collections.addAll(vmOpts, extraOptsArray);
-      }
-      // Add common options
-      Collections.addAll(vmOpts, new String[] {"-XX:+UnlockExperimentalVMOptions",
+    for (String[] extraFlags : extraFlagsList) {
+      flags.clear();
+      // Add extra flags specific to the sub-test.
+      Collections.addAll(flags, extraFlags);
+      // Add common flags
+      Collections.addAll(flags, new String[] {"-XX:+UnlockExperimentalVMOptions",
                                                "-XX:AllocateOldGenAt=" + test_dir,
                                                "-version"});
-
-      System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
-      for (int i = 0; i < vmOpts.size(); i += 1) {
-        System.out.print(" " + vmOpts.get(i));
-      }
-      System.out.println();
-
       ProcessBuilder pb =
-        ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+          ProcessTools.createJavaProcessBuilder(true, flags.toArray(String[]::new));
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
       System.out.println("Output:\n" + output.getOutput());

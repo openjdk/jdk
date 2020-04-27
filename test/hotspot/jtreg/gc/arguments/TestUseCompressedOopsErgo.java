@@ -35,8 +35,8 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseSerialGC
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseSerialGC
  */
 
 /*
@@ -51,8 +51,8 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
  */
 
 /*
@@ -67,8 +67,8 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseG1GC
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseG1GC
  */
 
 /*
@@ -83,8 +83,8 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
  */
 
 public class TestUseCompressedOopsErgo {

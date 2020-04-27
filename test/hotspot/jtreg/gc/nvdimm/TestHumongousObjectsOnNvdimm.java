@@ -31,8 +31,8 @@ package gc.nvdimm;
  * @requires test.vm.gc.nvdimm
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main gc.nvdimm.TestHumongousObjectsOnNvdimm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                                  -XX:+WhiteBoxAPI
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver gc.nvdimm.TestHumongousObjectsOnNvdimm
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -50,39 +50,31 @@ import gc.testlibrary.Helpers;
  */
 public class TestHumongousObjectsOnNvdimm {
 
-    private static ArrayList<String> testOpts;
+    private static String[] commonFlags;
 
     public static void main(String args[]) throws Exception {
-        testOpts = new ArrayList<>();
-
-        String[] common_options = new String[] {
+        commonFlags = new String[] {
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
-            "-XX:AllocateOldGenAt="+System.getProperty("test.dir", "."),
+            "-XX:AllocateOldGenAt=" + System.getProperty("test.dir", "."),
             "-Xms10M", "-Xmx10M",
             "-XX:G1HeapRegionSize=1m"
         };
-
-        String testVmOptsStr = System.getProperty("test.java.opts");
-        if (!testVmOptsStr.isEmpty()) {
-            String[] testVmOpts = testVmOptsStr.split(" ");
-            Collections.addAll(testOpts, testVmOpts);
-        }
-        Collections.addAll(testOpts, common_options);
 
         // Test with G1 GC
         runTest("-XX:+UseG1GC");
     }
 
     private static void runTest(String... extraFlags) throws Exception {
-        Collections.addAll(testOpts, extraFlags);
-        testOpts.add(HumongousObjectTest.class.getName());
-        System.out.println(testOpts);
+        ArrayList<String> flags = new ArrayList<>();
+        Collections.addAll(flags, commonFlags);
+        Collections.addAll(flags, extraFlags);
+        flags.add(HumongousObjectTest.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false,
-                testOpts.toArray(new String[testOpts.size()]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+                flags.toArray(String[]::new));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);

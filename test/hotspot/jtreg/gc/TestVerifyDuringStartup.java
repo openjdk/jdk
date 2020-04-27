@@ -30,38 +30,22 @@ package gc;
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main gc.TestVerifyDuringStartup
+ * @run driver gc.TestVerifyDuringStartup
  */
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class TestVerifyDuringStartup {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList<>();
+    String[] flags = {
+        "-XX:-UseTLAB",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+VerifyDuringStartup",
+        "-Xlog:gc+verify=debug",
+        "-version"};
 
-    String testVmOptsStr = System.getProperty("test.java.opts");
-    if (!testVmOptsStr.isEmpty()) {
-      String[] testVmOpts = testVmOptsStr.split(" ");
-      Collections.addAll(vmOpts, testVmOpts);
-    }
-    Collections.addAll(vmOpts, new String[] {"-XX:-UseTLAB",
-                                             "-XX:+UnlockDiagnosticVMOptions",
-                                             "-XX:+VerifyDuringStartup",
-                                             "-Xlog:gc+verify=debug",
-                                             "-version"});
-
-    System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
-    for (int i = 0; i < vmOpts.size(); i += 1) {
-      System.out.print(" " + vmOpts.get(i));
-    }
-    System.out.println();
-
-    ProcessBuilder pb =
-      ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());
