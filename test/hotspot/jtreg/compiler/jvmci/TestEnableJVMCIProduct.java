@@ -27,6 +27,7 @@
  * @summary Tests effect of -XX:+EnableJVMCIProduct on EnableJVMCI and UseJVMCICompiler
  * @requires vm.jvmci
  * @library /test/lib
+ * @run driver TestEnableJVMCIProduct
  */
 
 import jdk.test.lib.process.ProcessTools;

@@ -27,6 +27,7 @@
  * @summary Ensure -XX:-JVMCIPrintProperties can be enabled and successfully prints expected output to stdout.
  * @requires vm.jvmci & !vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib
+ * @run driver TestJVMCIPrintProperties
  */
 
 import jdk.test.lib.process.ProcessTools;
