@@ -24,15 +24,19 @@
 /*
  * @test
  * @key headful
- *    @bug 4368790
- *    @summary JButton stays pressed when focus stolen
- *    @author Alexander Potochkin
- *    @run main bug4368790
+ * @bug 4368790 8213123
+ * @summary JButton stays pressed when focus stolen
+ * @run main bug4368790
  */
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
+import java.awt.FlowLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug4368790 {
     private static JButton b1;
@@ -53,26 +57,43 @@ public class bug4368790 {
         b1.requestFocus();
     }
 
-    public static void main(String[] args) throws Exception {
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(50);
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug4368790.createGui();
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported L&F: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Robot robot = new Robot();
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing L&F: " + laf);
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+
+            try {
+                robot.setAutoDelay(50);
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        bug4368790.createGui();
+                    }
+                });
+                robot.waitForIdle();
+                robot.keyPress(KeyEvent.VK_SPACE);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_SPACE);
+                robot.waitForIdle();
+                if (b1.getModel().isPressed()) {
+                    throw new RuntimeException("The button is unexpectedly pressed");
                 }
-            });
-            robot.waitForIdle();
-            robot.keyPress(KeyEvent.VK_SPACE);
-            robot.keyPress(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_SPACE);
-            robot.waitForIdle();
-            if (b1.getModel().isPressed()) {
-                throw new RuntimeException("The button is unexpectedly pressed");
+            } finally {
+                if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
             }
-        } finally {
-            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+            robot.delay(1000);
         }
     }
 }

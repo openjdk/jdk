@@ -522,6 +522,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             // If focusLost arrives while the button has been left-clicked this would disarm the button,
             // causing actionPerformed not to fire on mouse release!
             //b.getModel().setArmed(false);
+            b.getModel().setPressed(false);
             ((Component)e.getSource()).repaint();
         }
 
