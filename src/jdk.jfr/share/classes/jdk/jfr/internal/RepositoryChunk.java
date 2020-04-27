@@ -91,7 +91,7 @@ final class RepositoryChunk {
         try {
             finishWithException(endTime);
         } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getMessage());
+            Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
         }
     }
 
