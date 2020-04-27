@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@ import java.util.Comparator;
 import java.util.Objects;
 
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.internal.consumer.Dispatcher;
-import jdk.jfr.internal.consumer.FileAccess;
-import jdk.jfr.internal.consumer.RecordingInput;
 
 /**
  * Implementation of an event stream that operates against a recording file.
@@ -52,7 +49,7 @@ public final class EventFileStream extends AbstractEventStream {
     public EventFileStream(AccessControlContext acc, Path path) throws IOException {
         super(acc, null);
         Objects.requireNonNull(path);
-        this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILIGED);
+        this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILEGED);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,7 +244,7 @@ public final class EventControl {
 
     private static Control defineCutoff(PlatformEventType type) {
         Cutoff cutoff = type.getAnnotation(Cutoff.class);
-        String def = Cutoff.INIFITY;
+        String def = Cutoff.INFINITY;
         if (cutoff != null) {
             def = cutoff.value();
         }

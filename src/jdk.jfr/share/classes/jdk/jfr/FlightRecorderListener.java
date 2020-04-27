@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ public interface FlightRecorderListener {
      * <p>
      * This method allows clients to implement their own initialization mechanism
      * that is executed before a {@code FlightRecorder} instance is returned by
-     * {@code FlightRecorder#getFlightRecorder()}.
+     * {@link FlightRecorder#getFlightRecorder()}.
      *
      * @implNote This method should return as soon as possible, to avoid blocking
      *           initialization of Flight Recorder. To avoid deadlocks or unexpected
      *           behavior, this method should not call
-     *           {@link FlightRecorder#getFlightRecorder()} or start new recordings.
+     *           {@code FlightRecorder.getFlightRecorder()} or start new recordings.
      *
      * @implSpec The default implementation of this method is empty.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,21 +41,19 @@ import java.lang.annotation.Target;
  * <p>
  * The following example shows how to annotate a method in an event class.
  *
- * <pre>
- * <code>
- * class HelloWorld extend Event {
+ * <pre>{@literal
+ * class HelloWorld extends Event {
  *
- *   {@literal @}Label("Message");
+ *   @Label("Message")
  *   String message;
  *
- *   {@literal @}SettingDefinition;
- *   {@literal @}Label("Message Filter");
+ *   @SettingDefinition
+ *   @Label("Message Filter")
  *   public boolean filter(RegExpControl regExp) {
  *     return regExp.matches(message);
  *   }
  * }
- * </code>
- * </pre>
+ * }</pre>
  *
  * For an example of how the setting controls are defined, see
  * {@link SettingControl}.

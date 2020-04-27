@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public enum RecordingState {
      * recording are released.
      * <p>
      * Nothing that can be done with a recording from this point, and it's
-     * no longer retrievable from the {@code FlightRrecorder.getRecordings()} method.
+     * no longer retrievable from the {@link FlightRecorder#getRecordings()} method.
      */
     CLOSED;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.nio.file.Path;
 
 // Protected by modular boundaries.
 public abstract class FileAccess {
-    public final static FileAccess UNPRIVILIGED = new UnPriviliged();
+    public final static FileAccess UNPRIVILEGED = new UnPrivileged();
 
     public abstract RandomAccessFile openRAF(File f, String mode) throws IOException;
 
@@ -46,7 +46,7 @@ public abstract class FileAccess {
 
     public abstract long fileSize(Path p) throws IOException;
 
-    private static class UnPriviliged extends FileAccess {
+    private static class UnPrivileged extends FileAccess {
         @Override
         public RandomAccessFile openRAF(File f, String mode) throws IOException {
             return new RandomAccessFile(f, mode);

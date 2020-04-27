@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.concurrent.Callable;
  * A user supplied path must never be used in an unsafe context, such as a
  * shutdown hook or any other thread created by JFR.
  * <p>
- * All operation using this path must happen in {@link #doPriviligedIO(Callable)}
+ * All operation using this path must happen in {@link #doPrivilegedIO(Callable)}
  */
 public final class WriteableUserPath {
     private final AccessControlContext controlContext;
@@ -120,7 +120,7 @@ public final class WriteableUserPath {
         return real;
     }
 
-    public void doPriviligedIO(Callable<?> function) throws IOException {
+    public void doPrivilegedIO(Callable<?> function) throws IOException {
         try {
             inPrivileged = true;
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {

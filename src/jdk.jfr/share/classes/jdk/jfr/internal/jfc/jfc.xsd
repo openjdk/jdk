@@ -73,7 +73,7 @@
 
 	<!-- Text represents a string based input which may have a contentType that hints how the text should be interpreted. 
 	For content that can be ordered (i.e numbers) it's possible to set a minimum and maximum value. How values are 
-	ordered are determined by the contentType. For instance, if the contenType would be "timeSpan" "1 s" would 
+	ordered are determined by the contentType. For instance, if the contentType would be "timeSpan" "1 s" would
 	larger then "1 ns". -->
 	<xsd:complexType name="textType">
 		<xsd:simpleContent>
@@ -89,7 +89,7 @@
 	</xsd:complexType>
 
 	<!-- Selection represents an input from a set of values. Values are stored in the option elements and 
-	they each have unique identifier (selectionIdentfier). The default attribute should point to one of 
+	they each have unique identifier (selectionIdentifier). The default attribute should point to one of
 	these values -->
 	<xsd:simpleType name="selectionIdentifier">
 		<xsd:restriction base="xsd:NMTOKEN" />

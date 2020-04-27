@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public final class SecuritySupport {
     private final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final static Module JFR_MODULE = Event.class.getModule();
     public  final static SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
-    public final static FileAccess PRIVILIGED = new Privileged();
+    public final static FileAccess PRIVILEGED = new Privileged();
     static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
@@ -453,8 +453,8 @@ public final class SecuritySupport {
         return doPrivilegedWithReturn(() -> new Thread(runnable, threadName), new Permission[0]);
     }
 
-    static void setDaemonThread(Thread t, boolean daeomn) {
-      doPrivileged(()-> t.setDaemon(daeomn), new RuntimePermission("modifyThread"));
+    static void setDaemonThread(Thread t, boolean daemon) {
+      doPrivileged(()-> t.setDaemon(daemon), new RuntimePermission("modifyThread"));
     }
 
     public static SafePath getAbsolutePath(SafePath path) throws IOException {

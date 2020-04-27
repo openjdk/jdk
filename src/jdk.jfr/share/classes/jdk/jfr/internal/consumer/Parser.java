@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ abstract class Parser {
     public abstract Object parse(RecordingInput input) throws IOException;
 
     /**
-     * Skips data that would usually be by parsed the {@code #parse(RecordingInput)} method.
+     * Skips data that would usually be by parsed the {@link #parse(RecordingInput)} method.
      *
      * @param input input to read from
      * @throws IOException if operation couldn't be completed due to I/O

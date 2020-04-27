@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public abstract class JdkJfrConsumer {
     private static JdkJfrConsumer instance;
 
     // Initialization will trigger setAccess being called
-    private static void forceInitializetion() {
+    private static void forceInitialization() {
         try {
             Class<?> c = RecordedObject.class;
             Class.forName(c.getName(), true, c.getClassLoader());
@@ -64,7 +64,7 @@ public abstract class JdkJfrConsumer {
 
     public static JdkJfrConsumer instance() {
         if (instance == null) {
-            forceInitializetion();
+            forceInitialization();
         }
         return instance;
     }

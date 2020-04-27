@@ -46,8 +46,7 @@ import jdk.jfr.internal.WriteableUserPath;
  * <p>
  * The following example shows how configure, start, stop and dump recording data to disk.
  *
- * <pre>
- * <code>
+ * <pre>{@literal
  *   Configuration c = Configuration.getConfiguration("default");
  *   Recording r = new Recording(c);
  *   r.start();
@@ -55,8 +54,7 @@ import jdk.jfr.internal.WriteableUserPath;
  *   Thread.sleep(5000);
  *   r.stop();
  *   r.dump(Files.createTempFile("my-recording", ".jfr"));
- * </code>
- * </pre>
+ * }</pre>
  *
  * @since 9
  */
@@ -145,11 +143,9 @@ public final class Recording implements Closeable {
      * <p>
      * The following example shows how create a recording that uses a predefined configuration.
      *
-     * <pre>
-     * <code>
+     * <pre>{@literal
      * Recording r = new Recording(Configuration.getConfiguration("default"));
-     * </code>
-     * </pre>
+     * }</pre>
      *
      * The newly created recording is in the {@link RecordingState#NEW} state. To
      * start the recording, invoke the {@link Recording#start()} method.
@@ -269,7 +265,7 @@ public final class Recording implements Closeable {
     /**
      * Returns the time when this recording was started.
      *
-     * @return the the time, or {@code null} if this recording is not started
+     * @return the time, or {@code null} if this recording is not started
      */
     public Instant getStartTime() {
         return internal.getStartTime();
@@ -311,25 +307,21 @@ public final class Recording implements Closeable {
      * <p>
      * The following example shows how to set event settings for a recording.
      *
-     * <pre>
-     * <code>
-     *     Map{@literal <}String, String{@literal >} settings = new HashMap{@literal <}{@literal >}();
+     * <pre>{@literal
+     *     Map<String, String> settings = new HashMap<>();
      *     settings.putAll(EventSettings.enabled("jdk.CPUSample").withPeriod(Duration.ofSeconds(2)).toMap());
      *     settings.putAll(EventSettings.enabled(MyEvent.class).withThreshold(Duration.ofSeconds(2)).withoutStackTrace().toMap());
      *     settings.put("jdk.ExecutionSample#period", "10 ms");
      *     recording.setSettings(settings);
-     * </code>
-     * </pre>
+     * }</pre>
      *
      * The following example shows how to merge settings.
      *
-     * <pre>
-     *     {@code
+     * <pre>{@literal
      *     Map<String, String> settings = recording.getSettings();
      *     settings.putAll(additionalSettings);
      *     recording.setSettings(settings);
-     * }
-     * </pre>
+     * }</pre>
      *
      * @param settings the settings to set, not {@code null}
      */
@@ -421,7 +413,7 @@ public final class Recording implements Closeable {
      *
      * @param maxSize the amount of data to retain, {@code 0} if infinite
      *
-     * @throws IllegalArgumentException if <code>maxSize</code> is negative
+     * @throws IllegalArgumentException if {@code maxSize} is negative
      *
      * @throws IllegalStateException if the recording is in {@code CLOSED} state
      */
@@ -474,7 +466,7 @@ public final class Recording implements Closeable {
      *
      * @param maxAge the length of time that data is kept, or {@code null} if infinite
      *
-     * @throws IllegalArgumentException if <code>maxAge</code> is negative
+     * @throws IllegalArgumentException if {@code maxAge} is negative
      *
      * @throws IllegalStateException if the recording is in the {@code CLOSED} state
      */
@@ -586,10 +578,10 @@ public final class Recording implements Closeable {
      * <p>
      * The stream may contain some data outside the specified range.
      *
-     * @param the start start time for the stream, or {@code null} to get data from
+     * @param start the start time for the stream, or {@code null} to get data from
      *        start time of the recording
      *
-     * @param the end end time for the stream, or {@code null} to get data until the
+     * @param end the end time for the stream, or {@code null} to get data until the
      *        present time.
      *
      * @return an input stream, or {@code null} if no data is available in the

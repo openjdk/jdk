@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public final class RequestEngine {
                 }
             } catch (Throwable e) {
                 // Prevent malicious user to propagate exception callback in the wrong context
-                Logger.log(LogTag.JFR_SYSTEM_EVENT, LogLevel.WARN, "Exception occured during execution of period hook for " + type.getLogName());
+                Logger.log(LogTag.JFR_SYSTEM_EVENT, LogLevel.WARN, "Exception occurred during execution of period hook for " + type.getLogName());
             }
         }
 
@@ -87,7 +87,7 @@ public final class RequestEngine {
                         Logger.log(LogTag.JFR_EVENT, LogLevel.DEBUG, ()-> "Executed periodic hook for " + type.getLogName());
                     } catch (Throwable t) {
                         // Prevent malicious user to propagate exception callback in the wrong context
-                        Logger.log(LogTag.JFR_EVENT, LogLevel.WARN, "Exception occured during execution of period hook for " + type.getLogName());
+                        Logger.log(LogTag.JFR_EVENT, LogLevel.WARN, "Exception occurred during execution of period hook for " + type.getLogName());
                     }
                     return null;
                 }
@@ -238,7 +238,7 @@ public final class RequestEngine {
             // calculate time left
             left = (r_period - r_delta);
 
-            /**
+            /*
              * nothing outside checks that a period is >= 0, so left can end up
              * negative here. ex. (r_period =(-1)) - (r_delta = 0) if it is,
              * handle it.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public class TestJcmdDumpLimited {
     private static void testDumpEndBegin() throws Exception {
         Path testEndBegin = Paths.get("testEndBegin.jfr");
         OutputAnalyzer output = JcmdHelper.jcmd("JFR.dump", "filename=" + testEndBegin.toFile().getAbsolutePath(), "begin=" + Instant.now(), "end=" + Instant.now().minusSeconds(200));
-        output.shouldContain("Dump failed, begin must preceed end.");
+        output.shouldContain("Dump failed, begin must precede end.");
         assertMissingFile(testEndBegin);
     }
 

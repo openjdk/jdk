@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ final class DCmdDump extends AbstractDCmd {
     /**
      * Execute JFR.dump.
      *
-     * @param name name or id of the recording to dump, or <code>null</code> to dump everything
+     * @param name name or id of the recording to dump, or {@code null} to dump everything
      *
      * @param filename file path where recording should be written, not null
      * @param maxAge how far back in time to dump, may be null
@@ -114,7 +114,7 @@ final class DCmdDump extends AbstractDCmd {
 
         if (beginTime != null && endTime != null) {
             if (endTime.isBefore(beginTime)) {
-                throw new DCmdException("Dump failed, begin must preceed end.");
+                throw new DCmdException("Dump failed, begin must precede end.");
             }
         }
 

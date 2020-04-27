@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.jfr.MetadataDefinition;
  * Event annotation, determines the cutoff above which an event should not be
  * recorded, i.e. {@code "20 ms"}.
  *
- * This settings is only supported for JVM events,
+ * This settings is only supported for JVM events.
  *
  * @since 9
  */
@@ -50,7 +50,7 @@ public @interface Cutoff {
      * Settings name {@code "cutoff"} for configuring event cutoffs.
      */
     public final static String NAME = "cutoff";
-    public final static String INIFITY = "infinity";
+    public final static String INFINITY = "infinity";
 
     /**
      * Cutoff, for example {@code "20 ms"}.
@@ -67,9 +67,9 @@ public @interface Cutoff {
      * {@code "d"} (days)<br>
      * <p>
      * Example values, {@code "0 ns"}, {@code "10 ms"} and {@code "1 s"}. If the
-     * events has an infinite timespan, the text {@code"infinity"} should be used.
+     * events has an infinite timespan, the text {@code "infinity"} should be used.
      *
      * @return the threshold, default {@code "0 ns"} not {@code null}
      */
-    String value() default "inifity";
+    String value() default "infinity";
 }

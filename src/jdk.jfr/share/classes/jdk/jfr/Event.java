@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,17 @@ package jdk.jfr;
  * <p>
  * The following example shows how to implement an {@code Event} class.
  *
- * <pre>
- * <code>
+ * <pre>{@literal
  * import jdk.jfr.Event;
  * import jdk.jfr.Description;
  * import jdk.jfr.Label;
  *
  * public class Example {
  *
- *   &#064;Label("Hello World")
- *   &#064;Description("Helps programmer getting started")
+ *   @Label("Hello World")
+ *   @Description("Helps programmer getting started")
  *   static class HelloWorld extends Event {
- *       &#064;Label("Message")
+ *       @Label("Message")
  *       String message;
  *   }
  *
@@ -52,11 +51,10 @@ package jdk.jfr;
  *       event.commit();
  *   }
  * }
- * </code>
- * </pre>
+ * }</pre>
  * <p>
  * After an event is allocated and its field members are populated, it can be
- * written to the Flight Recorder system by using the {@code #commit()} method.
+ * written to the Flight Recorder system by using the {@link #commit()} method.
  * <p>
  * By default, an event is enabled. To disable an event annotate the
  * {@link Event} class with {@code @Enabled(false)}.
@@ -79,8 +77,8 @@ package jdk.jfr;
  * Gathering data to store in an event can be expensive. The
  * {@link Event#shouldCommit()} method can be used to verify whether an event
  * instance would actually be written to the system when the
- * {@code Event#commit()commit} method is invoked. If
- * {@link Event#shouldCommit()} returns false, then those operations can be
+ * {@code commit()} method is invoked. If
+ * {@code shouldCommit()} returns false, then those operations can be
  * avoided.
  *
  * @since 9
@@ -156,7 +154,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * {@code EventFactory} class.
      *
      * @param index the index of the field that is passed to
-     *        {@code EventFactory#create(String, java.util.List, java.util.List)}
+     *        {@link EventFactory#create(java.util.List, java.util.List)}
      * @param value value to set, can be {@code null}
      * @throws UnsupportedOperationException if it's not a dynamically generated
      *         event

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ final class DCmdCheck extends AbstractDCmd {
      * Execute JFR.check
      *
      * @param recordingText name or id of the recording to check, or
-     *        <code>null</code> to show a list of all recordings.
+     *        {@code null} to show a list of all recordings.
      *
      * @param verbose if event settings should be included.
      *
@@ -102,7 +102,7 @@ final class DCmdCheck extends AbstractDCmd {
         printGeneral(recording);
         if (verbose) {
             println();
-            printSetttings(recording);
+            printSettings(recording);
         }
     }
 
@@ -130,7 +130,7 @@ final class DCmdCheck extends AbstractDCmd {
         println();
     }
 
-    private void printSetttings(Recording recording) {
+    private void printSettings(Recording recording) {
         Map<String, String> settings = recording.getSettings();
         for (EventType eventType : sortByEventPath(getFlightRecorder().getEventTypes())) {
             StringJoiner sj = new StringJoiner(",", "[", "]");

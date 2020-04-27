@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,24 +82,24 @@ public class Type implements Comparable<Type> {
      *
      * @param javaTypeName i.e "java.lang.String"
      * @param superType i.e "java.lang.Annotation"
-     * @param id the class id that represents the class in the JVM
+     * @param typeId the class id that represents the class in the JVM
      *
      */
     public Type(String javaTypeName, String superType, long typeId) {
         this(javaTypeName, superType, typeId, false);
     }
 
-    Type(String javaTypeName, String superType, long typeId, boolean contantPool) {
-        this(javaTypeName, superType, typeId, contantPool, null);
+    Type(String javaTypeName, String superType, long typeId, boolean constantPool) {
+        this(javaTypeName, superType, typeId, constantPool, null);
     }
 
-    Type(String javaTypeName, String superType, long typeId, boolean contantPool, Boolean simpleType) {
+    Type(String javaTypeName, String superType, long typeId, boolean constantPool, Boolean simpleType) {
         Objects.requireNonNull(javaTypeName);
 
         if (!isValidJavaIdentifier(javaTypeName)) {
             throw new IllegalArgumentException(javaTypeName + " is not a valid Java identifier");
         }
-        this.constantPool = contantPool;
+        this.constantPool = constantPool;
         this.superType = superType;
         this.name = javaTypeName;
         this.id = typeId;

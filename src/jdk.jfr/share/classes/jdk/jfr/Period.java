@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public @interface Period {
      * <p>
      * Example values: {@code "0 ns"}, {@code "10 ms"}, and {@code "1 s"}.
      * <p>
-     * A period may also be <code>"everyChunk"</code> to specify that it occurs at
+     * A period may also be {@code "everyChunk"} to specify that it occurs at
      * least once for every recording file. The number of events that are emitted
      * depends on how many times the file rotations occur when data is recorded.
      *

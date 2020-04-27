@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ final class EventHandlerCreator {
     // with for example WLS.
     private static final int CLASS_VERSION = 52;
 
-    // This is needed so a new EventHandler is automatically generated in MetadataRespoistory
+    // This is needed so a new EventHandler is automatically generated in MetadataRepository
     // if a user Event class is loaded using APPCDS/CDS.
     private static final String SUFFIX  = "_" + System.currentTimeMillis() + "-" + JVM.getJVM().getPid();
 

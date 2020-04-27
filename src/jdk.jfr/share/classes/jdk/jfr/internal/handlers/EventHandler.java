@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public abstract class EventHandler {
     // Accessed by generated code in event class
     // Accessed by generated sub class
     public final boolean isEnabled() {
-        return platformEventType.isCommitable();
+        return platformEventType.isCommittable();
     }
 
     public final EventType getEventType() {

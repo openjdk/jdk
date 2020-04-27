@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ final class EventParser extends Parser {
 
     @Override
     public void skip(RecordingInput input) throws IOException {
-        throw new InternalError("Should not call this method. More efficent to read event size and skip ahead");
+        throw new InternalError("Should not call this method. More efficient to read event size and skip ahead");
     }
 
     public void resetCache() {

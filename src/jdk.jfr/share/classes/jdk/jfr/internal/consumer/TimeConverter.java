@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.time.ZoneOffset;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.consumer.ChunkHeader;
 
 /**
  * Converts ticks to nanoseconds
@@ -40,13 +39,13 @@ final class TimeConverter {
     private final long startTicks;
     private final long startNanos;
     private final double divisor;
-    private final ZoneOffset zoneOffet;
+    private final ZoneOffset zoneOffset;
 
     TimeConverter(ChunkHeader chunkHeader, int rawOffset) {
         this.startTicks = chunkHeader.getStartTicks();
         this.startNanos = chunkHeader.getStartNanos();
         this.divisor = chunkHeader.getTicksPerSecond() / 1000_000_000L;
-        this.zoneOffet = zoneOfSet(rawOffset);
+        this.zoneOffset = zoneOfSet(rawOffset);
     }
 
     public long convertTimestamp(long ticks) {
@@ -58,7 +57,7 @@ final class TimeConverter {
     }
 
     public ZoneOffset getZoneOffset() {
-        return zoneOffet;
+        return zoneOffset;
     }
 
     private ZoneOffset zoneOfSet(int rawOffset) {
