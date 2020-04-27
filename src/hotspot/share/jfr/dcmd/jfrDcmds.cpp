@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,7 @@ void JfrCheckFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 JfrStartFlightRecordingDCmd::JfrStartFlightRecordingDCmd(outputStream* output,
                                                          bool heap) : DCmdWithParser(output, heap),
   _name("name", "Name that can be used to identify recording, e.g. \\\"My Recording\\\"", "STRING", false, NULL),
-  _settings("settings", "Settings file(s), e.g. profile or default. See JRE_HOME/lib/jfr", "STRING SET", false),
+  _settings("settings", "Settings file(s), e.g. profile or default. See JAVA_HOME/lib/jfr", "STRING SET", false),
   _delay("delay", "Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g. 5h.", "NANOTIME", false, "0"),
   _duration("duration", "Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 300s.", "NANOTIME", false, "0"),
   _disk("disk", "Recording should be persisted to disk", "BOOLEAN", false),
