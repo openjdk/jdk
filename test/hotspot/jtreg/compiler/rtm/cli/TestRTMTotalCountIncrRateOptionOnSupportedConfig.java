@@ -30,12 +30,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.rtm.cpu & vm.rtm.compiler
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.rtm.cli.TestRTMTotalCountIncrRateOptionOnSupportedConfig
+ * @run driver compiler.rtm.cli.TestRTMTotalCountIncrRateOptionOnSupportedConfig
  */
 
 package compiler.rtm.cli;

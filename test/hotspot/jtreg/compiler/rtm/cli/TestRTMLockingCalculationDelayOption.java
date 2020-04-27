@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.rtm.compiler
- * @run main/othervm compiler.rtm.cli.TestRTMLockingCalculationDelayOption
+ * @run driver compiler.rtm.cli.TestRTMLockingCalculationDelayOption
  */
 
 package compiler.rtm.cli;
