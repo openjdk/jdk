@@ -209,15 +209,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) AllocatePrefetchStyle = 1;
 
-  if (AllocatePrefetchStyle == 4) {
-    AllocatePrefetchStepSize = cache_line_size; // Need exact value.
-    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 12; // Use larger blocks by default.
-    if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 2*cache_line_size; // Default is not defined?
-  } else {
-    if (cache_line_size > AllocatePrefetchStepSize) AllocatePrefetchStepSize = cache_line_size;
-    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 3; // Optimistic value.
-    if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 3*cache_line_size; // Default is not defined?
-  }
+  if (cache_line_size > AllocatePrefetchStepSize) AllocatePrefetchStepSize = cache_line_size;
+  // PPC processors have an automatic prefetch engine.
+  if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 1;
+  if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 3 * cache_line_size;
 
   assert(AllocatePrefetchLines > 0, "invalid value");
   if (AllocatePrefetchLines < 1) { // Set valid value in product VM.
