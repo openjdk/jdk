@@ -92,7 +92,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private final String name;     // zip file name
     private volatile boolean closeRequested;
-    private final @Stable ZipCoder zc;
 
     // The "resource" used by this zip file that needs to be
     // cleaned after use.
@@ -232,11 +231,10 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         Objects.requireNonNull(charset, "charset");
 
-        this.zc = ZipCoder.get(charset);
         this.name = name;
         long t0 = System.nanoTime();
 
-        this.res = new CleanableResource(this, file, mode);
+        this.res = new CleanableResource(this, ZipCoder.get(charset), file, mode);
 
         PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
         PerfCounter.getZipFileCount().increment();
@@ -307,7 +305,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (res.zsrc.comment == null) {
                 return null;
             }
-            return zc.toString(res.zsrc.comment);
+            return res.zsrc.zc.toString(res.zsrc.comment);
         }
     }
 
@@ -338,18 +336,9 @@ public class ZipFile implements ZipConstants, Closeable {
         ZipEntry entry = null;
         synchronized (this) {
             ensureOpen();
-            byte[] bname = zc.getBytes(name);
-            int pos = res.zsrc.getEntryPos(bname, true);
+            int pos = res.zsrc.getEntryPos(name, true);
             if (pos != -1) {
-                entry = getZipEntry(name, bname, pos, func);
-            } else if (!zc.isUTF8() && !name.isEmpty() && !name.endsWith("/")) {
-                // non-UTF-8 charsets need to lookup again with added slash
-                name = name + '/';
-                bname = zc.getBytes(name);
-                pos = res.zsrc.getEntryPos(bname, false);
-                if (pos != -1) {
-                    entry = getZipEntry(name, bname, pos, func);
-                }
+                entry = getZipEntry(name, pos, func);
             }
         }
         return entry;
@@ -371,7 +360,7 @@ public class ZipFile implements ZipConstants, Closeable {
      */
     public InputStream getInputStream(ZipEntry entry) throws IOException {
         Objects.requireNonNull(entry, "entry");
-        int pos = -1;
+        int pos;
         ZipFileInputStream in;
         Source zsrc = res.zsrc;
         Set<InputStream> istreams = res.istreams;
@@ -379,10 +368,8 @@ public class ZipFile implements ZipConstants, Closeable {
             ensureOpen();
             if (Objects.equals(lastEntryName, entry.name)) {
                 pos = lastEntryPos;
-            } else if (!zc.isUTF8() && (entry.flag & USE_UTF8) != 0) {
-                pos = zsrc.getEntryPos(zc.getBytesUTF8(entry.name), false);
             } else {
-                pos = zsrc.getEntryPos(zc.getBytes(entry.name), false);
+                pos = zsrc.getEntryPos(entry.name, false);
             }
             if (pos == -1) {
                 return null;
@@ -528,7 +515,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
-                return (T)getZipEntry(null, null, res.zsrc.getEntryPos(i++ * 3), gen);
+                return (T)getZipEntry(null, res.zsrc.getEntryPos(i++ * 3), gen);
             }
         }
 
@@ -600,18 +587,15 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> getZipEntry(null, null, pos, ZipEntry::new)), false);
+                pos -> getZipEntry(null, pos, ZipEntry::new)), false);
        }
     }
 
     private String getEntryName(int pos) {
         byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
-        if (!zc.isUTF8() && (CENFLG(cen, pos) & USE_UTF8) != 0) {
-            return zc.toStringUTF8(cen, pos + CENHDR, nlen);
-        } else {
-            return zc.toString(cen, pos + CENHDR, nlen);
-        }
+        ZipCoder zc = res.zsrc.zipCoderForPos(pos);
+        return zc.toString(cen, pos + CENHDR, nlen);
     }
 
     /*
@@ -647,34 +631,37 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> (JarEntry)getZipEntry(null, null, pos, func)), false);
+                pos -> (JarEntry)getZipEntry(null, pos, func)), false);
         }
     }
 
     private String lastEntryName;
     private int lastEntryPos;
 
-    /* Checks ensureOpen() before invoke this method */
-    private ZipEntry getZipEntry(String name, byte[] bname, int pos,
+    /* Check ensureOpen() before invoking this method */
+    private ZipEntry getZipEntry(String name, int pos,
                                  Function<String, ? extends ZipEntry> func) {
         byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
         int clen = CENCOM(cen, pos);
-        int flag = CENFLG(cen, pos);
-        if (name == null || bname.length != nlen) {
-            // to use the entry name stored in cen, if the passed in name is
-            // (1) null, invoked from iterator, or
-            // (2) not equal to the name stored, a slash is appended during
-            // getEntryPos() search.
-            if (!zc.isUTF8() && (flag & USE_UTF8) != 0) {
-                name = zc.toStringUTF8(cen, pos + CENHDR, nlen);
-            } else {
-                name = zc.toString(cen, pos + CENHDR, nlen);
+
+        ZipCoder zc = res.zsrc.zipCoderForPos(pos);
+        if (name != null) {
+            // only need to check for mismatch of trailing slash
+            if (nlen > 0 &&
+                !name.isEmpty() &&
+                zc.hasTrailingSlash(cen, pos + CENHDR + nlen) &&
+                !name.endsWith("/"))
+            {
+                name += '/';
             }
+        } else {
+            // invoked from iterator, use the entry name stored in cen
+            name = zc.toString(cen, pos + CENHDR, nlen);
         }
         ZipEntry e = func.apply(name);    //ZipEntry e = new ZipEntry(name);
-        e.flag = flag;
+        e.flag = CENFLG(cen, pos);
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
         e.size = CENLEN(cen, pos);
@@ -686,11 +673,7 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         if (clen != 0) {
             int start = pos + CENHDR + nlen + elen;
-            if (!zc.isUTF8() && (flag & USE_UTF8) != 0) {
-                e.comment = zc.toStringUTF8(cen, start, clen);
-            } else {
-                e.comment = zc.toString(cen, start, clen);
-            }
+            e.comment = zc.toString(cen, start, clen);
         }
         lastEntryName = e.name;
         lastEntryPos = pos;
@@ -721,11 +704,11 @@ public class ZipFile implements ZipConstants, Closeable {
 
         Source zsrc;
 
-        CleanableResource(ZipFile zf, File file, int mode) throws IOException {
+        CleanableResource(ZipFile zf, ZipCoder zc, File file, int mode) throws IOException {
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
             this.inflaterCache = new ArrayDeque<>();
-            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zf.zc);
+            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zc);
         }
 
         void clean() {
@@ -1113,7 +1096,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int[] EMPTY_META_VERSIONS = new int[0];
 
         private final Key key;               // the key in files
-        private final ZipCoder zc;           // zip coder used to decode/encode
+        private final @Stable ZipCoder zc;   // zip coder used to decode/encode
 
         private int refs = 1;
 
@@ -1412,8 +1395,6 @@ public class ZipFile implements ZipConstants, Closeable {
         private void initCEN(int knownTotal) throws IOException {
             // Prefer locals for better performance during startup
             byte[] cen;
-            ZipCoder zc = this.zc;
-
             if (knownTotal == -1) {
                 End end = findEND();
                 if (end.endpos == 0) {
@@ -1488,7 +1469,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (entryPos + nlen > limit)
                     zerror("invalid CEN header (bad header size)");
                 // Record the CEN offset and the name hash in our hash cell.
-                hash = zc.hashN(cen, entryPos, nlen);
+                hash = zipCoderForPos(pos).normalizedHash(cen, entryPos, nlen);
                 hsh = (hash & 0x7fffffff) % tablelen;
                 next = table[hsh];
                 table[hsh] = idx;
@@ -1544,11 +1525,12 @@ public class ZipFile implements ZipConstants, Closeable {
          * Returns the {@code pos} of the zip cen entry corresponding to the
          * specified entry name, or -1 if not found.
          */
-        private int getEntryPos(byte[] name, boolean addSlash) {
+        private int getEntryPos(String name, boolean addSlash) {
             if (total == 0) {
                 return -1;
             }
-            int hsh = zc.hashN(name, 0, name.length);
+
+            int hsh = ZipCoder.normalizedHash(name);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
 
             // Search down the target hash chain for a entry whose
@@ -1557,36 +1539,40 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (getEntryHash(idx) == hsh) {
                     // The CEN name must match the specfied one
                     int pos = getEntryPos(idx);
-                    byte[] cen = this.cen;
-                    final int nlen = CENNAM(cen, pos);
-                    int nameoff = pos + CENHDR;
 
-                    // If addSlash is true and we're using the UTF-8 zip coder,
-                    // we'll directly test for name+/ in addition to name,
-                    // unless name is the empty string or already ends with a
-                    // slash
-                    if (name.length == nlen ||
-                           (addSlash &&
-                            zc.isUTF8() &&
-                            name.length > 0 &&
-                            name.length + 1 == nlen &&
-                            cen[nameoff + nlen - 1] == '/' &&
-                            name[name.length - 1] != '/')) {
-                        boolean matched = true;
-                        for (int i = 0; i < name.length; i++) {
-                            if (name[i] != cen[nameoff++]) {
-                                matched = false;
-                                break;
-                            }
+                    try {
+                        ZipCoder zc = zipCoderForPos(pos);
+                        String entry = zc.toString(cen, pos + CENHDR, CENNAM(cen, pos));
+
+                        // If addSlash is true we'll test for name+/ in addition to
+                        // name, unless name is the empty string or already ends with a
+                        // slash
+                        int entryLen = entry.length();
+                        int nameLen = name.length();
+                        if ((entryLen == nameLen && entry.equals(name)) ||
+                                (addSlash &&
+                                nameLen + 1 == entryLen &&
+                                entry.startsWith(name) &&
+                                entry.charAt(entryLen - 1) == '/')) {
+                            return pos;
                         }
-                        if (matched) {
-                           return pos;
-                        }
+                    } catch (IllegalArgumentException iae) {
+                        // Ignore
                     }
                 }
                 idx = getEntryNext(idx);
             }
             return -1;
+        }
+
+        private ZipCoder zipCoderForPos(int pos) {
+            if (zc.isUTF8()) {
+                return zc;
+            }
+            if ((CENFLG(cen, pos) & USE_UTF8) != 0) {
+                return ZipCoder.UTF8;
+            }
+            return zc;
         }
 
         /**
