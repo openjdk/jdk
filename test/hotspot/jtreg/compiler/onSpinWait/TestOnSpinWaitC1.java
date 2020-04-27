@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @requires os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.compiler1.enabled
- * @run driver compiler.onSpinWait.TestOnSpinWait
+ * @run driver compiler.onSpinWait.TestOnSpinWaitC1
  */
 
 package compiler.onSpinWait;
