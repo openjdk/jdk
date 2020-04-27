@@ -454,6 +454,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.graph.test \
     org.graalvm.compiler.hotspot.aarch64.test \
     org.graalvm.compiler.hotspot.amd64.test \
+    org.graalvm.compiler.hotspot.jdk15.test \
     org.graalvm.compiler.hotspot.jdk9.test \
     org.graalvm.compiler.hotspot.lir.test \
     org.graalvm.compiler.hotspot.sparc.test \
