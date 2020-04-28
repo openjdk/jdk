@@ -50,7 +50,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
- * @run main/othervm TestDefaultMethods
+ * @run driver TestDefaultMethods
  */
 
 public class TestDefaultMethods {

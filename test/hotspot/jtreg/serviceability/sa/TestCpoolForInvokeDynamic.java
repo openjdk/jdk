@@ -52,7 +52,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.ui.classbrowser
- * @run main/othervm TestCpoolForInvokeDynamic
+ * @run driver TestCpoolForInvokeDynamic
  */
 
 public class TestCpoolForInvokeDynamic {

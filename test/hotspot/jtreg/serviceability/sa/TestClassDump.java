@@ -37,7 +37,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @summary Test ClassDump tool
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm TestClassDump
+ * @run driver TestClassDump
  */
 
 public class TestClassDump {

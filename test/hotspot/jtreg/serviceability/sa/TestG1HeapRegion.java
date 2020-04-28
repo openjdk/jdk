@@ -46,7 +46,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.gc.g1
  *          jdk.hotspot.agent/sun.jvm.hotspot.memory
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run main/othervm TestG1HeapRegion
+ * @run driver TestG1HeapRegion
  */
 
 public class TestG1HeapRegion {
