@@ -47,8 +47,8 @@ const char* ShenandoahPhaseTimings::_phase_names[] = {
 
 #undef GC_PHASE_DECLARE_NAME
 
-ShenandoahPhaseTimings::ShenandoahPhaseTimings() {
-  _max_workers = MAX2(ConcGCThreads, ParallelGCThreads);
+ShenandoahPhaseTimings::ShenandoahPhaseTimings(uint max_workers) :
+  _max_workers(max_workers) {
   assert(_max_workers > 0, "Must have some GC threads");
 
   // Initialize everything to sane defaults
@@ -182,7 +182,7 @@ void ShenandoahPhaseTimings::print_cycle_on(outputStream* out) const {
       out->print(SHENANDOAH_PHASE_NAME_FORMAT " " SHENANDOAH_US_TIME_FORMAT " us", _phase_names[i], v);
       if (_worker_data[i] != NULL) {
         out->print(", workers (us): ");
-        for (size_t c = 0; c < _max_workers; c++) {
+        for (uint c = 0; c < _max_workers; c++) {
           double tv = _worker_data[i]->get(c);
           if (tv != ShenandoahWorkerData::uninitialized()) {
             out->print(SHENANDOAH_US_WORKER_TIME_FORMAT ", ", tv * 1000000.0);
