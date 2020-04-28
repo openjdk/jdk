@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ namespace {
 
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
 
-    ReservedSpace rs(size, alignment, large, false);
+    ReservedSpace rs(size, alignment, large);
     MemoryReleaser releaser(&rs);
 
     EXPECT_TRUE(rs.base() != NULL) << "rs.special: " << rs.special();
@@ -218,7 +218,7 @@ namespace {
       case Commit:
         return ReservedSpace(reserve_size_aligned,
                              os::vm_allocation_granularity(),
-                             /* large */ false, /* exec */ false);
+                             /* large */ false);
     }
   }
 
@@ -297,7 +297,7 @@ TEST_VM(VirtualSpace, actual_committed_space_one_large_page) {
 
   size_t large_page_size = os::large_page_size();
 
-  ReservedSpace reserved(large_page_size, large_page_size, true, false);
+  ReservedSpace reserved(large_page_size, large_page_size, true);
   ReservedSpaceReleaser releaser(&reserved);
   ASSERT_TRUE(reserved.is_reserved());
 
