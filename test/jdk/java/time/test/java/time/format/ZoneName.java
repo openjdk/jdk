@@ -817,6 +817,7 @@ class ZoneName {
         "America/Dominica", "America/Port_of_Spain",
         "America/Ensenada", "America/Tijuana",
         "America/Fort_Wayne", "America/Indiana/Indianapolis",
+        "America/Godthab", "America/Nuuk",
         "America/Grenada", "America/Port_of_Spain",
         "America/Guadeloupe", "America/Port_of_Spain",
         "America/Indianapolis", "America/Indiana/Indianapolis",
