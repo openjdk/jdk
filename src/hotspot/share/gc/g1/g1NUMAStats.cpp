@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ double G1NUMAStats::Stat::rate() const {
 }
 
 G1NUMAStats::NodeDataArray::NodeDataArray(uint num_nodes) {
-  guarantee(num_nodes > 1, "Number of nodes (%u) should be set", num_nodes);
+  // Not using > 1, for -XX:+ForceNUMA support.
+  guarantee(num_nodes > 0, "Number of nodes (%u) should be set", num_nodes);
 
   // The row represents the number of nodes.
   _num_column = num_nodes;
@@ -124,7 +125,8 @@ void G1NUMAStats::NodeDataArray::copy(uint req_index, size_t* stat) {
 G1NUMAStats::G1NUMAStats(const int* node_ids, uint num_node_ids) :
   _node_ids(node_ids), _num_node_ids(num_node_ids), _node_data() {
 
-  assert(_num_node_ids  > 1, "Should have more than one active memory nodes %u", _num_node_ids);
+  // Not using > 1, for -XX:+ForceNUMA support.
+  assert(_num_node_ids > 0, "Should have at least one node id: %u", _num_node_ids);
 
   for (int i = 0; i < NodeDataItemsSentinel; i++) {
     _node_data[i] = new NodeDataArray(_num_node_ids);
