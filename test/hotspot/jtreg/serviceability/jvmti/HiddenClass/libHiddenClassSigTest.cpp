@@ -242,7 +242,7 @@ check_hidden_class_array(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass_array, const
 
 /* Process a CLASS_LOAD or aClassPrepare event. */
 static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
-                                int* event_count_ptr, const char* event_name) {
+                                jint* event_count_ptr, const char* event_name) {
   char* sig = NULL;
   char* gsig = NULL;
   jvmtiError err;
