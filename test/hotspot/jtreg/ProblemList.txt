@@ -95,7 +95,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
-runtime/CompactStrings/TestMethodNames.java 8242921 generic-all
 
 #############################################################################
 
