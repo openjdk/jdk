@@ -250,7 +250,7 @@ Please note that running with JCov reporting can be very memory intensive.
 While collecting code coverage with JCov, it is also possible to find coverage
 for only recently changed code. JCOV_DIFF_CHANGESET specifies a source
 revision. A textual report will be generated showing coverage of the diff
-between the specified revision and the repository tip. 
+between the specified revision and the repository tip.
 
 The report is stored in `build/$BUILD/test-results/jcov-output/diff_coverage_report`
 file.
