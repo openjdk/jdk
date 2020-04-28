@@ -156,7 +156,7 @@ void StringDedupEntryCache::free(StringDedupEntry* entry, uint worker_id) {
   assert(worker_id < _nlists, "Invalid worker id");
 
   entry->set_obj(NULL);
-  entry->set_hash(0);
+  entry->set_java_hash(0, false /* latin1 */);
 
   if (_cached[worker_id].length() < _max_list_length) {
     // Cache is not full
@@ -224,7 +224,7 @@ StringDedupTable*        StringDedupTable::_resized_table = NULL;
 StringDedupTable*        StringDedupTable::_rehashed_table = NULL;
 volatile size_t          StringDedupTable::_claimed_index = 0;
 
-StringDedupTable::StringDedupTable(size_t size, jint hash_seed) :
+StringDedupTable::StringDedupTable(size_t size, uint64_t hash_seed) :
   _size(size),
   _entries(0),
   _shrink_threshold((uintx)(size * _shrink_load_factor)),
@@ -246,11 +246,14 @@ void StringDedupTable::create() {
   _table = new StringDedupTable(_min_size);
 }
 
-void StringDedupTable::add(typeArrayOop value, bool latin1, unsigned int hash, StringDedupEntry** list) {
+void StringDedupTable::add(typeArrayOop value, bool latin1, uint64_t hash, StringDedupEntry** list) {
   StringDedupEntry* entry = _entry_cache->alloc();
   entry->set_obj(value);
-  entry->set_hash(hash);
-  entry->set_latin1(latin1);
+  if (use_java_hash()) {
+    entry->set_java_hash((unsigned int)hash, latin1);
+  } else {
+    entry->set_alt_hash(hash);
+  }
   entry->set_next(*list);
   *list = entry;
   _entries++;
@@ -265,17 +268,18 @@ void StringDedupTable::remove(StringDedupEntry** pentry, uint worker_id) {
 void StringDedupTable::transfer(StringDedupEntry** pentry, StringDedupTable* dest) {
   StringDedupEntry* entry = *pentry;
   *pentry = entry->next();
-  unsigned int hash = entry->hash();
+  uint64_t hash = use_java_hash() ? entry->java_hash() : entry->alt_hash();
   size_t index = dest->hash_to_index(hash);
   StringDedupEntry** list = dest->bucket(index);
   entry->set_next(*list);
   *list = entry;
 }
 
-typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned int hash,
+typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, uint64_t hash,
                                       StringDedupEntry** list, uintx &count) {
   for (StringDedupEntry* entry = *list; entry != NULL; entry = entry->next()) {
-    if (entry->hash() == hash && entry->latin1() == latin1) {
+    if ((use_java_hash() && entry->java_hash() == hash && entry->java_hash_latin1() == latin1) ||
+        (!use_java_hash() && entry->alt_hash() == hash)) {
       oop* obj_addr = (oop*)entry->obj_addr();
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(obj_addr);
       if (obj != NULL && java_lang_String::value_equals(value, static_cast<typeArrayOop>(obj))) {
@@ -290,7 +294,7 @@ typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned 
   return NULL;
 }
 
-typeArrayOop StringDedupTable::lookup_or_add_inner(typeArrayOop value, bool latin1, unsigned int hash) {
+typeArrayOop StringDedupTable::lookup_or_add_inner(typeArrayOop value, bool latin1, uint64_t hash) {
   size_t index = hash_to_index(hash);
   StringDedupEntry** list = bucket(index);
   uintx count = 0;
@@ -314,27 +318,29 @@ typeArrayOop StringDedupTable::lookup_or_add_inner(typeArrayOop value, bool lati
   return existing_value;
 }
 
-unsigned int StringDedupTable::hash_code(typeArrayOop value, bool latin1) {
+unsigned int StringDedupTable::java_hash_code(typeArrayOop value, bool latin1) {
+  assert(use_java_hash(), "Should not use java hash code");
+
   unsigned int hash;
   int length = value->length();
   if (latin1) {
     const jbyte* data = (jbyte*)value->base(T_BYTE);
-    if (use_java_hash()) {
-      hash = java_lang_String::hash_code(data, length);
-    } else {
-      hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
-    }
+    hash = java_lang_String::hash_code(data, length);
   } else {
     length /= sizeof(jchar) / sizeof(jbyte); // Convert number of bytes to number of chars
     const jchar* data = (jchar*)value->base(T_CHAR);
-    if (use_java_hash()) {
-      hash = java_lang_String::hash_code(data, length);
-    } else {
-      hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
-    }
+    hash = java_lang_String::hash_code(data, length);
   }
 
   return hash;
+}
+
+uint64_t StringDedupTable::alt_hash_code(typeArrayOop value) {
+  assert(!use_java_hash(), "Should not use alt hash code");
+
+  int length = value->length();
+  const jbyte* data = (jbyte*)value->base(T_BYTE);
+  return AltHashing::halfsiphash_64(_table->_hash_seed, (const int8_t*)data, length);
 }
 
 void StringDedupTable::deduplicate(oop java_string, StringDedupStat* stat) {
@@ -351,7 +357,7 @@ void StringDedupTable::deduplicate(oop java_string, StringDedupStat* stat) {
   }
 
   bool latin1 = java_lang_String::is_latin1(java_string);
-  unsigned int hash = 0;
+  uint64_t hash = 0;
 
   if (use_java_hash()) {
     if (!java_lang_String::hash_is_set(java_string)) {
@@ -360,7 +366,7 @@ void StringDedupTable::deduplicate(oop java_string, StringDedupStat* stat) {
     hash = java_lang_String::hash_code(java_string);
   } else {
     // Compute hash
-    hash = hash_code(value, latin1);
+    hash = alt_hash_code(value);
     stat->inc_hashed();
   }
 
@@ -510,9 +516,9 @@ uintx StringDedupTable::unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl,
             // destination partitions. finish_rehash() will do a single
             // threaded transfer of all entries.
             typeArrayOop value = (typeArrayOop)*p;
-            bool latin1 = (*entry)->latin1();
-            unsigned int hash = hash_code(value, latin1);
-            (*entry)->set_hash(hash);
+            assert(!use_java_hash(), "Should not be using Java hash");
+            uint64_t hash = alt_hash_code(value);
+            (*entry)->set_alt_hash(hash);
           }
 
           // Move to next entry
@@ -606,9 +612,14 @@ void StringDedupTable::verify() {
       guarantee(Universe::heap()->is_in(value), "Object must be on the heap");
       guarantee(!value->is_forwarded(), "Object must not be forwarded");
       guarantee(value->is_typeArray(), "Object must be a typeArrayOop");
-      bool latin1 = (*entry)->latin1();
-      unsigned int hash = hash_code(value, latin1);
-      guarantee((*entry)->hash() == hash, "Table entry has inorrect hash");
+      uint64_t hash;
+      if (use_java_hash()) {
+        hash = (*entry)->java_hash();
+        guarantee(java_hash_code(value, (*entry)->java_hash_latin1()) == hash, "Table entry has incorrect hash");
+      } else {
+        hash = (*entry)->alt_hash();
+        guarantee(alt_hash_code(value) == hash, "Table entry has incorrect hash");
+      }
       guarantee(_table->hash_to_index(hash) == bucket, "Table entry has incorrect index");
       entry = (*entry)->next_addr();
     }
@@ -620,12 +631,14 @@ void StringDedupTable::verify() {
     StringDedupEntry** entry1 = _table->bucket(bucket);
     while (*entry1 != NULL) {
       typeArrayOop value1 = (*entry1)->obj();
-      bool latin1_1 = (*entry1)->latin1();
       StringDedupEntry** entry2 = (*entry1)->next_addr();
       while (*entry2 != NULL) {
         typeArrayOop value2 = (*entry2)->obj();
-        bool latin1_2 = (*entry2)->latin1();
-        guarantee(latin1_1 != latin1_2 || !java_lang_String::value_equals(value1, value2), "Table entries must not have identical arrays");
+        guarantee(value1 != value2, "Table entries must not have the same array");
+        if (use_java_hash()) {
+          guarantee((*entry1)->java_hash_latin1() != (*entry2)->java_hash_latin1() ||
+                    !java_lang_String::value_equals(value1, value2), "Table entries must not have identical arrays");
+        }
         entry2 = (*entry2)->next_addr();
       }
       entry1 = (*entry1)->next_addr();
@@ -647,6 +660,6 @@ void StringDedupTable::print_statistics() {
             _table->_entries, percent_of((size_t)_table->_entries, _table->_size), _entry_cache->size(), _entries_added, _entries_removed);
   log.debug("    Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" STRDEDUP_PERCENT_FORMAT_NS ")",
             _resize_count, _table->_shrink_threshold, _shrink_load_factor * 100.0, _table->_grow_threshold, _grow_load_factor * 100.0);
-  log.debug("    Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x", _rehash_count, _rehash_threshold, _table->_hash_seed);
+  log.debug("    Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: " UINT64_FORMAT_X, _rehash_count, _rehash_threshold, _table->_hash_seed);
   log.debug("    Age Threshold: " UINTX_FORMAT, StringDeduplicationAgeThreshold);
 }
