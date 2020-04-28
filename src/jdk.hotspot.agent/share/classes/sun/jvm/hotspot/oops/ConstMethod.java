@@ -194,6 +194,17 @@ public class ConstMethod extends Metadata {
 
   // bytecode accessors
 
+  /** See if address is in the Method's bytecodes */
+  public boolean isAddressInMethod(Address bcp) {
+    Address bytecodeStart = getAddress().addOffsetTo(bytecodeOffset);
+    Address bytecodeEnd = bytecodeStart.addOffsetTo(getCodeSize() - 1);
+    if (bcp.greaterThanOrEqual(bytecodeStart) && bcp.lessThanOrEqual(bytecodeEnd)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   /** Get a bytecode or breakpoint at the given bci */
   public int getBytecodeOrBPAt(int bci) {
     return getAddress().getJByteAt(bytecodeOffset + bci) & 0xFF;
@@ -296,7 +307,8 @@ public class ConstMethod extends Metadata {
     }
 
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(bci == 0 || 0 <= bci && bci < getCodeSize(), "illegal bci");
+        Assert.that(0 <= bci && bci < getCodeSize(),
+                    "illegal bci(" + bci + ") codeSize(" + getCodeSize() + ")");
     }
     int bestBCI  =  0;
     int bestLine = -1;
