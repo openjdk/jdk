@@ -26,7 +26,8 @@
  * @summary Ensure proper parsing of quoted output names for -Xlog arguments.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestQuotedLogOutputs
+ * @comment after JDK-8224505, this has to be run in othervm mode
+ * @run main/othervm TestQuotedLogOutputs
  */
 
 import java.io.File;
