@@ -496,6 +496,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
   AC_SUBST(JAVA_FLAGS_SMALL)
 
+  # Don't presuppose SerialGC is present in the buildjdk. Also, we cannot test
+  # the buildjdk, but on the other hand we know what it will support.
+  BUILDJDK_JAVA_FLAGS_SMALL="-Xms32M -Xmx512M -XX:TieredStopAtLevel=1"
+  AC_SUBST(BUILDJDK_JAVA_FLAGS_SMALL)
+
   JAVA_TOOL_FLAGS_SMALL=""
   for f in $JAVA_FLAGS_SMALL; do
     JAVA_TOOL_FLAGS_SMALL="$JAVA_TOOL_FLAGS_SMALL -J$f"
