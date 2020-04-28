@@ -197,13 +197,15 @@ CP=$ANT_HOME/lib/ant.jar
 rm -rf $CLASSES; mkdir $CLASSES
 
 if [ "x$CYGPATH" = "x" ] ; then ## CYGPATH may be set in env.cfg
-  JAVAC_SOURCE_FILE=$IDEA_OUTPUT/src/idea/JdkIdeaAntLogger.java
+  JAVAC_SOURCE_FILE=$IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java
+  JAVAC_SOURCE_PATH=$IDEA_OUTPUT/src
   JAVAC_CLASSES=$CLASSES
   JAVAC_CP=$CP
 else
-  JAVAC_SOURCE_FILE=`cygpath -am $IDEA_OUTPUT/src/idea/JdkIdeaAntLogger.java`
+  JAVAC_SOURCE_FILE=`cygpath -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
+  JAVAC_SOURCE_PATH=`cygpath -am $IDEA_OUTPUT/src`
   JAVAC_CLASSES=`cygpath -am $CLASSES`
   JAVAC_CP=`cygpath -am $CP`
 fi
 
-$BOOT_JDK/bin/javac -d $JAVAC_CLASSES -cp $JAVAC_CP $JAVAC_SOURCE_FILE
+$BOOT_JDK/bin/javac -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE

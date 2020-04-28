@@ -1,10 +1,9 @@
 <!-- importing.xml -->
 <project name="jdk">
 
-    <script language="javascript" classpath="${idea.dir}/classes">
-        var JdkLogger = Java.type("idea.JdkIdeaAntLogger");
-        new JdkLogger(project)
-    </script>
+    <taskdef name="wrapLogger" classname="idea.IdeaLoggerWrapper" classpath="${idea.dir}/classes"/>
+
+    <wrapLogger/>
 
     <macrodef name="call-make">
         <attribute name="dir"/>
