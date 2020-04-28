@@ -389,10 +389,10 @@ class Stream<T> extends ExchangeImpl<T> {
             if (hframe.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse();
-                if (hframe.getFlag(HeaderFrame.END_STREAM)) {
-                    if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
-                    receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
-                }
+            }
+            if (hframe.getFlag(HeaderFrame.END_STREAM)) {
+                if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
+                receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
             }
         } else if (frame instanceof DataFrame) {
             receiveDataFrame((DataFrame)frame);
