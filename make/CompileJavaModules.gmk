@@ -38,8 +38,11 @@ $(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
 ################################################################################
 # Module specific build settings
 
-java.base_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
-java.base_COPY += .icu .dat .spp .nrm content-types.properties hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
+java.base_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
+java.base_ADD_JAVAC_FLAGS += -XDstringConcat=inline
+java.base_COPY += .icu .dat .spp .nrm content-types.properties \
+    hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
 java.base_CLEAN += intrinsic.properties
 
 java.base_EXCLUDE_FILES += \
@@ -70,18 +73,20 @@ endif
 
 ################################################################################
 
-java.compiler_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.compiler_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.datatransfer_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.datatransfer_DOCLINT += -Xdoclint:all/protected,-reference \
+    '-Xdoclint/package:java.*,javax.*'
 java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' \
-    --doclint-format html4
+java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
+    '-Xdoclint/package:java.*,javax.*'
+java.desktop_ADD_JAVAC_FLAGS += --doclint-format html4
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN += iio-plugin.properties cursors.properties
 
@@ -214,75 +219,89 @@ java.desktop_EXCLUDE_FILES += \
 
 ################################################################################
 
-java.scripting_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.scripting_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 java.scripting_COPY += .js
 java.scripting_CLEAN += .properties
 
 ################################################################################
 
-java.instrument_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.instrument_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.logging_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.logging_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.management_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.management_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.management.rmi_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:javax.*'
+java.management.rmi_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:javax.*'
 
 ################################################################################
 
-java.prefs_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.prefs_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.transaction.xa_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:javax.*'
+java.transaction.xa_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:javax.*'
 
 ################################################################################
 
-java.sql_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.sql_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.sql.rowset_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.sql.rowset_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 java.sql.rowset_CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
     $(TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
 
 ################################################################################
 
-java.rmi_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.rmi_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 java.rmi_CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/registry/resources/*.properties \
     $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/server/resources/*.properties)
 
 ################################################################################
 
-java.xml_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility \
+java.xml_DOCLINT += -Xdoclint:all/protected,-accessibility \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
 java.xml_CLEAN += .properties
 
 ################################################################################
 
-java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.naming_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 java.naming_CLEAN += jndiprovider.properties
 
 ################################################################################
 
-java.security.jgss_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.security.jgss_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.smartcardio_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.smartcardio_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.xml.crypto_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.xml.crypto_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 java.xml.crypto_COPY += .dtd .xml
 java.xml.crypto_CLEAN += .properties
 
@@ -294,9 +313,9 @@ jdk.charsets_COPY += .dat
 
 ################################################################################
 
-jdk.compiler_ADD_JAVAC_FLAGS += -Xdoclint:all/protected \
-    '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*' \
-    -XDstringConcat=inline
+jdk.compiler_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
+jdk.compiler_ADD_JAVAC_FLAGS += -XDstringConcat=inline
 jdk.compiler_CLEAN_FILES += $(wildcard \
     $(patsubst %, $(TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
         sun/tools/serialver/resources))
@@ -365,8 +384,9 @@ endif
 
 ################################################################################
 
-jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst .postrm .postinst .list .sh \
-    .desktop .copyright .control .plist .template .icns .scpt .entitlements .wxs .wxl .wxi .ico .bmp .tiff
+jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
+    .postrm .postinst .list .sh .desktop .copyright .control .plist .template \
+    .icns .scpt .entitlements .wxs .wxl .wxi .ico .bmp .tiff
 
 jdk.incubator.jpackage_CLEAN += .properties
 
