@@ -107,6 +107,10 @@ public class Win32AMD64JavaThreadPDAccess implements JavaThreadPDAccess {
     }
     if (guesser.getPC() == null) {
       return new X86Frame(guesser.getSP(), guesser.getFP());
+    } else if (VM.getVM().getInterpreter().contains(guesser.getPC())) {
+      // pass the value of R13 which contains the bcp for the top level frame
+      Address bcp = context.getRegisterAsAddress(AMD64ThreadContext.R13);
+      return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC(), null, bcp);
     } else {
       return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC());
     }
