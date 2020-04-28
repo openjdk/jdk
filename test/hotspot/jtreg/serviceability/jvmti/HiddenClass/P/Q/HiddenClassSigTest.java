@@ -38,19 +38,21 @@ import java.io.FileInputStream;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 
-interface Test<T> {
-    String test(T t);
+interface HCInterf<T> {
+    String hcMethod(T t);
 }
 
-class HiddenClassSig<T> implements Test<T> {
+class HiddenClassSig<T> implements HCInterf<T> {
     private String realTest() { return "HiddenClassSig: "; }
 
-    public String test(T t) {
+    public String hcMethod(T t) {
         String str = realTest();
         return str + t.toString();
     }
@@ -60,12 +62,12 @@ public class HiddenClassSigTest {
     private static void log(String str) { System.out.println(str); }
 
     private static final String HCName = "P/Q/HiddenClassSig.class";
-    private static final String DIR = Utils.TEST_CLASSES;
+    private static final Path CLASSES_DIR = Paths.get(Utils.TEST_CLASSES);
     private static final String LOG_PREFIX = "HiddenClassSigTest: ";
 
     static native void checkHiddenClass(Class klass, String sig);
     static native void checkHiddenClassArray(Class array, String sig);
-    static native boolean checkFailed();
+    static native boolean checkFailed(); // get native agent failing status
 
     static {
         try {
@@ -78,26 +80,14 @@ public class HiddenClassSigTest {
         }
     }
 
-    static byte[] readClassFile(String classFileName) throws Exception {
-        File classFile = new File(classFileName);
-        try (FileInputStream in = new FileInputStream(classFile);
-             ByteArrayOutputStream out = new ByteArrayOutputStream())
-        {
-            int b;
-            while ((b = in.read()) != -1) {
-                out.write(b);
-            }
-            return out.toByteArray();
-        }
-    }
-
     static Class<?> defineHiddenClass(String classFileName) throws Exception {
         Lookup lookup = MethodHandles.lookup();
-        byte[] bytes = readClassFile(DIR + File.separator + classFileName);
+        byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve(classFileName));
         Class<?> hc = lookup.defineHiddenClass(bytes, false).lookupClass();
         return hc;
     }
 
+    // print all name variations
     static void logClassInfo(Class<?> klass) {
         log("\n### Testing class: " + klass);
         log(LOG_PREFIX + "isHidden:  " + klass.isHidden());
@@ -110,23 +100,29 @@ public class HiddenClassSigTest {
 
     private static final String HC_NAME = "P.Q.HiddenClassSig";
     private static final String HC_SUFFIX_REGEX = "0x[0-9a-f]+";
+
     static boolean checkName(Class<?> klass, String name, String toString) {
         boolean failed = false;
         String regex = "";
         Class<?> c = klass;
+
+        // for an array add the prefix "[" for each dimension
         while (c.isArray()) {
             regex = "\\[" + regex;
             c = c.componentType();
         }
+        // construct the expected name
         if (klass.isArray()) {
             regex += "L" + HC_NAME + "/" + HC_SUFFIX_REGEX + ";";
         } else {
             regex = HC_NAME + "/" + HC_SUFFIX_REGEX;
         }
+        // check the name matches the expected
         if (!name.matches(regex)) {
             log("Test FAIL: result of Class::getName" + " \"" + name + "\" does not match " + regex);
             failed = true;
         }
+        // check the string name matches the expected
         if (!toString.matches("class " + regex)) {
             log("Test FAIL: result of Class::toString" + " \"" + name + "\" does not match " + regex);
             failed = true;
@@ -136,12 +132,16 @@ public class HiddenClassSigTest {
 
     static boolean checkTypeName(Class<?> klass, String name) {
         boolean failed = false;
+        // construct the expected type name
         String regex = HC_NAME + "/" + HC_SUFFIX_REGEX;
         Class<?> c = klass;
+
+        // for an array add the suffix "[]" for each dimension
         while (c.isArray()) {
             c = c.componentType();
             regex = regex + "\\[\\]";
         }
+        // check the type name matches the expected
         if (!name.matches(regex)) {
             log("Test FAIL: result of Class::getTypeName" + " \"" + name + "\" does not match " + regex);
             failed = true;
@@ -152,14 +152,19 @@ public class HiddenClassSigTest {
     static boolean checkGenericString(Class<?> klass, String name) {
         boolean failed = false;
         Class<?> c = klass;
+        // construct the expected generic string
         String regex = HC_NAME + "/" + HC_SUFFIX_REGEX + "<T>";
+
+        // add the expected name prefix for a non-array class
         if (!klass.isArray()) {
             regex = "class " + regex;
         }
+        // for an array get the bottom component class
         while (c.isArray()) {
             c = c.componentType();
             regex = regex + "\\[\\]";
         }
+        // check the generic string matches the expected
         if (!name.matches(regex)) {
             log("Test FAIL: result of Class::toGenericString" + " \"" + name + "\" does not match " + regex);
             failed = true;
@@ -169,12 +174,16 @@ public class HiddenClassSigTest {
 
     static boolean checkDescriptorString(Class<?> klass, String name) {
         boolean failed = false;
+        // construct the expected descriptor string
         String regex = "L" + HC_NAME.replace('.', '/') + "." + HC_SUFFIX_REGEX + ";";
         Class<?> c = klass;
+
+        // for array get the bottom component class
         while (c.isArray()) {
             regex = "\\[" + regex;
             c = c.componentType();
         }
+        // check the descriptor string matches the expected
         if (!name.matches(regex)) {
             log("Test FAIL: result of Class::descriptorString" + " \"" + name + "\" does not match " + regex);
             failed = true;
@@ -186,15 +195,19 @@ public class HiddenClassSigTest {
         boolean failed = false;
         logClassInfo(klass);
 
+        // verify all name variations
         failed |= checkName(klass, klass.getName(), klass.toString());
         failed |= checkTypeName(klass, klass.getTypeName());
         failed |= checkGenericString(klass, klass.toGenericString());
         failed |= checkDescriptorString(klass, klass.descriptorString());
 
+        // an array class is never hidden
         if (klass.isArray() && klass.isHidden()) {
             log("Test FAIL: an array class is never hidden");
             failed = true;
         }
+
+        // verify hidden class array or class by the native agent
         if (klass.isArray()) {
             checkHiddenClassArray(klass, klass.descriptorString());
         } else {
@@ -205,25 +218,31 @@ public class HiddenClassSigTest {
 
     public static void main(String args[]) throws Exception {
         log(LOG_PREFIX + "started");
+
+        // define a hidden class to test
         Class<?> hc = defineHiddenClass(HCName);
-        String baseName = ("" + hc).substring("class ".length());
 
-        Test<String> t = (Test<String>)hc.newInstance();
-        String str = t.test("Test generic hidden class");
-        log(LOG_PREFIX + "hc.test() returned string: " + str);
+        // allocate a hidden class instance to test
+        HCInterf<String> testObj = (HCInterf<String>)hc.newInstance();
 
+        String str = testObj.hcMethod("Test generic hidden class");
+        log(LOG_PREFIX + "hc.hcMethod() returned string: " + str);
+
+        // test all hidden class name/signature variations
         boolean failed = testClass(hc);
 
+        // test all hidden class array name/signature variations
         Class<?> hcArr = hc.arrayType();
         failed |= testClass(hcArr);
 
+        // test all hidden class double array name/signature variations
         Class<?> hcArrArr = hcArr.arrayType();
         failed |= testClass(hcArrArr);
 
-        if (failed) {
+        if (failed) { // check the java part failing status
           throw new RuntimeException("FAIL: failed status from java part");
         }
-        if (checkFailed()) {
+        if (checkFailed()) { // check the native agent failing status
           throw new RuntimeException("FAIL: failed status from native agent");
         }
         log(LOG_PREFIX + "finished");
