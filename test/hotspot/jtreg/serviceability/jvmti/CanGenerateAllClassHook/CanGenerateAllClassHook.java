@@ -30,7 +30,7 @@
  * @requires vm.cds
  * @library /test/lib
  * @compile CanGenerateAllClassHook.java
- * @run driver/native CanGenerateAllClassHook
+ * @run main/native CanGenerateAllClassHook
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
