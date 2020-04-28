@@ -85,6 +85,8 @@ ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
   JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
 endif
 
+JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" || test "$$?" = "1" )
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JMODS) $(BASE_RELEASE_FILE) \
@@ -93,7 +95,8 @@ $(eval $(call SetupExecute, jlink_jdk, \
     SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk, \
     PRE_COMMAND := $(RM) -r $(JDK_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
-        $(JLINK_JDK_EXTRA_OPTS) --output $(JDK_IMAGE_DIR), \
+        $(JLINK_JDK_EXTRA_OPTS) --output $(JDK_IMAGE_DIR) \
+        $(JLINK_DISABLE_WARNINGS), \
 ))
 
 JLINK_JDK_TARGETS := $(jlink_jdk)
