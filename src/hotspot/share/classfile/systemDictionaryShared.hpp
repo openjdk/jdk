@@ -167,10 +167,6 @@ private:
                                     Handle manifest,
                                     Handle url,
                                     TRAPS);
-  static void define_shared_package(Symbol* class_name,
-                                    Handle class_loader,
-                                    ModuleEntry* mod_entry,
-                                    TRAPS);
 
   static Handle get_shared_jar_manifest(int shared_path_index, TRAPS);
   static Handle get_shared_jar_url(int shared_path_index, TRAPS);
