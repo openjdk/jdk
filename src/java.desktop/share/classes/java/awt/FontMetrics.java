@@ -260,12 +260,59 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Gets the maximum advance width of any character in this
-     * {@code Font}.  The advance is the
-     * distance from the leftmost point to the rightmost point on the
-     * string's baseline.  The advance of a {@code String} is
-     * not necessarily the sum of the advances of its characters.
-     * @return    the maximum advance width of any character
+     * Returns an estimate of the maximum advance width of any character
+     * in the {@code Font} described by this {@code FontMetrics} object,
+     * with important caveats, enumerated below.
+     * <p>
+     * The advance is the distance from the leftmost point used to position
+     * the character to the rightmost point along the baseline.
+     * This is not the same thing as the visible width of the glyph image
+     * representing the character.
+     * <p>
+     * The advance of a {@code String} is not necessarily the sum of the
+     * advances of its characters. It may differ substantially if
+     * complex text layout is required for proper rendering.
+     * <p>
+     * Some of the caveats of the reported value include
+     * <ul>
+     * <li> The returned value is relying upon information from some
+     * underlying system font, and the correctness of that information
+     * is outside of AWT's control.
+     * <li> When specific characters are mapped into glyphs
+     * in some rendering context, instructions in the font itself
+     * together with the rasterization process may cause some glyph
+     * to have a wider advance than reported.
+     * <li> When a font is requested in some style, eg {@code Font.BOLD},
+     * for which no exact match is available, then techniques to satisfy
+     * the requested rendering may similarly result in glyphs that are
+     * wider than the reported maximum.
+     * <li> Depending on the implementation, an AWT logical font or
+     * physical font may need to locate some characters from one or more
+     * "fall back" fonts, when the primary underlying physical font does not
+     * support the character. These fonts may not all be known or considered
+     * in the calculation of the reported maximum advance. It is common
+     * for the design center of such fall back fonts to be for a different
+     * script than the design center of the primary font, so their
+     * advances can be quite different. This can also lead to the
+     * unexpected result that a font such as {@code Font.MONOSPACED} can
+     * render glyphs that are not all the same width.
+     * </ul>
+     * None of these caveats are exposed as they are all implementation details,
+     * and there is no practical way to determine when these are in effect.
+     * An application which needs a better estimate of the maximum advance,
+     * and knows the subset of characters it expects to display can query
+     * the advance of each such character to find the widest, however,
+     * as discussed above, since the displayed width of a {@code String}
+     * is not necessarily the sum of the advances the value still needs
+     * to be used with caution.
+     * <p>
+     * In summary, this method makes no absolute guarantee, nor can
+     * it even make a guarantee to be correct within some margin of error.
+     * So it should be used at most only for estimating the total space
+     * sufficient to display some number of as yet unknown characters from
+     * the font. And that might be either an overestimate, or an
+     * underestimate depending on the specific text and rendering conext.
+     * @return    an estimate of the maximum advance width of any character
      *            in the {@code Font}, or {@code -1} if the
      *            maximum advance width is not known.
      */
