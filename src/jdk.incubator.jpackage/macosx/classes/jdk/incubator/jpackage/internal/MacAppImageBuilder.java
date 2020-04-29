@@ -839,7 +839,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 args.addAll(Arrays.asList("codesign",
                         "--timestamp",
                         "--options", "runtime",
-                        "--deep",
                         "--force",
                         "-s", signingIdentity, // sign with this key
                         "--prefix", identifierPrefix,
@@ -884,7 +883,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         args.addAll(Arrays.asList("codesign",
                 "--timestamp",
                 "--options", "runtime",
-                "--deep",
                 "--force",
                 "-s", signingIdentity,
                 "-vvvv"));
