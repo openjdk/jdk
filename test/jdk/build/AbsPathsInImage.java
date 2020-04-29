@@ -151,7 +151,7 @@ public class AbsPathsInImage {
                     return super.visitFile(file, attrs);
                 } else if (fileName.endsWith(".debuginfo") || fileName.endsWith(".pdb")) {
                     // Do nothing
-                } else if (fileName.endsWith("jvm.dll")) {
+                } else if (fileName.endsWith("jvm.dll") || fileName.endsWith("jpackage.dll")) {
                     // On Windows, the Microsoft toolchain does not provide a way
                     // to reliably remove all absolute paths from __FILE__ usage.
                     // Until that is fixed, we simply exclude jvm.dll from this
@@ -168,11 +168,13 @@ public class AbsPathsInImage {
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = scanBytes(Files.readAllBytes(file), searchPatterns);
-        // For the same reason as jvm.dll above, the jdk.incubating.jpackage module
+        // For the same reason as jvm.dll above, the jdk.incubator.jpackage module
         // contains some unavoidable header references in the launcher which is
         // stored as a java resource inside the modules file.
         if (IS_WINDOWS && file.toString().endsWith("modules")) {
-            matches = matches.stream().filter(f -> !f.endsWith("Dll.h")).collect(Collectors.toList());
+            matches = matches.stream()
+                .filter(f -> !f.matches(".*jdk\\.incubator\\.jpackage.*\\.h.*"))
+                .collect(Collectors.toList());
         }
         if (matches.size() > 0) {
             matchFound = true;
