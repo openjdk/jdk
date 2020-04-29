@@ -87,15 +87,14 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
   // Avoid reporting percentages above the theoretical max
   if (user_time + system_time > wallclock_time) {
     jlong excess = user_time + system_time - wallclock_time;
+    cur_cpu_time -= excess;
     if (user_time > excess) {
       user_time -= excess;
       cur_user_time -= excess;
-      cur_cpu_time -= excess;
     } else {
-      cur_cpu_time -= excess;
       excess -= user_time;
+      cur_user_time -= user_time;
       user_time = 0;
-      cur_user_time = 0;
       system_time -= excess;
     }
   }
