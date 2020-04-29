@@ -31,7 +31,6 @@ package gc.nvdimm;
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver gc.nvdimm.TestOldObjectsOnNvdimm
  */
 

@@ -33,7 +33,6 @@ package gc.g1;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Humongous objects may have references from the code cache
  * @run driver gc.g1.TestHumongousCodeCacheRoots
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,6 @@
  * @build ClassFileInstaller
  *
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:CompileCommand=compileonly,*.TestUseOptoBiasInliningWithoutEliminateLocks::dontinline_testMethod

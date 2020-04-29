@@ -40,7 +40,6 @@
  *        sun.hotspot.WhiteBox sun.hotspot.parser.DiagnosticCommand
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.parser.DiagnosticCommand
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI

@@ -5,7 +5,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestZGCWithCDS
  */
 

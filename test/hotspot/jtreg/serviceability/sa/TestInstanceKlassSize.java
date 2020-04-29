@@ -52,7 +52,7 @@ import java.util.*;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestInstanceKlassSize
  */
 

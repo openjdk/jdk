@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
  * @summary Test of diagnostic command Compiler.queue
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:+WhiteBoxAPI CompilerQueueTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:-TieredCompilation -XX:+WhiteBoxAPI CompilerQueueTest
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xint -XX:+WhiteBoxAPI CompilerQueueTest

@@ -32,7 +32,6 @@
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/timeout=1200 compiler.types.correctness.OffTest
  */
 

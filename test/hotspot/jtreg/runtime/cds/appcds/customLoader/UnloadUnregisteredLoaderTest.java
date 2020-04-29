@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@
  * @build sun.hotspot.WhiteBox ClassUnloadCommon
  * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller ClassUnloadCommon
- * @run driver ClassFileInstaller ClassUnloadCommon$1
- * @run driver ClassFileInstaller ClassUnloadCommon$TestFailure
+ *                                ClassUnloadCommon
+ *                                ClassUnloadCommon$1
+ *                                ClassUnloadCommon$TestFailure
  * @run driver UnloadUnregisteredLoaderTest
  */
 

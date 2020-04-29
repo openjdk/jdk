@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
  * @modules java.management java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *      sun.hotspot.WhiteBox$WhiteBoxPermission
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:MaxTenuringThreshold=0

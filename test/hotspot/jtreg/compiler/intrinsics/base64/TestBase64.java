@@ -27,7 +27,7 @@
  * @summary tests java.util.Base64
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true
  *       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.

@@ -31,7 +31,6 @@
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver/timeout=600 compiler.compilercontrol.mixed.RandomValidCommandsTest
  */
 
