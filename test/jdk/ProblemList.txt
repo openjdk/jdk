@@ -779,7 +779,6 @@ javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-al
 javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
 javax/swing/JComboBox/6559152/bug6559152.java 8196090 windows-all,macosx-all
 javax/swing/JComboBox/8032878/bug8032878.java 8196092,8196439 windows-all,macosx-all,linux-all
-javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all,macosx-all
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
 javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
