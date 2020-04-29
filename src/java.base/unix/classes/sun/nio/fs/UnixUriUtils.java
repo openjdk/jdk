@@ -115,9 +115,12 @@ class UnixUriUtils {
 
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
-            int mode = UnixNativeDispatcher.stat(up);
-            if ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR)
-                sb.append('/');
+            try {
+                up.checkRead();
+                int mode = UnixNativeDispatcher.stat(up);
+                if ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR)
+                    sb.append('/');
+            } catch (SecurityException ignore) { }
         }
 
         try {
