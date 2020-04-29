@@ -120,7 +120,10 @@ public:
         const std::streampos curPos = stream.tellp();
         const std::streampos size = curPos - anchor;
         stream.seekp(anchor);
-        writeWORD(stream, size);
+        if (size < 0) {
+            JP_THROW("Invalid negative size value");
+        }
+        writeWORD(stream, (size_t) size);
         stream.seekp(curPos);
 
         JP_CATCH_ALL;
