@@ -66,14 +66,14 @@ public class TmtoolTestScenario {
      * @return STDOUT of test app
      */
     public List<String> getAppOutput() {
-        return theApp.getAppOutput();
+        return theApp.getOutput().getStdoutAsList();
     }
 
     /**
      * @return Value of the app output with -XX:+PrintFlagsFinal as a map.
      */
-    public Map<String, String>  parseFlagsFinal() {
-        List<String> astr = theApp.getAppOutput();
+    public Map<String, String> parseFlagsFinal() {
+        List<String> astr = getAppOutput();
         Map<String, String> vmMap = new HashMap<String, String>();
 
         for (String line : astr) {

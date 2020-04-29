@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,20 @@ import jdk.test.lib.apps.LingeredApp;
 public class AttachNegativePidTest {
 
     public static void main(String... args) throws Exception {
-        LingeredApp app = LingeredApp.startApp();
-        String strPID = Long.toString(-1 * app.getPid());
+        LingeredApp app = null;
         try {
-            VirtualMachine.attach(strPID);
-        } catch (AttachNotSupportedException anse) {
-            // Passed
-            return;
+            app = LingeredApp.startApp();
+            String strPID = Long.toString(-1 * app.getPid());
+            try {
+                VirtualMachine.attach(strPID);
+            } catch (AttachNotSupportedException anse) {
+                // Passed
+                return;
+            }
+            throw new RuntimeException("There is no expected AttachNotSupportedException for " + strPID);
+        } finally {
+            LingeredApp.stopApp(app);
         }
-        throw new RuntimeException("There is no expected AttachNotSupportedException for " + strPID);
     }
 
 }
