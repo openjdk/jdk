@@ -1684,16 +1684,23 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   if (iv_phi != NULL) {
     // Now adjust the inner loop's exit condition
     Node* limit = inner_cl->limit();
-    Node* sub = NULL;
+    // If limit < init for stride > 0 (or limit > init for stride 0),
+    // the loop body is run only once. Given limit - init (init - limit resp.)
+    // would be negative, the unsigned comparison below would cause
+    // the loop body to be run for LoopStripMiningIter.
+    Node* max = NULL;
     if (stride > 0) {
-      sub = igvn->transform(new SubINode(limit, iv_phi));
+      max = MaxNode::max_diff_with_zero(limit, iv_phi, TypeInt::INT, *igvn);
     } else {
-      sub = igvn->transform(new SubINode(iv_phi, limit));
+      max = MaxNode::max_diff_with_zero(iv_phi, limit, TypeInt::INT, *igvn);
     }
     // sub is positive and can be larger than the max signed int
     // value. Use an unsigned min.
     Node* const_iters = igvn->intcon(scaled_iters);
-    Node* min = MaxNode::unsigned_min(sub, const_iters, TypeInt::make(0, scaled_iters, Type::WidenMin), *igvn);
+    Node* min = MaxNode::unsigned_min(max, const_iters, TypeInt::make(0, scaled_iters, Type::WidenMin), *igvn);
+    // min is the number of iterations for the next inner loop execution:
+    // unsigned_min(max(limit - iv_phi, 0), scaled_iters) if stride > 0
+    // unsigned_min(max(iv_phi - limit, 0), scaled_iters) if stride < 0
 
     Node* new_limit = NULL;
     if (stride > 0) {
