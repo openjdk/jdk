@@ -108,11 +108,7 @@ public class TransitiveDependencies {
         allModules.add("java.base");
         allModules.add("jdk.unsupported");
 
-        String version =
-                Integer.toString(Integer.parseInt(Source.DEFAULT.name), Character.MAX_RADIX);
-        version = version.toUpperCase(Locale.ROOT);
-
-        Path targetFile = Paths.get(args[0]).resolve(version).resolve("system-modules");
+        Path targetFile = Paths.get(args[0]);
 
         Files.createDirectories(targetFile.getParent());
 
