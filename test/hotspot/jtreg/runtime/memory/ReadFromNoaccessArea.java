@@ -25,6 +25,7 @@
  * @test
  * @summary Test that touching noaccess area in class ReservedHeapSpace results in SIGSEGV/ACCESS_VIOLATION
  * @library /test/lib
+ * @requires vm.bits == 64
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
@@ -36,14 +37,11 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
+import jtreg.SkippedException;
 
 public class ReadFromNoaccessArea {
 
   public static void main(String args[]) throws Exception {
-    if (!Platform.is64bit()) {
-      System.out.println("ReadFromNoaccessArea tests is useful only on 64bit architecture. Passing silently.");
-      return;
-    }
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
           "-Xbootclasspath/a:.",
@@ -62,8 +60,7 @@ public class ReadFromNoaccessArea {
     System.out.println(output.getStderr());
     System.out.println("***************************************************************");
     if (output.getStdout() != null && output.getStdout().contains("WB_ReadFromNoaccessArea method is useless")) {
-      // Test conditions broken. There is no protected page in ReservedHeapSpace in these circumstances. Silently passing test.
-      return;
+      throw new SkippedException("There is no protected page in ReservedHeapSpace in these circumstance");
     }
     if (Platform.isWindows()) {
       output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
