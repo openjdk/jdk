@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@ package nsk.share.runner;
 import nsk.share.log.Log;
 import nsk.share.test.StressOptions;
 import java.io.PrintStream;
+import jdk.test.lib.Utils;
 
 public class RunParams {
         private StressOptions stressOptions;
         private long sleepTime = 500;
         private long iterations = 0;
         private int numberOfThreads;
-        private long seed = System.currentTimeMillis();
         private boolean runGCThread = false;
         private boolean runFinThread = false;
         private boolean runMemDiagThread = false;
@@ -126,11 +126,9 @@ public class RunParams {
         }
 
         public final long getSeed() {
-                return seed;
-        }
-
-        public final void setSeed(long seed) {
-                this.seed = seed;
+                // ensure that seed got printed out
+                Utils.getRandomInstance();
+                return Utils.SEED;
         }
 
         public final boolean isRunGCThread() {
@@ -212,8 +210,6 @@ public class RunParams {
                                 runFinDiagThread = true;
                         else if (args[i].equals("-Df"))
                                 runFinDiagThread = true;
-                        else if (args[i].equals("-s"))
-                                seed = Long.parseLong(args[++i]);
                         else if (args[i].equals("-t"))
                                 numberOfThreads = Integer.parseInt(args[++i]);
                         else if (args[i].equals("-it"))
@@ -233,7 +229,6 @@ public class RunParams {
                 out.println("Sleep time: " + sleepTime);
                 out.println("Iterations: " + iterations);
                 out.println("Number of threads: " + numberOfThreads);
-                out.println("Seed: " + seed);
                 out.println("Run GC thread: " + runGCThread);
                 out.println("Run mem diag thread: " + runMemDiagThread);
                 out.println("Run forever: " + runForever);
@@ -244,7 +239,6 @@ public class RunParams {
                 log.debug("Sleep time: " + sleepTime);
                 log.debug("Iterations: " + iterations);
                 log.debug("Number of threads: " + numberOfThreads);
-                log.debug("Seed: " + seed);
                 log.debug("Run GC thread: " + runGCThread);
                 log.debug("Run mem diag thread: " + runMemDiagThread);
                 log.debug("Run forever: " + runForever);

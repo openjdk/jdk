@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.util.Random;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import jdk.test.lib.Utils;
+
 public class RandomEx extends Random {
     private final Map<Class<?>, Supplier<?>> map = new HashMap<>();
 
@@ -51,6 +53,7 @@ public class RandomEx extends Random {
     }
 
     public RandomEx() {
+        super(Utils.getRandomInstance().nextLong());
     }
 
     public RandomEx(long seed) {

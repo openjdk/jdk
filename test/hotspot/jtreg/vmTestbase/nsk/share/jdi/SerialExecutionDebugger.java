@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import nsk.share.TestBug;
 import nsk.share.jpda.AbstractDebuggeeTest;
 import java.io.*;
 import java.util.*;
+import jdk.test.lib.Utils;
 
 /*
  * This class serial executes several JDI tests based on nsk.share.jdi.TestDebuggerType2 in single VM
@@ -192,7 +193,7 @@ public class SerialExecutionDebugger extends TestDebuggerType2 {
             if (testWorkDir == null)
                 throw new TestBug("Debugger requires -testWorkDir parameter");
 
-            Collections.shuffle(result);
+            Collections.shuffle(result, Utils.getRandomInstance());
 
             // save resulted tests sequence in file (to simplify reproducing)
             try {

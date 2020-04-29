@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,38 @@
 
 package nsk.share.test;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
+import jdk.test.lib.Utils;
 import nsk.share.TestFailure;
 
 /**
  * Utility class which encapsulates all useful static methods.
  */
 public class LocalRandom {
+    static {
+        // ensure seed got printed out
+        Utils.getRandomInstance();
+    }
+    private final static ThreadLocal<Random> random = new ThreadLocal<>() {
+        protected Random initialValue() {
+            // each thread gets its own seed independendly on the order they
+            // use LocalRandom, yet it depends on the order threads are created.
+            // main thread uses original seed
+            return new Random(Utils.SEED ^ (Thread.currentThread().getId() - 1));
+        }
+    };
     private static int minPauseTime = 3000;
     private static int maxPauseTime = 5000;
     private static int maxRandomCount = 65536;
+
+
+    /*
+     * Initializes a thread-local instance to ensure that there is enough memory.
+     * Useful for tests that exhaust memory.
+     */
+    public static void init() {
+        random.get();
+    }
 
     /*
      * Return next random double number.
@@ -40,11 +62,11 @@ public class LocalRandom {
      * @return random double
      */
     public static double random() {
-        return ThreadLocalRandom.current().nextDouble();
+        return random.get().nextDouble();
     }
 
     public static double nextDouble() {
-        return ThreadLocalRandom.current().nextDouble();
+        return random.get().nextDouble();
     }
 
     public static byte nextByte() {
@@ -60,7 +82,7 @@ public class LocalRandom {
     }
 
     public static boolean nextBoolean() {
-        return ThreadLocalRandom.current().nextBoolean();
+        return random.get().nextBoolean();
     }
 
     public static void nextBytes(byte[] arr) {
@@ -252,7 +274,7 @@ public class LocalRandom {
     }
 
     public static int nextInt() {
-        return ThreadLocalRandom.current().nextInt();
+        return random.get().nextInt();
     }
 
     /**
@@ -262,11 +284,11 @@ public class LocalRandom {
      * @return random integer
      */
     public static int nextInt(int n) {
-        return ThreadLocalRandom.current().nextInt(n);
+        return random.get().nextInt(n);
     }
 
     public static long nextLong() {
-        return ThreadLocalRandom.current().nextLong();
+        return random.get().nextLong();
     }
 
     /**
@@ -286,7 +308,7 @@ public class LocalRandom {
      * @return random double
      */
     public static float nextFloat() {
-        return ThreadLocalRandom.current().nextFloat();
+        return random.get().nextFloat();
     }
 
     /**
