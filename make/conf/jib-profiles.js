@@ -467,6 +467,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
+		"--disable-jvm-feature-jvmci",
+		"--disable-jvm-feature-graal",
+		"--disable-jvm-feature-aot",
             ],
         },
 
