@@ -28,7 +28,7 @@ package gc.z;
  * @requires vm.gc.Z & !vm.graal.enabled
  * @summary Test ZGC with small heaps
  * @library / /test/lib
- * @run main/othervm gc.z.TestSmallHeap 8M 16M 32M 64M 128M 256M 512M 1024M
+ * @run driver gc.z.TestSmallHeap 8M 16M 32M 64M 128M 256M 512M 1024M
  */
 
 import jdk.test.lib.process.ProcessTools;

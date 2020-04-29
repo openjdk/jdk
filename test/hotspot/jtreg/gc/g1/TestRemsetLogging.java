@@ -34,7 +34,7 @@ package gc.g1;
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @summary Verify output of -Xlog:gc+remset*=trace
- * @run main gc.g1.TestRemsetLogging
+ * @run driver gc.g1.TestRemsetLogging
  *
  * Test the output of -Xlog:gc+remset*=trace in conjunction with G1SummarizeRSetStatsPeriod.
  */

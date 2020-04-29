@@ -28,7 +28,7 @@
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
- * @run main TestThreadFailure
+ * @run driver TestThreadFailure
  */
 
 import java.util.*;

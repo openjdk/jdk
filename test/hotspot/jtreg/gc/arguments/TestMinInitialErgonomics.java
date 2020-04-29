@@ -35,7 +35,7 @@ package gc.arguments;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm gc.arguments.TestMinInitialErgonomics
+ * @run driver gc.arguments.TestMinInitialErgonomics
  * @author thomas.schatzl@oracle.com
  */
 

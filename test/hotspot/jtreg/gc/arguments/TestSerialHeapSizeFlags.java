@@ -34,7 +34,7 @@ package gc.arguments;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm gc.arguments.TestSerialHeapSizeFlags
+ * @run driver gc.arguments.TestSerialHeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */
 

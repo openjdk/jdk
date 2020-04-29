@@ -33,7 +33,7 @@ package gc.arguments;
  * @modules java.management/sun.management
  * @library /test/lib
  * @library /
- * @run main gc.arguments.TestG1HeapRegionSize
+ * @run driver gc.arguments.TestG1HeapRegionSize
  */
 
 import java.util.regex.Matcher;

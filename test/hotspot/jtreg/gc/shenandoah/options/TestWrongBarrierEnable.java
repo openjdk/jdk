@@ -27,7 +27,7 @@
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
- * @run main/othervm TestWrongBarrierEnable
+ * @run driver TestWrongBarrierEnable
  */
 
 import java.util.*;

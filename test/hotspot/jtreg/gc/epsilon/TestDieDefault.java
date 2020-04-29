@@ -29,7 +29,7 @@ package gc.epsilon;
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon GC should die on heap exhaustion
  * @library /test/lib
- * @run main gc.epsilon.TestDieDefault
+ * @run driver gc.epsilon.TestDieDefault
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

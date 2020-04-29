@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package gc.serial;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @summary Allocate to get a promotion failure and verify that that heap change logging is present.
- * @run main gc.serial.HeapChangeLogging
+ * @run driver gc.serial.HeapChangeLogging
  */
 
 import java.util.regex.Matcher;

@@ -33,7 +33,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.g1.TestEagerReclaimHumongousRegionsClearMarkBits
+ * @run driver gc.g1.TestEagerReclaimHumongousRegionsClearMarkBits
  */
 
 import java.util.ArrayList;

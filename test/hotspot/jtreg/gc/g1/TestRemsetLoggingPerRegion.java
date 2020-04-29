@@ -34,7 +34,7 @@ package gc.g1;
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @summary Verify output of -Xlog:gc+remset*=trace in regards to per-region type output
- * @run main gc.g1.TestRemsetLoggingPerRegion
+ * @run driver gc.g1.TestRemsetLoggingPerRegion
  */
 
 public class TestRemsetLoggingPerRegion {
