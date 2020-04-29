@@ -31,7 +31,7 @@
  * As described in the Java Virtual Machine Specification, certain types in this package
  * are given special treatment by the virtual machine:
  * <ul>
- * <li>The classes {@link java.lang.invoke.MethodHandle MethodHandle}
+ * <li>The classes {@link java.lang.invoke.MethodHandle MethodHandle} and
  * {@link java.lang.invoke.VarHandle VarHandle} contain
  * <a href="MethodHandle.html#sigpoly">signature polymorphic methods</a>
  * which can be linked regardless of their type descriptor.
@@ -190,7 +190,7 @@
  * invoked with just the parameter types of static arguments, thereby supporting a wider
  * range of methods compatible with the static arguments (such as methods that don't declare
  * or require the lookup, name, and type meta-data parameters).
- * <p> For example, for dynamically-computed call site, a the first argument
+ * <p> For example, for dynamically-computed call site, the first argument
  * could be {@code Object} instead of {@code MethodHandles.Lookup}, and the return type
  * could also be {@code Object} instead of {@code CallSite}.
  * (Note that the types and number of the stacked arguments limit
