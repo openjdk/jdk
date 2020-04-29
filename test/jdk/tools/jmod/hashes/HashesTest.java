@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160286
+ * @bug 8160286 8243666
  * @summary Test the recording and checking of module hashes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
@@ -84,6 +85,7 @@ public class HashesTest {
     private final Path srcDir;
     private final Path lib;
     private final ModuleInfoMaker builder;
+
     HashesTest(Path dest) throws IOException {
         if (Files.exists(dest)) {
             deleteDirectory(dest);
@@ -305,6 +307,29 @@ public class HashesTest {
         validateImageJmodsTest(ht, mpath);
     }
 
+    @Test
+    public static void testReproducibibleHash() throws Exception {
+        HashesTest ht = new HashesTest(Path.of("repro"));
+        ht.makeModule("m4");
+        ht.makeModule("m3", "m4");
+        ht.makeModule("m2");
+        ht.makeModule("m1", "m2", "m3");
+
+        // create JMOD files and run jmod hash
+        List.of("m1", "m2", "m3", "m4").forEach(ht::makeJmod);
+        Map<String, ModuleHashes> hashes1 = ht.runJmodHash();
+
+        // sleep a bit to be confident that the hashes aren't dependent on timestamps
+        Thread.sleep(2000);
+
+        // (re)create JMOD files and run jmod hash
+        List.of("m1", "m2", "m3", "m4").forEach(ht::makeJmod);
+        Map<String, ModuleHashes> hashes2 = ht.runJmodHash();
+
+        // hashes should be equal
+        assertEquals(hashes1, hashes2);
+    }
+
     private static void validateImageJmodsTest(HashesTest ht, Path mpath)
         throws IOException
     {
@@ -432,6 +457,25 @@ public class HashesTest {
             }
         }
         runJmod(args);
+    }
+
+    /**
+     * Execute jmod hash on the modules in the lib directory. Returns a map of
+     * the modules, with the module name as the key, for the modules that have
+     * a ModuleHashes class file attribute.
+     */
+    private Map<String, ModuleHashes> runJmodHash() {
+        runJmod(List.of("hash",
+                "--module-path", lib.toString(),
+                "--hash-modules", ".*"));
+        HashesTest ht = this;
+        return ModulePath.of(Runtime.version(), true, lib)
+                .findAll()
+                .stream()
+                .map(ModuleReference::descriptor)
+                .map(ModuleDescriptor::name)
+                .filter(mn -> ht.hashes(mn) != null)
+                .collect(Collectors.toMap(mn -> mn, ht::hashes));
     }
 
     private static void runJmod(List<String> args) {

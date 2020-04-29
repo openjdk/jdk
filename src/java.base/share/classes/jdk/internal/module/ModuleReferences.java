@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ class ModuleReferences {
                                         Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JarModuleReader(file, uri);
-        HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
+        HashSupplier hasher = (a) -> ModuleHashes.computeHash(supplier, a);
         return newModule(attrs, uri, supplier, patcher, hasher);
     }
 
@@ -103,7 +103,7 @@ class ModuleReferences {
     static ModuleReference newJModModule(ModuleInfo.Attributes attrs, Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JModModuleReader(file, uri);
-        HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
+        HashSupplier hasher = (a) -> ModuleHashes.computeHash(supplier, a);
         return newModule(attrs, uri, supplier, null, hasher);
     }
 

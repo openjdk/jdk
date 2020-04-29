@@ -27,9 +27,8 @@ package jdk.internal.module;
 
 import java.io.PrintStream;
 import java.lang.module.Configuration;
+import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.net.URI;
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -39,7 +38,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
 
@@ -114,25 +112,15 @@ public class ModuleHashesBuilder {
                    mods.addAll(ns);
 
                    if (!ns.isEmpty()) {
-                       Map<String, Path> moduleToPath = ns.stream()
-                           .collect(toMap(Function.identity(), this::moduleToPath));
-                       hashes.put(mn, ModuleHashes.generate(moduleToPath, "SHA-256"));
+                       Set<ModuleReference> mrefs = ns.stream()
+                               .map(name -> configuration.findModule(name)
+                                                         .orElseThrow(InternalError::new))
+                               .map(ResolvedModule::reference)
+                               .collect(toSet());
+                       hashes.put(mn, ModuleHashes.generate(mrefs, "SHA-256"));
                    }
                });
         return hashes;
-    }
-
-    private Path moduleToPath(String name) {
-        ResolvedModule rm = configuration.findModule(name).orElseThrow(
-            () -> new InternalError("Selected module " + name + " not on module path"));
-
-        URI uri = rm.reference().location().get();
-        Path path = Path.of(uri);
-        String fn = path.getFileName().toString();
-        if (!fn.endsWith(".jar") && !fn.endsWith(".jmod")) {
-            throw new UnsupportedOperationException(path + " is not a modular JAR or jmod file");
-        }
-        return path;
     }
 
     /*
