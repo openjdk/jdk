@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,6 +56,7 @@ address StubRoutines::aarch64::_string_indexof_linear_ll = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
 address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
+address StubRoutines::aarch64::_method_entry_barrier = NULL;
 bool StubRoutines::aarch64::_completed = false;
 
 /**

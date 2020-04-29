@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArguments.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/globals_extension.hpp"
-#include "utilities/debug.hpp"
 
 void ZArguments::initialize_platform() {
-  // Disable class unloading - we don't support concurrent class unloading yet.
-  FLAG_SET_DEFAULT(ClassUnloading, false);
-  FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
+    // Does nothing
 }

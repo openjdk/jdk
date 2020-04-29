@@ -2483,7 +2483,8 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, UseEmptySlotsInSupers, true,                                \
                 "Allow allocating fields in empty slots of super-classes")  \
                                                                             \
-
+  diagnostic(bool, DeoptimizeNMethodBarriersALot, false,                    \
+                "Make nmethod barriers deoptimise a lot.")                  \
 
 // Interface macros
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)      extern "C" type name;

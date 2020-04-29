@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -69,6 +69,9 @@ class aarch64 {
   static address _string_indexof_linear_uu;
   static address _string_indexof_linear_ul;
   static address _large_byte_array_inflate;
+
+  static address _method_entry_barrier;
+
   static bool _completed;
 
  public:
@@ -169,6 +172,10 @@ class aarch64 {
 
   static address large_byte_array_inflate() {
       return _large_byte_array_inflate;
+  }
+
+  static address method_entry_barrier() {
+    return _method_entry_barrier;
   }
 
   static bool complete() {

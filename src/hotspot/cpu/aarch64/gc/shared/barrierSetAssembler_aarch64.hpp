@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define CPU_AARCH64_GC_SHARED_BARRIERSETASSEMBLER_AARCH64_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 
@@ -72,6 +74,10 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   virtual void barrier_stubs_init() {}
+
+  virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void c2i_entry_barrier(MacroAssembler* masm);
+
 };
 
 #endif // CPU_AARCH64_GC_SHARED_BARRIERSETASSEMBLER_AARCH64_HPP
