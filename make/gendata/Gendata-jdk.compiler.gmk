@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk
-include SetupJavaCompilers.gmk
 
 ################################################################################
 
@@ -53,12 +52,14 @@ COMPILECREATESYMBOLS_ADD_EXPORTS := \
     #
 
 $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
-    SETUP := GENERATE_OLDBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/make/langtools/src/classes \
         $(TOPDIR)/src/jdk.jdeps/share/classes, \
     INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols, \
-    ADD_JAVAC_FLAGS := $(INTERIM_LANGTOOLS_ARGS) \
+    DISABLED_WARNINGS := options, \
+    JAVAC_FLAGS := \
+        $(INTERIM_LANGTOOLS_ARGS) \
         --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))

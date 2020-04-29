@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,17 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 
 ################################################################################
 # Setup the compilation of the properties compilation tool. You can depend
 # upon $(BUILD_TOOLS_LANGTOOLS) to trigger a compilation of the tools.
-$(eval $(call SetupJavaCompilation,BUILD_TOOLS_LANGTOOLS, \
-    SETUP := BOOT_JAVAC, \
-    DISABLE_SJAVAC := true, \
-    ADD_JAVAC_FLAGS := -Xprefer:source, \
+$(eval $(call SetupJavaCompilation, BUILD_TOOLS_LANGTOOLS, \
+    COMPILER := bootjdk, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/make/langtools/tools, \
     INCLUDES := compileproperties propertiesparser, \
     COPY := .properties, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes))
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes, \
+))
 
 all: $(BUILD_TOOLS_LANGTOOLS)

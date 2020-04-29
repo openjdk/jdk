@@ -33,7 +33,6 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include NativeCompilation.gmk
-include SetupJavaCompilers.gmk
 include TextFileProcessing.gmk
 include ZipArchive.gmk
 
@@ -93,7 +92,6 @@ COPY_TO_IMAGE := *.html *.txt *.png *.xml README*
 # EXTRA_COPY_TO_IMAGE   Additional files to copy to images (as wildcards)
 # EXTRA_MANIFEST_ATTR   Extra manifest attribute
 # SKIP_COMPILATION   Skip Java compilation iff true
-# DISABLE_SJAVAC   Passed to SetupJavaCompilation
 # DISABLED_WARNINGS Additional disabled warnings
 SetupBuildDemo = $(NamedParamsMacroTemplate)
 define SetupBuildDemoBody
@@ -126,7 +124,7 @@ define SetupBuildDemoBody
 
   ifneq ($$($1_SKIP_COMPILATION), true)
     $$(eval $$(call SetupJavaCompilation, BUILD_DEMO_$1, \
-        SETUP := GENERATE_USINGJDKBYTECODE, \
+        TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
         SRC := $$($1_MAIN_SRC) $$($1_EXTRA_SRC_DIR), \
         BIN := $(SUPPORT_OUTPUTDIR)/demos/classes/$$($1_DEMO_SUBDIR)/$1, \
         COPY := $(COPY_TO_JAR) $$($1_EXTRA_COPY_TO_JAR), \
@@ -137,7 +135,6 @@ define SetupBuildDemoBody
         SRCZIP := $(SUPPORT_OUTPUTDIR)/demos/image/$$($1_DEMO_SUBDIR)/$1/src.zip, \
         EXCLUDE_FILES := $$($1_EXCLUDE_FILES), \
         DISABLED_WARNINGS := $$($1_DISABLED_WARNINGS), \
-        DISABLE_SJAVAC := $$($1_DISABLE_SJAVAC), \
     ))
 
     $1 += $$(BUILD_DEMO_$1)
@@ -183,7 +180,6 @@ $(eval $(call SetupBuildDemo, SwingSet2, \
     EXTRA_COPY_TO_JAR := .java, \
     EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
     DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast, \
-    DISABLE_SJAVAC := true, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \

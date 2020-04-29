@@ -1,5 +1,5 @@
 
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,21 +44,25 @@ TEXT_SOURCES := $(TEXT_PKG)/BreakIteratorRules.java \
 BREAK_ITERATOR_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/break_iterator_classes
 
 # These two files should be moved out to a build tool!
-$(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_BASE, \
-    SETUP := GENERATE_OLDBYTECODE, \
+$(eval $(call SetupJavaCompilation, BUILD_BREAKITERATOR_BASE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/src/java.base/share/classes, \
     INCLUDE_FILES := \
         $(TEXT_PKG)/BreakIteratorRules.java \
         $(TEXT_PKG)/BreakIteratorInfo.java, \
-    BIN := $(BREAK_ITERATOR_CLASSES)/java.base))
+    BIN := $(BREAK_ITERATOR_CLASSES)/java.base, \
+    DISABLED_WARNINGS := options, \
+))
 
-$(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_LD, \
-    SETUP := GENERATE_OLDBYTECODE, \
+$(eval $(call SetupJavaCompilation, BUILD_BREAKITERATOR_LD, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/src/jdk.localedata/share/classes, \
     INCLUDE_FILES := \
         $(TEXT_PKG_LD)/BreakIteratorRules_th.java \
         $(TEXT_PKG_LD)/BreakIteratorInfo_th.java, \
-    BIN := $(BREAK_ITERATOR_CLASSES)/jdk.localedata))
+    BIN := $(BREAK_ITERATOR_CLASSES)/jdk.localedata, \
+    DISABLED_WARNINGS := options, \
+))
 
 BREAK_ITERATOR_BOOTCLASSPATH := \
     --patch-module java.base=$(BREAK_ITERATOR_CLASSES)/java.base \

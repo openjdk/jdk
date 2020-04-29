@@ -23,10 +23,6 @@
 # questions.
 #
 
-# When you read this source. Remember that $(sort ...) has the side effect
-# of removing duplicates. It is actually this side effect that is
-# desired whenever sort is used below!
-
 ifndef _JAVA_COMPILATION_GMK
 _JAVA_COMPILATION_GMK := 1
 
@@ -39,30 +35,22 @@ endif
 include JarArchive.gmk
 include ZipArchive.gmk
 
-# Setup make rules for defining a Java compiler, which is needed to compile
-# Java code. This rule generates no output.
-#
-# Parameter 1 is the name of the compiler definition. This name needs to be
-# passed to SetupJavaCompilation. This name is used as variable prefix.
-#
-# Remaining parameters are named arguments. These include:
-#   JVM:=The jvm used to run the javac command
-#   JAVAC:=The javac jar and bootstrap classpath changes, or just bin/javac if JVM is left out
-#   FLAGS:=Flags to be supplied to javac
-#   SERVER_DIR:=Use a javac server (-XDserver) and store the server related files here
-#   SERVER_JVM:=Use this JVM for the server. Defaults to the JVM above.
-#   DISABLE_SJAVAC:=Set to true if this setup does not support sjavac
-SetupJavaCompiler = $(NamedParamsMacroTemplate)
-define SetupJavaCompilerBody
-  # The port file contains the tcp/ip on which the server listens
-  # and the cookie necessary to talk to the server.
-  $1_SJAVAC_PORTFILE:=$$($1_SERVER_DIR)/server.port
-  # You can use a different JVM to run the background javac server.
-  ifeq ($$($1_SERVER_JVM),)
-    # It defaults to the same JVM that is used to start the javac command.
-    $1_SERVER_JVM:=$$($1_JVM)
-  endif
-endef
+###
+### Definitions for common release targets
+###
+
+# Create classes that can run on the bootjdk
+TARGET_RELEASE_BOOTJDK := $(BOOT_JDK_SOURCETARGET)
+
+# Create classes that can be used in (or be a part of) the new jdk we're building
+TARGET_RELEASE_NEWJDK := -source $(JDK_SOURCE_TARGET_VERSION) -target $(JDK_SOURCE_TARGET_VERSION)
+
+# Create classes that can be used in JDK 8, for legacy support
+TARGET_RELEASE_JDK8 := --release 8
+
+# Create classes for the new jdk, relying only on the modules of the new jdk
+TARGET_RELEASE_NEWJDK_UPGRADED := $(TARGET_RELEASE_NEWJDK) \
+    --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none
 
 define add_file_to_copy
   # param 1 = BUILD_MYPACKAGE
@@ -76,7 +64,7 @@ define add_file_to_copy
     $1_COPY_$$($2_TARGET) := 1
     # Now we can setup the dependency that will trigger the copying.
     $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET) : $2
-	$$(call LogInfo, Copying $$(patsubst $(OUTPUTDIR)/%,%, $$@))
+	$$(call LogInfo, Copying $$(patsubst $$(OUTPUTDIR)/%,%, $$@))
 	$$(install-file)
 	$(CHMOD) -f ug+w $$@
 
@@ -86,10 +74,7 @@ define add_file_to_copy
 endef
 
 # This macro is used only for properties files that are to be
-# copied over to the classes directory in cleaned form:
-# Previously this was inconsistently done in different repositories.
-# This is the new clean standard. Though it is to be superseded by
-# a standard annotation processor from with sjavac.
+# copied over to the classes directory in cleaned form.
 #
 # An empty echo ensures that the input to sed always ends with a newline.
 # Certain implementations (e.g. Solaris) will skip the last line without
@@ -120,12 +105,12 @@ define add_file_to_clean
   ifneq ($$($1_CLEAN_$$($2_TARGET)), 1)
     $1_CLEAN_$$($2_TARGET) := 1
     $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET) : $2
-	$$(call LogInfo, Cleaning $$(patsubst $(OUTPUTDIR)/%,%, $$@))
+	$$(call LogInfo, Cleaning $$(patsubst $$(OUTPUTDIR)/%,%, $$@))
 	$$(call MakeTargetDir)
 	( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
 	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/^[ 	]*#.*/#/g' \
-	    | $(SED) -f "$(TOPDIR)/make/common/support/unicode2x.sed" \
+	    | $(SED) -f "$$(TOPDIR)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
 	        -e 's/^[ 	]*//;s/[ 	]*$$$$//' \
@@ -151,9 +136,12 @@ endef
 # The target for public API digest is returned in $1_API_TARGET.
 #
 # Remaining parameters are named arguments. These include:
-#   SETUP:=must point to a previously setup java compiler, for example: SETUP:=BOOTJAVAC
-#   JVM:=path to ..bin/java
-#   ADD_JAVAC_FLAGS:=javac flags to append to the default ones.
+#   SMALL_JAVA:=set to false to run javac as a "big" java app
+#   COMPILER:=bootjdk or interim, the latter is default
+#   TARGET_RELEASE:=javac flags to set the targeted jdk release (-source/-target or --release)
+#   Defaults to $(TARGET_RELEASE_NEWJDK).
+#   JAVAC_FLAGS:=javac flags to append to the default ones.
+#   JAVA_FLAGS:=flags to be appended to the java launching the compiler
 #   DISABLED_WARNINGS:=list of Xlint warnings that should be disabled
 #   SRC:=one or more directories to search for sources. The order of the source roots
 #        is significant. The first found file of a certain name has priority.
@@ -174,14 +162,12 @@ endef
 #       specify files that need to be generated by other rules first.
 #   HEADERS:=path to directory where all generated c-headers are written.
 #   DEPENDS:=Extra dependecy
-#   DISABLE_SJAVAC:=Explicitly disable the use of sjavac for this compilation unit.
 #   KEEP_DUPS:=Do not remove duplicate file names from different source roots.
 #   FAIL_NO_SRC:=Set to false to not fail the build if no source files are found,
 #        default is true.
-#   DEBUG_SYMBOLS:=Set to false to disable generation of debug symbols.
 #   CREATE_API_DIGEST:=Set to true to use a javac plugin to generate a public API
 #        hash which can be used for down stream dependencies to only rebuild
-#        when the API changes. Implicitly used in sjavac.
+#        when the API changes.
 #   KEEP_ALL_TRANSLATIONS:=Set to true to skip translation filtering
 SetupJavaCompilation = $(NamedParamsMacroTemplate)
 define SetupJavaCompilationBody
@@ -191,14 +177,76 @@ define SetupJavaCompilationBody
     $$(error Must specify BIN (in $1))
   endif
 
-  # Extract the info from the java compiler setup.
-  $1_JVM := $$($$($1_SETUP)_JVM)
-  $1_JAVAC := $$($$($1_SETUP)_JAVAC)
-  $1_FLAGS :=
-  ifneq ($$($1_DEBUG_SYMBOLS), false)
-    $1_FLAGS := -g
+  ifeq ($$($1_SMALL_JAVA), )
+    # If unspecified, default to true
+    $1_SMALL_JAVA := true
   endif
-  $1_FLAGS += $$($$($1_SETUP)_FLAGS) $$($1_ADD_JAVAC_FLAGS) $(JAVAC_FLAGS)
+
+  ifeq ($$($1_COMPILER), )
+    # If unspecified, default to interim compiler
+    $1_COMPILER := interim
+  endif
+
+  ifeq ($$($1_COMPILER), bootjdk)
+    # Javac server is not available when using the bootjdk compiler.
+    $1_JAVAC_CMD := $$(JAVAC)
+
+    ifeq ($$($1_SMALL_JAVA), true)
+      $1_FLAGS += $$(addprefix -J, $$(JAVA_FLAGS_SMALL))
+    endif
+    ifeq ($$($1_JAVA_FLAGS), true)
+      $1_FLAGS += $$(addprefix -J, $$($1_JAVA_FLAGS))
+    endif
+
+    ifeq ($$($1_TARGET_RELEASE), )
+      # If unspecified, default to the new jdk we're building
+      $1_TARGET_RELEASE := $$(TARGET_RELEASE_BOOTJDK)
+    endif
+  else ifeq ($$($1_COMPILER), interim)
+    # Use java server if it is enabled, and the user does not want a specialized
+    # class path.
+    ifeq ($$($1_ENABLE_JAVAC_SERVER+$$($1_CLASSPATH)), true+)
+      $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.sjavac.Main
+
+      # How to launch the server. This must use JAVA_DETACH, which is the "big" java
+      # with an ability to detach from fixpath (on Windows)
+      # This will be executed by the client, if needed.
+      $1_JAVAC_SERVER_CMD := $$(JAVA_DETACH) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+      $1_ESCAPED_CMD := $$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_JAVAC_SERVER_CMD))))
+
+      # The port file contains the tcp/ip on which the server listens
+      # and the cookie necessary to talk to the server.
+      $1_JAVA_SERVER_FLAGS := --server:portfile=$$(SJAVAC_SERVER_DIR)/server.port,sjavac=$$($1_ESCAPED_CMD)
+
+      # Always use small to launch client
+      $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC) $$($1_JAVA_SERVER_FLAGS)
+    else
+      # No javac server
+      $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.javac.Main
+
+      ifeq ($$($1_SMALL_JAVA), true)
+       $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+      else
+       $1_JAVAC_CMD := $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+      endif
+    endif
+
+    ifeq ($$($1_TARGET_RELEASE), )
+      # If unspecified, default to the new jdk we're building
+      $1_TARGET_RELEASE := $$(TARGET_RELEASE_NEWJDK)
+    endif
+  else
+    $$(error Invalid value for COMPILER in SetupJavaCompilation for $1: '$$($1_COMPILER)')
+  endif
+
+  # Allow overriding on the command line
+  JAVA_WARNINGS_ARE_ERRORS ?= -Werror
+
+  # Tell javac to do exactly as told and no more
+  PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
+
+  $1_FLAGS += -g -Xlint:all --doclint-format html5 $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS) $$(JAVA_WARNINGS_ARE_ERRORS)
+  $1_FLAGS += $$($1_JAVAC_FLAGS)
 
   ifneq ($$($1_DISABLED_WARNINGS), )
     $1_FLAGS += -Xlint:$$(call CommaList, $$(addprefix -, $$($1_DISABLED_WARNINGS)))
@@ -207,13 +255,6 @@ define SetupJavaCompilationBody
   ifneq ($$($1_CLASSPATH), )
     $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
   endif
-
-  ifeq ($$($1_JAVAC),)
-    $$(error The Java compilation $1 refers to a non-existant java compiler setup $$($1_SETUP))
-  endif
-  $1_SJAVAC_PORTFILE := $$($$($1_SETUP)_SJAVAC_PORTFILE)
-  $1_SERVER_JVM := $$($$($1_SETUP)_SERVER_JVM)
-  $1_DISABLE_SJAVAC := $$($$($1_SETUP)_DISABLE_SJAVAC)
 
   ifneq ($$($1_MODULE), )
     $1_MODULE_SUBDIR := /$$($1_MODULE)
@@ -264,13 +305,10 @@ define SetupJavaCompilationBody
     # Remove duplicate source files by keeping the first found of each duplicate.
     # This allows for automatic overrides with custom or platform specific versions
     # source files.
-    #
-    # For the smart javac wrapper case, add each removed file to an extra exclude
-    # file list to prevent sjavac from finding duplicate sources.
     $1_SRCS := $$(strip $$(foreach s, $$($1_SRCS), \
         $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), $$(s))) \
         $$(if $$($1_$$(relative_src)), \
-          $$(eval $1_SJAVAC_EXCLUDE_FILES += $$(s)), \
+          , \
           $$(eval $1_$$(relative_src) := 1) $$(s))))
   endif
 
@@ -343,92 +381,15 @@ define SetupJavaCompilationBody
     # and remove .java at the end.
     $1_REWRITE_INTO_CLASSES:=$$(foreach i,$$($1_SRC),-e 's|$$i/||g') -e 's|/|.|g' -e 's|.java$$$$||g'
 
-    # Create SJAVAC variable from JAVAC variable. Expects $1_JAVAC to be
-    # "bootclasspathprepend -cp .../javac.jar com.sun.tools.javac.Main"
-    # and javac is simply replaced with sjavac.
-    $1_SJAVAC:=$$(subst com.sun.tools.javac.Main,com.sun.tools.sjavac.Main,$$($1_JAVAC))
-
-    # Set the $1_REMOTE to spawn a background javac server.
-    $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst \
-        $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
-
     $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
     $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
 
-    ifeq ($$($1_DISABLE_SJAVAC)x$$(ENABLE_SJAVAC),xyes)
-      # Using sjavac to compile.
+    # Put headers in a temp dir to filter out those that actually
+    # changed before copying them to the real header dir.
+    ifneq (,$$($1_HEADERS))
+      $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
 
-      # Create the sjavac wrapper command line. Sjavac doesn't handle patterns that
-      # match the absolute path, only the part inside each src dir. Instead -i and
-      # -x flags apply only to the next -src arg on the command line.
-      $1_EXCLUDE_FILES_ABS := $$(filter /%, $$($1_EXCLUDE_FILES)) $$($1_SJAVAC_EXCLUDE_FILES)
-      $1_EXCLUDE_FILES_REL := $$(filter-out /%, $$($1_EXCLUDE_FILES))
-      $1_SJAVAC_ARGS_STRING := $$(foreach s, $$(patsubst %/, %, $$($1_SRC)), \
-          $$(addprefix -x ,$$(addsuffix /**,$$($1_EXCLUDES))) \
-          $$(addprefix -i ,$$(addsuffix /**,$$($1_INCLUDES))) \
-          $$(addprefix -x **,$$(strip $$($1_EXCLUDE_FILES_REL))) \
-          $$(addprefix -i **,$$(strip $$($1_INCLUDE_FILES))) \
-          $$(addprefix -x , $$(strip $$(patsubst $$(s)/%, %, $$(filter $$(s)/%, $$($1_EXCLUDE_FILES_ABS))))) \
-          -src $$(s))
-
-      ifneq ($$(word 20, $$($1_SJAVAC_ARGS_STRING)), )
-        $1_SJAVAC_ARGS_FILE := $$($1_BIN)/_the.$1_args
-        $1_SJAVAC_ARGS := @$$($1_SJAVAC_ARGS_FILE)
-      else
-        $1_SJAVAC_ARGS := $$($1_SJAVAC_ARGS_STRING)
-      endif
-
-
-      ifneq (,$$($1_HEADERS))
-        $1_HEADERS_ARG := -h $$($1_HEADERS)
-      endif
-
-      $1_VARDEPS := $$($1_JVM) $$($1_SJAVAC) $$($1_SJAVAC_ARGS_STRING) $$($1_FLAGS) \
-          $$($1_HEADERS_ARG) $$($1_BIN) $$($1_EXCLUDES) $$($1_INCLUDES) \
-          $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
-      $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
-          $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.vardeps)
-
-      $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
-		$$(call MakeDir, $$(@D) $$(dir $$($1_SJAVAC_PORTFILE)))
-		$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
-                ifneq ($$($1_SJAVAC_ARGS_FILE), )
-		  $$(eval $$(call ListPathsSafely,$1_SJAVAC_ARGS_STRING, $$($1_SJAVAC_ARGS_FILE)))
-                endif
-		$$(call LogWarn, Compiling $1)
-		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
-		    $$($1_JVM) $$($1_SJAVAC) \
-		        $$($1_REMOTE) \
-		        -j 1 \
-		        --permit-unidentified-artifacts \
-		        --permit-sources-without-package \
-		        --compare-found-sources $$@.tmp \
-		        --log=$(LOG_LEVEL) \
-		        --state-dir=$$($1_BIN)$$($1_MODULE_SUBDIR) \
-		        $$($1_SJAVAC_ARGS) \
-		        $$($1_FLAGS) \
-		        $$($1_HEADERS_ARG) \
-		        -d $$($1_BIN)) && \
-		$(MV) $$@.tmp $$@
-                # Create a pubapi file that only changes when the pubapi changes. Dependent
-                # compilations can use this file to only get recompiled when pubapi has changed.
-                # Grep returns 1 if no matching lines are found. Do not fail for this.
-		$(GREP) -e "^I" $$($1_BIN)$$($1_MODULE_SUBDIR)/javac_state \
-		    > $$($1_API_TARGET).tmp || test "$$$$?" = "1"
-		if [ ! -f $$($1_API_TARGET) ] \
-		    || [ "`$(DIFF) $$($1_API_TARGET) $$($1_API_TARGET).tmp`" != "" ]; then \
-		  $(MV) $$($1_API_TARGET).tmp $$($1_API_TARGET); \
-		fi
-
-    else
-      # Using plain javac to batch compile everything.
-
-      # When building in batch, put headers in a temp dir to filter out those that actually
-      # changed before copying them to the real header dir.
-      ifneq (,$$($1_HEADERS))
-        $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
-
-        $$($1_HEADERS)/_the.$1_headers: $$($1_COMPILE_TARGET)
+      $$($1_HEADERS)/_the.$1_headers: $$($1_COMPILE_TARGET)
 		$$(call MakeTargetDir)
 		if [ -d "$$($1_HEADERS).$1.tmp" ]; then \
 		  for f in `$(CD) $$($1_HEADERS).$1.tmp && $(FIND) . -type f`; do \
@@ -442,43 +403,35 @@ define SetupJavaCompilationBody
 		$(RM) -r $$($1_HEADERS).$1.tmp
 		$(TOUCH) $$@
 
-        $1_HEADER_TARGETS := $$($1_HEADERS)/_the.$1_headers
-      endif
+      $1_HEADER_TARGETS := $$($1_HEADERS)/_the.$1_headers
+    endif
 
-      $1_VARDEPS := $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) $$($1_BIN) \
-          $$($1_HEADERS_ARG) $$($1_EXCLUDES) $$($1_INCLUDES) \
-          $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
-      $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
-          $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.vardeps)
+    $1_VARDEPS := $$($1_JAVAC_CMD) $$($1_FLAGS) $$($1_BIN) \
+        $$($1_HEADERS_ARG) $$($1_EXCLUDES) $$($1_INCLUDES) \
+        $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.vardeps)
 
-      ifeq ($$($1_DISABLE_SJAVAC)x$(ENABLE_JAVAC_SERVER), xyes)
-        $1_JAVAC_CMD := $$($1_SJAVAC) $$($1_REMOTE)
-      else
-        $1_JAVAC_CMD := $$($1_JAVAC)
-      endif
+    ifeq ($$($1_CREATE_API_DIGEST), true)
+      $1_API_DIGEST_FLAGS := \
+          -classpath $$(BUILDTOOLS_OUTPUTDIR)/depend \
+          -Xplugin:"depend $$($1_API_TARGET)" \
+          #
 
-      ifeq ($$($1_CREATE_API_DIGEST), true)
-        $1_API_DIGEST_FLAGS := \
-            -classpath $(BUILDTOOLS_OUTPUTDIR)/depend \
-            -Xplugin:"depend $$($1_API_TARGET)" \
-            #
+      $1_EXTRA_DEPS := $$(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
+    endif
 
-        $1_EXTRA_DEPS := $(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
-      endif
-
-      # When not using sjavac, pass along all sources to javac using an @file.
-      $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE) \
-          $$($1_EXTRA_DEPS)
+    # Pass along all sources to javac using an @file.
+    $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE) \
+        $$($1_EXTRA_DEPS)
 		$$(call MakeDir, $$(@D))
 		$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 		$$(call LogWarn, Compiling $$(words $$($1_SRCS)) files for $1)
 		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
-		    $$($1_JVM) $$($1_JAVAC_CMD) $$($1_FLAGS) \
-		        -implicit:none \
+		    $$($1_JAVAC_CMD) $$($1_FLAGS) \
 		        $$($1_API_DIGEST_FLAGS) \
 		        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \
 		$(MV) $$@.tmp $$@
-    endif
 
     # Add all targets to main variable
     $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_COMPILE_TARGET) \
@@ -506,7 +459,6 @@ define SetupJavaCompilationBody
           EXTRA_MANIFEST_ATTR:=$$($1_EXTRA_MANIFEST_ATTR), \
           JARINDEX:=$$($1_JARINDEX), \
           HEADERS:=$$($1_HEADERS), \
-          SETUP:=$$($1_SETUP), \
       ))
 
       # Add jar to target list

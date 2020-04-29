@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 
 TARGETS :=
 
@@ -36,18 +35,17 @@ TEST_LIB_SOURCE_DIR := $(TOPDIR)/test/lib
 TEST_LIB_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/lib
 
 $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \
-    SETUP := GENERATE_USINGJDKBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SRC := $(TEST_LIB_SOURCE_DIR)/sun, \
     BIN := $(TEST_LIB_SUPPORT)/wb_classes, \
     JAR := $(TEST_LIB_SUPPORT)/wb.jar, \
-    ADD_JAVAC_FLAGS := $(JAVAC_WARNINGS), \
 ))
 
 TARGETS += $(BUILD_WB_JAR)
 
 # test-lib.jar will contain only hprof classes until JDK-8081381 is resolved
 $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
-    SETUP := GENERATE_USINGJDKBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SRC := $(TEST_LIB_SOURCE_DIR)/jdk/test/lib/hprof, \
     BIN := $(TEST_LIB_SUPPORT)/test-lib_classes, \
     JAR := $(TEST_LIB_SUPPORT)/test-lib.jar, \
