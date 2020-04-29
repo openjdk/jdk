@@ -37,9 +37,6 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class ShutdownTest {
    Object[] obj;
@@ -67,25 +64,20 @@ public class ShutdownTest {
        }
     }
 
-    private static void startVM(List<String> options) throws Throwable {
+    private static void startVM(String... options) throws Throwable {
         // Combine VM flags given from command-line and your additional options
-        OutputAnalyzer output = ProcessTools.executeTestJvm(options.toArray(new String[options.size()]));
+        OutputAnalyzer output = ProcessTools.executeTestJvm(options);
         output.shouldContain("- ShutdownTest -");
         output.shouldHaveExitValue(0);
 
     }
 
     public static void main(String[] args) throws Throwable {
-        List<String> options = new ArrayList<>();
-
         // To reproduce original bug you may need this option: "-Xmx2500k",
-        Collections.addAll(options,
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+VerifyBeforeExit");
-        options.add(ShutdownTestThread.class.getName());
-
         for (int iteration = 0; iteration < 5; ++iteration) {
-            startVM(options);
+            startVM("-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+VerifyBeforeExit",
+                    ShutdownTestThread.class.getName());
         }
     }
 }

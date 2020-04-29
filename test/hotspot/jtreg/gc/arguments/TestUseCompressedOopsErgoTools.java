@@ -94,7 +94,7 @@ class TestUseCompressedOopsErgoTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs.toArray(String[]::new));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     return output;

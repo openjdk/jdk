@@ -77,8 +77,7 @@ public class TestRemsetLoggingTools {
         finalargs.add(VerifySummaryOutput.class.getName());
         finalargs.add(String.valueOf(numGCs));
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            finalargs.toArray(new String[0]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);

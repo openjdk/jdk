@@ -56,8 +56,7 @@ public class TestVerifySubSet {
                                                  "-Xlog:gc+verify=debug",
                                                  "-XX:VerifySubSet="+subset,
                                                  TestVerifySubSetRunSystemGC.class.getName()});
-        ProcessBuilder pb =
-            ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOpts);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         System.out.println("Output:\n" + output.getOutput());

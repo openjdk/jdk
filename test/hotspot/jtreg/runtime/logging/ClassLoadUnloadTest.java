@@ -77,7 +77,7 @@ public class ClassLoadUnloadTest {
         Collections.addAll(argsList, "-Xmn8m");
         Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
         Collections.addAll(argsList, ClassUnloadTestMain.class.getName());
-        return ProcessTools.createJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
+        return ProcessTools.createJavaProcessBuilder(argsList);
     }
 
     public static void main(String... args) throws Exception {

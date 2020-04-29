@@ -107,7 +107,7 @@ public class TestHumongousCodeCacheRoots {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(String[]::new));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     return output;

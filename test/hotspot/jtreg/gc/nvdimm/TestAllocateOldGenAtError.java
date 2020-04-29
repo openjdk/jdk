@@ -89,8 +89,7 @@ public class TestAllocateOldGenAtError {
     Collections.addAll(flags, commonFlags);
     Collections.addAll(flags, extraFlags);
 
-    ProcessBuilder pb =
-        ProcessTools.createJavaProcessBuilder(true, flags.toArray(String[]::new));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     return output;
   }

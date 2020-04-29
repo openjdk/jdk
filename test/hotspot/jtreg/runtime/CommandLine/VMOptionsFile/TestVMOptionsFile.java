@@ -247,7 +247,7 @@ public class TestVMOptionsFile {
         runJava.add(PrintPropertyAndOptions.class.getName());
         runJava.addAll(appParams);
 
-        pb = ProcessTools.createJavaProcessBuilder(runJava.toArray(new String[0]));
+        pb = ProcessTools.createJavaProcessBuilder(runJava);
 
         VMParams.clear();
         appParams.clear();

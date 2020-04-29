@@ -41,12 +41,11 @@ import jdk.test.lib.process.ProcessTools;
 public class TestUseNUMAInterleaving {
 
     public static void main(String[] args) throws Exception {
-        String[] vmargs = new String[]{
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+            true,
             "-XX:+UseNUMA",
             "-XX:+PrintFlagsFinal",
-            "-version"
-        };
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(true, vmargs);
+            "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         boolean isNUMAEnabled

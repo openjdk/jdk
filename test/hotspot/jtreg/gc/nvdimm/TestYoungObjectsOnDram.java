@@ -72,8 +72,7 @@ public class TestYoungObjectsOnDram {
         Collections.addAll(flags, extraFlags);
         flags.add(YoungObjectTest.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
-                flags.toArray(String[]::new));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());

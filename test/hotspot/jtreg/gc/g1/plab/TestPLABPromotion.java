@@ -116,7 +116,7 @@ public class TestPLABPromotion {
             testCase.print(System.out);
             List<String> options = PLABUtils.prepareOptions(testCase.toOptions());
             options.add(AppPLABPromotion.class.getName());
-            OutputAnalyzer out = ProcessTools.executeTestJvm(options.toArray(new String[options.size()]));
+            OutputAnalyzer out = ProcessTools.executeTestJvm(options);
             PLABUtils.commonCheck(out);
             output = out.getOutput();
             checkResults(testCase);

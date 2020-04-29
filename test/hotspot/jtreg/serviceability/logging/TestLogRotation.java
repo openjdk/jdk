@@ -71,17 +71,16 @@ public class TestLogRotation {
     }
 
     public static void runTest(int numberOfFiles) throws Exception {
-
-        ArrayList<String> args = new ArrayList();
-        String[] logOpts = new String[]{
-            "-cp", System.getProperty("java.class.path"),
-            "-Xlog:gc=debug:" + logFileName + "::filesize=" + logFileSizeK + "k,filecount=" + numberOfFiles,
-            "-XX:-DisableExplicitGC", // to ensure that System.gc() works
-            "-Xmx128M"};
-        args.addAll(Arrays.asList(logOpts));
-        args.add(GCLoggingGenerator.class.getName());
-        args.add(String.valueOf(numberOfFiles * logFileSizeK * 1024));
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, args.toArray(String[]::new));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                true,
+                "-cp", System.getProperty("java.class.path"),
+                "-Xlog:gc=debug:" + logFileName
+                        + "::filesize=" + logFileSizeK + "k"
+                        + ",filecount=" + numberOfFiles,
+                "-XX:-DisableExplicitGC", // to ensure that System.gc() works
+                "-Xmx128M",
+                GCLoggingGenerator.class.getName(),
+                String.valueOf(numberOfFiles * logFileSizeK * 1024));
         pb.redirectErrorStream(true);
         pb.redirectOutput(new File(GCLoggingGenerator.class.getName() + ".log"));
         Process process = pb.start();

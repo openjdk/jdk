@@ -70,11 +70,14 @@ public class TestInitialGCThreadLogging {
   }
 
   private static void testInitialGCThreadLogging(String gcFlag, String threadName) throws Exception {
-    // UseDynamicNumberOfGCThreads and TraceDynamicGCThreads enabled
-    String[] baseArgs = {"-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", "-version"};
-
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);
+    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+" + gcFlag,
+        "-Xmx10M",
+        "-XX:+UseDynamicNumberOfGCThreads",
+        "-Xlog:gc+task=trace",
+        "-version");
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()), threadName);
   }
 }

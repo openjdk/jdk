@@ -51,7 +51,7 @@ public class MaxMetaspaceSize {
     }
 
     String msg = "Failed allocating metaspace object";
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(processArgs.toArray(new String[0]));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(processArgs);
     CDSTestUtils.executeAndLog(pb, "dump").shouldContain(msg).shouldHaveExitValue(1);
   }
 }

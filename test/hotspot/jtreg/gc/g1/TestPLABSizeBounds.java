@@ -63,7 +63,7 @@ public class TestPLABSizeBounds {
         testArguments.add("-XX:OldPLABSize=" + plabSize);
         testArguments.add(GCTest.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments.toArray(new String[0]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         if (shouldSucceed) {

@@ -327,7 +327,7 @@ public class TestLargePagesFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     return output;

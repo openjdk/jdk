@@ -98,13 +98,11 @@ public class TestSmallHeap {
 
     private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {
         long minMaxHeap = 4 * 1024 * 1024;
-        LinkedList<String> vmOptions = new LinkedList<>();
-        vmOptions.add(gc);
-        vmOptions.add("-Xmx" + minMaxHeap);
-        vmOptions.add("-XX:+PrintFlagsFinal");
-        vmOptions.add(VerifyHeapSize.class.getName());
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[0]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            gc,
+            "-Xmx" + minMaxHeap,
+            "-XX:+PrintFlagsFinal",
+            VerifyHeapSize.class.getName());
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 

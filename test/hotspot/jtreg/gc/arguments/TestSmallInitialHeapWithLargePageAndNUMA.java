@@ -61,15 +61,14 @@ public class TestSmallInitialHeapWithLargePageAndNUMA {
     long initHeap = heapAlignment;
     long maxHeap = heapAlignment * 2;
 
-    String[] vmArgs = {"-XX:+UseParallelGC",
-                       "-Xms" + String.valueOf(initHeap),
-                       "-Xmx" + String.valueOf(maxHeap),
-                       "-XX:+UseNUMA",
-                       "-XX:+UseHugeTLBFS",
-                       "-XX:+PrintFlagsFinal",
-                       "-version"};
-
-    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(vmArgs);
+    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(
+        "-XX:+UseParallelGC",
+        "-Xms" + String.valueOf(initHeap),
+        "-Xmx" + String.valueOf(maxHeap),
+        "-XX:+UseNUMA",
+        "-XX:+UseHugeTLBFS",
+        "-XX:+PrintFlagsFinal",
+        "-version");
     OutputAnalyzer analyzer = new OutputAnalyzer(pb_enabled.start());
 
     if (largePageOrNumaEnabled(analyzer)) {

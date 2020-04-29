@@ -41,13 +41,13 @@ public class TestAllocateHeapAt {
         final String heapBackingFile = "Heap Backing File: " + directory;
         final String failedToCreateFile = "Failed to create file " + directory;
 
-        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(new String[] {
+        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
                 "-XX:+UseZGC",
                 "-Xlog:gc*",
                 "-Xms32M",
                 "-Xmx32M",
                 "-XX:AllocateHeapAt=" + directory,
-                "-version" }))
+                "-version"))
             .shouldContain(exists ? heapBackingFile : failedToCreateFile)
             .shouldNotContain(exists ? failedToCreateFile : heapBackingFile)
             .shouldHaveExitValue(exists ? 0 : 1);

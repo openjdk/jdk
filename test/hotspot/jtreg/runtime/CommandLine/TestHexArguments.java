@@ -37,15 +37,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestHexArguments {
     public static void main(String args[]) throws Exception {
-      String[] javaArgs = {"-XX:SharedBaseAddress=0x1D000000", "-version"};
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs);
-
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+          "-XX:SharedBaseAddress=0x1D000000", "-version");
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
       output.shouldNotContain("Could not create the Java Virtual Machine");
       output.shouldHaveExitValue(0);
 
-      String[] javaArgs1 = {"-XX:SharedBaseAddress=1D000000", "-version"};
-      pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
+      pb = ProcessTools.createJavaProcessBuilder(
+          "-XX:SharedBaseAddress=1D000000", "-version");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Could not create the Java Virtual Machine");
   }

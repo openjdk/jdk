@@ -101,10 +101,11 @@ public class RedefineLeak {
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
             // run outside of jtreg to not OOM on jtreg classes that are loaded after metaspace is full
-            String[] javaArgs1 = { "-XX:MetaspaceSize=12m", "-XX:MaxMetaspaceSize=12m",
-                                   "-javaagent:redefineagent.jar", "RedefineLeak"};
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
-
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-XX:MetaspaceSize=12m",
+                    "-XX:MaxMetaspaceSize=12m",
+                    "-javaagent:redefineagent.jar",
+                    "RedefineLeak");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldContain("transformCount:10000");
             output.shouldHaveExitValue(0);

@@ -46,7 +46,7 @@ public class RunFinalizationTest {
         javaArgs.add("-cp");
         javaArgs.add(System.getProperty("test.class.path"));
         javaArgs.add(TEST_APP_NAME);
-        ProcessBuilder testAppPb = ProcessTools.createJavaProcessBuilder(javaArgs.toArray(new String[javaArgs.size()]));
+        ProcessBuilder testAppPb = ProcessTools.createJavaProcessBuilder(javaArgs);
 
         final AtomicBoolean failed = new AtomicBoolean();
         final AtomicBoolean passed = new AtomicBoolean();
