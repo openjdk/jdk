@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -129,18 +129,17 @@ define DeclareRecipeForModuleMakefile
   $2-$$($1_TARGET_SUFFIX):
         ifeq ($$($1_USE_WRAPPER), true)
 	  +($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
-	      -f ModuleWrapper.gmk \
+	      -f ModuleWrapper.gmk -I $$(TOPDIR)/make/common/modules  \
 	      $$(addprefix -I, $$(PHASE_MAKEDIRS) \
-	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(PHASE_MAKEDIRS)) \
+	          $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
 	      ) \
 	      MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX) $$($1_EXTRA_ARGS))
         else
-	  +($(CD) $$(dir $$(firstword $$(wildcard $$(addsuffix \
-	      /$$($1_MAKE_SUBDIR)/$$($1_FILE_PREFIX)-$2.gmk, $$(PHASE_MAKEDIRS))))) \
+	  +($(CD) $$(TOPDIR)/make \
 	  && $(MAKE) $(MAKE_ARGS) \
-	      -f $$($1_FILE_PREFIX)-$2.gmk \
+	      -f modules/$2/$$($1_FILE_PREFIX).gmk -I $$(TOPDIR)/make/common/modules \
 	      $$(addprefix -I, $$(PHASE_MAKEDIRS) \
-	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(PHASE_MAKEDIRS)) \
+	          $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
 	      ) \
 	      MODULE=$2 $$($1_EXTRA_ARGS) \
 	  )
@@ -153,7 +152,7 @@ endef
 # Param 2: Module name
 define DeclareRecipesForPhaseAndModule
   $1_$2_MAKEFILES := $$(strip $$(wildcard \
-      $$(addsuffix /$$($1_MAKE_SUBDIR)/$$($1_FILE_PREFIX)-$2.gmk, $$(PHASE_MAKEDIRS))))
+      $$(addsuffix /modules/$2/$$($1_FILE_PREFIX).gmk, $$(PHASE_MAKEDIRS))))
 
   # Only declare recipes if there are makefiles to call
   ifneq ($$($1_$2_MAKEFILES), )
