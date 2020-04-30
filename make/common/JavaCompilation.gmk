@@ -205,7 +205,7 @@ define SetupJavaCompilationBody
   else ifeq ($$($1_COMPILER), interim)
     # Use java server if it is enabled, and the user does not want a specialized
     # class path.
-    ifeq ($$($1_ENABLE_JAVAC_SERVER+$$($1_CLASSPATH)), true+)
+    ifeq ($$(ENABLE_JAVAC_SERVER)+$$($1_CLASSPATH), true+)
       $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.sjavac.Main
 
       # How to launch the server. This must use JAVA_DETACH, which is the "big" java
