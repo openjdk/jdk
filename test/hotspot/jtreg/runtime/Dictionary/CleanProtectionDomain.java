@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main CleanProtectionDomain
+ * @run driver CleanProtectionDomain
  */
 
 import java.security.ProtectionDomain;

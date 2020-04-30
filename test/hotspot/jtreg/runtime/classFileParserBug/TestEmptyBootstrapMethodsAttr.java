@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile emptynumbootstrapmethods1.jcod emptynumbootstrapmethods2.jcod
- * @run main TestEmptyBootstrapMethodsAttr
+ * @run driver TestEmptyBootstrapMethodsAttr
  */
 
 import java.io.File;

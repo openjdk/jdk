@@ -33,7 +33,7 @@
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ReserveMemory
+ * @run driver ReserveMemory
  */
 
 import jdk.test.lib.process.ProcessTools;

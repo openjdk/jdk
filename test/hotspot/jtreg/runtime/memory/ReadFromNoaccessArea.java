@@ -30,7 +30,7 @@
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ReadFromNoaccessArea
+ * @run driver ReadFromNoaccessArea
  */
 
 import jdk.test.lib.Platform;

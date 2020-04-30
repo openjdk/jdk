@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyNewInvokeSpecial.jasm
- * @run main/othervm -Xverify:all CondyNewInvokeSpecialTest
+ * @run driver CondyNewInvokeSpecialTest
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -37,7 +37,8 @@ import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 public class CondyNewInvokeSpecialTest {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("CondyNewInvokeSpecial");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xverify:all",
+                                                                  "CondyNewInvokeSpecial");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("In CondyNewInvokeSpecial <init> method");
         oa.shouldHaveExitValue(0);

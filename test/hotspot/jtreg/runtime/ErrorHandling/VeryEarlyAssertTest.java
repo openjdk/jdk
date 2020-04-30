@@ -31,6 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @requires (vm.debug == true)
  * @requires os.family == "linux"
+ * @run driver VeryEarlyAssertTest
  */
 
 import java.io.BufferedReader;

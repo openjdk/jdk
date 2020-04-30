@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 1 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 1 of 10
  */
 /*
  * @test
@@ -43,7 +43,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 2 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 2 of 10
  */
 /*
  * @test
@@ -54,7 +54,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 3 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 3 of 10
  */
 /*
  * @test
@@ -65,7 +65,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 4 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 4 of 10
  */
 /*
  * @test
@@ -76,7 +76,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 5 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 5 of 10
  */
 /*
  * @test
@@ -87,7 +87,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 6 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 6 of 10
  */
 /*
  * @test
@@ -98,7 +98,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 7 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 7 of 10
  */
 /*
  * @test
@@ -109,7 +109,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 8 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 8 of 10
  */
 /*
  * @test
@@ -120,7 +120,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 9 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 9 of 10
  */
 /*
  * @test
@@ -131,7 +131,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges 10 of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges 10 of 10
  */
 // --- end auto-generated
 

@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile EnclMethTest.jcod
- * @run main EnclMethodAttr
+ * @run driver EnclMethodAttr
  */
 
 import java.io.File;

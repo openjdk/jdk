@@ -31,7 +31,7 @@
  *          classes in method throws clauses.
  * @library /test/lib
  * @compile CheckedExceptions.jcod
- * @run main TestCheckedExceptions
+ * @run driver TestCheckedExceptions
  */
 
 import jdk.test.lib.process.ProcessTools;
