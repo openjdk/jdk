@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,6 +513,9 @@ public final class PNGImageWriter extends ImageWriter {
     private void write_iCCP() throws IOException {
         if (metadata.iCCP_present) {
             ChunkStream cs = new ChunkStream(PNGImageReader.iCCP_TYPE, stream);
+            if (metadata.iCCP_profileName.length() > 79) {
+                throw new IIOException("iCCP profile name is longer than 79");
+            }
             cs.writeBytes(metadata.iCCP_profileName);
             cs.writeByte(0); // null terminator
 
@@ -701,6 +704,9 @@ public final class PNGImageWriter extends ImageWriter {
         if (metadata.sPLT_present) {
             ChunkStream cs = new ChunkStream(PNGImageReader.sPLT_TYPE, stream);
 
+            if (metadata.sPLT_paletteName.length() > 79) {
+                throw new IIOException("sPLT palette name is longer than 79");
+            }
             cs.writeBytes(metadata.sPLT_paletteName);
             cs.writeByte(0); // null terminator
 
@@ -748,6 +754,9 @@ public final class PNGImageWriter extends ImageWriter {
         while (keywordIter.hasNext()) {
             ChunkStream cs = new ChunkStream(PNGImageReader.tEXt_TYPE, stream);
             String keyword = keywordIter.next();
+            if (keyword.length() > 79) {
+                throw new IIOException("tEXt keyword is longer than 79");
+            }
             cs.writeBytes(keyword);
             cs.writeByte(0);
 
@@ -777,7 +786,11 @@ public final class PNGImageWriter extends ImageWriter {
         while (keywordIter.hasNext()) {
             ChunkStream cs = new ChunkStream(PNGImageReader.iTXt_TYPE, stream);
 
-            cs.writeBytes(keywordIter.next());
+            String keyword = keywordIter.next();
+            if (keyword.length() > 79) {
+                throw new IIOException("iTXt keyword is longer than 79");
+            }
+            cs.writeBytes(keyword);
             cs.writeByte(0);
 
             Boolean compressed = flagIter.next();
@@ -810,6 +823,9 @@ public final class PNGImageWriter extends ImageWriter {
         while (keywordIter.hasNext()) {
             ChunkStream cs = new ChunkStream(PNGImageReader.zTXt_TYPE, stream);
             String keyword = keywordIter.next();
+            if (keyword.length() > 79) {
+                throw new IIOException("tEXt keyword is longer than 79");
+            }
             cs.writeBytes(keyword);
             cs.writeByte(0);
 
