@@ -54,6 +54,7 @@ public class GetPackageXbootclasspath {
 
         new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
                 "-Xbootclasspath/a:" + test_classes, "P.Test")
-            .start()).shouldContain("Test Passed");
+            .start()).shouldContain("Test Passed")
+            .shouldHaveExitValue(0);
     }
 }

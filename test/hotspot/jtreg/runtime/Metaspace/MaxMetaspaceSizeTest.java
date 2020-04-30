@@ -43,5 +43,6 @@ public class MaxMetaspaceSizeTest {
             "--version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("MaxMetaspaceSize is too small.");
+        output.shouldNotHaveExitValue(0);
     }
 }
