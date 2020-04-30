@@ -326,11 +326,7 @@ public class SynthGraphicsUtils {
      */
     public void paintText(SynthContext ss, Graphics g, String text,
                           Rectangle bounds, int mnemonicIndex) {
-        // Clip the text within textRect bounds
-        Shape oldClip = g.getClip();
-        ((Graphics2D)g).clip(bounds);
         paintText(ss, g, text, bounds.x, bounds.y, mnemonicIndex);
-        g.setClip(oldClip);
     }
 
     /**
