@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase jit/escape/LockElision/MatMul.
  * VM Testbase keywords: [jit, quick]
@@ -55,12 +56,12 @@ import java.util.concurrent.Executors;
 import nsk.share.Consts;
 import nsk.share.Log;
 import nsk.share.Pair;
-
 import nsk.share.test.StressOptions;
 import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 
+import jdk.test.lib.Utils;
 
 class MatMul {
 
@@ -603,7 +604,7 @@ class MatMul {
             return true;
         }
 
-        private static Random random = new Random();
+        private static Random random = Utils.getRandomInstance();
 
         public static Matrix randomMatrix(int dim) {
             Matrix result = new Matrix(dim);

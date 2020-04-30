@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 package vm.compiler.coverage.parentheses.share.generation;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 
 /**
  * This class generate rrandom ight parentheses sequence in string representation: "(())", "()(())" etc
  */
 public class ParenthesesGenerator {
-    private static Random random = new Random();
+    private static Random random = Utils.getRandomInstance();
 
     public static String generate(int size) {
         if (size == 0) {

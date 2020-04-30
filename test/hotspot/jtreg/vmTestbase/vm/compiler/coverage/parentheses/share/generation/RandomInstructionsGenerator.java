@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,13 @@ import vm.compiler.coverage.parentheses.share.InstructionSequence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 /**
  * Generates random but correct list of JVM instructions
  */
 public class RandomInstructionsGenerator {
-    private static Random random = new Random();
+    private static Random random = Utils.getRandomInstance();
 
     private static <E> E choseRandomElement(List<E> list) {
         return list.get(random.nextInt(list.size()));
