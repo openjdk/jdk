@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,11 @@ import sun.util.logging.PlatformLogger;
  * management system may ignore such requests, or modify the requested
  * geometry in order to place and size the {@code Window} in a way
  * that more closely matches the desktop settings.
+ * <p>
+ * Visual effects such as halos, shadows, motion effects and animations may be
+ * applied to the window by the desktop window management system. These are
+ * outside the knowledge and control of the AWT and so for the purposes of this
+ * specification are not considered part of the top-level window.
  * <p>
  * Due to the asynchronous nature of native event handling, the results
  * returned by {@code getBounds}, {@code getLocation},
