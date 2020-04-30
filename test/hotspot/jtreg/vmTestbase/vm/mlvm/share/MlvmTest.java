@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,6 @@ public abstract class MlvmTest {
                         + "the specified exception class names separated with commas have to be caught for the test to pass")
     private List<Class<? extends Throwable>> requiredExceptionClasses = new ArrayList<>();
 
-    @Option(name = "seed", default_value = "0", description = "Initial random seed")
-    private long _seed;
-
     @Option(name = "runs", default_value = "1", description = "How many times the test should be re-run")
     private int runs = 1;
 
@@ -140,13 +137,6 @@ public abstract class MlvmTest {
         return name;
     }
 
-    void initRNG() {
-        if (_seed != 0) {
-            Env.setRNGSeed(_seed);
-        }
-        Env.traceVerbose("Initial seed = " + _seed);
-    }
-
     /**
      * Sets number of test runs
      * @param r Number of test runs
@@ -166,7 +156,7 @@ public abstract class MlvmTest {
     // Sugar...
     /**
      * Provides Random Number Generator for the test. The tests should always use this generator
-     * to guarantee repeatability (using -seed option), especially in multi-threaded usages
+     * to guarantee repeatability, especially in multi-threaded usages
      * @return Random number generator for this thread, seeded with command-line option, if provided
      */
     public static Random getRNG() {

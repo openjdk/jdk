@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package vm.mlvm.share;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 import nsk.share.ArgumentParser;
 import nsk.share.Log;
@@ -69,11 +70,7 @@ public class Env {
     // RNG
     //
 
-    private static long _seed = new Random().nextLong();
-
-    public static void setRNGSeed(long seed) {
-        _seed = seed;
-    }
+    private static long _seed = Utils.SEED;
 
     private static volatile boolean _wasSeedPrinted = false;
 
@@ -84,6 +81,8 @@ public class Env {
                 if ( ! _wasSeedPrinted ) {
                     _wasSeedPrinted = true;
                     traceImportant("RNG seed = " + _seed + " (0x" + Long.toHexString(_seed) + ")");
+                    // ensure we also print out how to change seed
+                    Utils.getRandomInstance();
                 }
 
                 long seed = _seed;
