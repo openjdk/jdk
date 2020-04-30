@@ -72,18 +72,19 @@ void ShenandoahStringDedup::deduplicate(oop java_string) {
   StringDedupTable::deduplicate(java_string, &dummy);
 }
 
-void ShenandoahStringDedup::parallel_oops_do(BoolObjectClosure* is_alive, OopClosure* cl, uint worker_id) {
+void ShenandoahStringDedup::parallel_oops_do(ShenandoahPhaseTimings::Phase phase,
+        BoolObjectClosure* is_alive, OopClosure* cl, uint worker_id) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_enabled(), "String deduplication not enabled");
 
   StringDedupUnlinkOrOopsDoClosure sd_cl(is_alive, cl);
   {
-    ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
+    ShenandoahWorkerTimingsTracker x(phase, ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
     StringDedupQueue::unlink_or_oops_do(&sd_cl);
   }
 
   {
-    ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
+    ShenandoahWorkerTimingsTracker x(phase, ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
     StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
   }
 }

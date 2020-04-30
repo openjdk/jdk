@@ -40,8 +40,9 @@
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
-inline ShenandoahVMRoot<CONCURRENT>::ShenandoahVMRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase) :
-  _itr(storage), _par_phase(par_phase) {
+inline ShenandoahVMRoot<CONCURRENT>::ShenandoahVMRoot(OopStorage* storage,
+        ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
+  _itr(storage), _phase(phase), _par_phase(par_phase) {
 }
 
 template <bool CONCURRENT>
@@ -50,23 +51,25 @@ inline void ShenandoahVMRoot<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
   if (CONCURRENT) {
     _itr.oops_do(cl);
   } else {
-    ShenandoahWorkerTimingsTracker timer(_par_phase, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
     _itr.oops_do(cl);
   }
 }
 
 template <bool CONCURRENT>
-inline ShenandoahWeakRoot<CONCURRENT>::ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase) :
-  ShenandoahVMRoot<CONCURRENT>(storage, par_phase) {
+inline ShenandoahWeakRoot<CONCURRENT>::ShenandoahWeakRoot(OopStorage* storage,
+  ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
+  ShenandoahVMRoot<CONCURRENT>(storage, phase, par_phase) {
 }
 
-inline ShenandoahWeakRoot<false>::ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase) :
-  _itr(storage), _par_phase(par_phase) {
+inline ShenandoahWeakRoot<false>::ShenandoahWeakRoot(OopStorage* storage,
+  ShenandoahPhaseTimings::Phase phase,  ShenandoahPhaseTimings::ParPhase par_phase) :
+  _itr(storage), _phase(phase), _par_phase(par_phase) {
 }
 
 template <typename IsAliveClosure, typename KeepAliveClosure>
 void ShenandoahWeakRoot<false /* concurrent */>::weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_par_phase, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
   _itr.weak_oops_do(is_alive, keep_alive);
 }
 
@@ -87,11 +90,11 @@ void ShenandoahWeakRoots<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
   _vm_roots.oops_do(cl, worker_id);
 }
 
-inline ShenandoahWeakRoots<false /* concurrent */>::ShenandoahWeakRoots() :
-  _jni_roots(OopStorageSet::jni_weak(), ShenandoahPhaseTimings::JNIWeakRoots),
-  _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
-  _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
-  _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
+inline ShenandoahWeakRoots<false /* concurrent */>::ShenandoahWeakRoots(ShenandoahPhaseTimings::Phase phase) :
+  _jni_roots(OopStorageSet::jni_weak(), phase, ShenandoahPhaseTimings::JNIWeakRoots),
+  _string_table_roots(OopStorageSet::string_table_weak(), phase, ShenandoahPhaseTimings::StringTableRoots),
+  _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), phase, ShenandoahPhaseTimings::ResolvedMethodTableRoots),
+  _vm_roots(OopStorageSet::vm_weak(), phase, ShenandoahPhaseTimings::VMWeakRoots) {
 }
 
 template <typename IsAliveClosure, typename KeepAliveClosure>
@@ -109,9 +112,9 @@ void ShenandoahWeakRoots<false /* concurrent */>::oops_do(Closure* cl, uint work
 }
 
 template <bool CONCURRENT>
-ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots() :
-  _jni_handle_roots(OopStorageSet::jni_global(), ShenandoahPhaseTimings::JNIRoots),
-  _vm_global_roots(OopStorageSet::vm_global(), ShenandoahPhaseTimings::VMGlobalRoots) {
+ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots(ShenandoahPhaseTimings::Phase phase) :
+  _jni_handle_roots(OopStorageSet::jni_global(), phase, ShenandoahPhaseTimings::JNIRoots),
+  _vm_global_roots(OopStorageSet::vm_global(), phase, ShenandoahPhaseTimings::VMGlobalRoots) {
 }
 
 template <bool CONCURRENT>
@@ -122,7 +125,8 @@ void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
-ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoaderDataRoots() {
+ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase) :
+  _phase(phase) {
   if (!SINGLE_THREADED) {
     ClassLoaderDataGraph::clear_claimed_marks();
   }
@@ -148,7 +152,7 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::always_strong_
   } else if (CONCURRENT) {
      ClassLoaderDataGraph::always_strong_cld_do(clds);
   } else {
-   ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CLDGRoots, worker_id);
+   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
    ClassLoaderDataGraph::always_strong_cld_do(clds);
   }
 }
@@ -162,19 +166,19 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do(CLDClos
   } else if (CONCURRENT) {
     ClassLoaderDataGraph::cld_do(clds);
   }  else {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
     ClassLoaderDataGraph::cld_do(clds);
   }
 }
 
 template <typename ITR>
-ShenandoahCodeCacheRoots<ITR>::ShenandoahCodeCacheRoots() {
+ShenandoahCodeCacheRoots<ITR>::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
   nmethod::oops_do_marking_prologue();
 }
 
 template <typename ITR>
 void ShenandoahCodeCacheRoots<ITR>::code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
   _coderoots_iterator.possibly_parallel_blobs_do(blob_cl);
 }
 
@@ -203,7 +207,12 @@ public:
 template <typename ITR>
 ShenandoahRootScanner<ITR>::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _thread_roots(n_workers > 1) {
+  _serial_roots(phase),
+  _thread_roots(phase, n_workers > 1),
+  _code_roots(phase),
+  _vm_roots(phase),
+  _dedup_roots(phase),
+  _cld_roots(phase) {
 }
 
 template <typename ITR>
