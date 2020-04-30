@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,8 +444,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         if (supportedLocaleString == null) {
             return Collections.emptySet();
         }
-        Set<String> tagset = new HashSet<>();
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
+        Set<String> tagset = new HashSet<>(Math.max((int)(tokens.countTokens() / 0.75f) + 1, 16));
         while (tokens.hasMoreTokens()) {
             tagset.add(tokens.nextToken());
         }
