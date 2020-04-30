@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,25 +138,23 @@ ZServiceabilityCounters* ZServiceability::counters() {
   return _counters;
 }
 
-ZServiceabilityMemoryUsageTracker::~ZServiceabilityMemoryUsageTracker() {
-  MemoryService::track_memory_usage();
-}
+ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
+    _memory_manager_stats(ZHeap::heap()->serviceability_memory_manager(),
+                          ZCollectedHeap::heap()->gc_cause(),
+                          true /* allMemoryPoolsAffected */,
+                          true /* recordGCBeginTime */,
+                          true /* recordPreGCUsage */,
+                          true /* recordPeakUsage */,
+                          true /* recordPostGCUsage */,
+                          true /* recordAccumulatedGCTime */,
+                          true /* recordGCEndTime */,
+                          true /* countCollection */) {}
 
-ZServiceabilityManagerStatsTracer::ZServiceabilityManagerStatsTracer(bool is_gc_begin, bool is_gc_end) :
-    _stats(ZHeap::heap()->serviceability_memory_manager(),
-           ZCollectedHeap::heap()->gc_cause() /* cause */,
-           true        /* allMemoryPoolsAffected */,
-           is_gc_begin /* recordGCBeginTime */,
-           is_gc_begin /* recordPreGCUsage */,
-           true        /* recordPeakUsage */,
-           is_gc_end   /* recordPostGCusage */,
-           true        /* recordAccumulatedGCTime */,
-           is_gc_end   /* recordGCEndTime */,
-           is_gc_end   /* countCollection */) {}
+ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
+    _svc_gc_marker(SvcGCMarker::CONCURRENT),
+    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()) {}
 
-ZServiceabilityCountersTracer::ZServiceabilityCountersTracer() :
-    _stats(ZHeap::heap()->serviceability_counters()->collector_counters()) {}
-
-ZServiceabilityCountersTracer::~ZServiceabilityCountersTracer() {
+ZServiceabilityPauseTracer::~ZServiceabilityPauseTracer()  {
   ZHeap::heap()->serviceability_counters()->update_sizes();
+  MemoryService::track_memory_usage();
 }
