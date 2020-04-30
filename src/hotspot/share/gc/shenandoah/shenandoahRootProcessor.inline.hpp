@@ -48,12 +48,8 @@ inline ShenandoahVMRoot<CONCURRENT>::ShenandoahVMRoot(OopStorage* storage,
 template <bool CONCURRENT>
 template <typename Closure>
 inline void ShenandoahVMRoot<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
-  if (CONCURRENT) {
-    _itr.oops_do(cl);
-  } else {
-    ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
-    _itr.oops_do(cl);
-  }
+  ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
+  _itr.oops_do(cl);
 }
 
 template <bool CONCURRENT>
@@ -149,11 +145,9 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::always_strong_
     assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::always_strong_cld_do(clds);
-  } else if (CONCURRENT) {
-     ClassLoaderDataGraph::always_strong_cld_do(clds);
   } else {
-   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-   ClassLoaderDataGraph::always_strong_cld_do(clds);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ClassLoaderDataGraph::always_strong_cld_do(clds);
   }
 }
 
@@ -163,9 +157,7 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do(CLDClos
     assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::cld_do(clds);
-  } else if (CONCURRENT) {
-    ClassLoaderDataGraph::cld_do(clds);
-  }  else {
+  } else {
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
     ClassLoaderDataGraph::cld_do(clds);
   }

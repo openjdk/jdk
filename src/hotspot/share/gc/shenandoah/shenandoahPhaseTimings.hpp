@@ -91,9 +91,11 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
+  SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_,         "  CWR: ", f)                      \
   f(conc_cleanup_early,                             "Concurrent Cleanup")              \
   f(conc_class_unloading,                           "Concurrent Class Unloading")      \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
+  SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
