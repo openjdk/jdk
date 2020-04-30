@@ -40,8 +40,8 @@
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
-inline ShenandoahVMRoot<CONCURRENT>::ShenandoahVMRoot(OopStorage* storage, ShenandoahPhaseTimings::GCParPhases phase) :
-  _itr(storage), _phase(phase) {
+inline ShenandoahVMRoot<CONCURRENT>::ShenandoahVMRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase) :
+  _itr(storage), _par_phase(par_phase) {
 }
 
 template <bool CONCURRENT>
@@ -50,23 +50,23 @@ inline void ShenandoahVMRoot<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
   if (CONCURRENT) {
     _itr.oops_do(cl);
   } else {
-    ShenandoahWorkerTimingsTracker timer(_phase, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_par_phase, worker_id);
     _itr.oops_do(cl);
   }
 }
 
 template <bool CONCURRENT>
-inline ShenandoahWeakRoot<CONCURRENT>::ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::GCParPhases phase) :
-  ShenandoahVMRoot<CONCURRENT>(storage, phase) {
+inline ShenandoahWeakRoot<CONCURRENT>::ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase) :
+  ShenandoahVMRoot<CONCURRENT>(storage, par_phase) {
 }
 
-inline ShenandoahWeakRoot<false>::ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::GCParPhases phase) :
-  _itr(storage), _phase(phase) {
+inline ShenandoahWeakRoot<false>::ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase) :
+  _itr(storage), _par_phase(par_phase) {
 }
 
 template <typename IsAliveClosure, typename KeepAliveClosure>
 void ShenandoahWeakRoot<false /* concurrent */>::weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_par_phase, worker_id);
   _itr.weak_oops_do(is_alive, keep_alive);
 }
 

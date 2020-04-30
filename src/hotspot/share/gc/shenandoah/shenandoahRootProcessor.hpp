@@ -38,12 +38,12 @@ class ShenandoahSerialRoot {
 public:
   typedef void (*OopsDo)(OopClosure*);
 private:
-  ShenandoahSharedFlag                      _claimed;
-  const OopsDo                              _oops_do;
-  const ShenandoahPhaseTimings::GCParPhases _phase;
+  ShenandoahSharedFlag                   _claimed;
+  const OopsDo                           _oops_do;
+  const ShenandoahPhaseTimings::ParPhase _par_phase;
 
 public:
-  ShenandoahSerialRoot(OopsDo oops_do, ShenandoahPhaseTimings::GCParPhases);
+  ShenandoahSerialRoot(OopsDo oops_do, ShenandoahPhaseTimings::ParPhase par_phase);
   void oops_do(OopClosure* cl, uint worker_id);
 };
 
@@ -62,12 +62,12 @@ public:
 class ShenandoahWeakSerialRoot {
   typedef void (*WeakOopsDo)(BoolObjectClosure*, OopClosure*);
 private:
-  ShenandoahSharedFlag                      _claimed;
-  const WeakOopsDo                          _weak_oops_do;
-  const ShenandoahPhaseTimings::GCParPhases _phase;
+  ShenandoahSharedFlag                   _claimed;
+  const WeakOopsDo                       _weak_oops_do;
+  const ShenandoahPhaseTimings::ParPhase _par_phase;
 
 public:
-  ShenandoahWeakSerialRoot(WeakOopsDo oops_do, ShenandoahPhaseTimings::GCParPhases);
+  ShenandoahWeakSerialRoot(WeakOopsDo oops_do, ShenandoahPhaseTimings::ParPhase par_phase);
   void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
 };
 
@@ -98,9 +98,9 @@ template <bool CONCURRENT>
 class ShenandoahVMRoot {
 private:
   OopStorage::ParState<CONCURRENT, false /* is_const */> _itr;
-  const ShenandoahPhaseTimings::GCParPhases _phase;
+  const ShenandoahPhaseTimings::ParPhase _par_phase;
 public:
-  ShenandoahVMRoot(OopStorage* storage, ShenandoahPhaseTimings::GCParPhases phase);
+  ShenandoahVMRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase);
 
   template <typename Closure>
   void oops_do(Closure* cl, uint worker_id);
@@ -109,17 +109,17 @@ public:
 template <bool CONCURRENT>
 class ShenandoahWeakRoot : public ShenandoahVMRoot<CONCURRENT> {
 public:
-  ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::GCParPhases phase);
+  ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase);
 };
 
 template <>
 class ShenandoahWeakRoot<false /*concurrent*/> {
 private:
   OopStorage::ParState<false /*concurrent*/, false /*is_const*/> _itr;
-  const ShenandoahPhaseTimings::GCParPhases _phase;
+  const ShenandoahPhaseTimings::ParPhase _par_phase;
 
 public:
-  ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::GCParPhases phase);
+  ShenandoahWeakRoot(OopStorage* storage, ShenandoahPhaseTimings::ParPhase par_phase);
 
   template <typename IsAliveClosure, typename KeepAliveClosure>
   void weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id);

@@ -42,13 +42,13 @@
 #include "runtime/thread.hpp"
 #include "services/management.hpp"
 
-ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do, ShenandoahPhaseTimings::GCParPhases phase) :
-  _oops_do(oops_do), _phase(phase) {
+ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do, ShenandoahPhaseTimings::ParPhase par_phase) :
+  _oops_do(oops_do), _par_phase(par_phase) {
 }
 
 void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
   if (_claimed.try_set()) {
-    ShenandoahWorkerTimingsTracker timer(_phase, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_par_phase, worker_id);
     _oops_do(cl);
   }
 }
@@ -74,13 +74,13 @@ void ShenandoahSerialRoots::oops_do(OopClosure* cl, uint worker_id) {
   _jvmti_root.oops_do(cl, worker_id);
 }
 
-ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do, ShenandoahPhaseTimings::GCParPhases phase) :
-  _weak_oops_do(weak_oops_do), _phase(phase) {
+ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do, ShenandoahPhaseTimings::ParPhase par_phase) :
+  _weak_oops_do(weak_oops_do), _par_phase(par_phase) {
 }
 
 void ShenandoahWeakSerialRoot::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
   if (_claimed.try_set()) {
-    ShenandoahWorkerTimingsTracker timer(_phase, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_par_phase, worker_id);
     _weak_oops_do(is_alive, keep_alive);
   }
 }

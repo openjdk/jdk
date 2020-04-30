@@ -33,7 +33,7 @@
 class ShenandoahCollectorPolicy;
 class outputStream;
 
-#define SHENANDOAH_GC_PAR_PHASE_DO(CNT_PREFIX, DESC_PREFIX, f)                         \
+#define SHENANDOAH_PAR_PHASE_DO(CNT_PREFIX, DESC_PREFIX, f)                            \
   f(CNT_PREFIX ## TotalWork,                DESC_PREFIX "<total>")                     \
   f(CNT_PREFIX ## ThreadRoots,              DESC_PREFIX "Thread Roots")                \
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
@@ -56,7 +56,7 @@ class outputStream;
   f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \
   // end
 
-#define SHENANDOAH_GC_PHASE_DO(f)                                                      \
+#define SHENANDOAH_PHASE_DO(f)                                                         \
   f(conc_reset,                                     "Concurrent Reset")                \
                                                                                        \
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
@@ -64,7 +64,7 @@ class outputStream;
   f(make_parsable,                                  "  Make Parsable")                 \
   f(init_update_region_states,                      "  Update Region States")          \
   f(scan_roots,                                     "  Scan Roots")                    \
-  SHENANDOAH_GC_PAR_PHASE_DO(scan_,                 "    S: ", f)                      \
+  SHENANDOAH_PAR_PHASE_DO(scan_,                    "    S: ", f)                      \
   f(resize_tlabs,                                   "  Resize TLABs")                  \
                                                                                        \
   f(conc_mark,                                      "Concurrent Marking")              \
@@ -73,22 +73,22 @@ class outputStream;
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
   f(update_roots,                                   "  Update Roots")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(update_,               "    U: ", f)                      \
+  SHENANDOAH_PAR_PHASE_DO(update_,                  "    U: ", f)                      \
   f(finish_queues,                                  "  Finish Queues")                 \
   f(weakrefs,                                       "  Weak References")               \
   f(weakrefs_process,                               "    Process")                     \
   f(purge,                                          "  System Purge")                  \
   f(purge_class_unload,                             "    Unload Classes")              \
-  SHENANDOAH_GC_PAR_PHASE_DO(purge_cu_par_,         "      CU: ", f)                   \
+  SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
   f(purge_weak_par,                                 "    Weak Roots")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(purge_weak_par_,       "      WR: ", f)                   \
+  SHENANDOAH_PAR_PHASE_DO(purge_weak_par_,          "      WR: ", f)                   \
   f(purge_cldg,                                     "    CLDG")                        \
   f(final_update_region_states,                     "  Update Region States")          \
   f(retire_tlabs,                                   "  Retire TLABs")                  \
   f(choose_cset,                                    "  Choose Collection Set")         \
   f(final_rebuild_freeset,                          "  Rebuild Free Set")              \
   f(init_evac,                                      "  Initial Evacuation")            \
-  SHENANDOAH_GC_PAR_PHASE_DO(evac_,                 "    E: ", f)                      \
+  SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
   f(conc_cleanup_early,                             "Concurrent Cleanup")              \
@@ -106,7 +106,7 @@ class outputStream;
   f(final_update_refs,                              "Pause Final Update Refs (N)")     \
   f(final_update_refs_finish_work,                  "  Finish Work")                   \
   f(final_update_refs_roots,                        "  Update Roots")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(final_update_,         "    UR: ", f)                     \
+  SHENANDOAH_PAR_PHASE_DO(final_update_,            "    UR: ", f)                     \
   f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
@@ -116,32 +116,32 @@ class outputStream;
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
-  SHENANDOAH_GC_PAR_PHASE_DO(degen_gc_update_,      "    DU: ", f)                     \
+  SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
                                                                                        \
   f(full_gc_gross,                                  "Pause Full GC (G)")               \
   f(full_gc,                                        "Pause Full GC (N)")               \
   f(full_gc_heapdump_pre,                           "  Pre Heap Dump")                 \
   f(full_gc_prepare,                                "  Prepare")                       \
   f(full_gc_scan_roots,                             "  Scan Roots")                    \
-  SHENANDOAH_GC_PAR_PHASE_DO(full_gc_scan_roots_,   "    FS: ", f)                     \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_scan_roots_,      "    FS: ", f)                     \
   f(full_gc_update_roots,                           "  Update Roots")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(full_gc_update_roots_, "    FU: ", f)                     \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_update_roots_,    "    FU: ", f)                     \
   f(full_gc_mark,                                   "  Mark")                          \
   f(full_gc_mark_finish_queues,                     "    Finish Queues")               \
   f(full_gc_weakrefs,                               "    Weak References")             \
   f(full_gc_weakrefs_process,                       "      Process")                   \
   f(full_gc_purge,                                  "    System Purge")                \
   f(full_gc_purge_class_unload,                     "      Unload Classes")            \
-  SHENANDOAH_GC_PAR_PHASE_DO(full_gc_purge_cu_par_, "        CU: ", f)                 \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_purge_cu_par_,    "        CU: ", f)                 \
   f(full_gc_purge_weak_par,                         "      Weak Roots")                \
-  SHENANDOAH_GC_PAR_PHASE_DO(full_gc_purge_weak_p_, "        WR: ", f)                 \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_purge_weak_p_,    "        WR: ", f)                 \
   f(full_gc_purge_cldg,                             "      CLDG")                      \
   f(full_gc_calculate_addresses,                    "  Calculate Addresses")           \
   f(full_gc_calculate_addresses_regular,            "    Regular Objects")             \
   f(full_gc_calculate_addresses_humong,             "    Humongous Objects")           \
   f(full_gc_adjust_pointers,                        "  Adjust Pointers")               \
   f(full_gc_adjust_roots,                           "  Adjust Roots")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(full_gc_adjust_roots_, "    FA: ", f)                     \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_adjust_roots_,    "    FA: ", f)                     \
   f(full_gc_copy_objects,                           "  Copy Objects")                  \
   f(full_gc_copy_objects_regular,                   "    Regular Objects")             \
   f(full_gc_copy_objects_humong,                    "    Humongous Objects")           \
@@ -153,7 +153,7 @@ class outputStream;
   f(conc_uncommit,                                  "Concurrent Uncommit")             \
                                                                                        \
   f(heap_iteration_roots,                           "Heap Iteration")                  \
-  SHENANDOAH_GC_PAR_PHASE_DO(heap_iteration_roots_, "  HI: ", f)                       \
+  SHENANDOAH_PAR_PHASE_DO(heap_iteration_roots_,    "  HI: ", f)                       \
   // end
 
 typedef WorkerDataArray<double> ShenandoahWorkerData;
@@ -162,20 +162,20 @@ class ShenandoahPhaseTimings : public CHeapObj<mtGC> {
   friend class ShenandoahGCPhase;
   friend class ShenandoahWorkerTimingsTracker;
 public:
-#define GC_PHASE_DECLARE_ENUM(type, title)   type,
+#define SHENANDOAH_PHASE_DECLARE_ENUM(type, title)   type,
 
   enum Phase {
-    SHENANDOAH_GC_PHASE_DO(GC_PHASE_DECLARE_ENUM)
+    SHENANDOAH_PHASE_DO(SHENANDOAH_PHASE_DECLARE_ENUM)
     _num_phases,
     _invalid_phase = _num_phases
   };
 
-  enum GCParPhases {
-    SHENANDOAH_GC_PAR_PHASE_DO(,, GC_PHASE_DECLARE_ENUM)
-    GCParPhasesSentinel
+  enum ParPhase {
+    SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_PHASE_DECLARE_ENUM)
+    _num_par_phases
   };
 
-#undef GC_PHASE_DECLARE_ENUM
+#undef SHENANDOAH_PHASE_DECLARE_ENUM
 
 private:
   uint                _max_workers;
@@ -190,8 +190,8 @@ private:
   static bool is_worker_phase(Phase phase);
   Phase current_worker_phase() { return _current_worker_phase; }
 
-  ShenandoahWorkerData* worker_data(Phase phase, GCParPhases par_phase);
-  Phase worker_par_phase(Phase phase, GCParPhases par_phase);
+  ShenandoahWorkerData* worker_data(Phase phase, ParPhase par_phase);
+  Phase worker_par_phase(Phase phase, ParPhase par_phase);
 
   void set_cycle_data(Phase phase, double time);
 
@@ -217,15 +217,15 @@ public:
 
 class ShenandoahWorkerTimingsTracker : public StackObj {
 private:
-  ShenandoahPhaseTimings*             const _timings;
-  ShenandoahPhaseTimings::Phase       const _phase;
-  ShenandoahPhaseTimings::GCParPhases const _par_phase;
+  ShenandoahPhaseTimings*          const _timings;
+  ShenandoahPhaseTimings::Phase    const _phase;
+  ShenandoahPhaseTimings::ParPhase const _par_phase;
   uint const _worker_id;
 
   double _start_time;
   EventGCPhaseParallel _event;
 public:
-  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::GCParPhases par_phase, uint worker_id);
+  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id);
   ~ShenandoahWorkerTimingsTracker();
 };
 
