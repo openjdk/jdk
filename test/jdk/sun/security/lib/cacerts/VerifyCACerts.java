@@ -26,7 +26,7 @@
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
- *      8223499 8225392 8232019 8234245 8233223
+ *      8223499 8225392 8232019 8234245 8233223 8225068
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -52,12 +52,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 93;
+    private static final int COUNT = 92;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "22:AA:EB:89:4E:A4:EA:25:CA:3E:DA:0F:F1:2B:FA:05:4B:68:C5:E1:3A:F9:03:40:BF:EF:F5:13:7C:CE:BC:60";
+            = "B1:F9:EA:77:B5:21:84:3D:91:90:DD:53:C9:9E:9C:07:62:08:60:74:1D:75:BD:C7:94:B7:5B:AC:DD:49:2C:34";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -151,8 +151,6 @@ public class VerifyCACerts {
                     "69:DD:D7:EA:90:BB:57:C9:3E:13:5D:C8:5E:A6:FC:D5:48:0B:60:32:39:BD:C4:54:FC:75:8B:2A:26:CF:7F:79");
             put("verisignclass3g5ca [jdk]",
                     "9A:CF:AB:7E:43:C8:D8:80:D0:6B:26:2A:94:DE:EE:E4:B4:65:99:89:C3:D0:CA:F1:9B:AF:64:05:E4:1A:B7:DF");
-            put("keynectisrootca [jdk]",
-                    "42:10:F1:99:49:9A:9A:C3:3C:8D:E0:2B:A6:DB:AA:14:40:8B:DD:8A:6E:32:46:89:C1:92:2D:06:97:15:A3:32");
             put("dtrustclass3ca2 [jdk]",
                     "49:E7:A4:42:AC:F0:EA:62:87:05:00:54:B5:25:64:B6:50:E4:F4:9E:42:E3:48:D6:AA:38:E0:39:E9:57:B1:C1");
             put("dtrustclass3ca2ev [jdk]",
@@ -259,8 +257,6 @@ public class VerifyCACerts {
         {
             // Valid until: Tue Jul 09 14:40:36 EDT 2019
             add("utnuserfirstobjectca [jdk]");
-            // Valid until: Tue May 26 00:00:00 GMT 2020
-            add("keynectisrootca [jdk]");
             // Valid until: Sat May 30 10:38:31 GMT 2020
             add("addtrustexternalca [jdk]");
             // Valid until: Sat May 30 10:48:38 GMT 2020
