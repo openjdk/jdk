@@ -38,39 +38,39 @@ import jdk.test.lib.process.ProcessTools;
 
 public class CheckLoopStripMining {
     public static void main(String args[]) throws Exception {
-        String[] subProcessArgs1 = { "-XX:+UnlockDiagnosticVMOptions",
-                                     // to prevent biased locking handshakes from changing the timing of this test
-                                     "-XX:-UseBiasedLocking",
-                                     "-XX:+SafepointTimeout",
-                                     "-XX:+SafepointALot",
-                                     "-XX:+AbortVMOnSafepointTimeout",
-                                     "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(300),
-                                     "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(300),
-                                     "-XX:-TieredCompilation",
-                                     "-XX:+UseCountedLoopSafepoints",
-                                     "-XX:LoopStripMiningIter=1000",
-                                     "-XX:LoopUnrollLimit=0",
-                                     "-XX:CompileCommand=compileonly,compiler.loopstripmining.CheckLoopStripMining$Test1::test_loop",
-                                     "-Xcomp",
-                                     Test1.class.getName()};
-
-        ProcessTools.executeTestJvm(subProcessArgs1).shouldHaveExitValue(0)
+        ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions",
+                                    // to prevent biased locking handshakes from changing the timing of this test
+                                    "-XX:-UseBiasedLocking",
+                                    "-XX:+SafepointTimeout",
+                                    "-XX:+SafepointALot",
+                                    "-XX:+AbortVMOnSafepointTimeout",
+                                    "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(300),
+                                    "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(300),
+                                    "-XX:-TieredCompilation",
+                                    "-XX:+UseCountedLoopSafepoints",
+                                    "-XX:LoopStripMiningIter=1000",
+                                    "-XX:LoopUnrollLimit=0",
+                                    "-XX:CompileCommand=compileonly,compiler.loopstripmining.CheckLoopStripMining$Test1::test_loop",
+                                    "-Xcomp",
+                                    Test1.class.getName())
+            .shouldHaveExitValue(0)
             .stdoutShouldContain("sum: 715827882");
-        String[] subProcessArgs2 = { "-XX:+UnlockDiagnosticVMOptions",
-                                     // to prevent biased locking handshakes from changing the timing of this test
-                                     "-XX:-UseBiasedLocking",
-                                     "-XX:+SafepointTimeout",
-                                     "-XX:+SafepointALot",
-                                     "-XX:+AbortVMOnSafepointTimeout",
-                                     "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(300),
-                                     "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(300),
-                                     "-XX:-TieredCompilation",
-                                     "-XX:+UseCountedLoopSafepoints",
-                                     "-XX:LoopStripMiningIter=1000",
-                                     "-XX:LoopUnrollLimit=0",
-                                     "-XX:-BackgroundCompilation",
-                                     Test2.class.getName()};
-        ProcessTools.executeTestJvm(subProcessArgs2).shouldHaveExitValue(0);
+
+        ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions",
+                                    // to prevent biased locking handshakes from changing the timing of this test
+                                    "-XX:-UseBiasedLocking",
+                                    "-XX:+SafepointTimeout",
+                                    "-XX:+SafepointALot",
+                                    "-XX:+AbortVMOnSafepointTimeout",
+                                    "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(300),
+                                    "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(300),
+                                    "-XX:-TieredCompilation",
+                                    "-XX:+UseCountedLoopSafepoints",
+                                    "-XX:LoopStripMiningIter=1000",
+                                    "-XX:LoopUnrollLimit=0",
+                                    "-XX:-BackgroundCompilation",
+                                    Test2.class.getName())
+            .shouldHaveExitValue(0);
     }
 
     public static class Test1 {

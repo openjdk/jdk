@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,19 @@ ResourceEditor::FileLock::FileLock(const std::wstring& binaryPath) {
                     << binaryPath << ") failed", BeginUpdateResource));
     }
 
+    ownHandle(true);
+    discard(false);
+}
+
+
+ResourceEditor::FileLock::FileLock(HANDLE h): h(h) {
+    ownHandle(false);
     discard(false);
 }
 
 
 ResourceEditor::FileLock::~FileLock() {
-    if (!EndUpdateResource(h, theDiscard)) {
+    if (theOwnHandle && !EndUpdateResource(h, theDiscard)) {
         JP_NO_THROW(JP_THROW(SysError(tstrings::any()
             << "EndUpdateResource(" << h << ") failed.", EndUpdateResource)));
     }
@@ -85,8 +92,8 @@ ResourceEditor& ResourceEditor::id(LPCWSTR v) {
         theId = printer.str();
     } else {
         theId = v;
-        theIdPtr = theId.c_str();
     }
+    theIdPtr = v;
     return *this;
 }
 

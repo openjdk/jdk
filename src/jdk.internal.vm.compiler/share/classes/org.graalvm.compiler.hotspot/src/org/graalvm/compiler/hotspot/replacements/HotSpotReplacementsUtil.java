@@ -361,6 +361,11 @@ public class HotSpotReplacementsUtil {
         return config.jvmAccWrittenFlags;
     }
 
+    @Fold
+    public static int jvmAccIsHiddenClass(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.jvmAccIsHiddenClass;
+    }
+
     public static final LocationIdentity KLASS_LAYOUT_HELPER_LOCATION = new HotSpotOptimizingLocationIdentity("Klass::_layout_helper") {
         @Override
         public ValueNode canonicalizeRead(ValueNode read, AddressNode location, ValueNode object, CanonicalizerTool tool) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 4118818
  * @summary allow null X.500 Names
+ * @library /test/lib
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  */
@@ -31,7 +32,7 @@
 import java.util.Arrays;
 import sun.security.util.DerOutputStream;
 import sun.security.x509.*;
-import sun.security.util.HexDumpEncoder;
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class NullX500Name {
 
@@ -63,16 +64,16 @@ public class NullX500Name {
         subject.encode(dos);
         byte[] out = dos.toByteArray();
         byte[] enc = subject.getEncoded();
-        HexDumpEncoder e = new HexDumpEncoder();
+        HexPrinter e = HexPrinter.simple();
         if (Arrays.equals(out, enc))
-            System.out.println("Sucess: out:" + e.encodeBuffer(out));
+            System.out.println("Success: out:" + e.toString(out));
         else {
-            System.out.println("Failed: encode:" + e.encodeBuffer(out));
-            System.out.println("getEncoded:" + e.encodeBuffer(enc));
+            System.out.println("Failed: encode:" + e.toString(out));
+            System.out.println("getEncoded:" + e.toString(enc));
         }
         X500Name x = new X500Name(enc);
         if (x.equals(subject))
-            System.out.println("Sucess: X500Name(byte[]):" + x.toString());
+            System.out.println("Success: X500Name(byte[]):" + x.toString());
         else
             System.out.println("Failed: X500Name(byte[]):" + x.toString());
     }

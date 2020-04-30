@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 
@@ -83,7 +84,10 @@ public class AddPackagesAttribute {
             bytes = baos.toByteArray();
         }
 
-        Files.write(mi, bytes);
+        byte[] currentBytes = Files.readAllBytes(mi);
+        if (!Arrays.equals(bytes, currentBytes)) {
+            Files.write(mi, bytes);
+        }
     }
 
 }

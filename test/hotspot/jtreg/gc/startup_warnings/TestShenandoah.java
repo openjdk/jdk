@@ -32,7 +32,7 @@ package gc.startup_warnings;
 * @library /test/lib
 * @modules java.base/jdk.internal.misc
 *          java.management
-* @run main gc.startup_warnings.TestShenandoah
+* @run driver gc.startup_warnings.TestShenandoah
 */
 
 import jdk.test.lib.process.ProcessTools;

@@ -480,37 +480,6 @@ void SystemDictionaryShared::define_shared_package(Symbol*  class_name,
   }
 }
 
-// Define Package for shared app/platform classes from named module
-void SystemDictionaryShared::define_shared_package(Symbol* class_name,
-                                                   Handle class_loader,
-                                                   ModuleEntry* mod_entry,
-                                                   TRAPS) {
-  assert(mod_entry != NULL, "module_entry should not be NULL");
-  Handle module_handle(THREAD, mod_entry->module());
-
-  Handle pkg_name = get_package_name(class_name, CHECK);
-  assert(pkg_name.not_null(), "Package should not be null for class in named module");
-
-  Klass* classLoader_klass;
-  if (SystemDictionary::is_system_class_loader(class_loader())) {
-    classLoader_klass = SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass();
-  } else {
-    assert(SystemDictionary::is_platform_class_loader(class_loader()), "unexpected classloader");
-    classLoader_klass = SystemDictionary::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass();
-  }
-
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args(2);
-  args.set_receiver(class_loader);
-  args.push_oop(pkg_name);
-  args.push_oop(module_handle);
-  JavaCalls::call_virtual(&result, classLoader_klass,
-                          vmSymbols::definePackage_name(),
-                          vmSymbols::definePackage_signature(),
-                          &args,
-                          CHECK);
-}
-
 // Get the ProtectionDomain associated with the CodeSource from the classloader.
 Handle SystemDictionaryShared::get_protection_domain_from_classloader(Handle class_loader,
                                                                       Handle url, TRAPS) {
@@ -599,11 +568,11 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       // For shared app/platform classes originated from the run-time image:
       //   The ProtectionDomains are cached in the corresponding ModuleEntries
       //   for fast access by the VM.
-      if (pkg_entry != NULL) {
-        ModuleEntry* mod_entry = pkg_entry->module();
-        pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
-        define_shared_package(class_name, class_loader, mod_entry, CHECK_(pd));
-      }
+      // all packages from module image are already created during VM bootstrap in
+      // Modules::define_module().
+      assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
+      ModuleEntry* mod_entry = pkg_entry->module();
+      pd = get_shared_protection_domain(class_loader, mod_entry, THREAD);
     } else {
       // For shared app/platform classes originated from JAR files on the class path:
       //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length

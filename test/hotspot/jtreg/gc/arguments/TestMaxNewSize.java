@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package gc.arguments;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.arguments.TestMaxNewSize -XX:+UseSerialGC
+ * @run driver gc.arguments.TestMaxNewSize -XX:+UseSerialGC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
 
@@ -49,7 +49,7 @@ package gc.arguments;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.arguments.TestMaxNewSize -XX:+UseParallelGC
+ * @run driver gc.arguments.TestMaxNewSize -XX:+UseParallelGC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
 
@@ -64,7 +64,7 @@ package gc.arguments;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.arguments.TestMaxNewSize -XX:+UseG1GC
+ * @run driver gc.arguments.TestMaxNewSize -XX:+UseG1GC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
 
@@ -95,7 +95,7 @@ public class TestMaxNewSize {
     finalargs.addAll(Arrays.asList(flags));
     finalargs.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("Initial young gen size set larger than the maximum young gen size");
   }
@@ -118,7 +118,7 @@ public class TestMaxNewSize {
     finalargs.add("-XX:+PrintFlagsFinal");
     finalargs.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

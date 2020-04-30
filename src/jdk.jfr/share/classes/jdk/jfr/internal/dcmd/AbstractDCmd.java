@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ abstract class AbstractDCmd {
         // Invoking ProcessHandle.current().pid() would require loading more
         // classes during startup so instead JVM.getJVM().getPid() is used.
         // The pid will not be exposed to running Java application, only when starting
-        // JFR from command line (-XX:StartFlightRecordin) or jcmd (JFR.start and JFR.check)
+        // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
         return JVM.getJVM().getPid();
     }
 

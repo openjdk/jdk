@@ -32,6 +32,7 @@ import jdk.test.lib.process.*;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run driver TestAbortVMOnSafepointTimeout
  */
 
 public class TestAbortVMOnSafepointTimeout {

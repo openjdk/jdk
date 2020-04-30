@@ -25,7 +25,6 @@
 
 package jdk.jfr.internal;
 
-import java.io.IOException;
 import java.util.List;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -283,7 +282,6 @@ public final class JVM {
      *
      * @param file the file where data should be written, or null if it should
      *        not be copied out (in memory).
-     * @throws IOException
      */
     public native void setOutput(String file);
 
@@ -362,8 +360,6 @@ public final class JVM {
      * Requires that JFR has been started with {@link #createNativeJFR()}
      *
      * @param bytes binary representation of metadata descriptor
-     *
-     * @param binary representation of descriptor
      */
     public native void storeMetadataDescriptor(byte[] bytes);
 
@@ -428,8 +424,8 @@ public final class JVM {
     public native double getTimeConversionFactor();
 
     /**
-     * Return a unique identifier for a class. Compared to {@link #getClassId()}
-     * , this method does not tag the class as being "in-use".
+     * Return a unique identifier for a class. Compared to {@link #getClassId(Class)},
+     * this method does not tag the class as being "in-use".
      *
      * @param clazz class
      *

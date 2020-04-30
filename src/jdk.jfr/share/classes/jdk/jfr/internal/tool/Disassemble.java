@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ final class Disassemble extends Command {
 
     @Override
     public String getDescription() {
-        return "Disassamble a recording file into smaller files/chunks";
+        return "Disassemble a recording file into smaller files/chunks";
     }
 
     @Override
@@ -164,7 +164,7 @@ final class Disassemble extends Command {
     }
 
     private List<Long> findChunkSizes(Path p) throws IOException {
-        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILIGED)) {
+        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {
             List<Long> sizes = new ArrayList<>();
             ChunkHeader ch = new ChunkHeader(input);
             sizes.add(ch.getSize());

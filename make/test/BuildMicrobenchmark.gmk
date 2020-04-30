@@ -29,7 +29,6 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 include TestFilesCompilation.gmk
 
 ifeq ($(JMH_CORE_JAR), )
@@ -74,34 +73,27 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 #### Compile Indify tool
 
 $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
-    SETUP := GENERATE_OLDBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/test/jdk/java/lang/invoke, \
     INCLUDE_FILES := indify/Indify.java, \
-    DISABLED_WARNINGS := rawtypes serial, \
+    DISABLED_WARNINGS := rawtypes serial options, \
     BIN := $(MICROBENCHMARK_TOOLS_CLASSES), \
+    JAVAC_FLAGS := -XDstringConcat=inline -Xprefer:newer, \
 ))
 
 #### Compile Targets
 
-# Building microbenchmark requires the jdk.unsupported and java.management modules,
-# and to have sjavac disabled.
-$(eval $(call SetupJavaCompiler, MICROBENCHMARK_JAVA_COMPILER, \
-    JVM := $(JAVA) --add-modules jdk.unsupported --limit-modules java.management, \
-    JAVAC := $(NEW_JAVAC), \
-    DISABLE_SJAVAC := true, \
-    FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none \
-        -Xlint:all -Werror, \
-    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
-    SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
-))
+# Building microbenchmark requires the jdk.unsupported and java.management modules.
 
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
-    SETUP := MICROBENCHMARK_JAVA_COMPILER, \
-    ADD_JAVAC_FLAGS := -cp $(MICROBENCHMARK_CLASSPATH), \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
+    SMALL_JAVA := false, \
+    CLASSPATH := $(MICROBENCHMARK_CLASSPATH), \
     DISABLED_WARNINGS := processing rawtypes cast serial, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
+    JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management, \
 ))
 
 $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)

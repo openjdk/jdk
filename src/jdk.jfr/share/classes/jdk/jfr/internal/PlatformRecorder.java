@@ -243,7 +243,7 @@ public final class PlatformRecorder {
             RepositoryChunk newChunk = null;
             if (toDisk) {
                 newChunk = repository.newChunk(now);
-                MetadataRepository.getInstance().setOutput(newChunk.getUnfishedFile().toString());
+                MetadataRepository.getInstance().setOutput(newChunk.getUnfinishedFile().toString());
             } else {
                 MetadataRepository.getInstance().setOutput(null);
             }
@@ -258,7 +258,7 @@ public final class PlatformRecorder {
             if (toDisk) {
                 newChunk = repository.newChunk(now);
                 RequestEngine.doChunkEnd();
-                MetadataRepository.getInstance().setOutput(newChunk.getUnfishedFile().toString());
+                MetadataRepository.getInstance().setOutput(newChunk.getUnfinishedFile().toString());
                 startNanos = jvm.getChunkStartNanos();
             }
             recording.setState(RecordingState.RUNNING);
@@ -326,7 +326,7 @@ public final class PlatformRecorder {
             updateSettingsButIgnoreRecording(recording);
             if (toDisk) {
                 newChunk = repository.newChunk(now);
-                MetadataRepository.getInstance().setOutput(newChunk.getUnfishedFile().toString());
+                MetadataRepository.getInstance().setOutput(newChunk.getUnfinishedFile().toString());
             } else {
                 MetadataRepository.getInstance().setOutput(null);
             }
@@ -378,7 +378,7 @@ public final class PlatformRecorder {
         Instant now = Instant.now();
         RepositoryChunk newChunk = repository.newChunk(now);
         RequestEngine.doChunkEnd();
-        MetadataRepository.getInstance().setOutput(newChunk.getUnfishedFile().toString());
+        MetadataRepository.getInstance().setOutput(newChunk.getUnfinishedFile().toString());
         writeMetaEvents();
         if (currentChunk != null) {
             finishChunk(currentChunk, now, null);

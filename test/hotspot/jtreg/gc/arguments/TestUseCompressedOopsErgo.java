@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,7 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseSerialGC
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseSerialGC
  */
 
 /*
@@ -51,8 +50,7 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
  */
 
 /*
@@ -67,8 +65,7 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseG1GC
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseG1GC
  */
 
 /*
@@ -83,8 +80,7 @@ package gc.arguments;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+ * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
  */
 
 public class TestUseCompressedOopsErgo {

@@ -674,6 +674,8 @@ protected:
   Symbol* name() const                   { return _name; }
   void set_name(Symbol* n);
 
+  virtual void release_C_heap_structures();
+
  public:
   // jvm support
   virtual jint compute_modifier_flags(TRAPS) const;

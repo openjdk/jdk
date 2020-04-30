@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ package gc.arguments;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
+import jtreg.SkippedException;
 
 public class TestSmallInitialHeapWithLargePageAndNUMA {
 
@@ -60,21 +61,22 @@ public class TestSmallInitialHeapWithLargePageAndNUMA {
     long initHeap = heapAlignment;
     long maxHeap = heapAlignment * 2;
 
-    String[] vmArgs = {"-XX:+UseParallelGC",
-                       "-Xms" + String.valueOf(initHeap),
-                       "-Xmx" + String.valueOf(maxHeap),
-                       "-XX:+UseNUMA",
-                       "-XX:+UseHugeTLBFS",
-                       "-XX:+PrintFlagsFinal",
-                       "-version"};
-
-    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(vmArgs);
+    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(
+        "-XX:+UseParallelGC",
+        "-Xms" + String.valueOf(initHeap),
+        "-Xmx" + String.valueOf(maxHeap),
+        "-XX:+UseNUMA",
+        "-XX:+UseHugeTLBFS",
+        "-XX:+PrintFlagsFinal",
+        "-version");
     OutputAnalyzer analyzer = new OutputAnalyzer(pb_enabled.start());
 
     if (largePageOrNumaEnabled(analyzer)) {
       // We reach here, if both NUMA and HugeTLB are supported.
       // However final flags will not be printed as NUMA initialization will be failed.
       checkAnalyzerValues(analyzer, 1, MSG_EXIT_TOO_SMALL_HEAP);
+    } else {
+      throw new SkippedException("either NUMA or HugeTLB is not supported");
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,32 +36,30 @@ import jdk.jfr.internal.Control;
  * The following example shows a naive implementation of a setting control for
  * regular expressions:
  *
- * <pre>
- * <code>
+ * <pre>{@literal
  * final class RegExpControl extends SettingControl {
  *   private Pattern pattern = Pattern.compile(".*");
  *
- *   {@literal @}Override
+ *   @Override
  *   public void setValue(String value) {
  *     this.pattern = Pattern.compile(value);
  *   }
  *
- *   {@literal @}Override
- *   public String combine(Set{@literal <}String{@literal >} values) {
+ *   @Override
+ *   public String combine(Set<String> values) {
  *     return String.join("|", values);
  *   }
  *
- *   {@literal @}Override
+ *   @Override
  *   public String getValue() {
  *     return pattern.toString();
  *   }
  *
- *   public String matches(String s) {
+ *   public boolean matches(String s) {
  *     return pattern.matcher(s).find();
  *   }
  * }
- * </code>
- * </pre>
+ * }</pre>
  *
  * The {@code setValue(String)}, {@code getValue()} and
  * {@code combine(Set<String>)} methods are invoked when a setting value
@@ -86,28 +84,27 @@ import jdk.jfr.internal.Control;
  * The following example shows how to create an event that uses the
  * regular expression filter defined above.
  *
- * <pre>
- * <code>
+ * <pre>{@literal
  * abstract class HTTPRequest extends Event {
- *   {@literal @}Label("Request URI")
+ *   @Label("Request URI")
  *   protected String uri;
  *
- *   {@literal @}Label("Servlet URI Filter")
- *   {@literal @}SettingDefinition
+ *   @Label("Servlet URI Filter")
+ *   @SettingDefinition
  *   protected boolean uriFilter(RegExpControl regExp) {
  *     return regExp.matches(uri);
  *   }
  * }
  *
- * {@literal @}Label("HTTP Get Request")
+ * @Label("HTTP Get Request")
  * class HTTPGetRequest extends HTTPRequest {
  * }
  *
- * {@literal @}Label("HTTP Post Request")
+ * @Label("HTTP Post Request")
  * class HTTPPostRequest extends HTTPRequest {
  * }
  *
- * class ExampleServlet extends HTTPServlet {
+ * class ExampleServlet extends HttpServlet {
  *   protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
  *     HTTPGetRequest request = new HTTPGetRequest();
  *     request.begin();
@@ -124,22 +121,18 @@ import jdk.jfr.internal.Control;
  *     request.commit();
  *   }
  * }
- * </code>
- * </pre>
+ * }</pre>
  *
+ * <p>
  * The following example shows how an event can be filtered by assigning the
  * {@code "uriFilter"} setting with the specified regular expressions.
  *
- * <pre>
- * <code>
+ * <pre>{@literal
  * Recording r = new Recording();
  * r.enable("HTTPGetRequest").with("uriFilter", "https://www.example.com/list/.*");
  * r.enable("HTTPPostRequest").with("uriFilter", "https://www.example.com/login/.*");
  * r.start();
- * </code>
- * </pre>
- *
- *
+ * }</pre>
  *
  * @see SettingDefinition
  *

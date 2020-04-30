@@ -28,7 +28,7 @@
  * @summary SIGBUS in com.sun.crypto.provider.CipherBlockChaining
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xbatch
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.

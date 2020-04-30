@@ -29,7 +29,6 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 include Execute.gmk
 
 ifeq ($(call isTargetOs, windows), true)
@@ -97,10 +96,11 @@ ifeq ($(call isTargetOs, windows), true)
   TOOLS_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/support/tools_classes
 
   $(eval $(call SetupJavaCompilation, BUILD_PROJECT_CREATOR, \
-      SETUP := GENERATE_OLDBYTECODE, \
-      DISABLED_WARNINGS := auxiliaryclass deprecation rawtypes unchecked cast, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+      DISABLED_WARNINGS := auxiliaryclass deprecation rawtypes unchecked cast options, \
       SRC := $(TOPDIR)/make/hotspot/src/classes, \
       BIN := $(TOOLS_OUTPUTDIR), \
+      JAVAC_FLAGS := -XDstringConcat=inline, \
   ))
 
   TARGETS += $(BUILD_PROJECT_CREATOR)

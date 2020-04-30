@@ -257,11 +257,11 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the packages elements will be added
      */
     protected void addPackageList(Content contentTree) {
-        Content caption = getTableCaption(contents.getContent(
+        Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
-        Table table = new Table(HtmlStyle.useSummary)
+                        LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)));
+        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -282,12 +282,12 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 pkgToPackageAnnotations.isEmpty()) {
             return;
         }
-        Content caption = getTableCaption(contents.getContent(
+        Content caption = contents.getContent(
                 "doclet.ClassUse_PackageAnnotation",
                 getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
+                        LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)));
 
-        Table table = new Table(HtmlStyle.useSummary)
+        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

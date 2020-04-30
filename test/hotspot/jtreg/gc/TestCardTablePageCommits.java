@@ -44,8 +44,11 @@ public class TestCardTablePageCommits {
         // because of 8kB pages, assume 4 KB pages for all other CPUs.
         String Xmx = Platform.isSparc() ? "-Xmx8m" : "-Xmx4m";
 
-        String[] opts = {Xmx, "-XX:NativeMemoryTracking=detail", "-XX:+UseParallelGC", "-version"};
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            Xmx,
+            "-XX:NativeMemoryTracking=detail",
+            "-XX:+UseParallelGC",
+            "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

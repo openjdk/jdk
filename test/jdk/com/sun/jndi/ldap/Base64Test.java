@@ -163,9 +163,6 @@ public class Base64Test {
      */
     private static void deserialize(byte[] bytes) throws Exception {
 
-        //System.out.println("\nSerialized RefAddr object: ");
-        //System.out.println(new sun.security.util.HexDumpEncoder().encode(bytes));
-
         ObjectInputStream objectStream =
             new ObjectInputStream(new ByteArrayInputStream(bytes));
         Object object = objectStream.readObject();

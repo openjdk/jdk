@@ -33,12 +33,13 @@
 #include "runtime/safepoint.hpp"
 
 template<typename IsAlive, typename KeepAlive>
-ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::ShenandoahParallelWeakRootsCleaningTask(IsAlive* is_alive,
+ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::ShenandoahParallelWeakRootsCleaningTask(ShenandoahPhaseTimings::Phase phase,
+                                                                                                     IsAlive* is_alive,
                                                                                                      KeepAlive* keep_alive,
                                                                                                      uint num_workers,
                                                                                                      bool include_concurrent_roots) :
   AbstractGangTask("Parallel Weak Root Cleaning Task"),
-  _weak_processing_task(num_workers),
+  _phase(phase), _weak_processing_task(num_workers), _serial_weak_roots(phase),
   _is_alive(is_alive), _keep_alive(keep_alive), _include_concurrent_roots(include_concurrent_roots) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
 
@@ -63,7 +64,7 @@ void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::work(uint work
   }
 
   if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::parallel_oops_do(_is_alive, _keep_alive, worker_id);
+    ShenandoahStringDedup::parallel_oops_do(_phase, _is_alive, _keep_alive, worker_id);
   }
 }
 

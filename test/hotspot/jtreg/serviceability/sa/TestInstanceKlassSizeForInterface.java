@@ -48,7 +48,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestInstanceKlassSizeForInterface
  */
 
@@ -102,8 +102,8 @@ public class TestInstanceKlassSizeForInterface {
     private static void createAnotherToAttach(
                             String[] instanceKlassNames,
                             int lingeredAppPid) throws Exception {
-
-        String[] toolArgs = {
+        // Start a new process to attach to the LingeredApp process to get SA info
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
@@ -113,12 +113,7 @@ public class TestInstanceKlassSizeForInterface {
             "-XX:+WhiteBoxAPI",
             "-Xbootclasspath/a:.",
             "TestInstanceKlassSizeForInterface",
-            Integer.toString(lingeredAppPid)
-        };
-
-        // Start a new process to attach to the LingeredApp process to get SA info
-        ProcessBuilder processBuilder = ProcessTools
-                  .createJavaProcessBuilder(toolArgs);
+            Integer.toString(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ package gc.ergonomics;
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.ergonomics.TestInitialGCThreadLogging
  */
 
@@ -70,11 +70,14 @@ public class TestInitialGCThreadLogging {
   }
 
   private static void testInitialGCThreadLogging(String gcFlag, String threadName) throws Exception {
-    // UseDynamicNumberOfGCThreads and TraceDynamicGCThreads enabled
-    String[] baseArgs = {"-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", "-version"};
-
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);
+    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+" + gcFlag,
+        "-Xmx10M",
+        "-XX:+UseDynamicNumberOfGCThreads",
+        "-Xlog:gc+task=trace",
+        "-version");
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()), threadName);
   }
 }

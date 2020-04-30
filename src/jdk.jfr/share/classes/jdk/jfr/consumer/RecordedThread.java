@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public final class RecordedThread extends RecordedObject {
     }
 
     /**
-     * Returns the Java thread name, or {@code null} if if doesn't exist.
+     * Returns the Java thread name, or {@code null} if doesn't exist.
      * <p>
      * Returns {@code java.lang.Thread.getName()} if the thread has a Java
      * representation. {@code null} otherwise.

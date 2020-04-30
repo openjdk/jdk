@@ -3960,7 +3960,7 @@ return mh1;
      *     {@code short}, {@code char}, {@code int}, {@code long},
      *     {@code float}, or {@code double} then numeric atomic update access
      *     modes are unsupported.
-     * <li>if the field type is anything other than {@code boolean},
+     * <li>if the component type is anything other than {@code boolean},
      *     {@code byte}, {@code short}, {@code char}, {@code int} or
      *     {@code long} then bitwise atomic update access modes are
      *     unsupported.

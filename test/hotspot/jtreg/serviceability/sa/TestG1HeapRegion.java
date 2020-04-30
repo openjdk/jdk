@@ -46,7 +46,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.gc.g1
  *          jdk.hotspot.agent/sun.jvm.hotspot.memory
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run main/othervm TestG1HeapRegion
+ * @run driver TestG1HeapRegion
  */
 
 public class TestG1HeapRegion {
@@ -71,18 +71,15 @@ public class TestG1HeapRegion {
 
     private static void createAnotherToAttach(long lingeredAppPid)
                                                          throws Exception {
-        String[] toolArgs = {
+        // Start a new process to attach to the lingered app
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.gc.g1=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.memory=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.runtime=ALL-UNNAMED",
             "TestG1HeapRegion",
-            Long.toString(lingeredAppPid)
-        };
-
-        // Start a new process to attach to the lingered app
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(toolArgs);
+            Long.toString(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);

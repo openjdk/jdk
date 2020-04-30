@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package gc.arguments;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.arguments.TestG1ConcRefinementThreads
+ * @run driver gc.arguments.TestG1ConcRefinementThreads
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -71,7 +71,7 @@ public class TestG1ConcRefinementThreads {
     }
     Collections.addAll(vmOpts, "-XX:+UseG1GC", "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(0);

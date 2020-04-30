@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.util.JarUtils
  * @build ClassForName ProtectionDomainCacheTest
- * @run main/othervm/policy=test.policy -Djava.security.manager ProtectionDomainCacheTest
+ * @run driver ProtectionDomainCacheTest
  */
 
 import java.net.URL;

@@ -215,8 +215,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<li><a href=\"#annotation.type.member\">Annotation Type Elements</a></li>\n"
                 + "</ul>",
                 "<div class=\"deprecated-summary\" id=\"forRemoval\">\n"
-                + "<table>\n"
-                + "<caption><span>For Removal</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                + "<table class=\"summary-table\">\n"
+                + "<caption><span>For Removal</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Element</th>\n"
@@ -224,8 +224,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</tr>\n"
                 + "</thead>",
                 "<div class=\"deprecated-summary\" id=\"enum\">\n"
-                + "<table>\n"
-                + "<caption><span>Enums</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                + "<table class=\"summary-table\">\n"
+                + "<caption><span>Enums</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Enum</th>\n"
@@ -243,8 +243,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</table>\n"
                 + "</div>",
                 "<div class=\"deprecated-summary\" id=\"exception\">\n"
-                + "<table>\n"
-                + "<caption><span>Exceptions</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                + "<table class=\"summary-table\">\n"
+                + "<caption><span>Exceptions</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Exceptions</th>\n"
@@ -262,8 +262,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</table>\n"
                 + "</div>",
                 "<div class=\"deprecated-summary\" id=\"field\">\n"
-                + "<table>\n"
-                + "<caption><span>Fields</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                + "<table class=\"summary-table\">\n"
+                + "<caption><span>Fields</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Field</th>\n"

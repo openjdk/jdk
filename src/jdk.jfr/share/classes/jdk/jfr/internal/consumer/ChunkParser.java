@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,8 +187,6 @@ public final class ChunkParser {
 
     /**
      * Reads an event and returns null when segment or chunk ends.
-     *
-     * @param awaitNewEvents wait for new data.
      */
     RecordedEvent readStreamingEvent() throws IOException {
         long absoluteChunkEnd = chunkHeader.getEnd();
@@ -198,7 +196,7 @@ public final class ChunkParser {
         }
         long lastValid = absoluteChunkEnd;
         long metadataPosition = chunkHeader.getMetataPosition();
-        long contantPosition = chunkHeader.getConstantPoolPosition();
+        long constantPosition = chunkHeader.getConstantPoolPosition();
         chunkFinished = awaitUpdatedHeader(absoluteChunkEnd, configuration.filterEnd);
         if (chunkFinished) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "At chunk end");
@@ -214,10 +212,10 @@ public final class ChunkParser {
             typeMap = factory.getTypeMap();
             updateConfiguration();
         }
-        if (contantPosition != chunkHeader.getConstantPoolPosition()) {
+        if (constantPosition != chunkHeader.getConstantPoolPosition()) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new constant pool data. Filling up pools with new values");
             constantLookups.forEach(c -> c.getLatestPool().setAllResolved(false));
-            fillConstantPools(contantPosition + chunkHeader.getAbsoluteChunkStart());
+            fillConstantPools(constantPosition + chunkHeader.getAbsoluteChunkStart());
             constantLookups.forEach(c -> c.getLatestPool().setResolving());
             constantLookups.forEach(c -> c.getLatestPool().resolve());
             constantLookups.forEach(c -> c.getLatestPool().setResolved());

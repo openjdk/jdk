@@ -28,7 +28,6 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 include TextFileProcessing.gmk
 
 ################################################################################
@@ -44,7 +43,7 @@ BUILD_TOOLS_SRC_DIRS += \
     #
 
 $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
-    SETUP := GENERATE_OLDBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(BUILD_TOOLS_SRC_DIRS), \
     EXCLUDES := \
         build/tools/classlist \
@@ -54,10 +53,10 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
         build/tools/depend \
         , \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
-    ADD_JAVAC_FLAGS := \
+    DISABLED_WARNINGS := options, \
+    JAVAC_FLAGS := \
         --add-exports java.desktop/sun.awt=ALL-UNNAMED \
-        --add-exports java.base/sun.text=ALL-UNNAMED \
-        , \
+        --add-exports java.base/sun.text=ALL-UNNAMED, \
 ))
 
 TARGETS += $(BUILD_TOOLS_JDK)
@@ -72,10 +71,11 @@ TARGETS += $(COPY_NIMBUS_TEMPLATES)
 ################################################################################
 
 $(eval $(call SetupJavaCompilation, COMPILE_DEPEND, \
-    SETUP := GENERATE_OLDBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/make/jdk/src/classes, \
     INCLUDES := build/tools/depend, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/depend, \
+    DISABLED_WARNINGS := options, \
 ))
 
 DEPEND_SERVICE_PROVIDER := $(BUILDTOOLS_OUTPUTDIR)/depend/META-INF/services/com.sun.source.util.Plugin

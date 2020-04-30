@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ final class DCmdStop extends AbstractDCmd {
     /**
      * Execute JFR.stop
      *
-     * Requires that either <code>name or <code>id</code> is set.
+     * Requires that either {@code name} or {@code id} is set.
      *
      * @param name name or id of the recording to stop.
      *
      * @param filename file path where data should be written after recording has
-     *        been stopped, or <code>null</code> if recording shouldn't be written
+     *        been stopped, or {@code null} if recording shouldn't be written
      *        to disk.
      * @return result text
      *

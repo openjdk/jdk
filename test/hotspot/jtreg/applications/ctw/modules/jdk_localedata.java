@@ -34,6 +34,5 @@
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.localedata 0% 50%
  */

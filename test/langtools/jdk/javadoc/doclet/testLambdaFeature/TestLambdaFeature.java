@@ -58,16 +58,16 @@ public class TestLambdaFeature extends JavadocTester {
                 "<td class=\"col-first\"><code>default void</code></td>",
                 "<div class=\"member-signature\"><span class=\"modifiers\">default</span>&nbsp;"
                 + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">defaultMethod</span>()</div>\n",
-                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
                 + " id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">Instance Methods</button>"
-                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\""
+                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"method-summary-table.tabpanel\""
                 + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\""
                 + " onclick=\"show(4);\">Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
                 + " id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">Default Methods</button></div>",
                 "<dl class=\"notes\">\n"
                 + "<dt>Functional Interface:</dt>\n"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ final class Summary extends Command {
         long totalDuration = 0;
         long chunks = 0;
 
-        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILIGED)) {
+        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {
             ChunkHeader first = new ChunkHeader(input);
             ChunkHeader ch = first;
             String eventPrefix = Type.EVENT_NAME_PREFIX;

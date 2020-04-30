@@ -619,6 +619,15 @@ public final class SSLSocketImpl
             }
         }
 
+        // Deliver the user_canceled alert and the close notify alert.
+        closeNotify(useUserCanceled);
+
+        if (!isInputShutdown()) {
+            bruteForceCloseInput(hasCloseReceipt);
+        }
+    }
+
+    void closeNotify(boolean useUserCanceled) throws IOException {
         // Need a lock here so that the user_canceled alert and the
         // close_notify alert can be delivered together.
         int linger = getSoLinger();
@@ -633,7 +642,7 @@ public final class SSLSocketImpl
                         conContext.outputRecord.recordLock.tryLock(
                                 linger, TimeUnit.SECONDS)) {
                     try {
-                        handleClosedNotifyAlert(useUserCanceled);
+                        deliverClosedNotify(useUserCanceled);
                     } finally {
                         conContext.outputRecord.recordLock.unlock();
                     }
@@ -687,18 +696,14 @@ public final class SSLSocketImpl
         } else {
             conContext.outputRecord.recordLock.lock();
             try {
-                handleClosedNotifyAlert(useUserCanceled);
+                deliverClosedNotify(useUserCanceled);
             } finally {
                 conContext.outputRecord.recordLock.unlock();
             }
         }
-
-        if (!isInputShutdown()) {
-            bruteForceCloseInput(hasCloseReceipt);
-        }
     }
 
-    private void handleClosedNotifyAlert(
+    private void deliverClosedNotify(
             boolean useUserCanceled) throws IOException {
         try {
             // send a user_canceled alert if needed.

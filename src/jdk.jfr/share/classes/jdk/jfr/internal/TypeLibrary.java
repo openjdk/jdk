@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public final class TypeLibrary {
         try {
             m = annotation.getClass().getMethod(methodName, new Class<?>[0]);
         } catch (NoSuchMethodException e1) {
-            throw (Error) new InternalError("Could not loacate method " + methodName + " in annotation " + annotation.getClass().getName());
+            throw (Error) new InternalError("Could not locate method " + methodName + " in annotation " + annotation.getClass().getName());
         }
         SecuritySupport.setAccessible(m);
         try {

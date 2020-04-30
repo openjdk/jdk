@@ -517,21 +517,6 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get table caption.
-     *
-     * @param title the content for the caption
-     * @return a content tree for the caption
-     */
-    public Content getTableCaption(Content title) {
-        Content captionSpan = HtmlTree.SPAN(title);
-        Content space = Entity.NO_BREAK_SPACE;
-        Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, space);
-        Content caption = HtmlTree.CAPTION(captionSpan);
-        caption.add(tabSpan);
-        return caption;
-    }
-
-    /**
      * Returns a packagename content.
      *
      * @param packageElement the package to check

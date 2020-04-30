@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  */
 
 import sun.security.jgss.GSSUtil;
-import sun.security.util.HexDumpEncoder;
+import jdk.test.lib.hexdump.HexPrinter;
 
 // The basic krb5 test skeleton you can copy from
 public class MSOID2 {
@@ -72,7 +72,7 @@ public class MSOID2 {
                     nt[pos] = (byte)newLen;
                 }
                 t = nt;
-                new HexDumpEncoder().encodeBuffer(t, System.out);
+                HexPrinter.simple().format(t);
             }
             if (t != null || !s.x().isEstablished()) t = s.take(t);
             if (c.x().isEstablished() && s.x().isEstablished()) break;

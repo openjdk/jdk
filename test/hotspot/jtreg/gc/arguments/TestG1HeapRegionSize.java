@@ -33,7 +33,7 @@ package gc.arguments;
  * @modules java.management/sun.management
  * @library /test/lib
  * @library /
- * @run main gc.arguments.TestG1HeapRegionSize
+ * @run driver gc.arguments.TestG1HeapRegionSize
  */
 
 import java.util.regex.Matcher;
@@ -54,7 +54,7 @@ public class TestG1HeapRegionSize {
     flagList.add("-XX:+PrintFlagsFinal");
     flagList.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flagList.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flagList);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(exitValue);
 

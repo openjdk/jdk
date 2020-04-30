@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8048357
  * @summary test PKCS7 data signing, encoding and verification
+ * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -40,7 +41,6 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import sun.security.util.HexDumpEncoder;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -55,10 +55,9 @@ import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
 import sun.security.x509.X509Key;
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class SignerOrder {
-
-    static final HexDumpEncoder hexDump = new HexDumpEncoder();
 
     //signer infos
     static final byte[] data1 = "12345".getBytes();
@@ -120,7 +119,7 @@ public class SignerOrder {
         signerInfo.derEncode(strm);
         System.out.println("SignerInfo, length: "
                 + strm.toByteArray().length);
-        System.out.println(hexDump.encode(strm.toByteArray()));
+        HexPrinter.simple().format(strm.toByteArray());
         System.out.println("\n");
         strm.reset();
     }
@@ -131,7 +130,7 @@ public class SignerOrder {
             signerInfos[i].derEncode(strm);
             System.out.println("SignerInfo[" + i + "], length: "
                     + strm.toByteArray().length);
-            System.out.println(hexDump.encode(strm.toByteArray()));
+            HexPrinter.simple().format(strm.toByteArray());
             System.out.println("\n");
             strm.reset();
         }

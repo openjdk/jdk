@@ -71,8 +71,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "extends java.lang.Enum&lt;<a href=\"Coin.html\" "
                 + "title=\"enum in pkg\">Coin</a>&gt;</pre>",
                 // Check for enum constant section
-                "<caption><span>Enum Constants"
-                + "</span><span class=\"tab-end\">&nbsp;</span></caption>",
+                "<caption><span>Enum Constants</span></caption>",
                 // Detail for enum constant
                 "<span class=\"member-name-link\"><a href=\"#Dime\">Dime</a></span>",
                 // Automatically insert documentation for values() and valueOf().
@@ -228,7 +227,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo.html\" title=\"class in pkg2\">"
-                + "Foo</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "Foo</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"../ClassUseTest1.html\" "
                 + "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends "
                 + "<a href=\"../Foo.html\" title=\"class in pkg2\">Foo"
@@ -237,7 +236,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo.html\" title=\"class in "
-                + "pkg2\">Foo</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "pkg2\">Foo</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><span class=\"type-name-label\">ClassUseTest1."
                 + "</span><code><span class=\"member-name-link\"><a href=\"../"
                 + "ClassUseTest1.html#method(T)\">method</a></span>"
@@ -245,7 +244,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Fields in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo.html\" title=\"class in pkg2\">"
-                + "Foo</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "Foo</a></span></caption>",
                 "td class=\"col-first\"><code><a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>"
                 + "&lt;<a href=\"../Foo.html\" title=\"class in pkg2\""
@@ -256,7 +255,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Fields in <a href=\"../"
                 + "package-summary.html\">pkg2</a> declared as <a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest"
-                + "</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "</a></span></caption>",
                 "<td class=\"col-first\"><code><a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;<a "
                 + "href=\"../Foo.html\" title=\"class in pkg2\">Foo</a"
@@ -267,8 +266,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo2.html\" title=\"interface "
-                + "in pkg2\">Foo2</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>",
+                + "in pkg2\">Foo2</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"../ClassUseTest1.html\" "
                 + "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends "
                 + "<a href=\"../Foo.html\" title=\"class in pkg2\">Foo"
@@ -277,8 +275,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo2.html\" title=\"interface "
-                + "in pkg2\">Foo2</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>",
+                + "in pkg2\">Foo2</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><span class=\"type-name-label\">"
                 + "ClassUseTest1.</span><code><span class=\"member-name-link\"><a href=\"../"
                 + "ClassUseTest1.html#method(T)\">method</a></span>"
@@ -290,8 +287,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../ParamTest.html\" title=\"class "
-                + "in pkg2\">ParamTest</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg2\">ParamTest</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"../ClassUseTest2.html\" "
                 + "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends "
                 + "<a href=\"../ParamTest.html\" title=\"class in pkg2\">"
@@ -300,8 +296,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../ParamTest.html\" title=\"class "
-                + "in pkg2\">ParamTest</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg2\">ParamTest</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><span class=\"type-name-label\">ClassUseTest2."
                 + "</span><code><span class=\"member-name-link\"><a href=\"../"
                 + "ClassUseTest2.html#method(T)\">method</a></span>"
@@ -309,7 +304,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Fields in <a href=\"../"
                 + "package-summary.html\">pkg2</a> declared as <a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest"
-                + "</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "</a></span></caption>",
                 "<td class=\"col-first\"><code><a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>"
                 + "&lt;<a href=\"../Foo.html\" title=\"class in pkg2\">"
@@ -317,8 +312,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../ParamTest.html\" title=\"class "
-                + "in pkg2\">ParamTest</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg2\">ParamTest</a></span></caption>",
                 "<td class=\"col-first\"><code>&lt;T extends <a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest"
                 + "</a>&lt;<a href=\"../Foo3.html\" title=\"class in "
@@ -332,7 +326,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo3.html\" title=\"class in pkg2\">"
-                + "Foo3</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "Foo3</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"../ClassUseTest2.html\" "
                 + "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends "
                 + "<a href=\"../ParamTest.html\" title=\"class in pkg2\">"
@@ -341,8 +335,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo3.html\" title=\"class in "
-                + "pkg2\">Foo3</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>",
+                + "pkg2\">Foo3</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><span class=\"type-name-label\">ClassUseTest2."
                 + "</span><code><span class=\"member-name-link\"><a href=\"../"
                 + "ClassUseTest2.html#method(T)\">method</a></span>"
@@ -350,8 +343,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> that return types with "
                 + "arguments of type <a href=\"../Foo3.html\" title"
-                + "=\"class in pkg2\">Foo3</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "=\"class in pkg2\">Foo3</a></span></caption>",
                 "<td class=\"col-first\"><code>&lt;T extends <a href=\"../"
                 + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;"
                 + "<a href=\"../Foo3.html\" title=\"class in pkg2\">Foo3"
@@ -365,8 +357,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../ParamTest2.html\" title=\"class "
-                + "in pkg2\">ParamTest2</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg2\">ParamTest2</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"../ClassUseTest3.html\" "
                 + "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends "
                 + "<a href=\"../ParamTest2.html\" title=\"class in pkg2\">"
@@ -376,8 +367,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../ParamTest2.html\" title=\"class "
-                + "in pkg2\">ParamTest2</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg2\">ParamTest2</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><span class=\"type-name-label\">ClassUseTest3"
                 + ".</span><code><span class=\"member-name-link\"><a href=\"../ClassUseTest3."
                 + "html#method(T)\">method</a></span>&#8203;(T&nbsp;t)</code></th>",
@@ -395,8 +385,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo4.html\" title=\"class in "
-                + "pkg2\">Foo4</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>",
+                + "pkg2\">Foo4</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"../ClassUseTest3.html\" "
                 + "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends "
                 + "<a href=\"../ParamTest2.html\" title=\"class in pkg2\">"
@@ -406,7 +395,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
                 + "type <a href=\"../Foo4.html\" title=\"class in "
-                + "pkg2\">Foo4</a></span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "pkg2\">Foo4</a></span></caption>",
                 "<th class=\"col-second\" scope=\"row\"><span class=\"type-name-label\">ClassUseTest3."
                 + "</span><code><span class=\"member-name-link\"><a href=\"../ClassUseTest3."
                 + "html#method(T)\">method</a></span>&#8203;(T&nbsp;t)</code>"
@@ -414,8 +403,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> that return types with "
                 + "arguments of type <a href=\"../Foo4.html\" "
-                + "title=\"class in pkg2\">Foo4</a></span><span class=\""
-                + "tab-end\">&nbsp;</span></caption>",
+                + "title=\"class in pkg2\">Foo4</a></span></caption>",
                 "<td class=\"col-first\"><code>&lt;T extends <a href=\"../"
                 + "ParamTest2.html\" title=\"class in pkg2\">"
                 + "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".."
@@ -431,8 +419,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Method parameters in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type arguments of "
                 + "type <a href=\"../Foo4.html\" title=\"class in "
-                + "pkg2\">Foo4</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>\n"
+                + "pkg2\">Foo4</a></span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Modifier and Type</th>\n"
@@ -451,8 +438,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<caption><span>Constructor parameters in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type arguments "
                 + "of type <a href=\"../Foo4.html\" title=\"class in "
-                + "pkg2\">Foo4</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>"
+                + "pkg2\">Foo4</a></span></caption>"
         );
 
         //=================================
@@ -582,38 +568,31 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkOutput("pkg/class-use/AnnotationType.html", true,
                 "<caption><span>Packages with annotations of type <a href=\""
                 + "../AnnotationType.html\" title=\"annotation in pkg\">"
-                + "AnnotationType</a></span><span class=\"tab-end\">&nbsp;"
-                + "</span></caption>",
+                + "AnnotationType</a></span></caption>",
                 "<caption><span>Classes in <a href=\"../"
                 + "package-summary.html\">pkg</a> with annotations of type "
                 + "<a href=\"../AnnotationType.html\" title=\""
-                + "annotation in pkg\">AnnotationType</a></span><span class"
-                + "=\"tab-end\">&nbsp;</span></caption>",
+                + "annotation in pkg\">AnnotationType</a></span></caption>",
                 "<caption><span>Fields in <a href=\"../"
                 + "package-summary.html\">pkg</a> with annotations of type "
                 + "<a href=\"../AnnotationType.html\" title=\"annotation "
-                + "in pkg\">AnnotationType</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg\">AnnotationType</a></span></caption>",
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg</a> with annotations of type "
                 + "<a href=\"../AnnotationType.html\" title=\"annotation "
-                + "in pkg\">AnnotationType</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg\">AnnotationType</a></span></caption>",
                 "<caption><span>Method parameters in <a href=\"../"
                 + "package-summary.html\">pkg</a> with annotations of type "
                 + "<a href=\"../AnnotationType.html\" title=\"annotation "
-                + "in pkg\">AnnotationType</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg\">AnnotationType</a></span></caption>",
                 "<caption><span>Constructors in <a href=\"../"
                 + "package-summary.html\">pkg</a> with annotations of type "
                 + "<a href=\"../AnnotationType.html\" title=\"annotation "
-                + "in pkg\">AnnotationType</a></span><span class=\"tab-end\">"
-                + "&nbsp;</span></caption>",
+                + "in pkg\">AnnotationType</a></span></caption>",
                 "<caption><span>Constructor parameters in <a href=\"../"
                 + "package-summary.html\">pkg</a> with annotations of "
                 + "type <a href=\"../AnnotationType.html\" title=\""
-                + "annotation in pkg\">AnnotationType</a></span><span class=\""
-                + "tab-end\">&nbsp;</span></caption>"
+                + "annotation in pkg\">AnnotationType</a></span></caption>"
         );
 
         //==============================================================

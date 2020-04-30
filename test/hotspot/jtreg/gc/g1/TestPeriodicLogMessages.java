@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ package gc.g1;
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
- * @run main gc.g1.TestPeriodicLogMessages
+ * @run driver gc.g1.TestPeriodicLogMessages
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,12 @@ public final class RecordedMethod extends RecordedObject {
      * Returns the method descriptor for this method (for example,
      * {@code "(Ljava/lang/String;)V"}).
      * <p>
-     * See Java Virtual Machine Specification, 4.3
-     * <p>
-     * If this method doesn't belong to a Java frame then the the result is undefined.
+     * If this method doesn't belong to a Java frame then the result is undefined.
      *
-     * @return method descriptor.
+     * @return method descriptor
      *
      * @see RecordedFrame#isJavaFrame()
+     * @jvms 4.3 Descriptors
      */
     public String getDescriptor() {
         return getTyped("descriptor", String.class, null);

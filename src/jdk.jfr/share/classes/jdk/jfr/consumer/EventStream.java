@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,15 +87,14 @@ import jdk.jfr.internal.consumer.FileAccess;
  * <p>
  * If an unexpected exception occurs in an action, it is possible to catch the
  * exception in an error handler. An error handler can be registered using the
- * {@link #onError(Runnable)} method. If no error handler is registered, the
+ * {@link #onError(Consumer)} method. If no error handler is registered, the
  * default behavior is to print the exception and its backtrace to the standard
  * error stream.
  * <p>
  * The following example shows how an {@code EventStream} can be used to listen
  * to events on a JVM running Flight Recorder
  *
- * <pre>
- * <code>
+ * <pre>{@literal
  * try (var es = EventStream.openRepository()) {
  *   es.onEvent("jdk.CPULoad", event -> {
  *     System.out.println("CPU Load " + event.getEndTime());
@@ -113,8 +112,7 @@ import jdk.jfr.internal.consumer.FileAccess;
  *   });
  *   es.start();
  * }
- * </code>
- * </pre>
+ * }</pre>
  * <p>
  * To start recording together with the stream, see {@link RecordingStream}.
  *
@@ -139,7 +137,7 @@ public interface EventStream extends AutoCloseable {
      */
     public static EventStream openRepository() throws IOException {
         Utils.checkAccessFlightRecorder();
-        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILIGED, null);
+        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null);
     }
 
     /**
@@ -162,7 +160,7 @@ public interface EventStream extends AutoCloseable {
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.nonNull(directory);
         AccessControlContext acc = AccessController.getContext();
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILIGED, null);
+        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null);
     }
 
     /**
@@ -213,7 +211,7 @@ public interface EventStream extends AutoCloseable {
     /**
      * Registers an action to perform if an exception occurs.
      * <p>
-     * if an action is not registered, an exception stack trace is printed to
+     * If an action is not registered, an exception stack trace is printed to
      * standard error.
      * <p>
      * Registering an action overrides the default behavior. If multiple actions
@@ -273,7 +271,7 @@ public interface EventStream extends AutoCloseable {
      * Specifies that the event object in an {@link #onEvent(Consumer)} action
      * can be reused.
      * <p>
-     * If reuse is set to {@code true), an action should not keep a reference
+     * If reuse is set to {@code true}, an action should not keep a reference
      * to the event object after the action has completed.
      *
      * @param reuse {@code true} if an event object can be reused, {@code false}
@@ -286,7 +284,7 @@ public interface EventStream extends AutoCloseable {
      * they were committed to the stream.
      *
      * @param ordered if event objects arrive in chronological order to
-     *        {@code #onEvent(Consumer)}
+     *        {@link #onEvent(Consumer)}
      */
     void setOrdered(boolean ordered);
 
@@ -321,22 +319,22 @@ public interface EventStream extends AutoCloseable {
     void setEndTime(Instant endTime);
 
     /**
-     * Start processing of actions.
+     * Starts processing of actions.
      * <p>
      * Actions are performed in the current thread.
      * <p>
-     * To stop the stream, use the {@code #close()} method.
+     * To stop the stream, use the {@link #close()} method.
      *
      * @throws IllegalStateException if the stream is already started or closed
      */
     void start();
 
     /**
-     * Start asynchronous processing of actions.
+     * Starts asynchronous processing of actions.
      * <p>
      * Actions are performed in a single separate thread.
      * <p>
-     * To stop the stream, use the {@code #close()} method.
+     * To stop the stream, use the {@link #close()} method.
      *
      * @throws IllegalStateException if the stream is already started or closed
      */

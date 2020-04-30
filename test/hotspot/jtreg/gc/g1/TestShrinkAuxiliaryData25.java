@@ -36,7 +36,6 @@ package gc.g1;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData25
  */
 public class TestShrinkAuxiliaryData25 {

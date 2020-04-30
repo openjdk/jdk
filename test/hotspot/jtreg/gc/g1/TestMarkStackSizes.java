@@ -32,7 +32,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.g1.TestMarkStackSizes
+ * @run driver gc.g1.TestMarkStackSizes
  */
 
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class TestMarkStackSizes {
         Collections.addAll(testArguments, extraArgs);
         testArguments.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments.toArray(new String[0]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ package gc.stress;
  * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory
- * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
- * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
- * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
+ * @run driver gc.stress.TestReclaimStringsLeaksMemory
+ * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
+ * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
+ * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
  */
 
 import java.util.Arrays;
@@ -61,9 +61,8 @@ public class TestReclaimStringsLeaksMemory {
                                                                    "-XX:+PrintNMTStatistics" ));
         baseargs.addAll(Arrays.asList(args));
         baseargs.add(GCTest.class.getName());
-        ProcessBuilder pb_default =
-            ProcessTools.createJavaProcessBuilder(baseargs.toArray(new String[] {}));
-        verifySymbolMemoryUsageNotTooHigh(new OutputAnalyzer(pb_default.start()));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(baseargs);
+        verifySymbolMemoryUsageNotTooHigh(new OutputAnalyzer(pb.start()));
     }
 
     private static void verifySymbolMemoryUsageNotTooHigh(OutputAnalyzer output) throws Exception {

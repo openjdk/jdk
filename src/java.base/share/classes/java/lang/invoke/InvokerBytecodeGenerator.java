@@ -236,7 +236,7 @@ class InvokerBytecodeGenerator {
         return className;
     }
 
-    public static class ClassData {
+    static class ClassData {
         final String name;
         final String desc;
         final Object value;

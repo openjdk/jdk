@@ -2073,7 +2073,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
         // Accumulate type for resulting Phi
         base_type = base_type->meet_speculative(in(i)->in(AddPNode::Base)->bottom_type());
-        address_type = address_type->meet_speculative(in(i)->in(AddPNode::Base)->bottom_type());
+        address_type = address_type->meet_speculative(in(i)->in(AddPNode::Address)->bottom_type());
       }
       if (doit && base == NULL) {
         // Check for neighboring AddP nodes in a tree.

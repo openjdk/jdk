@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
  * @library /test/lib server
+ * @compile ../ReferenceTracker.java
  * @build Http2TestServer
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm ContinuationFrameTest
@@ -72,6 +73,9 @@ public class ContinuationFrameTest {
     Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
     String http2URI;
     String https2URI;
+    String noBodyhttp2URI;
+    String noBodyhttps2URI;
+    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     /**
      * A function that returns a list of 1) a HEADERS frame ( with an empty
@@ -86,6 +90,23 @@ public class ContinuationFrameTest {
                                                          encodedHeaders);
             return List.of(hf, cf);
         };
+
+    /**
+     * A function that returns a list of 1) a HEADERS frame with END_STREAM
+     * ( and with an empty payload ), and 2) two CONTINUATION frames,the first
+     * is empty and the second contains headers and the END_HEADERS flag
+     */
+    static BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> twoContinuation =
+        (Integer streamid, List<ByteBuffer> encodedHeaders) -> {
+            List<ByteBuffer> empty =  List.of(ByteBuffer.wrap(new byte[0]));
+            HeadersFrame hf = new HeadersFrame(streamid, HeaderFrame.END_STREAM, empty);
+            ContinuationFrame cf = new ContinuationFrame(streamid, 0,empty);
+            ContinuationFrame cf1 = new ContinuationFrame(streamid,
+                                                         HeaderFrame.END_HEADERS,
+                                                         encodedHeaders);
+
+                return List.of(hf, cf, cf1);
+            };
 
     /**
      * A function that returns a list of a HEADERS frame followed by a number of
@@ -112,15 +133,20 @@ public class ContinuationFrameTest {
     @DataProvider(name = "variants")
     public Object[][] variants() {
         return new Object[][] {
-                { http2URI,  false, oneContinuation },
-                { https2URI, false, oneContinuation },
-                { http2URI,  true,  oneContinuation },
-                { https2URI, true,  oneContinuation },
+                { http2URI,        false, oneContinuation },
+                { https2URI,       false, oneContinuation },
+                { http2URI,        true,  oneContinuation },
+                { https2URI,       true,  oneContinuation },
 
-                { http2URI,  false, byteAtATime },
-                { https2URI, false, byteAtATime },
-                { http2URI,  true,  byteAtATime },
-                { https2URI, true,  byteAtATime },
+                { noBodyhttp2URI,  false, twoContinuation },
+                { noBodyhttp2URI,  true,  twoContinuation },
+                { noBodyhttps2URI, false, twoContinuation },
+                { noBodyhttps2URI, true,  twoContinuation },
+
+                { http2URI,        false, byteAtATime },
+                { https2URI,       false, byteAtATime },
+                { http2URI,        true,  byteAtATime },
+                { https2URI,       true,  byteAtATime },
         };
     }
 
@@ -136,8 +162,13 @@ public class ContinuationFrameTest {
 
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = HttpClient.newBuilder().sslContext(sslContext).build();
+            if (!sameClient || client == null) {
+                client = HttpClient.newBuilder()
+                         .proxy(HttpClient.Builder.NO_PROXY)
+                         .sslContext(sslContext)
+                         .build();
+                TRACKER.track(client);
+            }
 
             HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
                                              .POST(BodyPublishers.ofString("Hello there!"))
@@ -149,6 +180,13 @@ public class ContinuationFrameTest {
                 resp = client.sendAsync(request, BodyHandlers.ofString()).join();
             }
 
+            if(uri.contains("nobody")) {
+                out.println("Got response: " + resp);
+                assertTrue(resp.statusCode() == 204,
+                    "Expected 204, got:" + resp.statusCode());
+                assertEquals(resp.version(), HTTP_2);
+                continue;
+            }
             out.println("Got response: " + resp);
             out.println("Got body: " + resp.body());
             assertTrue(resp.statusCode() == 200,
@@ -166,13 +204,17 @@ public class ContinuationFrameTest {
 
         http2TestServer = new Http2TestServer("localhost", false, 0);
         http2TestServer.addHandler(new Http2EchoHandler(), "/http2/echo");
+        http2TestServer.addHandler(new Http2NoBodyHandler(), "/http2/nobody");
         int port = http2TestServer.getAddress().getPort();
         http2URI = "http://localhost:" + port + "/http2/echo";
+        noBodyhttp2URI = "http://localhost:" + port + "/http2/nobody";
 
         https2TestServer = new Http2TestServer("localhost", true, sslContext);
         https2TestServer.addHandler(new Http2EchoHandler(), "/https2/echo");
+        https2TestServer.addHandler(new Http2NoBodyHandler(), "/https2/nobody");
         port = https2TestServer.getAddress().getPort();
         https2URI = "https://localhost:" + port + "/https2/echo";
+        noBodyhttps2URI = "https://localhost:" + port + "/https2/nobody";
 
         // Override the default exchange supplier with a custom one to enable
         // particular test scenarios
@@ -185,8 +227,15 @@ public class ContinuationFrameTest {
 
     @AfterTest
     public void teardown() throws Exception {
-        http2TestServer.stop();
-        https2TestServer.stop();
+        AssertionError fail = TRACKER.check(500);
+        try {
+            http2TestServer.stop();
+            https2TestServer.stop();
+        } finally {
+            if (fail != null) {
+                throw fail;
+            }
+        }
     }
 
     static class Http2EchoHandler implements Http2Handler {
@@ -200,6 +249,17 @@ public class ContinuationFrameTest {
                 t.getResponseHeaders().addHeader("theHeader", "Frames");
                 t.sendResponseHeaders(200, bytes.length);
                 os.write(bytes);
+            }
+        }
+    }
+
+    static class Http2NoBodyHandler implements Http2Handler {
+        @Override
+        public void handle(Http2TestExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                 OutputStream os = t.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+                t.sendResponseHeaders(204, -1);
             }
         }
     }
@@ -225,7 +285,7 @@ public class ContinuationFrameTest {
         @Override
         public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
             this.responseLength = responseLength;
-            if (responseLength > 0 || responseLength < 0) {
+            if (responseLength != 0 && rCode != 204) {
                 long clen = responseLength > 0 ? responseLength : 0;
                 rspheadersBuilder.setHeader("Content-length", Long.toString(clen));
             }
@@ -236,10 +296,8 @@ public class ContinuationFrameTest {
             List<Http2Frame> headerFrames = headerFrameSupplier.apply(streamid, encodeHeaders);
             assert headerFrames.size() > 0;  // there must always be at least 1
 
-            if (responseLength < 0) {
-                headerFrames.get(headerFrames.size() -1).setFlag(HeadersFrame.END_STREAM);
+            if(headerFrames.get(0).getFlag(HeaderFrame.END_STREAM))
                 os.closeInternal();
-            }
 
             for (Http2Frame f : headerFrames)
                 conn.outputQ.put(f);

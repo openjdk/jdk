@@ -42,15 +42,16 @@ public class TestLinkageErrorInGenerateOopMap {
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
             // Spawn new VM instance to execute test
-            String[] flags = {"-XX:+UnlockDiagnosticVMOptions",
-                              "-XX:-BytecodeVerificationRemote",
-                              "-XX:-BytecodeVerificationLocal",
-                              "-XX:-TieredCompilation",
-                              "-XX:CompileCommand=dontinline,compiler/linkage/OSRWithBadOperandStack.m*",
-                              "-XX:-CreateCoredumpOnCrash",
-                              "-Xmx64m",
-                              "compiler.linkage.TestLinkageErrorInGenerateOopMap", "run"};
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(flags);
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:-BytecodeVerificationRemote",
+                    "-XX:-BytecodeVerificationLocal",
+                    "-XX:-TieredCompilation",
+                    "-XX:CompileCommand=dontinline,compiler/linkage/OSRWithBadOperandStack.m*",
+                    "-XX:-CreateCoredumpOnCrash",
+                    "-Xmx64m",
+                    "compiler.linkage.TestLinkageErrorInGenerateOopMap",
+                    "run");
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
             if (out.getExitValue() != 0) {
                 // OSR compilation should exit with an error during OopMap verification

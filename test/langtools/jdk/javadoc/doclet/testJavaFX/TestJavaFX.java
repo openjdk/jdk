@@ -155,8 +155,8 @@ public class TestJavaFX extends JavadocTester {
                 + "<dd>JavaFX 8.0</dd>",
                 "<section class=\"property-summary\" id=\"property.summary\">\n"
                 + "<h2>Property Summary</h2>\n"
-                + "<div class=\"member-summary\">\n<table>\n"
-                + "<caption><span>Properties</span><span class=\"tab-end\">&nbsp;</span></caption>",
+                + "<div class=\"member-summary\">\n<table class=\"summary-table\">\n"
+                + "<caption><span>Properties</span></caption>",
                 "<tr class=\"alt-color\">\n"
                 + "<td class=\"col-first\"><code><a href=\"C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
                 "<tr class=\"row-color\">\n"
@@ -238,8 +238,8 @@ public class TestJavaFX extends JavadocTester {
                 + "</section>",
                 "<section class=\"property-summary\" id=\"property.summary\">\n"
                 + "<h2>Property Summary</h2>\n"
-                + "<div class=\"member-summary\">\n<table>\n"
-                + "<caption><span>Properties</span><span class=\"tab-end\">&nbsp;</span></caption>");
+                + "<div class=\"member-summary\">\n<table class=\"summary-table\">\n"
+                + "<caption><span>Properties</span></caption>");
 
         checkOutput("pkg2/Test.html", false,
                 "<h2>Property Summary</h2>\n"

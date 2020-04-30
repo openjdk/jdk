@@ -100,7 +100,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 Boolean.toString(shrinkHeapInSteps)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
+        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         analyzer.shouldHaveExitValue(0);
     }
@@ -125,7 +125,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-version"
         );
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
+        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         analyzer.shouldHaveExitValue(1);
         analyzer.shouldContain("Error: Could not create the Java Virtual Machine.");

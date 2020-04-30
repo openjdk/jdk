@@ -261,12 +261,10 @@ BPERF_SETUP_BUILD_CORES
 BPERF_SETUP_BUILD_MEMORY
 BPERF_SETUP_BUILD_JOBS
 BPERF_SETUP_TEST_JOBS
+BPERF_SETUP_JAVAC_SERVER
 
 # Setup arguments for the boot jdk (after cores and memory have been setup)
 BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
-
-# Setup smart javac (after cores and memory have been setup)
-BPERF_SETUP_SMART_JAVAC
 
 # Setup use of icecc if requested
 BPERF_SETUP_ICECC

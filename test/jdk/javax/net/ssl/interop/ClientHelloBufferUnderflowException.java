@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,14 @@
  * @test
  * @bug 8215790 8219389
  * @summary Verify exception
+ * @library /test/lib
  * @modules java.base/sun.security.util
  * @run main/othervm ClientHelloBufferUnderflowException
  */
 
-import sun.security.util.HexDumpEncoder;
 import javax.net.ssl.SSLHandshakeException;
+
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class ClientHelloBufferUnderflowException extends ClientHelloInterOp {
     /*
@@ -75,7 +77,7 @@ public class ClientHelloBufferUnderflowException extends ClientHelloInterOp {
 
         System.out.println("The ClientHello message used");
         try {
-            (new HexDumpEncoder()).encodeBuffer(bytes, System.out);
+            HexPrinter.simple().format(bytes);
         } catch (Exception e) {
             // ignore
         }

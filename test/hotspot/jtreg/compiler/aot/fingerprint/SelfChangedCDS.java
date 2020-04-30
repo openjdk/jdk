@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,17 @@
  * @build compiler.aot.fingerprint.SelfChanged
  *        sun.hotspot.WhiteBox
  *
- * @run main compiler.aot.fingerprint.SelfChanged WRITE-UNMODIFIED-CLASS
+ * @run driver compiler.aot.fingerprint.SelfChanged WRITE-UNMODIFIED-CLASS
  * @run driver compiler.aot.AotCompiler -libname libSelfChanged.so
  *      -class compiler.aot.fingerprint.Blah
  *
  * @run driver ClassFileInstaller -jar SelfChangedCDS.jar compiler.aot.fingerprint.Blah
- * @run main compiler.aot.fingerprint.CDSDumper SelfChangedCDS.jar SelfChangedCDS.classlist SelfChangedCDS.jsa -showversion
+ * @run driver compiler.aot.fingerprint.CDSDumper SelfChangedCDS.jar SelfChangedCDS.classlist SelfChangedCDS.jsa -showversion
  *      compiler.aot.fingerprint.Blah
  *
- * @run main compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
+ * @run driver compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED
- * @run main compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
+ * @run driver compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+PrintAOT
  *      -XX:AOTLibrary=./libSelfChanged.so
  *      -XX:SharedArchiveFile=SelfChangedCDS.jsa
@@ -51,14 +51,14 @@
  *      -Xlog:aot+class+fingerprint=trace -Xlog:aot+class+load=trace
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED
  *
- * @run main
+ * @run driver
  *      compiler.aot.fingerprint.SelfChanged WRITE-MODIFIED-CLASS
  * @run driver compiler.aot.AotCompiler -libname libSelfChanged.so
  *      -class compiler.aot.fingerprint.Blah
  *
- * @run main compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
+ * @run driver compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
  *      compiler.aot.fingerprint.Blah TEST-MODIFIED
- * @run main compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
+ * @run driver compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+PrintAOT
  *      -XX:AOTLibrary=./libSelfChanged.so
  *      -XX:SharedArchiveFile=SelfChangedCDS.jsa
@@ -73,12 +73,12 @@
  *      -class compiler.aot.fingerprint.Blah
  *      -extraopt -Xmx512m
  *
- * @run main compiler.aot.fingerprint.CDSDumper SelfChangedCDS.jar SelfChangedCDS.classlist SelfChangedCDS.jsa -Xmx512m
+ * @run driver compiler.aot.fingerprint.CDSDumper SelfChangedCDS.jar SelfChangedCDS.classlist SelfChangedCDS.jsa -Xmx512m
  *      compiler.aot.fingerprint.Blah
  *
- * @run main compiler.aot.fingerprint.CDSRunner -Xmx512m -cp SelfChangedCDS.jar
+ * @run driver compiler.aot.fingerprint.CDSRunner -Xmx512m -cp SelfChangedCDS.jar
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED
- * @run main compiler.aot.fingerprint.CDSRunner -Xmx512m -cp SelfChangedCDS.jar
+ * @run driver compiler.aot.fingerprint.CDSRunner -Xmx512m -cp SelfChangedCDS.jar
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+PrintAOT
  *      -XX:AOTLibrary=./libSelfChanged.so
  *      -XX:SharedArchiveFile=SelfChangedCDS.jsa

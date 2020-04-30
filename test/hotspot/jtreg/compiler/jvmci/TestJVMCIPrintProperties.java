@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Ensure -XX:-JVMCIPrintProperties can be enabled and successfully prints expected output to stdout.
  * @requires vm.jvmci & !vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib
+ * @run driver TestJVMCIPrintProperties
  */
 
 import jdk.test.lib.process.ProcessTools;

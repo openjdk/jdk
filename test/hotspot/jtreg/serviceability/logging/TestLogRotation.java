@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm/timeout=600 TestLogRotation
+ * @run driver/timeout=600 TestLogRotation
  *
  */
 import jdk.test.lib.process.ProcessTools;
@@ -71,23 +71,16 @@ public class TestLogRotation {
     }
 
     public static void runTest(int numberOfFiles) throws Exception {
-
-        ArrayList<String> args = new ArrayList();
-        String[] logOpts = new String[]{
-            "-cp", System.getProperty("java.class.path"),
-            "-Xlog:gc=debug:" + logFileName + "::filesize=" + logFileSizeK + "k,filecount=" + numberOfFiles,
-            "-XX:-DisableExplicitGC", // to ensure that System.gc() works
-            "-Xmx128M"};
-        // System.getProperty("test.java.opts") is '' if no options is set
-        // need to skip such empty
-        String[] externalVMopts = System.getProperty("test.java.opts").length() == 0
-                ? new String[0]
-                : System.getProperty("test.java.opts").split(" ");
-        args.addAll(Arrays.asList(externalVMopts));
-        args.addAll(Arrays.asList(logOpts));
-        args.add(GCLoggingGenerator.class.getName());
-        args.add(String.valueOf(numberOfFiles * logFileSizeK * 1024));
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[0]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                true,
+                "-cp", System.getProperty("java.class.path"),
+                "-Xlog:gc=debug:" + logFileName
+                        + "::filesize=" + logFileSizeK + "k"
+                        + ",filecount=" + numberOfFiles,
+                "-XX:-DisableExplicitGC", // to ensure that System.gc() works
+                "-Xmx128M",
+                GCLoggingGenerator.class.getName(),
+                String.valueOf(numberOfFiles * logFileSizeK * 1024));
         pb.redirectErrorStream(true);
         pb.redirectOutput(new File(GCLoggingGenerator.class.getName() + ".log"));
         Process process = pb.start();

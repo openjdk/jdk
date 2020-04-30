@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,8 @@ package gc.g1;
  *          java.management/sun.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Verify output of -Xlog:gc+remset*=trace in regards to per-region type output
- * @run main gc.g1.TestRemsetLoggingPerRegion
+ * @run driver gc.g1.TestRemsetLoggingPerRegion
  */
 
 public class TestRemsetLoggingPerRegion {

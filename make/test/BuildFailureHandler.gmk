@@ -28,7 +28,6 @@ default: build
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 include NativeCompilation.gmk
 
 TARGETS :=
@@ -49,13 +48,14 @@ TOOLS_JAR := $(wildcard $(BOOT_JDK)/lib/tools.jar)
 FH_CLASSPATH := $(call PathList, $(JTREG_JAR) $(TOOLS_JAR))
 
 $(eval $(call SetupJavaCompilation, BUILD_FAILURE_HANDLER, \
-    SETUP := GENERATE_OLDBYTECODE, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(FH_BASEDIR)/src/share/classes $(FH_BASEDIR)/src/share/conf, \
     BIN := $(FH_SUPPORT)/classes, \
-    DISABLED_WARNINGS := serial try, \
+    DISABLED_WARNINGS := options serial try, \
     COPY := .properties, \
     CLASSPATH := $(JTREG_JAR) $(TOOLS_JAR), \
     JAR := $(FH_JAR), \
+    JAVAC_FLAGS := -XDstringConcat=inline, \
 ))
 
 TARGETS += $(BUILD_FAILURE_HANDLER)

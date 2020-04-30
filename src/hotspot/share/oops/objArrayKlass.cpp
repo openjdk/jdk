@@ -54,8 +54,8 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
   return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
 }
 
-Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                int n, Klass* element_klass, TRAPS) {
+ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
+                                                      int n, Klass* element_klass, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = NULL;
@@ -88,7 +88,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
           // Now retry from the beginning
           ek = element_klass->array_klass(n, CHECK_NULL);
         }  // re-lock
-        return ek;
+        return ObjArrayKlass::cast(ek);
       }
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
@@ -98,9 +98,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
 
   // Create type name for klass.
   Symbol* name = NULL;
-  if (!element_klass->is_instance_klass() ||
-      (name = InstanceKlass::cast(element_klass)->array_name()) == NULL) {
-
+  {
     ResourceMark rm(THREAD);
     char *name_str = element_klass->name()->as_C_string();
     int len = element_klass->name()->utf8_length();
@@ -116,11 +114,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
       new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
     }
     new_str[idx++] = '\0';
-    name = SymbolTable::new_permanent_symbol(new_str);
-    if (element_klass->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(element_klass);
-      ik->set_array_name(name);
-    }
+    name = SymbolTable::new_symbol(new_str);
   }
 
   // Initialize instance variables
@@ -143,12 +137,8 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
 }
 
 ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayKlass(name, ID) {
-  this->set_dimension(n);
-  this->set_element_klass(element_klass);
-  // decrement refcount because object arrays are not explicitly freed.  The
-  // InstanceKlass array_name() keeps the name counted while the klass is
-  // loaded.
-  name->decrement_refcount();
+  set_dimension(n);
+  set_element_klass(element_klass);
 
   Klass* bk;
   if (element_klass->is_objArray_klass()) {
@@ -157,12 +147,12 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
     bk = element_klass;
   }
   assert(bk != NULL && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
-  this->set_bottom_klass(bk);
-  this->set_class_loader_data(bk->class_loader_data());
+  set_bottom_klass(bk);
+  set_class_loader_data(bk->class_loader_data());
 
-  this->set_layout_helper(array_layout_helper(T_OBJECT));
-  assert(this->is_array_klass(), "sanity");
-  assert(this->is_objArray_klass(), "sanity");
+  set_layout_helper(array_layout_helper(T_OBJECT));
+  assert(is_array_klass(), "sanity");
+  assert(is_objArray_klass(), "sanity");
 }
 
 int ObjArrayKlass::oop_size(oop obj) const {

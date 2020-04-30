@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,16 @@
  * questions.
  */
 
-import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Starts a new process to execute a command.
@@ -48,6 +48,10 @@ import java.util.Arrays;
  * {@code --java}, i.e. 0 or 95 means pass.
  */
 public class ExecDriver {
+    // copied from jdk.test.lib.Utils.TEST_CLASS_PATH
+    private static final String TEST_CLASS_PATH = System.getProperty("test.class.path", ".");
+    // copied from jdk.test.lib.Utils.TEST_CLASS_PATH
+    private static final String TEST_JDK = System.getProperty("test.jdk");
     public static void main(String[] args) throws IOException, InterruptedException {
         boolean java = false;
         boolean launcher = false;
@@ -68,7 +72,7 @@ public class ExecDriver {
                 }
                 args[0] = javaBin();
                 args[1] = "-cp";
-                args[2] = Utils.TEST_CLASS_PATH;
+                args[2] = TEST_CLASS_PATH;
                 System.arraycopy(oldArgs, 1, args, count, oldArgs.length - 1);
                 java = true;
                 break;
@@ -84,7 +88,7 @@ public class ExecDriver {
         // adding 'test.vm.opts' and 'test.java.opts'
         if (java) {
             String[] oldArgs = args;
-            String[] testJavaOpts = Utils.getTestJavaOpts();
+            String[] testJavaOpts = getTestJavaOpts();
             if (testJavaOpts.length > 0) {
                 args = new String[args.length + testJavaOpts.length];
                 // bin/java goes before options
@@ -101,10 +105,11 @@ public class ExecDriver {
         ProcessBuilder pb = new ProcessBuilder(args);
         // adding jvm.so to library path
         if (launcher) {
-            Path dir = Paths.get(Utils.TEST_JDK);
+            Path dir = Paths.get(TEST_JDK);
             String value;
-            String name = Platform.sharedLibraryPathVariableName();
-            if (Platform.isWindows()) {
+            String name = sharedLibraryPathVariableName();
+            // if (jdk.test.lib.Platform.isWindows()) {
+            if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
                 value = dir.resolve("bin")
                            .resolve(variant())
                            .toAbsolutePath()
@@ -125,7 +130,7 @@ public class ExecDriver {
                       .merge(name, value, (x, y) -> y + File.pathSeparator + x));
             System.out.println("  with CLASSPATH = " +
                     pb.environment()
-                      .put("CLASSPATH", Utils.TEST_CLASS_PATH));
+                      .put("CLASSPATH", TEST_CLASS_PATH));
         }
         Process p = pb.start();
         // inheritIO does not work as expected for @run driver
@@ -138,18 +143,51 @@ public class ExecDriver {
         }
     }
 
+    // copied from jdk.test.lib.Platform::sharedLibraryPathVariableName
+    private static String sharedLibraryPathVariableName() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.startsWith("win")) {
+            return "PATH";
+        } else if (osName.startsWith("mac")) {
+            return "DYLD_LIBRARY_PATH";
+        } else if (osName.startsWith("aix")) {
+            return "LIBPATH";
+        } else {
+            return "LD_LIBRARY_PATH";
+        }
+    }
+
+    // copied from jdk.test.lib.Utils::getTestJavaOpts()
+    private static String[] getTestJavaOpts() {
+        List<String> opts = new ArrayList<String>();
+        {
+            String v = System.getProperty("test.vm.opts", "").trim();
+            if (!v.isEmpty()) {
+                Collections.addAll(opts, v.split("\\s+"));
+            }
+        }
+        {
+            String v = System.getProperty("test.java.opts", "").trim();
+            if (!v.isEmpty()) {
+                Collections.addAll(opts, v.split("\\s+"));
+            }
+        }
+        return opts.toArray(new String[0]);
+    }
+
+    // copied jdk.test.lib.Platform::variant
     private static String variant() {
-        if (Platform.isServer()) {
+        String vmName = System.getProperty("java.vm.name");
+        if (vmName.endsWith(" Server VM")) {
             return "server";
-        } else if (Platform.isClient()) {
+        } else if (vmName.endsWith(" Client VM")) {
             return "client";
-        } else if (Platform.isMinimal()) {
+        } else if (vmName.endsWith(" Minimal VM")) {
             return "minimal";
         } else {
             throw new Error("TESTBUG: unsuppported vm variant");
         }
     }
-
 
     private static void copy(InputStream is, OutputStream os) {
         byte[] buffer = new byte[1024];
@@ -165,7 +203,7 @@ public class ExecDriver {
     }
 
     private static String javaBin() {
-        return Paths.get(Utils.TEST_JDK)
+        return Paths.get(TEST_JDK)
                     .resolve("bin")
                     .resolve("java")
                     .toAbsolutePath()

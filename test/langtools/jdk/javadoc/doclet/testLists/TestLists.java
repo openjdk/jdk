@@ -183,7 +183,7 @@ public class TestLists extends JavadocTester {
                 + "<section class=\"field-summary\" id=\"field.summary\">\n"
                 + "<h2>Field Summary</h2>\n"
                 + "<div class=\"member-summary\">\n"
-                + "<table>",
+                + "<table class=\"summary-table\">",
                 "</section>\n"
                 + "</li>\n"
                 + "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
@@ -191,7 +191,7 @@ public class TestLists extends JavadocTester {
                 + "<section class=\"constructor-summary\" id=\"constructor.summary\">\n"
                 + "<h2>Constructor Summary</h2>\n"
                 + "<div class=\"member-summary\">\n"
-                + "<table>");
+                + "<table class=\"summary-table\">");
 
         checkOutput("p/E.html", true,
                 "</section>\n"
@@ -201,7 +201,7 @@ public class TestLists extends JavadocTester {
                 + "<section class=\"constants-summary\" id=\"enum.constant.summary\">\n"
                 + "<h2>Enum Constant Summary</h2>\n"
                 + "<div class=\"member-summary\">\n"
-                + "<table>");
+                + "<table class=\"summary-table\">");
 
         checkOutput("p/A.html", true,
                 "<section class=\"summary\">\n"
@@ -211,7 +211,7 @@ public class TestLists extends JavadocTester {
                 + "<section class=\"member-summary\" id=\"annotation.type.required.element.summary\">\n"
                 + "<h2>Required Element Summary</h2>\n"
                 + "<div class=\"member-summary\">\n"
-                + "<table>");
+                + "<table class=\"summary-table\">");
 
     }
 }

@@ -30,7 +30,6 @@ include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
@@ -38,8 +37,11 @@ $(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
 ################################################################################
 # Module specific build settings
 
-java.base_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
-java.base_COPY += .icu .dat .spp .nrm content-types.properties hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
+java.base_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
+java.base_JAVAC_FLAGS += -XDstringConcat=inline
+java.base_COPY += .icu .dat .spp .nrm content-types.properties \
+    hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
 java.base_CLEAN += intrinsic.properties
 
 java.base_EXCLUDE_FILES += \
@@ -70,18 +72,19 @@ endif
 
 ################################################################################
 
-java.compiler_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.compiler_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.datatransfer_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.datatransfer_DOCLINT += -Xdoclint:all/protected,-reference \
+    '-Xdoclint/package:java.*,javax.*'
 java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' \
-    --doclint-format html4
+java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
+    '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN += iio-plugin.properties cursors.properties
 
@@ -214,75 +217,89 @@ java.desktop_EXCLUDE_FILES += \
 
 ################################################################################
 
-java.scripting_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.scripting_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 java.scripting_COPY += .js
 java.scripting_CLEAN += .properties
 
 ################################################################################
 
-java.instrument_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.instrument_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.logging_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.logging_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.management_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.management_DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.management.rmi_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:javax.*'
+java.management.rmi_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:javax.*'
 
 ################################################################################
 
-java.prefs_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.prefs_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.transaction.xa_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:javax.*'
+java.transaction.xa_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:javax.*'
 
 ################################################################################
 
-java.sql_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.sql_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.sql.rowset_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.sql.rowset_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 java.sql.rowset_CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
     $(TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
 
 ################################################################################
 
-java.rmi_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.rmi_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 java.rmi_CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/registry/resources/*.properties \
     $(TOPDIR)/src/java.rmi/share/classes/sun/rmi/server/resources/*.properties)
 
 ################################################################################
 
-java.xml_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility \
+java.xml_DOCLINT += -Xdoclint:all/protected,-accessibility \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
 java.xml_CLEAN += .properties
 
 ################################################################################
 
-java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.naming_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 java.naming_CLEAN += jndiprovider.properties
 
 ################################################################################
 
-java.security.jgss_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.security.jgss_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.smartcardio_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
+java.smartcardio_DOCLINT += -Xdoclint:all/protected,-accessibility \
+    '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
-java.xml.crypto_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.xml.crypto_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:java.*,javax.*'
 java.xml.crypto_COPY += .dtd .xml
 java.xml.crypto_CLEAN += .properties
 
@@ -294,9 +311,9 @@ jdk.charsets_COPY += .dat
 
 ################################################################################
 
-jdk.compiler_ADD_JAVAC_FLAGS += -Xdoclint:all/protected \
-    '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*' \
-    -XDstringConcat=inline
+jdk.compiler_DOCLINT += -Xdoclint:all/protected \
+    '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
+jdk.compiler_JAVAC_FLAGS += -XDstringConcat=inline
 jdk.compiler_CLEAN_FILES += $(wildcard \
     $(patsubst %, $(TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
         sun/tools/serialver/resources))
@@ -337,17 +354,7 @@ jdk.javadoc_COPY += .xml .css .js .png
 
 ################################################################################
 
-jdk.jartool_ADD_JAVAC_FLAGS += -XDstringConcat=inline
-
-################################################################################
-
-jdk.scripting.nashorn_DISABLED_WARNINGS += removal
-jdk.scripting.nashorn_COPY := .properties .js
-
-################################################################################
-
-jdk.scripting.nashorn.shell_DISABLED_WARNINGS += removal
-jdk.scripting.nashorn.shell_COPY += .js .properties
+jdk.jartool_JAVAC_FLAGS += -XDstringConcat=inline
 
 ################################################################################
 
@@ -375,8 +382,9 @@ endif
 
 ################################################################################
 
-jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst .postrm .postinst .list .sh \
-    .desktop .copyright .control .plist .template .icns .scpt .entitlements .wxs .wxl .wxi .ico .bmp .tiff
+jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
+    .postrm .postinst .list .sh .desktop .copyright .control .plist .template \
+    .icns .scpt .entitlements .wxs .wxl .wxi .ico .bmp .tiff
 
 jdk.incubator.jpackage_CLEAN += .properties
 
@@ -426,11 +434,11 @@ jdk.internal.jvmstat_COPY += aliasmap
 # The exports are needed since JVMCI is dynamically exported (see
 # jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
-jdk.internal.vm.ci_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline
+jdk.internal.vm.ci_JAVAC_FLAGS += -parameters -XDstringConcat=inline
 
 ################################################################################
 
-jdk.internal.vm.compiler_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
+jdk.internal.vm.compiler_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler \
@@ -464,6 +472,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.graph.test \
     org.graalvm.compiler.hotspot.aarch64.test \
     org.graalvm.compiler.hotspot.amd64.test \
+    org.graalvm.compiler.hotspot.jdk15.test \
     org.graalvm.compiler.hotspot.jdk9.test \
     org.graalvm.compiler.hotspot.lir.test \
     org.graalvm.compiler.hotspot.sparc.test \
@@ -498,7 +507,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
 # The exports are needed since JVMCI is dynamically exported (see
 # jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
-jdk.aot_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
+jdk.aot_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler,jdk.aot \
@@ -533,7 +542,7 @@ jdk.localedata_KEEP_ALL_TRANSLATIONS := true
 
 jdk.jfr_DISABLED_WARNINGS += exports
 jdk.jfr_COPY := .xsd .xml .dtd
-jdk.jfr_ADD_JAVAC_FLAGS := -XDstringConcat=inline
+jdk.jfr_JAVAC_FLAGS := -XDstringConcat=inline
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
@@ -596,7 +605,7 @@ ifeq ($(MODULE), jdk.aot)
 endif
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \
-    SETUP := $(if $($(MODULE)_SETUP), $($(MODULE)_SETUP), GENERATE_JDKBYTECODE), \
+    SMALL_JAVA := false, \
     MODULE := $(MODULE), \
     SRC := $(wildcard $(MODULE_SRC_DIRS)), \
     INCLUDES := $(JDK_USER_DEFINED_FILTER), \
@@ -604,8 +613,9 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
     CREATE_API_DIGEST := true, \
-    ADD_JAVAC_FLAGS := \
-        $($(MODULE)_ADD_JAVAC_FLAGS) \
+    JAVAC_FLAGS := \
+        $($(MODULE)_DOCLINT) \
+        $($(MODULE)_JAVAC_FLAGS) \
         --module-source-path $(MODULESOURCEPATH) \
         --module-path $(MODULEPATH) \
         --system none, \

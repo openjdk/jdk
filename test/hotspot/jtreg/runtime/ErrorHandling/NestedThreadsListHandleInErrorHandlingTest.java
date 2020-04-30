@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary Nested ThreadsListHandle info should be in error handling output.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+EnableThreadSMRStatistics NestedThreadsListHandleInErrorHandlingTest
+ * @run driver NestedThreadsListHandleInErrorHandlingTest
  */
 
 /*
@@ -54,6 +54,7 @@ public class NestedThreadsListHandleInErrorHandlingTest {
     // counters and confusing this test.
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+EnableThreadSMRStatistics",
         "-Xmx100M",
         "-XX:ErrorHandlerTest=17",
         "-XX:-CreateCoredumpOnCrash",

@@ -347,10 +347,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   # oldest supported bootjdk.
   OLDEST_BOOT_JDK=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \
       | $TR " " "\n" | $SORT -n | $HEAD -n1`
-  BOOT_JDK_SOURCETARGET="-source $OLDEST_BOOT_JDK -target $OLDEST_BOOT_JDK"
+  # -Xlint:-options is added to avoid "warning: [options] system modules path not set in conjunction with -source"
+  BOOT_JDK_SOURCETARGET="-source $OLDEST_BOOT_JDK -target $OLDEST_BOOT_JDK -Xlint:-options"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
-
-  AC_SUBST(JAVAC_FLAGS)
 
   # Check if the boot jdk is 32 or 64 bit
   if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
@@ -433,12 +432,10 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   UTIL_ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs_big,[$JAVA])
   BOOTCYCLE_JVM_ARGS_BIG=-Xms64M
 
-  # Maximum amount of heap memory and stack size.
+  # Maximum amount of heap memory.
   JVM_HEAP_LIMIT_32="768"
   # Running a 64 bit JVM allows for and requires a bigger heap
   JVM_HEAP_LIMIT_64="1600"
-  STACK_SIZE_32=768
-  STACK_SIZE_64=1536
   JVM_HEAP_LIMIT_GLOBAL=`expr $MEMORY_SIZE / 2`
   if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_32"; then
     JVM_HEAP_LIMIT_32=$JVM_HEAP_LIMIT_GLOBAL
@@ -452,14 +449,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   fi
 
   if test "x$BOOT_JDK_BITS" = "x32"; then
-    STACK_SIZE=$STACK_SIZE_32
     JVM_MAX_HEAP=$JVM_HEAP_LIMIT_32
   else
-    STACK_SIZE=$STACK_SIZE_64
     JVM_MAX_HEAP=$JVM_HEAP_LIMIT_64
   fi
   UTIL_ADD_JVM_ARG_IF_OK([-Xmx${JVM_MAX_HEAP}M],boot_jdk_jvmargs_big,[$JAVA])
-  UTIL_ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs_big,[$JAVA])
 
   AC_MSG_RESULT([$boot_jdk_jvmargs_big])
 
@@ -468,20 +462,13 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
     BOOTCYCLE_MAX_HEAP=$JVM_HEAP_LIMIT_32
-    BOOTCYCLE_STACK_SIZE=$STACK_SIZE_32
   else
     BOOTCYCLE_MAX_HEAP=$JVM_HEAP_LIMIT_64
-    BOOTCYCLE_STACK_SIZE=$STACK_SIZE_64
   fi
   BOOTCYCLE_JVM_ARGS_BIG="$BOOTCYCLE_JVM_ARGS_BIG -Xmx${BOOTCYCLE_MAX_HEAP}M"
-  BOOTCYCLE_JVM_ARGS_BIG="$BOOTCYCLE_JVM_ARGS_BIG -XX:ThreadStackSize=$BOOTCYCLE_STACK_SIZE"
   AC_MSG_CHECKING([flags for bootcycle boot jdk java command for big workloads])
   AC_MSG_RESULT([$BOOTCYCLE_JVM_ARGS_BIG])
   AC_SUBST(BOOTCYCLE_JVM_ARGS_BIG)
-
-  # By default, the main javac compilations use big
-  JAVA_FLAGS_JAVAC="$JAVA_FLAGS_BIG"
-  AC_SUBST(JAVA_FLAGS_JAVAC)
 
   AC_MSG_CHECKING([flags for boot jdk java command for small workloads])
 
@@ -495,6 +482,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
   AC_SUBST(JAVA_FLAGS_SMALL)
+
+  # Don't presuppose SerialGC is present in the buildjdk. Also, we cannot test
+  # the buildjdk, but on the other hand we know what it will support.
+  BUILDJDK_JAVA_FLAGS_SMALL="-Xms32M -Xmx512M -XX:TieredStopAtLevel=1"
+  AC_SUBST(BUILDJDK_JAVA_FLAGS_SMALL)
 
   JAVA_TOOL_FLAGS_SMALL=""
   for f in $JAVA_FLAGS_SMALL; do

@@ -278,7 +278,7 @@ public class GraalUnitTestLauncher {
         javaFlags.add("@"+GENERATED_TESTCLASSES_FILENAME);
 
         ProcessBuilder javaPB = ProcessTools.createJavaProcessBuilder(true,
-                javaFlags.toArray(new String[javaFlags.size()]));
+                javaFlags);
 
         // Some tests rely on MX_SUBPROCESS_COMMAND_FILE env variable which contains
         // name of the file with java executable and java args used to launch the current process.

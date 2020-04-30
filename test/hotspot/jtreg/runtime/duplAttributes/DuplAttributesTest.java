@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile DuplAttributes.jcod
- * @run main DuplAttributesTest
+ * @run driver DuplAttributesTest
  */
 
 import java.io.File;

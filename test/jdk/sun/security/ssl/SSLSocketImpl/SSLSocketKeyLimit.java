@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.util.Arrays;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
-import sun.security.util.HexDumpEncoder;
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class SSLSocketKeyLimit {
     SSLSocket socket;
@@ -212,7 +212,7 @@ public class SSLSocketKeyLimit {
                     if (b == 0x0A || b == 0x0D) {
                         continue;
                     }
-                    System.out.println("\nData invalid: " + new HexDumpEncoder().encode(buf));
+                    System.out.println("\nData invalid: " + HexPrinter.minimal().toString(buf));
                     break;
                 }
 

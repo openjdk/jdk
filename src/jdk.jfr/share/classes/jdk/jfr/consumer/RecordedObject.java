@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class RecordedObject {
      *
      * @param name name of the field to get, not {@code null}
      *
-     * @return {@code true} if the field exists, {@code false} otherwise.
+     * @return {@code true} if the field exists, {@code false} otherwise
      *
      * @see #getFields()
      */
@@ -222,8 +222,7 @@ public class RecordedObject {
      * <p>
      * Example
      *
-     * <pre>
-     * <code>
+     * <pre>{@literal
      * if (event.hasField("intValue")) {
      *   int intValue = event.getValue("intValue");
      *   System.out.println("Int value: " + intValue);
@@ -236,10 +235,9 @@ public class RecordedObject {
      *
      * if (event.hasField("sampledThread")) {
      *   RecordedThread sampledThread = event.getValue("sampledThread");
-     *   System.out.println("Sampled thread: " + sampledThread.getName());
+     *   System.out.println("Sampled thread: " + sampledThread.getJavaName());
      * }
-     * </code>
-     * </pre>
+     * }</pre>
      *
      * @param <T> the return type
      * @param  name of the field to get, not {@code null}

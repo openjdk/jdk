@@ -91,9 +91,10 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(HtmlStyle.overviewSummary)
+            Table table =  new Table(HtmlStyle.overviewSummary, HtmlStyle.summaryTable)
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                    .setId("all-modules-table")
                     .setDefaultTab(resources.getText("doclet.All_Modules"))
                     .setTabScript(i -> "show(" + i + ");")
                     .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));

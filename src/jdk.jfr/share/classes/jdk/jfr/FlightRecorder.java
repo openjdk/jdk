@@ -85,7 +85,7 @@ public final class FlightRecorder {
     /**
      * Creates a snapshot of all available recorded data.
      * <p>
-     * A snapshot is a synthesized recording in a {@code STOPPPED} state. If no data is
+     * A snapshot is a synthesized recording in a {@code STOPPED} state. If no data is
      * available, a recording with size {@code 0} is returned.
      * <p>
      * A snapshot provides stable access to data for later operations (for example,
@@ -93,17 +93,15 @@ public final class FlightRecorder {
      * <p>
      * The following example shows how to create a snapshot and write a subset of the data to a file.
      *
-     * <pre>
-     * <code>
+     * <pre>{@literal
      * try (Recording snapshot = FlightRecorder.getFlightRecorder().takeSnapshot()) {
-     *   if (snapshot.getSize() &gt; 0) {
+     *   if (snapshot.getSize() > 0) {
      *     snapshot.setMaxSize(100_000_000);
      *     snapshot.setMaxAge(Duration.ofMinutes(5));
      *     snapshot.dump(Paths.get("snapshot.jfr"));
      *   }
      * }
-     * </code>
-     * </pre>
+     * }</pre>
      *
      * The caller must close the recording when access to the data is no longer
      * needed.

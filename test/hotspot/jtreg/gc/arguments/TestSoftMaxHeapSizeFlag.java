@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package gc.arguments;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm gc.arguments.TestSoftMaxHeapSizeFlag
+ * @run driver gc.arguments.TestSoftMaxHeapSizeFlag
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -43,36 +43,36 @@ public class TestSoftMaxHeapSizeFlag {
 
     public static void main(String args[]) throws Exception {
         // Test default value
-        ProcessTools.executeTestJvm(new String[]{ "-Xms" + Xms, "-Xmx" + Xmx,
-                                                  "-XX:+PrintFlagsFinal", "-version" })
+        ProcessTools.executeTestJvm("-Xms" + Xms, "-Xmx" + Xmx,
+                                    "-XX:+PrintFlagsFinal", "-version")
                     .shouldMatch("SoftMaxHeapSize[ ]+=[ ]+" + Xmx)
                     .shouldHaveExitValue(0);
 
         // Test setting small value
-        ProcessTools.executeTestJvm(new String[]{ "-Xms" + Xms, "-Xmx" + Xmx,
-                                                  "-XX:SoftMaxHeapSize=" + Xms,
-                                                  "-XX:+PrintFlagsFinal", "-version" })
+        ProcessTools.executeTestJvm("-Xms" + Xms, "-Xmx" + Xmx,
+                                    "-XX:SoftMaxHeapSize=" + Xms,
+                                    "-XX:+PrintFlagsFinal", "-version")
                     .shouldMatch("SoftMaxHeapSize[ ]+=[ ]+" + Xms)
                     .shouldHaveExitValue(0);
 
         // Test setting middle value
-        ProcessTools.executeTestJvm(new String[]{ "-Xms" + Xms, "-Xmx" + Xmx,
-                                                  "-XX:SoftMaxHeapSize=" + betweenXmsAndXmx,
-                                                  "-XX:+PrintFlagsFinal", "-version" })
+        ProcessTools.executeTestJvm("-Xms" + Xms, "-Xmx" + Xmx,
+                                    "-XX:SoftMaxHeapSize=" + betweenXmsAndXmx,
+                                    "-XX:+PrintFlagsFinal", "-version")
                     .shouldMatch("SoftMaxHeapSize[ ]+=[ ]+" + betweenXmsAndXmx)
                     .shouldHaveExitValue(0);
 
         // Test setting largest value
-        ProcessTools.executeTestJvm(new String[]{ "-Xms" + Xms, "-Xmx" + Xmx,
-                                                  "-XX:SoftMaxHeapSize=" + Xmx,
-                                                  "-XX:+PrintFlagsFinal", "-version" })
+        ProcessTools.executeTestJvm("-Xms" + Xms, "-Xmx" + Xmx,
+                                    "-XX:SoftMaxHeapSize=" + Xmx,
+                                    "-XX:+PrintFlagsFinal", "-version")
                     .shouldMatch("SoftMaxHeapSize[ ]+=[ ]+" + Xmx)
                     .shouldHaveExitValue(0);
 
         // Test setting a too large value
-        ProcessTools.executeTestJvm(new String[]{ "-Xms" + Xms, "-Xmx" + Xmx,
-                                                  "-XX:SoftMaxHeapSize=" + greaterThanXmx,
-                                                  "-XX:+PrintFlagsFinal", "-version" })
+        ProcessTools.executeTestJvm("-Xms" + Xms, "-Xmx" + Xmx,
+                                    "-XX:SoftMaxHeapSize=" + greaterThanXmx,
+                                    "-XX:+PrintFlagsFinal", "-version")
                     .shouldContain("SoftMaxHeapSize must be less than or equal to the maximum heap size")
                     .shouldHaveExitValue(1);
     }

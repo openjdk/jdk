@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile LambdaMath.jcod
- * @run main ClassFileParserBug
+ * @run driver ClassFileParserBug
  */
 
 import java.io.File;

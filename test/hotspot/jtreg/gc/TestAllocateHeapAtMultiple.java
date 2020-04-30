@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package gc;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires vm.bits == "64" & vm.gc != "Z" & os.family != "aix"
- * @run main/timeout=360 gc.TestAllocateHeapAtMultiple
+ * @run driver/timeout=360 gc.TestAllocateHeapAtMultiple
  */
 
 import jdk.test.lib.JDKToolFinder;
@@ -40,48 +40,29 @@ import java.util.Collections;
 
 public class TestAllocateHeapAtMultiple {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList<>();
-    String[] testVmOpts = null;
+    ArrayList<String> flags = new ArrayList<>();
 
     String test_dir = System.getProperty("test.dir", ".");
 
-    String testVmOptsStr = System.getProperty("test.java.opts");
-    if (!testVmOptsStr.isEmpty()) {
-      testVmOpts = testVmOptsStr.split(" ");
-    }
-
-    // Extra options for each of the sub-tests
-    String[] extraOptsList = new String[] {
-      "-Xmx32m -Xms32m -XX:+UseCompressedOops",     // 1. With compressedoops enabled.
-      "-Xmx32m -Xms32m -XX:-UseCompressedOops",     // 2. With compressedoops disabled.
-      "-Xmx32m -Xms32m -XX:HeapBaseMinAddress=3g",  // 3. With user specified HeapBaseMinAddress.
-      "-Xmx32m -Xms32m -XX:+UseLargePages",         // 4. Set UseLargePages.
-      "-Xmx32m -Xms32m -XX:+UseNUMA"                // 5. Set UseNUMA.
+    // Extra flags for each of the sub-tests
+    String[][] extraFlagsList = new String[][] {
+      {"-Xmx32m", "-Xms32m", "-XX:+UseCompressedOops"},     // 1. With compressedoops enabled.
+      {"-Xmx32m", "-Xms32m", "-XX:-UseCompressedOops"},     // 2. With compressedoops disabled.
+      {"-Xmx32m", "-Xms32m", "-XX:HeapBaseMinAddress=3g"},  // 3. With user specified HeapBaseMinAddress.
+      {"-Xmx32m", "-Xms32m", "-XX:+UseLargePages"},         // 4. Set UseLargePages.
+      {"-Xmx32m", "-Xms32m", "-XX:+UseNUMA"}                // 5. Set UseNUMA.
     };
 
-    for(String extraOpts : extraOptsList) {
-      vmOpts.clear();
-      if(testVmOpts != null) {
-        Collections.addAll(vmOpts, testVmOpts);
-      }
-      // Add extra options specific to the sub-test.
-      String[] extraOptsArray = extraOpts.split(" ");
-      if(extraOptsArray != null) {
-        Collections.addAll(vmOpts, extraOptsArray);
-      }
-      // Add common options
-      Collections.addAll(vmOpts, new String[] {"-XX:AllocateHeapAt=" + test_dir,
-                                               "-Xlog:gc+heap=info",
-                                               "-version"});
+    for (String[] extraFlags : extraFlagsList) {
+      flags.clear();
+      // Add extra flags specific to the sub-test.
+      Collections.addAll(flags, extraFlags);
+      // Add common flags
+      Collections.addAll(flags, new String[] {"-XX:AllocateHeapAt=" + test_dir,
+                                              "-Xlog:gc+heap=info",
+                                              "-version"});
 
-      System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
-      for (int i = 0; i < vmOpts.size(); i += 1) {
-        System.out.print(" " + vmOpts.get(i));
-      }
-      System.out.println();
-
-      ProcessBuilder pb =
-        ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
       System.out.println("Output:\n" + output.getOutput());

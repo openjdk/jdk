@@ -1635,6 +1635,20 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("sub  sp, sp, rscratch1");
   }
+  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    st->print("\n\t");
+    st->print("ldr  rscratch1, [guard]\n\t");
+    st->print("dmb ishld\n\t");
+    st->print("ldr  rscratch2, [rthread, #thread_disarmed_offset]\n\t");
+    st->print("cmp  rscratch1, rscratch2\n\t");
+    st->print("b.eq skip");
+    st->print("\n\t");
+    st->print("blr #nmethod_entry_barrier_stub\n\t");
+    st->print("b skip\n\t");
+    st->print("guard: int\n\t");
+    st->print("\n\t");
+    st->print("skip:\n\t");
+  }
 }
 #endif
 
@@ -1666,6 +1680,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ generate_stack_overflow_check(bangsize);
 
   __ build_frame(framesize);
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
 
   if (VerifyStackAtCalls) {
     Unimplemented();
@@ -13208,7 +13227,7 @@ instruct sqrtD_reg(vRegD dst, vRegD src) %{
 %}
 
 instruct sqrtF_reg(vRegF dst, vRegF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
 
   ins_cost(INSN_COST * 50);
   format %{ "fsqrts  $dst, $src" %}
@@ -17021,6 +17040,28 @@ instruct vdiv2D(vecX dst, vecX src1, vecX src2)
 %}
 
 // --------------------------------- SQRT -------------------------------------
+
+instruct vsqrt2F(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVF src));
+  format %{ "fsqrt  $dst, $src\t# vector (2F)" %}
+  ins_encode %{
+    __ fsqrt(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp64);
+%}
+
+instruct vsqrt4F(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVF src));
+  format %{ "fsqrt  $dst, $src\t# vector (4F)" %}
+  ins_encode %{
+    __ fsqrt(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vsqrt_fp128);
+%}
 
 instruct vsqrt2D(vecX dst, vecX src)
 %{

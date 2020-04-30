@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,26 +29,16 @@ package gc;
  * @requires vm.gc != "Z" & os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main gc.TestAllocateHeapAtError
+ * @run driver gc.TestAllocateHeapAtError
  */
 
 import java.io.File;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.UUID;
 
 public class TestAllocateHeapAtError {
   public static void main(String args[]) throws Exception {
-    ArrayList<String> vmOpts = new ArrayList<>();
-
-    String testVmOptsStr = System.getProperty("test.java.opts");
-    if (!testVmOptsStr.isEmpty()) {
-      String[] testVmOpts = testVmOptsStr.split(" ");
-      Collections.addAll(vmOpts, testVmOpts);
-    }
     String test_dir = System.getProperty("test.dir", ".");
 
     File f = null;
@@ -56,20 +46,13 @@ public class TestAllocateHeapAtError {
       f = new File(test_dir, UUID.randomUUID().toString());
     } while(f.exists());
 
-    Collections.addAll(vmOpts, new String[] {"-XX:AllocateHeapAt=" + f.getName(),
-                                             "-Xlog:gc+heap=info",
-                                             "-Xmx32m",
-                                             "-Xms32m",
-                                             "-version"});
-
-    System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
-    for (int i = 0; i < vmOpts.size(); i += 1) {
-      System.out.print(" " + vmOpts.get(i));
-    }
-    System.out.println();
-
-    ProcessBuilder pb =
-      ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        true,
+        "-XX:AllocateHeapAt=" + f.getName(),
+        "-Xlog:gc+heap=info",
+        "-Xmx32m",
+        "-Xms32m",
+        "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());

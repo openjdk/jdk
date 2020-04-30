@@ -65,7 +65,7 @@ public class TestGroupName extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index.html", true,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overview-summary_tabpanel\""
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"all-packages-table.tabpanel\""
                 + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t1\" class=\"table-tab\""
                 + " onclick=\"show(1);\">abc &lt; &amp; &gt; def</button>",
                 ",\"abc < & > def\"],");
@@ -100,7 +100,7 @@ public class TestGroupName extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index.html", true,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"overview-summary_tabpanel\""
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"all-modules-table.tabpanel\""
                 + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
                 + " onclick=\"show(2);\">Other Modules</button>",
                 ",\"abc < & > def\"],");

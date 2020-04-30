@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.*;
 import java.util.*;
 
 import nsk.share.test.ExecutionController;
+import nsk.share.test.LocalRandom;
 
 /**
  * <tt>NonbranchyTree</tt> defines a tree structure. Each node of the tree
@@ -38,7 +39,6 @@ public class NonbranchyTree {
     /** Minimal size of each node (in bytes) */
     public final static int MIN_NODE_SIZE = 20;
     private Node root;
-    private Random random;
     private int numberOfNodes;
     private float branchiness;
     private int size;
@@ -61,21 +61,16 @@ public class NonbranchyTree {
      *
      */
     public NonbranchyTree(int numberOfNodes, float branchiness, int size) {
-        this(numberOfNodes, branchiness, size, new Random(System.currentTimeMillis()), null);
+        this(numberOfNodes, branchiness, size, null);
         initTree();
     }
 
     public NonbranchyTree(int numberOfNodes, float branchiness, int size, ExecutionController controller) {
-        this(numberOfNodes, branchiness, size, new Random(System.currentTimeMillis()), controller);
-        initTree();
-    }
-
-    private NonbranchyTree(int numberOfNodes, float branchiness, int size, Random random, ExecutionController controller) {
         this.numberOfNodes = numberOfNodes;
         this.branchiness = branchiness;
         this.size = size;
-        this.random = random;
         this.controller = controller;
+        initTree();
     }
 
     private void initTree() {
@@ -94,6 +89,8 @@ public class NonbranchyTree {
             throw new IllegalArgumentException("Illegal size of nodes: "
                                              + size + ", must be at least 1.");
         }
+        // ensure that LocalRandom is loaded and has enough memory
+        LocalRandom.nextBoolean();
         root = createTree(numberOfNodes, size);
     }
 
@@ -119,7 +116,7 @@ public class NonbranchyTree {
                 // Create a few nodes
                 if (makeRightNode()) {
                     // The node will have two sons
-                    int leftNodes = 1 + random.nextInt(numberOfNodes - 2);
+                    int leftNodes = 1 + LocalRandom.nextInt(numberOfNodes - 2);
                     int rightNodes = numberOfNodes - 1 - leftNodes;
 
                     node.left = createTree(leftNodes, size);
@@ -142,7 +139,7 @@ public class NonbranchyTree {
 
     // Define the "branchiness" of the tree
     private boolean makeRightNode() {
-        return (random.nextFloat() < branchiness);
+        return (LocalRandom.nextFloat() < branchiness);
     }
 
     /**

@@ -587,9 +587,9 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // to deallocate.
   assert(array_klasses() == NULL, "array classes shouldn't be created for this class yet");
 
-  // Release C heap allocated data that this might point to, which includes
+  // Release C heap allocated data that this points to, which includes
   // reference counting symbol names.
-  release_C_heap_structures();
+  release_C_heap_structures_internal();
 
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
@@ -1378,14 +1378,14 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
       // Check if update has already taken place
       if (array_klasses() == NULL) {
-        Klass*    k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
+        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
         // use 'release' to pair with lock-free load
         release_set_array_klasses(k);
       }
     }
   }
   // _this will always be set at this point
-  ObjArrayKlass* oak = (ObjArrayKlass*)array_klasses();
+  ObjArrayKlass* oak = array_klasses();
   if (or_null) {
     return oak->array_klass_or_null(n);
   }
@@ -1624,12 +1624,12 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
 
 void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
   if (array_klasses() != NULL)
-    ArrayKlass::cast(array_klasses())->array_klasses_do(f, THREAD);
+    array_klasses()->array_klasses_do(f, THREAD);
 }
 
 void InstanceKlass::array_klasses_do(void f(Klass* k)) {
   if (array_klasses() != NULL)
-    ArrayKlass::cast(array_klasses())->array_klasses_do(f);
+    array_klasses()->array_klasses_do(f);
 }
 
 #ifdef ASSERT
@@ -2386,7 +2386,6 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push((Klass**)&_array_klasses);
   it->push(&_constants);
   it->push(&_inner_classes);
-  it->push(&_array_name);
 #if INCLUDE_JVMTI
   it->push(&_previous_versions);
 #endif
@@ -2513,7 +2512,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != NULL) {
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    ArrayKlass::cast(array_klasses())->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize current biased locking state.
@@ -2581,17 +2580,19 @@ static void method_release_C_heap_structures(Method* m) {
   m->release_C_heap_structures();
 }
 
-void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
+void InstanceKlass::release_C_heap_structures() {
+
   // Clean up C heap
-  ik->release_C_heap_structures();
-  ik->constants()->release_C_heap_structures();
+  release_C_heap_structures_internal();
+  constants()->release_C_heap_structures();
 
   // Deallocate and call destructors for MDO mutexes
-  ik->methods_do(method_release_C_heap_structures);
-
+  methods_do(method_release_C_heap_structures);
 }
 
-void InstanceKlass::release_C_heap_structures() {
+void InstanceKlass::release_C_heap_structures_internal() {
+  Klass::release_C_heap_structures();
+
   // Can't release the constant pool here because the constant pool can be
   // deallocated separately from the InstanceKlass for default methods and
   // redefine classes.
@@ -2629,12 +2630,6 @@ void InstanceKlass::release_C_heap_structures() {
   }
 #endif
 
-  // Decrement symbol reference counts associated with the unloaded class.
-  if (_name != NULL) _name->decrement_refcount();
-
-  // unreference array name derived from this class name (arrays of an unloaded
-  // class can't be referenced anymore).
-  if (_array_name != NULL)  _array_name->decrement_refcount();
   FREE_C_HEAP_ARRAY(char, _source_debug_extension);
 }
 
@@ -3719,9 +3714,6 @@ void InstanceKlass::verify_on(outputStream* st) {
   }
 
   // Verify other fields
-  if (array_klasses() != NULL) {
-    guarantee(array_klasses()->is_klass(), "should be klass");
-  }
   if (constants() != NULL) {
     guarantee(constants()->is_constantPool(), "should be constant pool");
   }

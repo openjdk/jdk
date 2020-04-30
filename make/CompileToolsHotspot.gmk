@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ include $(SPEC)
 include MakeBase.gmk
 
 include JavaCompilation.gmk
-include SetupJavaCompilers.gmk
 
 TARGETS :=
 
@@ -45,7 +44,7 @@ ifeq ($(INCLUDE_GRAAL), true)
   ##############################################################################
   # Compile the annotation processors
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_MATCH_PROCESSOR, \
-      SETUP := GENERATE_OLDBYTECODE, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
       SRC := \
           $(SRC_DIR)/org.graalvm.compiler.processor/src \
           $(SRC_DIR)/org.graalvm.compiler.core.match.processor/src \
@@ -53,6 +52,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       EXCLUDE_FILES := $(EXCLUDE_FILES), \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.match.processor, \
       JAR := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.match.processor.jar, \
+      DISABLED_WARNINGS := options, \
   ))
 
   TARGETS += $(BUILD_VM_COMPILER_MATCH_PROCESSOR)
@@ -60,13 +60,14 @@ ifeq ($(INCLUDE_GRAAL), true)
   ##############################################################################
 
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_NODEINFO_PROCESSOR, \
-      SETUP := GENERATE_OLDBYTECODE, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
       SRC := \
           $(SRC_DIR)/org.graalvm.compiler.processor/src \
           $(SRC_DIR)/org.graalvm.compiler.nodeinfo.processor/src \
           , \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.nodeinfo.processor, \
       JAR := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.nodeinfo.processor.jar, \
+      DISABLED_WARNINGS := options, \
   ))
 
   TARGETS += $(BUILD_VM_COMPILER_NODEINFO_PROCESSOR)
@@ -74,7 +75,8 @@ ifeq ($(INCLUDE_GRAAL), true)
   ##############################################################################
 
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_OPTIONS_PROCESSOR, \
-      SETUP := GENERATE_OLDBYTECODE, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+      DISABLED_WARNINGS := options, \
       SRC := \
           $(SRC_DIR)/org.graalvm.compiler.processor/src \
           $(SRC_DIR)/org.graalvm.compiler.options.processor/src \
@@ -88,7 +90,7 @@ ifeq ($(INCLUDE_GRAAL), true)
   ##############################################################################
 
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_REPLACEMENTS_PROCESSOR, \
-      SETUP := GENERATE_OLDBYTECODE, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
       SRC := \
           $(SRC_DIR)/org.graalvm.compiler.processor/src \
           $(SRC_DIR)/org.graalvm.compiler.replacements.processor/src \
@@ -96,6 +98,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       EXCLUDE_FILES := $(EXCLUDE_FILES), \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier, \
       JAR := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar, \
+      DISABLED_WARNINGS := options, \
   ))
 
   TARGETS += $(BUILD_VM_COMPILER_REPLACEMENTS_PROCESSOR)
@@ -103,7 +106,7 @@ ifeq ($(INCLUDE_GRAAL), true)
   ##############################################################################
 
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_SERVICEPROVIDER_PROCESSOR, \
-      SETUP := GENERATE_OLDBYTECODE, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
       SRC := \
           $(SRC_DIR)/org.graalvm.compiler.processor/src \
           $(SRC_DIR)/org.graalvm.compiler.serviceprovider.processor/src \
@@ -111,6 +114,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       EXCLUDE_FILES := $(EXCLUDE_FILES), \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.serviceprovider.processor, \
       JAR := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.serviceprovider.processor.jar, \
+      DISABLED_WARNINGS := options, \
   ))
 
   TARGETS += $(BUILD_VM_COMPILER_SERVICEPROVIDER_PROCESSOR)

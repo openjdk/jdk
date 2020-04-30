@@ -23,10 +23,8 @@
 
 package jdk.test.lib.apps;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -40,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.UUID;
+
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputBuffer;
 import jdk.test.lib.process.StreamPumper;
@@ -49,9 +49,18 @@ import jdk.test.lib.process.StreamPumper;
  * to make further attach actions reliable across supported platforms
 
  * Caller example:
- *   SmartTestApp a = SmartTestApp.startApp(cmd);
+ *
+ *   LingeredApp a = LingeredApp.startApp(cmd);
+ *     // do something.
+ *     // a.getPid(). a.getProcess(), a.getProcessStdout() are available.
+ *   LingeredApp.stopApp(a);
+ *
+ *   for use custom LingeredApp (class SmartTestApp extends LingeredApp):
+ *
+ *   SmartTestApp = new SmartTestApp();
+ *   LingeredApp.startApp(a, cmd);
  *     // do something
- *   a.stopApp();
+ *   a.stopApp();   // LingeredApp.stopApp(a) can be used as well
  *
  *   or fine grained control
  *
@@ -63,10 +72,9 @@ import jdk.test.lib.process.StreamPumper;
  *   a.deleteLock();
  *   a.waitAppTerminate();
  *
- *  Then you can work with app output and process object
+ *  After app termination (stopApp/waitAppTermination) its output is available
  *
  *   output = a.getAppOutput();
- *   process = a.getProcess();
  *
  */
 public class LingeredApp {
@@ -144,7 +152,7 @@ public class LingeredApp {
             throw new RuntimeException("Process is still alive. Can't get its output.");
         }
         if (output == null) {
-            output = OutputBuffer.of(stdoutBuffer.toString(), stderrBuffer.toString());
+            output = OutputBuffer.of(stdoutBuffer.toString(), stderrBuffer.toString(), appProcess.exitValue());
         }
         return output;
     }
@@ -166,18 +174,6 @@ public class LingeredApp {
 
         outPumperThread.start();
         errPumperThread.start();
-    }
-
-    /**
-     *
-     * @return application output as List. Empty List if application produced no output
-     */
-    public List<String> getAppOutput() {
-        if (appProcess.isAlive()) {
-            throw new RuntimeException("Process is still alive. Can't get its output.");
-        }
-        BufferedReader bufReader = new BufferedReader(new StringReader(output.getStdout()));
-        return bufReader.lines().collect(Collectors.toList());
     }
 
     /* Make sure all part of the app use the same method to get dates,
@@ -241,14 +237,16 @@ public class LingeredApp {
      * The app touches the lock file when it's started
      * wait while it happens. Caller have to delete lock on wait error.
      *
-     * @param timeout
+     * @param timeout timeout in seconds
      * @throws java.io.IOException
      */
     public void waitAppReady(long timeout) throws IOException {
+        // adjust timeout for timeout_factor and convert to ms
+        timeout = Utils.adjustTimeout(timeout) * 1000;
         long here = epoch();
         while (true) {
             long epoch = epoch();
-            if (epoch - here > (timeout * 1000)) {
+            if (epoch - here > timeout) {
                 throw new IOException("App waiting timeout");
             }
 
@@ -272,29 +270,19 @@ public class LingeredApp {
     }
 
     /**
+     * Waits the application to start with the default timeout.
+     */
+    public void waitAppReady() throws IOException {
+        waitAppReady(appWaitTime);
+    }
+
+    /**
      * Analyze an environment and prepare a command line to
      * run the app, app name should be added explicitly
      */
     private List<String> runAppPrepare(String[] vmArguments) {
-        // We should always use testjava or throw an exception,
-        // so we can't use JDKToolFinder.getJDKTool("java");
-        // that falls back to compile java on error
-        String jdkPath = System.getProperty("test.jdk");
-        if (jdkPath == null) {
-            // we are not under jtreg, try env
-            Map<String, String> env = System.getenv();
-            jdkPath = env.get("TESTJAVA");
-        }
-
-        if (jdkPath == null) {
-            throw new RuntimeException("Can't determine jdk path neither test.jdk property no TESTJAVA env are set");
-        }
-
-        String osname = System.getProperty("os.name");
-        String javapath = jdkPath + ((osname.startsWith("window")) ? "/bin/java.exe" : "/bin/java");
-
-        List<String> cmd = new ArrayList<String>();
-        cmd.add(javapath);
+        List<String> cmd = new ArrayList<>();
+        cmd.add(JDKToolFinder.getTestJDKTool("java"));
         Collections.addAll(cmd, vmArguments);
 
         // Make sure we set correct classpath to run the app
@@ -318,12 +306,9 @@ public class LingeredApp {
      */
     public void printCommandLine(List<String> cmd) {
         // A bit of verbosity
-        StringBuilder cmdLine = new StringBuilder();
-        for (String strCmd : cmd) {
-            cmdLine.append("'").append(strCmd).append("' ");
-        }
-
-        System.err.println("Command line: [" + cmdLine.toString() + "]");
+        System.out.println(cmd.stream()
+                .map(s -> "'" + s + "'")
+                .collect(Collectors.joining(" ", "Command line: [", "]")));
     }
 
     /**
@@ -357,7 +342,7 @@ public class LingeredApp {
                     " LingeredApp stderr: [" + output.getStderr() + "]\n" +
                     " LingeredApp exitValue = " + appProcess.exitValue();
 
-            System.err.println(msg);
+            System.out.println(msg);
         }
     }
 
@@ -398,7 +383,7 @@ public class LingeredApp {
         theApp.createLock();
         try {
             theApp.runAppExactJvmOpts(jvmOpts);
-            theApp.waitAppReady(appWaitTime);
+            theApp.waitAppReady();
         } catch (Exception ex) {
             theApp.deleteLock();
             throw ex;
@@ -428,7 +413,7 @@ public class LingeredApp {
         try {
             startApp(a, additionalJvmOpts);
         } catch (Exception ex) {
-            System.err.println("LingeredApp failed to start: " + ex);
+            System.out.println("LingeredApp failed to start: " + ex);
             a.finishApp();
             throw ex;
         }

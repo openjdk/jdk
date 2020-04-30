@@ -393,72 +393,11 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
 ])
 
 
-AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
+AC_DEFUN_ONCE([BPERF_SETUP_JAVAC_SERVER],
 [
-  AC_ARG_WITH(sjavac-server-java, [AS_HELP_STRING([--with-sjavac-server-java],
-      [use this java binary for running the sjavac background server @<:@Boot JDK java@:>@])])
-
-  if test "x$with_sjavac_server_java" != x; then
-    SJAVAC_SERVER_JAVA="$with_sjavac_server_java"
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" = x; then
-      AC_MSG_ERROR([Could not execute server java: $SJAVAC_SERVER_JAVA])
-    fi
-  else
-    SJAVAC_SERVER_JAVA="$JAVA"
-  fi
-  AC_SUBST(SJAVAC_SERVER_JAVA)
-
-  if test "$MEMORY_SIZE" -gt "3000"; then
-    if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
-      JVM_64BIT=true
-    fi
-  fi
-
-  MX_VALUE=`expr $MEMORY_SIZE / 2`
-  if test "$JVM_64BIT" = true; then
-    # Set ms lower than mx since more than one instance of the server might
-    # get launched at the same time before they figure out which instance won.
-    MS_VALUE=512
-    if test "$MX_VALUE" -gt "2048"; then
-      MX_VALUE=2048
-    fi
-  else
-    MS_VALUE=256
-    if test "$MX_VALUE" -gt "1500"; then
-      MX_VALUE=1500
-    fi
-  fi
-  if test "$MX_VALUE" -lt "512"; then
-    MX_VALUE=512
-  fi
-
-  JAVAC_SERVER_AVAILABLE=true
-  SJAVAC_MEMORY_OPT="-Xms${MS_VALUE}M -Xmx${MX_VALUE}M"
-  UTIL_ADD_JVM_ARG_IF_OK([$SJAVAC_MEMORY_OPT],SJAVAC_SERVER_JAVA_FLAGS,[$SJAVAC_SERVER_JAVA])
-  if test "x$JVM_ARG_OK" = "xfalse"; then
-    AC_MSG_WARN([Could not set '$SJAVAC_MEMORY_OPT' on bootjdk, disabling sjavac and javac server])
-    JAVAC_SERVER_AVAILABLE=false
-  fi
-  AC_SUBST(SJAVAC_SERVER_JAVA_FLAGS)
-
-  UTIL_ARG_ENABLE(NAME: sjavac, DEFAULT: false, AVAILABLE: $JAVAC_SERVER_AVAILABLE,
-      DESC: [use sjavac to do fast incremental compiles],
-      CHECKING_MSG: [whether to use sjavac],
-      IF_ENABLED: [ ENABLE_SJAVAC="yes" ],
-      IF_DISABLED: [ ENABLE_SJAVAC="no" ])
-  AC_SUBST(ENABLE_SJAVAC)
-
-  UTIL_ARG_ENABLE(NAME: javac-server, DEFAULT: true, AVAILABLE: $JAVAC_SERVER_AVAILABLE,
+  UTIL_ARG_ENABLE(NAME: javac-server, DEFAULT: true,
+      RESULT: ENABLE_JAVAC_SERVER,
       DESC: [enable javac server],
-      CHECKING_MSG: [whether to use javac server],
-      IF_ENABLED: [ ENABLE_JAVAC_SERVER="yes" ],
-      IF_DISABLED: [ ENABLE_JAVAC_SERVER="no" ])
+      CHECKING_MSG: [whether to use javac server])
   AC_SUBST(ENABLE_JAVAC_SERVER)
-
-  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || test "x$ENABLE_SJAVAC" = "xyes"; then
-    # When using a server javac, the small client instances do not need much
-    # resources.
-    JAVA_FLAGS_JAVAC="$JAVA_FLAGS_SMALL"
-  fi
 ])

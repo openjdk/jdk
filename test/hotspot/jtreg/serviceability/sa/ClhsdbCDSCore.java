@@ -31,7 +31,7 @@
  * @requires vm.flavor == "server"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm/timeout=2400 -Xmx1g ClhsdbCDSCore
+ * @run driver/timeout=2400 ClhsdbCDSCore
  */
 
 import java.io.File;

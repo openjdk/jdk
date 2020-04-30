@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8187436
  * @summary Test that getPackage() works with a class loaded via -Xbootclasspath/a.
  * @library /test/lib
- * @run main/othervm GetPackageXbootclasspath
+ * @run driver GetPackageXbootclasspath
  */
 
 // This is a regression test for a bug with the exploded build but should pass

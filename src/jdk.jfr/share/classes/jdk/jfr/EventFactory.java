@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ public final class EventFactory {
         try {
             return new EventFactory(eventClass, sanitizedAnnotation, sanitizedFields);
         } catch (IllegalAccessException e) {
-            throw new IllegalAccessError("Could not accees constructor of generated event handler, " + e.getMessage());
+            throw new IllegalAccessError("Could not access constructor of generated event handler, " + e.getMessage());
         } catch (NoSuchMethodException e) {
             throw new InternalError("Could not find constructor in generated event handler, " + e.getMessage());
         }
@@ -189,7 +189,7 @@ public final class EventFactory {
         try {
             return (Event) constructorHandle.invoke();
         } catch (Throwable e) {
-            throw new InstantiationError("Could not instantaite dynamically generated event class " + eventClass.getName() + ". " + e.getMessage());
+            throw new InstantiationError("Could not instantiate dynamically generated event class " + eventClass.getName() + ". " + e.getMessage());
         }
     }
 

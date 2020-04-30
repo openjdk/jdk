@@ -29,16 +29,9 @@
 JFR_TOOLS_SRCDIR := $(TOPDIR)/make/src/classes
 JFR_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/buildtools/tools_classes
 
-$(eval $(call SetupJavaCompiler, GENERATE_JFRBYTECODE, \
-    JAVAC := $(JAVAC), \
-    FLAGS := -Xlint:all -Werror, \
-    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
-    SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
-    DISABLE_SJAVAC := true, \
-))
-
 $(eval $(call SetupJavaCompilation, BUILD_JFR_TOOLS, \
-    SETUP := GENERATE_JFRBYTECODE, \
+    COMPILER := bootjdk, \
+    SMALL_JAVA := false, \
     SRC := $(JFR_TOOLS_SRCDIR), \
     BIN := $(JFR_TOOLS_OUTPUTDIR), \
     DISABLED_WARNINGS := try, \

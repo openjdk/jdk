@@ -52,7 +52,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.ui.classbrowser
- * @run main/othervm TestCpoolForInvokeDynamic
+ * @run main TestCpoolForInvokeDynamic
  */
 
 public class TestCpoolForInvokeDynamic {
@@ -90,8 +90,8 @@ public class TestCpoolForInvokeDynamic {
     private static void createAnotherToAttach(
                             String[] instanceKlassNames,
                             long lingeredAppPid) throws Exception {
-
-        String[] toolArgs = {
+        // Start a new process to attach to the lingered app
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
@@ -99,11 +99,7 @@ public class TestCpoolForInvokeDynamic {
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.ui.classbrowser=ALL-UNNAMED",
             "TestCpoolForInvokeDynamic",
-            Long.toString(lingeredAppPid)
-        };
-
-        // Start a new process to attach to the lingered app
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(toolArgs);
+            Long.toString(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);

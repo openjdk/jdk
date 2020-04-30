@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,32 +75,32 @@ import java.lang.annotation.Target;
  * <tr>
  * <th scope="row">1</th>
  * <th scope="row">File Upload</th>
- * <td><code>@Category("Upload")</code></td>
+ * <td>{@code @Category("Upload")}</td>
  * </tr>
  * <tr>
  * <th scope="row">2</th>
  * <th scope="row">Image Read</th>
- * <td><code>@Category({"Upload", "Image Upload"})</code></td>
+ * <td>{@code @Category({"Upload", "Image Upload"})}</td>
  * </tr>
  * <tr>
  * <th scope="row">2</th>
  * <th scope="row">Image Resize</th>
- * <td><code>@Category({"Upload", "Image Upload"})</code></td>
+ * <td>{@code @Category({"Upload", "Image Upload"})}</td>
  * </tr>
  * <tr>
  * <th scope="row">2</th>
  * <th scope="row">Image Write</th>
- * <td><code>@Category({"Upload", "Image Upload"})</code></td>
+ * <td>{@code @Category({"Upload", "Image Upload"})}</td>
  * </tr>
  * <tr>
  * <th scope="row">3</th>
  * <th scope="row">Socket Read</th>
- * <td><code>@Category("Java Application")</code></td>
+ * <td>{@code @Category("Java Application")}</td>
  * </tr>
  * <tr>
  * <th scope="row">3</th>
  * <th scope="row">File Write</th>
- * <td><code>@Category("Java Application")</code></td>
+ * <td>{@code @Category("Java Application")}</td>
  * </tr>
  * </tbody>
  * </table>

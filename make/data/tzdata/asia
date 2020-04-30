@@ -309,6 +309,27 @@ Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 
 # China
 
+# From Phake Nick (2020-04-15):
+# According to this news report:
+# http://news.sina.com.cn/c/2004-09-01/19524201403.shtml
+# on April 11, 1919, newspaper in Shanghai said clocks in Shanghai will spring
+# forward for an hour starting from midnight of that Saturday. The report did
+# not mention what happened in Shanghai thereafter, but it mentioned that a
+# similar trial in Tianjin which ended at October 1st as citizens are told to
+# recede the clock on September 30 from 12:00pm to 11:00pm. The trial at
+# Tianjin got terminated in 1920.
+#
+# From Paul Eggert (2020-04-15):
+# The Returns of Trade and Trade Reports, page 711, says "Daylight saving was
+# given a trial during the year, and from the 12th April to the 1st October
+# the clocks were all set one hour ahead of sun time.  Though the scheme was
+# generally esteemed a success, it was announced early in 1920 that it would
+# not be repeated."
+#
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Shang	1919	only	-	Apr	12	24:00	1:00	D
+Rule	Shang	1919	only	-	Sep	30	24:00	0	S
+
 # From Paul Eggert (2018-10-02):
 # The following comes from Table 1 of:
 # Li Yu. Research on the daylight saving movement in 1940s Shanghai.
@@ -317,6 +338,89 @@ Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 # The table lists dates only; I am guessing 00:00 and 24:00 transition times.
 # Also, the table lists the planned end of DST in 1949, but the corresponding
 # zone line cuts this off on May 28, when the Communists took power.
+
+# From Phake Nick (2020-04-15):
+#
+# For the history of time in Shanghai between 1940-1942, the situation is
+# actually slightly more complex than the table [below]....  At the time,
+# there were three different authorities in Shanghai, including Shanghai
+# International Settlement, a settlement established by western countries with
+# its own westernized form of government, Shanghai French Concession, similar
+# to the international settlement but is controlled by French, and then the
+# rest of the city of Shanghai, which have already been controlled by Japanese
+# force through a puppet local government (Wang Jingwei regime).  It was
+# additionally complicated by the circumstances that, according to the 1940s
+# Shanghai summer time essay cited in the database, some
+# departments/businesses/people in the Shanghai city itself during that time
+# period, refused to change their clock and instead only changed their opening
+# hours.
+#
+# For example, as quoted in the article, in 1940, other than the authority
+# itself, power, tram, bus companies, cinema, department stores, and other
+# public service organizations have all decided to follow the summer time and
+# spring forward the clock.  On the other hand, the custom office refused to
+# spring forward the clock because of worry on mechanical wear to the physical
+# clock, postal office refused to spring forward because of disruption to
+# business and log-keeping, although they did changed their office hour to
+# match rest of the city.  So is travel agents, and also weather
+# observatory.  It is said both time standards had their own supporters in the
+# city at the time, those who prefer new time standard would have moved their
+# clock while those who prefer the old time standard would keep their clock
+# unchange, and there were different clocks that use different time standard
+# in the city at the time for people who use different time standard to adjust
+# their clock to their preferred time.
+#
+# a. For the 1940 May 31 spring forward, the essay claim that it was
+# coordinared between the international settlement authority and the French
+# concession authority and have gathered support from Hong Kong and Xiamen,
+# that it would spring forward an hour from May 31 "midnight", and the essay
+# claim "Hong Kong government implemented the spring forward in the same time
+# on the same date as Shanghai".
+#
+# b. For the 1940 fall back, it was said that they initially intended to do
+# so on September 30 00:59 at night, however they postponed it to October 12
+# after discussion with relevant parties. However schools restored to the
+# original schedule ten days earlier.
+#
+# c. For the 1941 spring forward, it is said to start from March 15
+# "following the previous year's method", and in addition to that the essay
+# cited an announcement in 1941 from the Wang regime which said the Special
+# City of Shanghai under Wang regime control will follow the DST rule set by
+# the Settlements, irrespective of the original DST plan announced by the Wang
+# regime for other area under its control(April 1 to September 30). (no idea
+# to situation before that announcement)
+#
+# d. For the 1941 fall back, it was said that the fall back would occurs at
+# the end of September (A newspaper headline cited by the essay, published on
+# October 1, 1941, have the headlines which said "French Concession would
+# rewind to the old clock this morning), but it ultimately didn't happen due
+# to disagreement between the international settlement authority and the
+# French concession authority, and the fall back ultimately occurred on
+# November 1.
+#
+# e. In 1941 December, Japan have officially started war with the United
+# States and the United Kingdom, and in Shanghai they have marched into the
+# international settlement, taken over its control
+#
+# f. For the 1942 spring forward, the essay said that the spring forward
+# started on January 31. It said this time the custom office and postal
+# department will also change their clocks, unlike before.
+#
+# g. The essay itself didn't cover any specific changes thereafter until the
+# end of the war, it quoted a November 1942 command from the government of the
+# Wang regime, which claim the daylight saving time applies year round during
+# the war. However, the essay ambiguously said the period is "February 1 to
+# September 30", which I don't really understand what is the meaning of such
+# period in the context of year round implementation here.. More researches
+# might be needed to show exactly what happened during that period of time.
+
+# From Phake Nick (2020-04-15):
+# According to a Japanese tour bus pamphlet in Nanjing area believed to be
+# from around year 1941: http://www.tt-museum.jp/tairiku_0280_nan1941.html ,
+# the schedule listed was in the format of Japanese time.  Which indicate some
+# use of the Japanese time (instead of syncing by DST) might have occurred in
+# the Yangtze river delta area during that period of time although the scope
+# of such use will need to be investigated to determine.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Shang	1940	only	-	Jun	 1	 0:00	1:00	D
@@ -595,7 +699,7 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 			6:00	-	+06
 
 
-# Hong Kong (Xianggang)
+# Hong Kong
 
 # Milne gives 7:36:41.7; round this.
 
@@ -605,9 +709,7 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 # it is not [an] observatory, but the official meteorological agency of HK,
 # and also serves as the official timing agency), there are some missing
 # and incorrect rules. Although the exact switch over time is missing, I
-# think 3:30 is correct. The official DST record for Hong Kong can be
-# obtained from
-# http://www.hko.gov.hk/gts/time/Summertime.htm
+# think 3:30 is correct.
 
 # From Phake Nick (2018-10-27):
 # According to Singaporean newspaper
@@ -718,10 +820,10 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 #   Resolution of the Legislative Council passed on 9 May 1979
 #	https://www.legco.gov.hk/yr78-79/english/lc_sitg/hansard/h790509.pdf#page=39
 
-# From Paul Eggert (2019-05-31):
+# From Paul Eggert (2020-04-15):
 # Here are the dates given at
-# https://www.hko.gov.hk/gts/time/Summertime.htm
-# as of 2014-06-19:
+# https://www.hko.gov.hk/en/gts/time/Summertime.htm
+# as of 2020-02-10:
 # Year        Period
 # 1941        15 Jun to 30 Sep
 # 1942        Whole year
@@ -1851,6 +1953,47 @@ Zone	Asia/Jerusalem	2:20:54 -	LMT	1880
 
 # '9:00' and 'JST' is from Guy Harris.
 
+# From Paul Eggert (2020-01-19):
+# Starting in the 7th century, Japan generally followed an ancient Chinese
+# timekeeping system that divided night and day into six hours each,
+# with hour length depending on season.  In 1873 the government
+# started requiring the use of a Western style 24-hour clock.  See:
+# Yulia Frumer, "Making Time: Astronomical Time Measurement in Tokugawa Japan"
+# <https://www.worldcat.org/oclc/1043907065>.  As the tzdb code and
+# data support only 24-hour clocks, its tables model timestamps before
+# 1873 using Western-style local mean time.
+
+# From Hideyuki Suzuki (1998-11-09):
+# 'Tokyo' usually stands for the former location of Tokyo Astronomical
+# Observatory: 139° 44' 40.90" E (9h 18m 58.727s), 35° 39' 16.0" N.
+# This data is from 'Rika Nenpyou (Chronological Scientific Tables) 1996'
+# edited by National Astronomical Observatory of Japan....
+# JST (Japan Standard Time) has been used since 1888-01-01 00:00 (JST).
+# The law is enacted on 1886-07-07.
+
+# From Hideyuki Suzuki (1998-11-16):
+# The ordinance No. 51 (1886) established "standard time" in Japan,
+# which stands for the time on 135° E.
+# In the ordinance No. 167 (1895), "standard time" was renamed to "central
+# standard time".  And the same ordinance also established "western standard
+# time", which stands for the time on 120° E....  But "western standard
+# time" was abolished in the ordinance No. 529 (1937).  In the ordinance No.
+# 167, there is no mention regarding for what place western standard time is
+# standard....
+#
+# I wrote "ordinance" above, but I don't know how to translate.
+# In Japanese it's "chokurei", which means ordinance from emperor.
+
+# From Yu-Cheng Chuang (2013-07-12):
+# ...the Meiji Emperor announced Ordinance No. 167 of Meiji Year 28 "The clause
+# about standard time" ... The adoption began from Jan 1, 1896.
+# https://ja.wikisource.org/wiki/標準時ニ關スル件_(公布時)
+#
+# ...the Showa Emperor announced Ordinance No. 529 of Showa Year 12 ... which
+# means the whole Japan territory, including later occupations, adopt Japan
+# Central Time (UT+9). The adoption began on Oct 1, 1937.
+# https://ja.wikisource.org/wiki/明治二十八年勅令第百六十七號標準時ニ關スル件中改正ノ件
+
 # From Paul Eggert (1995-03-06):
 # Today's _Asahi Evening News_ (page 4) reports that Japan had
 # daylight saving between 1948 and 1951, but "the system was discontinued
@@ -1898,37 +2041,6 @@ Rule	Japan	1948	only	-	May	Sat>=1	24:00	1:00	D
 Rule	Japan	1948	1951	-	Sep	Sat>=8	25:00	0	S
 Rule	Japan	1949	only	-	Apr	Sat>=1	24:00	1:00	D
 Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
-
-# From Hideyuki Suzuki (1998-11-09):
-# 'Tokyo' usually stands for the former location of Tokyo Astronomical
-# Observatory: 139° 44' 40.90" E (9h 18m 58.727s), 35° 39' 16.0" N.
-# This data is from 'Rika Nenpyou (Chronological Scientific Tables) 1996'
-# edited by National Astronomical Observatory of Japan....
-# JST (Japan Standard Time) has been used since 1888-01-01 00:00 (JST).
-# The law is enacted on 1886-07-07.
-
-# From Hideyuki Suzuki (1998-11-16):
-# The ordinance No. 51 (1886) established "standard time" in Japan,
-# which stands for the time on 135° E.
-# In the ordinance No. 167 (1895), "standard time" was renamed to "central
-# standard time".  And the same ordinance also established "western standard
-# time", which stands for the time on 120° E....  But "western standard
-# time" was abolished in the ordinance No. 529 (1937).  In the ordinance No.
-# 167, there is no mention regarding for what place western standard time is
-# standard....
-#
-# I wrote "ordinance" above, but I don't know how to translate.
-# In Japanese it's "chokurei", which means ordinance from emperor.
-
-# From Yu-Cheng Chuang (2013-07-12):
-# ...the Meiji Emperor announced Ordinance No. 167 of Meiji Year 28 "The clause
-# about standard time" ... The adoption began from Jan 1, 1896.
-# https://ja.wikisource.org/wiki/標準時ニ關スル件_(公布時)
-#
-# ...the Showa Emperor announced Ordinance No. 529 of Showa Year 12 ... which
-# means the whole Japan territory, including later occupations, adopt Japan
-# Central Time (UT+9). The adoption began on Oct 1, 1937.
-# https://ja.wikisource.org/wiki/明治二十八年勅令第百六十七號標準時ニ關スル件中改正ノ件
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
@@ -3109,22 +3221,9 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # [T]he Palestinian cabinet decision (Mar 8th 2016) published on
 # http://www.palestinecabinet.gov.ps/WebSite/Upload/Decree/GOV_17/16032016134830.pdf
 # states that summer time will end on Oct 29th at 01:00.
-#
-# From Tim Parenti (2016-10-19):
-# Predict fall transitions on October's last Saturday at 01:00 from now on.
-# This is consistent with the 2016 transition as well as our spring
-# predictions.
-#
-# From Paul Eggert (2016-10-19):
-# It's also consistent with predictions in the following URLs today:
-# https://www.timeanddate.com/time/change/gaza-strip/gaza
-# https://www.timeanddate.com/time/change/west-bank/hebron
 
 # From Sharef Mustafa (2018-03-16):
-# Palestine summer time will start on Mar 24th 2018 by advancing the
-# clock by 60 minutes as per Palestinian cabinet decision published on
-# the official website, though the decree did not specify the exact
-# time of the time shift.
+# Palestine summer time will start on Mar 24th 2018 ...
 # http://www.palestinecabinet.gov.ps/Website/AR/NDecrees/ViewFile.ashx?ID=e7a42ab7-ee23-435a-b9c8-a4f7e81f3817
 
 # From Even Scharning (2019-03-23):
@@ -3134,15 +3233,20 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # From Sharif Mustafa (2019-03-26):
 # The Palestinian cabinet announced today that the switch to DST will
 # be on Fri Mar 29th 2019 by advancing the clock by 60 minutes.
-# The decree signing date is Mar 12th but it was not published till today.
-# The decree does not specify the exact time of switch.
 # http://palestinecabinet.gov.ps/Website/AR/NDecrees/ViewFile.ashx?ID=e54e9ea1-50ee-4137-84df-0d6c78da259b
 #
 # From Even Scharning (2019-04-10):
 # Our source in Palestine said it happened Friday 29 at 00:00 local time....
+
+# From Sharef Mustafa (2019-10-18):
+# Palestine summer time will end on midnight Oct 26th 2019 ...
+# http://www.palestinecabinet.gov.ps/website/ar/ViewDetails?ID=43948
 #
 # From Paul Eggert (2019-04-10):
 # For now, guess spring-ahead transitions are March's last Friday at 00:00.
+#
+# From Tim Parenti (2016-10-19):
+# Predict fall transitions on October's last Saturday at 01:00 from now on.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,6 @@ ReservedSpace::ReservedSpace(size_t size, size_t alignment,
                              bool large,
                              char* requested_address) : _fd_for_heap(-1) {
   initialize(size, alignment, large, requested_address, false);
-}
-
-ReservedSpace::ReservedSpace(size_t size, size_t alignment,
-                             bool large,
-                             bool executable) : _fd_for_heap(-1) {
-  initialize(size, alignment, large, NULL, executable);
 }
 
 ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
@@ -646,8 +640,8 @@ MemRegion ReservedHeapSpace::region() const {
 // executable.
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
-                                     bool large) :
-  ReservedSpace(r_size, rs_align, large, /*executable*/ true) {
+                                     bool large) : ReservedSpace() {
+  initialize(r_size, rs_align, large, /*requested address*/ NULL, /*executable*/ true);
   MemTracker::record_virtual_memory_type((address)base(), mtCode);
 }
 
@@ -1127,7 +1121,7 @@ class TestReservedSpace : AllStatic {
 
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
 
-    ReservedSpace rs(size, alignment, large, false);
+    ReservedSpace rs(size, alignment, large);
 
     assert(rs.base() != NULL, "Must be");
     assert(rs.size() == size, "Must be");
@@ -1255,7 +1249,7 @@ class TestVirtualSpace : AllStatic {
     case Commit:
       return ReservedSpace(reserve_size_aligned,
                            os::vm_allocation_granularity(),
-                           /* large */ false, /* exec */ false);
+                           /* large */ false);
     }
   }
 
@@ -1310,7 +1304,7 @@ class TestVirtualSpace : AllStatic {
 
     size_t large_page_size = os::large_page_size();
 
-    ReservedSpace reserved(large_page_size, large_page_size, true, false);
+    ReservedSpace reserved(large_page_size, large_page_size, true);
 
     assert(reserved.is_reserved(), "Must be");
 

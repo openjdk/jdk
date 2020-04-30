@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/heapRegionSet.hpp"
+#include "memory/allocation.hpp"
 #include "services/memoryUsage.hpp"
 
 class HeapRegion;
@@ -39,6 +40,20 @@ class WorkGang;
 class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
  protected:
   virtual HeapRegion* default_value() const { return NULL; }
+};
+
+// Helper class to define a range [start, end) of regions.
+class HeapRegionRange : public StackObj {
+  // Inclusive start of the range.
+  uint _start;
+  // Exclusive end of the range.
+  uint _end;
+ public:
+  HeapRegionRange(uint start, uint end);
+
+  uint start() const { return _start; }
+  uint end() const { return _end; }
+  uint length() const { return _end - _start; }
 };
 
 // This class keeps track of the actual heap memory, auxiliary data
@@ -107,10 +122,10 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   void assert_contiguous_range(uint start, uint num_regions) NOT_DEBUG_RETURN;
 
-  // Finds the next sequence of unavailable regions starting from start_idx. Returns the
-  // length of the sequence found. If this result is zero, no such sequence could be found,
-  // otherwise res_idx indicates the start index of these regions.
-  uint find_unavailable_from_idx(uint start_idx, uint* res_idx) const;
+  // Finds the next sequence of unavailable regions starting at the given index. Returns the
+  // sequence found as a HeapRegionRange. If no regions can be found, both start and end of
+  // the returned range is equal to max_regions().
+  HeapRegionRange find_unavailable_from_idx(uint index) const;
   // Finds the next sequence of empty regions starting from start_idx, going backwards in
   // the heap. Returns the length of the sequence found. If this value is zero, no
   // sequence could be found, otherwise res_idx contains the start index of this range.

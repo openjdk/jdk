@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
@@ -64,8 +63,11 @@ public class GetFlagValueTest {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        String[] arguments = {"-XX:+UnlockExperimentalVMOptions", "-XX:+EnableJVMCI", "-XX:+PrintFlagsFinal", "-version"};
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCI",
+            "-XX:+PrintFlagsFinal",
+            "-version");
         out = new OutputAnalyzer(pb.start());
 
         out.shouldHaveExitValue(0);

@@ -50,45 +50,45 @@ public class TestAbstractMethod extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 "<td class=\"col-first\"><code>default void</code></td>",
-                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\" "
-                + "aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\" "
+                + "aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\" "
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" "
                 + "onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
                 + " onclick=\"show(2);\">Instance Methods</button><button role=\"tab\""
-                + " aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-selected=\"false\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" onclick=\"show(4);\">"
                 + "Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">"
                 + "Default Methods</button></div>");
 
         checkOutput("pkg/B.html", true,
-                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
                 + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" onclick=\"show(4);\">"
                 + "Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"table-tab\""
                 + " onclick=\"show(8);\">Concrete Methods</button></div>",
                 "<td class=\"col-first\"><code>abstract void</code></td>");
 
         checkOutput("pkg/C.html", true,
-                "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"member-summary_tabpanel\" tabindex=\"0\""
+                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
+                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
                 + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
                 + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"member-summary_tabpanel\" tabindex=\"-1\""
+                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
                 + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">"
                 + "Default Methods</button></div>");
 
@@ -96,13 +96,13 @@ public class TestAbstractMethod extends JavadocTester {
                 "<td class=\"col-first\"><code>abstract void</code></td>");
 
         checkOutput("pkg/B.html", false,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\""
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"method-summary.tabpanel\""
                 + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\""
                 + " onclick=\"show(16);\">Default Methods</button>",
                 "<td class=\"col-first\"><code>default void</code></td>");
 
         checkOutput("pkg/C.html", false,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"member-summary_tabpanel\""
+                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"method-summary.tabpanel\""
                 + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\""
                 + " onclick=\"show(4);\">Abstract Methods</button>"
                 + "<span class=\"tab-end\">&nbsp;</span>");

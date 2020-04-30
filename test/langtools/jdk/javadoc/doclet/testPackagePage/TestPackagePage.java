@@ -84,8 +84,8 @@ public class TestPackagePage extends JavadocTester {
         checkOutput("help-doc.html", true,
             "<li>Package</li>");
         checkOutput("allclasses-index.html", true,
-                "<div class=\"type-summary\">\n<table>\n"
-                + "<caption><span>Class Summary</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                "<div class=\"type-summary\" id=\"all-classes-table\">\n<table class=\"summary-table\">\n"
+                + "<caption><span>Class Summary</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Class</th>\n"
@@ -93,8 +93,8 @@ public class TestPackagePage extends JavadocTester {
                 + "</tr>\n"
                 + "</thead>\n");
         checkOutput("allpackages-index.html", true,
-                "<div class=\"packages-summary\">\n<table>\n"
-                + "<caption><span>Package Summary</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                "<div class=\"packages-summary\">\n<table class=\"summary-table\">\n"
+                + "<caption><span>Package Summary</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Package</th>\n"

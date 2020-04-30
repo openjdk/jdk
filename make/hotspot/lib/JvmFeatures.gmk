@@ -55,6 +55,10 @@ ifeq ($(call check-jvm-feature, zero), true)
   endif
 endif
 
+ifeq ($(JVM_VARIANT), custom)
+  JVM_CFLAGS_FEATURES += -DVMTYPE=\"Custom\"
+endif
+
 ifeq ($(call check-jvm-feature, minimal), true)
   JVM_CFLAGS_FEATURES += -DMINIMAL_JVM -DVMTYPE=\"Minimal\"
   ifeq ($(call isTargetOs, linux), true)
@@ -151,8 +155,6 @@ endif
 ifneq ($(call check-jvm-feature, serialgc), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_SERIALGC=0
   JVM_EXCLUDE_PATTERNS += gc/serial
-  # If serial is disabled, we cannot use serial as OldGC in parallel
-  JVM_EXCLUDE_FILES += psMarkSweep.cpp psMarkSweepDecorator.cpp
 endif
 
 ifneq ($(call check-jvm-feature, epsilongc), true)

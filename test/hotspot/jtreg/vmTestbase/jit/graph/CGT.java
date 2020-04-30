@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,6 @@ public class CGT {
         System.out.println("  -help                               prints out this message");
         System.out.println("  -numTestClass #                     limits the number of \"Test Methods\" to #");
         System.out.println("  -randomcLoop #                      # of random function calls");
-        System.out.println("  -seed #                             uses the specified seed rather than the System Time");
         System.out.println("  -staticLoop #                       # of non-random static function calls");
         System.out.println("  -v -verbose                         turn on verbose mode");
         System.out.println("  -path <path to classlist>           required, argument so program can find classes");

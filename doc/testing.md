@@ -23,7 +23,7 @@ Some example command-lines:
     $ make test-jdk_lang JTREG="JOBS=8"
     $ make test TEST=jdk_lang
     $ make test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
-    $ make test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT_FACTOR=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
+    $ make test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT_FACTOR=8;JAVA_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
     $ make test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
     $ make test TEST="micro:java.lang.reflect" MICRO="FORK=1;WARMUP_ITER=2"
     $ make exploded-test TEST=tier2
@@ -190,11 +190,11 @@ pass unnoticed.
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell
 normally eats `;`, the recommended usage is to write the assignment inside
 qoutes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
-as in `JTREG="VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
+as in `JTREG="JAVA_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
 
 (Other ways are possible, e.g. using backslash: `JTREG=JOBS=1\;TIMEOUT_FACTOR=8`.
 Also, as a special technique, the string `%20` will be replaced with space for
-certain options, e.g. `JTREG=VM_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug`.
+certain options, e.g. `JTREG=JAVA_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug`.
 This can be useful if you have layers of scripts and have trouble getting
 proper quoting of command line arguments through.)
 
@@ -218,11 +218,11 @@ Currently only applies to JTReg.
 
 Currently only applies to JTReg.
 
-#### VM_OPTIONS
+#### JAVA_OPTIONS
 
 Applies to JTReg, GTest and Micro.
 
-#### JAVA_OPTIONS
+#### VM_OPTIONS
 
 Applies to JTReg, GTest and Micro.
 
@@ -250,7 +250,7 @@ Please note that running with JCov reporting can be very memory intensive.
 While collecting code coverage with JCov, it is also possible to find coverage
 for only recently changed code. JCOV_DIFF_CHANGESET specifies a source
 revision. A textual report will be generated showing coverage of the diff
-between the specified revision and the repository tip. 
+between the specified revision and the repository tip.
 
 The report is stored in `build/$BUILD/test-results/jcov-output/diff_coverage_report`
 file.
@@ -331,10 +331,15 @@ Additional options to the JTReg test framework.
 Use `JTREG="OPTIONS=--help all"` to see all available JTReg options.
 
 #### JAVA_OPTIONS
-Additional Java options to JTReg (`-javaoption`).
+Additional Java options for running test classes (sent to JTReg as
+`-javaoption`).
 
 #### VM_OPTIONS
-Additional VM options to JTReg (`-vmoption`).
+Additional Java options to be used when compiling and running classes (sent to
+JTReg as `-vmoption`).
+
+This option is only needed in special circumstances. To pass Java options to
+your test classes, use `JAVA_OPTIONS`.
 
 #### AOT_MODULES
 

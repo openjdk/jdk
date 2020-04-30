@@ -146,8 +146,7 @@ public class BMITestRunner {
                 new Integer(iterations).toString()
             });
 
-        OutputAnalyzer outputAnalyzer = ProcessTools.
-            executeTestJvm(vmOpts.toArray(new String[vmOpts.size()]));
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(vmOpts);
 
         outputAnalyzer.shouldHaveExitValue(0);
 

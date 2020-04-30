@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -47,6 +48,7 @@ public class AbsPathsInImage {
     // Set this property on command line to scan an alternate dir or file:
     // JTREG=JAVA_OPTIONS=-Djdk.test.build.AbsPathInImage.dir=/path/to/dir
     public static final String DIR_PROPERTY = "jdk.test.build.AbsPathsInImage.dir";
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
 
     private boolean matchFound = false;
 
@@ -119,7 +121,7 @@ public class AbsPathsInImage {
      * variants depending on platform.
      */
     private static void expandPatterns(List<byte[]> searchPatterns, String pattern) {
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        if (IS_WINDOWS) {
             String forward = pattern.replace('\\', '/');
             String back = pattern.replace('/', '\\');
             if (pattern.charAt(1) == ':') {
@@ -149,7 +151,7 @@ public class AbsPathsInImage {
                     return super.visitFile(file, attrs);
                 } else if (fileName.endsWith(".debuginfo") || fileName.endsWith(".pdb")) {
                     // Do nothing
-                } else if (fileName.endsWith("jvm.dll")) {
+                } else if (fileName.endsWith("jvm.dll") || fileName.endsWith("jpackage.dll")) {
                     // On Windows, the Microsoft toolchain does not provide a way
                     // to reliably remove all absolute paths from __FILE__ usage.
                     // Until that is fixed, we simply exclude jvm.dll from this
@@ -166,7 +168,16 @@ public class AbsPathsInImage {
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = scanBytes(Files.readAllBytes(file), searchPatterns);
+        // For the same reason as jvm.dll above, the jdk.incubator.jpackage module
+        // contains some unavoidable header references in the launcher which is
+        // stored as a java resource inside the modules file.
+        if (IS_WINDOWS && file.toString().endsWith("modules")) {
+            matches = matches.stream()
+                .filter(f -> !f.matches(".*jdk\\.incubator\\.jpackage.*\\.h.*"))
+                .collect(Collectors.toList());
+        }
         if (matches.size() > 0) {
+            matchFound = true;
             System.out.println(file + ":");
             for (String match : matches) {
                 System.out.println(match);
@@ -181,6 +192,7 @@ public class AbsPathsInImage {
             while ((zipEntry = zipInputStream.getNextEntry()) != null) {
                 List<String> matches = scanBytes(zipInputStream.readAllBytes(), searchPatterns);
                 if (matches.size() > 0) {
+                    matchFound = true;
                     System.out.println(zipFile + ", " + zipEntry.getName() + ":");
                     for (String match : matches) {
                         System.out.println(match);
@@ -203,7 +215,6 @@ public class AbsPathsInImage {
                     }
                 }
                 if (found) {
-                    matchFound = true;
                     matches.add(new String(data, charsStart(data, i), charsOffset(data, i, searchPattern.length)));
                     // No need to search the same string for multiple patterns
                     break;

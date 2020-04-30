@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void PrintError() {
 // Note: We do not check here that iconTarget is valid icon.
 // Java code will already do this for us.
 
-bool ChangeIcon(wstring iconTarget, wstring launcher) {
+bool ChangeIcon(HANDLE update, const wstring& iconTarget) {
     WORD language = MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT);
 
     HANDLE icon = CreateFile(iconTarget.c_str(), GENERIC_READ, 0, NULL,
@@ -154,15 +154,6 @@ bool ChangeIcon(wstring iconTarget, wstring launcher) {
     }
 
     // Store images in .EXE
-    HANDLE update = BeginUpdateResource(launcher.c_str(), FALSE);
-    if (update == NULL) {
-        free(lpid);
-        free(lpgid);
-        CloseHandle(icon);
-        PrintError();
-        return false;
-    }
-
     for (int i = 0; i < lpid->idCount; i++) {
         LPBYTE lpBuffer = (LPBYTE) malloc(lpid->idEntries[i].dwBytesInRes);
         SetFilePointer(icon, lpid->idEntries[i].dwImageOffset,
@@ -194,11 +185,6 @@ bool ChangeIcon(wstring iconTarget, wstring launcher) {
     }
 
     free(lpgid);
-
-    if (EndUpdateResource(update, FALSE) == FALSE) {
-        PrintError();
-        return false;
-    }
 
     return true;
 }

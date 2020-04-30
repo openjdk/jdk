@@ -27,8 +27,7 @@
  * @summary Tests logging of shared library loads and unloads.
  * @library /runtime/testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main LoadLibraryTest
  */
 

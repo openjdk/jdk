@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@ package gc.g1;
 /**
  * @test
  * @bug 8169703
+ * @key gc regression
  * @summary Verifies that dumping and loading a CDS archive succeeds with AlwaysPreTouch
  * @requires vm.gc.G1
- * @key gc regression
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main gc.g1.TestSharedArchiveWithPreTouch
+ * @run driver gc.g1.TestSharedArchiveWithPreTouch
  */
 
 import java.util.List;
@@ -60,7 +60,7 @@ public class TestSharedArchiveWithPreTouch {
         }
         dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump", "-Xlog:cds" }));
 
-        pb = ProcessTools.createJavaProcessBuilder(dump_args.toArray(new String[0]));
+        pb = ProcessTools.createJavaProcessBuilder(dump_args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {
             output.shouldContain("Loading classes to share");

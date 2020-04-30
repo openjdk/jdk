@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.process.ProcessTools;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build FinalizationRunner
- * @run main RunFinalizationTest
+ * @run driver RunFinalizationTest
  */
 public class RunFinalizationTest {
     private final static String TEST_APP_NAME = "FinalizationRunner";
@@ -46,7 +46,7 @@ public class RunFinalizationTest {
         javaArgs.add("-cp");
         javaArgs.add(System.getProperty("test.class.path"));
         javaArgs.add(TEST_APP_NAME);
-        ProcessBuilder testAppPb = ProcessTools.createJavaProcessBuilder(javaArgs.toArray(new String[javaArgs.size()]));
+        ProcessBuilder testAppPb = ProcessTools.createJavaProcessBuilder(javaArgs);
 
         final AtomicBoolean failed = new AtomicBoolean();
         final AtomicBoolean passed = new AtomicBoolean();

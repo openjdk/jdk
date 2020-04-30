@@ -35,7 +35,7 @@ for i in {1..10}; do
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=1800 TestOptionsWithRanges $i of 10
+ * @run driver/timeout=1800 TestOptionsWithRanges $i of 10
  */
 EOF
 done

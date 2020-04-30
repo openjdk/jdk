@@ -409,34 +409,25 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
     border: none;
     height:16px;
 }
-.overview-summary .tab-end, .member-summary .tab-end, .type-summary .tab-end,
-.use-summary .tab-end, .constants-summary .tab-end, .deprecated-summary .tab-end,
-.requires-summary .tab-end, .packages-summary .tab-end, .provides-summary .tab-end, .uses-summary .tab-end {
-    display:none;
-    width:5px;
-    position:relative;
-    float:left;
-    background-color:#F8981D;
-}
-.overview-summary [role=tablist] button, .member-summary [role=tablist] button,
-.type-summary [role=tablist] button, .packages-summary [role=tablist] button {
+
+div.table-tabs > button {
    border: none;
    cursor: pointer;
    padding: 5px 12px 7px 12px;
    font-weight: bold;
    margin-right: 3px;
 }
-.overview-summary [role=tablist] .active-table-tab, .member-summary [role=tablist] .active-table-tab,
-.type-summary [role=tablist] .active-table-tab, .packages-summary [role=tablist] .active-table-tab {
+div.table-tabs > button.active-table-tab {
    background: #F8981D;
    color: #253441;
 }
-.overview-summary [role=tablist] .table-tab, .member-summary [role=tablist] .table-tab,
-.type-summary [role=tablist] .table-tab, .packages-summary [role=tablist] .table-tab {
+div.table-tabs > button.table-tab {
    background: #4D7A97;
    color: #FFFFFF;
 }
-.row-color th, .alt-color th {
+
+.row-color th,
+.alt-color th {
     font-weight:normal;
 }
 .overview-summary td, .member-summary td, .type-summary td,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  * @library /test/lib
- * @run main TestMaxJavaStackTraceDepth runTest
+ * @run driver TestMaxJavaStackTraceDepth runTest
  */
 
 import java.lang.reflect.Field;

@@ -26,49 +26,28 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UncheckedIOException;
-import java.io.Writer;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
 
 public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
-
-    static {
-        System.loadLibrary("jpackage");
-    }
-
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.incubator.jpackage.internal.resources.WinResources");
 
-    private final static String LIBRARY_NAME = "applauncher.dll";
-
-    private final static String TEMPLATE_APP_ICON ="java48.ico";
-
-    private static final String EXECUTABLE_PROPERTIES_TEMPLATE =
-            "WinLauncher.template";
+    private static final String TEMPLATE_APP_ICON ="java48.ico";
 
     private final Path root;
     private final Path appDir;
@@ -76,13 +55,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     private final Path runtimeDir;
     private final Path mdir;
     private final Path binDir;
-
-    public static final BundlerParamInfo<Boolean> REBRAND_EXECUTABLE =
-            new WindowsBundlerParam<>(
-            "win.launcher.rebrand",
-            Boolean.class,
-            params -> Boolean.TRUE,
-            (s, p) -> Boolean.valueOf(s));
 
     public static final BundlerParamInfo<File> ICON_ICO =
             new StandardBundlerParam<>(
@@ -150,16 +122,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         return "app/" + APP_NAME.fetchFrom(params) +".cfg";
     }
 
-    private File getConfig_ExecutableProperties(
-           Map<String, ? super Object> params) {
-        return new File(getConfigRoot(params),
-                APP_NAME.fetchFrom(params) + ".properties");
-    }
-
-    File getConfigRoot(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params);
-    }
-
     @Override
     public Path getAppDir() {
         return appDir;
@@ -200,41 +162,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     public void prepareJreFiles(Map<String, ? super Object> params)
         throws IOException {}
 
-    private void validateValueAndPut(
-            Map<String, String> data, String key,
-            BundlerParamInfo<String> param,
-            Map<String, ? super Object> params) {
-        String value = param.fetchFrom(params);
-        if (value.contains("\r") || value.contains("\n")) {
-            Log.error("Configuration Parameter " + param.getID()
-                    + " contains multiple lines of text, ignore it");
-            data.put(key, "");
-            return;
-        }
-        data.put(key, value);
-    }
-
-    protected void prepareExecutableProperties(
-           Map<String, ? super Object> params) throws IOException {
-
-        Map<String, String> data = new HashMap<>();
-
-        // mapping Java parameters in strings for version resource
-        validateValueAndPut(data, "COMPANY_NAME", VENDOR, params);
-        validateValueAndPut(data, "FILE_DESCRIPTION", DESCRIPTION, params);
-        validateValueAndPut(data, "FILE_VERSION", VERSION, params);
-        data.put("INTERNAL_NAME", getLauncherName(params));
-        validateValueAndPut(data, "LEGAL_COPYRIGHT", COPYRIGHT, params);
-        data.put("ORIGINAL_FILENAME", getLauncherName(params));
-        validateValueAndPut(data, "PRODUCT_NAME", APP_NAME, params);
-        validateValueAndPut(data, "PRODUCT_VERSION", VERSION, params);
-
-        createResource(EXECUTABLE_PROPERTIES_TEMPLATE, params)
-                .setCategory(I18N.getString("resource.executable-properties-template"))
-                .setSubstitutionData(data)
-                .saveToFile(getConfig_ExecutableProperties(params));
-    }
-
     private void createLauncherForEntryPoint(Map<String, ? super Object> params,
             Map<String, ? super Object> mainParams) throws IOException {
 
@@ -251,8 +178,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         writeCfgFile(params, root.resolve(
                 getLauncherCfgName(params)).toFile());
 
-        prepareExecutableProperties(params);
-
         // Copy executable to bin folder
         Path executableFile = binDir.resolve(getLauncherName(params));
 
@@ -261,47 +186,11 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
             writeEntry(is_launcher, executableFile);
         }
 
-        File launcher = executableFile.toFile();
-        launcher.setWritable(true, true);
+        // Update branding of launcher executable
+        new ExecutableRebrander().rebrandLauncher(params, iconTarget, executableFile);
 
-        // Update branding of EXE file
-        if (REBRAND_EXECUTABLE.fetchFrom(params)) {
-            try {
-                String tempDirectory = WindowsDefender.getUserTempDirectory();
-                if (Arguments.CLIOptions.context().userProvidedBuildRoot) {
-                    tempDirectory =
-                            TEMP_ROOT.fetchFrom(params).getAbsolutePath();
-                }
-                if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(
-                        tempDirectory)) {
-                    Log.verbose(MessageFormat.format(I18N.getString(
-                            "message.potential.windows.defender.issue"),
-                            tempDirectory));
-                }
-
-                launcher.setWritable(true);
-
-                if (iconTarget != null) {
-                    iconSwap(iconTarget.toAbsolutePath().toString(),
-                            launcher.getAbsolutePath());
-                }
-
-                File executableProperties =
-                        getConfig_ExecutableProperties(params);
-
-                if (executableProperties.exists()) {
-                    if (versionSwap(executableProperties.getAbsolutePath(),
-                            launcher.getAbsolutePath()) != 0) {
-                        throw new RuntimeException(MessageFormat.format(
-                                I18N.getString("error.version-swap"),
-                                executableProperties.getAbsolutePath()));
-                    }
-                }
-            } finally {
-                executableFile.toFile().setExecutable(true);
-                executableFile.toFile().setReadOnly();
-            }
-        }
+        executableFile.toFile().setExecutable(true);
+        executableFile.toFile().setReadOnly();
     }
 
     private void copyApplication(Map<String, ? super Object> params)
@@ -321,10 +210,4 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
             }
         }
     }
-
-    private static native int iconSwap(String iconTarget, String launcher);
-
-    private static native int versionSwap(String executableProperties,
-            String launcher);
-
 }

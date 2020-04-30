@@ -38,24 +38,24 @@
 #define SHENANDOAH_US_TIME_FORMAT "%8.0lf"
 #define SHENANDOAH_US_WORKER_TIME_FORMAT "%3.0lf"
 
-#define GC_PHASE_DECLARE_NAME(type, title) \
+#define SHENANDOAH_PHASE_DECLARE_NAME(type, title) \
   title,
 
 const char* ShenandoahPhaseTimings::_phase_names[] = {
-  SHENANDOAH_GC_PHASE_DO(GC_PHASE_DECLARE_NAME)
+  SHENANDOAH_PHASE_DO(SHENANDOAH_PHASE_DECLARE_NAME)
 };
 
-#undef GC_PHASE_DECLARE_NAME
+#undef SHENANDOAH_PHASE_DECLARE_NAME
 
-ShenandoahPhaseTimings::ShenandoahPhaseTimings() {
-  _max_workers = MAX2(ConcGCThreads, ParallelGCThreads);
+ShenandoahPhaseTimings::ShenandoahPhaseTimings(uint max_workers) :
+  _max_workers(max_workers) {
   assert(_max_workers > 0, "Must have some GC threads");
 
   // Initialize everything to sane defaults
   for (uint i = 0; i < _num_phases; i++) {
 #define SHENANDOAH_WORKER_DATA_NULL(type, title) \
     _worker_data[i] = NULL;
-    SHENANDOAH_GC_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_NULL)
+    SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_NULL)
 #undef SHENANDOAH_WORKER_DATA_NULL
     _cycle_data[i] = 0;
   }
@@ -68,25 +68,23 @@ ShenandoahPhaseTimings::ShenandoahPhaseTimings() {
       int c = 0;
 #define SHENANDOAH_WORKER_DATA_INIT(type, title) \
       if (c++ != 0) _worker_data[i + c] = new ShenandoahWorkerData(title, _max_workers);
-      SHENANDOAH_GC_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_INIT)
+      SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_INIT)
 #undef SHENANDOAH_WORKER_DATA_INIT
     }
   }
 
   _policy = ShenandoahHeap::heap()->shenandoah_policy();
   assert(_policy != NULL, "Can not be NULL");
-
-  _current_worker_phase = _invalid_phase;
 }
 
-ShenandoahPhaseTimings::Phase ShenandoahPhaseTimings::worker_par_phase(Phase phase, GCParPhases par_phase) {
+ShenandoahPhaseTimings::Phase ShenandoahPhaseTimings::worker_par_phase(Phase phase, ParPhase par_phase) {
   assert(is_worker_phase(phase), "Phase should accept worker phase times: %s", phase_name(phase));
   Phase p = Phase(phase + 1 + par_phase);
   assert(p >= 0 && p < _num_phases, "Out of bound for: %s", phase_name(phase));
   return p;
 }
 
-ShenandoahWorkerData* ShenandoahPhaseTimings::worker_data(Phase phase, GCParPhases par_phase) {
+ShenandoahWorkerData* ShenandoahPhaseTimings::worker_data(Phase phase, ParPhase par_phase) {
   Phase p = worker_par_phase(phase, par_phase);
   ShenandoahWorkerData* wd = _worker_data[p];
   assert(wd != NULL, "Counter initialized: %s", phase_name(p));
@@ -109,6 +107,24 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case purge_class_unload:
     case purge_weak_par:
     case heap_iteration_roots:
+    case conc_weak_roots:
+    case conc_strong_roots:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
+  switch (phase) {
+    case scan_roots:
+    case update_roots:
+    case init_evac:
+    case final_update_refs_roots:
+    case degen_gc_update_roots:
+    case full_gc_scan_roots:
+    case full_gc_update_roots:
+    case full_gc_adjust_roots:
       return true;
     default:
       return false;
@@ -132,18 +148,13 @@ void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time) {
 void ShenandoahPhaseTimings::record_workers_start(Phase phase) {
   assert(is_worker_phase(phase), "Phase should accept worker phase times: %s", phase_name(phase));
 
-  assert(_current_worker_phase == _invalid_phase, "Should not be set yet: requested %s, existing %s",
-         phase_name(phase), phase_name(_current_worker_phase));
-  _current_worker_phase = phase;
-
-  for (uint i = 1; i < GCParPhasesSentinel; i++) {
-    worker_data(phase, GCParPhases(i))->reset();
+  for (uint i = 1; i < _num_par_phases; i++) {
+    worker_data(phase, ParPhase(i))->reset();
   }
 }
 
 void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
   assert(is_worker_phase(phase), "Phase should accept worker phase times: %s", phase_name(phase));
-  _current_worker_phase = _invalid_phase;
 }
 
 void ShenandoahPhaseTimings::flush_par_workers_to_cycle() {
@@ -151,8 +162,8 @@ void ShenandoahPhaseTimings::flush_par_workers_to_cycle() {
     Phase phase = Phase(pi);
     if (is_worker_phase(phase)) {
       double s = 0;
-      for (uint i = 1; i < GCParPhasesSentinel; i++) {
-        double t = worker_data(phase, GCParPhases(i))->sum();
+      for (uint i = 1; i < _num_par_phases; i++) {
+        double t = worker_data(phase, ParPhase(i))->sum();
         // add to each line in phase
         set_cycle_data(Phase(phase + i + 1), t);
         s += t;
@@ -182,7 +193,7 @@ void ShenandoahPhaseTimings::print_cycle_on(outputStream* out) const {
       out->print(SHENANDOAH_PHASE_NAME_FORMAT " " SHENANDOAH_US_TIME_FORMAT " us", _phase_names[i], v);
       if (_worker_data[i] != NULL) {
         out->print(", workers (us): ");
-        for (size_t c = 0; c < _max_workers; c++) {
+        for (uint c = 0; c < _max_workers; c++) {
           double tv = _worker_data[i]->get(c);
           if (tv != ShenandoahWorkerData::uninitialized()) {
             out->print(SHENANDOAH_US_WORKER_TIME_FORMAT ", ", tv * 1000000.0);
@@ -233,9 +244,11 @@ void ShenandoahPhaseTimings::print_global_on(outputStream* out) const {
   }
 }
 
-ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::GCParPhases par_phase, uint worker_id) :
-        _timings(ShenandoahHeap::heap()->phase_timings()), _phase(_timings->current_worker_phase()),
-        _par_phase(par_phase), _worker_id(worker_id) {
+ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase,
+        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id) :
+        _timings(ShenandoahHeap::heap()->phase_timings()),
+        _phase(phase), _par_phase(par_phase), _worker_id(worker_id) {
+
   assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized(),
          "Should not be set yet: %s", ShenandoahPhaseTimings::phase_name(_timings->worker_par_phase(_phase, _par_phase)));
   _start_time = os::elapsedTime();
@@ -244,8 +257,8 @@ ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahPhaseTi
 ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
   _timings->worker_data(_phase, _par_phase)->set(_worker_id, os::elapsedTime() - _start_time);
 
-  if (ShenandoahGCPhase::is_root_work_phase()) {
-    ShenandoahPhaseTimings::Phase root_phase = ShenandoahGCPhase::current_phase();
+  if (ShenandoahPhaseTimings::is_root_work_phase(_phase)) {
+    ShenandoahPhaseTimings::Phase root_phase = _phase;
     ShenandoahPhaseTimings::Phase cur_phase = _timings->worker_par_phase(root_phase, _par_phase);
     _event.commit(GCId::current(), _worker_id, ShenandoahPhaseTimings::phase_name(cur_phase));
   }

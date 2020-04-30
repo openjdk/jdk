@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase jit/misctests/Pi.
  * VM Testbase keywords: [jit, quick]
@@ -38,6 +39,7 @@ package jit.misctests.Pi;
 
 import java.util.Random;
 import nsk.share.TestFailure;
+import jdk.test.lib.Utils;
 
 class Pi{
     static double pi;
@@ -55,7 +57,7 @@ class Pi{
     static void wurf(int wieOft) {
         double x,y;
         Random zufall;
-        zufall=new Random();
+        zufall = Utils.getRandomInstance();
         for(int i=0;i<=wieOft;i++) {
             x=zufall.nextDouble();
             y=zufall.nextDouble();

@@ -260,7 +260,7 @@ public class TestOverrideMethods  extends JavadocTester {
         // Check methods with covariant return types
         // Only m2 should be shown in summary; m1 and m3 should listed as declared in Base
         checkOutput("pkg6/Sub.html", true,
-                "<table aria-labelledby=\"t0\">\n"
+                "<table class=\"summary-table\" aria-labelledby=\"t0\">\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">Modifier and Type</th>\n"

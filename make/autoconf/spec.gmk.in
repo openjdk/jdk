@@ -355,9 +355,6 @@ BOOT_JDK_SOURCETARGET:=@BOOT_JDK_SOURCETARGET@
 # Information about the build system
 NUM_CORES:=@NUM_CORES@
 MEMORY_SIZE:=@MEMORY_SIZE@
-# Enable sjavac support = use a javac server,
-# multi core javac compilation and dependency tracking.
-ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 ENABLE_JAVAC_SERVER:=@ENABLE_JAVAC_SERVER@
 # Store sjavac server synchronization files here, and
 # the sjavac server log files.
@@ -620,9 +617,8 @@ STRIPFLAGS:=@STRIPFLAGS@
 JAVA_FLAGS:=@JAVA_FLAGS@
 JAVA_FLAGS_BIG:=@JAVA_FLAGS_BIG@
 JAVA_FLAGS_SMALL:=@JAVA_FLAGS_SMALL@
-JAVA_FLAGS_JAVAC:=@JAVA_FLAGS_JAVAC@
+BUILDJDK_JAVA_FLAGS_SMALL:=@BUILDJDK_JAVA_FLAGS_SMALL@
 JAVA_TOOL_FLAGS_SMALL:=@JAVA_TOOL_FLAGS_SMALL@
-SJAVAC_SERVER_JAVA_FLAGS:=@SJAVAC_SERVER_JAVA_FLAGS@
 
 # The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk
 # for bootcycle-images build. Make sure to keep them in sync. Do not use the *_CMD
@@ -635,12 +631,11 @@ JLINK_CMD := @JLINK@
 JMOD_CMD := @JMOD@
 JARSIGNER_CMD:=@JARSIGNER@
 JJS_CMD:=@JJS@
-SJAVAC_SERVER_JAVA_CMD:=@SJAVAC_SERVER_JAVA@
 # These variables are meant to be used. They are defined with = instead of := to make
 # it possible to override only the *_CMD variables.
 JAVA=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
-JAVA_JAVAC=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_JAVAC) $(JAVA_FLAGS)
+JAVA_DETACH =@FIXPATH@ @FIXPATH_DETACH_FLAG@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVAC=@FIXPATH@ $(JAVAC_CMD)
 JAVADOC=@FIXPATH@ $(JAVADOC_CMD)
 JAR=@FIXPATH@ $(JAR_CMD)
@@ -648,15 +643,6 @@ JLINK = @FIXPATH@ $(JLINK_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JMOD = @FIXPATH@ $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
 JJS=@FIXPATH@ $(JJS_CMD) $(JAVA_TOOL_FLAGS_SMALL)
-# A specific java binary with specific options can be used to run
-# the long running background sjavac servers and other long running tasks.
-SJAVAC_SERVER_JAVA=@FIXPATH@ @FIXPATH_DETACH_FLAG@ $(SJAVAC_SERVER_JAVA_CMD) \
-    $(SJAVAC_SERVER_JAVA_FLAGS)
-
-# Hotspot sets this variable before reading the SPEC when compiling sa-jdi.jar. Avoid
-# overriding that value by using ?=.
-JAVAC_FLAGS?=@JAVAC_FLAGS@
-
 
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)

@@ -65,21 +65,12 @@ private:
   }
   G1TaskQueueEntry(HeapWord* addr) : _holder((void*)((uintptr_t)addr | ArraySliceBit)) { }
 public:
-  G1TaskQueueEntry(const G1TaskQueueEntry& other) { _holder = other._holder; }
+
   G1TaskQueueEntry() : _holder(NULL) { }
+  // Trivially copyable, for use in GenericTaskQueue.
 
   static G1TaskQueueEntry from_slice(HeapWord* what) { return G1TaskQueueEntry(what); }
   static G1TaskQueueEntry from_oop(oop obj) { return G1TaskQueueEntry(obj); }
-
-  G1TaskQueueEntry& operator=(const G1TaskQueueEntry& t) {
-    _holder = t._holder;
-    return *this;
-  }
-
-  volatile G1TaskQueueEntry& operator=(const volatile G1TaskQueueEntry& t) volatile {
-    _holder = t._holder;
-    return *this;
-  }
 
   oop obj() const {
     assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,12 @@ import java.util.zip.ZipOutputStream;
  * You can use ClassFileInstaller to ensure that WhiteBox is available in the current
  * directory of your test:
  *
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
  * Or, you can use the -jar option to store the class in the specified JAR file. If a relative
  * path name is given, the JAR file would be relative to the current directory of
  *
- * @run main ClassFileInstaller -jar myjar.jar sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar myjar.jar sun.hotspot.WhiteBox
  */
 public class ClassFileInstaller {
     /**

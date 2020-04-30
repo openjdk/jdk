@@ -146,7 +146,7 @@ public abstract class CiReplayBase {
                         RUN_SHELL_NO_LIMIT, options.toArray(new String[0])));
             } else {
                 crashOut = ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(true,
-                        options.toArray(new String[0])));
+                        options));
             }
             crashOutputString = crashOut.getOutput();
             Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM exits gracefully");

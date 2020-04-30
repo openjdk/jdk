@@ -198,7 +198,7 @@ class TestStringDeduplicationTools {
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.err.println(output.getStderr());
         System.out.println(output.getStdout());

@@ -58,7 +58,7 @@ import sun.hotspot.WhiteBox;
  * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure
  *      -Xms20M -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
  *      -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0 -XX:G1HeapRegionSize=1m

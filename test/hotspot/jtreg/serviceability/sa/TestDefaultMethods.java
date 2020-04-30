@@ -50,7 +50,7 @@ import jdk.test.lib.Utils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
- * @run main/othervm TestDefaultMethods
+ * @run main TestDefaultMethods
  */
 
 public class TestDefaultMethods {
@@ -97,19 +97,15 @@ public class TestDefaultMethods {
     private static void createAnotherToAttach(
                             String[] instanceKlassNames,
                             long lingeredAppPid) throws Exception {
-
-        String[] toolArgs = {
+        // Start a new process to attach to the lingered app
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
             "TestDefaultMethods",
-            Long.toString(lingeredAppPid)
-        };
-
-        // Start a new process to attach to the lingered app
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(toolArgs);
+             Long.toString(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);

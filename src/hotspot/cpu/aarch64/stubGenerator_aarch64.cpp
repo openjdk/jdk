@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4155,6 +4155,50 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+    address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    __ set_last_Java_frame(sp, rfp, lr, rscratch1);
+
+    __ enter();
+    __ add(rscratch2, sp, wordSize);  // rscratch2 points to the saved lr
+
+    __ sub(sp, sp, 4 * wordSize);  // four words for the returned {sp, fp, lr, pc}
+
+    __ push_call_clobbered_registers();
+
+    __ mov(c_rarg0, rscratch2);
+    __ call_VM_leaf
+         (CAST_FROM_FN_PTR
+          (address, BarrierSetNMethod::nmethod_stub_entry_barrier), 1);
+
+    __ reset_last_Java_frame(true);
+
+    __ mov(rscratch1, r0);
+
+    __ pop_call_clobbered_registers();
+
+    __ cbnz(rscratch1, deoptimize_label);
+
+    __ leave();
+    __ ret(lr);
+
+    __ BIND(deoptimize_label);
+
+    __ ldp(/* new sp */ rscratch1, rfp, Address(sp, 0 * wordSize));
+    __ ldp(lr, /* new pc*/ rscratch2, Address(sp, 2 * wordSize));
+
+    __ mov(sp, rscratch1);
+    __ br(rscratch2);
+
+    return start;
+  }
+
   // r0  = result
   // r1  = str1
   // r2  = cnt1
@@ -5745,6 +5789,10 @@ class StubGenerator: public StubCodeGenerator {
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
 
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
+    }
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();

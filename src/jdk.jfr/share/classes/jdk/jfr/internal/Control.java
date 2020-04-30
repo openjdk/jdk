@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ abstract public class Control {
                         return getValue();
                     } catch (Throwable t) {
                         // Prevent malicious user to propagate exception callback in the wrong context
-                        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occured when trying to get value for " + getClass());
+                        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when trying to get value for " + getClass());
                     }
                     return defaultValue != null ? defaultValue : ""; // Need to return something
                 }
@@ -123,7 +123,7 @@ abstract public class Control {
             try {
                 setValue(value);
             } catch (Throwable t) {
-                Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occured when setting value \"" + value + "\" for " + getClass());
+                Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\" for " + getClass());
             }
         } else {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -133,7 +133,7 @@ abstract public class Control {
                         setValue(value);
                     } catch (Throwable t) {
                         // Prevent malicious user to propagate exception callback in the wrong context
-                        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occured when setting value \"" + value + "\" for " + getClass());
+                        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\" for " + getClass());
                     }
                     return null;
                 }
@@ -155,7 +155,7 @@ abstract public class Control {
                     combine(Collections.unmodifiableSet(values));
                 } catch (Throwable t) {
                     // Prevent malicious user to propagate exception callback in the wrong context
-                    Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occured when combining " + values + " for " + getClass());
+                    Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when combining " + values + " for " + getClass());
                 }
                 return null;
             }

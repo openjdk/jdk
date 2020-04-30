@@ -69,10 +69,10 @@ final class DCmdStart extends AbstractDCmd {
      * @param disk if recording should be persisted to disk
      * @param path file path where recording data should be written
      * @param maxAge how long recording data should be kept in the disk
-     *        repository, or <code>0</code> if no limit should be set.
+     *        repository, or {@code 0} if no limit should be set.
      *
      * @param maxSize the minimum amount data to keep in the disk repository
-     *        before it is discarded, or <code>0</code> if no limit should be
+     *        before it is discarded, or {@code 0} if no limit should be
      *        set.
      *
      * @param dumpOnExit if recording should dump on exit

@@ -26,18 +26,21 @@
 package jdk.internal.module;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
+import java.lang.module.ModuleReader;
+import java.lang.module.ModuleReference;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.TreeMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /**
  * The result of hashing the contents of a number of module artifacts.
@@ -61,8 +64,8 @@ public final class ModuleHashes {
      * @param algorithm   the algorithm used to create the hashes
      * @param nameToHash  the map of module name to hash value
      */
-    public ModuleHashes(String algorithm, Map<String, byte[]> nameToHash) {
-        this.algorithm = algorithm;
+    ModuleHashes(String algorithm, Map<String, byte[]> nameToHash) {
+        this.algorithm = Objects.requireNonNull(algorithm);
         this.nameToHash = Collections.unmodifiableMap(nameToHash);
     }
 
@@ -96,52 +99,123 @@ public final class ModuleHashes {
     }
 
     /**
-     * Computes the hash for the given file with the given message digest
-     * algorithm.
+     * Computes a hash from the names and content of a module.
      *
+     * @param reader the module reader to access the module content
+     * @param algorithm the name of the message digest algorithm to use
+     * @return the hash
+     * @throws IllegalArgumentException if digest algorithm is not supported
      * @throws UncheckedIOException if an I/O error occurs
-     * @throws RuntimeException if the algorithm is not available
      */
-    public static byte[] computeHash(Path file, String algorithm) {
+    private static byte[] computeHash(ModuleReader reader, String algorithm) {
+        MessageDigest md;
         try {
-            MessageDigest md = MessageDigest.getInstance(algorithm);
-
-            // Ideally we would just mmap the file but this consumes too much
-            // memory when jlink is running concurrently on very large jmods
-            try (FileChannel fc = FileChannel.open(file)) {
-                ByteBuffer bb = ByteBuffer.allocate(32*1024);
-                while (fc.read(bb) > 0) {
-                    bb.flip();
-                    md.update(bb);
-                    assert bb.remaining() == 0;
-                    bb.clear();
-                }
-            }
-
-            return md.digest();
+            md = MessageDigest.getInstance(algorithm);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
+        }
+        try {
+            byte[] buf = new byte[32*1024];
+            reader.list().sorted().forEach(rn -> {
+                md.update(rn.getBytes(StandardCharsets.UTF_8));
+                try (InputStream in = reader.open(rn).orElseThrow()) {
+                    int n;
+                    while ((n = in.read(buf)) > 0) {
+                        md.update(buf, 0, n);
+                    }
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            });
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+        return md.digest();
+    }
+
+    /**
+     * Computes a hash from the names and content of a module.
+     *
+     * @param supplier supplies the module reader to access the module content
+     * @param algorithm the name of the message digest algorithm to use
+     * @return the hash
+     * @throws IllegalArgumentException if digest algorithm is not supported
+     * @throws UncheckedIOException if an I/O error occurs
+     */
+    static byte[] computeHash(Supplier<ModuleReader> supplier, String algorithm) {
+        try (ModuleReader reader = supplier.get()) {
+            return computeHash(reader, algorithm);
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
     }
 
     /**
-     * Computes the hash for every entry in the given map, returning a
-     * {@code ModuleHashes} to encapsulate the result. The map key is
-     * the entry name, typically the module name. The map value is the file
-     * path to the entry (module artifact).
+     * Computes the hash from the names and content of a set of modules. Returns
+     * a {@code ModuleHashes} to encapsulate the result.
      *
+     * @param mrefs the set of modules
+     * @param algorithm the name of the message digest algorithm to use
      * @return ModuleHashes that encapsulates the hashes
+     * @throws IllegalArgumentException if digest algorithm is not supported
+     * @throws UncheckedIOException if an I/O error occurs
      */
-    public static ModuleHashes generate(Map<String, Path> map, String algorithm) {
+    static ModuleHashes generate(Set<ModuleReference> mrefs, String algorithm) {
         Map<String, byte[]> nameToHash = new TreeMap<>();
-        for (Map.Entry<String, Path> entry: map.entrySet()) {
-            String name = entry.getKey();
-            Path path = entry.getValue();
-            nameToHash.put(name, computeHash(path, algorithm));
+        for (ModuleReference mref : mrefs) {
+            try (ModuleReader reader = mref.open()) {
+                byte[] hash = computeHash(reader, algorithm);
+                nameToHash.put(mref.descriptor().name(), hash);
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
         }
         return new ModuleHashes(algorithm, nameToHash);
+    }
+
+    @Override
+    public int hashCode() {
+        int h = algorithm.hashCode();
+        for (Map.Entry<String, byte[]> e : nameToHash.entrySet()) {
+            h = h * 31 + e.getKey().hashCode();
+            h = h * 31 + Arrays.hashCode(e.getValue());
+        }
+        return h;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ModuleHashes))
+            return false;
+        ModuleHashes other = (ModuleHashes) obj;
+        if (!algorithm.equals(other.algorithm)
+                || nameToHash.size() != other.nameToHash.size())
+            return false;
+        for (Map.Entry<String, byte[]> e : nameToHash.entrySet()) {
+            String name = e.getKey();
+            byte[] hash = e.getValue();
+            if (!Arrays.equals(hash, other.nameToHash.get(name)))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(algorithm);
+        sb.append(" ");
+        nameToHash.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> {
+                    sb.append(e.getKey());
+                    sb.append("=");
+                    byte[] ba = e.getValue();
+                    for (byte b : ba) {
+                        sb.append(String.format("%02x", b & 0xff));
+                    }
+                });
+        return sb.toString();
     }
 
     /**

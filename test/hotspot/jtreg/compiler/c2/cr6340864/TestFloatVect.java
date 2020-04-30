@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ public class TestFloatVect {
       test_divv(a0, a1, -VALUE);
       test_diva(a0, a1, a3);
       test_negc(a0, a1);
+      test_sqrt(a0, a1);
     }
     // Test and verify results
     System.out.println("Verification");
@@ -352,6 +353,22 @@ public class TestFloatVect {
         errn += verify("test_negc: ", i, a0[i], (float)(-((float)(ADD_INIT+i))));
       }
 
+      // Overwrite with +0.0/-0.0 values
+      a1[6] = (float)0.0;
+      a1[7] = (float)-0.0;
+      test_sqrt(a0, a1);
+      errn += verify("test_sqrt: ", 0, a0[0], (Float.NaN));
+      errn += verify("test_sqrt: ", 1, a0[1], (Float.POSITIVE_INFINITY));
+      errn += verify("test_sqrt: ", 2, a0[2], (Float.NaN));
+      errn += verify("test_sqrt: ", 3, a0[3], (float)(Math.sqrt((double)Float.MAX_VALUE)));
+      errn += verify("test_sqrt: ", 4, a0[4], (float)(Math.sqrt((double)Float.MIN_VALUE)));
+      errn += verify("test_sqrt: ", 5, a0[5], (float)(Math.sqrt((double)Float.MIN_NORMAL)));
+      errn += verify("test_sqrt: ", 6, a0[6], (float)0.0);
+      errn += verify("test_sqrt: ", 7, a0[7], (float)-0.0);
+      for (int i=8; i<ARRLEN; i++) {
+        errn += verify("test_sqrt: ", i, a0[i], (float)(Math.sqrt((double)(ADD_INIT+i))));
+      }
+
     }
 
     if (errn > 0)
@@ -488,6 +505,13 @@ public class TestFloatVect {
     end = System.currentTimeMillis();
     System.out.println("test_negc_n: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_sqrt(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_sqrt_n: " + (end - start));
+
     return errn;
   }
 
@@ -576,6 +600,12 @@ public class TestFloatVect {
   static void test_negc(float[] a0, float[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (float)(-((float)a1[i]));
+    }
+  }
+
+  static void test_sqrt(float[] a0, float[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (float)(Math.sqrt((double)a1[i]));
     }
   }
 

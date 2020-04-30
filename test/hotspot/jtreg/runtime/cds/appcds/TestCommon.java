@@ -238,8 +238,7 @@ public class TestCommon extends CDSTestUtils {
             }
         }
 
-        String[] cmdLine = cmd.toArray(new String[cmd.size()]);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmdLine);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }
@@ -385,8 +384,7 @@ public class TestCommon extends CDSTestUtils {
             }
         }
 
-        String[] cmdLine = cmd.toArray(new String[cmd.size()]);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmdLine);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }

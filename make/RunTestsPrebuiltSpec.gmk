@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,9 @@ TEST_JOBS ?= 0
 
 # Use hard-coded values for java flags (one size, fits all!)
 JAVA_FLAGS := -Duser.language=en -Duser.country=US
-JAVA_FLAGS_BIG:= -Xms64M -Xmx1600M -XX:ThreadStackSize=1536
-JAVA_FLAGS_SMALL:= -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+JAVA_FLAGS_BIG := -Xms64M -Xmx1600M
+JAVA_FLAGS_SMALL := -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+BUILDJDK_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILD_JAVA_FLAGS := $(JAVA_FLAGS_BIG)
 
 ################################################################################
@@ -120,7 +121,7 @@ JARSIGNER_CMD := $(BOOT_JDK)/bin/jarsigner
 
 JAVA := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVA_SMALL := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
-JAVA_JAVAC := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+JAVA_DETACH := $(FIXPATH) $(FIXPATH_DETACH_FLAG) $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVAC := $(FIXPATH) $(JAVAC_CMD)
 JAR := $(FIXPATH) $(JAR_CMD)
 JLINK := $(FIXPATH) $(JLINK_CMD)

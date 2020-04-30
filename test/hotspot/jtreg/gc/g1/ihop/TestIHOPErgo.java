@@ -128,8 +128,7 @@ public class TestIHOPErgo {
     }
 
     private static OutputAnalyzer executeTest(List<String> options) throws Throwable, RuntimeException {
-        OutputAnalyzer out;
-        out = ProcessTools.executeTestJvm(options.toArray(new String[options.size()]));
+        OutputAnalyzer out = ProcessTools.executeTestJvm(options);
         if (out.getExitValue() != 0) {
             System.out.println(out.getOutput());
             throw new RuntimeException("AppIHOP failed with exit code" + out.getExitValue());

@@ -36,6 +36,7 @@
 template <typename IsAlive, typename KeepAlive>
 class ShenandoahParallelWeakRootsCleaningTask : public AbstractGangTask {
 protected:
+  ShenandoahPhaseTimings::Phase _phase;
   WeakProcessor::Task       _weak_processing_task;
   ShenandoahSerialWeakRoots _serial_weak_roots;
   IsAlive*                  _is_alive;
@@ -43,7 +44,8 @@ protected:
   bool                      _include_concurrent_roots;
 
 public:
-  ShenandoahParallelWeakRootsCleaningTask(IsAlive* is_alive,
+  ShenandoahParallelWeakRootsCleaningTask(ShenandoahPhaseTimings::Phase phase,
+                                          IsAlive* is_alive,
                                           KeepAlive* keep_alive,
                                           uint num_workers,
                                           bool include_concurrent_roots);

@@ -31,8 +31,7 @@ package gc.nvdimm;
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main gc.nvdimm.TestYoungObjectsOnDram -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                                  -XX:+WhiteBoxAPI
+ * @run driver gc.nvdimm.TestYoungObjectsOnDram
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -50,40 +49,30 @@ import java.util.Collections;
 public class TestYoungObjectsOnDram {
 
     public static final int ALLOCATION_SIZE = 100;
-    private static ArrayList<String> testOpts;
+    private static String[] commonFlags;
 
     public static void main(String args[]) throws Exception {
-        testOpts = new ArrayList<>();
-
-        String[] common_options = new String[] {
+        commonFlags = new String[] {
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
-            "-XX:AllocateOldGenAt="+System.getProperty("test.dir", "."),
+            "-XX:AllocateOldGenAt=" + System.getProperty("test.dir", "."),
             "-XX:SurvivorRatio=1", // Survivor-to-eden ratio is 1:1
             "-Xms10M", "-Xmx10M",
             "-XX:InitialTenuringThreshold=15" // avoid promotion of objects to Old Gen
         };
-
-        String testVmOptsStr = System.getProperty("test.java.opts");
-        if (!testVmOptsStr.isEmpty()) {
-            String[] testVmOpts = testVmOptsStr.split(" ");
-            Collections.addAll(testOpts, testVmOpts);
-        }
-        Collections.addAll(testOpts, common_options);
-
         runTest("-XX:+UseG1GC");
         runTest("-XX:+UseParallelGC");
     }
 
     private static void runTest(String... extraFlags) throws Exception {
-        Collections.addAll(testOpts, extraFlags);
-        testOpts.add(YoungObjectTest.class.getName());
-        System.out.println(testOpts);
+        ArrayList<String> flags = new ArrayList<>();
+        Collections.addAll(flags, commonFlags);
+        Collections.addAll(flags, extraFlags);
+        flags.add(YoungObjectTest.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false,
-                testOpts.toArray(new String[testOpts.size()]));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());

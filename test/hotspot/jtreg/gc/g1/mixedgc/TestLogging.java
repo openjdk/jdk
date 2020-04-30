@@ -91,7 +91,7 @@ public class TestLogging {
         testOpts.add(RunMixedGC.class.getName());
         System.out.println(testOpts);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false,
-                testOpts.toArray(new String[testOpts.size()]));
+                testOpts);
         return new OutputAnalyzer(pb.start());
     }
 }

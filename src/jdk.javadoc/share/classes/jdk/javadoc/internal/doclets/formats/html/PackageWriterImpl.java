@@ -209,8 +209,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
             TableHeader tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
-            Table table = new Table(HtmlStyle.typeSummary)
-                    .setCaption(getTableCaption(new StringContent(label)))
+            Table table = new Table(HtmlStyle.typeSummary, HtmlStyle.summaryTable)
+                    .setCaption(new StringContent(label))
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
 

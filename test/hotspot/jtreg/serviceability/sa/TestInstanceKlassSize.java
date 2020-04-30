@@ -52,7 +52,7 @@ import java.util.*;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestInstanceKlassSize
  */
 
@@ -82,7 +82,7 @@ public class TestInstanceKlassSize {
         }
         try {
             // Run this app with the LingeredApp PID to get SA output from the LingeredApp
-            String[] toolArgs = {
+            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                 "--add-modules=jdk.hotspot.agent",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
@@ -92,11 +92,7 @@ public class TestInstanceKlassSize {
                 "-XX:+WhiteBoxAPI",
                 "-Xbootclasspath/a:.",
                 "TestInstanceKlassSize",
-                Long.toString(app.getPid())
-            };
-
-            ProcessBuilder processBuilder = ProcessTools
-                                            .createJavaProcessBuilder(toolArgs);
+                Long.toString(app.getPid()));
             SATestUtils.addPrivilegesIfNeeded(processBuilder);
             output = ProcessTools.executeProcess(processBuilder);
             System.out.println(output.getOutput());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *
- * @run main/othervm/timeout=1800 invokevirtualTests
+ * @run driver/timeout=1800 invokevirtualTests
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -43,7 +43,7 @@ import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 public class invokevirtualTests {
 
-    public static void runTest(String classFileVersion, String option) throws Exception {
+    public static void runTest(String classFileVersion, String option) throws Throwable {
         System.out.println("\ninvokevirtual invocation tests, option: " + option +
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, "-Xmx128M", option,
@@ -63,7 +63,8 @@ public class invokevirtualTests {
             System.out.println(
                 "\nAlso note that passing --dump to invokevirtual.Generator will" +
                 " dump the generated classes (for debugging purposes).\n");
-            System.exit(1);
+
+            throw e;
         }
     }
 

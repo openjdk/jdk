@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/iterator.hpp"
 
 class ShenandoahStringDedup : public StringDedup {
@@ -39,7 +40,11 @@ public:
   // Deduplicate a string, the call is lock-free
   static void deduplicate(oop java_string);
 
-  static void parallel_oops_do(BoolObjectClosure* is_alive, OopClosure* cl, uint worker_id);
+  static void parallel_oops_do(ShenandoahPhaseTimings::Phase phase,
+                               BoolObjectClosure* is_alive,
+                               OopClosure* cl,
+                               uint worker_id);
+
   static void oops_do_slow(OopClosure* cl);
 
   static inline bool is_candidate(oop obj);

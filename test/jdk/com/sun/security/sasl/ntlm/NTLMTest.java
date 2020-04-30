@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6911951 7150092
+ * @library /test/lib
  * @summary NTLM should be a supported Java SASL mechanism
  * @modules java.base/sun.security.util
  *          java.security.sasl
@@ -32,7 +33,7 @@ import java.io.IOException;
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 import java.util.*;
-import sun.security.util.HexDumpEncoder;
+import jdk.test.lib.hexdump.HexPrinter;
 
 public class NTLMTest {
 
@@ -312,7 +313,7 @@ public class NTLMTest {
         byte[] response = (clnt.hasInitialResponse()
                 ? clnt.evaluateChallenge(EMPTY) : EMPTY);
         System.out.println("Initial:");
-        new HexDumpEncoder().encodeBuffer(response, System.out);
+        HexPrinter.simple().format(response);
         byte[] challenge;
 
         while (!clnt.isComplete() || !srv.isComplete()) {
@@ -320,12 +321,12 @@ public class NTLMTest {
             response = null;
             if (challenge != null) {
                 System.out.println("Challenge:");
-                new HexDumpEncoder().encodeBuffer(challenge, System.out);
+                HexPrinter.simple().format(challenge);
                 response = clnt.evaluateChallenge(challenge);
             }
             if (response != null) {
                 System.out.println("Response:");
-                new HexDumpEncoder().encodeBuffer(response, System.out);
+                HexPrinter.simple().format(response);
             }
         }
 

@@ -88,10 +88,8 @@ public class TestVerifyBeforeAndAfterGCFlags {
                                        (verifyAfterGC ? "-XX:+VerifyAfterGC"
                                                       : "-XX:-VerifyAfterGC"),
                                        GarbageProducer.class.getName() });
-        ProcessBuilder procBuilder =
-            GCArguments.createJavaProcessBuilder(vmOpts.toArray(
-                                                     new String[vmOpts.size()]));
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts);
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
         analyzer.shouldHaveExitValue(0);
         analyzer.shouldNotMatch(VERIFY_BEFORE_GC_CORRUPTED_PATTERN);

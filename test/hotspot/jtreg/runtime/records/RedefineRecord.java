@@ -95,10 +95,12 @@ public class RedefineRecord {
             return;
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
-            String[] javaArgs1 = { "-XX:MetaspaceSize=12m", "-XX:MaxMetaspaceSize=12m",
-                                   "-javaagent:redefineagent.jar", "--enable-preview",
-                                   "RedefineRecord"};
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:MetaspaceSize=12m",
+                "-XX:MaxMetaspaceSize=12m",
+                "-javaagent:redefineagent.jar",
+                "--enable-preview",
+                "RedefineRecord");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotContain("processing of -javaagent failed");
         }

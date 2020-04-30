@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.test.lib.security.SSLContextBuilder;
 
 import java.util.concurrent.*;
 
-import sun.security.util.HexDumpEncoder;
+import jdk.test.lib.hexdump.HexPrinter;
 
 /**
  * An example to show the way to use SSLEngine in datagram connections.
@@ -688,12 +688,11 @@ public class DTLSOverDatagram {
     }
 
     final static void printHex(String prefix, ByteBuffer bb) {
-        HexDumpEncoder  dump = new HexDumpEncoder();
 
         synchronized (System.out) {
             System.out.println(prefix);
             try {
-                dump.encodeBuffer(bb.slice(), System.out);
+                HexPrinter.simple().format(bb.slice());
             } catch (Exception e) {
                 // ignore
             }
@@ -704,13 +703,10 @@ public class DTLSOverDatagram {
     final static void printHex(String prefix,
             byte[] bytes, int offset, int length) {
 
-        HexDumpEncoder  dump = new HexDumpEncoder();
-
         synchronized (System.out) {
             System.out.println(prefix);
             try {
-                ByteBuffer bb = ByteBuffer.wrap(bytes, offset, length);
-                dump.encodeBuffer(bb, System.out);
+                HexPrinter.simple().format(bytes, offset, length);
             } catch (Exception e) {
                 // ignore
             }

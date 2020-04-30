@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 package vm.jit.LongTransitions;
 import java.io.*;
 import java.util.Random;
+import jdk.test.lib.Utils;
+
 public class LTTest
 {
     public static boolean flag = false;
     static Random rnd;
     static{
-        rnd=new Random();
+        rnd=Utils.getRandomInstance();
         System.loadLibrary("LTTest");
     }
     public static int getRndInt(){return rnd.nextInt(Integer.MAX_VALUE);}

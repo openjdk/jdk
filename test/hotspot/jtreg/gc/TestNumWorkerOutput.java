@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package gc;
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UseG1GC gc.TestNumWorkerOutput UseG1GC
+ * @run driver gc.TestNumWorkerOutput UseG1GC
  */
 
 import sun.hotspot.WhiteBox;
@@ -59,7 +59,7 @@ public class TestNumWorkerOutput {
     }
 
     public static void runTest(String gcArg) throws Exception {
-        final String[] arguments = {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -67,10 +67,7 @@ public class TestNumWorkerOutput {
             "-XX:+" + gcArg,
             "-Xmx10M",
             "-XX:+PrintGCDetails",
-            GCTest.class.getName()
-            };
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(arguments);
+            GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);

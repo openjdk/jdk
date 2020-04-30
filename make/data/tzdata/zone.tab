@@ -154,8 +154,8 @@ CA	+4906-11631	America/Creston	MST - BC (Creston)
 CA	+5946-12014	America/Dawson_Creek	MST - BC (Dawson Cr, Ft St John)
 CA	+5848-12242	America/Fort_Nelson	MST - BC (Ft Nelson)
 CA	+4916-12307	America/Vancouver	Pacific - BC (most areas)
-CA	+6043-13503	America/Whitehorse	Pacific - Yukon (south)
-CA	+6404-13925	America/Dawson	Pacific - Yukon (north)
+CA	+6043-13503	America/Whitehorse	Pacific - Yukon (east)
+CA	+6404-13925	America/Dawson	Pacific - Yukon (west)
 CC	-1210+09655	Indian/Cocos
 CD	-0418+01518	Africa/Kinshasa	Dem. Rep. of Congo (west)
 CD	-1140+02728	Africa/Lubumbashi	Dem. Rep. of Congo (east)
@@ -212,7 +212,7 @@ GF	+0456-05220	America/Cayenne
 GG	+492717-0023210	Europe/Guernsey
 GH	+0533-00013	Africa/Accra
 GI	+3608-00521	Europe/Gibraltar
-GL	+6411-05144	America/Godthab	Greenland (most areas)
+GL	+6411-05144	America/Nuuk	Greenland (most areas)
 GL	+7646-01840	America/Danmarkshavn	National Park (east coast)
 GL	+7029-02158	America/Scoresbysund	Scoresbysund/Ittoqqortoormiit
 GL	+7634-06847	America/Thule	Thule/Pituffik
@@ -358,7 +358,7 @@ RU	+554521+0373704	Europe/Moscow	MSK+00 - Moscow area
 # The obsolescent zone.tab format cannot represent Europe/Simferopol well.
 # Put it in RU section and list as UA.  See "territorial claims" above.
 # Programs should use zone1970.tab instead; see above.
-UA	+4457+03406	Europe/Simferopol	MSK+00 - Crimea
+UA	+4457+03406	Europe/Simferopol	Crimea
 RU	+5836+04939	Europe/Kirov	MSK+00 - Kirov
 RU	+4621+04803	Europe/Astrakhan	MSK+01 - Astrakhan
 RU	+4844+04425	Europe/Volgograd	MSK+01 - Volgograd
@@ -422,8 +422,8 @@ TV	-0831+17913	Pacific/Funafuti
 TW	+2503+12130	Asia/Taipei
 TZ	-0648+03917	Africa/Dar_es_Salaam
 UA	+5026+03031	Europe/Kiev	Ukraine (most areas)
-UA	+4837+02218	Europe/Uzhgorod	Ruthenia
-UA	+4750+03510	Europe/Zaporozhye	Zaporozh'ye/Zaporizhia; Lugansk/Luhansk (east)
+UA	+4837+02218	Europe/Uzhgorod	Transcarpathia
+UA	+4750+03510	Europe/Zaporozhye	Zaporozhye and east Lugansk
 UG	+0019+03225	Africa/Kampala
 UM	+2813-17722	Pacific/Midway	Midway Islands
 UM	+1917+16637	Pacific/Wake	Wake Island

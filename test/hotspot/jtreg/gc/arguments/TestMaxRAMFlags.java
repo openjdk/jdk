@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,7 @@ package gc.arguments;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main gc.arguments.TestMaxRAMFlags
+ * @run driver gc.arguments.TestMaxRAMFlags
  * @author bob.vandette@oracle.com
  */
 
@@ -64,7 +63,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
@@ -87,7 +86,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

@@ -572,12 +572,13 @@ Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
 			 0:00	1:00	IST	1947 Nov  2  2:00s
 			 0:00	-	GMT	1948 Apr 18  2:00s
 			 0:00	GB-Eire	GMT/IST	1968 Oct 27
-# The next line is for when negative SAVE values are used.
+# Vanguard section, for zic and other parsers that support negative DST.
 			 1:00	Eire	IST/GMT
-# These three lines are for when SAVE values are always nonnegative.
+# Rearguard section, for parsers lacking negative DST; see ziguard.awk.
 #			 1:00	-	IST	1971 Oct 31  2:00u
 #			 0:00	GB-Eire	GMT/IST	1996
 #			 0:00	EU	GMT/IST
+# End of rearguard section.
 
 
 ###############################################################################
@@ -1041,7 +1042,7 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 			1:00	Czech	CE%sT	1946 Dec  1  3:00
 # Vanguard section, for zic and other parsers that support negative DST.
 			1:00	-1:00	GMT	1947 Feb 23  2:00
-# Rearguard section, for parsers that do not support negative DST.
+# Rearguard section, for parsers lacking negative DST; see ziguard.awk.
 #			0:00	-	GMT	1947 Feb 23  2:00
 # End of rearguard section.
 			1:00	Czech	CE%sT	1979
@@ -1198,14 +1199,17 @@ Zone America/Danmarkshavn -1:14:40 -	LMT	1916 Jul 28
 			-3:00	-	-03	1980 Apr  6  2:00
 			-3:00	EU	-03/-02	1996
 			0:00	-	GMT
+#
+# Use the old name Scoresbysund, as the current name Ittoqqortoormiit
+# exceeds tzdb's 14-letter limit and has no common English abbreviation.
 Zone America/Scoresbysund -1:27:52 -	LMT	1916 Jul 28 # Ittoqqortoormiit
 			-2:00	-	-02	1980 Apr  6  2:00
 			-2:00	C-Eur	-02/-01	1981 Mar 29
 			-1:00	EU	-01/+00
-Zone America/Godthab	-3:26:56 -	LMT	1916 Jul 28 # Nuuk
+Zone America/Nuuk	-3:26:56 -	LMT	1916 Jul 28 # Godthåb
 			-3:00	-	-03	1980 Apr  6  2:00
 			-3:00	EU	-03/-02
-Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik air base
+Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik
 			-4:00	Thule	A%sT
 
 # Estonia
@@ -1575,7 +1579,7 @@ Zone	Europe/Budapest	1:16:20 -	LMT	1890 Oct
 #
 # From January 1st, 1908 the whole of Iceland was standardised at 1 hour
 # behind GMT. Previously, local mean solar time was used in different parts
-# of Iceland, the almanak had been based on Reykjavik mean solar time which
+# of Iceland, the almanak had been based on Reykjavík mean solar time which
 # was 1 hour and 28 minutes behind GMT.
 #
 # "first day of winter" referred to [below] means the first day of the 26 weeks

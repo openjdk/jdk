@@ -61,8 +61,7 @@ public class ClassLoaderStatsTest {
   // Expected output from VM.classloader_stats:
     // ClassLoader         Parent              CLD*               Classes   ChunkSz   BlockSz  Type
     // 0x0000000800bd3830  0x000000080037f468  0x00007f001c2ea170       1     10240      4672  ClassLoaderStatsTest$DummyClassLoader
-    //                                                                  1      2048      1080   + unsafe anonymous classes
-    //                                                                  1      2048      1088   + hidden classes
+    //                                                                  2      2048      1088   + hidden classes
     // 0x0000000000000000  0x0000000000000000  0x00007f00e852d190    1607   4628480   3931216  <boot class loader>
     //                                                                 38    124928     85856   + hidden classes
     // 0x00000008003b5508  0x0000000000000000  0x00007f001c2d4760       1      6144      4040  jdk.internal.reflect.DelegatingClassLoader
@@ -70,7 +69,7 @@ public class ClassLoaderStatsTest {
     // ...
 
     static Pattern clLine = Pattern.compile("0x\\p{XDigit}*\\s*0x\\p{XDigit}*\\s*0x\\p{XDigit}*\\s*(\\d*)\\s*(\\d*)\\s*(\\d*)\\s*(.*)");
-    static Pattern anonLine = Pattern.compile("\\s*(\\d*)\\s*(\\d*)\\s*(\\d*)\\s*.*");
+    static Pattern hiddenLine = Pattern.compile("\\s*(\\d*)\\s*(\\d*)\\s*(\\d*)\\s*.*");
 
     public static DummyClassLoader dummyloader;
 
@@ -89,7 +88,7 @@ public class ClassLoaderStatsTest {
             String line = lines.next();
             Matcher m = clLine.matcher(line);
             if (m.matches()) {
-                // verify that DummyClassLoader has loaded 1 class, 1 anonymous class, and 1 hidden class
+                // verify that DummyClassLoader has loaded 1 regular class and 2 hidden classes
                 if (m.group(4).equals("ClassLoaderStatsTest$DummyClassLoader")) {
                     System.out.println("DummyClassLoader line: " + line);
                     if (!m.group(1).equals("1")) {
@@ -100,26 +99,14 @@ public class ClassLoaderStatsTest {
 
                     String next = lines.next();
                     System.out.println("DummyClassLoader next: " + next);
-                    if (!next.contains("unsafe anonymous classes")) {
-                        Assert.fail("Should have an anonymous class");
-                    }
-                    Matcher m1 = anonLine.matcher(next);
-                    m1.matches();
-                    if (!m1.group(1).equals("1")) {
-                        Assert.fail("Should have loaded 1 anonymous class, but found : " + m1.group(1));
-                    }
-                    checkPositiveInt(m1.group(2));
-                    checkPositiveInt(m1.group(3));
-
-                    next = lines.next();
-                    System.out.println("DummyClassLoader next: " + next);
                     if (!next.contains("hidden classes")) {
                         Assert.fail("Should have a hidden class");
                     }
-                    Matcher m2 = anonLine.matcher(next);
+                    Matcher m2 = hiddenLine.matcher(next);
                     m2.matches();
-                    if (!m2.group(1).equals("1")) {
-                        Assert.fail("Should have loaded 1 hidden class, but found : " + m2.group(1));
+                    if (!m2.group(1).equals("2")) {
+                        // anonymous classes are included in the hidden classes count.
+                        Assert.fail("Should have loaded 2 hidden classes, but found : " + m2.group(1));
                     }
                     checkPositiveInt(m2.group(2));
                     checkPositiveInt(m2.group(3));

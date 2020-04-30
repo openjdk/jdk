@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ public class TestDoubleVect {
       test_rint(a0, a1);
       test_ceil(a0, a1);
       test_floor(a0, a1);
+      test_sqrt(a0, a1);
     }
     // Test and verify results
     System.out.println("Verification");
@@ -404,6 +405,22 @@ public class TestDoubleVect {
       errn += verify("test_rint_cc: ", 0, other_corner_cases_res[0], -0.0);
       errn += verify("test_rint_cc: ", 1, other_corner_cases_res[1], 0.0);
       errn += verify("test_rint_cc: ", 2, other_corner_cases_res[2], 9.007199254740992E15);
+
+      // Overwrite with +0.0/-0.0 values
+      a1[6] = (double)0.0;
+      a1[7] = (double)-0.0;
+      test_sqrt(a0, a1);
+      errn += verify("test_sqrt: ", 0, a0[0], (Double.NaN));
+      errn += verify("test_sqrt: ", 1, a0[1], (Double.POSITIVE_INFINITY));
+      errn += verify("test_sqrt: ", 2, a0[2], (Double.NaN));
+      errn += verify("test_sqrt: ", 3, a0[3], Math.sqrt(Double.MAX_VALUE));
+      errn += verify("test_sqrt: ", 4, a0[4], Math.sqrt(Double.MIN_VALUE));
+      errn += verify("test_sqrt: ", 5, a0[5], Math.sqrt(Double.MIN_NORMAL));
+      errn += verify("test_sqrt: ", 6, a0[6], (double)0.0);
+      errn += verify("test_sqrt: ", 7, a0[7], (double)-0.0);
+      for (int i=8; i<ARRLEN; i++) {
+        errn += verify("test_sqrt: ", i, a0[i], Math.sqrt((double)(ADD_INIT+i)));
+      }
     }
 
     if (errn > 0)
@@ -540,6 +557,13 @@ public class TestDoubleVect {
     end = System.currentTimeMillis();
     System.out.println("test_negc_n: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_sqrt(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_sqrt_n: " + (end - start));
+
     return errn;
   }
 
@@ -658,6 +682,12 @@ public class TestDoubleVect {
   static void test_floor_cc(double[] a0, double[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = Math.floor(a1[i]);
+    }
+  }
+
+  static void test_sqrt(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (double)(Math.sqrt((double)a1[i]));
     }
   }
 

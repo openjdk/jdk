@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @library /test/lib
  * @author  Robert Field
  * @compile -XDignore.symbol.file ManyNewInstanceAnonTest.java
- * @run main ClassFileInstaller ManyNewInstanceAnonTest
+ * @run driver ClassFileInstaller ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all -Dsun.reflection.noInflation=true ManyNewInstanceAnonTest
  */

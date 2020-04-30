@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @compile TestEscapeThroughInvokeWithCondy$A.jasm
  * @compile TestEscapeThroughInvokeWithCondy.jasm
  * @compile TestEscapeCondy.java
- * @run main/othervm TestEscapeCondy
+ * @run driver TestEscapeCondy
  */
 
 import jdk.test.lib.process.ProcessTools;

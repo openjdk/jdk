@@ -168,7 +168,7 @@ public class TestNewSizeFlags {
                 Long.toString(maxHeapSize)
         );
         vmOptions.removeIf(String::isEmpty);
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
+        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         return analyzer;
     }

@@ -28,6 +28,8 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
@@ -107,31 +109,23 @@ class TaskQueueSuper: public CHeapObj<F> {
 protected:
   // Internal type for indexing the queue; also used for the tag.
   typedef NOT_LP64(uint16_t) LP64_ONLY(uint32_t) idx_t;
+  STATIC_ASSERT(N == idx_t(N)); // Ensure N fits in an idx_t.
 
-  // The first free element after the last one pushed (mod N).
-  volatile uint _bottom;
-
-  enum { MOD_N_MASK = N - 1 };
+  // N must be a power of 2 for computing modulo via masking.
+  // N must be >= 2 for the algorithm to work at all, though larger is better.
+  // C++11: is_power_of_2 is not (yet) constexpr.
+  STATIC_ASSERT((N >= 2) && ((N & (N - 1)) == 0));
+  static const uint MOD_N_MASK = N - 1;
 
   class Age {
+    friend class TaskQueueSuper;
+
   public:
-    Age(size_t data = 0)         { _data = data; }
-    Age(const Age& age)          { _data = age._data; }
-    Age(idx_t top, idx_t tag)    { _fields._top = top; _fields._tag = tag; }
+    explicit Age(size_t data = 0) : _data(data) {}
+    Age(idx_t top, idx_t tag) { _fields._top = top; _fields._tag = tag; }
 
-    Age   get()        const volatile { return _data; }
-    void  set(Age age) volatile       { _data = age._data; }
-
-    idx_t top()        const volatile { return _fields._top; }
-    idx_t tag()        const volatile { return _fields._tag; }
-
-    // Increment top; if it wraps, increment tag also.
-    void increment() {
-      _fields._top = increment_index(_fields._top);
-      if (_fields._top == 0) ++_fields._tag;
-    }
-
-    Age cmpxchg(const Age new_age, const Age old_age) volatile;
+    idx_t top() const { return _fields._top; }
+    idx_t tag() const { return _fields._tag; }
 
     bool operator ==(const Age& other) const { return _data == other._data; }
 
@@ -144,9 +138,41 @@ protected:
       size_t _data;
       fields _fields;
     };
+    STATIC_ASSERT(sizeof(size_t) >= sizeof(fields));
   };
 
-  volatile Age _age;
+  uint bottom_relaxed() const {
+    return Atomic::load(&_bottom);
+  }
+
+  uint bottom_acquire() const {
+    return Atomic::load_acquire(&_bottom);
+  }
+
+  void set_bottom_relaxed(uint new_bottom) {
+    Atomic::store(&_bottom, new_bottom);
+  }
+
+  void release_set_bottom(uint new_bottom) {
+    Atomic::release_store(&_bottom, new_bottom);
+  }
+
+  Age age_relaxed() const {
+    return Age(Atomic::load(&_age._data));
+  }
+
+  void set_age_relaxed(Age new_age) {
+    Atomic::store(&_age._data, new_age._data);
+  }
+
+  Age cmpxchg_age(Age old_age, Age new_age) {
+    return Age(Atomic::cmpxchg(&_age._data, old_age._data, new_age._data));
+  }
+
+  idx_t age_top_relaxed() const {
+    // Atomically accessing a subfield of an "atomic" member.
+    return Atomic::load(&_age._fields._top);
+  }
 
   // These both operate mod N.
   static uint increment_index(uint ind) {
@@ -163,7 +189,7 @@ protected:
   }
 
   // Returns the size corresponding to the given "bot" and "top".
-  uint size(uint bot, uint top) const {
+  uint clean_size(uint bot, uint top) const {
     uint sz = dirty_size(bot, top);
     // Has the queue "wrapped", so that bottom is less than top?  There's a
     // complicated special case here.  A pair of threads could perform pop_local
@@ -182,27 +208,46 @@ protected:
     return (sz == N - 1) ? 0 : sz;
   }
 
+private:
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+
+  // Index of the first free element after the last one pushed (mod N).
+  volatile uint _bottom;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(uint));
+
+  // top() is the index of the oldest pushed element (mod N), and tag()
+  // is the associated epoch, to distinguish different modifications of
+  // the age.  There is no available element if top() == _bottom or
+  // (_bottom - top()) mod N == N-1; the latter indicates underflow
+  // during concurrent pop_local/pop_global.
+  volatile Age _age;
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(Age));
+
+  NONCOPYABLE(TaskQueueSuper);
+
 public:
   TaskQueueSuper() : _bottom(0), _age() {}
 
-  // Return true if the TaskQueue contains/does not contain any tasks.
-  bool peek()     const { return _bottom != _age.top(); }
-  bool is_empty() const { return size() == 0; }
+  // Return true if the TaskQueue contains any tasks.
+  // Unreliable if there are concurrent pushes or pops.
+  bool peek() const {
+    return bottom_relaxed() != age_top_relaxed();
+  }
+
+  bool is_empty() const {
+    return size() == 0;
+  }
 
   // Return an estimate of the number of elements in the queue.
-  // The "careful" version admits the possibility of pop_local/pop_global
-  // races.
+  // Treats pop_local/pop_global race that underflows as empty.
   uint size() const {
-    return size(_bottom, _age.top());
+    return clean_size(bottom_relaxed(), age_top_relaxed());
   }
 
-  uint dirty_size() const {
-    return dirty_size(_bottom, _age.top());
-  }
-
+  // Discard the contents of the queue.
   void set_empty() {
-    _bottom = 0;
-    _age.set(0);
+    set_bottom_relaxed(0);
+    set_age_relaxed(Age());
   }
 
   // Maximum number of elements allowed in the queue.  This is two less
@@ -210,9 +255,6 @@ public:
   // from underflow involving pop_local and concurrent pop_global operations
   // in GenericTaskQueue.
   uint max_elems() const { return N - 2; }
-
-  // Total size of queue.
-  static const uint total_size() { return N; }
 
   TASKQUEUE_STATS_ONLY(TaskQueueStats stats;)
 };
@@ -254,11 +296,23 @@ protected:
   typedef typename TaskQueueSuper<N, F>::Age Age;
   typedef typename TaskQueueSuper<N, F>::idx_t idx_t;
 
-  using TaskQueueSuper<N, F>::_bottom;
-  using TaskQueueSuper<N, F>::_age;
+  using TaskQueueSuper<N, F>::MOD_N_MASK;
+
+  using TaskQueueSuper<N, F>::bottom_relaxed;
+  using TaskQueueSuper<N, F>::bottom_acquire;
+
+  using TaskQueueSuper<N, F>::set_bottom_relaxed;
+  using TaskQueueSuper<N, F>::release_set_bottom;
+
+  using TaskQueueSuper<N, F>::age_relaxed;
+  using TaskQueueSuper<N, F>::set_age_relaxed;
+  using TaskQueueSuper<N, F>::cmpxchg_age;
+  using TaskQueueSuper<N, F>::age_top_relaxed;
+
   using TaskQueueSuper<N, F>::increment_index;
   using TaskQueueSuper<N, F>::decrement_index;
   using TaskQueueSuper<N, F>::dirty_size;
+  using TaskQueueSuper<N, F>::clean_size;
 
 public:
   using TaskQueueSuper<N, F>::max_elems;
@@ -285,13 +339,14 @@ public:
 
   // Attempts to claim a task from the "local" end of the queue (the most
   // recently pushed) as long as the number of entries exceeds the threshold.
-  // If successful, returns true and sets t to the task; otherwise, returns false
-  // (the queue is empty or the number of elements below the threshold).
-  inline bool pop_local(volatile E& t, uint threshold = 0);
+  // If successfully claims a task, returns true and sets t to the task;
+  // otherwise, returns false and t is unspecified.  May fail and return
+  // false because of a successful steal by pop_global.
+  inline bool pop_local(E& t, uint threshold = 0);
 
   // Like pop_local(), but uses the "global" end of the queue (the least
   // recently pushed).
-  bool pop_global(volatile E& t);
+  bool pop_global(E& t);
 
   // Delete any resource associated with the queue.
   ~GenericTaskQueue();
@@ -301,9 +356,10 @@ public:
   template<typename Fn> void iterate(Fn fn);
 
 private:
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  // Base class has trailing padding.
+
   // Element array.
-  volatile E* _elems;
+  E* _elems;
 
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(E*));
   // Queue owner local variables. Not to be accessed by other threads.
@@ -444,12 +500,6 @@ public:
   virtual bool should_exit_termination() = 0;
 };
 
-#ifdef _MSC_VER
-#pragma warning(push)
-// warning C4522: multiple assignment operators specified
-#pragma warning(disable:4522)
-#endif
-
 // This is a container class for either an oop* or a narrowOop*.
 // Both are pushed onto a task queue and the consumer will test is_narrow()
 // to determine which should be processed.
@@ -468,18 +518,11 @@ class StarTask {
     _holder = (void*)p;
   }
   StarTask()             { _holder = NULL; }
+  // Trivially copyable, for use in GenericTaskQueue.
+
   operator oop*()        { return (oop*)_holder; }
   operator narrowOop*()  {
     return (narrowOop*)((uintptr_t)_holder & ~COMPRESSED_OOP_MASK);
-  }
-
-  StarTask& operator=(const StarTask& t) {
-    _holder = t._holder;
-    return *this;
-  }
-  volatile StarTask& operator=(const volatile StarTask& t) volatile {
-    _holder = t._holder;
-    return *this;
   }
 
   bool is_narrow() const {
@@ -494,19 +537,7 @@ public:
   ObjArrayTask(oop o, size_t idx): _obj(o), _index(int(idx)) {
     assert(idx <= size_t(max_jint), "too big");
   }
-  ObjArrayTask(const ObjArrayTask& t): _obj(t._obj), _index(t._index) { }
-
-  ObjArrayTask& operator =(const ObjArrayTask& t) {
-    _obj = t._obj;
-    _index = t._index;
-    return *this;
-  }
-  volatile ObjArrayTask&
-  operator =(const volatile ObjArrayTask& t) volatile {
-    (void)const_cast<oop&>(_obj = t._obj);
-    _index = t._index;
-    return *this;
-  }
+  // Trivially copyable, for use in GenericTaskQueue.
 
   inline oop obj()   const { return _obj; }
   inline int index() const { return _index; }
@@ -517,9 +548,5 @@ private:
   oop _obj;
   int _index;
 };
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #endif // SHARE_GC_SHARED_TASKQUEUE_HPP

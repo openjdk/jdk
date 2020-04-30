@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,20 +35,20 @@
  * To define a Flight Recorder event, extend {@link jdk.jfr.Event} and add
  * fields that matches the data types of the payload. Metadata about fields,
  * such as labels, descriptions and units, can be added by using the annotations
- * available in the <code>jdk.jfr</code> package, or by using a user-defined
+ * available in the {@code jdk.jfr} package, or by using a user-defined
  * annotation that has the {@link jdk.jfr.MetadataDefinition} annotation.
  * <p>
  * After an event class is defined, instances can be created (event objects).
  * Data is stored in the event by assigning data to fields. Event timing can be
- * explicitly controlled by using the <code>begin</code> and {@code end} methods
- * available in the <code>Event</code> class.
+ * explicitly controlled by using the {@code begin} and {@code end} methods
+ * available in the {@code Event} class.
  * <p>
  * Gathering data to store in an event can be expensive. The
- * {@link Event#shouldCommit()} method can be used to verify whether an event
- * instance would actually be written to the system when the
- * {@code Event#commit()} method is invoked. If
- * {@link Event#shouldCommit()} returns {@code false}, then those operations can be
- * avoided.
+ * {@link jdk.jfr.Event#shouldCommit()} method can be used to verify whether
+ * an event instance would actually be written to the system when
+ * the {@link jdk.jfr.Event#commit()} method is invoked.
+ * If {@link jdk.jfr.Event#shouldCommit()} returns {@code false},
+ * then those operations can be avoided.
  * <p>
  * Sometimes the field layout of an event is not known at compile time. In that
  * case, an event can be dynamically defined. However, dynamic events might not
@@ -63,8 +63,8 @@
  * <p>
  * <b>Controlling Flight Recorder</b>
  * <p>
- * Flight Recorder can be controlled locally by using the <code>jcmd</code>
- * command line tool or remotely by using the <code>FlightRecorderMXBean</code>
+ * Flight Recorder can be controlled locally by using the {@code jcmd}
+ * command line tool or remotely by using the {@code FlightRecorderMXBean}
  * interface, registered in the platform MBeanServer. When direct programmatic
  * access is needed, a Flight Recorder instance can be obtained by invoking
  * {@link jdk.jfr.FlightRecorder#getFlightRecorder()} and a recording created by
@@ -168,7 +168,7 @@
  * </tr>
  * <tr>
  * <th scope="row">{@code stackTrace}</th>
- * <td>Specifies whether the stack trace from the {@code Event#commit()} method
+ * <td>Specifies whether the stack trace from the {@link Event#commit()} method
  * is recorded</td>
  * <td>{@code "true"}</td>
  * <td>String representation of a {@code Boolean} ({@code "true"} or

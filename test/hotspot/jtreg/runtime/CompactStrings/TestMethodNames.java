@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,19 @@
  * questions.
  */
 
-import javax.script.*;
-import java.util.function.*;
-
 /*
  * @test
  * @bug 8164612
  * @summary Test method names containing Latin-1 supplement characters.
+ * @compile methodNames.jcod
  * @run main/othervm -XX:+CompactStrings TestMethodNames
  * @run main/othervm -XX:-CompactStrings TestMethodNames
  */
 public class TestMethodNames {
-    public static void main(String[] args) throws Exception {
-        ScriptEngineManager m = new ScriptEngineManager();
-        ScriptEngine e = m.getEngineByName("nashorn");
 
-        e.eval("({get \"\0\"(){}})[\"\0\"]");
-        e.eval("({get \"\\x80\"(){}})[\"\\x80\"]");
-        e.eval("({get \"\\xff\"(){}})[\"\\xff\"]");
+    public static void main(String[] args) throws Exception {
+        // Load class containing methods with names containing Latin-1
+        // supplement characters.
+        Class newClass = Class.forName("methodNames");
     }
 }

@@ -33,7 +33,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include SetupJavaCompilers.gmk
+include JavaCompilation.gmk
 
 TARGETS_BUILD :=
 TARGETS_IMAGE :=
@@ -65,6 +65,8 @@ ifeq ($(INCLUDE_GRAAL), true)
           --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
           --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
           --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+          -Xprefer:newer \
+          #
 
       ### Copy 3rd party libs
       $(eval $(call SetupCopyFiles, COPY_GRAALUNIT_LIBS, \
@@ -76,7 +78,7 @@ ifeq ($(INCLUDE_GRAAL), true)
 
       ### Compile graalunit tests
       $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_TESTS, \
-          SETUP := GENERATE_USINGJDKBYTECODE, \
+          TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
           SRC := \
               $(SRC_DIR)/jdk.internal.vm.compiler.collections.test/src \
               $(SRC_DIR)/org.graalvm.compiler.api.directives.test/src \
@@ -93,6 +95,7 @@ ifeq ($(INCLUDE_GRAAL), true)
               $(SRC_DIR)/org.graalvm.compiler.graph.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.aarch64.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.amd64.test/src \
+              $(SRC_DIR)/org.graalvm.compiler.hotspot.jdk15.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.jdk9.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.lir.test/src \
               $(SRC_DIR)/org.graalvm.compiler.hotspot.sparc.test/src \
@@ -114,7 +117,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
           CLASSPATH := $(TEST_COMPILE_CP), \
           DISABLED_WARNINGS := processing, \
-          ADD_JAVAC_FLAGS := $(TEST_JAVAC_FLAGS), \
+          JAVAC_FLAGS := $(TEST_JAVAC_FLAGS), \
           COPY := .input, \
       ))
 
@@ -122,20 +125,16 @@ ifeq ($(INCLUDE_GRAAL), true)
 
       ### Compile graalunit tests which require -XDstringConcat=inline
       $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_TESTS_SET2, \
-          SETUP := GENERATE_USINGJDKBYTECODE, \
+          TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
           DEPENDS := $(BUILD_VM_COMPILER_TESTS), \
           SRC := $(SRC_DIR)/org.graalvm.compiler.core.test/src, \
           INCLUDE_FILES := org/graalvm/compiler/core/test/VerifyDebugUsageTest.java, \
           BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
           CLASSPATH := \
               $(TEST_COMPILE_CP) \
-              $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests \
-              , \
+              $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
           DISABLED_WARNINGS := processing, \
-          ADD_JAVAC_FLAGS := \
-              $(TEST_JAVAC_FLAGS) \
-              -XDstringConcat=inline \
-              , \
+          JAVAC_FLAGS := $(TEST_JAVAC_FLAGS) -XDstringConcat=inline, \
       ))
 
       TARGETS_BUILD += $(BUILD_VM_COMPILER_TESTS_SET2)
@@ -152,7 +151,7 @@ ifeq ($(INCLUDE_GRAAL), true)
 
       ### Compile and build mxtool
       $(eval $(call SetupJavaCompilation, BUILD_MXTOOL, \
-          SETUP := GENERATE_USINGJDKBYTECODE, \
+          TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
           SRC := $(TEST_DIR)/com.oracle.mxtool.junit, \
           BIN := $(COMPILE_OUTPUTDIR)/com.oracle.mxtool.junit, \
           JAR := $(COMPILE_OUTPUTDIR)/com.oracle.mxtool.junit.jar, \

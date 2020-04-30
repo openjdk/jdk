@@ -26,13 +26,14 @@
 
 extern "C" {
 
-static const char* EXP_INTERF_SIG = "LP/Q/Test;";
+static const char* EXP_INTERF_SIG = "LP/Q/HCInterf;";
 static const char* SIG_START      = "LP/Q/HiddenClassSig";
 static const size_t SIG_START_LEN = strlen(SIG_START);
 static const int    ACC_INTERFACE = 0x0200; // Interface class modifiers bit
 
 static jvmtiEnv *jvmti = NULL;
 static jint class_load_count = 0;
+static jint class_prep_count = 0;
 static bool failed = false;
 
 #define LOG0(str)             { printf(str); fflush(stdout); }
@@ -86,6 +87,7 @@ check_class_signature(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass, bool is_hidden
   char* gsig = NULL;
   jvmtiError err;
 
+  // get class signature
   err = jvmti->GetClassSignature(klass, &sig, &gsig);
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class: Error in JVMTI GetClassSignature");
 
@@ -160,9 +162,11 @@ check_hidden_class_loader(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
     char* sig = NULL;
     jclass kls = loader_classes[idx];
 
+    // GetClassLoaderClasses should not return any hidden classes
     if (!is_hidden(jni, kls)) {
       continue;
     }
+    // get class signature
     err = jvmti->GetClassSignature(kls, &sig, NULL);
     CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_loader: Error in JVMTI GetClassSignature");
 
@@ -189,11 +193,11 @@ check_hidden_class_impl_interf(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
     failed = true;
     return;
   }
-
-  // check the interface signature is matching the expected
+  // get interface signature
   err = jvmti->GetClassSignature(interfaces[0], &sig, NULL);
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_impl_interf: Error in JVMTI GetClassSignature for implemented interface");
 
+  // check the interface signature is matching the expected
   if (strcmp(sig, EXP_INTERF_SIG) != 0) {
     LOG2("check_hidden_class_impl_interf: FAIL: implemented interface signature: %s, expected to be: %s\n",
            sig, EXP_INTERF_SIG);
@@ -236,6 +240,43 @@ check_hidden_class_array(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass_array, const
   LOG0("### Native agent: check_hidden_class_array finished\n");
 }
 
+/* Process a CLASS_LOAD or aClassPrepare event. */
+static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
+                                jint* event_count_ptr, const char* event_name) {
+  char* sig = NULL;
+  char* gsig = NULL;
+  jvmtiError err;
+
+  // get class signature
+  err = jvmti->GetClassSignature(klass, &sig, &gsig);
+  CHECK_JVMTI_ERROR(jni, err, "ClassLoad event: Error in JVMTI GetClassSignature");
+
+  // check if this is an expected class event for hidden class
+  if (strlen(sig) > strlen(SIG_START) &&
+      strncmp(sig, SIG_START, SIG_START_LEN) == 0 &&
+      is_hidden(jni, klass)) {
+    (*event_count_ptr)++;
+    if (gsig == NULL) {
+      LOG1("%s event: FAIL: GetClassSignature returned NULL generic signature for hidden class\n", event_name);
+      failed = true;
+    }
+    LOG2("%s event: hidden class with sig: %s\n", event_name, sig);
+    LOG2("%s event: hidden class with gsig: %s\n", event_name, gsig);
+  }
+}
+
+/* Check CLASS_LOAD event is generated for the given hidden class. */
+static void JNICALL
+ClassLoad(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jclass klass) {
+  process_class_event(jvmti, jni, klass, &class_load_count, "ClassLoad");
+}
+
+/* Check CLASS_PREPARE event is generated for the given hidden class. */
+static void JNICALL
+ClassPrepare(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jclass klass) {
+  process_class_event(jvmti, jni, klass, &class_prep_count, "ClassPrepare");
+}
+
 /* Enable CLASS_LOAD event notification mode. */
 static void JNICALL
 VMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
@@ -244,38 +285,18 @@ VMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   printf("VMInit event: SIG_START: %s, SIG_START_LEN: %d\n", SIG_START, (int)SIG_START_LEN);
   fflush(stdout);
 
+  // enable ClassLoad event notification mode
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL);
   CHECK_JVMTI_ERROR(jni, err, "VMInit event: Error in enabling ClassLoad events notification");
-}
 
-/* Check CLASS_LOAD event is generated for the given hidden class. */
-static void JNICALL
-ClassLoad(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jclass klass) {
-  char* sig = NULL;
-  char* gsig = NULL;
-  char* src_name = NULL;
-  jvmtiError err;
-
-  err = jvmti->GetClassSignature(klass, &sig, &gsig);
-  CHECK_JVMTI_ERROR(jni, err, "ClassLoad event: Error in JVMTI GetClassSignature");
-
-  if (strlen(sig) > strlen(SIG_START) &&
-      strncmp(sig, SIG_START, SIG_START_LEN) == 0 &&
-      is_hidden(jni, klass)) {
-    class_load_count++;
-    if (gsig == NULL) {
-      LOG0("ClassLoad event: FAIL: GetClassSignature returned NULL generic signature for hidden class\n");
-      failed = true;
-    }
-    LOG1("ClassLoad event: hidden class with sig: %s\n", sig);
-    LOG1("ClassLoad event: hidden class with gsig: %s\n", gsig);
-  }
+  // enable ClassPrepare event notification mode
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+  CHECK_JVMTI_ERROR(jni, err, "VMInit event: Error in enabling ClassPrepare events notification");
 }
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks callbacks;
-  jvmtiCapabilities caps;
   jvmtiError err;
 
   LOG0("Agent_OnLoad: started\n");
@@ -288,21 +309,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   // set required event callbacks
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.ClassLoad = &ClassLoad;
+  callbacks.ClassPrepare = &ClassPrepare;
   callbacks.VMInit = &VMInit;
 
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
   if (err != JVMTI_ERROR_NONE) {
     LOG1("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", err);
-    failed = true;
-    return JNI_ERR;
-  }
-
-  // add required capabilities
-  memset(&caps, 0, sizeof(caps));
-  caps.can_get_source_file_name = 1;
-  err = jvmti->AddCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG1("Agent_OnLoad: Error in JVMTI AddCapabilities: %d\n", err);
     failed = true;
     return JNI_ERR;
   }
@@ -351,7 +363,13 @@ Java_P_Q_HiddenClassSigTest_checkHiddenClassArray(JNIEnv *jni, jclass klass, jcl
 JNIEXPORT jboolean JNICALL
 Java_P_Q_HiddenClassSigTest_checkFailed(JNIEnv *jni, jclass klass) {
   if (class_load_count == 0) {
-    LOG0("Native Agent: missed ClassLoad event for hidden class\n");
+    // expected ClassLoad event was not generated for hidden class
+    LOG0("Native Agent: FAIL: missed ClassLoad event for hidden class\n");
+    failed = true;
+  }
+  if (class_prep_count == 0) {
+    // expected ClassPrepare event was not generated for hidden class
+    LOG0("Native Agent: FAIL: missed ClassPrepare event for hidden class\n");
     failed = true;
   }
   return failed;

@@ -191,8 +191,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
 
         checkOutput("a/module-summary.html", present,
                 "<div class=\"packages-summary\">\n"
-                + "<table>\n"
-                + "<caption><span>" + typeString + "</span><span class=\"tab-end\">&nbsp;</span></caption>\n"
+                + "<table class=\"details-table\">\n"
+                + "<caption><span>" + typeString + "</span></caption>\n"
                 + "<thead>\n"
                 + "<tr>\n"
                 + "<th class=\"col-first\" scope=\"col\">From</th>\n"
