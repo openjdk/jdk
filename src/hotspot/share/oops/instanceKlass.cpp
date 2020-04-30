@@ -1378,14 +1378,14 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
       // Check if update has already taken place
       if (array_klasses() == NULL) {
-        Klass*    k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
+        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
         // use 'release' to pair with lock-free load
         release_set_array_klasses(k);
       }
     }
   }
   // _this will always be set at this point
-  ObjArrayKlass* oak = (ObjArrayKlass*)array_klasses();
+  ObjArrayKlass* oak = array_klasses();
   if (or_null) {
     return oak->array_klass_or_null(n);
   }
@@ -1624,12 +1624,12 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
 
 void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
   if (array_klasses() != NULL)
-    ArrayKlass::cast(array_klasses())->array_klasses_do(f, THREAD);
+    array_klasses()->array_klasses_do(f, THREAD);
 }
 
 void InstanceKlass::array_klasses_do(void f(Klass* k)) {
   if (array_klasses() != NULL)
-    ArrayKlass::cast(array_klasses())->array_klasses_do(f);
+    array_klasses()->array_klasses_do(f);
 }
 
 #ifdef ASSERT
@@ -2512,7 +2512,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != NULL) {
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    ArrayKlass::cast(array_klasses())->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize current biased locking state.
@@ -3714,9 +3714,6 @@ void InstanceKlass::verify_on(outputStream* st) {
   }
 
   // Verify other fields
-  if (array_klasses() != NULL) {
-    guarantee(array_klasses()->is_klass(), "should be klass");
-  }
   if (constants() != NULL) {
     guarantee(constants()->is_constantPool(), "should be constant pool");
   }

@@ -54,8 +54,8 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
   return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
 }
 
-Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                int n, Klass* element_klass, TRAPS) {
+ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
+                                                      int n, Klass* element_klass, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = NULL;
@@ -88,7 +88,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
           // Now retry from the beginning
           ek = element_klass->array_klass(n, CHECK_NULL);
         }  // re-lock
-        return ek;
+        return ObjArrayKlass::cast(ek);
       }
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
