@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,8 @@ final class JLinkBundlerHelper {
                 StandardBundlerParam.ADD_MODULES.fetchFrom(params);
         Set<String> limitModules =
                 StandardBundlerParam.LIMIT_MODULES.fetchFrom(params);
+        List<String> options =
+                StandardBundlerParam.JLINK_OPTIONS.fetchFrom(params);
         Path outputDir = imageBuilder.getRuntimeRoot();
         File mainJar = getMainJar(params);
         ModFile.ModType mainJarType = ModFile.ModType.Unknown;
@@ -181,7 +183,7 @@ final class JLinkBundlerHelper {
         }
 
         runJLink(outputDir, modulePath, modules, limitModules,
-                new HashMap<String,String>(), bindServices);
+                options, bindServices);
 
         imageBuilder.prepareApplicationFiles(params);
     }
@@ -316,7 +318,7 @@ final class JLinkBundlerHelper {
 
     private static void runJLink(Path output, List<Path> modulePath,
             Set<String> modules, Set<String> limitModules,
-            HashMap<String, String> user, boolean bindServices)
+            List<String> options, boolean bindServices)
             throws PackagerException {
 
         // This is just to ensure jlink is given a non-existant directory
@@ -342,19 +344,18 @@ final class JLinkBundlerHelper {
             args.add("--limit-modules");
             args.add(getStringList(limitModules));
         }
-        if (user != null && !user.isEmpty()) {
-            for (Map.Entry<String, String> entry : user.entrySet()) {
-                args.add(entry.getKey());
-                args.add(entry.getValue());
+        if (options != null) {
+            for (String option : options) {
+                if (option.startsWith("--output") ||
+                        option.startsWith("--add-modules") ||
+                        option.startsWith("--module-path")) {
+                    throw new PackagerException("error.blocked.option", option);
+                }
+                args.add(option);
             }
-        } else {
-            args.add("--strip-native-commands");
-            args.add("--strip-debug");
-            args.add("--no-man-pages");
-            args.add("--no-header-files");
-            if (bindServices) {
-                args.add("--bind-services");
-            }
+        }
+        if (bindServices) {
+            args.add("--bind-services");
         }
 
         StringWriter writer = new StringWriter();

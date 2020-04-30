@@ -727,6 +727,19 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 appLauncherCfgPath(launcherName));
     }
 
+    public List<String> readRuntimeReleaseFile() {
+        verifyIsOfType(PackageType.IMAGE);
+        if (isRuntime()) {
+            return null;
+        }
+        Path release = appLayout().runtimeRelease();
+        try {
+            return Files.readAllLines(release);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
     public static String escapeAndJoin(String... args) {
         return escapeAndJoin(List.of(args));
     }

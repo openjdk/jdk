@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,11 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
     private static final String JAVABASEJMOD = "java.base.jmod";
     private final static String DEFAULT_VERSION = "1.0";
     private final static String DEFAULT_RELEASE = "1";
+    private final static String[] DEFAULT_JLINK_OPTIONS = {
+            "--strip-native-commands",
+            "--strip-debug",
+            "--no-man-pages",
+            "--no-header-files"};
 
     StandardBundlerParam(String id, Class<T> valueType,
             Function<Map<String, ? super Object>, T> defaultValueFunction,
@@ -478,6 +483,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     p -> new LinkedHashSet<String>(),
                     (s, p) -> new LinkedHashSet<>(Arrays.asList(s.split(",")))
             );
+
+    @SuppressWarnings("unchecked")
+    static final StandardBundlerParam<List<String>> JLINK_OPTIONS =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.JLINK_OPTIONS.getId(),
+                    (Class<List<String>>) (Object) List.class,
+                    p -> Arrays.asList(DEFAULT_JLINK_OPTIONS),
+                    (s, p) -> null);
 
     @SuppressWarnings("unchecked")
     static final BundlerParamInfo<Set<String>> LIMIT_MODULES =

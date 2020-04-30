@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,11 @@ public class Arguments {
             setOptionValue("arguments", arguments);
         }),
 
+        JLINK_OPTIONS ("jlink-options", OptionCategories.PROPERTY, () -> {
+            List<String> options = getArgumentList(popArg());
+            setOptionValue("jlink-options", options);
+        }),
+
         ICON ("icon", OptionCategories.PROPERTY),
 
         COPYRIGHT ("copyright", OptionCategories.PROPERTY),
@@ -264,6 +269,7 @@ public class Arguments {
         MODULE_PATH ("module-path", "p", OptionCategories.MODULAR),
 
         BIND_SERVICES ("bind-services", OptionCategories.PROPERTY, () -> {
+            showDeprecation("bind-services");
             setOptionValue("bind-services", true);
         }),
 
@@ -579,7 +585,11 @@ public class Arguments {
                         CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
                         CLIOptions.BIND_SERVICES.getIdWithPrefix());
             }
-
+            if (allOptions.contains(CLIOptions.JLINK_OPTIONS)) {
+                throw new PackagerException("ERR_MutuallyExclusiveOptions",
+                        CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
+                        CLIOptions.JLINK_OPTIONS.getIdWithPrefix());
+            }
         }
         if (hasMainJar && hasMainModule) {
             throw new PackagerException("ERR_BothMainJarAndModule");
@@ -809,4 +819,8 @@ public class Arguments {
         return null;
     }
 
+    private static void showDeprecation(String option) {
+        Log.error(MessageFormat.format(I18N.getString("warning.deprecation"),
+                option));
+    }
 }
