@@ -82,10 +82,8 @@ public class TestClassLoaderStatsEvent {
                 Events.assertField(event, "classCount").equal(2L);
                 Events.assertField(event, "chunkSize").above(1L);
                 Events.assertField(event, "blockSize").above(1L);
-                Events.assertField(event, "unsafeAnonymousClassCount").equal(2L);
-                Events.assertField(event, "unsafeAnonymousChunkSize").above(0L);
-                Events.assertField(event, "unsafeAnonymousBlockSize").above(0L);
-                Events.assertField(event, "hiddenClassCount").equal(2L);
+                // Hidden classes stats include both hidden and unsafe anonymous classes.
+                Events.assertField(event, "hiddenClassCount").equal(4L);
                 Events.assertField(event, "hiddenChunkSize").above(0L);
                 Events.assertField(event, "hiddenBlockSize").above(0L);
                 isAnyFound = true;

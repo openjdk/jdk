@@ -62,16 +62,7 @@ void MetaspaceTracer::send_allocation_failure_event(ClassLoaderData *cld,
   E event;
   if (event.should_commit()) {
     event.set_classLoader(cld);
-    event.set_unsafeAnonymousClassLoader(false); // initialize these
-    event.set_hiddenClassLoader(false);
-    if (cld->has_class_mirror_holder()) {
-      assert(cld->klasses() != NULL, "unexpected NULL for cld->klasses()");
-      if (cld->klasses()->is_non_strong_hidden()) {
-        event.set_hiddenClassLoader(true);
-      } else {
-        event.set_unsafeAnonymousClassLoader(true);
-      }
-    }
+    event.set_hiddenClassLoader(cld->has_class_mirror_holder());
     event.set_size(word_size * BytesPerWord);
     event.set_metadataType((u1) mdtype);
     event.set_metaspaceObjectType((u1) objtype);

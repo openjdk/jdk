@@ -146,9 +146,6 @@ class LoaderTreeNode : public ResourceObj {
   LoadedClassInfo* _classes;
   int _num_classes;
 
-  LoadedClassInfo* _anon_classes;
-  int _num_anon_classes;
-
   LoadedClassInfo* _hidden_classes;
   int _num_hidden_classes;
 
@@ -224,7 +221,8 @@ class LoaderTreeNode : public ResourceObj {
       if (print_classes) {
         if (_classes != NULL) {
           for (LoadedClassInfo* lci = _classes; lci; lci = lci->_next) {
-            // non-strong hidden and unsafe anonymous classes should not live in the primary CLD of their loaders.
+            // non-strong hidden and unsafe anonymous classes should not live in
+            // the primary CLD of their loaders.
             assert(lci->_cld == _cld, "must be");
 
             branchtracker.print(st);
@@ -247,33 +245,6 @@ class LoaderTreeNode : public ResourceObj {
           branchtracker.print(st);
           st->print("%*s ", indentation, "");
           st->print_cr("(%u class%s)", _num_classes, (_num_classes == 1) ? "" : "es");
-
-          // Empty line
-          branchtracker.print(st);
-          st->cr();
-        }
-
-        if (_anon_classes != NULL) {
-          for (LoadedClassInfo* lci = _anon_classes; lci; lci = lci->_next) {
-            branchtracker.print(st);
-            if (lci == _anon_classes) { // first iteration
-              st->print("%*s ", indentation, "Unsafe Anonymous Classes:");
-            } else {
-              st->print("%*s ", indentation, "");
-            }
-            st->print("%s", lci->_klass->external_name());
-            // For unsafe anonymous classes, also print CLD if verbose. Should
-            // be a different one than the primary CLD.
-            assert(lci->_cld != _cld, "must be");
-            if (verbose) {
-              st->print("  (Loader Data: " PTR_FORMAT ")", p2i(lci->_cld));
-            }
-            st->cr();
-          }
-          branchtracker.print(st);
-          st->print("%*s ", indentation, "");
-          st->print_cr("(%u unsafe anonymous class%s)", _num_anon_classes,
-                       (_num_anon_classes == 1) ? "" : "es");
 
           // Empty line
           branchtracker.print(st);
@@ -333,9 +304,8 @@ public:
 
   LoaderTreeNode(const oop loader_oop)
     : _loader_oop(loader_oop), _cld(NULL), _child(NULL), _next(NULL),
-      _classes(NULL), _num_classes(0), _anon_classes(NULL), _num_anon_classes(0),
-      _hidden_classes(NULL), _num_hidden_classes(0),
-      _num_folded(0)
+      _classes(NULL), _num_classes(0), _hidden_classes(NULL),
+      _num_hidden_classes(0), _num_folded(0)
     {}
 
   void set_cld(const ClassLoaderData* cld) {
@@ -357,7 +327,7 @@ public:
     LoadedClassInfo** p_list_to_add_to;
     bool is_hidden = first_class->_klass->is_hidden();
     if (has_class_mirror_holder) {
-      p_list_to_add_to = is_hidden ? &_hidden_classes : &_anon_classes;
+      p_list_to_add_to = &_hidden_classes;
     } else {
       p_list_to_add_to = &_classes;
     }
@@ -367,11 +337,7 @@ public:
     }
     *p_list_to_add_to = first_class;
     if (has_class_mirror_holder) {
-      if (is_hidden) {
-        _num_hidden_classes += num_classes;
-      } else {
-        _num_anon_classes += num_classes;
-      }
+      _num_hidden_classes += num_classes;
     } else {
       _num_classes += num_classes;
     }

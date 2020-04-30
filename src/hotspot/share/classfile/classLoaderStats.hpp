@@ -77,10 +77,6 @@ public:
   size_t            _block_sz;
   uintx             _classes_count;
 
-  size_t            _anon_chunk_sz;
-  size_t            _anon_block_sz;
-  uintx             _anon_classes_count;
-
   size_t            _hidden_chunk_sz;
   size_t            _hidden_block_sz;
   uintx             _hidden_classes_count;
@@ -92,9 +88,6 @@ public:
     _chunk_sz(0),
     _block_sz(0),
     _classes_count(0),
-    _anon_chunk_sz(0),
-    _anon_block_sz(0),
-    _anon_classes_count(0),
     _hidden_chunk_sz(0),
     _hidden_block_sz(0),
     _hidden_classes_count(0) {

@@ -74,18 +74,9 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   cld->classes_do(&csc);
   bool is_hidden = false;
   if(cld->has_class_mirror_holder()) {
-    // if cld has a class holder then it must be either hidden or unsafe anonymous.
-    Klass* k = cld->klasses();
-    // if it's an array class then need to see if bottom class is hidden.
-    if (k->is_array_klass()) {
-      k = ObjArrayKlass::cast(k)->bottom_klass();
-    }
-    is_hidden = k->is_hidden();
-    if (is_hidden) {
-      cls->_hidden_classes_count += csc._num_classes;
-    } else {
-      cls->_anon_classes_count += csc._num_classes;
-    }
+    // If cld has a class holder then it must be either hidden or unsafe anonymous.
+    // Either way, count it as a hidden class.
+    cls->_hidden_classes_count += csc._num_classes;
   } else {
     cls->_classes_count = csc._num_classes;
   }
@@ -94,13 +85,8 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   ClassLoaderMetaspace* ms = cld->metaspace_or_null();
   if (ms != NULL) {
     if(cld->has_class_mirror_holder()) {
-      if (is_hidden) {
-        cls->_hidden_chunk_sz += ms->allocated_chunks_bytes();
-        cls->_hidden_block_sz += ms->allocated_blocks_bytes();
-      } else {
-        cls->_anon_chunk_sz += ms->allocated_chunks_bytes();
-        cls->_anon_block_sz += ms->allocated_blocks_bytes();
-      }
+      cls->_hidden_chunk_sz += ms->allocated_chunks_bytes();
+      cls->_hidden_block_sz += ms->allocated_blocks_bytes();
     } else {
       cls->_chunk_sz = ms->allocated_chunks_bytes();
       cls->_block_sz = ms->allocated_blocks_bytes();
@@ -133,12 +119,6 @@ bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats* const& 
     _out->print("<boot class loader>");
   }
   _out->cr();
-  if (cls->_anon_classes_count > 0) {
-    _out->print_cr(SPACE SPACE SPACE "                                    " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "   + unsafe anonymous classes",
-        "", "", "",
-        cls->_anon_classes_count,
-        cls->_anon_chunk_sz, cls->_anon_block_sz);
-  }
   if (cls->_hidden_classes_count > 0) {
     _out->print_cr(SPACE SPACE SPACE "                                    " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "   + hidden classes",
         "", "", "",

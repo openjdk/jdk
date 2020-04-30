@@ -480,9 +480,6 @@ public:
     event.set_classCount(cls->_classes_count);
     event.set_chunkSize(cls->_chunk_sz);
     event.set_blockSize(cls->_block_sz);
-    event.set_unsafeAnonymousClassCount(cls->_anon_classes_count);
-    event.set_unsafeAnonymousChunkSize(cls->_anon_chunk_sz);
-    event.set_unsafeAnonymousBlockSize(cls->_anon_block_sz);
     event.set_hiddenClassCount(cls->_hidden_classes_count);
     event.set_hiddenChunkSize(cls->_hidden_chunk_sz);
     event.set_hiddenBlockSize(cls->_hidden_block_sz);
