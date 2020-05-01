@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,7 @@ public class except012 {
 
         static {
             crazyBytecode = new byte[1000];
-            Random random = new Random(0);
+            Random random = new Random(42);
             for (int i = 0; i < crazyBytecode.length; i++)
                 crazyBytecode[i] = (byte) random.nextInt(256);
         }

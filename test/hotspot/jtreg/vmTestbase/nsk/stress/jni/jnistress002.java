@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 
 /*
  * @test
- * @key stress
+ * @key stress randomness
  *
  * @summary converted from VM testbase nsk/stress/jni/jnistress002.
  * VM testbase keywords: [stress, quick, feature_283, nonconcurrent]
@@ -61,6 +61,7 @@ package nsk.stress.jni;
 import nsk.share.Consts;
 import nsk.share.Debug;
 import nsk.share.test.StressOptions;
+import jdk.test.lib.Utils;
 
 import java.lang.reflect.Field;
 import java.util.Random;
@@ -433,7 +434,7 @@ class JNIter002 extends Thread {
         System.loadLibrary("jnistress002");
     }
 
-    static Random myRandom = new Random();
+    Random myRandom = new Random(Utils.getRandomInstance().nextLong());
 
     public JNIter002(Synchronizer[] aSync) {
         sync = aSync;

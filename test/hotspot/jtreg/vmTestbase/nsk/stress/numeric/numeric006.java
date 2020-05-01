@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress
+ * @key stress randomness
  *
  * @summary converted from VM testbase nsk/stress/numeric/numeric006.
  * VM testbase keywords: [stress, slow, nonconcurrent, quick]
@@ -60,12 +60,15 @@
  * COMMENTS
  *     See the bug-report:
  *         #4242172 (P3/S5) 2.0: poor performance in matrix calculations
+ * @library /test/lib
  * @run main/othervm nsk.stress.numeric.numeric006.numeric006 300 3
  */
 
 package nsk.stress.numeric.numeric006;
 
 import java.io.PrintStream;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /**
  * This test calculates the product <code>A<sup>.</sup>A</code> for
@@ -109,6 +112,7 @@ import java.io.PrintStream;
  * #4242172 (P3/S5) 2.0: poor performance in matrix calculations
  */
 public class numeric006 {
+    private static final Random RNG = Utils.getRandomInstance();
     /**
      * When testing performance, single thread calculation is allowed to
      * be 10% slower than multi-threads calculation (<code>TOLERANCE</code>
@@ -373,7 +377,7 @@ public class numeric006 {
 
         for (int line = 0; line < size; line++)
             for (int column = 0; column < size; column++)
-                A[line][column] = (float) ((1 - 2 * Math.random()) * size);
+                A[line][column] = (float) ((1 - 2 * RNG.nextDouble()) * size);
 
         return A;
     }
