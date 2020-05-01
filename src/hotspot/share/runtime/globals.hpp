@@ -192,7 +192,7 @@ const size_t minimumSymbolTableSize = 1024;
           range(os::vm_allocation_granularity(), NOT_LP64(2*G) LP64_ONLY(8192*G)) \
                                                                             \
   product(bool, ForceNUMA, false,                                           \
-          "Force NUMA optimizations on single-node/UMA systems")            \
+          "(Deprecated) Force NUMA optimizations on single-node/UMA systems") \
                                                                             \
   product(uintx, NUMAChunkResizeWeight, 20,                                 \
           "Percentage (0-100) used to weight the current sample when "      \
