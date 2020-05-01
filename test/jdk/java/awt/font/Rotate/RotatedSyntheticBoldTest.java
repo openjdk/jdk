@@ -23,11 +23,13 @@
 
 /*
  * @test    RotatedSyntheticBoldTest
- * @bug     8233006
+ * @bug     8233006 8244113
  * @summary This test verifies that rotated synthetically bolded fonts
  *          do not have a wandering baseline
  * @run     main RotatedSyntheticBoldTest
- *
+ */
+
+/*
  * Note this is designed to be run headless. The creation of the UI
  * is meant to be run outside the harness as an visualisaton aid to
  * debugging any failure.
@@ -74,8 +76,8 @@ public class RotatedSyntheticBoldTest extends JPanel {
         }
     }
 
-    static void createUI() {
-        SwingUtilities.invokeLater(() -> {
+    static void createUI() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
             JFrame frame = new JFrame("Synthetic Text Test");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new RotatedSyntheticBoldTest());
@@ -151,6 +153,9 @@ public class RotatedSyntheticBoldTest extends JPanel {
         boolean failed = false;
         for (String s : families) {
             Font font = new Font(s, Font.BOLD, 20);
+            if (font.canDisplayUpTo(TEXT) != -1) {
+                continue;
+            }
             g2d.setFont(font);
             GlyphVector gv = font.createGlyphVector(frc, TEXT);
             Rectangle2D r = gv.getVisualBounds();
