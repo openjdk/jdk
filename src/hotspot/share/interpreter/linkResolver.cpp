@@ -664,7 +664,9 @@ void LinkResolver::check_method_loader_constraints(const LinkInfo& link_info,
 
   ResourceMark rm(THREAD);
   Symbol* failed_type_symbol =
-    SystemDictionary::check_signature_loaders(link_info.signature(), current_loader,
+    SystemDictionary::check_signature_loaders(link_info.signature(),
+                                              /*klass_being_linked*/ NULL, // We are not linking class
+                                              current_loader,
                                               resolved_loader, true, CHECK);
   if (failed_type_symbol != NULL) {
     Klass* current_class = link_info.current_klass();
@@ -700,6 +702,7 @@ void LinkResolver::check_field_loader_constraints(Symbol* field, Symbol* sig,
   ResourceMark rm(THREAD);  // needed for check_signature_loaders
   Symbol* failed_type_symbol =
     SystemDictionary::check_signature_loaders(sig,
+                                              /*klass_being_linked*/ NULL, // We are not linking class
                                               ref_loader, sel_loader,
                                               false,
                                               CHECK);

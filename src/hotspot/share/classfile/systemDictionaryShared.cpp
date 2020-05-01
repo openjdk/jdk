@@ -69,11 +69,29 @@ DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
 public:
-  struct DTConstraint {
+  struct DTLoaderConstraint {
+    Symbol* _name;
+    char _loader_type1;
+    char _loader_type2;
+    DTLoaderConstraint(Symbol* name, char l1, char l2) : _name(name), _loader_type1(l1), _loader_type2(l2) {
+      _name->increment_refcount();
+    }
+    DTLoaderConstraint() : _name(NULL), _loader_type1('0'), _loader_type2('0') {}
+    bool equals(const DTLoaderConstraint& t) {
+      return t._name == _name &&
+             ((t._loader_type1 == _loader_type1 && t._loader_type2 == _loader_type2) ||
+              (t._loader_type2 == _loader_type1 && t._loader_type1 == _loader_type2));
+    }
+  };
+
+  struct DTVerifierConstraint {
     Symbol* _name;
     Symbol* _from_name;
-    DTConstraint() : _name(NULL), _from_name(NULL) {}
-    DTConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {}
+    DTVerifierConstraint() : _name(NULL), _from_name(NULL) {}
+    DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
+      _name->increment_refcount();
+      _from_name->increment_refcount();
+    }
   };
 
   InstanceKlass*               _klass;
@@ -81,8 +99,9 @@ public:
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
-  GrowableArray<DTConstraint>* _verifier_constraints;
-  GrowableArray<char>*         _verifier_constraint_flags;
+  GrowableArray<DTVerifierConstraint>* _verifier_constraints;
+  GrowableArray<char>*                 _verifier_constraint_flags;
+  GrowableArray<DTLoaderConstraint>* _loader_constraints;
 
   DumpTimeSharedClassInfo() {
     _klass = NULL;
@@ -93,18 +112,28 @@ public:
     _excluded = false;
     _verifier_constraints = NULL;
     _verifier_constraint_flags = NULL;
+    _loader_constraints = NULL;
   }
 
   void add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
+  void record_linking_constraint(Symbol* name, Handle loader1, Handle loader2);
 
   bool is_builtin() {
     return SystemDictionaryShared::is_builtin(_klass);
   }
 
-  int num_constraints() {
+  int num_verifier_constraints() {
     if (_verifier_constraint_flags != NULL) {
       return _verifier_constraint_flags->length();
+    } else {
+      return 0;
+    }
+  }
+
+  int num_loader_constraints() {
+    if (_loader_constraints != NULL) {
+      return _loader_constraints->length();
     } else {
       return 0;
     }
@@ -114,9 +143,15 @@ public:
     it->push(&_klass);
     if (_verifier_constraints != NULL) {
       for (int i = 0; i < _verifier_constraints->length(); i++) {
-        DTConstraint* cons = _verifier_constraints->adr_at(i);
+        DTVerifierConstraint* cons = _verifier_constraints->adr_at(i);
         it->push(&cons->_name);
         it->push(&cons->_from_name);
+      }
+    }
+    if (_loader_constraints != NULL) {
+      for (int i = 0; i < _loader_constraints->length(); i++) {
+        DTLoaderConstraint* lc = _loader_constraints->adr_at(i);
+        it->push(&lc->_name);
       }
     }
   }
@@ -202,19 +237,32 @@ public:
     int _clsfile_crc32;
   };
 
-  // This is different than  DumpTimeSharedClassInfo::DTConstraint. We use
+  // This is different than  DumpTimeSharedClassInfo::DTVerifierConstraint. We use
   // u4 instead of Symbol* to save space on 64-bit CPU.
-  struct RTConstraint {
+  struct RTVerifierConstraint {
     u4 _name;
     u4 _from_name;
+    Symbol* name() { return (Symbol*)(SharedBaseAddress + _name);}
+    Symbol* from_name() { return (Symbol*)(SharedBaseAddress + _from_name); }
+  };
+
+  struct RTLoaderConstraint {
+    u4   _name;
+    char _loader_type1;
+    char _loader_type2;
+    Symbol* constraint_name() {
+      return (Symbol*)(SharedBaseAddress + _name);
+    }
   };
 
   InstanceKlass* _klass;
-  int _num_constraints;
+  int _num_verifier_constraints;
+  int _num_loader_constraints;
 
-  // optional CrcInfo      _crc;  (only for UNREGISTERED classes)
-  // optional RTConstraint _verifier_constraints[_num_constraints]
-  // optional char         _verifier_constraint_flags[_num_constraints]
+  // optional CrcInfo              _crc;  (only for UNREGISTERED classes)
+  // optional RTLoaderConstraint   _loader_constraint_types[_num_loader_constraints]
+  // optional RTVerifierConstraint _verifier_constraints[_num_verifier_constraints]
+  // optional char                 _verifier_constraint_flags[_num_verifier_constraints]
 
 private:
   static size_t header_size_size() {
@@ -227,34 +275,46 @@ private:
       return 0;
     }
   }
-  static size_t verifier_constraints_size(int num_constraints) {
-    return sizeof(RTConstraint) * num_constraints;
+  static size_t verifier_constraints_size(int num_verifier_constraints) {
+    return sizeof(RTVerifierConstraint) * num_verifier_constraints;
   }
-  static size_t verifier_constraint_flags_size(int num_constraints) {
-    return sizeof(char) * num_constraints;
+  static size_t verifier_constraint_flags_size(int num_verifier_constraints) {
+    return sizeof(char) * num_verifier_constraints;
+  }
+  static size_t loader_constraints_size(int num_loader_constraints) {
+    return sizeof(RTLoaderConstraint) * num_loader_constraints;
   }
 
 public:
-  static size_t byte_size(InstanceKlass* klass, int num_constraints) {
+  static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_loader_constraints) {
     return header_size_size() +
            crc_size(klass) +
-           verifier_constraints_size(num_constraints) +
-           verifier_constraint_flags_size(num_constraints);
+           loader_constraints_size(num_loader_constraints) +
+           verifier_constraints_size(num_verifier_constraints) +
+           verifier_constraint_flags_size(num_verifier_constraints);
   }
 
 private:
   size_t crc_offset() const {
     return header_size_size();
   }
-  size_t verifier_constraints_offset() const {
+
+  size_t loader_constraints_offset() const  {
     return crc_offset() + crc_size(_klass);
   }
+  size_t verifier_constraints_offset() const {
+    return loader_constraints_offset() + loader_constraints_size(_num_loader_constraints);
+  }
   size_t verifier_constraint_flags_offset() const {
-    return verifier_constraints_offset() + verifier_constraints_size(_num_constraints);
+    return verifier_constraints_offset() + verifier_constraints_size(_num_verifier_constraints);
   }
 
-  void check_constraint_offset(int i) const {
-    assert(0 <= i && i < _num_constraints, "sanity");
+  void check_verifier_constraint_offset(int i) const {
+    assert(0 <= i && i < _num_verifier_constraints, "sanity");
+  }
+
+  void check_loader_constraint_offset(int i) const {
+    assert(0 <= i && i < _num_loader_constraints, "sanity");
   }
 
 public:
@@ -262,18 +322,28 @@ public:
     assert(crc_size(_klass) > 0, "must be");
     return (CrcInfo*)(address(this) + crc_offset());
   }
-  RTConstraint* verifier_constraints() {
-    assert(_num_constraints > 0, "sanity");
-    return (RTConstraint*)(address(this) + verifier_constraints_offset());
+  RTVerifierConstraint* verifier_constraints() {
+    assert(_num_verifier_constraints > 0, "sanity");
+    return (RTVerifierConstraint*)(address(this) + verifier_constraints_offset());
   }
-  RTConstraint* verifier_constraint_at(int i) {
-    check_constraint_offset(i);
+  RTVerifierConstraint* verifier_constraint_at(int i) {
+    check_verifier_constraint_offset(i);
     return verifier_constraints() + i;
   }
 
   char* verifier_constraint_flags() {
-    assert(_num_constraints > 0, "sanity");
+    assert(_num_verifier_constraints > 0, "sanity");
     return (char*)(address(this) + verifier_constraint_flags_offset());
+  }
+
+  RTLoaderConstraint* loader_constraints() {
+    assert(_num_loader_constraints > 0, "sanity");
+    return (RTLoaderConstraint*)(address(this) + loader_constraints_offset());
+  }
+
+  RTLoaderConstraint* loader_constraint_at(int i) {
+    check_loader_constraint_offset(i);
+    return loader_constraints() + i;
   }
 
   static u4 object_delta_u4(Symbol* sym) {
@@ -290,17 +360,27 @@ public:
       c->_clsfile_size = info._clsfile_size;
       c->_clsfile_crc32 = info._clsfile_crc32;
     }
-    _num_constraints = info.num_constraints();
-    if (_num_constraints > 0) {
-      RTConstraint* constraints = verifier_constraints();
+    _num_verifier_constraints = info.num_verifier_constraints();
+    _num_loader_constraints   = info.num_loader_constraints();
+    int i;
+    if (_num_verifier_constraints > 0) {
+      RTVerifierConstraint* vf_constraints = verifier_constraints();
       char* flags = verifier_constraint_flags();
-      int i;
-      for (i = 0; i < _num_constraints; i++) {
-        constraints[i]._name      = object_delta_u4(info._verifier_constraints->at(i)._name);
-        constraints[i]._from_name = object_delta_u4(info._verifier_constraints->at(i)._from_name);
+      for (i = 0; i < _num_verifier_constraints; i++) {
+        vf_constraints[i]._name      = object_delta_u4(info._verifier_constraints->at(i)._name);
+        vf_constraints[i]._from_name = object_delta_u4(info._verifier_constraints->at(i)._from_name);
       }
-      for (i = 0; i < _num_constraints; i++) {
+      for (i = 0; i < _num_verifier_constraints; i++) {
         flags[i] = info._verifier_constraint_flags->at(i);
+      }
+    }
+
+    if (_num_loader_constraints > 0) {
+      RTLoaderConstraint* ld_constraints = loader_constraints();
+      for (i = 0; i < _num_loader_constraints; i++) {
+        ld_constraints[i]._name = object_delta_u4(info._loader_constraints->at(i)._name);
+        ld_constraints[i]._loader_type1 = info._loader_constraints->at(i)._loader_type1;
+        ld_constraints[i]._loader_type2 = info._loader_constraints->at(i)._loader_type2;
       }
     }
     if (DynamicDumpSharedSpaces) {
@@ -314,15 +394,8 @@ public:
            crc()->_clsfile_crc32 == clsfile_crc32;
   }
 
-  Symbol* get_constraint_name(int i) {
-    return (Symbol*)(SharedBaseAddress + verifier_constraint_at(i)->_name);
-  }
-  Symbol* get_constraint_from_name(int i) {
-    return (Symbol*)(SharedBaseAddress + verifier_constraint_at(i)->_from_name);
-  }
-
-  char get_constraint_flag(int i) {
-    check_constraint_offset(i);
+  char verifier_constraint_flag(int i) {
+    check_verifier_constraint_offset(i);
     return verifier_constraint_flags()[i];
   }
 
@@ -385,7 +458,6 @@ oop SystemDictionaryShared::shared_jar_url(int index) {
 oop SystemDictionaryShared::shared_jar_manifest(int index) {
   return _shared_jar_manifests->obj_at(index);
 }
-
 
 Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TRAPS) {
   Handle manifest ;
@@ -1034,7 +1106,7 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   }
   if (p->_verifier_constraints != NULL) {
     for (int i = 0; i < p->_verifier_constraints->length(); i++) {
-      DumpTimeSharedClassInfo::DTConstraint constraint = p->_verifier_constraints->at(i);
+      DumpTimeSharedClassInfo::DTVerifierConstraint constraint = p->_verifier_constraints->at(i);
       if (constraint._name != NULL ) {
         constraint._name->decrement_refcount();
       }
@@ -1042,11 +1114,21 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
         constraint._from_name->decrement_refcount();
       }
     }
-    FREE_C_HEAP_ARRAY(DTConstraint, p->_verifier_constraints);
+    FREE_C_HEAP_ARRAY(DumpTimeSharedClassInfo::DTVerifierConstraint, p->_verifier_constraints);
     p->_verifier_constraints = NULL;
+    FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
+    p->_verifier_constraint_flags = NULL;
   }
-  FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
-  p->_verifier_constraint_flags = NULL;
+  if (p->_loader_constraints != NULL) {
+    for (int i = 0; i < p->_loader_constraints->length(); i++) {
+      DumpTimeSharedClassInfo::DTLoaderConstraint ld =  p->_loader_constraints->at(i);
+      if (ld._name != NULL) {
+        ld._name->decrement_refcount();
+      }
+    }
+    FREE_C_HEAP_ARRAY(DumpTimeSharedClassInfo::DTLoaderConstraint, p->_loader_constraints);
+    p->_loader_constraints = NULL;
+  }
   _dumptime_table->remove(k);
 }
 
@@ -1246,19 +1328,19 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
 void DumpTimeSharedClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == NULL) {
-    _verifier_constraints = new(ResourceObj::C_HEAP, mtClass) GrowableArray<DTConstraint>(4, true, mtClass);
+    _verifier_constraints = new(ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, true, mtClass);
   }
   if (_verifier_constraint_flags == NULL) {
     _verifier_constraint_flags = new(ResourceObj::C_HEAP, mtClass) GrowableArray<char>(4, true, mtClass);
   }
-  GrowableArray<DTConstraint>* vc_array = _verifier_constraints;
+  GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {
-    DTConstraint* p = vc_array->adr_at(i);
+    DTVerifierConstraint* p = vc_array->adr_at(i);
     if (name == p->_name && from_name == p->_from_name) {
       return;
     }
   }
-  DTConstraint cons(name, from_name);
+  DTVerifierConstraint cons(name, from_name);
   vc_array->append(cons);
 
   GrowableArray<char>* vcflags_array = _verifier_constraint_flags;
@@ -1276,17 +1358,76 @@ void DumpTimeSharedClassInfo::add_verification_constraint(InstanceKlass* k, Symb
   }
 }
 
+static char get_loader_type_by(oop  loader) {
+  assert(SystemDictionary::is_builtin_class_loader(loader), "Must be built-in loader");
+  if (SystemDictionary::is_boot_class_loader(loader)) {
+    return (char)ClassLoader::BOOT_LOADER;
+  } else if (SystemDictionary::is_platform_class_loader(loader)) {
+    return (char)ClassLoader::PLATFORM_LOADER;
+  } else {
+    assert(SystemDictionary::is_system_class_loader(loader), "Class loader mismatch");
+    return (char)ClassLoader::APP_LOADER;
+  }
+}
+
+static oop get_class_loader_by(char type) {
+  if (type == (char)ClassLoader::BOOT_LOADER) {
+    return (oop)NULL;
+  } else if (type == (char)ClassLoader::PLATFORM_LOADER) {
+    return SystemDictionary::java_platform_loader();
+  } else {
+    assert (type == (char)ClassLoader::APP_LOADER, "Sanity");
+    return SystemDictionary::java_system_loader();
+  }
+}
+
+void DumpTimeSharedClassInfo::record_linking_constraint(Symbol* name, Handle loader1, Handle loader2) {
+  assert(loader1 != loader2, "sanity");
+  LogTarget(Info, class, loader, constraints) log;
+  if (_loader_constraints == NULL) {
+    _loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(4, true, mtClass);
+  }
+  char lt1 = get_loader_type_by(loader1());
+  char lt2 = get_loader_type_by(loader2());
+  DTLoaderConstraint lc(name, lt1, lt2);
+  for (int i = 0; i < _loader_constraints->length(); i++) {
+    DTLoaderConstraint dt = _loader_constraints->at(i);
+    if (lc.equals(dt)) {
+      if (log.is_enabled()) {
+        ResourceMark rm;
+        // Use loader[0]/loader[1] to be consistent with the logs in loaderConstraints.cpp
+        log.print("[CDS record loader constraint for class: %s constraint_name: %s loader[0]: %s loader[1]: %s already added]",
+                  _klass->external_name(), name->as_C_string(),
+                  ClassLoaderData::class_loader_data(loader1())->loader_name_and_id(),
+                  ClassLoaderData::class_loader_data(loader2())->loader_name_and_id());
+      }
+      return;
+    }
+  }
+  _loader_constraints->append(lc);
+  if (log.is_enabled()) {
+    ResourceMark rm;
+    // Use loader[0]/loader[1] to be consistent with the logs in loaderConstraints.cpp
+    log.print("[CDS record loader constraint for class: %s constraint_name: %s loader[0]: %s loader[1]: %s total %d]",
+              _klass->external_name(), name->as_C_string(),
+              ClassLoaderData::class_loader_data(loader1())->loader_name_and_id(),
+              ClassLoaderData::class_loader_data(loader2())->loader_name_and_id(),
+              _loader_constraints->length());
+  }
+}
+
 void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass,
                                                             TRAPS) {
   assert(!DumpSharedSpaces && UseSharedSpaces, "called at run time with CDS enabled only");
   RunTimeSharedClassInfo* record = RunTimeSharedClassInfo::get_for(klass);
 
-  int length = record->_num_constraints;
+  int length = record->_num_verifier_constraints;
   if (length > 0) {
     for (int i = 0; i < length; i++) {
-      Symbol* name      = record->get_constraint_name(i);
-      Symbol* from_name = record->get_constraint_from_name(i);
-      char c            = record->get_constraint_flag(i);
+      RunTimeSharedClassInfo::RTVerifierConstraint* vc = record->verifier_constraint_at(i);
+      Symbol* name      = vc->name();
+      Symbol* from_name = vc->from_name();
+      char c            = record->verifier_constraint_flag(i);
 
       if (log_is_enabled(Trace, cds, verification)) {
         ResourceMark rm(THREAD);
@@ -1316,6 +1457,109 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   }
 }
 
+// Record class loader constraints that are checked inside
+// InstanceKlass::link_class(), so that these can be checked quickly
+// at runtime without laying out the vtable/itables.
+void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKlass* klass,
+                                                    Handle loader1, Handle loader2, TRAPS) {
+  // A linking constraint check is executed when:
+  //   - klass extends or implements type S
+  //   - klass overrides method S.M(...) with X.M
+  //     - If klass defines the method M, X is
+  //       the same as klass.
+  //     - If klass does not define the method M,
+  //       X must be a supertype of klass and X.M is
+  //       a default method defined by X.
+  //   - loader1 = X->class_loader()
+  //   - loader2 = S->class_loader()
+  //   - loader1 != loader2
+  //   - M's paramater(s) include an object type T
+  // We require that
+  //   - whenever loader1 and loader2 try to
+  //     resolve the type T, they must always resolve to
+  //     the same InstanceKlass.
+  // NOTE: type T may or may not be currently resolved in
+  // either of these two loaders. The check itself does not
+  // try to resolve T.
+  oop klass_loader = klass->class_loader();
+  assert(klass_loader != NULL, "should not be called for boot loader");
+  assert(loader1 != loader2, "must be");
+
+  if (!is_system_class_loader(klass_loader) &&
+      !is_platform_class_loader(klass_loader)) {
+    // If klass is loaded by system/platform loaders, we can
+    // guarantee that klass and S must be loaded by the same
+    // respective loader between dump time and run time, and
+    // the exact same check on (name, loader1, loader2) will
+    // be executed. Hence, we can cache this check and execute
+    // it at runtime without walking the vtable/itables.
+    //
+    // This cannot be guaranteed for classes loaded by other
+    // loaders, so we bail.
+    return;
+  }
+
+  if (THREAD->is_VM_thread()) {
+    assert(DynamicDumpSharedSpaces, "must be");
+    // We are re-laying out the vtable/itables of the *copy* of
+    // a class during the final stage of dynamic dumping. The
+    // linking constraints for this class has already been recorded.
+    return;
+  }
+  Arguments::assert_is_dumping_archive();
+  DumpTimeSharedClassInfo* info = find_or_allocate_info_for(klass);
+  info->record_linking_constraint(name, loader1, loader2);
+}
+
+// returns true IFF there's no need to re-initialize the i/v-tables for klass for
+// the purpose of checking class loader constraints.
+bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRAPS) {
+  assert(!DumpSharedSpaces && UseSharedSpaces, "called at run time with CDS enabled only");
+  LogTarget(Info, class, loader, constraints) log;
+  if (klass->is_shared_boot_class()) {
+    // No class loader constraint check performed for boot classes.
+    return true;
+  }
+  if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
+    RunTimeSharedClassInfo* info = RunTimeSharedClassInfo::get_for(klass);
+    assert(info != NULL, "Sanity");
+    if (info->_num_loader_constraints > 0) {
+      HandleMark hm;
+      for (int i = 0; i < info->_num_loader_constraints; i++) {
+        RunTimeSharedClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
+        Symbol* name = lc->constraint_name();
+        Handle loader1(THREAD, get_class_loader_by(lc->_loader_type1));
+        Handle loader2(THREAD, get_class_loader_by(lc->_loader_type2));
+        if (log.is_enabled()) {
+          ResourceMark rm(THREAD);
+          log.print("[CDS add loader constraint for class %s symbol %s loader[0] %s loader[1] %s",
+                    klass->external_name(), name->as_C_string(),
+                    ClassLoaderData::class_loader_data(loader1())->loader_name_and_id(),
+                    ClassLoaderData::class_loader_data(loader2())->loader_name_and_id());
+        }
+        if (!SystemDictionary::add_loader_constraint(name, klass, loader1, loader2, THREAD)) {
+          // Loader constraint violation has been found. The caller
+          // will re-layout the vtable/itables to produce the correct
+          // exception.
+          if (log.is_enabled()) {
+            log.print(" failed]");
+          }
+          return false;
+        }
+        if (log.is_enabled()) {
+            log.print(" succeeded]");
+        }
+      }
+      return true; // for all recorded constraints added successully.
+    }
+  }
+  if (log.is_enabled()) {
+    ResourceMark rm(THREAD);
+    log.print("[CDS has not recorded loader constraint for class %s]", klass->external_name());
+  }
+  return false;
+}
+
 class EstimateSizeForArchive : StackObj {
   size_t _shared_class_info_size;
   int _num_builtin_klasses;
@@ -1330,7 +1574,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
     if (!info.is_excluded()) {
-      size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_constraints());
+      size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
       _shared_class_info_size += align_up(byte_size, BytesPerWord);
     }
     return true; // keep on iterating
@@ -1360,7 +1604,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
-      size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_constraints());
+      size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
       RunTimeSharedClassInfo* record;
       record = (RunTimeSharedClassInfo*)MetaspaceShared::read_only_space_alloc(byte_size);
       record->init(info);

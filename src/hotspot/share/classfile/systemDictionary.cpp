@@ -2297,8 +2297,8 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   return klass;
 }
 
-
 bool SystemDictionary::add_loader_constraint(Symbol* class_name,
+                                             Klass* klass_being_linked,
                                              Handle class_loader1,
                                              Handle class_loader2,
                                              Thread* THREAD) {
@@ -2336,6 +2336,12 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     InstanceKlass* klass2 = find_class(d_hash2, constraint_name, dictionary2);
     bool result = constraints()->add_entry(constraint_name, klass1, class_loader1,
                                            klass2, class_loader2);
+    if (Arguments::is_dumping_archive() && klass_being_linked != NULL &&
+        !klass_being_linked->is_shared()) {
+         SystemDictionaryShared::record_linking_constraint(constraint_name,
+                                     InstanceKlass::cast(klass_being_linked),
+                                     class_loader1, class_loader2, THREAD);
+    }
     if (Signature::is_array(class_name)) {
       constraint_name->decrement_refcount();
     }
@@ -2457,7 +2463,7 @@ const char* SystemDictionary::find_nest_host_error(const constantPoolHandle& poo
 // called (perhaps via an override) from the supertype.
 //
 //
-// SystemDictionary::check_signature_loaders(sig, l1, l2)
+// SystemDictionary::check_signature_loaders(sig, klass_being_linked, l1, l2)
 //
 // Make sure all class components (including arrays) in the given
 // signature will be resolved to the same class in both loaders.
@@ -2465,6 +2471,7 @@ const char* SystemDictionary::find_nest_host_error(const constantPoolHandle& poo
 // NULL if no constraint failed.  No exception except OOME is thrown.
 // Arrays are not added to the loader constraint table, their elements are.
 Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
+                                               Klass* klass_being_linked,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {
   // Nothing to do if loaders are the same.
@@ -2478,14 +2485,13 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
       // Note: In the future, if template-like types can take
       // arguments, we will want to recognize them and dig out class
       // names hiding inside the argument lists.
-      if (!add_loader_constraint(sig, loader1, loader2, THREAD)) {
+      if (!add_loader_constraint(sig, klass_being_linked, loader1, loader2, THREAD)) {
         return sig;
       }
     }
   }
   return NULL;
 }
-
 
 Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid,
                                                        Symbol* signature,

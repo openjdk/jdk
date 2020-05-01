@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,9 @@ class Handle {
   oop     operator -> () const                   { return non_null_obj(); }
 
   bool operator == (oop o) const                 { return obj() == o; }
+  bool operator != (oop o) const                 { return obj() != o; }
   bool operator == (const Handle& h) const       { return obj() == h.obj(); }
+  bool operator != (const Handle& h) const       { return obj() != h.obj(); }
 
   // Null checks
   bool    is_null() const                        { return _handle == NULL; }

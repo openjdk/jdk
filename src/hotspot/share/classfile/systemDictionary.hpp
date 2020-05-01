@@ -494,10 +494,10 @@ public:
   // Note:  java_lang_Class::primitive_type is the inverse of java_mirror
 
   // Check class loader constraints
-  static bool add_loader_constraint(Symbol* name, Handle loader1,
+  static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2, TRAPS);
-  static Symbol* check_signature_loaders(Symbol* signature, Handle loader1,
-                                         Handle loader2, bool is_method, TRAPS);
+  static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
+                                         Handle loader1, Handle loader2, bool is_method, TRAPS);
 
   // JSR 292
   // find a java.lang.invoke.MethodHandle.invoke* method for a given signature
@@ -656,7 +656,12 @@ protected:
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
-
+  static bool is_boot_class_loader(oop class_loader) { return class_loader == NULL; }
+  static bool is_builtin_class_loader(oop class_loader) {
+    return is_boot_class_loader(class_loader)      ||
+           is_platform_class_loader(class_loader)  ||
+           is_system_class_loader(class_loader);
+  }
   // Returns TRUE if the method is a non-public member of class java.lang.Object.
   static bool is_nonpublic_Object_method(Method* m) {
     assert(m != NULL, "Unexpected NULL Method*");
