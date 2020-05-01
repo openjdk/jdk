@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.List;
 import nsk.share.gc.gp.GarbageProducer;
 import nsk.share.gc.gp.GarbageUtils;
 import nsk.share.test.Stresser;
+import nsk.share.test.LocalRandom;
 
 
 public class MXBeanTestThread extends Thread {
@@ -45,10 +46,6 @@ public class MXBeanTestThread extends Thread {
      * Number of simultaneously running threads
      */
     private static int threadCount;
-    /**
-     * java.util.Random instance for stress test (allocateStress())
-     */
-    private java.util.Random random = new java.util.Random();
     /**
      * Expected amount of memory allocated during stress test
      */
@@ -157,11 +154,13 @@ public class MXBeanTestThread extends Thread {
         // Anount of memory allocated by thread with existing links
         // Which means that these objects can't be collected by GC
         long actuallyAllocated = 0;
+        // ensure LocalRandom is loaded and has enough memory
+        LocalRandom.init();
         try {
             while (stresser.continueExecution()) {
-                //int chunkSize = random.nextInt(MAX_OBJECT_SIZE);
+                //int chunkSize = LocalRandom.nextInt(MAX_OBJECT_SIZE);
                 //Object obj = gp.create(chunkSize);
-                int chunkSize = random.nextInt(MAX_ARR_SIZE);
+                int chunkSize = LocalRandom.nextInt(MAX_ARR_SIZE);
                 Object obj = new long[chunkSize];
                 allocatedList.add(obj);
                 actuallyAllocated += chunkSize*8;

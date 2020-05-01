@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,6 @@ public abstract class ThreadMXBeanTestBase extends MonitoringTestBase
      */
     protected static final int DELTA_PERCENT = 15;
     /**
-     * java.util.Random instance for allocArr filling
-     */
-    private final java.util.Random random = new java.util.Random();
-
-    /**
      * Instance of com.sun.management.ThreadMXBean used by all tests
      * Obtained in initialize() method
      */
@@ -81,10 +76,12 @@ public abstract class ThreadMXBeanTestBase extends MonitoringTestBase
         if (monitoringFactory.hasThreadMXBeanNew()) {
             threadMXBean =
                     (com.sun.management.ThreadMXBean) monitoringFactory.getThreadMXBeanNew();
+            // ensure LocalRandom is loaded and has enough memory
+            LocalRandom.init();
             for (int i = 0; i < ALLOCATIONS; i++) {
                 allocArr[i] = Memory.getArrayExtraSize() + Memory.getIntSize()
                         + Memory.getReferenceSize() // don't be zero-length
-                        + random.nextInt(MAX_OBJECT_SIZE);
+                        + LocalRandom.nextInt(MAX_OBJECT_SIZE);
             }
         } else {
             log.info("com.sun.management.ThreadMXBean API is not available!");
