@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @modules jdk.jdi/com.sun.tools.jdi:+open
- * @key stress
+ * @key stress randomness
  *
  * @summary converted from VM Testbase nsk/jdi/stress/serial/mixed002.
  * VM Testbase keywords: [stress, jpda, jdi, feature_jdk6_jpda, vm6]
