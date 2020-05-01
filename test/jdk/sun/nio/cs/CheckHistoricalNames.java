@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  */
 
 /* @test
- * @bug 4513767 4961027 6217210
+ * @bug 4513767 4961027 6217210 8242541
  * @summary Checks canonical names match between old and (NIO) core charsets
  * @modules jdk.charsets
  */
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 
 public class CheckHistoricalNames {
     static int failed = 0;
@@ -294,6 +296,7 @@ public class CheckHistoricalNames {
         checkMappedName("x-MacThai", "MacThai");
         checkMappedName("x-MacTurkish", "MacTurkish");
         checkMappedName("x-MacUkraine", "MacUkraine");
+        checkCharsetAndHistoricalName();
 
         if (failed != 0)
             throw new Exception("Test Failed: " + failed);
@@ -313,6 +316,26 @@ public class CheckHistoricalNames {
                                + " - expected " + canonical
                                + ", got " + reader.getEncoding());
             failed++;
+        }
+    }
+
+    private static void checkCharsetAndHistoricalName() {
+        for (Charset cs : Charset.availableCharsets().values()) {
+            InputStreamReader isr = new InputStreamReader(System.in, cs);
+            String encoding = isr.getEncoding();
+            try {
+                Charset csHist = Charset.forName(encoding);
+                if (!cs.equals(csHist)) {
+                    System.out.println("Failed charset name"
+                                       + " - expected " + cs.name()
+                                       + ", got " + csHist.name());
+                    failed++;
+                }
+            } catch (UnsupportedCharsetException uce) {
+                System.out.println("Failed : charset - " + cs.name()
+                                   + ", missing alias entry - " + encoding);
+                failed++;
+            }
         }
     }
 }

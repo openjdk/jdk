@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,7 @@ charset ISO-8859-16 ISO_8859_16
     alias   iso-ir-226
     alias   ISO_8859-16:2001
     alias   ISO_8859-16
+    alias   ISO8859_16
     alias   latin10
     alias   l10
     alias   csISO885916
@@ -697,7 +698,7 @@ charset x-euc-jp-linux EUC_JP_LINUX
 charset x-eucJP-Open EUC_JP_Open
     package sun.nio.cs.ext
     type    template
-    hisname EUC_JP_Solari
+    hisname EUC_JP_Solaris
     ascii   true
     alias   EUC_JP_Solaris       # JDK historical
     alias   eucJP-open
@@ -1391,7 +1392,7 @@ charset x-IBM833 IBM833
 
 charset x-IBM834 IBM834 # EBCDIC DBCS-only Korean
     package sun.nio.cs.ext
-    type    source
+    type    template
     alias   cp834
     alias   ibm834
     alias   834
@@ -1485,7 +1486,7 @@ charset x-IBM949 IBM949
 
 charset x-IBM949C IBM949C
     package sun.nio.cs.ext
-    type    source
+    type    template
     alias   cp949C              # JDK historical
     alias   ibm949C
     alias   ibm-949C

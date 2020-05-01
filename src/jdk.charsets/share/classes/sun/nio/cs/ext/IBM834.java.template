@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 /*
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -41,7 +41,7 @@ import static sun.nio.cs.CharsetMapping.*;
 public class IBM834 extends Charset
 {
     public IBM834() {
-        super("x-IBM834", ExtendedCharsets.aliasesFor("x-IBM834"));
+        super("x-IBM834", $ALIASES$);
     }
 
     public boolean contains(Charset cs) {

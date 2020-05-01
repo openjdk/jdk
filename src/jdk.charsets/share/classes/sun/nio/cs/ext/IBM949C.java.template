@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -36,7 +36,7 @@ public class IBM949C extends Charset implements HistoricallyNamedCharset
 {
 
     public IBM949C() {
-        super("x-IBM949C", ExtendedCharsets.aliasesFor("x-IBM949C"));
+        super("x-IBM949C", $ALIASES$);
     }
 
     public String historicalName() {
