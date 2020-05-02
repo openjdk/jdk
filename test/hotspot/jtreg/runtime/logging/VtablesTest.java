@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8141564
  * @summary vtables=trace should have logging from each of the statements in the code
  * @library /test/lib
+ * @requires vm.debug
  * @compile ClassB.java
  *          p1/A.java
  *          p2/B.jcod
@@ -42,23 +43,21 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class VtablesTest {
     public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:vtables=trace", "ClassB");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("copy vtable from ClassA to ClassB");
-            output.shouldContain("Initializing: ClassB");
-            output.shouldContain("adding ClassB.Method1()V");
-            output.shouldContain("] overriding with ClassB.Method2()V");
-            output.shouldContain("invokevirtual resolved method: caller-class:ClassB");
-            output.shouldContain("invokevirtual selected method: receiver-class:ClassB");
-            output.shouldContain("NOT overriding with p2.D.nooverride()V");
-            output.shouldHaveExitValue(0);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:vtables=trace", "ClassB");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("copy vtable from ClassA to ClassB");
+        output.shouldContain("Initializing: ClassB");
+        output.shouldContain("adding ClassB.Method1()V");
+        output.shouldContain("] overriding with ClassB.Method2()V");
+        output.shouldContain("invokevirtual resolved method: caller-class:ClassB");
+        output.shouldContain("invokevirtual selected method: receiver-class:ClassB");
+        output.shouldContain("NOT overriding with p2.D.nooverride()V");
+        output.shouldHaveExitValue(0);
 
-            pb = ProcessTools.createJavaProcessBuilder("-Xlog:vtables=trace", "p1/C");
-            output = new OutputAnalyzer(pb.start());
-            output.shouldContain("transitive overriding superclass ");
-            output.shouldHaveExitValue(0);
-        }
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:vtables=trace", "p1/C");
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("transitive overriding superclass ");
+        output.shouldHaveExitValue(0);
     }
 }
 

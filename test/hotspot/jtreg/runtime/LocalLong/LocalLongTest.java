@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,25 +27,23 @@
  * @bug 8163014
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.bits == 64
  * @compile LocalLongHelper.java
  * @run driver LocalLongTest
  */
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class LocalLongTest {
     public static void main(String... args) throws Exception {
-        if (Platform.is64bit()) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xint",
-                                                                      "--add-opens",
-                                                                      "java.base/java.lang=ALL-UNNAMED",
-                                                                      "--add-opens",
-                                                                      "java.base/java.lang.invoke=ALL-UNNAMED",
-                                                                      "LocalLongHelper");
-            OutputAnalyzer o = new OutputAnalyzer(pb.start());
-            o.shouldHaveExitValue(0);
-        }
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xint",
+                                                                  "--add-opens",
+                                                                  "java.base/java.lang=ALL-UNNAMED",
+                                                                  "--add-opens",
+                                                                  "java.base/java.lang.invoke=ALL-UNNAMED",
+                                                                  "LocalLongHelper");
+        OutputAnalyzer o = new OutputAnalyzer(pb.start());
+        o.shouldHaveExitValue(0);
     };
 }

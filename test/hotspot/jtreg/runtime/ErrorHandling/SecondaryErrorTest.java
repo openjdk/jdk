@@ -27,6 +27,8 @@
  * @bug 8065896
  * @summary Synchronous signals during error reporting may terminate or hang VM process
  * @library /test/lib
+ * @requires vm.debug
+ * @requires os.family != "windows"
  * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -40,23 +42,12 @@ import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 public class SecondaryErrorTest {
 
 
   public static void main(String[] args) throws Exception {
-
-    // Do not execute for windows, nor for non-debug builds
-    if (Platform.isWindows()) {
-      return;
-    }
-
-    if (!Platform.isDebugBuild()) {
-      return;
-    }
-
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
