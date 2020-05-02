@@ -48,6 +48,10 @@ struct JniObjWithEnv {
         return ! operator == (other);
     }
 
+    explicit operator bool() const {
+        return env && obj;
+    }
+
     JNIEnv *env;
     jobject obj;
 
