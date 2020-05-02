@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668
-        6911753 8071447 8186751
+        6911753 8071447 8186751 8242541
  * @summary Check that registered charsets are actually registered
  * @modules jdk.charsets
  */
@@ -443,6 +443,7 @@ public class RegisteredCharsets {
                     "iso-ir-226",
                     "ISO_8859-16:2001",
                     "ISO_8859-16",
+                    "ISO8859_16",
                     "latin10",
                     "l10",
                     "csISO885916"

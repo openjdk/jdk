@@ -77,8 +77,6 @@ public class invocationC1Tests {
         int major_version = klassbuf[6] << 8 | klassbuf[7];
         runTest("invokespecial.Generator", String.valueOf(major_version));
         runTest("invokeinterface.Generator", String.valueOf(major_version));
-
-      // Uncomment this test once JDK-8226588 is fixed
-        // runTest("invokevirtual.Generator", String.valueOf(major_version));
+        runTest("invokevirtual.Generator", String.valueOf(major_version));
     }
 }

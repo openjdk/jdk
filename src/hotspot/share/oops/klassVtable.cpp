@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,9 +491,9 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
           if (target_loader() != super_loader()) {
             ResourceMark rm(THREAD);
             Symbol* failed_type_symbol =
-              SystemDictionary::check_signature_loaders(signature, target_loader,
-                                                        super_loader, true,
-                                                        CHECK_(false));
+              SystemDictionary::check_signature_loaders(signature, _klass,
+                                                        target_loader, super_loader,
+                                                        true, CHECK_(false));
             if (failed_type_symbol != NULL) {
               stringStream ss;
               ss.print("loader constraint violation for class %s: when selecting "
@@ -1230,6 +1230,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
           ResourceMark rm(THREAD);
           Symbol* failed_type_symbol =
             SystemDictionary::check_signature_loaders(m->signature(),
+                                                      _klass,
                                                       method_holder_loader,
                                                       interface_loader,
                                                       true, CHECK);

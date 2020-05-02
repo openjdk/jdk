@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayout> {
     enum PathRole {
-        RUNTIME, APP, LAUNCHERS, DESKTOP, APP_MODS, DLLS
+        RUNTIME, APP, LAUNCHERS, DESKTOP, APP_MODS, DLLS, RELEASE
     }
 
     ApplicationLayout(Map<Object, Path> paths) {
@@ -96,6 +96,13 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
         return pathGroup().getPath(PathRole.DESKTOP);
     }
 
+    /**
+     * Path to release file in the Java runtime directory.
+     */
+    public Path runtimeRelease() {
+        return pathGroup().getPath(PathRole.RELEASE);
+    }
+
     static ApplicationLayout linuxAppImage() {
         return new ApplicationLayout(Map.of(
                 PathRole.LAUNCHERS, Path.of("bin"),
@@ -103,7 +110,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, Path.of("lib/runtime"),
                 PathRole.DESKTOP, Path.of("lib"),
                 PathRole.DLLS, Path.of("lib"),
-                PathRole.APP_MODS, Path.of("lib/app/mods")
+                PathRole.APP_MODS, Path.of("lib/app/mods"),
+                PathRole.RELEASE, Path.of("lib/runtime/release")
         ));
     }
 
@@ -114,7 +122,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, Path.of("runtime"),
                 PathRole.DESKTOP, Path.of(""),
                 PathRole.DLLS, Path.of(""),
-                PathRole.APP_MODS, Path.of("app/mods")
+                PathRole.APP_MODS, Path.of("app/mods"),
+                PathRole.RELEASE, Path.of("runtime/release")
         ));
     }
 
@@ -125,7 +134,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, Path.of("Contents/runtime"),
                 PathRole.DESKTOP, Path.of("Contents/Resources"),
                 PathRole.DLLS, Path.of("Contents/MacOS"),
-                PathRole.APP_MODS, Path.of("Contents/app/mods")
+                PathRole.APP_MODS, Path.of("Contents/app/mods"),
+                PathRole.RELEASE, Path.of("Contents/runtime/Contents/Home/release")
         ));
     }
 

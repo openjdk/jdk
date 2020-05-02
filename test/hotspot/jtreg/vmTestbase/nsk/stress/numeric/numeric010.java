@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress
+ * @key stress randomness
  *
  * @summary converted from VM testbase nsk/stress/numeric/numeric010.
  * VM testbase keywords: [stress, slow, nonconcurrent, quick]
@@ -68,12 +68,15 @@
  *     Note, that despite HotSpot works faster in milti-thread calculations,
  *     it still remains essentially slower than classic VM with JIT on.
  *
+ * @library /test/lib
  * @run main/othervm nsk.stress.numeric.numeric010.numeric010 200 200
  */
 
 package nsk.stress.numeric.numeric010;
 
 import java.io.PrintStream;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /**
  * This test calculates the product <code>A<sup>.</sup>A</code> for a square
@@ -125,6 +128,7 @@ import java.io.PrintStream;
  * 4242172 (P3/S5) 2.0: poor performance in matrix calculations
  */
 public class numeric010 {
+    private static final Random RNG = Utils.getRandomInstance();
     /**
      * When testing performance, 1-thread calculation is allowed to be 10%
      * slower than multi-thread calculation (<code>tolerance</code> is
@@ -432,7 +436,7 @@ public class numeric010 {
             for (int line = 0; line < size; line++)
                 for (int column = 0; column < size; column++)
                     value[line][column] =
-                            Math.round((float) ((1 - 2 * Math.random()) * size));
+                            Math.round((float) ((1 - 2 * RNG.nextDouble()) * size));
         }
 
         /**

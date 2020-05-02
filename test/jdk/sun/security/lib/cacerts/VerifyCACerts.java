@@ -26,7 +26,7 @@
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
- *      8223499 8225392 8232019 8234245 8233223
+ *      8223499 8225392 8232019 8234245 8233223 8225068 8225069
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -52,12 +52,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 93;
+    private static final int COUNT = 91;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "22:AA:EB:89:4E:A4:EA:25:CA:3E:DA:0F:F1:2B:FA:05:4B:68:C5:E1:3A:F9:03:40:BF:EF:F5:13:7C:CE:BC:60";
+            = "60:EF:3A:F8:44:CF:79:6F:A3:55:AD:3A:80:61:A7:EE:69:2A:B4:E4:F4:01:C4:47:FF:F8:25:1E:AB:87:31:F2";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -93,8 +93,6 @@ public class VerifyCACerts {
                     "4F:F4:60:D5:4B:9C:86:DA:BF:BC:FC:57:12:E0:40:0D:2B:ED:3F:BC:4D:4F:BD:AA:86:E0:6A:DC:D2:A9:AD:7A");
             put("utnuserfirstobjectca [jdk]",
                     "6F:FF:78:E4:00:A7:0C:11:01:1C:D8:59:77:C4:59:FB:5A:F9:6A:3D:F0:54:08:20:D0:F4:B8:60:78:75:E5:8F");
-            put("addtrustclass1ca [jdk]",
-                    "8C:72:09:27:9A:C0:4E:27:5E:16:D0:7F:D3:B7:75:E8:01:54:B5:96:80:46:E3:1F:52:DD:25:76:63:24:E9:A7");
             put("addtrustexternalca [jdk]",
                     "68:7F:A4:51:38:22:78:FF:F0:C8:B1:1F:8D:43:D5:76:67:1C:6E:B2:BC:EA:B4:13:FB:83:D9:65:D0:6D:2F:F2");
             put("addtrustqualifiedca [jdk]",
@@ -151,8 +149,6 @@ public class VerifyCACerts {
                     "69:DD:D7:EA:90:BB:57:C9:3E:13:5D:C8:5E:A6:FC:D5:48:0B:60:32:39:BD:C4:54:FC:75:8B:2A:26:CF:7F:79");
             put("verisignclass3g5ca [jdk]",
                     "9A:CF:AB:7E:43:C8:D8:80:D0:6B:26:2A:94:DE:EE:E4:B4:65:99:89:C3:D0:CA:F1:9B:AF:64:05:E4:1A:B7:DF");
-            put("keynectisrootca [jdk]",
-                    "42:10:F1:99:49:9A:9A:C3:3C:8D:E0:2B:A6:DB:AA:14:40:8B:DD:8A:6E:32:46:89:C1:92:2D:06:97:15:A3:32");
             put("dtrustclass3ca2 [jdk]",
                     "49:E7:A4:42:AC:F0:EA:62:87:05:00:54:B5:25:64:B6:50:E4:F4:9E:42:E3:48:D6:AA:38:E0:39:E9:57:B1:C1");
             put("dtrustclass3ca2ev [jdk]",
@@ -259,12 +255,8 @@ public class VerifyCACerts {
         {
             // Valid until: Tue Jul 09 14:40:36 EDT 2019
             add("utnuserfirstobjectca [jdk]");
-            // Valid until: Tue May 26 00:00:00 GMT 2020
-            add("keynectisrootca [jdk]");
             // Valid until: Sat May 30 10:38:31 GMT 2020
             add("addtrustexternalca [jdk]");
-            // Valid until: Sat May 30 10:48:38 GMT 2020
-            add("addtrustclass1ca [jdk]");
             // Valid until: Sat May 30 10:44:50 GMT 2020
             add("addtrustqualifiedca [jdk]");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public:
 
   // Note:  The main entry point for this module is via SystemDictionary.
   // SystemDictionary::check_signature_loaders(Symbol* signature,
+  //                                           Klass* klass_being_linked,
   //                                           Handle loader1, Handle loader2,
   //                                           bool is_method, TRAPS)
 

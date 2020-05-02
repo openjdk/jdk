@@ -285,6 +285,9 @@ public:
                                              TRAPS) NOT_CDS_RETURN;
   static void set_class_has_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN;
   static bool has_class_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN_(false);
+  static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
+  static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
+                                     Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }

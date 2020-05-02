@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,6 @@ import nsk.share.gc.gp.array.LongArrayProducer;
 import nsk.share.gc.gp.array.ShortArrayProducer;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.LocalRandom;
-
-import java.util.Random;
 
 public class gcl001 extends ThreadedGCTest {
 
@@ -281,10 +279,9 @@ public class gcl001 extends ThreadedGCTest {
 
         void doit(int size) {
             char[] array = gp.create(size);
-            Random rand = new Random();
             char min = 0xffff, max = 0;
             for (int i = 0; i < array.length; ++i) {
-                array[i] = (char) rand.nextInt();
+                array[i] = (char) LocalRandom.nextInt();
                 if (array[i] > max) {
                     max = array[i];
                 }
@@ -455,7 +452,6 @@ public class gcl001 extends ThreadedGCTest {
         void doit(int size) {
 
             double[] array = gp.create(size);
-            Random rand = new Random();
             double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
             for (int i = 0; i < array.length; ++i) {
                 if (array[i] > max) {

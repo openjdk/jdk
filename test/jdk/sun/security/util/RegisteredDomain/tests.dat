@@ -71,6 +71,10 @@ ar.com                  ar.com          null
 site.ar.com             ar.com          site.ar.com
 w.site.ar.com           ar.com          site.ar.com
 
+# fj (no longer *.fj)
+foo.gov.fj              gov.fj          foo.gov.fj
+foo.fj                  fj              foo.fj
+
 # ie
 www.foo.ie              ie              foo.ie
 www.foo.gov.ie          gov.ie          foo.gov.ie

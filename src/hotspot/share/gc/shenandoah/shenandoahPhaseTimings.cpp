@@ -148,9 +148,23 @@ void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time) {
 void ShenandoahPhaseTimings::record_workers_start(Phase phase) {
   assert(is_worker_phase(phase), "Phase should accept worker phase times: %s", phase_name(phase));
 
-  for (uint i = 1; i < _num_par_phases; i++) {
-    worker_data(phase, ParPhase(i))->reset();
+  // Special case: these phases can enter multiple times, need to reset
+  // their worker data every time.
+  if (phase == heap_iteration_roots) {
+    for (uint i = 1; i < _num_par_phases; i++) {
+      worker_data(phase, ParPhase(i))->reset();
+    }
   }
+
+#ifdef ASSERT
+  for (uint i = 1; i < _num_par_phases; i++) {
+    ShenandoahWorkerData* wd = worker_data(phase, ParPhase(i));
+    for (uint c = 0; c < _max_workers; c++) {
+      assert(wd->get(c) == ShenandoahWorkerData::uninitialized(),
+             "Should not be set: %s", phase_name(worker_par_phase(phase, ParPhase(i))));
+    }
+  }
+#endif
 }
 
 void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
@@ -178,6 +192,9 @@ void ShenandoahPhaseTimings::flush_cycle_to_global() {
   for (uint i = 0; i < _num_phases; i++) {
     _global_data[i].add(_cycle_data[i]);
     _cycle_data[i] = 0;
+    if (_worker_data[i] != NULL) {
+      _worker_data[i]->reset();
+    }
   }
   OrderAccess::fence();
 }

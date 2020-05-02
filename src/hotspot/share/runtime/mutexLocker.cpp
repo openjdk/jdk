@@ -339,7 +339,7 @@ void mutex_init() {
 #if INCLUDE_JVMTI
   def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, _safepoint_check_always);
 #endif
-  def(DumpTimeTable_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+  def(DumpTimeTable_lock           , PaddedMutex  , leaf - 1,        true,  _safepoint_check_never);
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMCI
