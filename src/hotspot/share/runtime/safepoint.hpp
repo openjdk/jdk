@@ -162,7 +162,6 @@ public:
   static void handle_polling_page_exception(JavaThread *thread);
 
   static bool is_cleanup_needed();
-  static bool is_forced_cleanup_needed();
   static void do_cleanup_tasks();
 
   static void set_is_at_safepoint()             { _state = _synchronized; }

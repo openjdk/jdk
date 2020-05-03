@@ -781,7 +781,6 @@ struct SharedGlobals {
 };
 
 static SharedGlobals GVars;
-static int _forceMonitorScavenge = 0; // Scavenge required and pending
 
 static markWord read_stable_mark(oop obj) {
   markWord mark = obj->mark();
@@ -1170,27 +1169,8 @@ static bool monitors_used_above_threshold() {
   return false;
 }
 
-// Returns true if MonitorBound is set (> 0) and if the specified
-// cnt is > MonitorBound. Otherwise returns false.
-static bool is_MonitorBound_exceeded(const int cnt) {
-  const int mx = MonitorBound;
-  return mx > 0 && cnt > mx;
-}
-
 bool ObjectSynchronizer::is_cleanup_needed() {
-  if (monitors_used_above_threshold()) {
-    // Too many monitors in use.
-    return true;
-  }
-  return needs_monitor_scavenge();
-}
-
-bool ObjectSynchronizer::needs_monitor_scavenge() {
-  if (Atomic::load(&_forceMonitorScavenge) == 1) {
-    log_info(monitorinflation)("Monitor scavenge needed, triggering safepoint cleanup.");
-    return true;
-  }
-  return false;
+  return monitors_used_above_threshold();
 }
 
 void ObjectSynchronizer::oops_do(OopClosure* f) {
@@ -1237,41 +1217,6 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 // --   assigned to an object.  The object is inflated and the mark refers
 //      to the ObjectMonitor.
 
-
-// Constraining monitor pool growth via MonitorBound ...
-//
-// If MonitorBound is not set (<= 0), MonitorBound checks are disabled.
-//
-// The monitor pool is grow-only.  We scavenge at STW safepoint-time, but the
-// the rate of scavenging is driven primarily by GC.  As such,  we can find
-// an inordinate number of monitors in circulation.
-// To avoid that scenario we can artificially induce a STW safepoint
-// if the pool appears to be growing past some reasonable bound.
-// Generally we favor time in space-time tradeoffs, but as there's no
-// natural back-pressure on the # of extant monitors we need to impose some
-// type of limit.  Beware that if MonitorBound is set to too low a value
-// we could just loop. In addition, if MonitorBound is set to a low value
-// we'll incur more safepoints, which are harmful to performance.
-// See also: GuaranteedSafepointInterval
-//
-// If MonitorBound is set, the boundry applies to
-//     (om_list_globals._population - om_list_globals._free_count)
-// i.e., if there are not enough ObjectMonitors on the global free list,
-// then a safepoint deflation is induced. Picking a good MonitorBound value
-// is non-trivial.
-
-static void InduceScavenge(Thread* self, const char * Whence) {
-  // Induce STW safepoint to trim monitors
-  // Ultimately, this results in a call to deflate_idle_monitors() in the near future.
-  // More precisely, trigger a cleanup safepoint as the number
-  // of active monitors passes the specified threshold.
-  // TODO: assert thread state is reasonable
-
-  if (Atomic::xchg(&_forceMonitorScavenge, 1) == 0) {
-    VMThread::check_for_forced_cleanup();
-  }
-}
-
 ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
   // A large MAXPRIVATE value reduces both list lock contention
   // and list coherency traffic, but also tends to increase the
@@ -1315,15 +1260,6 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
       }
       self->om_free_provision += 1 + (self->om_free_provision / 2);
       if (self->om_free_provision > MAXPRIVATE) self->om_free_provision = MAXPRIVATE;
-
-      if (is_MonitorBound_exceeded(Atomic::load(&om_list_globals._population) -
-                                   Atomic::load(&om_list_globals._free_count))) {
-        // Not enough ObjectMonitors on the global free list.
-        // We can't safely induce a STW safepoint from om_alloc() as our thread
-        // state may not be appropriate for such activities and callers may hold
-        // naked oops, so instead we defer the action.
-        InduceScavenge(self, "om_alloc");
-      }
       continue;
     }
 
@@ -2024,8 +1960,6 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
                                Atomic::load(&om_list_globals._in_use_count),
                                Atomic::load(&om_list_globals._free_count));
   }
-
-  Atomic::store(&_forceMonitorScavenge, 0);    // Reset
 
   OM_PERFDATA_OP(Deflations, inc(counters->n_scavenged));
   OM_PERFDATA_OP(MonExtant, set_value(counters->n_in_circulation));

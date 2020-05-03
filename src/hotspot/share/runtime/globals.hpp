@@ -691,9 +691,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  product(intx, MonitorBound, 0, "(Deprecated) Bound Monitor population")   \
-          range(0, max_jint)                                                \
-                                                                            \
   experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
                 "Percentage of used monitors before triggering cleanup "    \
                 "safepoint which deflates monitors (0 is off). "            \

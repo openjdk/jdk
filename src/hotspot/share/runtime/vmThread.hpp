@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,6 @@ class VMThread: public NamedThread {
 
   // The ever running loop for the VMThread
   void loop();
-  static void check_for_forced_cleanup();
 
   // Called to stop the VM thread
   static void wait_for_vm_thread_exit();
