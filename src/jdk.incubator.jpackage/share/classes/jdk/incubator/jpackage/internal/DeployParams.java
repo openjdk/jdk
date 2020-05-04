@@ -295,6 +295,17 @@ public class DeployParams {
                 throw new PackagerException("ERR_LicenseFileNotExit");
             }
         }
+
+        // Validate icon file if set
+        String icon = (String)bundlerArguments.get(
+                Arguments.CLIOptions.ICON.getId());
+        if (icon != null) {
+            File iconFile = new File(icon);
+            if (!iconFile.exists()) {
+                throw new PackagerException("ERR_IconFileNotExit",
+                        iconFile.getAbsolutePath());
+            }
+        }
     }
 
     void setTargetFormat(String t) {
