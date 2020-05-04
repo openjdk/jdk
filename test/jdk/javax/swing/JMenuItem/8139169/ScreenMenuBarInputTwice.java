@@ -71,10 +71,20 @@ public class ScreenMenuBarInputTwice {
         robot.setAutoDelay(200);
         robot.setAutoWaitForIdle(true);
         createUIWithSeperateMenuBar();
+        robot.waitForIdle();
+        robot.delay(500);
         shortcutTestCase();
+        robot.waitForIdle();
+        robot.delay(250);
         cleanUp();
+        robot.waitForIdle();
+        robot.delay(250);
         createUIWithIntegratedMenuBar();
+        robot.waitForIdle();
+        robot.delay(500);
         menuTestCase();
+        robot.waitForIdle();
+        robot.delay(250);
         cleanUp();
     }
 
