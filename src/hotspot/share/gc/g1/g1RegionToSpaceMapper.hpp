@@ -51,7 +51,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   size_t _region_granularity;
   // Mapping management
-  CHeapBitMap _commit_map;
+  CHeapBitMap _region_commit_map;
 
   MemoryType _memory_type;
 
@@ -67,10 +67,6 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   void set_mapping_changed_listener(G1MappingChangedListener* listener) { _listener = listener; }
 
   virtual ~G1RegionToSpaceMapper() {}
-
-  bool is_committed(uintptr_t idx) const {
-    return _commit_map.at(idx);
-  }
 
   void commit_and_set_special();
   virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkGang* pretouch_workers = NULL) = 0;
