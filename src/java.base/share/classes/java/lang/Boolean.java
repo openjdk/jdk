@@ -27,6 +27,15 @@ package java.lang;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DynamicConstantDesc;
+import java.util.Optional;
+
+import static java.lang.constant.ConstantDescs.BSM_GET_STATIC_FINAL;
+import static java.lang.constant.ConstantDescs.CD_Boolean;
+
 /**
  * The Boolean class wraps a value of the primitive type
  * {@code boolean} in an object. An object of type
@@ -43,7 +52,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * @since   1.0
  */
 public final class Boolean implements java.io.Serializable,
-                                      Comparable<Boolean>
+                                      Comparable<Boolean>, Constable
 {
     /**
      * The {@code Boolean} object corresponding to the primitive
@@ -343,5 +352,17 @@ public final class Boolean implements java.io.Serializable,
      */
     public static boolean logicalXor(boolean a, boolean b) {
         return a ^ b;
+    }
+
+    /**
+     * Returns an {@link Optional} containing the nominal descriptor for this
+     * instance.
+     *
+     * @return an {@link Optional} describing the {@linkplain Boolean} instance
+     * @since 15
+     */
+    @Override
+    public Optional<DynamicConstantDesc<Boolean>> describeConstable() {
+        return Optional.of(value ? ConstantDescs.TRUE : ConstantDescs.FALSE);
     }
 }
