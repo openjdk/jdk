@@ -54,7 +54,8 @@ private:
     _gclab(NULL),
     _gclab_size(0),
     _worker_id(INVALID_WORKER_ID),
-    _force_satb_flush(false) {
+    _force_satb_flush(false),
+    _disarmed_value(ShenandoahCodeRoots::disarmed_value()) {
   }
 
   ~ShenandoahThreadLocalData() {
@@ -128,7 +129,6 @@ public:
     assert(data(thread)->_gclab == NULL, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
-    data(thread)->_disarmed_value = ShenandoahCodeRoots::disarmed_value();
   }
 
   static PLAB* gclab(Thread* thread) {
