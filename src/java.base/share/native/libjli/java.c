@@ -1958,7 +1958,7 @@ DescribeModule(JNIEnv *env, char *optString)
     NULL_CHECK(cls);
     NULL_CHECK(describeModuleID = (*env)->GetStaticMethodID(env, cls,
             "describeModule", "(Ljava/lang/String;)V"));
-    NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
+    NULL_CHECK(joptString = NewPlatformString(env, optString));
     (*env)->CallStaticVoidMethod(env, cls, describeModuleID, joptString);
 }
 
