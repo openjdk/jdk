@@ -44,8 +44,7 @@ public class RangeCheck {
             return;
         }
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-Xmx128m",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:-CreateCoredumpOnCrash",

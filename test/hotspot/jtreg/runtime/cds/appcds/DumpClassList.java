@@ -74,8 +74,7 @@ public class DumpClassList {
         String appendJar = JarBuilder.build("bootappend", "boot/append/Foo");
 
         // dump class list
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
             "-XX:DumpLoadedClassList=" + classList,
             "--patch-module=java.base=" + patchJar,
             "-Xbootclasspath/a:" + appendJar,

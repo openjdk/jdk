@@ -174,9 +174,7 @@ public class CtwRunner {
         while (!done) {
             String[] cmd = cmd(classStart, classStop);
             try {
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                        /* addTestVmAndJavaOptions = */ true,
-                        cmd);
+                ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
                 String commandLine = pb.command()
                         .stream()
                         .collect(Collectors.joining(" "));

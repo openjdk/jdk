@@ -46,8 +46,7 @@ public class TestAllocateHeapAtError {
       f = new File(test_dir, UUID.randomUUID().toString());
     } while(f.exists());
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        true,
+    ProcessBuilder pb = ProcessTools.createTestJvm(
         "-XX:AllocateHeapAt=" + f.getName(),
         "-Xlog:gc+heap=info",
         "-Xmx32m",

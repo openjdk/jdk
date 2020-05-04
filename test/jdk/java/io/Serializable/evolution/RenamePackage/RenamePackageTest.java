@@ -81,7 +81,7 @@ public class RenamePackageTest {
     }
 
     private static void runTestSerialDriver() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-classpath",
                 SHARE.toString()
                     + File.pathSeparator
@@ -93,7 +93,7 @@ public class RenamePackageTest {
     }
 
     private static void runInstallSerialDriver() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-classpath",
                 SHARE.toString()
                     + File.pathSeparator

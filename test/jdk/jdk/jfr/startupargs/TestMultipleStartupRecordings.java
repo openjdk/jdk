@@ -57,14 +57,14 @@ public class TestMultipleStartupRecordings {
 
     private static void launchUnary(String options) throws Exception {
         String recording1 = START_FLIGHT_RECORDING + (options != null ? options : "");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, recording1, MainClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createTestJvm(recording1, MainClass.class.getName());
         test(pb, "Started recording 1");
     }
 
     private static void launchBinary(String options1, String options2) throws Exception {
         String recording1 = START_FLIGHT_RECORDING + (options1 != null ? options1 : "");
         String recording2 = START_FLIGHT_RECORDING + (options2 != null ? options2 : "");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, recording1, recording2, MainClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createTestJvm(recording1, recording2, MainClass.class.getName());
         test(pb, "Started recording 1", "Started recording 2");
     }
 
@@ -72,7 +72,7 @@ public class TestMultipleStartupRecordings {
         String recording1 = START_FLIGHT_RECORDING + (options1 != null ? options1 : "");
         String recording2 = START_FLIGHT_RECORDING + (options2 != null ? options2 : "");
         String recording3 = START_FLIGHT_RECORDING + (options3 != null ? options3 : "");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, recording1, recording2, recording3, MainClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createTestJvm(recording1, recording2, recording3, MainClass.class.getName());
         test(pb, "Started recording 1", "Started recording 2", "Started recording 3");
     }
 
@@ -96,7 +96,7 @@ public class TestMultipleStartupRecordings {
         String flightRecorderOptions = FLIGHT_RECORDER_OPTIONS + "=maxchunksize=8m";
         String recording1 = START_FLIGHT_RECORDING + "=filename=recording1.jfr";
         String recording2 = START_FLIGHT_RECORDING + "=name=myrecording,filename=recording2.jfr";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flightRecorderOptions, recording1, recording2, MainClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createTestJvm(flightRecorderOptions, recording1, recording2, MainClass.class.getName());
         test(pb, "Started recording 1", "Started recording 2");
     }
 

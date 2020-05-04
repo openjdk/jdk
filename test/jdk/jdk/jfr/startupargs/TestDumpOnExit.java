@@ -94,7 +94,7 @@ public class TestDumpOnExit {
     }
 
     private static void testDumponExit(Supplier<Path> p,String... args) throws Exception, IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, args);
+        ProcessBuilder pb = ProcessTools.createTestJvm(args);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println(output.getOutput());
         output.shouldHaveExitValue(0);

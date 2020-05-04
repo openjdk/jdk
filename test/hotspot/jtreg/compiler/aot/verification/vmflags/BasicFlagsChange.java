@@ -87,7 +87,7 @@ public class BasicFlagsChange {
                so, a message like "skipped $pathTolibrary aot library" or
                "loaded    $pathToLibrary  aot library" is present for cases of
                incompatible or compatible flags respectively */
-            pb = ProcessTools.createJavaProcessBuilder(true, "-XX:+UnlockExperimentalVMOptions",
+            pb = ProcessTools.createTestJvm("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseAOT", "-XX:+PrintAOT", "-XX:AOTLibrary=./" + libName, option,
                     HelloWorldPrinter.class.getName());
         } catch (Exception ex) {

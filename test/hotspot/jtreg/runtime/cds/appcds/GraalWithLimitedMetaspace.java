@@ -83,7 +83,7 @@ public class GraalWithLimitedMetaspace {
     }
 
     static void dumpLoadedClasses(String[] expectedClasses) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
             "-XX:DumpLoadedClassList=" + CLASSLIST_FILE,
             // trigger JVMCI runtime init so that JVMCI classes will be
             // included in the classlist
@@ -110,7 +110,7 @@ public class GraalWithLimitedMetaspace {
     }
 
     static void dumpArchive() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
             "-cp",
             TESTJAR,
             "-XX:SharedClassListFile=" + CLASSLIST_FILE,

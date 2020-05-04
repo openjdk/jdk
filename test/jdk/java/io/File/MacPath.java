@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MacPath {
     public static void main(String args[]) throws Exception {
         final ProcessBuilder pb =
-                ProcessTools.createJavaProcessBuilder(true, MacPathTest.class.getName());
+                ProcessTools.createTestJvm(MacPathTest.class.getName());
         final Map<String, String> env = pb.environment();
         env.put("LC_ALL", "en_US.UTF-8");
         Process p = ProcessTools.startProcess("Mac Path Test", pb);

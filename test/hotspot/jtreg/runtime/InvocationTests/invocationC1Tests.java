@@ -48,7 +48,7 @@ public class invocationC1Tests {
     public static void runTest(String whichTests, String classFileVersion) throws Throwable {
         System.out.println("\nC1 invocation tests, Tests: " + whichTests +
                            ", class file version: " + classFileVersion);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, "-Xmx128M",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128M",
             "-Xcomp", "-XX:TieredStopAtLevel=1",
             "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
             whichTests, "--classfile_version=" + classFileVersion);

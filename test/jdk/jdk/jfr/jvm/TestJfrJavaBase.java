@@ -51,7 +51,7 @@ public class TestJfrJavaBase {
     public static void main(String[] args) throws Exception {
         OutputAnalyzer output;
         if (args.length == 0) {
-            output = ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(false,
+            output = ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
                 "-Dtest.jdk=" + System.getProperty("test.jdk"),
                 "--limit-modules", "java.base", "-cp", System.getProperty("java.class.path"),
                 TestJfrJavaBase.class.getName(), "runtest"));

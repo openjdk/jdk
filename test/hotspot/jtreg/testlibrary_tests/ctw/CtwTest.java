@@ -101,7 +101,7 @@ public abstract class CtwTest {
                 cmd[i] = cmd[i].replace("*", "\"*\"");
             }
         }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
+        ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         dump(output, "compile");
         output.shouldHaveExitValue(0);

@@ -97,7 +97,7 @@ public class BSMCalledTwice implements Opcodes {
         };
 
         cl.loadClass(classTestCName);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-cp", ".",  classTestCName);
+        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  classTestCName);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String test_output = output.getOutput();
         if (test_output == null) {

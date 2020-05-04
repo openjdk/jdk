@@ -46,7 +46,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class LargeClassTest implements Opcodes {
     public static void main(String... args) throws Exception {
         writeClassFile();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-cp", ".",  "Large");
+        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "Large");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

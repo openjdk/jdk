@@ -81,7 +81,7 @@ public class CDSJDITest {
         outputDump.shouldHaveExitValue(0);
 
         // Run the test specified JDI test
-        pb = ProcessTools.createJavaProcessBuilder(true, testArgs);
+        pb = ProcessTools.createTestJvm(testArgs);
         OutputAnalyzer outputRun = executeAndLog(pb, "exec");
         try {
             outputRun.shouldContain("sharing");

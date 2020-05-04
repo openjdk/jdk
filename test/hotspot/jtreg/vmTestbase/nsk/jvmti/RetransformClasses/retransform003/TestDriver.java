@@ -69,8 +69,7 @@ import java.util.Arrays;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-agentlib:retransform003-01=id=1 can_retransform_classes=1",
                 "-agentlib:retransform003-02=id=2 can_retransform_classes=0",
                 "-agentlib:retransform003-03=id=3 can_retransform_classes=1",

@@ -91,7 +91,7 @@ public class TestShutdownEvent {
     }
 
     private static void runSubtest(int subTestIndex) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                                 "-Xlog:jfr=debug",
                                 "-XX:-CreateCoredumpOnCrash",
                                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",

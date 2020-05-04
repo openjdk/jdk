@@ -57,7 +57,7 @@ public class GetObjectSizeOverflow {
         pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class"});
         pb.start().waitFor();
 
-        ProcessBuilder pt = ProcessTools.createJavaProcessBuilder(true, "-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
+        ProcessBuilder pt = ProcessTools.createTestJvm("-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
 
         if (output.getStdout().contains("Could not reserve enough space") || output.getStderr().contains("java.lang.OutOfMemoryError")) {

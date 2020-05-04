@@ -38,8 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestVerifyDuringStartup {
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        true,
+    ProcessBuilder pb = ProcessTools.createTestJvm(
         "-XX:-UseTLAB",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+VerifyDuringStartup",
