@@ -26,6 +26,7 @@
  * @summary Unit test for jdk.internal.icu.text.StringPrep
  * @bug 4737170 8060097 8174270
  * @modules java.base/jdk.internal.icu.text
+ *          java.base/sun.net.idn:open
  * @library .
  * @compile -XDignore.symbol.file TestStringPrep.java NFS4StringPrep.java
  *     TestData.java
