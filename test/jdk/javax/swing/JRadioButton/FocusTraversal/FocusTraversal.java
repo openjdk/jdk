@@ -134,6 +134,8 @@ public class FocusTraversal {
     private static void runTestCase() throws Exception {
         focusOn(a);
 
+        robot.waitForIdle();
+        robot.delay(500);
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
         robot.waitForIdle();
@@ -189,6 +191,7 @@ public class FocusTraversal {
                 | IllegalAccessException e) {
             return false;
         }
+        System.out.println("Testing lookAndFeel " + lookAndFeelString);
         return true;
     }
 
