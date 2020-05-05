@@ -83,10 +83,13 @@ public class DeployParams {
         if (!Files.isSymbolicLink(root.toPath())) {
             if (root.isDirectory()) {
                 File[] children = root.listFiles();
-                if (children != null) {
+                if (children != null && children.length > 0) {
                     for (File f : children) {
                         files.addAll(expandFileset(f));
                     }
+                } else {
+                    // Include empty folders
+                    files.add(root);
                 }
             } else {
                 files.add(root);
