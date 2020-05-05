@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase metaspace/stressHierarchy/stressHierarchy009.
  * VM Testbase keywords: [nonconcurrent, javac, no_cds]

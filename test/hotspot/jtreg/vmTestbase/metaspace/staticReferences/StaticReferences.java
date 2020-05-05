@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  * @modules java.base/jdk.internal.misc:+open
  *
  * @summary converted from VM Testbase metaspace/staticReferences.
