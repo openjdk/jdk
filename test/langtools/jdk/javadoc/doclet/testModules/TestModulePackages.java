@@ -72,9 +72,9 @@ public class TestModulePackages extends JavadocTester {
 
         checkExit(Exit.OK);
         checkOutput("m/module-summary.html", false,
-                "<h3>Packages</h3>\n"
-                + "<table class=\"packages-summary\" summary=\"Packages table, "
-                + "listing packages, and an explanation\">");
+                """
+                    <h3>Packages</h3>
+                    <table class="packages-summary" summary="Packages table, listing packages, and an explanation">""");
     }
 
     @Test
@@ -160,7 +160,8 @@ public class TestModulePackages extends JavadocTester {
         checkTableHead("m", ColKind.EXPORTED_TO);
         checkPackageRow("m", "p", "i0", "All Modules", null, "&nbsp;");
         checkPackageRow("m", "q", "i1",
-                "<a href=\"../other/module-summary.html\">other</a>", null, "&nbsp;");
+                """
+                    <a href="../other/module-summary.html">other</a>""", null, "&nbsp;");
     }
 
     @Test
@@ -248,11 +249,13 @@ public class TestModulePackages extends JavadocTester {
         checkPackageRow("m", "c", "i0", "None", "None", "&nbsp;");
         checkPackageRow("m", "e.all", "i1", "All Modules", "None", "&nbsp;");
         checkPackageRow("m", "e.other", "i2",
-                "<a href=\"../other/module-summary.html\">other</a>", "None", "&nbsp;");
+                """
+                    <a href="../other/module-summary.html">other</a>""", "None", "&nbsp;");
         checkPackageRow("m", "eo", "i3", "All Modules", "All Modules", "&nbsp;");
         checkPackageRow("m", "o.all", "i4", "None", "All Modules", "&nbsp;");
         checkPackageRow("m", "o.other", "i5", "None",
-                "<a href=\"../other/module-summary.html\">other</a>", "&nbsp;");
+                """
+                    <a href="../other/module-summary.html">other</a>""", "&nbsp;");
     }
 
     @Test
@@ -277,9 +280,15 @@ public class TestModulePackages extends JavadocTester {
         checkCaption("m", TabKind.OPENS);
         checkTableHead("m");
         checkPackageRow("m", "p", "i0", null, null,
-                "\n<div class=\"block\">implicitly open package</div>\n");
+                """
+
+                    <div class="block">implicitly open package</div>
+                    """);
         checkPackageRow("m", "q", "i1", null, null,
-                "\n<div class=\"block\">implicitly open package</div>\n");
+                """
+
+                    <div class="block">implicitly open package</div>
+                    """);
     }
     @Test
     public void openSingle(Path base) throws Exception {
@@ -368,7 +377,8 @@ public class TestModulePackages extends JavadocTester {
         checkTableHead("m", ColKind.OPENED_TO);
         checkPackageRow("m", "p", "i0", null, "All Modules", "&nbsp;");
         checkPackageRow("m", "q", "i1", null,
-                "<a href=\"../other/module-summary.html\">other</a>", "&nbsp;");
+                """
+                    <a href="../other/module-summary.html">other</a>""", "&nbsp;");
     }
 
     @Test
@@ -414,28 +424,28 @@ public class TestModulePackages extends JavadocTester {
         if (kinds.length > 1) {
             Set<TabKind> kindSet = Set.of(kinds);
             StringBuilder sb = new StringBuilder();
-            sb.append("<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\">"
-                        + "<button role=\"tab\" aria-selected=\"true\""
-                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"0\""
-                        + " onkeydown=\"switchTab(event)\""
-                        + " id=\"t0\" class=\"active-table-tab\">All Packages</button>");
+            sb.append("""
+                <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
+                e="tab" aria-selected="true" aria-controls="package-summary-table.tabpanel" tabi\
+                ndex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Packa\
+                ges</button>""");
             if (kindSet.contains(TabKind.EXPORTS)) {
-                sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"-1\""
-                        + " onkeydown=\"switchTab(event)\" id=\"t1\" class=\"table-tab\""
-                        + " onclick=\"show(1);\">Exports</button>");
+                sb.append("""
+                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
+                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="t1" class="table-tab" onc\
+                    lick="show(1);">Exports</button>""");
             }
             if (kindSet.contains(TabKind.OPENS)) {
-                sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"-1\""
-                        + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
-                        + " onclick=\"show(2);\">Opens</button>");
+                sb.append("""
+                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
+                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table-tab" onc\
+                    lick="show(2);">Opens</button>""");
             }
             if (kindSet.contains(TabKind.CONCEALED)) {
-                sb.append("<button role=\"tab\" aria-selected=\"false\""
-                        + " aria-controls=\"package-summary-table.tabpanel\" tabindex=\"-1\" "
-                        + "onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" "
-                        + "onclick=\"show(4);\">Concealed</button>");
+                sb.append("""
+                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
+                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="t3" class="table-tab" onc\
+                    lick="show(4);">Concealed</button>""");
             }
             sb.append("</div>");
             expect = sb.toString();
@@ -452,16 +462,23 @@ public class TestModulePackages extends JavadocTester {
     private void checkTableHead(String moduleName, ColKind... kinds) {
         Set<ColKind> kindSet = Set.of(kinds);
         StringBuilder sb = new StringBuilder();
-        sb.append("<tr>\n"
-            + "<th class=\"col-first\" scope=\"col\">Package</th>\n");
+        sb.append("""
+            <tr>
+            <th class="col-first" scope="col">Package</th>
+            """);
         if (kindSet.contains(ColKind.EXPORTED_TO)) {
-            sb.append("<th class=\"col-second\" scope=\"col\">Exported To Modules</th>\n");
+            sb.append("""
+                <th class="col-second" scope="col">Exported To Modules</th>
+                """);
         }
         if (kindSet.contains(ColKind.OPENED_TO)) {
-            sb.append("<th class=\"col-second\" scope=\"col\">Opened To Modules</th>\n");
+            sb.append("""
+                <th class="col-second" scope="col">Opened To Modules</th>
+                """);
         }
-        sb.append("<th class=\"col-last\" scope=\"col\">Description</th>\n"
-            + "</tr>");
+        sb.append("""
+            <th class="col-last" scope="col">Description</th>
+            </tr>""");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }
@@ -471,9 +488,9 @@ public class TestModulePackages extends JavadocTester {
         StringBuilder sb = new StringBuilder();
         int idNum = Integer.parseInt(id.substring(1));
         String color = (idNum % 2 == 1 ? "row-color" : "alt-color");
-        sb.append("<tr class=\"" + color + "\" id=\"" + id + "\">\n"
-                + "<th class=\"col-first\" scope=\"row\">"
-                + "<a href=\"" + packageName.replace('.', '/') + "/package-summary.html\">"
+        sb.append("<tr class=\"" + color + "\" id=\"" + id + """
+            ">
+            <th class="col-first" scope="row"><a href=\"""" + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></th>\n");
         if (exportedTo != null) {
             sb.append("<td class=\"col-second\">" + exportedTo + "</td>\n");

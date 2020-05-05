@@ -51,31 +51,35 @@ public class TestClassTree extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/package-tree.html", true,
-                "<ul>\n"
-                + "<li class=\"circle\">pkg.<a href=\"ParentClass.html\" "
-                + "title=\"class in pkg\"><span class=\"type-name-link\">ParentClass</span></a>",
-                "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n"
-                + "<ul>\n"
-                + "<li class=\"circle\">pkg.<a href=\"AnnotationType.html\" "
-                + "title=\"annotation in pkg\"><span class=\"type-name-link\">AnnotationType</span></a> "
-                + "(implements java.lang.annotation.Annotation)</li>\n"
-                + "</ul>",
-                "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n"
-                + "<ul>\n"
-                + "<li class=\"circle\">java.lang.Object\n"
-                + "<ul>\n"
-                + "<li class=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang.Comparable&lt;T&gt;, java.lang.constant.Constable, java.io.Serializable)\n"
-                + "<ul>\n"
-                + "<li class=\"circle\">pkg.<a href=\"Coin.html\" "
-                + "title=\"enum in pkg\"><span class=\"type-name-link\">Coin</span></a></li>\n"
-                + "</ul>\n"
-                + "</li>\n"
-                + "</ul>\n"
-                + "</li>\n"
-                + "</ul>");
+                """
+                    <ul>
+                    <li class="circle">pkg.<a href="ParentClass.html" title="class in pkg"><span cla\
+                    ss="type-name-link">ParentClass</span></a>""",
+                """
+                    <h2 title="Annotation Type Hierarchy">Annotation Type Hierarchy</h2>
+                    <ul>
+                    <li class="circle">pkg.<a href="AnnotationType.html" title="annotation in pkg"><\
+                    span class="type-name-link">AnnotationType</span></a> (implements java.lang.anno\
+                    tation.Annotation)</li>
+                    </ul>""",
+                """
+                    <h2 title="Enum Hierarchy">Enum Hierarchy</h2>
+                    <ul>
+                    <li class="circle">java.lang.Object
+                    <ul>
+                    <li class="circle">java.lang.Enum&lt;E&gt; (implements java.lang.Comparable&lt;T\
+                    &gt;, java.lang.constant.Constable, java.io.Serializable)
+                    <ul>
+                    <li class="circle">pkg.<a href="Coin.html" title="enum in pkg"><span class="type-name-link">Coin</span></a></li>
+                    </ul>
+                    </li>
+                    </ul>
+                    </li>
+                    </ul>""");
 
         checkOutput("pkg/package-tree.html", false,
-                "<li class=\"circle\">class pkg.<a href=\".ParentClass.html\" "
-                + "title=\"class in pkg\"><span class=\"type-name-link\">ParentClass</span></a></li>");
+                """
+                    <li class="circle">class pkg.<a href=".ParentClass.html" title="class in pkg"><s\
+                    pan class="type-name-link">ParentClass</span></a></li>""");
     }
 }

@@ -57,6 +57,7 @@ public class AccessH1 extends JavadocTester {
 
         // Test the doc title in the overview page
         checkOutput("index.html", true,
-                "<h1 class=\"title\">Document Title</h1>");
+                """
+                    <h1 class="title">Document Title</h1>""");
     }
 }

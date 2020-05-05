@@ -74,13 +74,16 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("index.html",
-                "<header role=\"banner\" class=\"flex-header\">\n"
-                + "<nav role=\"navigation\">",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">\n"
-                + "<h1 class=\"title\">Document Title</h1>",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">");
+                """
+                    <header role="banner" class="flex-header">
+                    <nav role="navigation">""",
+                """
+                    <main role="main">
+                    <div class="header">
+                    <h1 class="title">Document Title</h1>""",
+                """
+                    <footer role="contentinfo">
+                    <nav role="navigation">""");
     }
 
     @Test
@@ -98,13 +101,16 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("index.html",
-                "<header role=\"banner\" class=\"flex-header\">\n"
-                + "<nav role=\"navigation\">",
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">\n"
-                + "<h1 class=\"title\">Document Title</h1>",
-                "<footer role=\"contentinfo\">\n" +
-                        "<nav role=\"navigation\">");
+                """
+                    <header role="banner" class="flex-header">
+                    <nav role="navigation">""",
+                """
+                    <main role="main">
+                    <div class="header">
+                    <h1 class="title">Document Title</h1>""",
+                """
+                    <footer role="contentinfo">
+                    <nav role="navigation">""");
     }
 
     @Test
@@ -113,14 +119,15 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         createPackages(srcDir);
         Path docFiles = Files.createDirectory(srcDir.resolve("pkg1").resolve("doc-files"));
         Files.write(docFiles.resolve("s.html"), List.of(
-                "<html>\n"
-                + "  <head>\n"
-                + "    <title>\"Hello World\"</title>\n"
-                + "  </head>\n"
-                + "  <body>\n"
-                + "     A sample doc file.\n"
-                + "  </body>\n"
-                + "</html>"));
+                """
+                    <html>
+                      <head>
+                        <title>"Hello World"</title>
+                      </head>
+                      <body>
+                         A sample doc file.
+                      </body>
+                    </html>"""));
 
         Path outDir = base.resolve("out");
         javadoc("-d", outDir.toString(),
@@ -130,12 +137,15 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg1/doc-files/s.html",
-                "<header role=\"banner\" class=\"flex-header\">\n"
-                + "<nav role=\"navigation\">\n",
-                "<main role=\"main\">"
-                + "A sample doc file",
-                "<footer role=\"contentinfo\">\n"
-                + "<nav role=\"navigation\">"
+                """
+                    <header role="banner" class="flex-header">
+                    <nav role="navigation">
+                    """,
+                """
+                    <main role="main">A sample doc file""",
+                """
+                    <footer role="contentinfo">
+                    <nav role="navigation">"""
                 );
     }
 

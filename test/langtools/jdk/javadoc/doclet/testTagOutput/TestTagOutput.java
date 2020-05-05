@@ -48,14 +48,17 @@ public class TestTagOutput extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/DeprecatedTag.html", true,
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span></div>",
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
-                + "<div class=\"deprecation-comment\">Do not use this.</div>\n"
-                + "</div>");
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""",
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">Do not use this.</div>
+                    </div>""");
 
         checkOutput("pkg1/DeprecatedTag.html", false,
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
-                + "<div class=\"deprecation-comment\"></div>\n"
-                + "</div>");
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment"></div>
+                    </div>""");
     }
 }

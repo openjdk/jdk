@@ -50,14 +50,18 @@ public class TestCharset extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index.html", true,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">");
+            """
+                <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">""");
         checkOutput("pkg/Foo.html", true,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">");
+            """
+                <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">""");
 
         checkOutput("index.html", false,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"ISO-8859-1\">");
+            """
+                <meta http-equiv="Content-Type" content="text/html" charset="ISO-8859-1">""");
         checkOutput("pkg/Foo.html", false,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"ISO-8859-1\">");
+            """
+                <meta http-equiv="Content-Type" content="text/html" charset="ISO-8859-1">""");
     }
 
     @Test
@@ -68,8 +72,10 @@ public class TestCharset extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index.html", true,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">");
+            """
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8">""");
         checkOutput("pkg/Foo.html", true,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">");
+            """
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8">""");
     }
 }

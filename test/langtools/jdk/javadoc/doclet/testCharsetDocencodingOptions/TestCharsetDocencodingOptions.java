@@ -111,8 +111,10 @@ public class TestCharsetDocencodingOptions extends JavadocTester {
 
     void checkOutputFileEncoding(String charset) {
         checkOutput("index.html", true,
-                "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" + charset + "\">");
+                """
+                    <meta http-equiv="Content-Type" content="text/html; charset=""" + charset + "\">");
         checkOutput("pkg/Foo.html", true,
-                "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" + charset + "\">");
+                """
+                    <meta http-equiv="Content-Type" content="text/html; charset=""" + charset + "\">");
     }
 }

@@ -48,32 +48,46 @@ public class TestConstructors extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/Outer.html", true,
-                "<dt>See Also:</dt>\n"
-                + "<dd><a href=\"Outer.Inner.html#%3Cinit%3E()\"><code>Inner()</code></a>, \n"
-                + "<a href=\"Outer.Inner.html#%3Cinit%3E(int)\"><code>Inner(int)</code></a>, \n"
-                + "<a href=\"Outer.Inner.NestedInner.html#%3Cinit%3E()\"><code>NestedInner()</code></a>, \n"
-                + "<a href=\"Outer.Inner.NestedInner.html#%3Cinit%3E(int)\"><code>NestedInner(int)</code></a>, \n"
-                + "<a href=\"#%3Cinit%3E()\"><code>Outer()</code></a>, \n"
-                + "<a href=\"#%3Cinit%3E(int)\"><code>Outer(int)</code></a></dd>",
-                "Link: <a href=\"Outer.Inner.html#%3Cinit%3E()\"><code>Inner()</code></a>, "
-                + "<a href=\"#%3Cinit%3E(int)\"><code>Outer(int)</code></a>, "
-                + "<a href=\"Outer.Inner.NestedInner.html#%3Cinit%3E(int)\"><code>NestedInner(int)</code></a>",
-                "<a href=\"#%3Cinit%3E()\">Outer</a></span>()",
-                "<section class=\"detail\" id=\"&lt;init&gt;()\">",
-                "<a href=\"#%3Cinit%3E(int)\">Outer</a></span>&#8203;(int&nbsp;i)",
-                "<section class=\"detail\" id=\"&lt;init&gt;(int)\">");
+                """
+                    <dt>See Also:</dt>
+                    <dd><a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a>,\s
+                    <a href="Outer.Inner.html#%3Cinit%3E(int)"><code>Inner(int)</code></a>,\s
+                    <a href="Outer.Inner.NestedInner.html#%3Cinit%3E()"><code>NestedInner()</code></a>,\s
+                    <a href="Outer.Inner.NestedInner.html#%3Cinit%3E(int)"><code>NestedInner(int)</code></a>,\s
+                    <a href="#%3Cinit%3E()"><code>Outer()</code></a>,\s
+                    <a href="#%3Cinit%3E(int)"><code>Outer(int)</code></a></dd>""",
+                """
+                    Link: <a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a>, <a href=\
+                    "#%3Cinit%3E(int)"><code>Outer(int)</code></a>, <a href="Outer.Inner.NestedInner\
+                    .html#%3Cinit%3E(int)"><code>NestedInner(int)</code></a>""",
+                """
+                    <a href="#%3Cinit%3E()">Outer</a></span>()""",
+                """
+                    <section class="detail" id="&lt;init&gt;()">""",
+                """
+                    <a href="#%3Cinit%3E(int)">Outer</a></span>&#8203;(int&nbsp;i)""",
+                """
+                    <section class="detail" id="&lt;init&gt;(int)">""");
 
         checkOutput("pkg1/Outer.Inner.html", true,
-                "<a href=\"#%3Cinit%3E()\">Inner</a></span>()",
-                "<section class=\"detail\" id=\"&lt;init&gt;()\">",
-                "<a href=\"#%3Cinit%3E(int)\">Inner</a></span>&#8203;(int&nbsp;i)",
-                "<section class=\"detail\" id=\"&lt;init&gt;(int)\">");
+                """
+                    <a href="#%3Cinit%3E()">Inner</a></span>()""",
+                """
+                    <section class="detail" id="&lt;init&gt;()">""",
+                """
+                    <a href="#%3Cinit%3E(int)">Inner</a></span>&#8203;(int&nbsp;i)""",
+                """
+                    <section class="detail" id="&lt;init&gt;(int)">""");
 
         checkOutput("pkg1/Outer.Inner.NestedInner.html", true,
-                "<a href=\"#%3Cinit%3E()\">NestedInner</a></span>()",
-                "<section class=\"detail\" id=\"&lt;init&gt;()\">",
-                "<a href=\"#%3Cinit%3E(int)\">NestedInner</a></span>&#8203;(int&nbsp;i)",
-                "<section class=\"detail\" id=\"&lt;init&gt;(int)\">");
+                """
+                    <a href="#%3Cinit%3E()">NestedInner</a></span>()""",
+                """
+                    <section class="detail" id="&lt;init&gt;()">""",
+                """
+                    <a href="#%3Cinit%3E(int)">NestedInner</a></span>&#8203;(int&nbsp;i)""",
+                """
+                    <section class="detail" id="&lt;init&gt;(int)">""");
 
         checkOutput("pkg1/Outer.Inner.html", false,
                 "Outer.Inner()",
@@ -84,9 +98,13 @@ public class TestConstructors extends JavadocTester {
                 "Outer.Inner.NestedInner(int)");
 
         checkOutput("pkg1/Outer.html", false,
-                "<a href=\"Outer.Inner.html#Outer.Inner()\"><code>Outer.Inner()</code></a>",
-                "<a href=\"Outer.Inner.html#Outer.Inner(int)\"><code>Outer.Inner(int)</code></a>",
-                "<a href=\"Outer.Inner.NestedInner.html#Outer.Inner.NestedInner()\"><code>Outer.Inner.NestedInner()</code></a>",
-                "<a href=\"Outer.Inner.NestedInner.html#Outer.Inner.NestedInner(int)\"><code>Outer.Inner.NestedInner(int)</code></a>");
+                """
+                    <a href="Outer.Inner.html#Outer.Inner()"><code>Outer.Inner()</code></a>""",
+                """
+                    <a href="Outer.Inner.html#Outer.Inner(int)"><code>Outer.Inner(int)</code></a>""",
+                """
+                    <a href="Outer.Inner.NestedInner.html#Outer.Inner.NestedInner()"><code>Outer.Inner.NestedInner()</code></a>""",
+                """
+                    <a href="Outer.Inner.NestedInner.html#Outer.Inner.NestedInner(int)"><code>Outer.Inner.NestedInner(int)</code></a>""");
     }
 }

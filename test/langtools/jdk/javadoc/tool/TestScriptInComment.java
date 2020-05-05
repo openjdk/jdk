@@ -61,7 +61,8 @@ public class TestScriptInComment {
         LC("<script>#ALERT</script>", true), // script tag in Lower Case
         UC("<SCRIPT>#ALERT</script>", true), // script tag in Upper Case
         WS("< script >#ALERT</script>", false, "-Xdoclint:none"), // script tag with invalid white space
-        SP("<script src=\"file\"> #ALERT </script>", true), // script tag with an attribute
+        SP("""
+            <script src="file"> #ALERT </script>""", true), // script tag with an attribute
         ON("<a onclick='#ALERT'>x</a>", true), // event handler attribute
         OME("<img alt='1' onmouseenter='#ALERT'>", true), // onmouseenter event handler attribute
         OML("<img alt='1' onmouseleave='#ALERT'>", true), // onmouseleave event handler attribute

@@ -52,25 +52,31 @@ public class TestMemberSummary extends JavadocTester {
 
         checkOutput("pkg/PublicChild.html", true,
                 // Check return type in member summary.
-                "<code><a href=\"PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
-                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\"><a href=\"#returnTypeTest()\">"
-                + "returnTypeTest</a></span>()</code>",
+                """
+                    <code><a href="PublicChild.html" title="class in pkg">PublicChild</a></code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#returnTypeTest()">returnTypeTest</a></span>()</code>""",
                 // Check return type in member detail.
-                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"return-type\"><a href=\"PublicChild.html\" title=\"class in pkg\">"
-                + "PublicChild</a></span>&nbsp;<span class=\"member-name\">returnTypeTest</span>()</div>",
-                "<th class=\"col-constructor-name\" scope=\"row\"><code><span class=\"member-name-link\">"
-                + "<a href=\"#%3Cinit%3E()\">PublicChild</a></span>()</code></th>");
+                """
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                    lass="return-type"><a href="PublicChild.html" title="class in pkg">PublicChild</\
+                    a></span>&nbsp;<span class="member-name">returnTypeTest</span>()</div>""",
+                """
+                    <th class="col-constructor-name" scope="row"><code><span class="member-name-link\
+                    "><a href="#%3Cinit%3E()">PublicChild</a></span>()</code></th>""");
 
         checkOutput("pkg/PrivateParent.html", true,
-                "<td class=\"col-first\"><code>private </code></td>\n"
-                + "<th class=\"col-constructor-name\" scope=\"row\"><code><span class=\"member-name-link\">"
-                + "<a href=\"#%3Cinit%3E(int)\">PrivateParent</a></span>&#8203;(int&nbsp;i)</code>"
-                + "</th>");
+                """
+                    <td class="col-first"><code>private </code></td>
+                    <th class="col-constructor-name" scope="row"><code><span class="member-name-link\
+                    "><a href="#%3Cinit%3E(int)">PrivateParent</a></span>&#8203;(int&nbsp;i)</code><\
+                    /th>""");
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
-                "<section class=\"detail\" id=\"f(T[])\">\n"
-                + "<h3 id=\"f(java.lang.Object[])\">f</h3>\n");
+                """
+                    <section class="detail" id="f(T[])">
+                    <h3 id="f(java.lang.Object[])">f</h3>
+                    """);
     }
 }

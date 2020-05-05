@@ -48,53 +48,60 @@ public class TestSummaryTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index-all.html", true,
-            "<dl class=\"index\">\n"
-            + "<dt><span class=\"member-name-link\"><a href=\"p1/A.html#m()\">m()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence</div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"member-name-link\"><a href=\"p1/B.html#m()\">m()"
-            + "</a></span> - Method in class p1.<a href=\"p1/B.html\" title=\"class in p1\">B</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence</div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"member-name-link\"><a href=\"p1/A.html#m1()\">m1()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\"> First sentence </div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"member-name-link\"><a href=\"p1/A.html#m2()\">m2()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">Some html &lt;foo&gt; &nbsp; codes</div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"member-name-link\"><a href=\"p1/A.html#m3()\">m3()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence </div>\n"
-            + "</dd>\n"
-            + "<dt><span class=\"member-name-link\"><a href=\"p1/A.html#m4()\">m4()"
-            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
-            + "<dd>\n"
-            + "<div class=\"block\">First sentence i.e. the first sentence</div>\n"
-            + "</dd>\n"
-            + "</dl>\n",
-            "<div class=\"block\">The first... line</div>\n"
+            """
+                <dl class="index">
+                <dt><span class="member-name-link"><a href="p1/A.html#m()">m()</a></span> - Meth\
+                od in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dd>
+                <div class="block">First sentence</div>
+                </dd>
+                <dt><span class="member-name-link"><a href="p1/B.html#m()">m()</a></span> - Meth\
+                od in class p1.<a href="p1/B.html" title="class in p1">B</a></dt>
+                <dd>
+                <div class="block">First sentence</div>
+                </dd>
+                <dt><span class="member-name-link"><a href="p1/A.html#m1()">m1()</a></span> - Me\
+                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dd>
+                <div class="block"> First sentence </div>
+                </dd>
+                <dt><span class="member-name-link"><a href="p1/A.html#m2()">m2()</a></span> - Me\
+                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dd>
+                <div class="block">Some html &lt;foo&gt; &nbsp; codes</div>
+                </dd>
+                <dt><span class="member-name-link"><a href="p1/A.html#m3()">m3()</a></span> - Me\
+                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dd>
+                <div class="block">First sentence </div>
+                </dd>
+                <dt><span class="member-name-link"><a href="p1/A.html#m4()">m4()</a></span> - Me\
+                thod in class p1.<a href="p1/A.html" title="class in p1">A</a></dt>
+                <dd>
+                <div class="block">First sentence i.e. the first sentence</div>
+                </dd>
+                </dl>
+                """,
+            """
+                <div class="block">The first... line</div>
+                """
         );
 
         // make sure the second @summary's content is displayed correctly
         checkOutput("p1/A.html", true,
-             "<section class=\"detail\" id=\"m3()\">\n"
-             + "<h3>m3</h3>\n"
-             + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
-             + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">m3</span>()</div>\n"
-             + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
-             + "</section>\n"
+             """
+                 <section class="detail" id="m3()">
+                 <h3>m3</h3>
+                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                 lass="return-type">void</span>&nbsp;<span class="member-name">m3</span>()</div>
+                 <div class="block">First sentence  some text maybe second sentence.</div>
+                 </section>
+                 """
         );
 
         checkOutput("p1/package-summary.html", true,
-                "<div class=\"block\">The first... line second from ...</div>");
+                """
+                    <div class="block">The first... line second from ...</div>""");
     }
 
     @Test
@@ -106,9 +113,13 @@ public class TestSummaryTag extends JavadocTester {
 
         checkOutput(Output.OUT, true, "package.html:3: warning: invalid use of @summary");
 
-        checkOutput("index-all.html", true, "<div class=\"block\">foo bar</div>\n");
+        checkOutput("index-all.html", true, """
+            <div class="block">foo bar</div>
+            """);
 
-        checkOutput("p2/package-summary.html", true, "<div class=\"block\">foo bar baz.</div>\n");
+        checkOutput("p2/package-summary.html", true, """
+            <div class="block">foo bar baz.</div>
+            """);
     }
 
     @Test
@@ -120,6 +131,7 @@ public class TestSummaryTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index.html", true,
-                "<div class=\"block\">The first... line second from ...</div>");
+                """
+                    <div class="block">The first... line second from ...</div>""");
     }
 }

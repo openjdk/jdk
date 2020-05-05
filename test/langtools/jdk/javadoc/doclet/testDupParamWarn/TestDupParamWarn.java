@@ -49,6 +49,7 @@ public class TestDupParamWarn extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, false,
-            "Parameter \"a\" is documented more than once.");
+            """
+                Parameter "a" is documented more than once.""");
     }
 }

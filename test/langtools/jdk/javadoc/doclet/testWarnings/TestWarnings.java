@@ -79,8 +79,11 @@ public class TestWarnings extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput("pkg/X.html", true,
-            "<a href=\"#m()\"><code>m()</code></a><br/>",
-            "<a href=\"#%3Cinit%3E()\"><code>X()</code></a><br/>",
-            "<a href=\"#f\"><code>f</code></a><br/>");
+            """
+                <a href="#m()"><code>m()</code></a><br/>""",
+            """
+                <a href="#%3Cinit%3E()"><code>X()</code></a><br/>""",
+            """
+                <a href="#f"><code>f</code></a><br/>""");
     }
 }

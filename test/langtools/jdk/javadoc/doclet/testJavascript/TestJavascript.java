@@ -48,19 +48,23 @@ public class TestJavascript extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", false,
-                "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n"
-                + "</script>");
+                """
+                    <script type="text/javascript"><!--
+                    $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
+                    //-->
+                    </script>""");
 
         checkOutput("index.html", false,
-                "<script type=\"text/javascript\"><!--\n"
-                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "//-->\n");
+                """
+                    <script type="text/javascript"><!--
+                    $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
+                    //-->
+                    """);
 
         checkOutput("script.js", false,
-                "$(window).resize(function() {\n"
-                + "        $('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                + "    });");
+                """
+                    $(window).resize(function() {
+                            $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
+                        });""");
     }
 }

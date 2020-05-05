@@ -61,7 +61,8 @@ public class TestSimpleTag extends JavadocTester {
                 "<dt>EJB Beans:</dt>",
                 "<dt>Regular Tag:</dt>",
                 "<dt>Tag-With-Hyphens:</dt>",
-                "<dt>Parameters:</dt>\n"
-                + "<dd><code>arg</code> - this is an int argument.</dd>");
+                """
+                    <dt>Parameters:</dt>
+                    <dd><code>arg</code> - this is an int argument.</dd>""");
     }
 }

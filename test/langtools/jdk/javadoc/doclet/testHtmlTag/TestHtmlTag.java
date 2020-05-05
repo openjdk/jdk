@@ -107,88 +107,93 @@ public class TestHtmlTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg3/package-summary.html", true,
-                "<section class=\"package-description\" id=\"package.description\">\n"
-                + "<div class=\"block\"><p>This is the first line. Note the newlines before the &lt;p&gt; is relevant.</div>\n"
-                + "</section>");
+                """
+                    <section class="package-description" id="package.description">
+                    <div class="block"><p>This is the first line. Note the newlines before the &lt;p&gt; is relevant.</div>
+                    </section>""");
 
         checkOutput("pkg3/A.DatatypeFactory.html", true,
-                "<div class=\"block\"><p>\n"
-                + " Factory that creates new <code>javax.xml.datatype</code>\n"
-                + " <code>Object</code>s that map XML to/from Java <code>Object</code>s.</p>\n"
-                + "\n"
-                + " <p id=\"DatatypeFactory.newInstance\">\n"
-                + " A new instance of the <code>DatatypeFactory</code> is created through the\n"
-                + " <a href=\"#newInstance()\"><code>newInstance()</code></a> method that uses the following implementation\n"
-                + " resolution mechanisms to determine an implementation:</p>\n"
-                + " <ol>\n"
-                + " <li>\n"
-                + " If the system property specified by <a href=\"#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
-                + " \"<code>javax.xml.datatype.DatatypeFactory</code>\", exists, a class with\n"
-                + " the name of the property value is instantiated. Any Exception thrown\n"
-                + " during the instantiation process is wrapped as a\n"
-                + " <code>IllegalStateException</code>.\n"
-                + " </li>\n"
-                + " <li>\n"
-                + " If the file ${JAVA_HOME}/lib/jaxp.properties exists, it is loaded in a\n"
-                + " <code>Properties</code> <code>Object</code>. The\n"
-                + " <code>Properties</code> <code>Object </code> is then queried for the\n"
-                + " property as documented in the prior step and processed as documented in\n"
-                + " the prior step.\n"
-                + " </li>\n"
-                + " <li>\n"
-                + " Uses the service-provider loading facilities, defined by the\n"
-                + " <code>ServiceLoader</code> class, to attempt to locate and load an\n"
-                + " implementation of the service using the default loading mechanism:\n"
-                + " the service-provider loading facility will use the current thread's context class loader\n"
-                + " to attempt to load the service. If the context class loader is null, the system class loader will be used.\n"
-                + " <br>\n"
-                + " In case of <code>service configuration error</code> a\n"
-                + " <code>DatatypeConfigurationException</code> will be thrown.\n"
-                + " </li>\n"
-                + " <li>\n"
-                + " The final mechanism is to attempt to instantiate the <code>Class</code>\n"
-                + " specified by <a href=\"#DATATYPEFACTORY_IMPLEMENTATION_CLASS\"><code>DATATYPEFACTORY_IMPLEMENTATION_CLASS</code></a>. Any Exception\n"
-                + " thrown during the instantiation process is wrapped as a\n"
-                + " <code>IllegalStateException</code>.\n"
-                + " </li>\n"
-                + " </ol></div>");
+                """
+                    <div class="block"><p>
+                     Factory that creates new <code>javax.xml.datatype</code>
+                     <code>Object</code>s that map XML to/from Java <code>Object</code>s.</p>
+
+                     <p id="DatatypeFactory.newInstance">
+                     A new instance of the <code>DatatypeFactory</code> is created through the
+                     <a href="#newInstance()"><code>newInstance()</code></a> method that uses the following implementation
+                     resolution mechanisms to determine an implementation:</p>
+                     <ol>
+                     <li>
+                     If the system property specified by <a href="#DATATYPEFACTORY_PROPERTY"><code>DATATYPEFACTORY_PROPERTY</code></a>,
+                     "<code>javax.xml.datatype.DatatypeFactory</code>", exists, a class with
+                     the name of the property value is instantiated. Any Exception thrown
+                     during the instantiation process is wrapped as a
+                     <code>IllegalStateException</code>.
+                     </li>
+                     <li>
+                     If the file ${JAVA_HOME}/lib/jaxp.properties exists, it is loaded in a
+                     <code>Properties</code> <code>Object</code>. The
+                     <code>Properties</code> <code>Object </code> is then queried for the
+                     property as documented in the prior step and processed as documented in
+                     the prior step.
+                     </li>
+                     <li>
+                     Uses the service-provider loading facilities, defined by the
+                     <code>ServiceLoader</code> class, to attempt to locate and load an
+                     implementation of the service using the default loading mechanism:
+                     the service-provider loading facility will use the current thread's context class loader
+                     to attempt to load the service. If the context class loader is null, the system class loader will be used.
+                     <br>
+                     In case of <code>service configuration error</code> a
+                     <code>DatatypeConfigurationException</code> will be thrown.
+                     </li>
+                     <li>
+                     The final mechanism is to attempt to instantiate the <code>Class</code>
+                     specified by <a href="#DATATYPEFACTORY_IMPLEMENTATION_CLASS"><code>DATATYPEFACT\
+                    ORY_IMPLEMENTATION_CLASS</code></a>. Any Exception
+                     thrown during the instantiation process is wrapped as a
+                     <code>IllegalStateException</code>.
+                     </li>
+                     </ol></div>""");
 
         checkOutput("pkg3/A.ActivationDesc.html", true,
-                "<pre>public class <span class=\"type-name-label\">A.ActivationDesc</span>\n"
-                + "extends java.lang.Object\n"
-                + "implements java.io.Serializable</pre>\n"
-                + "<div class=\"block\">An activation descriptor contains the information necessary to activate\n"
-                + " an object: <ul>\n"
-                + " <li> the object's group identifier,\n"
-                + " <li> the object's fully-qualified class name,\n"
-                + " <li> the object's code location (the location of the class), a codebase\n"
-                + " URL path,\n"
-                + " <li> the object's restart \"mode\", and,\n"
-                + " <li> a \"marshalled\" object that can contain object specific\n"
-                + " initialization data. </ul>\n"
-                + "\n"
-                + " <p>\n"
-                + " A descriptor registered with the activation system can be used to\n"
-                + " recreate/activate the object specified by the descriptor. The\n"
-                + " <code>MarshalledObject</code> in the object's descriptor is passed as the\n"
-                + " second argument to the remote object's constructor for object to use\n"
-                + " during reinitialization/activation.</div>");
+                """
+                    <pre>public class <span class="type-name-label">A.ActivationDesc</span>
+                    extends java.lang.Object
+                    implements java.io.Serializable</pre>
+                    <div class="block">An activation descriptor contains the information necessary to activate
+                     an object: <ul>
+                     <li> the object's group identifier,
+                     <li> the object's fully-qualified class name,
+                     <li> the object's code location (the location of the class), a codebase
+                     URL path,
+                     <li> the object's restart "mode", and,
+                     <li> a "marshalled" object that can contain object specific
+                     initialization data. </ul>
+
+                     <p>
+                     A descriptor registered with the activation system can be used to
+                     recreate/activate the object specified by the descriptor. The
+                     <code>MarshalledObject</code> in the object's descriptor is passed as the
+                     second argument to the remote object's constructor for object to use
+                     during reinitialization/activation.</div>""");
 
         checkOutput("pkg3/A.ActivationGroupID.html", true,
-                "<pre>public class <span class=\"type-name-label\">A.ActivationGroupID</span>\n"
-                + "extends java.lang.Object\n"
-                + "implements java.io.Serializable</pre>\n"
-                + "<div class=\"block\">The identifier for a registered activation group serves several purposes:\n"
-                + " <ul>\n"
-                + " <li>identifies the group uniquely within the activation system, and\n"
-                + " <li>contains a reference to the group's activation system so that the\n"
-                + " group can contact its activation system when necessary.</ul><p>\n"
-                + "\n"
-                + " The <code>ActivationGroupID</code> is returned from the call to\n"
-                + " <code>ActivationSystem.registerGroup</code> and is used to identify the\n"
-                + " group within the activation system. This group id is passed as one of the\n"
-                + " arguments to the activation group's special constructor when an\n"
-                + " activation group is created/recreated.</div>\n"
-                + "<dl class=\"notes\">");
+                """
+                    <pre>public class <span class="type-name-label">A.ActivationGroupID</span>
+                    extends java.lang.Object
+                    implements java.io.Serializable</pre>
+                    <div class="block">The identifier for a registered activation group serves several purposes:
+                     <ul>
+                     <li>identifies the group uniquely within the activation system, and
+                     <li>contains a reference to the group's activation system so that the
+                     group can contact its activation system when necessary.</ul><p>
+
+                     The <code>ActivationGroupID</code> is returned from the call to
+                     <code>ActivationSystem.registerGroup</code> and is used to identify the
+                     group within the activation system. This group id is passed as one of the
+                     arguments to the activation group's special constructor when an
+                     activation group is created/recreated.</div>
+                    <dl class="notes">""");
     }
 }

@@ -51,34 +51,40 @@ public class TestOverriddenPrivateMethodsWithPrivateFlag extends JavadocTester {
 
         // The public method should be overridden
         checkOutput("pkg1/SubClass.html", true,
-                "<dt>Overrides:</dt>\n"
-                + "<dd><code><a href=\"BaseClass.html#publicMethod");
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="BaseClass.html#publicMethod""");
 
         // The package private method should be overridden since the base and sub class are in the same
         // package.
         checkOutput("pkg1/SubClass.html", true,
-                "<dt>Overrides:</dt>\n"
-                + "<dd><code><a href=\"BaseClass.html#packagePrivateMethod");
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="BaseClass.html#packagePrivateMethod""");
 
         // The public method in different package should be overridden
         checkOutput("pkg2/SubClass.html", true,
-                "<dt>Overrides:</dt>\n"
-                + "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="../pkg1/BaseClass.html#publicMethod""");
 
         // The private method in should not be overridden
         checkOutput("pkg1/SubClass.html", false,
-                "<dt>Overrides:</dt>\n"
-                + "<dd><code><a href=\"BaseClass.html#privateMethod");
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="BaseClass.html#privateMethod""");
 
         // The private method in different package should not be overridden
         checkOutput("pkg2/SubClass.html", false,
-                "<dt>Overrides:</dt>\n"
-                + "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod");
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="../pkg1/BaseClass.html#privateMethod""");
 
         // The package private method should not be overridden since the base and sub class are in
         // different packages.
         checkOutput("pkg2/SubClass.html", false,
-                "<dt>Overrides:</dt>\n"
-                + "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod");
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="../pkg1/BaseClass.html#packagePrivateMethod""");
     }
 }

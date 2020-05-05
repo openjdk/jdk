@@ -54,10 +54,12 @@ public class JavascriptWinTitle extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("index.html", true,
                 "<script type=\"text/javascript\">",
-                "<body class=\"package-index-page\">");
+                """
+                    <body class="package-index-page">""");
 
         // Test that "onload" is not present in BODY tag:
-        checkOutput("p1/package-summary.html", true, "<body class=\"package-declaration-page\">");
+        checkOutput("p1/package-summary.html", true, """
+            <body class="package-declaration-page">""");
 
         checkOutput("p1/C.html", true, "<title>C (Window Title)</title>");
     }

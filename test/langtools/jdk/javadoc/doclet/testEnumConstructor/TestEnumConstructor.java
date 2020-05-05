@@ -67,9 +67,11 @@ public class TestEnumConstructor extends JavadocTester {
         checkOrder("pkg/TestEnum.html",
                 "Constructor Summary",
                 "Modifier", "Constructor",
-                "private", "<a href=\"#%3Cinit%3E(int)\">TestEnum</a></span>&#8203;(int&nbsp;val)");
+                "private", """
+                    <a href="#%3Cinit%3E(int)">TestEnum</a></span>&#8203;(int&nbsp;val)""");
         checkOutput("index-all.html", true,
-                "<a href=\"pkg/TestEnum.html#%3Cinit%3E(int)\">TestEnum(int)</a>");
+                """
+                    <a href="pkg/TestEnum.html#%3Cinit%3E(int)">TestEnum(int)</a>""");
 
     }
 
@@ -87,16 +89,18 @@ public class TestEnumConstructor extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg/TestEnum.html", false, "Constructor Summary");
         checkOutput("index-all.html", false,
-                "<a href=\"pkg/TestEnum.html#%3Cinit%3E(int)\">TestEnum(int)</a>");
+                """
+                    <a href="pkg/TestEnum.html#%3Cinit%3E(int)">TestEnum(int)</a>""");
     }
 
     void createEnum(Path srcDir) throws Exception {
         tb.writeJavaFiles(srcDir,
-                "package pkg;\n"
-                + "public enum TestEnum{\n"
-                + "CONST1(100),CONST2(50),CONST3(10);\n"
-                + "private int val;\n"
-                + "TestEnum(int val){this.val=val;}\n"
-                + "}");
+                """
+                    package pkg;
+                    public enum TestEnum{
+                    CONST1(100),CONST2(50),CONST3(10);
+                    private int val;
+                    TestEnum(int val){this.val=val;}
+                    }""");
     }
 }

@@ -48,8 +48,8 @@ public class TestNestedGenerics extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/NestedGenerics.html", true,
-            "<div class=\"block\">Contains <a " +
-            "href=\"#foo(java.util.Map)\"><code>foo" +
-            "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>");
+            """
+                <div class="block">Contains <a href="#foo(java.util.Map)"><code>foo(java.util.Ma\
+                p&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>""");
     }
 }

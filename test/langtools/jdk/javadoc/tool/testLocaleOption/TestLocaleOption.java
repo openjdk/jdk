@@ -93,12 +93,14 @@ public class TestLocaleOption extends TestRunner {
 
         srcDir = Path.of("src");
         tb.writeJavaFiles(srcDir,
-                "package p;\n"
-                        + "public class HelloWorld {\n"
-                        + "    public static void main(String... args) {\n"
-                        + "        System.out.println(\"Hello World!\");\n"
-                        + "    }\n"
-                        + "}\n");
+                """
+                    package p;
+                    public class HelloWorld {
+                        public static void main(String... args) {
+                            System.out.println("Hello World!");
+                        }
+                    }
+                    """);
 
         runTests(m -> new Object[]{Path.of(m.getName())});
     }
@@ -125,12 +127,14 @@ public class TestLocaleOption extends TestRunner {
 
         if (Objects.equals(defaultLocale, ALLCAPS)) {
             checkContains(stdOut,
-                    "USAGE:\n"
-                            + "    JAVADOC [OPTIONS] [PACKAGENAMES] [SOURCEFILES] [@FILES]");
+                    """
+                        USAGE:
+                            JAVADOC [OPTIONS] [PACKAGENAMES] [SOURCEFILES] [@FILES]""");
         } else {
             checkContains(stdOut,
-                    "Usage:\n"
-                            + "    javadoc [options] [packagenames] [sourcefiles] [@files]");
+                    """
+                        Usage:
+                            javadoc [options] [packagenames] [sourcefiles] [@files]""");
         }
     }
 
@@ -162,12 +166,14 @@ public class TestLocaleOption extends TestRunner {
         // check console messages
         if (Objects.equals(defaultLocale, ALLCAPS)) {
             checkContains(stdOut,
-                    "LOADING SOURCE FILES FOR PACKAGE p...\n"
-                            + "CONSTRUCTING JAVADOC INFORMATION...");
+                    """
+                        LOADING SOURCE FILES FOR PACKAGE p...
+                        CONSTRUCTING JAVADOC INFORMATION...""");
         } else {
             checkContains(stdOut,
-                    "Loading source files for package p...\n"
-                            + "Constructing Javadoc information...");
+                    """
+                        Loading source files for package p...
+                        Constructing Javadoc information...""");
         }
 
         // check generated files
@@ -176,15 +182,21 @@ public class TestLocaleOption extends TestRunner {
         if (Objects.equals(docLocale, ALLCAPS)) {
             checkContains(hw,
                     "<h2>METHOD SUMMARY</h2>",
-                    "<th class=\"col-first\" scope=\"col\">MODIFIER AND TYPE</th>",
-                    "<th class=\"col-second\" scope=\"col\">METHOD</th>",
-                    "<th class=\"col-last\" scope=\"col\">DESCRIPTION</th>");
+                    """
+                        <th class="col-first" scope="col">MODIFIER AND TYPE</th>""",
+                    """
+                        <th class="col-second" scope="col">METHOD</th>""",
+                    """
+                        <th class="col-last" scope="col">DESCRIPTION</th>""");
         } else {
             checkContains(hw,
                     "<h2>Method Summary</h2>",
-                    "<th class=\"col-first\" scope=\"col\">Modifier and Type</th>",
-                    "<th class=\"col-second\" scope=\"col\">Method</th>",
-                    "<th class=\"col-last\" scope=\"col\">Description</th>");
+                    """
+                        <th class="col-first" scope="col">Modifier and Type</th>""",
+                    """
+                        <th class="col-second" scope="col">Method</th>""",
+                    """
+                        <th class="col-last" scope="col">Description</th>""");
         }
     }
 

@@ -48,22 +48,28 @@ public class TestHelpFile extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("help-doc.html", true,
-            "<a href=\"constant-values.html\">Constant Field Values</a>");
+            """
+                <a href="constant-values.html">Constant Field Values</a>""");
 
         // check a representative sample of the contents
         checkOrder("help-doc.html",
-                "</div>\n"
-                + "<section class=\"help-section\">\n"
-                + "<h2>Package</h2>",
-                "<ul class=\"help-section-list\">\n"
-                + "<li>Interfaces</li>\n"
-                + "<li>Classes</li>\n"
-                + "<li>Enums</li>",
-                "</section>\n"
-                + "<section class=\"help-section\">\n"
-                + "<h2>Class or Interface</h2>",
-                "<ul class=\"help-section-list\">\n"
-                + "<li>Class Inheritance Diagram</li>\n"
-                + "<li>Direct Subclasses</li>\n");
+                """
+                    </div>
+                    <section class="help-section">
+                    <h2>Package</h2>""",
+                """
+                    <ul class="help-section-list">
+                    <li>Interfaces</li>
+                    <li>Classes</li>
+                    <li>Enums</li>""",
+                """
+                    </section>
+                    <section class="help-section">
+                    <h2>Class or Interface</h2>""",
+                """
+                    <ul class="help-section-list">
+                    <li>Class Inheritance Diagram</li>
+                    <li>Direct Subclasses</li>
+                    """);
     }
 }

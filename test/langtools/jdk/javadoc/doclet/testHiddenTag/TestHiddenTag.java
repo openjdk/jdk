@@ -52,26 +52,33 @@ public class TestHiddenTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/A.html", true,
-                "<section class=\"detail\" id=\"visibleField\">",
-                "<section class=\"detail\" id=\"visibleMethod()\">",
-                "<dt>Direct Known Subclasses:</dt>\n" +
-                "<dd><code><a href=\"A.VisibleInner.html\" title=\"class in pkg1\">" +
-                "A.VisibleInner</a></code>, <code><a href=\"A.VisibleInnerExtendsInvisibleInner.html\" " +
-                "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></code></dd>");
+                """
+                    <section class="detail" id="visibleField">""",
+                """
+                    <section class="detail" id="visibleMethod()">""",
+                """
+                    <dt>Direct Known Subclasses:</dt>
+                    <dd><code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>\
+                    </code>, <code><a href="A.VisibleInnerExtendsInvisibleInner.html" title="class i\
+                    n pkg1">A.VisibleInnerExtendsInvisibleInner</a></code></dd>""");
 
         checkOutput("pkg1/A.html", false,
                 "<h3 id=\"inVisibleField\">",
-                "<h3><span id=\"inVisibleMethod()\">");
+                """
+                    <h3><span id="inVisibleMethod()">""");
 
         checkOutput("pkg1/A.VisibleInner.html", true,
-                "<code><a href=\"A.html#visibleField\">visibleField</a></code>",
-                "<code><a href=\"A.html#visibleMethod()\">visibleMethod</a></code>",
-                "<h2 id=\"nested.classes.inherited.from.class.pkg1.A\">" +
-                "Nested classes/interfaces inherited from class&nbsp;pkg1." +
-                "<a href=\"A.html\" title=\"class in pkg1\">A</a></h2>\n" +
-                "<code><a href=\"A.VisibleInner.html\" title=\"class in pkg1\">" +
-                "A.VisibleInner</a>, <a href=\"A.VisibleInnerExtendsInvisibleInner.html\" " +
-                "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></code></div>\n");
+                """
+                    <code><a href="A.html#visibleField">visibleField</a></code>""",
+                """
+                    <code><a href="A.html#visibleMethod()">visibleMethod</a></code>""",
+                """
+                    <h2 id="nested.classes.inherited.from.class.pkg1.A">Nested classes/interfaces in\
+                    herited from class&nbsp;pkg1.<a href="A.html" title="class in pkg1">A</a></h2>
+                    <code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>, <a\
+                     href="A.VisibleInnerExtendsInvisibleInner.html" title="class in pkg1">A.Visible\
+                    InnerExtendsInvisibleInner</a></code></div>
+                    """);
 
         checkOutput("pkg1/A.VisibleInner.html", false,
                 "../pkg1/A.VisibleInner.html#VisibleInner()",
@@ -79,11 +86,13 @@ public class TestHiddenTag extends JavadocTester {
                 "<a id=\"inVisibleMethod()\">");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
-                "<pre>public static class <span class=\"type-name-label\">" +
-                "A.VisibleInnerExtendsInvisibleInner</span>\n" +
-                "extends <a href=\"A.html\" title=\"class in pkg1\">A</a></pre>",
-                "<code><a href=\"A.html#visibleField\">visibleField</a></code>",
-                "<code><a href=\"A.html#visibleMethod()\">visibleMethod</a></code>");
+                """
+                    <pre>public static class <span class="type-name-label">A.VisibleInnerExtendsInvisibleInner</span>
+                    extends <a href="A.html" title="class in pkg1">A</a></pre>""",
+                """
+                    <code><a href="A.html#visibleField">visibleField</a></code>""",
+                """
+                    <code><a href="A.html#visibleMethod()">visibleMethod</a></code>""");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", false,
                 "invisibleField",

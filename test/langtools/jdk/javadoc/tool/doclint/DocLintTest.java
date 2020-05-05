@@ -68,13 +68,19 @@ public class DocLintTest {
         /* 04 */    "    public void method() { }\n" +
         /* 05 */    "\n" +
         /* 06 */    "    /** Syntax < error. */\n" +
-        /* 07 */    "    private void syntaxError() { }\n" +
+        /* 07 */    """
+            \s   private void syntaxError() { }
+            """ +
         /* 08 */    "\n" +
         /* 09 */    "    /** @see DoesNotExist */\n" +
-        /* 10 */    "    protected void referenceError() { }\n" +
+        /* 10 */    """
+            \s   protected void referenceError() { }
+            """ +
         /* 11 */    "\n" +
         /* 12 */    "    /** @return */\n" +
-        /* 13 */    "    public int emptyReturn() { return 0; }\n" +
+        /* 13 */    """
+            \s   public int emptyReturn() { return 0; }
+            """ +
         /* 14 */    "}\n";
 
     final String p1Code =

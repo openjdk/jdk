@@ -52,25 +52,36 @@ public class TestCopyFiles extends JavadocTester {
                 "--module", "acme.mdle");
         checkExit(Exit.OK);
         checkOrder("acme.mdle/p/doc-files/inpackage.html",
-                "\"Hello World\" (phi-WINDOW-TITLE-phi)",
+                """
+                    "Hello World" (phi-WINDOW-TITLE-phi)""",
                 "phi-TOP-phi",
                 // check top navbar
-                "<a href=\"../../module-summary.html\">Module</a>",
-                "<a href=\"../package-summary.html\">Package</a>",
-                "<a href=\"../../../overview-tree.html\">Tree</a>",
-                "<a href=\"../../../deprecated-list.html\">Deprecated</a>",
-                "<a href=\"../../../index-all.html\">Index</a>",
+                """
+                    <a href="../../module-summary.html">Module</a>""",
+                """
+                    <a href="../package-summary.html">Package</a>""",
+                """
+                    <a href="../../../overview-tree.html">Tree</a>""",
+                """
+                    <a href="../../../deprecated-list.html">Deprecated</a>""",
+                """
+                    <a href="../../../index-all.html">Index</a>""",
                 "phi-HEADER-phi",
-                "In a named module acme.module and named package "
-                        + "<a href=\"../package-summary.html\"><code>p</code></a>.",
+                """
+                    In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>.""",
                 "<dt>Since:</",
                 "forever",
                 // check bottom navbar
-                "<a href=\"../../module-summary.html\">Module</a>",
-                "<a href=\"../package-summary.html\">Package</a>",
-                "<a href=\"../../../overview-tree.html\">Tree</a>",
-                "<a href=\"../../../deprecated-list.html\">Deprecated</a>",
-                "<a href=\"../../../index-all.html\">Index</a>",
+                """
+                    <a href="../../module-summary.html">Module</a>""",
+                """
+                    <a href="../package-summary.html">Package</a>""",
+                """
+                    <a href="../../../overview-tree.html">Tree</a>""",
+                """
+                    <a href="../../../deprecated-list.html">Deprecated</a>""",
+                """
+                    <a href="../../../index-all.html">Index</a>""",
                 "phi-FOOTER-phi",
                 "phi-BOTTOM-phi"
         );
@@ -89,25 +100,36 @@ public class TestCopyFiles extends JavadocTester {
                 "--module", "acme.mdle,acme2.mdle");
         checkExit(Exit.OK);
         checkOrder("acme.mdle/p/doc-files/inpackage.html",
-                "\"Hello World\" (phi-WINDOW-TITLE-phi)",
+                """
+                    "Hello World" (phi-WINDOW-TITLE-phi)""",
                 "phi-TOP-phi",
                 // check top navbar
-                "<a href=\"../../module-summary.html\">Module</a>",
-                "<a href=\"../package-summary.html\">Package</a>",
-                "<a href=\"../../../overview-tree.html\">Tree</a>",
-                "<a href=\"../../../deprecated-list.html\">Deprecated</a>",
-                "<a href=\"../../../index-all.html\">Index</a>",
+                """
+                    <a href="../../module-summary.html">Module</a>""",
+                """
+                    <a href="../package-summary.html">Package</a>""",
+                """
+                    <a href="../../../overview-tree.html">Tree</a>""",
+                """
+                    <a href="../../../deprecated-list.html">Deprecated</a>""",
+                """
+                    <a href="../../../index-all.html">Index</a>""",
                 "phi-HEADER-phi",
-                "In a named module acme.module and named package "
-                        + "<a href=\"../package-summary.html\"><code>p</code></a>.",
+                """
+                    In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>.""",
                 "<dt>Since:</",
                 "forever",
                 // check bottom navbar
-                "<a href=\"../../module-summary.html\">Module</a>",
-                "<a href=\"../package-summary.html\">Package</a>",
-                "<a href=\"../../../overview-tree.html\">Tree</a>",
-                "<a href=\"../../../deprecated-list.html\">Deprecated</a>",
-                "<a href=\"../../../index-all.html\">Index</a>",
+                """
+                    <a href="../../module-summary.html">Module</a>""",
+                """
+                    <a href="../package-summary.html">Package</a>""",
+                """
+                    <a href="../../../overview-tree.html">Tree</a>""",
+                """
+                    <a href="../../../deprecated-list.html">Deprecated</a>""",
+                """
+                    <a href="../../../index-all.html">Index</a>""",
                 "phi-FOOTER-phi",
                 "phi-BOTTOM-phi"
         );
@@ -117,19 +139,29 @@ public class TestCopyFiles extends JavadocTester {
                 "SubSubReadme (phi-WINDOW-TITLE-phi)",
                 "phi-TOP-phi",
                 // check top navbar
-                "<a href=\"../../../../module-summary.html\">Module</a>",
-                "<a href=\"../../../package-summary.html\">Package</a>",
-                "<a href=\"../../../../../overview-tree.html\">Tree</a>",
-                "<a href=\"../../../../../deprecated-list.html\">Deprecated</a>",
-                "<a href=\"../../../../../index-all.html\">Index</a>",
+                """
+                    <a href="../../../../module-summary.html">Module</a>""",
+                """
+                    <a href="../../../package-summary.html">Package</a>""",
+                """
+                    <a href="../../../../../overview-tree.html">Tree</a>""",
+                """
+                    <a href="../../../../../deprecated-list.html">Deprecated</a>""",
+                """
+                    <a href="../../../../../index-all.html">Index</a>""",
                 "phi-HEADER-phi",
                 "SubSubReadme.html at third level of doc-file directory.",
                 // check bottom navbar
-                "<a href=\"../../../../module-summary.html\">Module</a>",
-                "<a href=\"../../../package-summary.html\">Package</a>",
-                "<a href=\"../../../../../overview-tree.html\">Tree</a>",
-                "<a href=\"../../../../../deprecated-list.html\">Deprecated</a>",
-                "<a href=\"../../../../../index-all.html\">Index</a>",
+                """
+                    <a href="../../../../module-summary.html">Module</a>""",
+                """
+                    <a href="../../../package-summary.html">Package</a>""",
+                """
+                    <a href="../../../../../overview-tree.html">Tree</a>""",
+                """
+                    <a href="../../../../../deprecated-list.html">Deprecated</a>""",
+                """
+                    <a href="../../../../../index-all.html">Index</a>""",
                 "phi-FOOTER-phi",
                 "phi-BOTTOM-phi"
         );
@@ -143,8 +175,8 @@ public class TestCopyFiles extends JavadocTester {
                 "--module", "acme.mdle");
         checkExit(Exit.OK);
         checkOutput("acme.mdle/p/doc-files/inpackage.html", true,
-                "In a named module acme.module and named package "
-                + "<a href=\"../package-summary.html\"><code>p</code></a>."
+                """
+                    In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>."""
         );
     }
 
@@ -157,8 +189,8 @@ public class TestCopyFiles extends JavadocTester {
                 "--module", "acme.mdle");
         checkExit(Exit.OK);
         checkOutput("acme.mdle/p/doc-files/inpackage.html", true,
-                "In a named module acme.module and named package "
-                + "<a href=\"../package-summary.html\"><code>p</code></a>."
+                """
+                    In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>."""
         );
     }
 
@@ -214,7 +246,9 @@ public class TestCopyFiles extends JavadocTester {
         );
         checkExit(Exit.OK);
         checkOutput("doc-files/inpackage.html", true,
-                "<title>(phi-WINDOW-TITLE-phi)</title>\n",
+                """
+                    <title>(phi-WINDOW-TITLE-phi)</title>
+                    """,
                 "In an unnamed package"
         );
     }
@@ -229,11 +263,15 @@ public class TestCopyFiles extends JavadocTester {
         );
         checkExit(Exit.OK);
         checkOutput("doc-files/inpackage.html", true,
-                "<title>(phi-WINDOW-TITLE-phi)</title>\n",
+                """
+                    <title>(phi-WINDOW-TITLE-phi)</title>
+                    """,
                 "In an unnamed package"
         );
         checkOutput("doc-files/doc-file/SubReadme.html", true,
-                "<title>Beep Beep (phi-WINDOW-TITLE-phi)</title>\n",
+                """
+                    <title>Beep Beep (phi-WINDOW-TITLE-phi)</title>
+                    """,
                 "SubReadme.html at second level of doc-file directory for unnamed package."
         );
     }
@@ -270,20 +308,23 @@ public class TestCopyFiles extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("p2/doc-files/case2.html", true,
                 "<!-- Generated by javadoc",
-                "<style type=\"text/css\">\n"
-                + "body {\n"
-                + "        font-family: Helvetica, Arial, sans-serif;\n"
-                + "        font-size: 14px;\n"
-                + "      }\n"
-                + "    </style>");
+                """
+                    <style type="text/css">
+                    body {
+                            font-family: Helvetica, Arial, sans-serif;
+                            font-size: 14px;
+                          }
+                        </style>""");
         checkOutput("p2/doc-files/case3.html", true,
                 "<!-- Generated by javadoc",
-                "<style>\n"
-                + "h1 {color:red;}\n"
-                + "        p {color:blue;}\n"
-                + "      </style>");
+                """
+                    <style>
+                    h1 {color:red;}
+                            p {color:blue;}
+                          </style>""");
         checkOutput("p2/doc-files/case4.html", true,
                 "<!-- Generated by javadoc",
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"theme.css\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="theme.css">""");
     }
 }

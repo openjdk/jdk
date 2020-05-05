@@ -55,51 +55,59 @@ public class TestLambdaFeature extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/A.html", true,
-                "<td class=\"col-first\"><code>default void</code></td>",
-                "<div class=\"member-signature\"><span class=\"modifiers\">default</span>&nbsp;"
-                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">defaultMethod</span>()</div>\n",
-                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
-                + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
-                + " id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">Instance Methods</button>"
-                + "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"method-summary-table.tabpanel\""
-                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\""
-                + " onclick=\"show(4);\">Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" onkeydown=\"switchTab(event)\""
-                + " id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">Default Methods</button></div>",
-                "<dl class=\"notes\">\n"
-                + "<dt>Functional Interface:</dt>\n"
-                + "<dd>This is a functional interface and can therefore be used as "
-                + "the assignment target for a lambda expression or method "
-                + "reference.</dd>\n"
-                + "</dl>");
+                """
+                    <td class="col-first"><code>default void</code></td>""",
+                """
+                    <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span \
+                    class="return-type">void</span>&nbsp;<span class="member-name">defaultMethod</sp\
+                    an>()</div>
+                    """,
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
+                    e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
+                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
+                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
+                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
+                    ="switchTab(event)" id="t3" class="table-tab" onclick="show(4);">Abstract Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t5" class="table\
+                    -tab" onclick="show(16);">Default Methods</button></div>""",
+                """
+                    <dl class="notes">
+                    <dt>Functional Interface:</dt>
+                    <dd>This is a functional interface and can therefore be used as the assignment t\
+                    arget for a lambda expression or method reference.</dd>
+                    </dl>""");
 
         checkOutput("pkg1/FuncInf.html", true,
-                "<dl class=\"notes\">\n"
-                + "<dt>Functional Interface:</dt>\n"
-                + "<dd>This is a functional interface and can therefore be used as "
-                + "the assignment target for a lambda expression or method "
-                + "reference.</dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>Functional Interface:</dt>
+                    <dd>This is a functional interface and can therefore be used as the assignment t\
+                    arget for a lambda expression or method reference.</dd>
+                    </dl>""");
 
         checkOutput("pkg/A.html", false,
-                "<td class=\"col-first\"><code>default default void</code></td>",
+                """
+                    <td class="col-first"><code>default default void</code></td>""",
                 "<pre>default&nbsp;default&nbsp;void&nbsp;defaultMethod()</pre>");
 
         checkOutput("pkg/B.html", false,
-                "<td class=\"col-first\"><code>default void</code></td>",
-                "<dl class=\"notes\">\n"
-                + "<dt>Functional Interface:</dt>");
+                """
+                    <td class="col-first"><code>default void</code></td>""",
+                """
+                    <dl class="notes">
+                    <dt>Functional Interface:</dt>""");
 
         checkOutput("pkg1/NotAFuncInf.html", false,
-                "<dl class=\"notes\">\n"
-                + "<dt>Functional Interface:</dt>\n"
-                + "<dd>This is a functional interface and can therefore be used as "
-                + "the assignment target for a lambda expression or method "
-                + "reference.</dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>Functional Interface:</dt>
+                    <dd>This is a functional interface and can therefore be used as the assignment t\
+                    arget for a lambda expression or method reference.</dd>
+                    </dl>""");
     }
 
     @Test
@@ -111,7 +119,8 @@ public class TestLambdaFeature extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/FuncInf.html", false,
-                "<dl class=\"notes\">\n"
-                + "<dt>Functional Interface:</dt>");
+                """
+                    <dl class="notes">
+                    <dt>Functional Interface:</dt>""");
     }
 }

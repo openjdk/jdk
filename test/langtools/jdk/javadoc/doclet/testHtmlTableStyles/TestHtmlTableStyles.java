@@ -49,30 +49,48 @@ public class TestHtmlTableStyles extends JavadocTester {
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
                 "attribute not supported in HTML5: summary",
-                "attribute border for table only accepts \"\" or \"1\", use CSS instead: BORDER",
+                """
+                    attribute border for table only accepts "" or "1", use CSS instead: BORDER""",
                 "attribute not supported in HTML5: cellpadding",
                 "attribute not supported in HTML5: cellspacing",
                 "attribute not supported in HTML5: align");
 
         checkOutput("pkg1/TestTable.html", true,
-                "<table summary=\"Summary\" border cellpadding=3 cellspacing=1>",
-                "<div class=\"member-summary\">\n<table class=\"summary-table\">",
-                "<div class=\"member-summary\">\n<table class=\"summary-table\">",
-                "<div class=\"member-summary\">\n<table class=\"summary-table\">");
+                """
+                    <table summary="Summary" border cellpadding=3 cellspacing=1>""",
+                """
+                    <div class="member-summary">
+                    <table class="summary-table">""",
+                """
+                    <div class="member-summary">
+                    <table class="summary-table">""",
+                """
+                    <div class="member-summary">
+                    <table class="summary-table">""");
 
         checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"type-summary\">\n<table class=\"summary-table\">");
+                """
+                    <div class="type-summary">
+                    <table class="summary-table">""");
 
         checkOutput("pkg1/class-use/TestTable.html", true,
-                "<div class=\"use-summary\">\n<table class=\"summary-table\">");
+                """
+                    <div class="use-summary">
+                    <table class="summary-table">""");
 
         checkOutput("index.html", true,
-                "<div class=\"overview-summary\" id=\"all-packages-table\">\n<table class=\"summary-table\">");
+                """
+                    <div class="overview-summary" id="all-packages-table">
+                    <table class="summary-table">""");
 
         checkOutput("deprecated-list.html", true,
-            "<div class=\"deprecated-summary\" id=\"method\">\n<table class=\"summary-table\">");
+            """
+                <div class="deprecated-summary" id="method">
+                <table class="summary-table">""");
 
         checkOutput("constant-values.html", true,
-            "<div class=\"constants-summary\">\n<table class=\"summary-table\">");
+            """
+                <div class="constants-summary">
+                <table class="summary-table">""");
     }
 }

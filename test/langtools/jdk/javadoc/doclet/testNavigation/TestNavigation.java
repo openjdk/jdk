@@ -62,43 +62,51 @@ public class TestNavigation extends JavadocTester {
         checkSubNav();
 
         checkOutput("pkg/A.html", true,
-                "<ul id=\"navbar.top.firstrow\" class=\"nav-list\" title=\"Navigation\">\n" +
-                "<li><a href=\"../index.html\">Overview</a></li>");
+                """
+                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../index.html">Overview</a></li>""");
 
         checkOutput("pkg/C.html", true,
-                "<ul id=\"navbar.top.firstrow\" class=\"nav-list\" title=\"Navigation\">\n" +
-                "<li><a href=\"../index.html\">Overview</a></li>");
+                """
+                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../index.html">Overview</a></li>""");
 
         checkOutput("pkg/E.html", true,
-                "<ul id=\"navbar.top.firstrow\" class=\"nav-list\" title=\"Navigation\">\n" +
-                "<li><a href=\"../index.html\">Overview</a></li>");
+                """
+                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../index.html">Overview</a></li>""");
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
-                "<div class=\"skip-nav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n"
-                + "<ul id=\"navbar.top.firstrow\" class=\"nav-list\" title=\"Navigation\">\n",
-                "<li><a href=\"../index.html\">Overview</a></li>");
+                """
+                    <div class="skip-nav"><a href="#skip.navbar.top" title="Skip navigation links">Skip navigation links</a></div>
+                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    """,
+                """
+                    <li><a href="../index.html">Overview</a></li>""");
 
         // Remaining tests check for additional padding to offset the fixed navigation bar.
         checkOutput("pkg/A.html", true,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "<span class=\"skip-nav\" id=\"skip.navbar.top\">\n"
-                + "<!--   -->\n"
-                + "</span></nav>\n"
-                + "</header>\n"
-                + "<div class=\"flex-content\">\n"
-                + "<main role=\"main\">\n"
-                + "<!-- ======== START OF CLASS DATA ======== -->");
+                """
+                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    <span class="skip-nav" id="skip.navbar.top">
+                    <!--   -->
+                    </span></nav>
+                    </header>
+                    <div class="flex-content">
+                    <main role="main">
+                    <!-- ======== START OF CLASS DATA ======== -->""");
 
         checkOutput("pkg/package-summary.html", true,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "<span class=\"skip-nav\" id=\"skip.navbar.top\">\n"
-                + "<!--   -->\n"
-                + "</span></nav>\n"
-                + "</header>\n"
-                + "<div class=\"flex-content\">\n"
-                + "<main role=\"main\">\n"
-                + "<div class=\"header\">");
+                """
+                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    <span class="skip-nav" id="skip.navbar.top">
+                    <!--   -->
+                    </span></nav>
+                    </header>
+                    <div class="flex-content">
+                    <main role="main">
+                    <div class="header">""");
     }
 
     // Test for checking additional padding to offset the fixed navigation bar in HTML5.
@@ -112,20 +120,23 @@ public class TestNavigation extends JavadocTester {
         checkSubNav();
 
         checkOutput("pkg/A.html", true,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "<span class=\"skip-nav\" id=\"skip.navbar.top\">\n"
-                + "<!--   -->\n"
-                + "</span></nav>\n"
-                + "</header>\n"
-                + "<div class=\"flex-content\">\n"
-                + "<main role=\"main\">\n"
-                + "<!-- ======== START OF CLASS DATA ======== -->");
+                """
+                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    <span class="skip-nav" id="skip.navbar.top">
+                    <!--   -->
+                    </span></nav>
+                    </header>
+                    <div class="flex-content">
+                    <main role="main">
+                    <!-- ======== START OF CLASS DATA ======== -->""");
 
         checkOutput("pkg/package-summary.html", true,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "<span class=\"skip-nav\" id=\"skip.navbar.top\">\n"
-                + "<!--   -->\n"
-                + "</span></nav>\n");
+                """
+                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    <span class="skip-nav" id="skip.navbar.top">
+                    <!--   -->
+                    </span></nav>
+                    """);
     }
 
     // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified.
@@ -139,67 +150,71 @@ public class TestNavigation extends JavadocTester {
         checkSubNav();
 
         checkOutput("pkg/A.html", false,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"skip-nav\"><a id=\"skip.navbar.top\">\n"
-                + "<!--   -->\n"
-                + "</a></div>\n"
-                + "</nav>\n"
-                + "</header>\n"
-                + "<!-- ======== START OF CLASS DATA ======== -->");
+                """
+                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    </div>
+                    <div class="skip-nav"><a id="skip.navbar.top">
+                    <!--   -->
+                    </a></div>
+                    </nav>
+                    </header>
+                    <!-- ======== START OF CLASS DATA ======== -->""");
 
         checkOutput("pkg/package-summary.html", false,
-                "<!-- ========= END OF TOP NAVBAR ========= -->\n"
-                + "</div>\n"
-                + "<div class=\"skip-nav\"><a id=\"skip.navbar.top\">\n"
-                + "<!--   -->\n"
-                + "</a></div>\n"
-                + "</nav>");
+                """
+                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    </div>
+                    <div class="skip-nav"><a id="skip.navbar.top">
+                    <!--   -->
+                    </a></div>
+                    </nav>""");
     }
 
     @Test
     public void test3(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
-                "package pkg1; public class A {\n"
-                + "    /**\n"
-                + "     * Class with members.\n"
-                + "     */\n"
-                + "    public static class X {\n"
-                + "        /**\n"
-                + "         * A ctor\n"
-                + "         */\n"
-                + "        public X() {\n"
-                + "        }\n"
-                + "        /**\n"
-                + "         * A field\n"
-                + "         */\n"
-                + "        public int field;\n"
-                + "        /**\n"
-                + "         * A method\n"
-                + "         */\n"
-                + "        public void method() {\n"
-                + "        }\n"
-                + "        /**\n"
-                + "         * An inner class\n"
-                + "         */\n"
-                + "        public static class IC {\n"
-                + "        }\n"
-                + "    }\n"
-                + "    /**\n"
-                + "     * Class with all inherited members.\n"
-                + "     */\n"
-                + "    public static class Y extends X {\n"
-                + "    }\n"
-                + "}");
+                """
+                    package pkg1; public class A {
+                        /**
+                         * Class with members.
+                         */
+                        public static class X {
+                            /**
+                             * A ctor
+                             */
+                            public X() {
+                            }
+                            /**
+                             * A field
+                             */
+                            public int field;
+                            /**
+                             * A method
+                             */
+                            public void method() {
+                            }
+                            /**
+                             * An inner class
+                             */
+                            public static class IC {
+                            }
+                        }
+                        /**
+                         * Class with all inherited members.
+                         */
+                        public static class Y extends X {
+                        }
+                    }""");
 
         tb.writeJavaFiles(src,
                 "package pkg1; public class C {\n"
                 + "}");
 
         tb.writeJavaFiles(src,
-                "package pkg1; public interface InterfaceWithNoMembers {\n"
-                + "}");
+                """
+                    package pkg1; public interface InterfaceWithNoMembers {
+                    }""");
 
         javadoc("-d", "out-3",
                 "-sourcepath", src.toString(),
@@ -208,31 +223,43 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/A.X.html",
                 "Summary",
-                "<li><a href=\"#nested.class.summary\">Nested</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#field.summary\">Field</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#constructor.summary\">Constr</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#method.summary\">Method</a></li>");
+                """
+                    <li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#method.summary">Method</a></li>""");
 
         checkOrder("pkg1/A.Y.html",
                 "Summary",
-                "<li><a href=\"#nested.class.summary\">Nested</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#field.summary\">Field</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#constructor.summary\">Constr</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#method.summary\">Method</a></li>");
+                """
+                    <li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#method.summary">Method</a></li>""");
 
         checkOrder("pkg1/A.X.IC.html",
                 "Summary",
                 "<li>Nested&nbsp;|&nbsp;</li>",
                 "<li>Field&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#constructor.summary\">Constr</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#method.summary\">Method</a></li>");
+                """
+                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#method.summary">Method</a></li>""");
 
         checkOrder("pkg1/C.html",
                 "Summary",
                 "<li>Nested&nbsp;|&nbsp;</li>",
                 "<li>Field&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#constructor.summary\">Constr</a>&nbsp;|&nbsp;</li>",
-                "<li><a href=\"#method.summary\">Method</a></li>");
+                """
+                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                """
+                    <li><a href="#method.summary">Method</a></li>""");
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
                 "Summary",
@@ -246,37 +273,47 @@ public class TestNavigation extends JavadocTester {
 
         checkOutput("pkg/A.html", false,
                 "All&nbsp;Classes",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_top");""",
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
 
         checkOutput("pkg/C.html", false,
                 "All&nbsp;Classes",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_top");""",
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
 
         checkOutput("pkg/E.html", false,
                 "All&nbsp;Classes",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_top");""",
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
 
         checkOutput("pkg/I.html", false,
                 "All&nbsp;Classes",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_top");""",
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
 
         checkOutput("pkg/package-summary.html", false,
                 "All&nbsp;Classes",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
-                "<script type=\"text/javascript\"><!--\n"
-                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_top");""",
+                """
+                    <script type="text/javascript"><!--
+                      allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
     }
 }

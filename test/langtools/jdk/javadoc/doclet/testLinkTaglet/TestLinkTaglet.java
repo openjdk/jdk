@@ -50,24 +50,28 @@ public class TestLinkTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-                "Qualified Link: <a href=\"C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
-                + " Unqualified Link1: <a href=\"C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
-                + " Unqualified Link2: <a href=\"C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
-                + " Qualified Link: <a href=\"#method(pkg.C.InnerC,pkg.C.InnerC2)\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>\n"
-                + " Unqualified Link: <a href=\"#method(pkg.C.InnerC,pkg.C.InnerC2)\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>\n"
-                + " Unqualified Link: <a href=\"#method(pkg.C.InnerC,pkg.C.InnerC2)\"><code>method(InnerC, InnerC2)</code></a>.<br/>\n"
-                + " Package Link: <a href=\"package-summary.html\"><code>pkg</code></a>.<br/>");
+                """
+                    Qualified Link: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
+                     Unqualified Link1: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
+                     Unqualified Link2: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
+                     Qualified Link: <a href="#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>method(pkg.\
+                    C.InnerC, pkg.C.InnerC2)</code></a>.<br/>
+                     Unqualified Link: <a href="#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>
+                     Unqualified Link: <a href="#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>method(InnerC, InnerC2)</code></a>.<br/>
+                     Package Link: <a href="package-summary.html"><code>pkg</code></a>.<br/>""");
 
         checkOutput("pkg/C.InnerC.html", true,
-                "Link to member in outer class: <a href=\"C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>\n"
-                + " Link to member in inner class: <a href=\"C.InnerC2.html#MEMBER2\"><code>C.InnerC2.MEMBER2</code></a> <br/>\n"
-                + " Link to another inner class: <a href=\"C.InnerC2.html\" title=\"class in pkg\"><code>C.InnerC2</code></a>");
+                """
+                    Link to member in outer class: <a href="C.html#MEMBER"><code>C.MEMBER</code></a> <br/>
+                     Link to member in inner class: <a href="C.InnerC2.html#MEMBER2"><code>C.InnerC2.MEMBER2</code></a> <br/>
+                     Link to another inner class: <a href="C.InnerC2.html" title="class in pkg"><code>C.InnerC2</code></a>""");
 
         checkOutput("pkg/C.InnerC2.html", true,
-                "<dl class=\"notes\">\n"
-                + "<dt>Enclosing class:</dt>\n"
-                + "<dd><a href=\"C.html\" title=\"class in pkg\">C</a></dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>Enclosing class:</dt>
+                    <dd><a href="C.html" title="class in pkg">C</a></dd>
+                    </dl>""");
 
         checkOutput(Output.OUT, false,
                 "Tag @see: reference not found: A");

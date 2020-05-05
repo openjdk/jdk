@@ -88,7 +88,8 @@ public class TestHelpOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-nohelp",
                 testSrc("Sample.java"));
-        checkOutput("Sample.html", false, "<li><a href=\"../help-doc.html\">Help</a></li>");
+        checkOutput("Sample.html", false, """
+            <li><a href="../help-doc.html">Help</a></li>""");
         checkExit(Exit.OK);
     }
 
@@ -100,7 +101,8 @@ public class TestHelpOption extends JavadocTester {
                 testSrc("Sample.java"));
         checkExit(Exit.OK);
         checkOutput("Sample.html", true,
-                "<li><a href=\"test-help.html\">Help</a></li>");
+                """
+                    <li><a href="test-help.html">Help</a></li>""");
         checkOutput("test-help.html", true,
                 "Help, help.");
     }
@@ -173,6 +175,7 @@ public class TestHelpOption extends JavadocTester {
                 "-sourcetab ");
 
         checkFileAndOutput("Sample.html", !withOption,
-                "<li><a href=\"help-doc.html\">Help</a></li>");
+                """
+                    <li><a href="help-doc.html">Help</a></li>""");
     }
 }

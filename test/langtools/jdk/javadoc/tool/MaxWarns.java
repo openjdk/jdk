@@ -83,7 +83,8 @@ public class MaxWarns {
 
     void check(String out, int count) {
         System.err.println(out);
-        Pattern warn = Pattern.compile("warning - @param argument \"i[0-9]+\" is not a parameter name");
+        Pattern warn = Pattern.compile("""
+            warning - @param argument "i[0-9]+" is not a parameter name""");
         Matcher m = warn.matcher(out);
         int n = 0;
         for (int start = 0; m.find(start); start = m.start() + 1) {

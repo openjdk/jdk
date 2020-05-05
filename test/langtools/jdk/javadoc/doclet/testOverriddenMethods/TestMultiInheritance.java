@@ -51,31 +51,25 @@ public class TestMultiInheritance extends JavadocTester {
         // Method foo() is inherited from BOTH I2 and I3
 
         checkOutput("pkg3/I1.html", true,
-                "Methods inherited from interface&nbsp;pkg3."
-                + "<a href=\"I2.html\" title=\"interface in pkg3\">"
-                + "I2</a>",
-                "Methods inherited from interface&nbsp;pkg3."
-                + "<a href=\"I3.html\" title=\"interface in pkg3\">"
-                + "I3</a>");
+                """
+                    Methods inherited from interface&nbsp;pkg3.<a href="I2.html" title="interface in pkg3">I2</a>""",
+                """
+                    Methods inherited from interface&nbsp;pkg3.<a href="I3.html" title="interface in pkg3">I3</a>""");
 
         checkOutput("pkg3/I0.html", true,
-                "Methods inherited from interface&nbsp;pkg3."
-                + "<a href=\"I2.html\" title=\"interface in pkg3\">"
-                + "I2</a>",
-                "Methods inherited from interface&nbsp;pkg3."
-                + "<a href=\"I3.html\" title=\"interface in pkg3\">"
-                + "I3</a>");
+                """
+                    Methods inherited from interface&nbsp;pkg3.<a href="I2.html" title="interface in pkg3">I2</a>""",
+                """
+                    Methods inherited from interface&nbsp;pkg3.<a href="I3.html" title="interface in pkg3">I3</a>""");
 
         // Method foo() is NOT inherited from I4 because it is overridden by I3.
 
         checkOutput("pkg3/I1.html", false,
-                "Methods inherited from interface&nbsp;pkg3."
-                + "<a href=\"I4.html\" title=\"interface in pkg3\">"
-                + "I4</a>");
+                """
+                    Methods inherited from interface&nbsp;pkg3.<a href="I4.html" title="interface in pkg3">I4</a>""");
 
         checkOutput("pkg3/I0.html", false,
-                "Methods inherited from interface&nbsp;pkg3."
-                + "<a href=\"I4.html\" title=\"interface in pkg3\">"
-                + "I4</a>");
+                """
+                    Methods inherited from interface&nbsp;pkg3.<a href="I4.html" title="interface in pkg3">I4</a>""");
     }
 }

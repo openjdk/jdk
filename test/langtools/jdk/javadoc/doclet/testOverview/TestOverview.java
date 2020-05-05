@@ -67,10 +67,12 @@ public class TestOverview extends JavadocTester {
 
     void checkOverview() {
         checkOutput("index.html", true,
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">\n"
-                + "<h1 class=\"title\">Document Title</h1>\n"
-                + "</div>\n"
-                + "<div class=\"block\">This is line1. This is line 2.</div>\n");
+                """
+                    <main role="main">
+                    <div class="header">
+                    <h1 class="title">Document Title</h1>
+                    </div>
+                    <div class="block">This is line1. This is line 2.</div>
+                    """);
     }
 }

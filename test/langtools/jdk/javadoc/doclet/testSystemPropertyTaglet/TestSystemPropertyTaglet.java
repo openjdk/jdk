@@ -62,155 +62,272 @@ public class TestSystemPropertyTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("mymodule/mypackage/MyAnnotation.html",
-                   "<h1 title=\"Annotation Type MyAnnotation\" class=\"title\">Annotation Type MyAnnotation</h1>",
-                   "(annotation) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Annotation Type MyAnnotation" class="title">Annotation Type MyAnnotation</h1>""",
+                   """
+                       (annotation) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "<h2>Element Details</h2>",
-                   "(annotation/method) the <code><span id=\"test.property-1\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (annotation/method) the <code><span id="test.property-1" class="search-tag-resul\
+                       t">test.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/mypackage/MyClass.html",
-                   "<h1 title=\"Class MyClass\" class=\"title\">Class MyClass</h1>",
-                   "(class) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Class MyClass" class="title">Class MyClass</h1>""",
+                   """
+                       (class) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "<h2>Field Details</h2>",
-                   "(class/field) the <code><span id=\"test.property-1\" class=\"search-tag-result\">test.property</span></code> system property.",
-                   "(class/static-field) the <code><span id=\"test.property-2\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (class/field) the <code><span id="test.property-1" class="search-tag-result">tes\
+                       t.property</span></code> system property.""",
+                   """
+                       (class/static-field) the <code><span id="test.property-2" class="search-tag-resu\
+                       lt">test.property</span></code> system property.""",
                    "<h2>Constructor Details</h2>",
-                   "(class/constructor) the <code><span id=\"test.property-3\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (class/constructor) the <code><span id="test.property-3" class="search-tag-resul\
+                       t">test.property</span></code> system property.""",
                    "<h2>Method Details</h2>",
-                   "(class/static-method) the <code><span id=\"test.property-4\" class=\"search-tag-result\">test.property</span></code> system property.",
-                   "(class/method) the <code><span id=\"test.property-5\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (class/static-method) the <code><span id="test.property-4" class="search-tag-res\
+                       ult">test.property</span></code> system property.""",
+                   """
+                       (class/method) the <code><span id="test.property-5" class="search-tag-result">te\
+                       st.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/mypackage/MyEnum.html",
-                   "<h1 title=\"Enum MyEnum\" class=\"title\">Enum MyEnum</h1>",
-                   "(enum) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Enum MyEnum" class="title">Enum MyEnum</h1>""",
+                   """
+                       (enum) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "<h2>Enum Constant Details</h2>",
-                   "(enum/constant) the <code><span id=\"test.property-1\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (enum/constant) the <code><span id="test.property-1" class="search-tag-result">t\
+                       est.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/mypackage/MyError.html",
-                   "<h1 title=\"Class MyError\" class=\"title\">Class MyError</h1>",
-                   "(error) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Class MyError" class="title">Class MyError</h1>""",
+                   """
+                       (error) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "<h2>Constructor Details</h2>",
-                   "(error/constructor) the <code><span id=\"test.property-1\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (error/constructor) the <code><span id="test.property-1" class="search-tag-resul\
+                       t">test.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/mypackage/MyException.html",
-                   "<h1 title=\"Class MyException\" class=\"title\">Class MyException</h1>",
-                   "(exception) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Class MyException" class="title">Class MyException</h1>""",
+                   """
+                       (exception) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "<h2>Constructor Details</h2>",
-                   "(exception/constructor) the <code><span id=\"test.property-1\" class=\"search-tag-result\">test.property</span></code>",
+                   """
+                       (exception/constructor) the <code><span id="test.property-1" class="search-tag-result">test.property</span></code>""",
                    "");
 
         checkOrder("mymodule/mypackage/MyInterface.html",
-                   "<h1 title=\"Interface MyInterface\" class=\"title\">Interface MyInterface</h1>",
-                   "(interface) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Interface MyInterface" class="title">Interface MyInterface</h1>""",
+                   """
+                       (interface) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "<h2>Field Details</h2>",
-                   "(interface/constant) the <code><span id=\"test.property-1\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (interface/constant) the <code><span id="test.property-1" class="search-tag-resu\
+                       lt">test.property</span></code> system property.""",
                    "<h2>Method Details</h2>",
-                   "(interface/method-1) the <code><span id=\"test.property-2\" class=\"search-tag-result\">test.property</span></code> system property.",
-                   "(interface/method-2) the <code><span id=\"test.property-3\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       (interface/method-1) the <code><span id="test.property-2" class="search-tag-resu\
+                       lt">test.property</span></code> system property.""",
+                   """
+                       (interface/method-2) the <code><span id="test.property-3" class="search-tag-resu\
+                       lt">test.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/module-summary.html",
-                   "<h1 title=\"Module\" class=\"title\">Module&nbsp;mymodule</h1>",
-                   "(module) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Module" class="title">Module&nbsp;mymodule</h1>""",
+                   """
+                       (module) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "");
 
         checkOrder("mymodule/mypackage/package-summary.html",
-                   "<h1 title=\"Package\" class=\"title\">Package&nbsp;mypackage</h1>",
-                   "(package) the <code><span id=\"test.property\" class=\"search-tag-result\">test.property</span></code> system property.",
+                   """
+                       <h1 title="Package" class="title">Package&nbsp;mypackage</h1>""",
+                   """
+                       (package) the <code><span id="test.property" class="search-tag-result">test.property</span></code> system property.""",
                    "");
 
         checkOrder("index-all.html",
-                   "<h2 class=\"title\" id=\"I:T\">T</h2>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyAnnotation.html#test.property\">test.property</a></span>" +
-                           " - Search tag in annotation type mypackage.MyAnnotation</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyClass.html#test.property\">test.property</a></span>" +
-                           " - Search tag in class mypackage.MyClass</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyEnum.html#test.property\">test.property</a></span>" +
-                           " - Search tag in enum mypackage.MyEnum</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyError.html#test.property\">test.property</a></span>" +
-                           " - Search tag in error mypackage.MyError</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyException.html#test.property\">test.property</a></span>" +
-                           " - Search tag in exception mypackage.MyException</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyInterface.html#test.property\">test.property</a></span>" +
-                           " - Search tag in interface mypackage.MyInterface</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/module-summary.html#test.property\">test.property</a></span>" +
-                           " - Search tag in module mymodule</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyAnnotation.html#test.property-1\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyAnnotation.value()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyClass.html#test.property-2\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyClass.INT_CONSTANT</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyClass.html#test.property-3\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyClass.MyClass()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyClass.html#test.property-1\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyClass.intField</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyClass.html#test.property-5\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyClass.run()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyClass.html#test.property-4\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyClass.value()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyEnum.html#test.property-1\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyEnum.X</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyEnum.html#test.property-2\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyEnum.m()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyError.html#test.property-1\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyError.MyError()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyException.html#test.property-1\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyException.MyException()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyInterface.html#test.property-1\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyInterface.INT_CONSTANT</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyInterface.html#test.property-2\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyInterface.m()</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/MyInterface.html#test.property-3\">test.property</a></span>" +
-                           " - Search tag in mypackage.MyInterface.m(String...)</dt>\n<dd>System Property</dd>",
-                   "<dt><span class=\"search-tag-link\"><a href=\"mymodule/mypackage/package-summary.html#test.property\">test.property</a></span>" +
-                           " - Search tag in package mypackage</dt>\n<dd>System Property</dd>",
+                   """
+                       <h2 class="title" id="I:T">T</h2>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyAnnotation.html#\
+                       test.property">test.property</a></span> - Search tag in annotation type mypackag\
+                       e.MyAnnotation</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyClass.html#test.\
+                       property">test.property</a></span> - Search tag in class mypackage.MyClass</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyEnum.html#test.p\
+                       roperty">test.property</a></span> - Search tag in enum mypackage.MyEnum</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyError.html#test.\
+                       property">test.property</a></span> - Search tag in error mypackage.MyError</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyException.html#t\
+                       est.property">test.property</a></span> - Search tag in exception mypackage.MyExc\
+                       eption</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyInterface.html#t\
+                       est.property">test.property</a></span> - Search tag in interface mypackage.MyInt\
+                       erface</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/module-summary.html#test.pro\
+                       perty">test.property</a></span> - Search tag in module mymodule</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyAnnotation.html#\
+                       test.property-1">test.property</a></span> - Search tag in mypackage.MyAnnotation\
+                       .value()</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyClass.html#test.\
+                       property-2">test.property</a></span> - Search tag in mypackage.MyClass.INT_CONST\
+                       ANT</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyClass.html#test.\
+                       property-3">test.property</a></span> - Search tag in mypackage.MyClass.MyClass()\
+                       </dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyClass.html#test.\
+                       property-1">test.property</a></span> - Search tag in mypackage.MyClass.intField<\
+                       /dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyClass.html#test.\
+                       property-5">test.property</a></span> - Search tag in mypackage.MyClass.run()</dt\
+                       >
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyClass.html#test.\
+                       property-4">test.property</a></span> - Search tag in mypackage.MyClass.value()</\
+                       dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyEnum.html#test.p\
+                       roperty-1">test.property</a></span> - Search tag in mypackage.MyEnum.X</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyEnum.html#test.p\
+                       roperty-2">test.property</a></span> - Search tag in mypackage.MyEnum.m()</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyError.html#test.\
+                       property-1">test.property</a></span> - Search tag in mypackage.MyError.MyError()\
+                       </dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyException.html#t\
+                       est.property-1">test.property</a></span> - Search tag in mypackage.MyException.M\
+                       yException()</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyInterface.html#t\
+                       est.property-1">test.property</a></span> - Search tag in mypackage.MyInterface.I\
+                       NT_CONSTANT</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyInterface.html#t\
+                       est.property-2">test.property</a></span> - Search tag in mypackage.MyInterface.m\
+                       ()</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/MyInterface.html#t\
+                       est.property-3">test.property</a></span> - Search tag in mypackage.MyInterface.m\
+                       (String...)</dt>
+                       <dd>System Property</dd>""",
+                   """
+                       <dt><span class="search-tag-link"><a href="mymodule/mypackage/package-summary.ht\
+                       ml#test.property">test.property</a></span> - Search tag in package mypackage</dt\
+                       >
+                       <dd>System Property</dd>""",
                    "");
 
         checkOutput("tag-search-index.js", true,
-                    "{\"l\":\"test.property\",\"h\":\"annotation type mypackage.MyAnnotation\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyAnnotation.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"class mypackage.MyClass\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyClass.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"enum mypackage.MyEnum\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyEnum.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"error mypackage.MyError\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyError.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"exception mypackage.MyException\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyException.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"interface mypackage.MyInterface\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyInterface.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"module mymodule\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/module-summary.html#test.property\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyAnnotation.value()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyAnnotation.html#test.property-1\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyClass.INT_CONSTANT\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyClass.html#test.property-2\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyClass.MyClass()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyClass.html#test.property-3\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyClass.intField\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyClass.html#test.property-1\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyClass.run()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyClass.html#test.property-5\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyClass.value()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyClass.html#test.property-4\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyEnum.X\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyEnum.html#test.property-1\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyEnum.m()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyEnum.html#test.property-2\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyError.MyError()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyError.html#test.property-1\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyException.MyException()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyException.html#test.property-1\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyInterface.INT_CONSTANT\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyInterface.html#test.property-1\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyInterface.m()\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyInterface.html#test.property-2\"}",
-                    "{\"l\":\"test.property\",\"h\":\"mypackage.MyInterface.m(String...)\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/MyInterface.html#test.property-3\"}",
-                    "{\"l\":\"test.property\",\"h\":\"package mypackage\"" +
-                            ",\"d\":\"System Property\",\"u\":\"mymodule/mypackage/package-summary.html#test.property\"}",
+                    """
+                        {"l":"test.property","h":"annotation type mypackage.MyAnnotation","d":"System Pr\
+                        operty","u":"mymodule/mypackage/MyAnnotation.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"class mypackage.MyClass","d":"System Property","u":"my\
+                        module/mypackage/MyClass.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"enum mypackage.MyEnum","d":"System Property","u":"mymo\
+                        dule/mypackage/MyEnum.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"error mypackage.MyError","d":"System Property","u":"my\
+                        module/mypackage/MyError.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"exception mypackage.MyException","d":"System Property"\
+                        ,"u":"mymodule/mypackage/MyException.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"interface mypackage.MyInterface","d":"System Property"\
+                        ,"u":"mymodule/mypackage/MyInterface.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"module mymodule","d":"System Property","u":"mymodule/module-summary.html#test.property"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyAnnotation.value()","d":"System Property",\
+                        "u":"mymodule/mypackage/MyAnnotation.html#test.property-1"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyClass.INT_CONSTANT","d":"System Property",\
+                        "u":"mymodule/mypackage/MyClass.html#test.property-2"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyClass.MyClass()","d":"System Property","u"\
+                        :"mymodule/mypackage/MyClass.html#test.property-3"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyClass.intField","d":"System Property","u":\
+                        "mymodule/mypackage/MyClass.html#test.property-1"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyClass.run()","d":"System Property","u":"my\
+                        module/mypackage/MyClass.html#test.property-5"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyClass.value()","d":"System Property","u":"\
+                        mymodule/mypackage/MyClass.html#test.property-4"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyEnum.X","d":"System Property","u":"mymodul\
+                        e/mypackage/MyEnum.html#test.property-1"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyEnum.m()","d":"System Property","u":"mymod\
+                        ule/mypackage/MyEnum.html#test.property-2"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyError.MyError()","d":"System Property","u"\
+                        :"mymodule/mypackage/MyError.html#test.property-1"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyException.MyException()","d":"System Prope\
+                        rty","u":"mymodule/mypackage/MyException.html#test.property-1"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyInterface.INT_CONSTANT","d":"System Proper\
+                        ty","u":"mymodule/mypackage/MyInterface.html#test.property-1"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyInterface.m()","d":"System Property","u":"\
+                        mymodule/mypackage/MyInterface.html#test.property-2"}""",
+                    """
+                        {"l":"test.property","h":"mypackage.MyInterface.m(String...)","d":"System Proper\
+                        ty","u":"mymodule/mypackage/MyInterface.html#test.property-3"}""",
+                    """
+                        {"l":"test.property","h":"package mypackage","d":"System Property","u":"mymodule\
+                        /mypackage/package-summary.html#test.property"}""",
                     "");
     }
 

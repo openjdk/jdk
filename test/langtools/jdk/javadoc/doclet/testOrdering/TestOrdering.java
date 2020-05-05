@@ -247,59 +247,73 @@ public class TestOrdering extends JavadocTester {
         };
 
         String expectedEnumOrdering[] = {
-            "Add.add.html\" title=\"enum in REPLACE_ME\"",
-            "Add.ADD.html\" title=\"enum in REPLACE_ME\""
+            """
+                Add.add.html" title="enum in REPLACE_ME\"""",
+            """
+                Add.ADD.html" title="enum in REPLACE_ME\""""
         };
 
         String expectedFieldOrdering[] = {
             "Add.html#addadd\"",
-            "add0/add/add/add/Add.html#addadd\"",
+            """
+                add0/add/add/add/Add.html#addadd\"""",
             "add0/add/add/Add.html#addadd\"",
             "add0/add/Add.html#addadd\"",
             "add0/Add.html#addadd\"",
-            "add1/add/add/add/Add.html#addadd\"",
+            """
+                add1/add/add/add/Add.html#addadd\"""",
             "add1/add/add/Add.html#addadd\"",
             "add1/add/Add.html#addadd\"",
             "add1/Add.html#addadd\"",
-            "add2/add/add/add/Add.html#addadd\"",
+            """
+                add2/add/add/add/Add.html#addadd\"""",
             "add2/add/add/Add.html#addadd\"",
             "add2/add/Add.html#addadd\"",
             "add2/Add.html#addadd\"",
-            "add3/add/add/add/Add.html#addadd\"",
+            """
+                add3/add/add/add/Add.html#addadd\"""",
             "add3/add/add/Add.html#addadd\"",
             "add3/add/Add.html#addadd\"",
             "add3/Add.html#addadd\"",
             "Add.html#AddAdd\"",
-            "add0/add/add/add/Add.html#AddAdd\"",
+            """
+                add0/add/add/add/Add.html#AddAdd\"""",
             "add0/add/add/Add.html#AddAdd\"",
             "add0/add/Add.html#AddAdd\"",
             "add0/Add.html#AddAdd\"",
-            "add1/add/add/add/Add.html#AddAdd\"",
+            """
+                add1/add/add/add/Add.html#AddAdd\"""",
             "add1/add/add/Add.html#AddAdd\"",
             "add1/add/Add.html#AddAdd\"",
             "add1/Add.html#AddAdd\"",
-            "add2/add/add/add/Add.html#AddAdd\"",
+            """
+                add2/add/add/add/Add.html#AddAdd\"""",
             "add2/add/add/Add.html#AddAdd\"",
             "add2/add/Add.html#AddAdd\"",
             "add2/Add.html#AddAdd\"",
-            "add3/add/add/add/Add.html#AddAdd\"",
+            """
+                add3/add/add/add/Add.html#AddAdd\"""",
             "add3/add/add/Add.html#AddAdd\"",
             "add3/add/Add.html#AddAdd\"",
             "add3/Add.html#AddAdd\"",
             "Add.html#ADDADD\"",
-            "add0/add/add/add/Add.html#ADDADD\"",
+            """
+                add0/add/add/add/Add.html#ADDADD\"""",
             "add0/add/add/Add.html#ADDADD\"",
             "add0/add/Add.html#ADDADD\"",
             "add0/Add.html#ADDADD\"",
-            "add1/add/add/add/Add.html#ADDADD\"",
+            """
+                add1/add/add/add/Add.html#ADDADD\"""",
             "add1/add/add/Add.html#ADDADD\"",
             "add1/add/Add.html#ADDADD\"",
             "add1/Add.html#ADDADD\"",
-            "add2/add/add/add/Add.html#ADDADD\"",
+            """
+                add2/add/add/add/Add.html#ADDADD\"""",
             "add2/add/add/Add.html#ADDADD\"",
             "add2/add/Add.html#ADDADD\"",
             "add2/Add.html#ADDADD\"",
-            "add3/add/add/add/Add.html#ADDADD\"",
+            """
+                add3/add/add/add/Add.html#ADDADD\"""",
             "add3/add/add/Add.html#ADDADD\"",
             "add3/add/Add.html#ADDADD\"",
             "add3/Add.html#ADDADD\""
@@ -320,22 +334,38 @@ public class TestOrdering extends JavadocTester {
         };
 
         String expectedPackageOrdering[] = {
-            "\"add0/package-summary.html\">add0</a> - package add0",
-            "\"add0/add/package-summary.html\">add0.add</a> - package add0.add",
-            "\"add0/add/add/package-summary.html\">add0.add.add</a> - package add0.add.add",
-            "\"add0/add/add/add/package-summary.html\">add0.add.add.add</a> - package add0.add.add.add",
-            "\"add1/package-summary.html\">add1</a> - package add1",
-            "\"add1/add/package-summary.html\">add1.add</a> - package add1.add",
-            "\"add1/add/add/package-summary.html\">add1.add.add</a> - package add1.add.add",
-            "\"add1/add/add/add/package-summary.html\">add1.add.add.add</a> - package add1.add.add.add",
-            "\"add2/package-summary.html\">add2</a> - package add2",
-            "\"add2/add/package-summary.html\">add2.add</a> - package add2.add",
-            "\"add2/add/add/package-summary.html\">add2.add.add</a> - package add2.add.add",
-            "\"add2/add/add/add/package-summary.html\">add2.add.add.add</a> - package add2.add.add.add",
-            "\"add3/package-summary.html\">add3</a> - package add3",
-            "\"add3/add/package-summary.html\">add3.add</a> - package add3.add",
-            "\"add3/add/add/package-summary.html\">add3.add.add</a> - package add3.add.add",
-            "\"add3/add/add/add/package-summary.html\">add3.add.add.add</a> - package add3.add.add.add"
+            """
+                "add0/package-summary.html">add0</a> - package add0""",
+            """
+                "add0/add/package-summary.html">add0.add</a> - package add0.add""",
+            """
+                "add0/add/add/package-summary.html">add0.add.add</a> - package add0.add.add""",
+            """
+                "add0/add/add/add/package-summary.html">add0.add.add.add</a> - package add0.add.add.add""",
+            """
+                "add1/package-summary.html">add1</a> - package add1""",
+            """
+                "add1/add/package-summary.html">add1.add</a> - package add1.add""",
+            """
+                "add1/add/add/package-summary.html">add1.add.add</a> - package add1.add.add""",
+            """
+                "add1/add/add/add/package-summary.html">add1.add.add.add</a> - package add1.add.add.add""",
+            """
+                "add2/package-summary.html">add2</a> - package add2""",
+            """
+                "add2/add/package-summary.html">add2.add</a> - package add2.add""",
+            """
+                "add2/add/add/package-summary.html">add2.add.add</a> - package add2.add.add""",
+            """
+                "add2/add/add/add/package-summary.html">add2.add.add.add</a> - package add2.add.add.add""",
+            """
+                "add3/package-summary.html">add3</a> - package add3""",
+            """
+                "add3/add/package-summary.html">add3.add</a> - package add3.add""",
+            """
+                "add3/add/add/package-summary.html">add3.add.add</a> - package add3.add.add""",
+            """
+                "add3/add/add/add/package-summary.html">add3.add.add.add</a> - package add3.add.add.add"""
         };
 
         void run() throws IOException {
@@ -365,43 +395,79 @@ public class TestOrdering extends JavadocTester {
             checkExit(Exit.OK);
             checkOrder("index-all.html", composeTestVectors());
             checkOrder("add0/add/package-tree.html",
-                    "<a href=\"Add.add.html\" title=\"enum in add0.add\">",
-                    "<a href=\"Add.ADD.html\" title=\"enum in add0.add\">");
+                    """
+                        <a href="Add.add.html" title="enum in add0.add">""",
+                    """
+                        <a href="Add.ADD.html" title="enum in add0.add">""");
             checkOrder("overview-tree.html",
-                    "<a href=\"Add.add.html\" title=\"enum in &lt;Unnamed&gt;\">",
-                    "<a href=\"add0/Add.add.html\" title=\"enum in add0\">",
-                    "<a href=\"add0/add/Add.add.html\" title=\"enum in add0.add\">",
-                    "<a href=\"add0/add/add/Add.add.html\" title=\"enum in add0.add.add\">",
-                    "<a href=\"add0/add/add/add/Add.add.html\" title=\"enum in add0.add.add.add\">",
-                    "<a href=\"add1/Add.add.html\" title=\"enum in add1\">",
-                    "<a href=\"add1/add/Add.add.html\" title=\"enum in add1.add\">",
-                    "<a href=\"add1/add/add/Add.add.html\" title=\"enum in add1.add.add\">",
-                    "<a href=\"add1/add/add/add/Add.add.html\" title=\"enum in add1.add.add.add\">",
-                    "<a href=\"add2/Add.add.html\" title=\"enum in add2\">",
-                    "<a href=\"add2/add/Add.add.html\" title=\"enum in add2.add\">",
-                    "<a href=\"add2/add/add/Add.add.html\" title=\"enum in add2.add.add\">",
-                    "<a href=\"add2/add/add/add/Add.add.html\" title=\"enum in add2.add.add.add\">",
-                    "<a href=\"add3/Add.add.html\" title=\"enum in add3\">",
-                    "<a href=\"add3/add/Add.add.html\" title=\"enum in add3.add\">",
-                    "<a href=\"add3/add/add/Add.add.html\" title=\"enum in add3.add.add\">",
-                    "<a href=\"add3/add/add/add/Add.add.html\" title=\"enum in add3.add.add.add\">",
-                    "<a href=\"Add.ADD.html\" title=\"enum in &lt;Unnamed&gt;\">",
-                    "<a href=\"add0/Add.ADD.html\" title=\"enum in add0\">",
-                    "<a href=\"add0/add/Add.ADD.html\" title=\"enum in add0.add\">",
-                    "<a href=\"add0/add/add/Add.ADD.html\" title=\"enum in add0.add.add\">",
-                    "<a href=\"add0/add/add/add/Add.ADD.html\" title=\"enum in add0.add.add.add\">",
-                    "<a href=\"add1/Add.ADD.html\" title=\"enum in add1\">",
-                    "<a href=\"add1/add/Add.ADD.html\" title=\"enum in add1.add\">",
-                    "<a href=\"add1/add/add/Add.ADD.html\" title=\"enum in add1.add.add\">",
-                    "<a href=\"add1/add/add/add/Add.ADD.html\" title=\"enum in add1.add.add.add\">",
-                    "<a href=\"add2/Add.ADD.html\" title=\"enum in add2\">",
-                    "<a href=\"add2/add/Add.ADD.html\" title=\"enum in add2.add\">",
-                    "<a href=\"add2/add/add/Add.ADD.html\" title=\"enum in add2.add.add\">",
-                    "<a href=\"add2/add/add/add/Add.ADD.html\" title=\"enum in add2.add.add.add\">",
-                    "<a href=\"add3/Add.ADD.html\" title=\"enum in add3\">",
-                    "<a href=\"add3/add/Add.ADD.html\" title=\"enum in add3.add\">",
-                    "<a href=\"add3/add/add/Add.ADD.html\" title=\"enum in add3.add.add\">",
-                    "<a href=\"add3/add/add/add/Add.ADD.html\" title=\"enum in add3.add.add.add\">");
+                    """
+                        <a href="Add.add.html" title="enum in &lt;Unnamed&gt;">""",
+                    """
+                        <a href="add0/Add.add.html" title="enum in add0">""",
+                    """
+                        <a href="add0/add/Add.add.html" title="enum in add0.add">""",
+                    """
+                        <a href="add0/add/add/Add.add.html" title="enum in add0.add.add">""",
+                    """
+                        <a href="add0/add/add/add/Add.add.html" title="enum in add0.add.add.add">""",
+                    """
+                        <a href="add1/Add.add.html" title="enum in add1">""",
+                    """
+                        <a href="add1/add/Add.add.html" title="enum in add1.add">""",
+                    """
+                        <a href="add1/add/add/Add.add.html" title="enum in add1.add.add">""",
+                    """
+                        <a href="add1/add/add/add/Add.add.html" title="enum in add1.add.add.add">""",
+                    """
+                        <a href="add2/Add.add.html" title="enum in add2">""",
+                    """
+                        <a href="add2/add/Add.add.html" title="enum in add2.add">""",
+                    """
+                        <a href="add2/add/add/Add.add.html" title="enum in add2.add.add">""",
+                    """
+                        <a href="add2/add/add/add/Add.add.html" title="enum in add2.add.add.add">""",
+                    """
+                        <a href="add3/Add.add.html" title="enum in add3">""",
+                    """
+                        <a href="add3/add/Add.add.html" title="enum in add3.add">""",
+                    """
+                        <a href="add3/add/add/Add.add.html" title="enum in add3.add.add">""",
+                    """
+                        <a href="add3/add/add/add/Add.add.html" title="enum in add3.add.add.add">""",
+                    """
+                        <a href="Add.ADD.html" title="enum in &lt;Unnamed&gt;">""",
+                    """
+                        <a href="add0/Add.ADD.html" title="enum in add0">""",
+                    """
+                        <a href="add0/add/Add.ADD.html" title="enum in add0.add">""",
+                    """
+                        <a href="add0/add/add/Add.ADD.html" title="enum in add0.add.add">""",
+                    """
+                        <a href="add0/add/add/add/Add.ADD.html" title="enum in add0.add.add.add">""",
+                    """
+                        <a href="add1/Add.ADD.html" title="enum in add1">""",
+                    """
+                        <a href="add1/add/Add.ADD.html" title="enum in add1.add">""",
+                    """
+                        <a href="add1/add/add/Add.ADD.html" title="enum in add1.add.add">""",
+                    """
+                        <a href="add1/add/add/add/Add.ADD.html" title="enum in add1.add.add.add">""",
+                    """
+                        <a href="add2/Add.ADD.html" title="enum in add2">""",
+                    """
+                        <a href="add2/add/Add.ADD.html" title="enum in add2.add">""",
+                    """
+                        <a href="add2/add/add/Add.ADD.html" title="enum in add2.add.add">""",
+                    """
+                        <a href="add2/add/add/add/Add.ADD.html" title="enum in add2.add.add.add">""",
+                    """
+                        <a href="add3/Add.ADD.html" title="enum in add3">""",
+                    """
+                        <a href="add3/add/Add.ADD.html" title="enum in add3.add">""",
+                    """
+                        <a href="add3/add/add/Add.ADD.html" title="enum in add3.add.add">""",
+                    """
+                        <a href="add3/add/add/add/Add.ADD.html" title="enum in add3.add.add.add">""");
         }
 
         void emitFile(String pkgname, String clsname, ListOrder order) throws IOException {
@@ -496,9 +562,12 @@ public class TestOrdering extends JavadocTester {
                     "something</span></a> - Annotation Type in",
                     "something</a></span> - Variable in class",
                     "something()</a></span> - Constructor",
-                    "something()</a></span> - Method in class a.<a href=\"a/A.html\"",
-                    "something()</a></span> - Method in class a.<a href=\"a/something.html\"",
-                    "something()</a></span> - Method in class something.<a href=\"something/J.html\"");
+                    """
+                        something()</a></span> - Method in class a.<a href="a/A.html\"""",
+                    """
+                        something()</a></span> - Method in class a.<a href="a/something.html\"""",
+                    """
+                        something()</a></span> - Method in class something.<a href="something/J.html\"""");
         }
     }
 
@@ -516,14 +585,22 @@ public class TestOrdering extends JavadocTester {
 
             checkOrder("pkg5/AnnoFieldTest.html",
                     "<h2>Field Details</h2>",
-                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">one</span></div>",
-                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">two</span></div>",
-                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">three</span></div>",
-                    "<div class=\"member-signature\"><span class=\"modifiers\">static final</span>&nbsp;"
-                    + "<span class=\"return-type\">int</span>&nbsp;<span class=\"member-name\">four</span></div>");
+                    """
+                        <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
+                        span class="return-type">int</span>&nbsp;<span class="member-name">one</span></d\
+                        iv>""",
+                    """
+                        <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
+                        span class="return-type">int</span>&nbsp;<span class="member-name">two</span></d\
+                        iv>""",
+                    """
+                        <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
+                        span class="return-type">int</span>&nbsp;<span class="member-name">three</span><\
+                        /div>""",
+                    """
+                        <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
+                        span class="return-type">int</span>&nbsp;<span class="member-name">four</span></\
+                        div>""");
 
             checkOrder("pkg5/AnnoOptionalTest.html",
                     "<h2>Optional Element Summary</h2>",
@@ -553,13 +630,19 @@ public class TestOrdering extends JavadocTester {
                     "<h2>Constructor Summary</h2>",
                     "<a href=\"#%3Cinit%3E(int)\"",
                     "<a href=\"#%3Cinit%3E(int,int)\"",
-                    "<a href=\"#%3Cinit%3E(int,int,int)\"",
-                    "<a href=\"#%3Cinit%3E(int,int,int,int)\"",
+                    """
+                        <a href="#%3Cinit%3E(int,int,int)\"""",
+                    """
+                        <a href="#%3Cinit%3E(int,int,int,int)\"""",
                     "<h2>Constructor Details</h2>",
-                    "<section class=\"detail\" id=\"&lt;init&gt;(int,int,int,int)\">",
-                    "<section class=\"detail\" id=\"&lt;init&gt;(int,int,int)\">",
-                    "<section class=\"detail\" id=\"&lt;init&gt;(int,int)\">",
-                    "<section class=\"detail\" id=\"&lt;init&gt;(int)\">");
+                    """
+                        <section class="detail" id="&lt;init&gt;(int,int,int,int)">""",
+                    """
+                        <section class="detail" id="&lt;init&gt;(int,int,int)">""",
+                    """
+                        <section class="detail" id="&lt;init&gt;(int,int)">""",
+                    """
+                        <section class="detail" id="&lt;init&gt;(int)">""");
 
             checkOrder("pkg5/EnumTest.html",
                     "<h2>Enum Constant Summary</h2>",
@@ -613,7 +696,8 @@ public class TestOrdering extends JavadocTester {
                     "<h2>Property Summary</h2>",
                     "<a href=\"#fourProperty\">four</a>",
                     "<a href=\"#oneProperty\">one</a>",
-                    "<a href=\"#threeProperty\">three</a>",
+                    """
+                        <a href="#threeProperty">three</a>""",
                     "<a href=\"#twoProperty\">two</a>",
                     "<h2>Property Details</h2>",
                     "<h3>oneProperty</h3>",

@@ -68,9 +68,10 @@ public class TestValueTagInModule extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m1/module-summary.html", true,
-                "<section class=\"module-description\" id=\"module.description\">\n"
-                + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
-                + "<div class=\"block\">value of field CONS : <a href=\"pkg/A.html#CONS\">100</a></div>");
+                """
+                    <section class="module-description" id="module.description">
+                    <!-- ============ MODULE DESCRIPTION =========== -->
+                    <div class="block">value of field CONS : <a href="pkg/A.html#CONS">100</a></div>""");
     }
 
     void createTestClass(Path srcDir) throws Exception {

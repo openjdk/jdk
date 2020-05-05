@@ -49,54 +49,66 @@ public class TestLiteralCodeInPre extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Test.html", true,
-                "no_pre</span>()</div>\n"
-                + "<div class=\"block\">abc<code>def</code>ghi</div>",
-                "no_pre_extra_whitespace</span>()</div>\n"
-                + "<div class=\"block\">abc<code> def  </code>ghi</div>",
-                "in_pre</span>()</div>\n"
-                + "<div class=\"block\"><pre> abc<code> def  </code>ghi</pre></div>",
-                "pre_after_text</span>()</div>\n"
-                + "<div class=\"block\">xyz <pre> abc<code> def  </code>ghi</pre></div>",
-                "after_pre</span>()</div>\n"
-                + "<div class=\"block\">xyz <pre> pqr </pre> abc<code> def  </code>ghi</div>",
-                "back_in_pre</span>()</div>\n"
-                + "<div class=\"block\">xyz <pre> pqr </pre> mno <pre> abc<code> def  </code>ghi</pre></div>",
-                "typical_usage_code</span>()</div>\n"
-                + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
-                + " Example:  <pre><code>\n"
-                + "   line 0 @Override\n"
-                + "   line 1 &lt;T&gt; void m(T t) {\n"
-                + "   line 2     // do something with T\n"
-                + "   line 3 }\n"
-                + " </code></pre>\n"
-                + " and so it goes.</div>",
-                "typical_usage_literal</span>()</div>\n"
-                + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
-                + " Example:  <pre>\n"
-                + "   line 0 @Override\n"
-                + "   line 1 &lt;T&gt; void m(T t) {\n"
-                + "   line 2     // do something with T\n"
-                + "   line 3 }\n"
-                + " </pre>\n"
-                + " and so it goes.</div>",
-                "recommended_usage_literal</span>()</div>\n"
-                + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
-                + " Example:  <pre>\n"
-                + "   line 0 @Override\n"
-                + "   line 1 &lt;T&gt; void m(T t) {\n"
-                + "   line 2     // do something with T\n"
-                + "   line 3 } </pre>\n"
-                + " and so it goes.</div>",
-                "<div class=\"block\">Test for html in pre, note the spaces\n"
-                + " <PRE>\n"
-                + " <b>id           </b>\n"
-                + " </PRE></div>",
-                "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">htmlAttrInPre1</span>()</div>\n"
-                + "<div class=\"block\">More html tag outliers.\n"
-                + " <pre>\n"
-                + " @Override\n"
-                + " <code> some.function() </code>\n"
-                + " </pre></div>");
+                """
+                    no_pre</span>()</div>
+                    <div class="block">abc<code>def</code>ghi</div>""",
+                """
+                    no_pre_extra_whitespace</span>()</div>
+                    <div class="block">abc<code> def  </code>ghi</div>""",
+                """
+                    in_pre</span>()</div>
+                    <div class="block"><pre> abc<code> def  </code>ghi</pre></div>""",
+                """
+                    pre_after_text</span>()</div>
+                    <div class="block">xyz <pre> abc<code> def  </code>ghi</pre></div>""",
+                """
+                    after_pre</span>()</div>
+                    <div class="block">xyz <pre> pqr </pre> abc<code> def  </code>ghi</div>""",
+                """
+                    back_in_pre</span>()</div>
+                    <div class="block">xyz <pre> pqr </pre> mno <pre> abc<code> def  </code>ghi</pre></div>""",
+                """
+                    typical_usage_code</span>()</div>
+                    <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                     Example:  <pre><code>
+                       line 0 @Override
+                       line 1 &lt;T&gt; void m(T t) {
+                       line 2     // do something with T
+                       line 3 }
+                     </code></pre>
+                     and so it goes.</div>""",
+                """
+                    typical_usage_literal</span>()</div>
+                    <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                     Example:  <pre>
+                       line 0 @Override
+                       line 1 &lt;T&gt; void m(T t) {
+                       line 2     // do something with T
+                       line 3 }
+                     </pre>
+                     and so it goes.</div>""",
+                """
+                    recommended_usage_literal</span>()</div>
+                    <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                     Example:  <pre>
+                       line 0 @Override
+                       line 1 &lt;T&gt; void m(T t) {
+                       line 2     // do something with T
+                       line 3 } </pre>
+                     and so it goes.</div>""",
+                """
+                    <div class="block">Test for html in pre, note the spaces
+                     <PRE>
+                     <b>id           </b>
+                     </PRE></div>""",
+                """
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                    lass="return-type">void</span>&nbsp;<span class="member-name">htmlAttrInPre1</sp\
+                    an>()</div>
+                    <div class="block">More html tag outliers.
+                     <pre>
+                     @Override
+                     <code> some.function() </code>
+                     </pre></div>""");
     }
 }

@@ -100,28 +100,30 @@ public class TestAutoLoadTaglets extends JavadocTester {
     private void createTaglets(Path srcDir) throws Exception {
         for (int i = 1; i < 3; i++) {
             tb.writeJavaFiles(srcDir,
-                    "import com.sun.source.doctree.DocTree;\n"
-                    + "import jdk.javadoc.doclet.Taglet;\n"
-                    + "import javax.lang.model.element.Element;\n"
-                    + "import java.util.List;\n"
-                    + "import java.util.Set;\n"
-                    + "public class Taglet" + i + " implements Taglet {\n"
-                    + "    @Override\n"
-                    + "    public Set<Location> getAllowedLocations() {\n"
-                    + "        return null;\n"
-                    + "    }\n"
-                    + "    @Override\n"
-                    + "    public boolean isInlineTag() {\n"
-                    + "        return true;\n"
-                    + "    }\n"
-                    + "    @Override\n"
-                    + "    public String getName() {\n"
-                    + "        return \"taglet" + i + "\";\n"
-                    + "    }\n"
-                    + "    @Override\n"
-                    + "    public String toString(List<? extends DocTree> tags, Element "
-                    + "element) {\n"
-                    + "        return \"user taglet taglet" + i + "\";\n"
+                    """
+                        import com.sun.source.doctree.DocTree;
+                        import jdk.javadoc.doclet.Taglet;
+                        import javax.lang.model.element.Element;
+                        import java.util.List;
+                        import java.util.Set;
+                        public class Taglet""" + i + """
+                        \simplements Taglet {
+                            @Override
+                            public Set<Location> getAllowedLocations() {
+                                return null;
+                            }
+                            @Override
+                            public boolean isInlineTag() {
+                                return true;
+                            }
+                            @Override
+                            public String getName() {
+                                return "taglet""" + i + """
+                        ";
+                            }
+                            @Override
+                            public String toString(List<? extends DocTree> tags, Element element) {
+                                return "user taglet taglet""" + i + "\";\n"
                     + "    }\n"
                     + "}\n");
         }

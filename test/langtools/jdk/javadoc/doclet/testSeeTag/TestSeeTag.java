@@ -49,13 +49,14 @@ public class TestSeeTag extends JavadocTester {
 
         checkOutput("pkg/Test.html", true,
             "<code>List</code>",
-            "<dl class=\"notes\">\n"
-            + "<dt>See Also:</dt>\n"
-            + "<dd><a href=\"Test.InnerOne.html#foo()\"><code>Test.InnerOne.foo()</code></a>, \n"
-            + "<a href=\"Test.InnerOne.html#bar(java.lang.Object)\"><code>Test.InnerOne.bar(Object)</code></a>, \n"
-            + "<a href=\"http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see\">Javadoc</a>, \n"
-            + "<a href=\"Test.InnerOne.html#baz(float)\"><code>something</code></a></dd>\n"
-            + "</dl>");
+            """
+                <dl class="notes">
+                <dt>See Also:</dt>
+                <dd><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a>,\s
+                <a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a>,\s
+                <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a>,\s
+                <a href="Test.InnerOne.html#baz(float)"><code>something</code></a></dd>
+                </dl>""");
 
         checkOutput("pkg/Test.html", false,
           "&lt;code&gt;List&lt;/code&gt;");
@@ -75,10 +76,11 @@ public class TestSeeTag extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput("badref/Test.html", true,
-                "<dl class=\"notes\">\n"
-                + "<dt>See Also:</dt>\n"
-                + "<dd><code>Object</code>, \n"
-                + "<code>Foo<String></code></dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd><code>Object</code>,\s
+                    <code>Foo<String></code></dd>
+                    </dl>""");
     }
 }

@@ -98,30 +98,31 @@ public class DocletPathTest extends APITest {
     private static final String TEST_STRING = "DocletOnDocletPath found and running";
 
     private static final String docletSrcText =
-        "import jdk.javadoc.doclet.*;\n" +
-        "import javax.lang.model.SourceVersion;\n" +
-        "import java.util.List;\n" +
-        "import java.util.Collections;\n" +
-        "import java.util.Set;\n" +
-        "import jdk.javadoc.doclet.Doclet;\n" +
-        "import java.util.Locale;\n" +
-        "import jdk.javadoc.doclet.Reporter;\n" +
-        "public class DocletOnDocletPath implements Doclet {\n" +
-        "    public boolean run(DocletEnvironment doc) {\n" +
-        "        reporter.print(javax.tools.Diagnostic.Kind.NOTE, " +
-        "                                \"" + TEST_STRING + "\");\n" +
-        "        return true;\n" +
-        "    }\n" +
-        "    public Set<Doclet.Option> getSupportedOptions() {return Collections.emptySet();}\n" +
-        "    public SourceVersion getSupportedSourceVersion() {\n" +
-        "        return SourceVersion.latestSupported();\n" +
-        "    }\n" +
-        "    Reporter reporter;\n" +
-        "    public void init(Locale locale, Reporter reporter) {\n" +
-        "        this.reporter = reporter;\n" +
-        "        return;\n" +
-        "    }" +
-        "    public String getName() { return \"DocletOnPath\"; }\n" +
-        "}\n";
+        """
+            import jdk.javadoc.doclet.*;
+            import javax.lang.model.SourceVersion;
+            import java.util.List;
+            import java.util.Collections;
+            import java.util.Set;
+            import jdk.javadoc.doclet.Doclet;
+            import java.util.Locale;
+            import jdk.javadoc.doclet.Reporter;
+            public class DocletOnDocletPath implements Doclet {
+                public boolean run(DocletEnvironment doc) {
+                    reporter.print(javax.tools.Diagnostic.Kind.NOTE,                                 \"""" + TEST_STRING + """
+            ");
+                    return true;
+                }
+                public Set<Doclet.Option> getSupportedOptions() {return Collections.emptySet();}
+                public SourceVersion getSupportedSourceVersion() {
+                    return SourceVersion.latestSupported();
+                }
+                Reporter reporter;
+                public void init(Locale locale, Reporter reporter) {
+                    this.reporter = reporter;
+                    return;
+                }    public String getName() { return "DocletOnPath"; }
+            }
+            """;
 }
 

@@ -89,14 +89,16 @@ public class TestOptionOrder extends JavadocTester {
         Path src = base.resolve("src");
 
         tb.writeJavaFiles(src,
-            "package app;\n"
-            + "/** Lorem ipsum.\n"
-            + " *  @see lib.LibClass\n"
-            + " */\n"
-            + "public class App {\n"
-            + "    /** Reference to LibClass. */\n"
-            + "    public lib.LibClass lc;\n"
-            + "}\n");
+            """
+                package app;
+                /** Lorem ipsum.
+                 *  @see lib.LibClass
+                 */
+                public class App {
+                    /** Reference to LibClass. */
+                    public lib.LibClass lc;
+                }
+                """);
 
         javadoc("-d", base.resolve("out").toString(),
                 "-classpath",
@@ -116,7 +118,8 @@ public class TestOptionOrder extends JavadocTester {
                 // Instance in See Also
                 "<dd><a href=\"http://example.com/" + first + "/lib/LibClass.html",
                 // Instance in Field declaration
-                "<td class=\"col-first\"><code><a href=\"http://example.com/" + first + "/lib/LibClass.html"
+                """
+                    <td class="col-first"><code><a href="http://example.com/""" + first + "/lib/LibClass.html"
                 );
     }
 

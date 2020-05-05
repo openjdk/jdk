@@ -81,23 +81,23 @@ public class TestModuleSpecificStylesheet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("ma/module-summary.html", true,
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"../ma/doc-files/spanstyle.css\"" +
-                        " title=\"Style\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="../ma/doc-files/spanstyle.css" title="Style">""");
 
         checkOutput("ma/pa/package-summary.html", true,
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"../../ma/doc-files/spanstyle.css\"" +
-                        " title=\"Style\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css" title="Style">""");
 
         checkOutput("ma/pa/A.html", true,
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"../../ma/doc-files/spanstyle.css\"" +
-                        " title=\"Style\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css" title="Style">""");
 
         checkOutput("ma/pa/pb/B.html", true,
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"../../../ma/doc-files/spanstyle.css\"" +
-                        " title=\"Style\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css" title="Style">""");
 
         checkOutput("ma/pa/pb/package-summary.html", true,
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"../../../ma/doc-files/spanstyle.css\"" +
-                        " title=\"Style\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css" title="Style">""");
     }
 }

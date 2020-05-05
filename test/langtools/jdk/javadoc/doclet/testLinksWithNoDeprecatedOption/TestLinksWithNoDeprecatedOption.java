@@ -73,21 +73,21 @@ public class TestLinksWithNoDeprecatedOption extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/class-use/A.html", true,
-                "<span class=\"member-name-link\">"
-                + "<a href=\"../B.html#a2\">a2</a></span>");
+                """
+                    <span class="member-name-link"><a href="../B.html#a2">a2</a></span>""");
 
         //links for deprecated items will not be found
         checkOutput("pkg/class-use/A.html", false,
-                "<span class=\"member-name-link\">"
-                + "<a href=\"../B.html#deprecatedField\">deprecatedField</a></span>");
+                """
+                    <span class="member-name-link"><a href="../B.html#deprecatedField">deprecatedField</a></span>""");
 
         checkOutput("pkg/class-use/A.html", false,
-                "<span class=\"member-name-link\">"
-                + "<a href=\"../B.html#deprecatedMethod(pkg.A)\">deprecatedMethod</a></span>");
+                """
+                    <span class="member-name-link"><a href="../B.html#deprecatedMethod(pkg.A)">deprecatedMethod</a></span>""");
 
         checkOutput("pkg/class-use/A.html",false,
-                "<span class=\"member-name-link\">"
-                + "<a href=\"../B.html#%3Cinit%3E(pkg.A)\">B</a></span>");
+                """
+                    <span class="member-name-link"><a href="../B.html#%3Cinit%3E(pkg.A)">B</a></span>""");
 
     }
 

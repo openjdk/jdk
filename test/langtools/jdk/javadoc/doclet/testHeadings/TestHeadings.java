@@ -52,44 +52,48 @@ public class TestHeadings extends JavadocTester {
 
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<th class=\"col-first\" scope=\"col\">"
-                + "Class</th>\n"
-                + "<th class=\"col-last\" scope=\"col\""
-                + ">Description</th>");
+                """
+                    <th class="col-first" scope="col">Class</th>
+                    <th class="col-last" scope="col">Description</th>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<th class=\"col-first\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"col-second\" scope=\"col\">Field</th>\n"
-                + "<th class=\"col-last\" scope=\"col\">Description</th>",
-                "<h3 id=\"methods.inherited.from.class.java.lang.Object\">"
-                + "Methods inherited from class&nbsp;java.lang.Object</h3>");
+                """
+                    <th class="col-first" scope="col">Modifier and Type</th>
+                    <th class="col-second" scope="col">Field</th>
+                    <th class="col-last" scope="col">Description</th>""",
+                """
+                    <h3 id="methods.inherited.from.class.java.lang.Object">Methods inherited from class&nbsp;java.lang.Object</h3>""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/C1.html", true,
-                "<th class=\"col-first\" scope=\"col\">Package</th>\n"
-                + "<th class=\"col-last\" scope=\"col\">Description</th>",
-                "<th class=\"col-first\" scope=\"col\">Modifier and Type</th>\n"
-                + "<th class=\"col-second\" scope=\"col\">Field</th>\n"
-                + "<th class=\"col-last\" scope=\"col\">Description</th>");
+                """
+                    <th class="col-first" scope="col">Package</th>
+                    <th class="col-last" scope="col">Description</th>""",
+                """
+                    <th class="col-first" scope="col">Modifier and Type</th>
+                    <th class="col-second" scope="col">Field</th>
+                    <th class="col-last" scope="col">Description</th>""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<th class=\"col-first\" scope=\"col\">Method</th>\n"
-                + "<th class=\"col-last\" scope=\"col\">Description</th>");
+                """
+                    <th class="col-first" scope="col">Method</th>
+                    <th class="col-last" scope="col">Description</th>""");
 
         // Constant values
         checkOutput("constant-values.html", true,
-                "<th class=\"col-first\" scope=\"col\">"
-                + "Modifier and Type</th>\n"
-                + "<th class=\"col-second\" scope=\"col\">Constant Field</th>\n"
-                + "<th class=\"col-last\" scope=\"col\">Value</th>");
+                """
+                    <th class="col-first" scope="col">Modifier and Type</th>
+                    <th class="col-second" scope="col">Constant Field</th>
+                    <th class="col-last" scope="col">Value</th>""");
 
         // Serialized Form
         checkOutput("serialized-form.html", true,
-                "<h2 title=\"Package\">Package&nbsp;pkg1</h2>",
-                "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">"
-                + "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>",
+                """
+                    <h2 title="Package">Package&nbsp;pkg1</h2>""",
+                """
+                    <h3>Class <a href="pkg1/C1.html" title="class in pkg1">pkg1.C1</a> extends java.lang.Object implements Serializable</h3>""",
                 "<h4>Serialized Fields</h4>");
 
         // Overview Summary

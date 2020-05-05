@@ -52,17 +52,28 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
                 "attribute not supported in HTML5: type");
 
         checkOutput("C.html", true,
-                "<div class=\"block\">case1   end of sentence.</div>",
-                "<div class=\"block\">case2   end of sentence.</div>",
-                "<div class=\"block\">case3   end of sentence.</div>",
-                "<div class=\"block\">case4   end of sentence.</div>",
-                "<div class=\"block\">case5   end of sentence.</div>",
-                "<div class=\"block\">case6   end of sentence.</div>",
-                "<div class=\"block\">case7   end of sentence.</div>",
-                "<div class=\"block\">case8   end of sentence.</div>",
-                "<div class=\"block\">case9   end of sentence.</div>",
-                "<div class=\"block\">caseA   end of sentence.</div>",
-                "<div class=\"block\">caseB A block quote example:</div>");
+                """
+                    <div class="block">case1   end of sentence.</div>""",
+                """
+                    <div class="block">case2   end of sentence.</div>""",
+                """
+                    <div class="block">case3   end of sentence.</div>""",
+                """
+                    <div class="block">case4   end of sentence.</div>""",
+                """
+                    <div class="block">case5   end of sentence.</div>""",
+                """
+                    <div class="block">case6   end of sentence.</div>""",
+                """
+                    <div class="block">case7   end of sentence.</div>""",
+                """
+                    <div class="block">case8   end of sentence.</div>""",
+                """
+                    <div class="block">case9   end of sentence.</div>""",
+                """
+                    <div class="block">caseA   end of sentence.</div>""",
+                """
+                    <div class="block">caseB A block quote example:</div>""");
     }
 
     @Test
@@ -73,6 +84,7 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput("Negative.html", true,
-                "<div class=\"block\">case1: A hanging &lt;  : xx<</div>");
+                """
+                    <div class="block">case1: A hanging &lt;  : xx<</div>""");
     }
 }

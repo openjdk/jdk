@@ -49,62 +49,65 @@ public class TestAbstractMethod extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/A.html", true,
-                "<td class=\"col-first\"><code>default void</code></td>",
-                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\" "
-                + "aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
-                + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\" "
-                + "onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\""
-                + " onclick=\"show(2);\">Instance Methods</button><button role=\"tab\""
-                + " aria-selected=\"false\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" onclick=\"show(4);\">"
-                + "Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">"
-                + "Default Methods</button></div>");
+                """
+                    <td class="col-first"><code>default void</code></td>""",
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
+                    e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
+                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
+                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
+                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
+                    ="switchTab(event)" id="t3" class="table-tab" onclick="show(4);">Abstract Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t5" class="table\
+                    -tab" onclick="show(16);">Default Methods</button></div>""");
 
         checkOutput("pkg/B.html", true,
-                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
-                + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
-                + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\" onclick=\"show(4);\">"
-                + "Abstract Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t4\" class=\"table-tab\""
-                + " onclick=\"show(8);\">Concrete Methods</button></div>",
-                "<td class=\"col-first\"><code>abstract void</code></td>");
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
+                    e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
+                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
+                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
+                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
+                    ="switchTab(event)" id="t3" class="table-tab" onclick="show(4);">Abstract Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t4" class="table\
+                    -tab" onclick="show(8);">Concrete Methods</button></div>""",
+                """
+                    <td class="col-first"><code>abstract void</code></td>""");
 
         checkOutput("pkg/C.html", true,
-                "<div class=\"table-tabs\" role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
-                + " aria-selected=\"true\" aria-controls=\"method-summary-table.tabpanel\" tabindex=\"0\""
-                + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"active-table-tab\">All Methods"
-                + "</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t2\" class=\"table-tab\" onclick=\"show(2);\">"
-                + "Instance Methods</button><button role=\"tab\" aria-selected=\"false\""
-                + " aria-controls=\"method-summary-table.tabpanel\" tabindex=\"-1\""
-                + " onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\" onclick=\"show(16);\">"
-                + "Default Methods</button></div>");
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
+                    e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
+                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
+                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
+                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
+                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
+                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
+                    ="switchTab(event)" id="t5" class="table-tab" onclick="show(16);">Default Method\
+                    s</button></div>""");
 
         checkOutput("pkg/A.html", false,
-                "<td class=\"col-first\"><code>abstract void</code></td>");
+                """
+                    <td class="col-first"><code>abstract void</code></td>""");
 
         checkOutput("pkg/B.html", false,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"method-summary.tabpanel\""
-                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t5\" class=\"table-tab\""
-                + " onclick=\"show(16);\">Default Methods</button>",
-                "<td class=\"col-first\"><code>default void</code></td>");
+                """
+                    <button role="tab" aria-selected="false" aria-controls="method-summary.tabpanel"\
+                     tabindex="-1" onkeydown="switchTab(event)" id="t5" class="table-tab" onclick="s\
+                    how(16);">Default Methods</button>""",
+                """
+                    <td class="col-first"><code>default void</code></td>""");
 
         checkOutput("pkg/C.html", false,
-                "<button role=\"tab\" aria-selected=\"false\" aria-controls=\"method-summary.tabpanel\""
-                + " tabindex=\"-1\" onkeydown=\"switchTab(event)\" id=\"t3\" class=\"table-tab\""
-                + " onclick=\"show(4);\">Abstract Methods</button>"
-                + "<span class=\"tab-end\">&nbsp;</span>");
+                """
+                    <button role="tab" aria-selected="false" aria-controls="method-summary.tabpanel"\
+                     tabindex="-1" onkeydown="switchTab(event)" id="t3" class="table-tab" onclick="s\
+                    how(4);">Abstract Methods</button><span class="tab-end">&nbsp;</span>""");
     }
 }

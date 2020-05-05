@@ -77,8 +77,8 @@ public class TestLinkOptionWithModule extends JavadocTester {
 
         checkExit(Exit.OK);
         checkOutput("com.ex2/com/ex2/B.html", true,
-                "<a href=\"../../../../out1a/com.ex1/com/ex1/A.html\" "
-                + "title=\"class or interface in com.ex1\" class=\"external-link\">A</a>");
+                """
+                    <a href="../../../../out1a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -96,8 +96,8 @@ public class TestLinkOptionWithModule extends JavadocTester {
 
         checkExit(Exit.OK);
         checkOutput("com/ex2/B.html", true,
-                "<a href=\"../../../out2a/com/ex1/A.html\" title=\"class or interface in com.ex1\" "
-                + "class=\"external-link\">A</a>");
+                """
+                    <a href="../../../out2a/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -118,8 +118,8 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "The code being documented uses modules but the packages defined "
                 + "in ../out3a/ are in the unnamed module");
         checkOutput("com.ex2/com/ex2/B.html", true,
-                "<a href=\"../../../../out3a/com/ex1/A.html\" "
-                + "title=\"class or interface in com.ex1\" class=\"external-link\">A</a>");
+                """
+                    <a href="../../../../out3a/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -140,8 +140,8 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "The code being documented uses packages in the unnamed module, but the packages defined "
                 + "in ../out4a/ are in named modules");
         checkOutput("com/ex2/B.html", true,
-                "<a href=\"../../../out4a/com.ex1/com/ex1/A.html\" "
-                + "title=\"class or interface in com.ex1\" class=\"external-link\">A</a>");
+                """
+                    <a href="../../../out4a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
     }
 
 
@@ -154,11 +154,13 @@ public class TestLinkOptionWithModule extends JavadocTester {
         new ModuleBuilder(tb, "com.ex2")
                 .requires("com.ex1")
                 .exports("com.ex2")
-                .classes("package com.ex2; \n"
-                        + "import com.ex1.A;\n"
-                        + "public class B{\n"
-                        + "public B(A obj){}\n"
-                        + "}\n")
+                .classes("""
+                    package com.ex2;\s
+                    import com.ex1.A;
+                    public class B{
+                    public B(A obj){}
+                    }
+                    """)
                 .write(moduleSrc);
 
         new ClassBuilder(tb, "com.ex1.A")

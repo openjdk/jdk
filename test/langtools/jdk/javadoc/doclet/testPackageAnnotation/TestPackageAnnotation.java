@@ -48,11 +48,14 @@ public class TestPackageAnnotation extends JavadocTester {
                 "pkg1");
         checkExit(Exit.OK);
         checkOutput("pkg1/package-summary.html", true,
-                "<main role=\"main\">\n<div class=\"header\">\n"
-                + "<p>@Deprecated(since=\"1&lt;2&gt;3\")\n"
-                + "</p>\n"
-                + "<h1 title=\"Package\" class=\"title\">Package&nbsp;pkg1</h1>\n"
-                + "</div>\n");
+                """
+                    <main role="main">
+                    <div class="header">
+                    <p>@Deprecated(since="1&lt;2&gt;3")
+                    </p>
+                    <h1 title="Package" class="title">Package&nbsp;pkg1</h1>
+                    </div>
+                    """);
     }
 
     @Test
@@ -63,11 +66,12 @@ public class TestPackageAnnotation extends JavadocTester {
                 "pkg2");
         checkExit(Exit.OK);
         checkOutput("pkg2/package-summary.html", true,
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
-                + "<div class=\"deprecation-comment\">This package is deprecated.</div>\n"
-                + "</div>\n"
-                + "<div class=\"block\">This is the description of package pkg2.</div>\n"
-                + "</section>");
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">This package is deprecated.</div>
+                    </div>
+                    <div class="block">This is the description of package pkg2.</div>
+                    </section>""");
     }
 
     @Test
@@ -78,11 +82,13 @@ public class TestPackageAnnotation extends JavadocTester {
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/package-summary.html", true,
-                "<main role=\"main\">\n"
-                + "<div class=\"header\">\n"
-                + "<p>@Deprecated(since=\"1&lt;2&gt;3\")\n"
-                + "</p>\n"
-                + "<h1 title=\"Package\" class=\"title\">Package&nbsp;pkg3</h1>\n"
-                + "</div>\n");
+                """
+                    <main role="main">
+                    <div class="header">
+                    <p>@Deprecated(since="1&lt;2&gt;3")
+                    </p>
+                    <h1 title="Package" class="title">Package&nbsp;pkg3</h1>
+                    </div>
+                    """);
     }
 }
