@@ -26,6 +26,8 @@
  * @requires vm.cds
  * @requires vm.bits == 64
  * @requires vm.gc.Z
+ * @comment assuming that default GC supports both UseCompressedOops and UseCompressedClassPointers
+ * @requires vm.gc == null
  * @comment Graal does not support ZGC
  * @requires !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
