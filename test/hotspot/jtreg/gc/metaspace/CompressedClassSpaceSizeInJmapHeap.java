@@ -36,7 +36,6 @@ package gc.metaspace;
  */
 
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.SA.SATestUtils;
@@ -49,11 +48,6 @@ public class CompressedClassSpaceSizeInJmapHeap {
     // Note that on some platforms it may require root privileges to run this test.
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
-
-        if (!Platform.is64bit()) {
-            // Compressed Class Space is only available on 64-bit JVMs
-            return;
-        }
 
         String pid = Long.toString(ProcessTools.getProcessId());
 

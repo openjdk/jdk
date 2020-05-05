@@ -30,6 +30,7 @@ package gc.metaspace;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.bits == 32
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.metaspace.TestCapacityUntilGCWrapAround
@@ -38,7 +39,6 @@ package gc.metaspace;
 import sun.hotspot.WhiteBox;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Platform;
 
 public class TestCapacityUntilGCWrapAround {
     private static long MB = 1024 * 1024;
@@ -46,17 +46,15 @@ public class TestCapacityUntilGCWrapAround {
     private static long MAX_UINT = 4 * GB - 1; // On 32-bit platforms
 
     public static void main(String[] args) {
-        if (Platform.is32bit()) {
-            WhiteBox wb = WhiteBox.getWhiteBox();
+        WhiteBox wb = WhiteBox.getWhiteBox();
 
-            long before = wb.metaspaceCapacityUntilGC();
-            // Now force possible overflow of capacity_until_GC.
-            long after = wb.incMetaspaceCapacityUntilGC(MAX_UINT);
+        long before = wb.metaspaceCapacityUntilGC();
+        // Now force possible overflow of capacity_until_GC.
+        long after = wb.incMetaspaceCapacityUntilGC(MAX_UINT);
 
-            Asserts.assertGTE(after, before,
-                              "Increasing with MAX_UINT should not cause wrap around: " + after + " < " + before);
-            Asserts.assertLTE(after, MAX_UINT,
-                              "Increasing with MAX_UINT should not cause value larger than MAX_UINT:" + after);
-        }
+        Asserts.assertGTE(after, before,
+                          "Increasing with MAX_UINT should not cause wrap around: " + after + " < " + before);
+        Asserts.assertLTE(after, MAX_UINT,
+                          "Increasing with MAX_UINT should not cause value larger than MAX_UINT:" + after);
     }
 }
