@@ -471,15 +471,15 @@ else # $(HAS_SPEC)=true
   # Remove any javac server logs and port files. This
   # prevents a new make run to reuse the previous servers.
   define PrepareSmartJavac
-	$(if $(SJAVAC_SERVER_DIR), \
-	  $(RM) -r $(SJAVAC_SERVER_DIR) 2> /dev/null && \
-	  $(MKDIR) -p $(SJAVAC_SERVER_DIR) \
+	$(if $(JAVAC_SERVER_DIR), \
+	  $(RM) -r $(JAVAC_SERVER_DIR) 2> /dev/null && \
+	  $(MKDIR) -p $(JAVAC_SERVER_DIR) \
 	)
   endef
 
   define CleanupSmartJavac
-	[ -f $(SJAVAC_SERVER_DIR)/server.port ] && $(ECHO) Stopping sjavac server && \
-	    $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
+	[ -f $(JAVAC_SERVER_DIR)/server.port ] && $(ECHO) Stopping sjavac server && \
+	    $(TOUCH) $(JAVAC_SERVER_DIR)/server.port.stop; true
   endef
 
   ifeq ($(call isBuildOs, windows), true)
@@ -488,7 +488,7 @@ else # $(HAS_SPEC)=true
     # synchronization process, wait for a while and hope it helps. This is only
     # used by build comparisons.
     define WaitForSmartJavacFinish
-	$(if $(SJAVAC_SERVER_DIR), \
+	$(if $(JAVAC_SERVER_DIR), \
 	  sleep 5\
 	)
     endef

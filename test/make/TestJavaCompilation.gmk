@@ -239,11 +239,6 @@ TEST_TARGETS += $(OUTPUT_DIR)/_jar3_updated
 ################################################################################
 # Test SetupJavaCompilation overrides of java files
 
-$(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
-    JAVAC := $(JAVAC), \
-    DISABLE_SJAVAC := true, \
-))
-
 JAVA_SRC_ROOT1 := $(OUTPUT_DIR)/javaroot1
 JAVA_SRC_ROOT2 := $(OUTPUT_DIR)/javaroot2
 
@@ -285,7 +280,7 @@ $(call CreateTextFile,$(JAVA_SRC_ROOT2)/a/c.properties,#javaroot2\nname=value2\n
 # otherwise $(wildcard ) will not find the directories and the sanity check in
 # SetupJavaCompilation will fail.
 $(eval $(call SetupJavaCompilation, BUILD_ROOT1_FIRST, \
-    SETUP := BOOT_JAVAC, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(JAVA_SRC_ROOT1)/ $(JAVA_SRC_ROOT2)/, \
     COPY := .txt .java, \
     CLEAN := .properties, \
@@ -317,7 +312,7 @@ verify-root1-first: $(BUILD_ROOT1_FIRST)
 	fi
 
 $(eval $(call SetupJavaCompilation, BUILD_ROOT2_FIRST, \
-    SETUP := BOOT_JAVAC, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(JAVA_SRC_ROOT2)/ $(JAVA_SRC_ROOT1)/, \
     COPY := .txt, \
     CLEAN := .properties, \

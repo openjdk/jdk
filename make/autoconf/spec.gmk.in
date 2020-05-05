@@ -356,9 +356,9 @@ BOOT_JDK_SOURCETARGET:=@BOOT_JDK_SOURCETARGET@
 NUM_CORES:=@NUM_CORES@
 MEMORY_SIZE:=@MEMORY_SIZE@
 ENABLE_JAVAC_SERVER:=@ENABLE_JAVAC_SERVER@
-# Store sjavac server synchronization files here, and
-# the sjavac server log files.
-SJAVAC_SERVER_DIR=$(MAKESUPPORT_OUTPUTDIR)/javacservers
+# Store javac server synchronization files here, and
+# the javac server log files.
+JAVAC_SERVER_DIR=$(MAKESUPPORT_OUTPUTDIR)/javacservers
 
 # Number of parallel jobs to use for compilation
 JOBS?=@JOBS@

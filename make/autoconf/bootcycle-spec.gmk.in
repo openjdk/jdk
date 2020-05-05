@@ -44,7 +44,8 @@ BOOT_JDK := $(JDK_IMAGE_DIR)
 # The bootcycle build has a different output directory
 OLD_OUTPUTDIR:=@OUTPUTDIR@
 OUTPUTDIR:=$(OLD_OUTPUTDIR)/bootcycle-build
-SJAVAC_SERVER_DIR:=$(patsubst $(OLD_OUTPUTDIR)%, $(OUTPUTDIR)%, $(SJAVAC_SERVER_DIR))
+# No spaces in patsubst to avoid leading space in variable
+JAVAC_SERVER_DIR:=$(patsubst $(OLD_OUTPUTDIR)%,$(OUTPUTDIR)%,$(JAVAC_SERVER_DIR))
 
 JAVA_CMD:=$(BOOT_JDK)/bin/java
 JAVAC_CMD:=$(BOOT_JDK)/bin/javac
