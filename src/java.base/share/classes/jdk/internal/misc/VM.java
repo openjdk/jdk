@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,6 +420,8 @@ public class VM {
      * object class in the archived graph.
      */
     public static native void initializeFromArchive(Class<?> c);
+
+    public static native long getRandomSeedForCDSDump();
 
     /**
      * Provides access to information on buffer usage.

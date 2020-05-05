@@ -505,10 +505,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
 
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::init_dumptime_info(this);
-  }
-
   // Set biased locking bit for all instances of this class; it will be
   // cleared if revocation occurs too often for this type
   if (UseBiasedLocking && BiasedLocking::enabled()) {

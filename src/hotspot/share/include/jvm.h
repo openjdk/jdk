@@ -176,6 +176,9 @@ JVM_GetVmArguments(JNIEnv *env);
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
+JNIEXPORT jlong JNICALL
+JVM_GetRandomSeedForCDSDump();
+
 /*
  * java.lang.Throwable
  */

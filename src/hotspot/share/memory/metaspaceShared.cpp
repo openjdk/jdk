@@ -77,6 +77,8 @@
 
 ReservedSpace MetaspaceShared::_shared_rs;
 VirtualSpace MetaspaceShared::_shared_vs;
+ReservedSpace MetaspaceShared::_symbol_rs;
+VirtualSpace MetaspaceShared::_symbol_vs;
 MetaspaceSharedStats MetaspaceShared::_stats;
 bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
@@ -120,21 +122,24 @@ char* DumpRegion::expand_top_to(char* newtop) {
     MetaspaceShared::report_out_of_space(_name, newtop - _top);
     ShouldNotReachHere();
   }
-  uintx delta;
-  if (DynamicDumpSharedSpaces) {
-    delta = DynamicArchive::object_delta_uintx(newtop);
-  } else {
-    delta = MetaspaceShared::object_delta_uintx(newtop);
-  }
-  if (delta > MAX_SHARED_DELTA) {
-    // This is just a sanity check and should not appear in any real world usage. This
-    // happens only if you allocate more than 2GB of shared objects and would require
-    // millions of shared classes.
-    vm_exit_during_initialization("Out of memory in the CDS archive",
-                                  "Please reduce the number of shared classes.");
+
+  if (_rs == MetaspaceShared::shared_rs()) {
+    uintx delta;
+    if (DynamicDumpSharedSpaces) {
+      delta = DynamicArchive::object_delta_uintx(newtop);
+    } else {
+      delta = MetaspaceShared::object_delta_uintx(newtop);
+    }
+    if (delta > MAX_SHARED_DELTA) {
+      // This is just a sanity check and should not appear in any real world usage. This
+      // happens only if you allocate more than 2GB of shared objects and would require
+      // millions of shared classes.
+      vm_exit_during_initialization("Out of memory in the CDS archive",
+                                    "Please reduce the number of shared classes.");
+    }
   }
 
-  MetaspaceShared::commit_shared_space_to(newtop);
+  MetaspaceShared::commit_to(_rs, _vs, newtop);
   _top = newtop;
   return _top;
 }
@@ -172,26 +177,35 @@ void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t neede
   }
 }
 
+void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
+  _rs = rs;
+  _vs = vs;
+  // Start with 0 committed bytes. The memory will be committed as needed by
+  // MetaspaceShared::commit_to().
+  if (!_vs->initialize(*_rs, 0)) {
+    fatal("Unable to allocate memory for shared space");
+  }
+  _base = _top = _rs->base();
+  _end = _rs->end();
+}
+
 void DumpRegion::pack(DumpRegion* next) {
   assert(!is_packed(), "sanity");
   _end = (char*)align_up(_top, Metaspace::reserve_alignment());
   _is_packed = true;
   if (next != NULL) {
+    next->_rs = _rs;
+    next->_vs = _vs;
     next->_base = next->_top = this->_end;
-    next->_end = MetaspaceShared::shared_rs()->end();
+    next->_end = _rs->end();
   }
 }
 
-static DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw");
+static DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw"), _symbol_region("symbols");
 static size_t _total_closed_archive_region_size = 0, _total_open_archive_region_size = 0;
 
-void MetaspaceShared::init_shared_dump_space(DumpRegion* first_space, address first_space_bottom) {
-  // Start with 0 committed bytes. The memory will be committed as needed by
-  // MetaspaceShared::commit_shared_space_to().
-  if (!_shared_vs.initialize(_shared_rs, 0)) {
-    fatal("Unable to allocate memory for shared space");
-  }
-  first_space->init(&_shared_rs, (char*)first_space_bottom);
+void MetaspaceShared::init_shared_dump_space(DumpRegion* first_space) {
+  first_space->init(&_shared_rs, &_shared_vs);
 }
 
 DumpRegion* MetaspaceShared::misc_code_dump_space() {
@@ -209,6 +223,10 @@ DumpRegion* MetaspaceShared::read_only_dump_space() {
 void MetaspaceShared::pack_dump_space(DumpRegion* current, DumpRegion* next,
                                       ReservedSpace* rs) {
   current->pack(next);
+}
+
+char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
+  return _symbol_region.allocate(num_bytes);
 }
 
 char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
@@ -320,6 +338,14 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   SharedBaseAddress = (size_t)_shared_rs.base();
   log_info(cds)("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 _shared_rs.size(), p2i(_shared_rs.base()));
+
+  size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
+  _symbol_rs = ReservedSpace(symbol_rs_size);
+  if (!_symbol_rs.is_reserved()) {
+    vm_exit_during_initialization("Unable to reserve memory for symbols",
+                                  err_msg(SIZE_FORMAT " bytes.", symbol_rs_size));
+  }
+  _symbol_region.init(&_symbol_rs, &_symbol_vs);
 }
 
 // Called by universe_post_init()
@@ -397,33 +423,37 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
   }
 }
 
-void MetaspaceShared::commit_shared_space_to(char* newtop) {
+void MetaspaceShared::commit_to(ReservedSpace* rs, VirtualSpace* vs, char* newtop) {
   Arguments::assert_is_dumping_archive();
-  char* base = _shared_rs.base();
+  char* base = rs->base();
   size_t need_committed_size = newtop - base;
-  size_t has_committed_size = _shared_vs.committed_size();
+  size_t has_committed_size = vs->committed_size();
   if (need_committed_size < has_committed_size) {
     return;
   }
 
   size_t min_bytes = need_committed_size - has_committed_size;
   size_t preferred_bytes = 1 * M;
-  size_t uncommitted = _shared_vs.reserved_size() - has_committed_size;
+  size_t uncommitted = vs->reserved_size() - has_committed_size;
 
   size_t commit =MAX2(min_bytes, preferred_bytes);
   commit = MIN2(commit, uncommitted);
   assert(commit <= uncommitted, "sanity");
 
-  bool result = _shared_vs.expand_by(commit, false);
-  ArchivePtrMarker::expand_ptr_end((address*)_shared_vs.high());
+  bool result = vs->expand_by(commit, false);
+  if (rs == &_shared_rs) {
+    ArchivePtrMarker::expand_ptr_end((address*)vs->high());
+  }
 
   if (!result) {
     vm_exit_during_initialization(err_msg("Failed to expand shared space to " SIZE_FORMAT " bytes",
                                           need_committed_size));
   }
 
-  log_debug(cds)("Expanding shared spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
-                 commit, _shared_vs.actual_committed_size(), _shared_vs.high());
+  assert(rs == &_shared_rs || rs == &_symbol_rs, "must be");
+  const char* which = (rs == &_shared_rs) ? "shared" : "symbol";
+  log_debug(cds)("Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
+                 which, commit, vs->actual_committed_size(), vs->high());
 }
 
 void MetaspaceShared::initialize_ptr_marker(CHeapBitMap* ptrmap) {
@@ -505,6 +535,10 @@ uintx MetaspaceShared::object_delta_uintx(void* obj) {
 // Global object for holding classes that have been loaded.  Since this
 // is run at a safepoint just before exit, this is the entire set of classes.
 static GrowableArray<Klass*>* _global_klass_objects;
+
+static int global_klass_compare(Klass** a, Klass **b) {
+  return a[0]->name()->fast_compare(b[0]->name());
+}
 
 GrowableArray<Klass*>* MetaspaceShared::collected_klasses() {
   return _global_klass_objects;
@@ -1331,7 +1365,14 @@ public:
       RefRelocator ext_reloc;
       iterate_roots(&ext_reloc);
     }
-
+    {
+      log_info(cds)("Fixing symbol identity hash ... ");
+      os::init_random(0x12345678);
+      GrowableArray<Symbol*>* symbols = _ssc->get_sorted_symbols();
+      for (int i=0; i<symbols->length(); i++) {
+        symbols->at(i)->update_identity_hash();
+      }
+    }
 #ifdef ASSERT
     {
       log_info(cds)("Verifying external roots ... ");
@@ -1364,6 +1405,21 @@ public:
   }
 
   static void iterate_roots(MetaspaceClosure* it) {
+    // To ensure deterministic contents in the archive, we just need to ensure that
+    // we iterate the MetsapceObjs in a deterministic order. It doesn't matter where
+    // the MetsapceObjs are located originally, as they are copied sequentially into
+    // the archive during the iteration.
+    //
+    // The only issue here is that the symbol table and the system directories may be
+    // randomly ordered, so we copy the symbols and klasses into two arrays and sort
+    // them deterministically.
+    //
+    // During -Xshare:dump, the order of Symbol creation is strictly determined by
+    // the SharedClassListFile (class loading is done in a single thread and the JIT
+    // is disabled). Also, Symbols are allocated in monotonically increasing addresses
+    // (see Symbol::operator new(size_t, int)). So if we iterate the Symbols by
+    // ascending address order, we ensure that all Symbols are copied into deterministic
+    // locations in the archive.
     GrowableArray<Symbol*>* symbols = _ssc->get_sorted_symbols();
     for (int i=0; i<symbols->length(); i++) {
       it->push(symbols->adr_at(i));
@@ -1525,6 +1581,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _global_klass_objects = new GrowableArray<Klass*>(1000);
   CollectClassesClosure collect_classes;
   ClassLoaderDataGraph::loaded_classes_do(&collect_classes);
+  _global_klass_objects->sort(global_klass_compare);
 
   print_class_stats();
 
@@ -1558,8 +1615,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   _ro_region.pack();
 
   // The vtable clones contain addresses of the current process.
-  // We don't want to write these addresses into the archive.
+  // We don't want to write these addresses into the archive. Same for i2i buffer.
   MetaspaceShared::zero_cpp_vtable_clones_for_writing();
+  memset(MetaspaceShared::i2i_entry_code_buffers(), 0,
+         MetaspaceShared::i2i_entry_code_buffers_size());
 
   // relocate the data so that it can be mapped to Arguments::default_SharedBaseAddress()
   // without runtime relocation.
@@ -1631,7 +1690,7 @@ void VM_PopulateDumpSharedSpace::print_region_stats(FileMapInfo *map_info) {
   _mc_region.print(total_reserved);
   _rw_region.print(total_reserved);
   _ro_region.print(total_reserved);
-  print_bitmap_region_stats(bitmap_reserved, total_reserved);
+  print_bitmap_region_stats(bitmap_used, total_reserved);
   print_heap_region_stats(_closed_archive_heap_regions, "ca", total_reserved);
   print_heap_region_stats(_open_archive_heap_regions, "oa", total_reserved);
 
@@ -1640,8 +1699,8 @@ void VM_PopulateDumpSharedSpace::print_region_stats(FileMapInfo *map_info) {
 }
 
 void VM_PopulateDumpSharedSpace::print_bitmap_region_stats(size_t size, size_t total_size) {
-  log_debug(cds)("bm  space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
-                 size, size/double(total_size)*100.0, size, p2i(NULL));
+  log_debug(cds)("bm  space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used]",
+                 size, size/double(total_size)*100.0, size);
 }
 
 void VM_PopulateDumpSharedSpace::print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,

@@ -142,6 +142,10 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     MetaspaceShared::relocate_klass_ptr(archived_oop);
+    // Clear age -- it might have been set if a GC happened during -Xshare:dump
+    markWord mark = archived_oop->mark_raw();
+    mark = mark.set_age(0);
+    archived_oop->set_mark_raw(mark);
     ArchivedObjectCache* cache = archived_object_cache();
     cache->put(obj, archived_oop);
     log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,

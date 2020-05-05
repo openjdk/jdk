@@ -503,14 +503,13 @@ private:
   void write_archive(char* serialized_data);
 
   void init_first_dump_space(address reserved_bottom) {
-    address first_space_base = reserved_bottom;
     DumpRegion* mc_space = MetaspaceShared::misc_code_dump_space();
     DumpRegion* rw_space = MetaspaceShared::read_write_dump_space();
 
     // Use the same MC->RW->RO ordering as in the base archive.
-    MetaspaceShared::init_shared_dump_space(mc_space, first_space_base);
+    MetaspaceShared::init_shared_dump_space(mc_space);
     _current_dump_space = mc_space;
-    _last_verified_top = first_space_base;
+    _last_verified_top = reserved_bottom;
     _num_dump_regions_used = 1;
   }
 
