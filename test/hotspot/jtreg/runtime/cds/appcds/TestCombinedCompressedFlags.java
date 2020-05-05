@@ -26,18 +26,17 @@
  * @bug 8232069
  * @summary Testing different combination of CompressedOops and CompressedClassPointers
  * @requires vm.cds
- * @requires (vm.gc=="null")
+ * @requires vm.gc == "null"
+ * @requires vm.bits == 64
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java
  * @modules java.base/jdk.internal.misc
- * @run main/othervm  TestCombinedCompressedFlags
+ * @run driver TestCombinedCompressedFlags
  */
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.util.List;
 import java.util.ArrayList;
-import jtreg.SkippedException;
 
 public class TestCombinedCompressedFlags {
     public static String HELLO_STRING = "Hello World";
@@ -161,10 +160,6 @@ public class TestCombinedCompressedFlags {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.is64bit()) {
-            throw new SkippedException("Platform is not 64 bit, skipped");
-        }
-
         String helloJar = JarBuilder.build("hello", "Hello");
         configureRunArgs();
         OutputAnalyzer out;

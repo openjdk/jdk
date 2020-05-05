@@ -1,38 +1,46 @@
 /*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
  * @test 8232069 for ZGC
  * @requires vm.cds
- * @requires (vm.gc=="null")
+ * @requires vm.bits == 64
+ * @requires vm.gc.Z
+ * @comment Graal does not support ZGC
+ * @requires !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestZGCWithCDS
+ * @run driver TestZGCWithCDS
  */
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
-import jtreg.SkippedException;
-
-import sun.hotspot.gc.GC;
-import sun.hotspot.code.Compiler;
 
 public class TestZGCWithCDS {
     public final static String HELLO = "Hello World";
     public final static String UNABLE_TO_USE_ARCHIVE = "Unable to use shared archive.";
     public final static String ERR_MSG = "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
     public static void main(String... args) throws Exception {
-         // The test is only for 64-bit
-         if (!Platform.is64bit()) {
-             throw new SkippedException("Platform is not 64 bit, skipped");
-         }
-
-         // Platform must support ZGC
-         if (!GC.Z.isSupported()) {
-             throw new SkippedException("Platform does not support ZGC, skipped");
-         } else if (Compiler.isGraalEnabled()) {
-             throw new SkippedException("Graal does not support ZGC, skipped");
-         }
-
          String helloJar = JarBuilder.build("hello", "Hello");
          // 0. dump with ZGC
          System.out.println("0. Dump with ZGC");

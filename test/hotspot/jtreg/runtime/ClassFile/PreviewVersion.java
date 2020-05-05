@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,14 @@ public class PreviewVersion {
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("Hi!");
+        oa.shouldHaveExitValue(0);
 
         // Test -Xlog:class+preview
         pb = ProcessTools.createJavaProcessBuilder("--enable-preview", "-Xlog:class+preview",
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("[info][class,preview] Loading class PVTest that depends on preview features");
+        oa.shouldHaveExitValue(0);
 
         // Subtract 1 from class's major version.  The class should fail to load
         // because its major_version does not match the JVM current version.
