@@ -481,16 +481,16 @@ const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type() {
+const TypeFunc* ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(const Type* value_type) {
   const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
+  fields[TypeFunc::Parms+0] = value_type;           // original field value
   fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;   // original load address
 
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
 
   // create result type (range)
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
+  fields[TypeFunc::Parms+0] = value_type;
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
 
   return TypeFunc::make(domain, range);
@@ -1045,6 +1045,20 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
 }
 #endif
 
+bool ShenandoahBarrierSetC2::maybe_skip_barrier(Node* n, uint i, PhaseGVN* phase) const {
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  Node* in = step_over_gc_barrier(n->in(i));
+  if (in != n->in(i)) {
+    if (igvn != NULL) {
+      n->set_req_X(i, in, igvn);
+    } else {
+      n->set_req(i, in);
+    }
+    return true;
+  }
+  return false;
+}
+
 Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const {
   if (is_shenandoah_wb_pre_call(n)) {
     uint cnt = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type()->domain()->cnt();
@@ -1085,6 +1099,20 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
         n->set_req(2, in2);
       }
       return n;
+    }
+  } else if (n->Opcode() == Op_CallStaticJava) {
+    if (n->as_CallStaticJava()->uncommon_trap_request() != 0) {
+      // Uncommon traps don't need barriers, values are handled
+      // during deoptimization. It also affects optimizing null-checks
+      // into implicit null-checks.
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      Node* ret = NULL;
+      for (uint i = TypeFunc::Parms; i < n->len(); i++) {
+        if (maybe_skip_barrier(n, i, phase)) {
+          ret = n;
+        }
+      }
+      return ret;
     }
   } else if (can_reshape &&
              n->Opcode() == Op_If &&

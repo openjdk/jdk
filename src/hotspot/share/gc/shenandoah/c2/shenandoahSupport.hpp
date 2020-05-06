@@ -61,9 +61,6 @@ private:
   static void test_heap_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
                               PhaseIdealLoop* phase, int flags);
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase);
-  static Node* clone_null_check(Node*& c, Node* val, Node* unc_ctrl, PhaseIdealLoop* phase);
-  static void fix_null_check(Node* unc, Node* unc_ctrl, Node* new_unc_ctrl, Unique_Node_List& uses,
-                             PhaseIdealLoop* phase);
   static void in_cset_fast_test(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
   static void move_heap_stable_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
   static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
@@ -254,7 +251,6 @@ public:
   virtual bool cmp( const Node &n ) const;
 
   bool is_redundant();
-  CallStaticJavaNode* pin_and_expand_null_check(PhaseIterGVN& igvn);
 
 private:
   bool needs_barrier(PhaseGVN* phase, Node* n);
