@@ -3907,11 +3907,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         public ScrollableTabPanel() {
             super(null);
             setOpaque(tabPane.isOpaque());
-            Color bgColor = UIManager.getColor("TabbedPane.tabAreaBackground");
-            if (bgColor == null) {
-                bgColor = tabPane.getBackground();
+            Color background = tabPane.getBackground();
+            Color tabAreaBackground = UIManager.getColor("TabbedPane.tabAreaBackground");
+            if (background instanceof UIResource && tabAreaBackground != null) {
+                setBackground(tabAreaBackground);
+            } else {
+                setBackground(background);
             }
-            setBackground(bgColor);
         }
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
