@@ -136,10 +136,9 @@ void launchApp() {
 
 } // namespace
 
-
 #ifndef JP_LAUNCHERW
 
-int APIENTRY wmain() {
+int __cdecl  wmain() {
     return AppLauncher::launch(std::nothrow, launchApp);
 }
 
@@ -242,7 +241,7 @@ void launchAppW() {
 } // namespace
 
 
-int APIENTRY wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     LastErrorGuiLogAppender lastErrorLogAppender;
     TeeLogAppender logAppender(&AppLauncher::defaultLastErrorLogAppender(),
             &lastErrorLogAppender);
