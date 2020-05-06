@@ -123,7 +123,7 @@ bool GenericTaskQueue<E, F, N>::pop_local_slow(uint localBot, Age oldAge) {
     Age tempAge = cmpxchg_age(oldAge, newAge);
     if (tempAge == oldAge) {
       // We win.
-      assert(dirty_size(localBot, age_top_relaxed()) != N - 1, "sanity");
+      assert_not_underflow(localBot, age_top_relaxed());
       TASKQUEUE_STATS_ONLY(stats.record_pop_slow());
       return true;
     }
@@ -132,7 +132,7 @@ bool GenericTaskQueue<E, F, N>::pop_local_slow(uint localBot, Age oldAge) {
   // and top is greater than bottom.  Fix this representation of the empty queue
   // to become the canonical one.
   set_age_relaxed(newAge);
-  assert(dirty_size(localBot, age_top_relaxed()) != N - 1, "sanity");
+  assert_not_underflow(localBot, age_top_relaxed());
   return false;
 }
 
@@ -144,7 +144,7 @@ GenericTaskQueue<E, F, N>::pop_local(E& t, uint threshold) {
   // resets the size to 0 before the next call (which is sequential,
   // since this is pop_local.)
   uint dirty_n_elems = dirty_size(localBot, age_top_relaxed());
-  assert(dirty_n_elems != N - 1, "Shouldn't be possible...");
+  assert_not_underflow(dirty_n_elems);
   if (dirty_n_elems <= threshold) return false;
   localBot = decrement_index(localBot);
   set_bottom_relaxed(localBot);
@@ -158,7 +158,7 @@ GenericTaskQueue<E, F, N>::pop_local(E& t, uint threshold) {
   // a "pop_global" operation, and we're done.
   idx_t tp = age_top_relaxed();
   if (clean_size(localBot, tp) > 0) {
-    assert(dirty_size(localBot, tp) != N - 1, "sanity");
+    assert_not_underflow(localBot, tp);
     TASKQUEUE_STATS_ONLY(stats.record_pop());
     return true;
   } else {
@@ -241,7 +241,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
 
   // Note that using "bottom" here might fail, since a pop_local might
   // have decremented it.
-  assert(dirty_size(localBot, newAge.top()) != N - 1, "sanity");
+  assert_not_underflow(localBot, newAge.top());
   return resAge == oldAge;
 }
 

@@ -202,10 +202,22 @@ protected:
     // threads attempting to perform the pop_global will all perform the same
     // CAS, and only one can succeed.)  Any stealing thread that reads after
     // either the increment or decrement will see an empty queue, and will not
-    // join the competitors.  The "sz == -1 || sz == N-1" state will not be
-    // modified by concurrent queues, so the owner thread can reset the state to
-    // _bottom == top so subsequent pushes will be performed normally.
+    // join the competitors.  The "sz == -1" / "sz == N-1" state will not be
+    // modified by concurrent threads, so the owner thread can reset the state
+    // to _bottom == top so subsequent pushes will be performed normally.
     return (sz == N - 1) ? 0 : sz;
+  }
+
+  // Assert that we're not in the underflow state where bottom has
+  // been decremented past top, so that _bottom+1 mod N == top.  See
+  // the discussion in clean_size.
+
+  void assert_not_underflow(uint bot, uint top) const {
+    assert_not_underflow(dirty_size(bot, top));
+  }
+
+  void assert_not_underflow(uint dirty_size) const {
+    assert(dirty_size != N - 1, "invariant");
   }
 
 private:
@@ -313,6 +325,7 @@ protected:
   using TaskQueueSuper<N, F>::decrement_index;
   using TaskQueueSuper<N, F>::dirty_size;
   using TaskQueueSuper<N, F>::clean_size;
+  using TaskQueueSuper<N, F>::assert_not_underflow;
 
 public:
   using TaskQueueSuper<N, F>::max_elems;
