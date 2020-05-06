@@ -27,9 +27,8 @@ package jdk.jfr.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,8 +40,6 @@ public final class Repository {
     private static final JVM jvm = JVM.getJVM();
     private static final Repository instance = new Repository();
 
-    public final static DateTimeFormatter REPO_DATE_FORMAT = DateTimeFormatter
-            .ofPattern("yyyy_MM_dd_HH_mm_ss");
     private static final String JFR_REPOSITORY_LOCATION_PROPERTY = "jdk.jfr.repository";
 
     private final Set<SafePath> cleanupDirectories = new HashSet<>();
@@ -80,7 +77,7 @@ public final class Repository {
         }
     }
 
-    synchronized RepositoryChunk newChunk(Instant timestamp) {
+    synchronized RepositoryChunk newChunk(ZonedDateTime timestamp) {
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
@@ -101,7 +98,7 @@ public final class Repository {
         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);
         SafePath f = null;
 
-        String basename = REPO_DATE_FORMAT.format(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
+        String basename = Utils.formatDateTime(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
         String name = basename;
 
         int i = 0;

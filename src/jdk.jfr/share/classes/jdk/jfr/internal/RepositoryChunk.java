@@ -33,12 +33,12 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
-import java.util.Objects;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 final class RepositoryChunk {
     private static final int MAX_CHUNK_NAMES = 100;
+    private static final String FILE_EXTENSION = ".jfr";
 
     static final Comparator<RepositoryChunk> END_TIME_COMPARATOR = new Comparator<RepositoryChunk>() {
         @Override
@@ -48,8 +48,7 @@ final class RepositoryChunk {
     };
 
     private final SafePath repositoryPath;
-    private final SafePath unFinishedFile;
-    private final SafePath file;
+    private final SafePath chunkFile;
     private final Instant startTime;
     private final RandomAccessFile unFinishedRAF;
 
@@ -57,34 +56,26 @@ final class RepositoryChunk {
     private int refCount = 0;
     private long size;
 
-    RepositoryChunk(SafePath path, Instant startTime) throws Exception {
-        ZonedDateTime z = ZonedDateTime.now();
-        String fileName = Repository.REPO_DATE_FORMAT.format(
-                LocalDateTime.ofInstant(startTime, z.getZone()));
-        this.startTime = startTime;
+    RepositoryChunk(SafePath path, ZonedDateTime timestamp) throws Exception {
+        this.startTime = timestamp.toInstant();
         this.repositoryPath = path;
-        this.unFinishedFile = findFileName(repositoryPath, fileName, ".jfr");
-        this.file = findFileName(repositoryPath, fileName, ".jfr");
-        this.unFinishedRAF = SecuritySupport.createRandomAccessFile(unFinishedFile);
- //       SecuritySupport.touch(file);
+        this.chunkFile = findFileName(repositoryPath, timestamp.toLocalDateTime());
+        this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
 
-    private static SafePath findFileName(SafePath directory, String name, String extension) throws Exception {
-        Path p = directory.toPath().resolve(name + extension);
+    private static SafePath findFileName(SafePath directory, LocalDateTime time) throws Exception {
+        String filename = Utils.formatDateTime(time);
+        Path p = directory.toPath().resolve(filename + FILE_EXTENSION);
         for (int i = 1; i < MAX_CHUNK_NAMES; i++) {
             SafePath s = new SafePath(p);
             if (!SecuritySupport.exists(s)) {
                 return s;
             }
-            String extendedName = String.format("%s_%02d%s", name, i, extension);
+            String extendedName = String.format("%s_%02d%s", filename, i, FILE_EXTENSION);
             p = directory.toPath().resolve(extendedName);
         }
-        p = directory.toPath().resolve(name + "_" + System.currentTimeMillis() + extension);
+        p = directory.toPath().resolve(filename + "_" + System.currentTimeMillis() + FILE_EXTENSION);
         return SecuritySupport.toRealPath(new SafePath(p));
-    }
-
-    public SafePath getUnfinishedFile() {
-        return unFinishedFile;
     }
 
     void finish(Instant endTime) {
@@ -97,15 +88,9 @@ final class RepositoryChunk {
 
     private void finishWithException(Instant endTime) throws IOException {
         unFinishedRAF.close();
-        this.size = finish(unFinishedFile, file);
+        this.size = SecuritySupport.getFileSize(chunkFile);
         this.endTime = endTime;
-        Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, () -> "Chunk finished: " + file);
-    }
-
-    private static long finish(SafePath unFinishedFile, SafePath file) throws IOException {
-        Objects.requireNonNull(unFinishedFile);
-        Objects.requireNonNull(file);
-        return SecuritySupport.getFileSize(file);
+        Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, () -> "Chunk finished: " + chunkFile);
     }
 
     public Instant getStartTime() {
@@ -134,13 +119,11 @@ final class RepositoryChunk {
         if (!isFinished()) {
             finish(Instant.MIN);
         }
-        if (file != null) {
-            delete(file);
-        }
+         delete(chunkFile);
         try {
             unFinishedRAF.close();
         } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, () -> "Could not close random access file: " + unFinishedFile.toString() + ". File will not be deleted due to: " + e.getMessage());
+            Logger.log(LogTag.JFR, LogLevel.ERROR, () -> "Could not close random access file: " + chunkFile.toString() + ". File will not be deleted due to: " + e.getMessage());
         }
     }
 
@@ -181,17 +164,14 @@ final class RepositoryChunk {
 
     @Override
     public String toString() {
-        if (isFinished()) {
-            return file.toString();
-        }
-        return unFinishedFile.toString();
+        return chunkFile.toString();
     }
 
     ReadableByteChannel newChannel() throws IOException {
         if (!isFinished()) {
             throw new IOException("Chunk not finished");
         }
-        return ((SecuritySupport.newFileChannelToRead(file)));
+        return ((SecuritySupport.newFileChannelToRead(chunkFile)));
     }
 
     public boolean inInterval(Instant startTime, Instant endTime) {
@@ -205,6 +185,6 @@ final class RepositoryChunk {
     }
 
     public SafePath getFile() {
-        return file;
+        return chunkFile;
     }
 }
