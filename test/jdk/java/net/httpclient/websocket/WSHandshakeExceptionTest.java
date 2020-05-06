@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8240666
  * @summary Basic test for WebSocketHandshakeException
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -55,7 +56,9 @@ import java.util.concurrent.Executors;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import static java.lang.System.out;
 
 public class WSHandshakeExceptionTest {
 
@@ -107,6 +110,9 @@ public class WSHandshakeExceptionTest {
                 }
                 WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
                 assertNotNull(wse.getResponse());
+                out.println("Status code is " + wse.getResponse().statusCode());
+                out.println("Response is " + wse.getResponse().body());
+                assertTrue(((String)wse.getResponse().body()).contains("404"));
                 assertEquals(wse.getResponse().statusCode(), 404);
             }
         }
