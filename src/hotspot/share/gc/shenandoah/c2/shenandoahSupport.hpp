@@ -53,16 +53,16 @@ private:
 #endif
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
-  static bool is_heap_state_test(Node* iff, int mask);
+  static bool is_gc_state_test(Node* iff, int mask);
   static bool has_safepoint_between(Node* start, Node* stop, PhaseIdealLoop *phase);
   static Node* find_bottom_mem(Node* ctrl, PhaseIdealLoop* phase);
   static void follow_barrier_uses(Node* n, Node* ctrl, Unique_Node_List& uses, PhaseIdealLoop* phase);
   static void test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase);
-  static void test_heap_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
-                              PhaseIdealLoop* phase, int flags);
+  static void test_gc_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
+                            PhaseIdealLoop* phase, int flags);
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase);
-  static void in_cset_fast_test(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
-  static void move_heap_stable_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
+  static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
+  static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
   static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
   static bool identical_backtoback_ifs(Node *n, PhaseIdealLoop* phase);
   static void fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& uses_to_ignore, uint last, PhaseIdealLoop* phase);

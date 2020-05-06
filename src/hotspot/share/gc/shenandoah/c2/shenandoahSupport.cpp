@@ -68,7 +68,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
   return true;
 }
 
-bool ShenandoahBarrierC2Support::is_heap_state_test(Node* iff, int mask) {
+bool ShenandoahBarrierC2Support::is_gc_state_test(Node* iff, int mask) {
   if (!UseShenandoahGC) {
     return false;
   }
@@ -102,7 +102,7 @@ bool ShenandoahBarrierC2Support::is_heap_state_test(Node* iff, int mask) {
 }
 
 bool ShenandoahBarrierC2Support::is_heap_stable_test(Node* iff) {
-  return is_heap_state_test(iff, ShenandoahHeap::HAS_FORWARDED);
+  return is_gc_state_test(iff, ShenandoahHeap::HAS_FORWARDED);
 }
 
 bool ShenandoahBarrierC2Support::is_gc_state_load(Node *n) {
@@ -860,82 +860,96 @@ static void hide_strip_mined_loop(OuterStripMinedLoopNode* outer, CountedLoopNod
   inner->clear_strip_mined();
 }
 
-void ShenandoahBarrierC2Support::test_heap_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
-                                                 PhaseIdealLoop* phase, int flags) {
+void ShenandoahBarrierC2Support::test_gc_state(Node*& ctrl, Node* raw_mem, Node*& test_fail_ctrl,
+                                               PhaseIdealLoop* phase, int flags) {
+  PhaseIterGVN& igvn = phase->igvn();
+  Node* old_ctrl = ctrl;
+
+  Node* thread          = new ThreadLocalNode();
+  Node* gc_state_offset = igvn.MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  Node* gc_state_addr   = new AddPNode(phase->C->top(), thread, gc_state_offset);
+  Node* gc_state        = new LoadBNode(old_ctrl, raw_mem, gc_state_addr,
+                                        DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(NULL),
+                                        TypeInt::BYTE, MemNode::unordered);
+  Node* gc_state_and    = new AndINode(gc_state, igvn.intcon(flags));
+  Node* gc_state_cmp    = new CmpINode(gc_state_and, igvn.zerocon(T_INT));
+  Node* gc_state_bool   = new BoolNode(gc_state_cmp, BoolTest::ne);
+
+  IfNode* gc_state_iff  = new IfNode(old_ctrl, gc_state_bool, PROB_UNLIKELY(0.999), COUNT_UNKNOWN);
+  ctrl                  = new IfTrueNode(gc_state_iff);
+  test_fail_ctrl        = new IfFalseNode(gc_state_iff);
+
   IdealLoopTree* loop = phase->get_loop(ctrl);
-  Node* thread = new ThreadLocalNode();
-  phase->register_new_node(thread, ctrl);
-  Node* offset = phase->igvn().MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  phase->set_ctrl(offset, phase->C->root());
-  Node* gc_state_addr = new AddPNode(phase->C->top(), thread, offset);
-  phase->register_new_node(gc_state_addr, ctrl);
-  uint gc_state_idx = Compile::AliasIdxRaw;
-  const TypePtr* gc_state_adr_type = NULL; // debug-mode-only argument
-  debug_only(gc_state_adr_type = phase->C->get_adr_type(gc_state_idx));
+  phase->register_control(gc_state_iff,   loop, old_ctrl);
+  phase->register_control(ctrl,           loop, gc_state_iff);
+  phase->register_control(test_fail_ctrl, loop, gc_state_iff);
 
-  Node* gc_state = new LoadBNode(ctrl, raw_mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered);
-  phase->register_new_node(gc_state, ctrl);
-  Node* heap_stable_and = new AndINode(gc_state, phase->igvn().intcon(flags));
-  phase->register_new_node(heap_stable_and, ctrl);
-  Node* heap_stable_cmp = new CmpINode(heap_stable_and, phase->igvn().zerocon(T_INT));
-  phase->register_new_node(heap_stable_cmp, ctrl);
-  Node* heap_stable_test = new BoolNode(heap_stable_cmp, BoolTest::ne);
-  phase->register_new_node(heap_stable_test, ctrl);
-  IfNode* heap_stable_iff = new IfNode(ctrl, heap_stable_test, PROB_UNLIKELY(0.999), COUNT_UNKNOWN);
-  phase->register_control(heap_stable_iff, loop, ctrl);
+  phase->register_new_node(thread,        old_ctrl);
+  phase->register_new_node(gc_state_addr, old_ctrl);
+  phase->register_new_node(gc_state,      old_ctrl);
+  phase->register_new_node(gc_state_and,  old_ctrl);
+  phase->register_new_node(gc_state_cmp,  old_ctrl);
+  phase->register_new_node(gc_state_bool, old_ctrl);
 
-  heap_stable_ctrl = new IfFalseNode(heap_stable_iff);
-  phase->register_control(heap_stable_ctrl, loop, heap_stable_iff);
-  ctrl = new IfTrueNode(heap_stable_iff);
-  phase->register_control(ctrl, loop, heap_stable_iff);
+  phase->set_ctrl(gc_state_offset, phase->C->root());
 
-  assert(is_heap_state_test(heap_stable_iff, flags), "Should match the shape");
+  assert(is_gc_state_test(gc_state_iff, flags), "Should match the shape");
 }
 
 void ShenandoahBarrierC2Support::test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase) {
-  const Type* val_t = phase->igvn().type(val);
+  Node* old_ctrl = ctrl;
+  PhaseIterGVN& igvn = phase->igvn();
+
+  const Type* val_t = igvn.type(val);
   if (val_t->meet(TypePtr::NULL_PTR) == val_t) {
-    IdealLoopTree* loop = phase->get_loop(ctrl);
-    Node* null_cmp = new CmpPNode(val, phase->igvn().zerocon(T_OBJECT));
-    phase->register_new_node(null_cmp, ctrl);
-    Node* null_test = new BoolNode(null_cmp, BoolTest::ne);
-    phase->register_new_node(null_test, ctrl);
-    IfNode* null_iff = new IfNode(ctrl, null_test, PROB_LIKELY(0.999), COUNT_UNKNOWN);
-    phase->register_control(null_iff, loop, ctrl);
-    ctrl = new IfTrueNode(null_iff);
-    phase->register_control(ctrl, loop, null_iff);
-    null_ctrl = new IfFalseNode(null_iff);
+    Node* null_cmp   = new CmpPNode(val, igvn.zerocon(T_OBJECT));
+    Node* null_test  = new BoolNode(null_cmp, BoolTest::ne);
+
+    IfNode* null_iff = new IfNode(old_ctrl, null_test, PROB_LIKELY(0.999), COUNT_UNKNOWN);
+    ctrl             = new IfTrueNode(null_iff);
+    null_ctrl        = new IfFalseNode(null_iff);
+
+    IdealLoopTree* loop = phase->get_loop(old_ctrl);
+    phase->register_control(null_iff,  loop, old_ctrl);
+    phase->register_control(ctrl,      loop, null_iff);
     phase->register_control(null_ctrl, loop, null_iff);
+
+    phase->register_new_node(null_cmp,  old_ctrl);
+    phase->register_new_node(null_test, old_ctrl);
   }
 }
 
-void ShenandoahBarrierC2Support::in_cset_fast_test(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase) {
-  IdealLoopTree *loop = phase->get_loop(ctrl);
-  Node* raw_rbtrue = new CastP2XNode(ctrl, val);
-  phase->register_new_node(raw_rbtrue, ctrl);
-  Node* cset_offset = new URShiftXNode(raw_rbtrue, phase->igvn().intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint()));
-  phase->register_new_node(cset_offset, ctrl);
-  Node* in_cset_fast_test_base_addr = phase->igvn().makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
-  phase->set_ctrl(in_cset_fast_test_base_addr, phase->C->root());
-  Node* in_cset_fast_test_adr = new AddPNode(phase->C->top(), in_cset_fast_test_base_addr, cset_offset);
-  phase->register_new_node(in_cset_fast_test_adr, ctrl);
-  uint in_cset_fast_test_idx = Compile::AliasIdxRaw;
-  const TypePtr* in_cset_fast_test_adr_type = NULL; // debug-mode-only argument
-  debug_only(in_cset_fast_test_adr_type = phase->C->get_adr_type(in_cset_fast_test_idx));
-  Node* in_cset_fast_test_load = new LoadBNode(ctrl, raw_mem, in_cset_fast_test_adr, in_cset_fast_test_adr_type, TypeInt::BYTE, MemNode::unordered);
-  phase->register_new_node(in_cset_fast_test_load, ctrl);
-  Node* in_cset_fast_test_cmp = new CmpINode(in_cset_fast_test_load, phase->igvn().zerocon(T_INT));
-  phase->register_new_node(in_cset_fast_test_cmp, ctrl);
-  Node* in_cset_fast_test_test = new BoolNode(in_cset_fast_test_cmp, BoolTest::eq);
-  phase->register_new_node(in_cset_fast_test_test, ctrl);
-  IfNode* in_cset_fast_test_iff = new IfNode(ctrl, in_cset_fast_test_test, PROB_UNLIKELY(0.999), COUNT_UNKNOWN);
-  phase->register_control(in_cset_fast_test_iff, loop, ctrl);
+void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase) {
+  Node* old_ctrl = ctrl;
+  PhaseIterGVN& igvn = phase->igvn();
 
-  not_cset_ctrl = new IfTrueNode(in_cset_fast_test_iff);
-  phase->register_control(not_cset_ctrl, loop, in_cset_fast_test_iff);
+  Node* raw_val        = new CastP2XNode(old_ctrl, val);
+  Node* cset_idx       = new URShiftXNode(raw_val, igvn.intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint()));
+  Node* cset_addr      = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
+  Node* cset_load_addr = new AddPNode(phase->C->top(), cset_addr, cset_idx);
+  Node* cset_load      = new LoadBNode(old_ctrl, raw_mem, cset_load_addr,
+                                       DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(NULL),
+                                       TypeInt::BYTE, MemNode::unordered);
+  Node* cset_cmp       = new CmpINode(cset_load, igvn.zerocon(T_INT));
+  Node* cset_bool      = new BoolNode(cset_cmp, BoolTest::eq);
 
-  ctrl = new IfFalseNode(in_cset_fast_test_iff);
-  phase->register_control(ctrl, loop, in_cset_fast_test_iff);
+  IfNode* cset_iff     = new IfNode(old_ctrl, cset_bool, PROB_UNLIKELY(0.999), COUNT_UNKNOWN);
+  not_cset_ctrl        = new IfTrueNode(cset_iff);
+  ctrl                 = new IfFalseNode(cset_iff);
+
+  IdealLoopTree *loop = phase->get_loop(old_ctrl);
+  phase->register_control(cset_iff,      loop, old_ctrl);
+  phase->register_control(not_cset_ctrl, loop, cset_iff);
+  phase->register_control(ctrl,          loop, cset_iff);
+
+  phase->set_ctrl(cset_addr, phase->C->root());
+
+  phase->register_new_node(raw_val,        old_ctrl);
+  phase->register_new_node(cset_idx,       old_ctrl);
+  phase->register_new_node(cset_load_addr, old_ctrl);
+  phase->register_new_node(cset_load,      old_ctrl);
+  phase->register_new_node(cset_cmp,       old_ctrl);
+  phase->register_new_node(cset_bool,      old_ctrl);
 }
 
 void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase) {
@@ -1235,7 +1249,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
     // Stable path.
     Node* heap_stable_ctrl = NULL;
-    test_heap_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::HAS_FORWARDED);
+    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::HAS_FORWARDED);
     IfNode* heap_stable_iff = heap_stable_ctrl->in(0)->as_If();
 
     // Heap stable case
@@ -1246,7 +1260,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     // Test for in-cset.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
-    in_cset_fast_test(ctrl, not_cset_ctrl, val, raw_mem, phase);
+    test_in_cset(ctrl, not_cset_ctrl, val, raw_mem, phase);
     if (not_cset_ctrl != NULL) {
       region->init_req(_not_cset, not_cset_ctrl);
       val_phi->init_req(_not_cset, val);
@@ -1364,7 +1378,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* phi2 = PhiNode::make(region2, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
-    test_heap_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::MARKING);
+    test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::MARKING);
     region->init_req(_heap_stable, heap_stable_ctrl);
     phi->init_req(_heap_stable, raw_mem);
 
@@ -1546,7 +1560,7 @@ Node* ShenandoahBarrierC2Support::get_load_addr(PhaseIdealLoop* phase, VectorSet
 
 }
 
-void ShenandoahBarrierC2Support::move_heap_stable_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase) {
+void ShenandoahBarrierC2Support::move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase) {
   IdealLoopTree *loop = phase->get_loop(iff);
   Node* loop_head = loop->_head;
   Node* entry_c = loop_head->in(LoopNode::EntryControl);
@@ -1740,7 +1754,7 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
             if (head->as_Loop()->is_strip_mined()) {
               head->as_Loop()->verify_strip_mined(0);
             }
-            move_heap_stable_test_out_of_loop(iff, phase);
+            move_gc_state_test_out_of_loop(iff, phase);
 
             AutoNodeBudget node_budget(phase);
 
