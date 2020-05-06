@@ -153,4 +153,20 @@ public class DirArchive implements Archive {
     private static String getPathName(Path path) {
         return path.toString().replace(File.separatorChar, '/');
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dirPath, moduleName);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DirArchive) {
+            DirArchive other = (DirArchive)obj;
+            return Objects.equals(dirPath, other.dirPath) &&
+                   Objects.equals(moduleName, other.moduleName);
+        }
+
+        return false;
+    }
 }
