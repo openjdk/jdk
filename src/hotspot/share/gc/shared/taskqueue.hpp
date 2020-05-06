@@ -240,10 +240,10 @@ private:
 public:
   TaskQueueSuper() : _bottom(0), _age() {}
 
-  // Return true if the TaskQueue contains any tasks.
+  // Assert the queue is empty.
   // Unreliable if there are concurrent pushes or pops.
-  bool peek() const {
-    return bottom_relaxed() != age_top_relaxed();
+  void assert_empty() const {
+    assert(bottom_relaxed() == age_top_relaxed(), "not empty");
   }
 
   bool is_empty() const {
@@ -439,8 +439,10 @@ private:
 
 class TaskQueueSetSuper {
 public:
-  // Returns "true" if some TaskQueue in the set contains a task.
-  virtual bool peek() = 0;
+  // Assert all queues in the set are empty.
+  NOT_DEBUG(void assert_empty() const {})
+  DEBUG_ONLY(virtual void assert_empty() const = 0;)
+
   // Tasks in queue
   virtual uint tasks() const = 0;
 };
@@ -471,8 +473,9 @@ public:
   // Returns if stealing succeeds, and sets "t" to the stolen task.
   bool steal(uint queue_num, E& t);
 
-  bool peek();
-  uint tasks() const;
+  DEBUG_ONLY(virtual void assert_empty() const;)
+
+  virtual uint tasks() const;
 
   uint size() const { return _n; }
 };
@@ -488,15 +491,14 @@ GenericTaskQueueSet<T, F>::queue(uint i) {
   return _queues[i];
 }
 
+#ifdef ASSERT
 template<class T, MEMFLAGS F>
-bool GenericTaskQueueSet<T, F>::peek() {
-  // Try all the queues.
+void GenericTaskQueueSet<T, F>::assert_empty() const {
   for (uint j = 0; j < _n; j++) {
-    if (_queues[j]->peek())
-      return true;
+    _queues[j]->assert_empty();
   }
-  return false;
 }
+#endif // ASSERT
 
 template<class T, MEMFLAGS F>
 uint GenericTaskQueueSet<T, F>::tasks() const {

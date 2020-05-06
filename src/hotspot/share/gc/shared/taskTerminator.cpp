@@ -39,8 +39,10 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
 }
 
 TaskTerminator::~TaskTerminator() {
-  assert(_offered_termination == 0 || !peek_in_queue_set(), "Precondition");
-  assert(_offered_termination == 0 || _offered_termination == _n_threads, "Terminated or aborted" );
+  if (_offered_termination != 0) {
+    assert(_offered_termination == _n_threads, "Must be terminated or aborted");
+    assert_queue_set_empty();
+  }
 
   assert(_spin_master == NULL, "Should have been reset");
   assert(_blocker != NULL, "Can not be NULL");
@@ -48,8 +50,8 @@ TaskTerminator::~TaskTerminator() {
 }
 
 #ifdef ASSERT
-bool TaskTerminator::peek_in_queue_set() {
-  return _queue_set->peek();
+void TaskTerminator::assert_queue_set_empty() const {
+  _queue_set->assert_empty();
 }
 #endif
 
@@ -87,7 +89,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   // Single worker, done
   if (_n_threads == 1) {
     _offered_termination = 1;
-    assert(!peek_in_queue_set(), "Precondition");
+    assert_queue_set_empty();
     return true;
   }
 
@@ -97,7 +99,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   if (_offered_termination == _n_threads) {
     _blocker->notify_all();
     _blocker->unlock();
-    assert(!peek_in_queue_set(), "Precondition");
+    assert_queue_set_empty();
     return true;
   }
 
@@ -110,7 +112,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 
       if (do_spin_master_work(terminator)) {
         assert(_offered_termination == _n_threads, "termination condition");
-        assert(!peek_in_queue_set(), "Precondition");
+        assert_queue_set_empty();
         return true;
       } else {
         _blocker->lock_without_safepoint_check();
@@ -118,7 +120,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
         // before returning from do_spin_master_work() and acquiring lock above.
         if (_offered_termination == _n_threads) {
           _blocker->unlock();
-          assert(!peek_in_queue_set(), "Precondition");
+          assert_queue_set_empty();
           return true;
         }
       }
@@ -127,7 +129,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 
       if (_offered_termination == _n_threads) {
         _blocker->unlock();
-        assert(!peek_in_queue_set(), "Precondition");
+        assert_queue_set_empty();
         return true;
       }
     }
