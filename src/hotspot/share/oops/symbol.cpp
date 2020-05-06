@@ -57,6 +57,7 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
 }
 
 void* Symbol::operator new(size_t sz, int len) throw() {
+#if INCLUDE_CDS
  if (DumpSharedSpaces) {
     // To get deterministic output from -Xshare:dump, we ensure that Symbols are allocated in
     // increasing addresses. When the symbols are copied into the archive, we preserve their
@@ -71,6 +72,7 @@ void* Symbol::operator new(size_t sz, int len) throw() {
    DEBUG_ONLY(last = p);
    return p;
  }
+#endif
   int alloc_size = size(len)*wordSize;
   address res = (address) AllocateHeap(alloc_size, mtSymbol);
   return res;
