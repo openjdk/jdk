@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,14 @@ abstract class HttpConnection implements Closeable {
      * any host through proxy.
      */
     abstract boolean isProxied();
+
+    /**
+     * Returns the address of the proxy used by this connection.
+     * Returns the proxy address for tunnel connections, or
+     * clear connection to any host through proxy.
+     * Returns {@code null} otherwise.
+     */
+    abstract InetSocketAddress proxy();
 
     /** Tells whether, or not, this connection is open. */
     final boolean isOpen() {

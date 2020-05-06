@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,6 +481,7 @@ public class ConnectionPoolTest {
         @Override boolean connected() {return !closed;}
         @Override boolean isSecure() {return secured;}
         @Override boolean isProxied() {return proxy!=null;}
+        @Override InetSocketAddress proxy() { return proxy; }
         @Override ConnectionPool.CacheKey cacheKey() {return key;}
         @Override FlowTube getConnectionFlow() {return flow;}
         @Override SocketChannel channel() {return channel;}

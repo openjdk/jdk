@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,45 +514,59 @@ class Http2Connection  {
         boolean isProxy = connection.isProxied(); // tunnel or plain clear connection through proxy
         boolean isSecure = connection.isSecure();
         InetSocketAddress addr = connection.address();
+        InetSocketAddress proxyAddr = connection.proxy();
+        assert isProxy == (proxyAddr != null);
 
-        return keyString(isSecure, isProxy, addr.getHostString(), addr.getPort());
+        return keyString(isSecure, proxyAddr, addr.getHostString(), addr.getPort());
     }
 
     static String keyFor(URI uri, InetSocketAddress proxy) {
         boolean isSecure = uri.getScheme().equalsIgnoreCase("https");
-        boolean isProxy = proxy != null;
 
-        String host;
-        int port;
-
-        if (proxy != null && !isSecure) {
-            // clear connection through proxy: use
-            // proxy host / proxy port
-            host = proxy.getHostString();
-            port = proxy.getPort();
-        } else {
-            // either secure tunnel connection through proxy
-            // or direct connection to host, but in either
-            // case only that host can be reached through
-            // the connection: use target host / target port
-            host = uri.getHost();
-            port = uri.getPort();
-        }
-        return keyString(isSecure, isProxy, host, port);
+        String host = uri.getHost();
+        int port = uri.getPort();
+        return keyString(isSecure, proxy, host, port);
     }
 
-    // {C,S}:{H:P}:host:port
+
+    // Compute the key for an HttpConnection in the Http2ClientImpl pool:
+    // The key string follows one of the three forms below:
+    //    {C,S}:H:host:port
+    //    C:P:proxy-host:proxy-port
+    //    S:T:H:host:port;P:proxy-host:proxy-port
     // C indicates clear text connection "http"
     // S indicates secure "https"
     // H indicates host (direct) connection
     // P indicates proxy
-    // Eg: "S:H:foo.com:80"
-    static String keyString(boolean secure, boolean proxy, String host, int port) {
+    // T indicates a tunnel connection through a proxy
+    //
+    // The first form indicates a direct connection to a server:
+    //   - direct clear connection to an HTTP host:
+    //     e.g.: "C:H:foo.com:80"
+    //   - direct secure connection to an HTTPS host:
+    //     e.g.: "S:H:foo.com:443"
+    // The second form indicates a clear connection to an HTTP/1.1 proxy:
+    //     e.g.: "C:P:myproxy:8080"
+    // The third form indicates a secure tunnel connection to an HTTPS
+    // host through an HTTP/1.1 proxy:
+    //     e.g: "S:T:H:foo.com:80;P:myproxy:8080"
+    static String keyString(boolean secure, InetSocketAddress proxy, String host, int port) {
         if (secure && port == -1)
             port = 443;
         else if (!secure && port == -1)
             port = 80;
-        return (secure ? "S:" : "C:") + (proxy ? "P:" : "H:") + host + ":" + port;
+        var key = (secure ? "S:" : "C:");
+        if (proxy != null && !secure) {
+            // clear connection through proxy
+            key = key + "P:" + proxy.getHostString() + ":" + proxy.getPort();
+        } else if (proxy == null) {
+            // direct connection to host
+            key = key + "H:" + host + ":" + port;
+        } else {
+            // tunnel connection through proxy
+            key = key + "T:H:" + host + ":" + port + ";P:" + proxy.getHostString() + ":" + proxy.getPort();
+        }
+        return  key;
     }
 
     String key() {
