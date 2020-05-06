@@ -1967,7 +1967,8 @@ void os::PlatformEvent::park() {       // AKA "down()"
     while (_event < 0) {
       // OS-level "spurious wakeups" are ignored
       status = pthread_cond_wait(_cond, _mutex);
-      assert_status(status == 0, status, "cond_wait");
+      assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
+                    status, "cond_wait");
     }
     --_nParked;
 
@@ -2158,7 +2159,8 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (time == 0) {
     _cur_index = REL_INDEX; // arbitrary choice when not timed
     status = pthread_cond_wait(&_cond[_cur_index], _mutex);
-    assert_status(status == 0, status, "cond_timedwait");
+    assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
+                  status, "cond_wait");
   }
   else {
     _cur_index = isAbsolute ? ABS_INDEX : REL_INDEX;
@@ -2339,7 +2341,8 @@ int os::PlatformMonitor::wait(jlong millis) {
     return ret;
   } else {
     int status = pthread_cond_wait(cond(), mutex());
-    assert_status(status == 0, status, "cond_wait");
+    assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
+                  status, "cond_wait");
     return OS_OK;
   }
 }
