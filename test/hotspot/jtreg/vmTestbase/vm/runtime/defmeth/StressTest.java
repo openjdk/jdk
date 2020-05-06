@@ -55,7 +55,7 @@ public class StressTest implements Runnable {
     private StressOptions opts = new StressOptions();
 
     @Option(name="seed", default_value="0", description="force deterministic behavior")
-    private int seed;
+    private long seed;
 
     @Option(name="redefine", default_value="false", description="use scenarios w/ class redefinition")
     private boolean doRedefine;
