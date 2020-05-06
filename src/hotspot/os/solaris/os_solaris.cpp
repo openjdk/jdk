@@ -3916,7 +3916,7 @@ jint os::init_2(void) {
 
   if (UseNUMA) {
     if (!Solaris::liblgrp_init()) {
-      UseNUMA = false;
+      FLAG_SET_ERGO(UseNUMA, false);
     } else {
       size_t lgrp_limit = os::numa_get_groups_num();
       int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtInternal);
@@ -3928,6 +3928,11 @@ jint os::init_2(void) {
         UseNUMA = ForceNUMA;
       }
     }
+  }
+
+  // When NUMA requested, not-NUMA-aware allocations default to interleaving.
+  if (UseNUMA && !UseNUMAInterleaving) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
 
   Solaris::signal_sets_init();

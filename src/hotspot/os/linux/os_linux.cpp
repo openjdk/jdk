@@ -5175,7 +5175,8 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    UseNUMA = false;
+    FLAG_SET_ERGO(UseNUMA, false);
+    FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
   } else {
     if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node()) {
       // If there's only one node (they start from 0) or if the process
@@ -5206,6 +5207,11 @@ void os::Linux::numa_init() {
         }
       }
     }
+  }
+
+  // When NUMA requested, not-NUMA-aware allocations default to interleaving.
+  if (UseNUMA && !UseNUMAInterleaving) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
 
   if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
@@ -5272,7 +5278,7 @@ jint os::init_2(void) {
   log_info(os)("HotSpot is running with %s, %s",
                Linux::glibc_version(), Linux::libpthread_version());
 
-  if (UseNUMA) {
+  if (UseNUMA || UseNUMAInterleaving) {
     Linux::numa_init();
   }
 

@@ -4158,14 +4158,6 @@ jint Arguments::adjust_after_os() {
          FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
       }
     }
-    // UseNUMAInterleaving is set to ON for all collectors and platforms when
-    // UseNUMA is set to ON. NUMA-aware collectors will interleave old gen and
-    // survivor spaces on top of NUMA allocation policy for the eden space.
-    // Non NUMA-aware collectors will interleave all of the heap spaces across
-    // NUMA nodes.
-    if (FLAG_IS_DEFAULT(UseNUMAInterleaving)) {
-      FLAG_SET_ERGO(UseNUMAInterleaving, true);
-    }
   }
   return JNI_OK;
 }
