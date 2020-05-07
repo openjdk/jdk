@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"

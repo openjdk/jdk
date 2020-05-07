@@ -1495,14 +1495,6 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
 }
 
 
-Klass* java_lang_Class::as_Klass(oop java_class) {
-  //%note memory_2
-  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  Klass* k = ((Klass*)java_class->metadata_field(_klass_offset));
-  assert(k == NULL || k->is_klass(), "type check");
-  return k;
-}
-
 Klass* java_lang_Class::as_Klass_raw(oop java_class) {
   //%note memory_2
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
