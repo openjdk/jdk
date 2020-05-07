@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841 8202537
+ * @bug 8176841 8202537 8244245
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -62,6 +62,7 @@ public class TestUnicodeExtension {
 
     private static final Chronology JAPANESE = JapaneseChronology.INSTANCE;
     private static final Chronology HIJRAH = HijrahChronology.INSTANCE;
+    private static final Chronology ISO = IsoChronology.INSTANCE;
 
     private static final ZoneId ASIATOKYO = ZoneId.of("Asia/Tokyo");
     private static final ZoneId AMLA = ZoneId.of("America/Los_Angeles");
@@ -100,14 +101,17 @@ public class TestUnicodeExtension {
         return new Object[][] {
             // Locale, Chrono override, Zone override, Expected Chrono, Expected Zone,
             // Expected formatted string
-            {Locale.JAPAN, null, null, null, null,
-            "2017\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 \u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
+            {Locale.JAPAN, null, null, ISO, null,
+            "2017\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 " +
+            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
             },
-            {Locale.JAPAN, JAPANESE, null, JAPANESE, null,
-            "\u5e73\u621029\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 \u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
+            {Locale.JAPAN, JAPANESE, null, ISO, null,
+            "2017\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 " +
+            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
             },
-            {Locale.JAPAN, JAPANESE, ASIATOKYO, JAPANESE, ASIATOKYO,
-            "\u5e73\u621029\u5e748\u670811\u65e5\u91d1\u66dc\u65e5 7\u664215\u520600\u79d2 \u65e5\u672c\u6a19\u6e96\u6642"
+            {Locale.JAPAN, JAPANESE, ASIATOKYO, ISO, ASIATOKYO,
+            "2017\u5e748\u670811\u65e5\u91d1\u66dc\u65e5 7\u664215\u520600\u79d2 " +
+            "\u65e5\u672c\u6a19\u6e96\u6642"
             },
 
             {JCAL, null, null, JAPANESE, null,
@@ -121,35 +125,63 @@ public class TestUnicodeExtension {
             },
 
 
-            {JPTYO, null, null, null, ASIATOKYO,
+            {JPTYO, null, null, ISO, ASIATOKYO,
             "Friday, August 11, 2017 at 7:15:00 AM Japan Standard Time"
             },
-            {JPTYO, null, AMLA, null, ASIATOKYO,
+            {JPTYO, null, AMLA, ISO, ASIATOKYO,
             "Friday, August 11, 2017 at 7:15:00 AM Japan Standard Time"
             },
             // invalid tz
-            {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, null, null, null,
+            {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, null, ISO, null,
             "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
             },
-            {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, AMLA, null, AMLA,
+            {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, AMLA, ISO, AMLA,
             "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
             },
 
-            {RG_GB, null, null, null, null,
+            {RG_GB, null, null, ISO, null,
             "Thursday, 10 August 2017 at 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
-            {Locale.forLanguageTag("en-US-u-nu-thai"), null, null, null, null,
-            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57 at \u0e53:\u0e51\u0e55:\u0e50\u0e50 PM Pacific Daylight Time"
+            {Locale.forLanguageTag("en-US-u-nu-thai"), null, null, ISO, null,
+            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57 at \u0e53:\u0e51\u0e55:" +
+            "\u0e50\u0e50 PM Pacific Daylight Time"
             },
             // DecimalStyle, "nu" vs "rg"
-            {Locale.forLanguageTag("en-US-u-nu-thai-rg-uszzzz"), null, null, null, null,
-            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57 at \u0e53:\u0e51\u0e55:\u0e50\u0e50 PM Pacific Daylight Time"
+            {Locale.forLanguageTag("en-US-u-nu-thai-rg-uszzzz"), null, null, ISO, null,
+            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57 at \u0e53:\u0e51\u0e55:" +
+            "\u0e50\u0e50 PM Pacific Daylight Time"
             },
             // DecimalStyle, invalid
-            {Locale.forLanguageTag("en-US-u-nu-foo"), null, null, null, null,
+            {Locale.forLanguageTag("en-US-u-nu-foo"), null, null, ISO, null,
             "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            },
+            // DecimalStyle, locale default
+            // Farsi uses Extended Arabic-Indic numbering system
+            {Locale.forLanguageTag("fa"), null, null, ISO, null,
+            "\u067e\u0646\u062c\u0634\u0646\u0628\u0647 \u06f1\u06f0 \u0627\u0648\u062a " +
+            "\u06f2\u06f0\u06f1\u06f7\u060c \u0633\u0627\u0639\u062a \u06f1\u06f5:\u06f1\u06f5:" +
+            "\u06f0\u06f0 (\u0648\u0642\u062a \u062a\u0627\u0628\u0633\u062a\u0627\u0646\u06cc " +
+            "\u063a\u0631\u0628 \u0627\u0645\u0631\u06cc\u06a9\u0627)"
+            },
+            // Farsi uses Extended Arabic-Indic numbering system
+            // (should not be overridden with it, as "latn" is explicitly specified)
+            {Locale.forLanguageTag("fa-u-nu-latn"), null, null, ISO, null,
+            "\u067e\u0646\u062c\u0634\u0646\u0628\u0647 10 \u0627\u0648\u062a 2017\u060c " +
+            "\u0633\u0627\u0639\u062a 15:15:00 (\u0648\u0642\u062a \u062a\u0627\u0628\u0633" +
+            "\u062a\u0627\u0646\u06cc \u063a\u0631\u0628 \u0627\u0645\u0631\u06cc\u06a9\u0627)"
+            },
+            // Dzongkha uses Tibetan numbering system
+            {Locale.forLanguageTag("dz"), null, null, ISO, null,
+            "\u0f42\u0f5f\u0f60\u0f0b\u0f54\u0f0b\u0f66\u0f44\u0f66\u0f0b, \u0f66\u0fa4\u0fb1" +
+            "\u0f72\u0f0b\u0f63\u0f7c\u0f0b\u0f22\u0f20\u0f21\u0f27 \u0f5f\u0fb3\u0f0b\u0f56" +
+            "\u0f62\u0f92\u0fb1\u0f51\u0f0b\u0f54\u0f0b \u0f5a\u0f7a\u0f66\u0f0b\u0f21\u0f20 " +
+            "\u0f46\u0f74\u0f0b\u0f5a\u0f7c\u0f51\u0f0b \u0f23 \u0f66\u0f90\u0f62\u0f0b\u0f58" +
+            "\u0f0b \u0f21\u0f25:\u0f20\u0f20 \u0f55\u0fb1\u0f72\u0f0b\u0f46\u0f0b \u0f56\u0fb1" +
+            "\u0f44\u0f0b\u0f68\u0f0b\u0f58\u0f72\u0f0b\u0f62\u0f72\u0f0b\u0f40\u0f0b\u0f54\u0f7a" +
+            "\u0f0b\u0f66\u0f72\u0f0b\u0f55\u0f72\u0f42\u0f0b\u0f49\u0f72\u0f53\u0f0b\u0f66\u0fb2" +
+            "\u0f74\u0f44\u0f0b\u0f46\u0f74\u0f0b\u0f5a\u0f7c\u0f51"
             },
         };
     }
@@ -160,13 +192,16 @@ public class TestUnicodeExtension {
             // Locale, Chrono override, Zone override, Expected Chrono, Expected Zone,
             // Expected formatted string
             {Locale.JAPAN, null, null, null, null,
-            "2017\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 \u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
+            "2017\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 " +
+            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
             },
             {Locale.JAPAN, JAPANESE, null, JAPANESE, null,
-            "\u5e73\u621029\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 \u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
+            "\u5e73\u621029\u5e748\u670810\u65e5\u6728\u66dc\u65e5 15\u664215\u520600\u79d2 " +
+            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593"
             },
             {Locale.JAPAN, JAPANESE, ASIATOKYO, JAPANESE, ASIATOKYO,
-            "\u5e73\u621029\u5e748\u670811\u65e5\u91d1\u66dc\u65e5 7\u664215\u520600\u79d2 \u65e5\u672c\u6a19\u6e96\u6642"
+            "\u5e73\u621029\u5e748\u670811\u65e5\u91d1\u66dc\u65e5 7\u664215\u520600\u79d2 " +
+            "\u65e5\u672c\u6a19\u6e96\u6642"
             },
 
             {JCAL, null, null, null, null,
@@ -209,6 +244,33 @@ public class TestUnicodeExtension {
             // DecimalStyle, invalid
             {Locale.forLanguageTag("en-US-u-nu-foo"), null, null, null, null,
             "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            },
+            // DecimalStyle, locale default
+            // Farsi uses Extended Arabic-Indic numbering system
+            // (should not be overridden with it)
+            {Locale.forLanguageTag("fa"), null, null, null, null,
+            "\u067e\u0646\u062c\u0634\u0646\u0628\u0647 10 \u0627\u0648\u062a 2017\u060c " +
+            "\u0633\u0627\u0639\u062a 15:15:00 (\u0648\u0642\u062a \u062a\u0627\u0628\u0633" +
+            "\u062a\u0627\u0646\u06cc \u063a\u0631\u0628 \u0627\u0645\u0631\u06cc\u06a9\u0627)"
+            },
+            // Farsi uses Extended Arabic-Indic numbering system
+            // (should not be overridden with it)
+            {Locale.forLanguageTag("fa-u-nu-latn"), null, null, null, null,
+            "\u067e\u0646\u062c\u0634\u0646\u0628\u0647 10 \u0627\u0648\u062a 2017\u060c " +
+            "\u0633\u0627\u0639\u062a 15:15:00 (\u0648\u0642\u062a \u062a\u0627\u0628\u0633" +
+            "\u062a\u0627\u0646\u06cc \u063a\u0631\u0628 \u0627\u0645\u0631\u06cc\u06a9\u0627)"
+            },
+            // Dzongkha uses Tibetan numbering system
+            // (should not be overridden with it)
+            {Locale.forLanguageTag("dz"), null, null, null, null,
+            "\u0f42\u0f5f\u0f60\u0f0b\u0f54\u0f0b\u0f66\u0f44\u0f66\u0f0b, \u0f66\u0fa4\u0fb1" +
+            "\u0f72\u0f0b\u0f63\u0f7c\u0f0b2017 \u0f5f\u0fb3\u0f0b\u0f56\u0f62\u0f92\u0fb1" +
+            "\u0f51\u0f0b\u0f54\u0f0b \u0f5a\u0f7a\u0f66\u0f0b10 \u0f46\u0f74\u0f0b\u0f5a" +
+            "\u0f7c\u0f51\u0f0b 3 \u0f66\u0f90\u0f62\u0f0b\u0f58\u0f0b 15:00 \u0f55\u0fb1" +
+            "\u0f72\u0f0b\u0f46\u0f0b \u0f56\u0fb1\u0f44\u0f0b\u0f68\u0f0b\u0f58\u0f72\u0f0b" +
+            "\u0f62\u0f72\u0f0b\u0f40\u0f0b\u0f54\u0f7a\u0f0b\u0f66\u0f72\u0f0b\u0f55\u0f72" +
+            "\u0f42\u0f0b\u0f49\u0f72\u0f53\u0f0b\u0f66\u0fb2\u0f74\u0f44\u0f0b\u0f46\u0f74" +
+            "\u0f0b\u0f5a\u0f7c\u0f51"
             },
         };
     }
