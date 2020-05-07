@@ -81,8 +81,6 @@ private:
 
   static bool clone_needs_barrier(Node* src, PhaseGVN& gvn);
 
-  bool maybe_skip_barrier(Node* n, uint i, PhaseGVN* phase) const;
-
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -105,7 +103,7 @@ public:
 
   static const TypeFunc* write_ref_field_pre_entry_Type();
   static const TypeFunc* shenandoah_clone_barrier_Type();
-  static const TypeFunc* shenandoah_load_reference_barrier_Type(const Type* value_type);
+  static const TypeFunc* shenandoah_load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
