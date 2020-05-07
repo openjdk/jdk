@@ -32,7 +32,12 @@ AC_DEFUN([BPERF_CHECK_CORES],
   if test -f /proc/cpuinfo; then
     # Looks like a Linux (or cygwin) system
     NUM_CORES=`cat /proc/cpuinfo  | grep -c processor`
-    FOUND_CORES=yes
+    if test "$NUM_CORES" -eq "0"; then
+      NUM_CORES=`cat /proc/cpuinfo  | grep -c ^CPU`
+    fi
+    if test "$NUM_CORES" -ne "0"; then
+      FOUND_CORES=yes
+    fi
   elif test -x /usr/sbin/psrinfo; then
     # Looks like a Solaris system
     NUM_CORES=`/usr/sbin/psrinfo -v | grep -c on-line`
