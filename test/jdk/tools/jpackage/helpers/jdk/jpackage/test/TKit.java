@@ -399,6 +399,15 @@ final public class TKit {
         private boolean contentsOnly;
     }
 
+    public static boolean deleteIfExists(Path path) throws IOException {
+        if (isWindows()) {
+            if (path.toFile().exists()) {
+                Files.setAttribute(path, "dos:readonly", false);
+            }
+        }
+        return Files.deleteIfExists(path);
+    }
+
     /**
      * Deletes contents of the given directory recursively. Shortcut for
      * <code>deleteDirectoryContentsRecursive(path, null)</code>

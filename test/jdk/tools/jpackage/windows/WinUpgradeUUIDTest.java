@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import jdk.jpackage.test.TKit;
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
+ * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
  * @compile WinUpgradeUUIDTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinUpgradeUUIDTest
@@ -79,10 +79,6 @@ public class WinUpgradeUUIDTest {
             final UUID upgradeCode = UUID.fromString(
                     "F0B18E75-52AD-41A2-BC86-6BE4FCD50BEB");
             return new PackageTest()
-                .forTypes(PackageType.WINDOWS)
-                .configureHelloApp()
-                .addInitializer(cmd -> cmd.addArguments("--win-upgrade-uuid",
-                        upgradeCode.toString()))
                 .forTypes(PackageType.WIN_MSI)
                 .addBundlePropertyVerifier("UpgradeCode", value -> {
                     if (value.startsWith("{")) {
@@ -92,7 +88,12 @@ public class WinUpgradeUUIDTest {
                         value = value.substring(0, value.length() - 1);
                     }
                     return UUID.fromString(value).equals(upgradeCode);
-                }, "is a match with");
+                }, "is a match with")
+                .forTypes(PackageType.WINDOWS)
+                .configureHelloApp()
+                .addInitializer(cmd -> cmd.addArguments("--win-upgrade-uuid",
+                        upgradeCode.toString())) ;
+
         };
 
         // Replace real uninstall command for the first package with nop action.
