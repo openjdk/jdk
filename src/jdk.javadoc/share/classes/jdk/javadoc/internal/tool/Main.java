@@ -46,7 +46,7 @@ public class Main {
      * The main entry point called by the launcher. This will call
      * System.exit with an appropriate return value.
      *
-     * @param args The command line parameters.
+     * @param args the command-line parameters
      */
     public static void main(String... args) {
         System.exit(execute(args));
@@ -55,7 +55,7 @@ public class Main {
     /**
      * Programmatic interface.
      *
-     * @param args The command line parameters.
+     * @param args the command-line parameters
      * @return The return code.
      */
     public static int execute(String... args) {
@@ -67,7 +67,7 @@ public class Main {
      * Programmatic interface.
      *
      * @param writer a stream for all output
-     * @param args The command line parameters.
+     * @param args the command-line parameters
      * @return The return code.
      */
     public static int execute(String[] args, PrintWriter writer) {
@@ -80,7 +80,7 @@ public class Main {
      *
      * @param outWriter a stream for expected output
      * @param errWriter a stream for diagnostic output
-     * @param args The command line parameters.
+     * @param args the command-line parameters
      * @return The return code.
      */
     public static int execute(String[] args, PrintWriter outWriter, PrintWriter errWriter) {

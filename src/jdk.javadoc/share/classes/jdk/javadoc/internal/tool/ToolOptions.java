@@ -696,7 +696,7 @@ public class ToolOptions {
     }
 
     void setDumpOnError(boolean v) {
-        dumpOnError = true;
+        dumpOnError = v;
     }
 
     /**
@@ -816,7 +816,7 @@ public class ToolOptions {
     /**
      * Returns an {@code IllegalOptionValue} exception.
      *
-     * @param arg the arghument to include in the detail message
+     * @param arg the argument to include in the detail message
      * @return the exception
      */
     private IllegalOptionValue illegalOptionValue(String arg) {
