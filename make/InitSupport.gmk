@@ -306,6 +306,15 @@ else # $(HAS_SPEC)=true
     topdir=$(TOPDIR)
   endif
 
+  # Setup the build environment to match the requested specification on
+  # level of reproducible builds
+  define SetupReproducibleBuild
+    ifeq ($$(SOURCE_DATE), updated)
+      SOURCE_DATE := $$(shell $$(DATE) +"%s")
+    endif
+    export SOURCE_DATE_EPOCH := $$(SOURCE_DATE)
+  endef
+
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
   # Syntax: COMPARE_BUILD=CONF=<configure options>:PATCH=<patch file>:
   #         MAKE=<make targets>:COMP_OPTS=<compare script options>:

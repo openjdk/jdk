@@ -228,6 +228,29 @@ AC_DEFUN([UTIL_GET_MATCHING_VALUES],
 ])
 
 ###############################################################################
+# Converts an ISO-8601 date/time string to a unix epoch timestamp. If no
+# suitable conversion method was found, an empty string is returned.
+#
+# Sets the specified variable to the resulting list.
+#
+# $1: result variable name
+# $2: input date/time string
+AC_DEFUN([UTIL_GET_EPOCH_TIMESTAMP],
+[
+  timestamp=$($DATE --utc --date=$2 +"%s" 2> /dev/null)
+  if test "x$timestamp" = x; then
+    # GNU date format did not work, try BSD date options
+    timestamp=$($DATE -j -f "%F %T" "$2" "+%s" 2> /dev/null)
+    if test "x$timestamp" = x; then
+      # Perhaps the time was missing
+      timestamp=$($DATE -j -f "%F %T" "$2 00:00:00" "+%s" 2> /dev/null)
+      # If this did not work, we give up and return the empty string
+    fi
+  fi
+  $1=$timestamp
+])
+
+###############################################################################
 # Sort a space-separated list, and remove duplicates.
 #
 # Sets the specified variable to the resulting list.
@@ -320,12 +343,14 @@ AC_DEFUN([UTIL_ALIASED_ARG_ENABLE],
 #     option should be available. Must set AVAILABLE to 'false' if not.
 #   IF_GIVEN:  An optional code block to execute if the option was given on the
 #     command line (regardless of the value).
+#   IF_NOT_GIVEN:  An optional code block to execute if the option was not given
+#     on the command line (regardless of the value).
 #   IF_ENABLED:  An optional code block to execute if the option is turned on.
 #   IF_DISABLED:  An optional code block to execute if the option is turned off.
 #
 UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
     [*NAME RESULT DEFAULT AVAILABLE DESC DEFAULT_DESC CHECKING_MSG
-    CHECK_AVAILABLE IF_GIVEN IF_ENABLED IF_DISABLED], [$@],
+    CHECK_AVAILABLE IF_GIVEN IF_NOT_GIVEN IF_ENABLED IF_DISABLED], [$@],
 [
   ##########################
   # Part 1: Set up m4 macros
@@ -356,6 +381,7 @@ UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
   # tripping up bash.
   m4_define([ARG_CHECK_AVAILABLE], m4_if(ARG_CHECK_AVAILABLE, , :, ARG_CHECK_AVAILABLE))
   m4_define([ARG_IF_GIVEN], m4_if(ARG_IF_GIVEN, , :, ARG_IF_GIVEN))
+  m4_define([ARG_IF_NOT_GIVEN], m4_if(ARG_IF_NOT_GIVEN, , :, ARG_IF_NOT_GIVEN))
   m4_define([ARG_IF_ENABLED], m4_if(ARG_IF_ENABLED, , :, ARG_IF_ENABLED))
   m4_define([ARG_IF_DISABLED], m4_if(ARG_IF_DISABLED, , :, ARG_IF_DISABLED))
 
@@ -425,6 +451,8 @@ UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
   # Execute result payloads, if present
   if test x$ARG_GIVEN = xtrue; then
     ARG_IF_GIVEN
+  else
+    ARG_IF_NOT_GIVEN
   fi
 
   if test x$ARG_RESULT = xtrue; then
