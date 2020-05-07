@@ -75,7 +75,7 @@ final class RepositoryChunk {
             p = directory.toPath().resolve(extendedName);
         }
         p = directory.toPath().resolve(filename + "_" + System.currentTimeMillis() + FILE_EXTENSION);
-        return SecuritySupport.toRealPath(new SafePath(p));
+        return new SafePath(p);
     }
 
     void finish(Instant endTime) {

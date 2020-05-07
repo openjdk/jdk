@@ -87,7 +87,7 @@ public final class Repository {
             }
             return new RepositoryChunk(repository, timestamp);
         } catch (Exception e) {
-            String errorMsg = String.format("Could not create chunk in repository %s, %s", repository, e.getMessage());
+            String errorMsg = String.format("Could not create chunk in repository %s, %s: %s", repository, e.getClass(), e.getMessage());
             Logger.log(LogTag.JFR, LogLevel.ERROR, errorMsg);
             jvm.abort(errorMsg);
             throw new InternalError("Could not abort after JFR disk creation error");
