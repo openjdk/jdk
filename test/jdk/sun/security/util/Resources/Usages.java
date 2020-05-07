@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,9 @@ public class Usages {
     static Pattern RB_GETSTRING = Pattern.compile(
             "(?m)rb[ \\n]*\\.getString[ \\n]*\\([ \\n]*\"(.*?)\"\\)");
 
+    static Pattern EVENT_OCSP_CRL = Pattern.compile(
+            "Event\\.report\\(\"(.*?)\",");
+
     // Command and Option enums in keytool
     static Pattern KT_ENUM = Pattern.compile("\\n +[A-Z]+\\(.*\"(.*)\"");
 
@@ -116,6 +119,10 @@ public class Usages {
             new sun.security.tools.jarsigner.Resources(), List.of(
                     new Pair("jdk.jartool/share/classes/sun/security/tools/jarsigner/Main.java",
                             List.of(RB_GETSTRING)),
+                    new Pair("java.base/share/classes/sun/security/provider/certpath/OCSP.java",
+                            List.of(EVENT_OCSP_CRL)),
+                    new Pair("java.base/share/classes/sun/security/provider/certpath/DistributionPointFetcher.java",
+                            List.of(EVENT_OCSP_CRL)),
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
             new sun.security.util.Resources(), List.of(

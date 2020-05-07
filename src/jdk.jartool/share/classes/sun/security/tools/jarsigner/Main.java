@@ -158,6 +158,7 @@ public class Main {
     boolean signManifest = true; // "sign" the whole manifest
     boolean externalSF = true; // leave the .SF out of the PKCS7 block
     boolean strict = false;  // treat warnings as error
+    boolean revocationCheck = false; // Revocation check flag
 
     // read zip entry raw bytes
     private String altSignerClass = null;
@@ -293,6 +294,7 @@ public class Main {
                 Arrays.fill(storepass, ' ');
                 storepass = null;
             }
+            Event.clearReportListener();
         }
 
         if (strict) {
@@ -484,6 +486,8 @@ public class Main {
                        // -help: legacy.
                        collator.compare(flags, "-help") == 0) {
                 fullusage();
+            } else if (collator.compare(flags, "-revCheck") == 0) {
+                revocationCheck = true;
             } else {
                 System.err.println(
                         rb.getString("Illegal.option.") + flags);
@@ -625,6 +629,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".certs.display.certificates.when.verbose.and.verifying"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".certs.revocation.check"));
         System.out.println();
         System.out.println(rb.getString
                 (".tsa.url.location.of.the.Timestamping.Authority"));
@@ -2053,7 +2060,13 @@ public class Main {
                                     .map(c -> new TrustAnchor(c, null))
                                     .collect(Collectors.toSet()),
                             null);
-                    pkixParameters.setRevocationEnabled(false);
+
+                    if (revocationCheck) {
+                        Security.setProperty("ocsp.enable", "true");
+                        System.setProperty("com.sun.security.enableCRLDP", "true");
+                        Event.setReportListener((t, o) -> System.out.println(String.format(rb.getString(t), o)));
+                    }
+                    pkixParameters.setRevocationEnabled(revocationCheck);
                 } catch (InvalidAlgorithmParameterException ex) {
                     // Only if tas is empty
                 }

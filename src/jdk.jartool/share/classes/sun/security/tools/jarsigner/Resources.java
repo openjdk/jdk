@@ -83,6 +83,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "                            suboptions can be all, grouped or summary"},
         {".certs.display.certificates.when.verbose.and.verifying",
                 "[-certs]                    display certificates when verbose and verifying"},
+        {".certs.revocation.check",
+                "[-revCheck]                 Enable certificate revocation check"},
         {".tsa.url.location.of.the.Timestamping.Authority",
                 "[-tsa <url>]                location of the Timestamping Authority"},
         {".tsacert.alias.public.key.certificate.for.Timestamping.Authority",
@@ -310,6 +312,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"Cannot.find.environment.variable.",
                 "Cannot find environment variable: "},
         {"Cannot.find.file.", "Cannot find file: "},
+        {"event.ocsp.check", "Contacting OCSP server at %s ..."},
+        {"event.crl.check", "Downloading CRL from %s ..."},
     };
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.security.auth.x500.X500Principal;
 import java.util.*;
 
 import sun.security.util.Debug;
+import sun.security.util.Event;
 import sun.security.validator.Validator;
 import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.*;
@@ -246,6 +247,8 @@ public class DistributionPointFetcher {
         if (debug != null) {
             debug.println("Trying to fetch CRL from DP " + uri);
         }
+
+        Event.report("event.crl.check", uri.toString());
         CertStore ucs = null;
         try {
             ucs = URICertStore.getInstance(new URICertStoreParameters(uri));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.Map;
 
 import sun.security.action.GetIntegerAction;
 import sun.security.util.Debug;
+import sun.security.util.Event;
 import sun.security.validator.Validator;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
@@ -232,6 +233,8 @@ public final class OCSP {
             if (debug != null) {
                 debug.println("connecting to OCSP service at: " + url);
             }
+
+            Event.report("event.ocsp.check", url.toString());
             HttpURLConnection con = (HttpURLConnection)url.openConnection();
             con.setConnectTimeout(CONNECT_TIMEOUT);
             con.setReadTimeout(CONNECT_TIMEOUT);
