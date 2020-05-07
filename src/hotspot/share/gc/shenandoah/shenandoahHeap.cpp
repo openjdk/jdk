@@ -1484,7 +1484,7 @@ public:
 
       // Remember limit for updating refs. It's guaranteed that we get no
       // from-space-refs written from here on.
-      r->set_update_watermark(r->top());
+      r->set_update_watermark_at_safepoint(r->top());
     } else {
       assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
