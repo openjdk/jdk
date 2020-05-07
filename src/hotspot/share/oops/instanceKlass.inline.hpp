@@ -26,6 +26,7 @@
 #define SHARE_OOPS_INSTANCEKLASS_INLINE_HPP
 
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
