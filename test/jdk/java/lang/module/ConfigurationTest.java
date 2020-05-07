@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2033,22 +2033,49 @@ public class ConfigurationTest {
         Configuration.empty().findModule(null);
     }
 
-    // immutable sets
+    // unmodifiable collections
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
-    public void testImmutableSet1() {
-        Configuration cf = ModuleLayer.boot().configuration();
-        ResolvedModule base = cf.findModule("java.base").get();
-        cf.modules().add(base);
+    @DataProvider(name = "configurations")
+    public Object[][] configurations() {
+        // empty, boot, and custom configurations
+        return new Object[][] {
+            { Configuration.empty(),              null },
+            { ModuleLayer.boot().configuration(), null },
+            { resolve(ModuleFinder.of()),         null },
+        };
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
-    public void testImmutableSet2() {
-        Configuration cf = ModuleLayer.boot().configuration();
-        ResolvedModule base = cf.findModule("java.base").get();
-        base.reads().add(base);
+    @Test(dataProvider = "configurations",
+            expectedExceptions = { UnsupportedOperationException.class })
+    public void testUnmodifiableParents1(Configuration cf, Object ignore) {
+        cf.parents().add(Configuration.empty());
     }
 
+    @Test(dataProvider = "configurations",
+            expectedExceptions = { UnsupportedOperationException.class })
+    public void testUnmodifiableParents2(Configuration cf, Object ignore) {
+        cf.parents().remove(Configuration.empty());
+    }
+
+    @Test(dataProvider = "configurations",
+            expectedExceptions = { UnsupportedOperationException.class })
+    public void testUnmodifiableModules1(Configuration cf, Object ignore) {
+        ResolvedModule module = ModuleLayer.boot()
+                .configuration()
+                .findModule("java.base")
+                .orElseThrow();
+        cf.modules().add(module);
+    }
+
+    @Test(dataProvider = "configurations",
+            expectedExceptions = { UnsupportedOperationException.class })
+    public void testUnmodifiableModules2(Configuration cf, Object ignore) {
+        ResolvedModule module = ModuleLayer.boot()
+                .configuration()
+                .findModule("java.base")
+                .orElseThrow();
+        cf.modules().remove(module);
+    }
 
     /**
      * Invokes parent.resolve(...)
