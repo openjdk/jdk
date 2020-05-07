@@ -351,6 +351,7 @@ public:
     _worker_phase(phase) {}
 
   void work(uint worker_id) {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahUpdateRefsClosure cl;
     _thread_roots.oops_do(&cl, NULL, worker_id);
   }
@@ -588,6 +589,7 @@ public:
     HandleMark hm;
     assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
     ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahCMDrainMarkingStackClosure complete_gc(worker_id, _terminator);
     if (heap->has_forwarded_objects()) {
       ShenandoahForwardedIsAliveClosure is_alive;
@@ -682,7 +684,11 @@ void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {
   ReferenceProcessorPhaseTimes pt(_heap->gc_timer(), rp->num_queues());
 
   {
-    ShenandoahGCPhase phase(phase_process);
+    // Note: Don't emit JFR event for this phase, to avoid overflow nesting phase level.
+    // Reference Processor emits 2 levels JFR event, that can get us over the JFR
+    // event nesting level limits, in case of degenerated GC gets upgraded to
+    // full GC.
+    ShenandoahTimingsTracker phase_timing(phase_process);
 
     if (_heap->has_forwarded_objects()) {
       ShenandoahCMKeepAliveUpdateClosure keep_alive(get_queue(serial_worker_id));

@@ -35,7 +35,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "utilities/debug.hpp"
 
-ShenandoahPhaseTimings::Phase ShenandoahGCPhase::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
+ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
 ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _heap(ShenandoahHeap::heap()),
@@ -85,7 +85,8 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_typ
   );
 }
 
-ShenandoahPausePhase::ShenandoahPausePhase(const char* title, bool log_heap_usage) :
+ShenandoahPausePhase::ShenandoahPausePhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
   _tracer(title, NULL, GCCause::_no_gc, log_heap_usage),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
   _timer->register_gc_pause_start(title);
@@ -95,7 +96,8 @@ ShenandoahPausePhase::~ShenandoahPausePhase() {
   _timer->register_gc_pause_end();
 }
 
-ShenandoahConcurrentPhase::ShenandoahConcurrentPhase(const char* title, bool log_heap_usage) :
+ShenandoahConcurrentPhase::ShenandoahConcurrentPhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
   _tracer(title, NULL, GCCause::_no_gc, log_heap_usage),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
   _timer->register_gc_concurrent_start(title);
@@ -105,7 +107,7 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
   _timer->register_gc_concurrent_end();
 }
 
-ShenandoahGCPhase::ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase) :
+ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase) :
   _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
   assert(!Thread::current()->is_Worker_thread() &&
               (Thread::current()->is_VM_thread() ||
@@ -116,22 +118,22 @@ ShenandoahGCPhase::ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase) :
   _start = os::elapsedTime();
 }
 
-ShenandoahGCPhase::~ShenandoahGCPhase() {
+ShenandoahTimingsTracker::~ShenandoahTimingsTracker() {
   _timings->record_phase_time(_phase, os::elapsedTime() - _start);
   _current_phase = _parent_phase;
 }
 
-bool ShenandoahGCPhase::is_current_phase_valid() {
+bool ShenandoahTimingsTracker::is_current_phase_valid() {
   return _current_phase < ShenandoahPhaseTimings::_num_phases;
 }
 
-ShenandoahGCSubPhase::ShenandoahGCSubPhase(ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahGCPhase(phase),
+ShenandoahGCPhase::ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase) :
+  ShenandoahTimingsTracker(phase),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
   _timer->register_gc_phase_start(ShenandoahPhaseTimings::phase_name(phase), Ticks::now());
 }
 
-ShenandoahGCSubPhase::~ShenandoahGCSubPhase() {
+ShenandoahGCPhase::~ShenandoahGCPhase() {
   _timer->register_gc_phase_end(Ticks::now());
 }
 
