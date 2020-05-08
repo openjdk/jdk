@@ -62,48 +62,52 @@ public class TestSystemPropertyPage extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index-all.html", true,
-                "<a href=\"system-properties.html\">System Properties</a>");
+                """
+                    <a href="system-properties.html">System Properties</a>""");
 
         checkOutput("system-properties.html", true,
-                "<div class=\"flex-box\">\n" +
-                "<header role=\"banner\" class=\"flex-header\">",
+                """
+                    <div class="flex-box">
+                    <header role="banner" class="flex-header">""",
 
-                "<div class=\"flex-content\">\n" +
-                "<main role=\"main\">\n" +
-                "<div class=\"header\">\n" +
-                "<h1>System Properties</h1>\n" +
-                "</div>",
+                """
+                    <div class="flex-content">
+                    <main role="main">
+                    <div class="header">
+                    <h1>System Properties</h1>
+                    </div>""",
 
-                "<table class=\"summary-table\">\n" +
-                "<caption><span>System Properties Summary</span></caption>\n" +
-                "<thead>\n" +
-                "<tr>\n" +
-                "<th class=\"col-first\" scope=\"col\">Property</th>\n" +
-                "<th class=\"col-last\" scope=\"col\">Referenced In</th>\n" +
-                "</tr>\n" +
-                "</thead>\n" +
-                "<tbody>\n" +
-                "<tr class=\"alt-color\">\n" +
-                "<th class=\"col-first\" scope=\"row\">user.address</th>\n" +
-                "<td class=\"col-last\">\n" +
-                "<div class=\"block\">" +
-                        "<code><a href=\"pkg2/B.html#user.address\">class pkg2.B</a></code>" +
-                        ", <a href=\"pkg1/doc-files/WithTitle.html#user.address\"><code>package pkg1: </code>Example Title</a></div>\n" +
-                "</td>\n" +
-                "</tr>\n" +
-                "<tr class=\"row-color\">\n" +
-                "<th class=\"col-first\" scope=\"row\">user.name</th>\n" +
-                "<td class=\"col-last\">\n" +
-                "<div class=\"block\">" +
-                        "<a href=\"index.html#user.name\">Overview</a>" +
-                        ", <code><a href=\"pkg1/A.html#user.name\">class pkg1.A</a></code>" +
-                        ", <a href=\"pkg1/doc-files/WithEmptyTitle.html#user.name\"><code>package pkg1: </code>WithEmptyTitle.html</a>" +
-                        ", <a href=\"pkg1/doc-files/WithTitle.html#user.name\"><code>package pkg1: </code>Example Title</a>" +
-                        ", <a href=\"pkg1/doc-files/WithoutTitle.html#user.name\"><code>package pkg1: </code>WithoutTitle.html</a></div>\n" +
-                "</td>\n" +
-                "</tr>\n" +
-                "</tbody>\n" +
-                "</table>");
+                """
+                    <table class="summary-table">
+                    <caption><span>System Properties Summary</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Property</th>
+                    <th class="col-last" scope="col">Referenced In</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row">user.address</th>
+                    <td class="col-last">
+                    <div class="block"><code><a href="pkg2/B.html#user.address">class pkg2.B</a></co\
+                    de>, <a href="pkg1/doc-files/WithTitle.html#user.address"><code>package pkg1: </\
+                    code>Example Title</a></div>
+                    </td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-first" scope="row">user.name</th>
+                    <td class="col-last">
+                    <div class="block"><a href="index.html#user.name">Overview</a>, <code><a href="p\
+                    kg1/A.html#user.name">class pkg1.A</a></code>, <a href="pkg1/doc-files/WithEmpty\
+                    Title.html#user.name"><code>package pkg1: </code>WithEmptyTitle.html</a>, <a hre\
+                    f="pkg1/doc-files/WithTitle.html#user.name"><code>package pkg1: </code>Example T\
+                    itle</a>, <a href="pkg1/doc-files/WithoutTitle.html#user.name"><code>package pkg\
+                    1: </code>WithoutTitle.html</a></div>
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>""");
     }
 
     /*
@@ -122,7 +126,8 @@ public class TestSystemPropertyPage extends JavadocTester {
         checkFiles(false, "system-properties.html");
 
         // Should be conditional on presence of the index file(s)
-        checkOutput("index-all.html", false, "<a href=\"system-properties.html\">");
+        checkOutput("index-all.html", false, """
+            <a href="system-properties.html">""");
         checkOutput("index-all.html", false, "System Properties");
     }
 }

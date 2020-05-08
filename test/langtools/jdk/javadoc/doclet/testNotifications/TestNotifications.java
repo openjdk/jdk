@@ -50,7 +50,8 @@ public class TestNotifications extends JavadocTester {
         javadoc("-d", outDir, "-sourcepath", testSrc, "pkg");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                "Creating destination directory: \"" + outDir);
+                """
+                    Creating destination directory: \"""" + outDir);
 
         // No need to notify that the destination must be created because
         // it already exists.
@@ -58,7 +59,8 @@ public class TestNotifications extends JavadocTester {
         javadoc("-d", outDir, "-sourcepath", testSrc, "pkg");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, false,
-                "Creating destination directory: \"" + outDir);
+                """
+                    Creating destination directory: \"""" + outDir);
     }
 
     @Test

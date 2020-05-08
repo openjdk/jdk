@@ -57,8 +57,7 @@ public class HandshakeTransitionTest {
             useJVMCICompilerStr = "-XX:+UnlockExperimentalVMOptions";
         }
         ProcessBuilder pb =
-            ProcessTools.createJavaProcessBuilder(
-                    true,
+            ProcessTools.createTestJvm(
                     "-Djava.library.path=" + lib,
                     "-XX:+SafepointALot",
                     "-XX:+HandshakeALot",

@@ -71,8 +71,9 @@ public class RemoveOldDoclet extends JavadocTester {
 
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
-                "javadoc: error - Class " + Doclet_CLASS_NAME + " is not a valid doclet.\n"
-                        + "Note: As of JDK 13, the com.sun.javadoc API is no longer supported.");
+                "javadoc: error - Class " + Doclet_CLASS_NAME + """
+                     is not a valid doclet.
+                    Note: As of JDK 13, the com.sun.javadoc API is no longer supported.""");
     }
 
     static class TestDoclet {

@@ -1520,14 +1520,6 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     if (DumpPrivateMappingsInCore) {
       ClassLoader::close_jrt_image();
     }
-#ifndef PRODUCT
-    fdStream out(defaultStream::output_fd());
-    out.print_raw("Current thread is ");
-    char buf[16];
-    jio_snprintf(buf, sizeof(buf), UINTX_FORMAT, os::current_thread_id());
-    out.print_raw_cr(buf);
-    out.print_raw_cr("Dumping core ...");
-#endif
     ::abort(); // dump core
   }
 
@@ -2060,7 +2052,7 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
 }
 
 static void _print_ascii_file_h(const char* header, const char* filename, outputStream* st) {
-  st->print("%s", header);
+  st->print_cr("%s:", header);
   if (!_print_ascii_file(filename, st)) {
     st->print_cr("<Not Available>");
   }
@@ -2291,39 +2283,24 @@ void os::Linux::print_libversion_info(outputStream* st) {
 
 void os::Linux::print_proc_sys_info(outputStream* st) {
   st->cr();
-  st->print_cr("/proc/sys/kernel/threads-max (system-wide limit on the number of threads):");
-  _print_ascii_file("/proc/sys/kernel/threads-max", st);
-  st->cr();
-  st->cr();
-
-  st->print_cr("/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have):");
-  _print_ascii_file("/proc/sys/vm/max_map_count", st);
-  st->cr();
-  st->cr();
-
-  st->print_cr("/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers):");
-  _print_ascii_file("/proc/sys/kernel/pid_max", st);
-  st->cr();
-  st->cr();
+  _print_ascii_file_h("/proc/sys/kernel/threads-max (system-wide limit on the number of threads)",
+                      "/proc/sys/kernel/threads-max", st);
+  _print_ascii_file_h("/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have)",
+                      "/proc/sys/vm/max_map_count", st);
+  _print_ascii_file_h("/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers)",
+                      "/proc/sys/kernel/pid_max", st);
 }
 
 void os::Linux::print_full_memory_info(outputStream* st) {
-  st->print("\n/proc/meminfo:\n");
-  _print_ascii_file("/proc/meminfo", st);
+  _print_ascii_file_h("\n/proc/meminfo", "/proc/meminfo", st);
   st->cr();
 
   // some information regarding THPs; for details see
   // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
-  st->print_cr("/sys/kernel/mm/transparent_hugepage/enabled:");
-  if (!_print_ascii_file("/sys/kernel/mm/transparent_hugepage/enabled", st)) {
-    st->print_cr("  <Not Available>");
-  }
-  st->cr();
-  st->print_cr("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter):");
-  if (!_print_ascii_file("/sys/kernel/mm/transparent_hugepage/defrag", st)) {
-    st->print_cr("  <Not Available>");
-  }
-  st->cr();
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
+                      "/sys/kernel/mm/transparent_hugepage/enabled", st);
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter)",
+                      "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
 
 void os::Linux::print_ld_preload_file(outputStream* st) {
@@ -2510,8 +2487,8 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
 
 // additional information about CPU e.g. available frequency ranges
 static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  _print_ascii_file_h("Online cpus:", "/sys/devices/system/cpu/online", st);
-  _print_ascii_file_h("Offline cpus:", "/sys/devices/system/cpu/offline", st);
+  _print_ascii_file_h("Online cpus", "/sys/devices/system/cpu/online", st);
+  _print_ascii_file_h("Offline cpus", "/sys/devices/system/cpu/offline", st);
 
   if (ExtensiveErrorReports) {
     // cache related info (cpu 0, should be similar for other CPUs)
@@ -2525,44 +2502,41 @@ static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t bufle
       snprintf(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
       snprintf(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
       if (file_exists(hbuf_level)) {
-        _print_ascii_file_h("cache level:", hbuf_level, st);
-        _print_ascii_file_h("cache type:", hbuf_type, st);
-        _print_ascii_file_h("cache size:", hbuf_size, st);
-        _print_ascii_file_h("cache coherency line size:", hbuf_coherency_line_size, st);
+        _print_ascii_file_h("cache level", hbuf_level, st);
+        _print_ascii_file_h("cache type", hbuf_type, st);
+        _print_ascii_file_h("cache size", hbuf_size, st);
+        _print_ascii_file_h("cache coherency line size", hbuf_coherency_line_size, st);
       }
     }
   }
 
   // we miss the cpufreq entries on Power and s390x
 #if defined(IA32) || defined(AMD64)
-  _print_ascii_file_h("BIOS frequency limitation:", "/sys/devices/system/cpu/cpu0/cpufreq/bios_limit", st);
-  _print_ascii_file_h("Frequency switch latency (ns):", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_transition_latency", st);
-  _print_ascii_file_h("Available cpu frequencies:", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", st);
+  _print_ascii_file_h("BIOS frequency limitation", "/sys/devices/system/cpu/cpu0/cpufreq/bios_limit", st);
+  _print_ascii_file_h("Frequency switch latency (ns)", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_transition_latency", st);
+  _print_ascii_file_h("Available cpu frequencies", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", st);
   // min and max should be in the Available range but still print them (not all info might be available for all kernels)
   if (ExtensiveErrorReports) {
-    _print_ascii_file_h("Maximum cpu frequency:", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", st);
-    _print_ascii_file_h("Minimum cpu frequency:", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq", st);
-    _print_ascii_file_h("Current cpu frequency:", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", st);
+    _print_ascii_file_h("Maximum cpu frequency", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", st);
+    _print_ascii_file_h("Minimum cpu frequency", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq", st);
+    _print_ascii_file_h("Current cpu frequency", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", st);
   }
   // governors are power schemes, see https://wiki.archlinux.org/index.php/CPU_frequency_scaling
   if (ExtensiveErrorReports) {
-    _print_ascii_file_h("Available governors:", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors", st);
+    _print_ascii_file_h("Available governors", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors", st);
   }
-  _print_ascii_file_h("Current governor:", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", st);
+  _print_ascii_file_h("Current governor", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", st);
   // Core performance boost, see https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
   // Raise operating frequency of some cores in a multi-core package if certain conditions apply, e.g.
   // whole chip is not fully utilized
-  _print_ascii_file_h("Core performance/turbo boost:", "/sys/devices/system/cpu/cpufreq/boost", st);
+  _print_ascii_file_h("Core performance/turbo boost", "/sys/devices/system/cpu/cpufreq/boost", st);
 #endif
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Only print the model name if the platform provides this as a summary
   if (!print_model_name_and_flags(st, buf, buflen)) {
-    st->print("\n/proc/cpuinfo:\n");
-    if (!_print_ascii_file("/proc/cpuinfo", st)) {
-      st->print_cr("  <Not Available>");
-    }
+    _print_ascii_file_h("\n/proc/cpuinfo", "/proc/cpuinfo", st);
   }
   print_sys_devices_cpu_info(st, buf, buflen);
 }
@@ -5175,7 +5149,8 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    UseNUMA = false;
+    FLAG_SET_ERGO(UseNUMA, false);
+    FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
   } else {
     if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node()) {
       // If there's only one node (they start from 0) or if the process
@@ -5206,6 +5181,11 @@ void os::Linux::numa_init() {
         }
       }
     }
+  }
+
+  // When NUMA requested, not-NUMA-aware allocations default to interleaving.
+  if (UseNUMA && !UseNUMAInterleaving) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
 
   if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
@@ -5272,7 +5252,7 @@ jint os::init_2(void) {
   log_info(os)("HotSpot is running with %s, %s",
                Linux::glibc_version(), Linux::libpthread_version());
 
-  if (UseNUMA) {
+  if (UseNUMA || UseNUMAInterleaving) {
     Linux::numa_init();
   }
 

@@ -52,37 +52,52 @@ public class TestClassLinks extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C1.html", true,
-                "<code><a href=\"C2.html\" title=\"class in p\">C2</a></code>",
-                "<code><span class=\"member-name-link\"><a href=\"#%3Cinit%3E()\">C1</a></span>()</code>");
+                """
+                    <code><a href="C2.html" title="class in p">C2</a></code>""",
+                """
+                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">C1</a></span>()</code>""");
 
         checkOutput("p/C2.html", true,
-                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><span class=\"member-name-link\"><a href=\"#%3Cinit%3E()\">C2</a></span>()</code>");
+                """
+                    <code><a href="C3.html" title="class in p">C3</a></code>""",
+                """
+                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">C2</a></span>()</code>""");
 
         checkOutput("p/C3.html", true,
-                "<code><a href=\"I1.html\" title=\"interface in p\">I1</a></code>, "
-                + "<code><a href=\"I12.html\" title=\"interface in p\">I12</a></code>, "
-                + "<code><a href=\"I2.html\" title=\"interface in p\">I2</a></code>, "
-                + "<code><a href=\"IT1.html\" title=\"interface in p\">IT1</a>&lt;T&gt;</code>, "
-                + "<code><a href=\"IT2.html\" title=\"interface in p\">IT2</a>&lt;java.lang.String&gt;</code>",
-                "<code><span class=\"member-name-link\"><a href=\"#%3Cinit%3E()\">C3</a></span>()</code>");
+                """
+                    <code><a href="I1.html" title="interface in p">I1</a></code>, <code><a href="I12\
+                    .html" title="interface in p">I12</a></code>, <code><a href="I2.html" title="int\
+                    erface in p">I2</a></code>, <code><a href="IT1.html" title="interface in p">IT1<\
+                    /a>&lt;T&gt;</code>, <code><a href="IT2.html" title="interface in p">IT2</a>&lt;\
+                    java.lang.String&gt;</code>""",
+                """
+                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">C3</a></span>()</code>""");
 
         checkOutput("p/I1.html", true,
-                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><a href=\"I12.html\" title=\"interface in p\">I12</a></code>");
+                """
+                    <code><a href="C3.html" title="class in p">C3</a></code>""",
+                """
+                    <code><a href="I12.html" title="interface in p">I12</a></code>""");
 
         checkOutput("p/I2.html", true,
-                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><a href=\"I12.html\" title=\"interface in p\">I12</a></code>");
+                """
+                    <code><a href="C3.html" title="class in p">C3</a></code>""",
+                """
+                    <code><a href="I12.html" title="interface in p">I12</a></code>""");
 
         checkOutput("p/I12.html", true,
-                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><a href=\"I1.html\" title=\"interface in p\">I1</a></code>, <code><a href=\"I2.html\" title=\"interface in p\">I2</a></code>");
+                """
+                    <code><a href="C3.html" title="class in p">C3</a></code>""",
+                """
+                    <code><a href="I1.html" title="interface in p">I1</a></code>, <code><a href="I2.\
+                    html" title="interface in p">I2</a></code>""");
 
         checkOutput("p/IT1.html", true,
-                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>");
+                """
+                    <code><a href="C3.html" title="class in p">C3</a></code>""");
 
         checkOutput("p/IT2.html", true,
-                "code><a href=\"C3.html\" title=\"class in p\">C3</a></code>");
+                """
+                    code><a href="C3.html" title="class in p">C3</a></code>""");
     }
 }

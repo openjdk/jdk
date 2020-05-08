@@ -63,7 +63,7 @@ public final class TestProcess implements AutoCloseable {
                 "-XX:StartFlightRecording:settings=none",
                 TestProcess.class.getName(), path.toString()
             };
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, args);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         process = ProcessTools.startProcess(name, pb);
     }
 

@@ -51,13 +51,15 @@ public class TestParamTaglet extends JavadocTester {
 
         checkOutput("pkg/C.html", true,
                 //Regular param tags.
-                "<dt>Parameters:</dt>\n"
-                + "<dd><code>param1</code> - testing 1 2 3.</dd>\n"
-                + "<dd><code>param2</code> - testing 1 2 3.",
+                """
+                    <dt>Parameters:</dt>
+                    <dd><code>param1</code> - testing 1 2 3.</dd>
+                    <dd><code>param2</code> - testing 1 2 3.""",
                 //Param tags that don't match with any real parameters.
-                "<dt>Parameters:</dt>\n"
-                + "<dd><code>p1</code> - testing 1 2 3.</dd>\n"
-                + "<dd><code>p2</code> - testing 1 2 3.",
+                """
+                    <dt>Parameters:</dt>
+                    <dd><code>p1</code> - testing 1 2 3.</dd>
+                    <dd><code>p2</code> - testing 1 2 3.""",
                 //{@inherit} doc misuse does not cause doclet to throw exception.
                 // Param is printed with nothing inherited.
                 //XXX: in the future when Configuration is available during doc inheritence,

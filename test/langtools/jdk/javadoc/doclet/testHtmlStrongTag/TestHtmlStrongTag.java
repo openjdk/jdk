@@ -48,7 +48,9 @@ public class TestHtmlStrongTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/C1.html", true,
-            "<dl class=\"notes\">\n<dt>See Also:</dt>");
+            """
+                <dl class="notes">
+                <dt>See Also:</dt>""");
 
         checkOutput("pkg1/C1.html", false,
             "<STRONG>Method Summary</STRONG>",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,15 @@ package java.lang;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.VM;
 
+import java.lang.constant.Constable;
+import java.lang.constant.DynamicConstantDesc;
+import java.util.Optional;
+
+import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.CD_short;
+import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
+
 /**
  * The {@code Short} class wraps a value of primitive type {@code
  * short} in an object.  An object of type {@code Short} contains a
@@ -43,7 +52,7 @@ import jdk.internal.misc.VM;
  * @see     java.lang.Number
  * @since   1.1
  */
-public final class Short extends Number implements Comparable<Short> {
+public final class Short extends Number implements Comparable<Short>, Constable {
 
     /**
      * A constant holding the minimum value a {@code short} can
@@ -201,6 +210,18 @@ public final class Short extends Number implements Comparable<Short> {
      */
     public static Short valueOf(String s) throws NumberFormatException {
         return valueOf(s, 10);
+    }
+
+    /**
+     * Returns an {@link Optional} containing the nominal descriptor for this
+     * instance.
+     *
+     * @return an {@link Optional} describing the {@linkplain Short} instance
+     * @since 15
+     */
+    @Override
+    public Optional<DynamicConstantDesc<Short>> describeConstable() {
+        return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_short, intValue()));
     }
 
     private static class ShortCache {

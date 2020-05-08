@@ -1147,14 +1147,6 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
-#ifndef PRODUCT
-    fdStream out(defaultStream::output_fd());
-    out.print_raw("Current thread is ");
-    char buf[16];
-    jio_snprintf(buf, sizeof(buf), UINTX_FORMAT, os::current_thread_id());
-    out.print_raw_cr(buf);
-    out.print_raw_cr("Dumping core ...");
-#endif
     ::abort(); // dump core (for debugging)
   }
 
@@ -3916,7 +3908,7 @@ jint os::init_2(void) {
 
   if (UseNUMA) {
     if (!Solaris::liblgrp_init()) {
-      UseNUMA = false;
+      FLAG_SET_ERGO(UseNUMA, false);
     } else {
       size_t lgrp_limit = os::numa_get_groups_num();
       int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtInternal);
@@ -3928,6 +3920,11 @@ jint os::init_2(void) {
         UseNUMA = ForceNUMA;
       }
     }
+  }
+
+  // When NUMA requested, not-NUMA-aware allocations default to interleaving.
+  if (UseNUMA && !UseNUMAInterleaving) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
 
   Solaris::signal_sets_init();

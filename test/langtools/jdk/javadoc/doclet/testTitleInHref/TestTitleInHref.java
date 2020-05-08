@@ -52,12 +52,14 @@ public class TestTitleInHref extends JavadocTester {
 
         checkOutput("pkg/Links.html", true,
                 //Test to make sure that the title shows up in a class link.
-                "<a href=\"Class.html\" title=\"class in pkg\">",
+                """
+                    <a href="Class.html" title="class in pkg">""",
                 //Test to make sure that the title shows up in an interface link.
-                "<a href=\"Interface.html\" title=\"interface in pkg\">",
+                """
+                    <a href="Interface.html" title="interface in pkg">""",
                 //Test to make sure that the title shows up in cross link shows up
-                "<a href=\"" + uri + "/java/io/File.html\" "
-                + "title=\"class or interface in java.io\" class=\"external-link\">"
-                + "<code>This is a cross link to class File</code></a>");
+                "<a href=\"" + uri + """
+                    /java/io/File.html" title="class or interface in java.io" class="external-link">\
+                    <code>This is a cross link to class File</code></a>""");
     }
 }

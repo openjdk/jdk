@@ -82,7 +82,7 @@ public class PrivateTransportTest {
         String libName = transportLib.getFileName().toString().replace("dt_socket", "private_dt_socket");
         Files.copy(transportLib, Paths.get(Utils.TEST_CLASSES).resolve(libName));
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-agentlib:jdwp=transport=private_dt_socket,server=y,suspend=n",
                 "-classpath", Utils.TEST_CLASSES,
                 "HelloWorld");

@@ -51,11 +51,13 @@ public class TestAuthor extends JavadocTester {
     TestAuthor() throws Exception {
         src = Files.createDirectories(Paths.get("src"));
         tb.writeJavaFiles(src,
-                  "package pkg;\n"
-                + "/** Introduction. \n"
-                + " * @author anonymous\n"
-                + " */\n"
-                + "public class Test { }\n");
+                  """
+                      package pkg;
+                      /** Introduction.\s
+                       * @author anonymous
+                       */
+                      public class Test { }
+                      """);
     }
 
     @Test
@@ -81,9 +83,10 @@ public class TestAuthor extends JavadocTester {
 
     void checkAuthor(boolean on) {
         checkOutput("pkg/Test.html", on,
-                "<dl class=\"notes\">\n"
-                + "<dt>Author:</dt>\n"
-                + "<dd>anonymous</dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>anonymous</dd>
+                    </dl>""");
     }
 }

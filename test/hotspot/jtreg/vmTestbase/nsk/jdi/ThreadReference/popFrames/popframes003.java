@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,20 +82,7 @@ import java.io.*;
  * If no the event, the test FAILED.                                    <BR>
  */
 
-public class popframes003 {
-
-    //----------------------------------------------------- templete section
-    static final int PASSED = 0;
-    static final int FAILED = 2;
-    static final int PASS_BASE = 95;
-
-    //----------------------------------------------------- templete parameters
-    static final String
-    sHeader1 = "\n==> nsk/jdi/ThreadReference/popFrames/popframes003 ",
-    sHeader2 = "--> debugger: ",
-    sHeader3 = "##> debugger: ";
-
-    //----------------------------------------------------- main method
+public class popframes003 extends JDIBase {
 
     public static void main (String argv[]) {
 
@@ -114,51 +101,18 @@ public class popframes003 {
         return testExitCode;
     }
 
-    //--------------------------------------------------   log procedures
-
-    private static Log  logHandler;
-
-    private static void log1(String message) {
-        logHandler.display(sHeader1 + message);
-    }
-    private static void log2(String message) {
-        logHandler.display(sHeader2 + message);
-    }
-    private static void log3(String message) {
-        logHandler.complain(sHeader3 + message);
-    }
-
     //  ************************************************    test parameters
 
     private String debuggeeName =
         "nsk.jdi.ThreadReference.popFrames.popframes003a";
 
     //====================================================== test program
-    //------------------------------------------------------ common section
-
-    static Debugee          debuggee;
-    static ArgumentHandler  argsHandler;
-
-    static int waitTime;
-
-    static VirtualMachine      vm            = null;
-    static EventRequestManager eventRManager = null;
-    static EventQueue          eventQueue    = null;
-    static EventSet            eventSet      = null;
-    static EventIterator       eventIterator = null;
-
-    static ReferenceType       debuggeeClass = null;
-
-    static int  testExitCode = PASSED;
 
     BreakpointRequest  bpRequest;
     MethodEntryRequest meRequest;
 
     BreakpointRequest  bpRequest2;
     MethodEntryRequest meRequest3;
-
-
-    //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
 
@@ -472,69 +426,6 @@ public class popframes003 {
         return;
     }
 
-  /*
-    * private BreakpointRequest settingBreakpoint(ThreadReference, ReferenceType,
-    *                                             String, String, String)
-    *
-    * It sets up a breakpoint at given line number within a given method in a given class
-    * for a given thread.
-    *
-    * Return value: BreakpointRequest object  in case of success
-    *
-    * JDITestRuntimeException   in case of an Exception thrown within the method
-    */
-
-    private BreakpointRequest settingBreakpoint ( ThreadReference thread,
-                                                  ReferenceType testedClass,
-                                                  String methodName,
-                                                  String bpLine,
-                                                  String property)
-            throws JDITestRuntimeException {
-
-        log2("......setting up a breakpoint:");
-        log2("       thread: " + thread + "; class: " + testedClass +
-                        "; method: " + methodName + "; line: " + bpLine);
-
-        List              alllineLocations = null;
-        Location          lineLocation     = null;
-        BreakpointRequest breakpRequest    = null;
-
-        try {
-            Method  method  = (Method) testedClass.methodsByName(methodName).get(0);
-
-            alllineLocations = method.allLineLocations();
-
-            int n =
-                ( (IntegerValue) testedClass.getValue(testedClass.fieldByName(bpLine) ) ).value();
-            if (n > alllineLocations.size()) {
-                log3("ERROR:  TEST_ERROR_IN_settingBreakpoint(): number is out of bound of method's lines");
-            } else {
-                lineLocation = (Location) alllineLocations.get(n);
-                try {
-                    breakpRequest = eventRManager.createBreakpointRequest(lineLocation);
-                    breakpRequest.putProperty("number", property);
-                    breakpRequest.addThreadFilter(thread);
-                    breakpRequest.setSuspendPolicy( EventRequest.SUSPEND_EVENT_THREAD);
-                } catch ( Exception e1 ) {
-                    log3("ERROR: inner Exception within settingBreakpoint() : " + e1);
-                    breakpRequest    = null;
-                }
-            }
-        } catch ( Exception e2 ) {
-            log3("ERROR: ATTENTION:  outer Exception within settingBreakpoint() : " + e2);
-            breakpRequest    = null;
-        }
-
-        if (breakpRequest == null) {
-            log2("      A BREAKPOINT HAS NOT BEEN SET UP");
-            throw new JDITestRuntimeException("**FAILURE to set up a breakpoint**");
-        }
-
-        log2("      a breakpoint has been set up");
-        return breakpRequest;
-    }
-
-
    /*
     * private MethodEntryRequest settingMethodEntryRequest(ThreadReference, ReferenceType,
     *                                             String)
@@ -575,46 +466,5 @@ public class popframes003 {
         return methodEntryRequest;
     }
 
-
-    private void getEventSet()
-                 throws JDITestRuntimeException {
-        try {
-//            log2("       eventSet = eventQueue.remove(waitTime);");
-            eventSet = eventQueue.remove(waitTime);
-            if (eventSet == null) {
-                throw new JDITestRuntimeException("** TIMEOUT while waiting for event **");
-            }
-//            log2("       eventIterator = eventSet.eventIterator;");
-            eventIterator = eventSet.eventIterator();
-        } catch ( Exception e ) {
-            throw new JDITestRuntimeException("** EXCEPTION while waiting for event ** : " + e);
-        }
-    }
-
-
-    private void eventForCommunication()
-                 throws JDITestRuntimeException {
-
-        log2("eventForCommunication");
-        getEventSet();
-
-        if (eventIterator.nextEvent() instanceof MethodEntryEvent)
-            return;
-
-        throw new JDITestRuntimeException("** event IS NOT a MethodEntryEvent **");
-    }
-
-
-    private void breakpointForCommunication()
-                 throws JDITestRuntimeException {
-
-        log2("breakpointForCommunication");
-        getEventSet();
-
-        if (eventIterator.nextEvent() instanceof BreakpointEvent)
-            return;
-
-        throw new JDITestRuntimeException("** event IS NOT a breakpoint **");
-    }
 
 }

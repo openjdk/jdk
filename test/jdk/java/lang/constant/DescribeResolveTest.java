@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,38 @@
  * questions.
  */
 
-/* @test
-   @bug 4173717
-   @summary Make sure that passing 0 in setReceiveBufferSize will throw
-   IllegalArgumentException
-   */
-import java.net.*;
+/*
+ * @test
+ * @run testng DescribeResolveTest
+ */
 
-public class SetReceiveBufferSize {
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
-    public static void main(String args[]) throws Exception {
-        boolean error = true;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.invoke.MethodHandles;
 
-        try (DatagramSocket soc = new DatagramSocket()) {
-            soc.setReceiveBufferSize(0);
-        } catch (IllegalArgumentException e) {
-            error = false;
-        }
+import static org.testng.Assert.assertEquals;
 
-        if (error) {
-            throw new RuntimeException("Test with 0 buffer size failed!");
-        }
+public class DescribeResolveTest {
+
+    @DataProvider
+    public static Object[][] constables() {
+        return new Object[][]{
+            { true },
+            { false },
+            { (short) 10 },
+            { (byte) 10 },
+            { (char) 10 },
+        };
     }
+
+    @Test(dataProvider = "constables")
+    public void testDescribeResolve(Constable constable) throws ReflectiveOperationException {
+        ConstantDesc desc = constable.describeConstable().orElseThrow();
+        Object resolved = desc.resolveConstantDesc(MethodHandles.lookup());
+        assertEquals(constable, resolved);
+    }
+
 }

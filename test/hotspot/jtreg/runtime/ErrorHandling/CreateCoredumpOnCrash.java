@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,16 @@ public class CreateCoredumpOnCrash {
     }
 
     public static void main(String[] args) throws Exception {
-        runTest("-XX:-CreateCoredumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped");
+        runTest("-XX:-CreateCoredumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped")
+                                             .shouldNotHaveExitValue(0);
 
         if (Platform.isWindows()) {
             // The old CreateMinidumpOnCrash option should still work
-            runTest("-XX:-CreateMinidumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped");
+            runTest("-XX:-CreateMinidumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped")
+                                                 .shouldNotHaveExitValue(0);
         } else {
-            runTest("-XX:+CreateCoredumpOnCrash").shouldNotContain("CreateCoredumpOnCrash turned off, no core file dumped");
+            runTest("-XX:+CreateCoredumpOnCrash").shouldNotContain("CreateCoredumpOnCrash turned off, no core file dumped")
+                                                 .shouldNotHaveExitValue(0);
         }
 
     }

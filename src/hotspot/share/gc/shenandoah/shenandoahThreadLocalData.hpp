@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,12 @@ private:
     _gclab(NULL),
     _gclab_size(0),
     _worker_id(INVALID_WORKER_ID),
-    _force_satb_flush(false) {
+    _force_satb_flush(false),
+    _disarmed_value(ShenandoahCodeRoots::disarmed_value()) {
+
+    // At least on x86_64, nmethod entry barrier encodes _disarmed_value offset
+    // in instruction as disp8 immed
+    assert(in_bytes(disarmed_value_offset()) < 128, "Offset range check");
   }
 
   ~ShenandoahThreadLocalData() {
@@ -128,7 +133,6 @@ public:
     assert(data(thread)->_gclab == NULL, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
-    data(thread)->_disarmed_value = ShenandoahCodeRoots::disarmed_value();
   }
 
   static PLAB* gclab(Thread* thread) {

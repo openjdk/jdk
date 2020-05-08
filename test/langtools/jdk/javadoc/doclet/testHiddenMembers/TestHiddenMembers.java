@@ -60,6 +60,7 @@ public class TestHiddenMembers extends JavadocTester {
         // (declared as private).
         // TODO: check normal case of generated tags: upper case of lower case
         checkOutput("pkg/SubClass.html", false,
-            "inherited from class pkg.<A HREF=\"../pkg/BaseClass.html\">BaseClass</A>");
+            """
+                inherited from class pkg.<A HREF="../pkg/BaseClass.html">BaseClass</A>""");
     }
 }

@@ -50,28 +50,35 @@ public class TestIndexInPackageFiles extends JavadocTester {
     public void test() throws IOException {
         Path src = Path.of("src");
         tb.writeJavaFiles(src,
-              "/**\n"
-            + " * Summary.\n"
-            + " * {@index test.name.1 additional info}\n"
-            + " * {@systemProperty test.property.1}\n"
-            + " */\n"
-            + "package p.q;",
-              "package p.q;\n"
-            + "/** This is a class in p.q. */\n"
-            + "public class C { }\n");
+              """
+                  /**
+                   * Summary.
+                   * {@index test.name.1 additional info}
+                   * {@systemProperty test.property.1}
+                   */
+                  package p.q;""",
+              """
+                  package p.q;
+                  /** This is a class in p.q. */
+                  public class C { }
+                  """);
 
         tb.writeFile(src.resolve("p/q/doc-files/extra.html"),
-            "<html><head><title>Extra</title></head><body>\n"
-            + "<h1>Extra</h1>\n"
-            + "{@index test.name.2 additional info}\n"
-            + "{@systemProperty test.property.2}\n"
-            + "</body></html>\n");
+            """
+                <html><head><title>Extra</title></head><body>
+                <h1>Extra</h1>
+                {@index test.name.2 additional info}
+                {@systemProperty test.property.2}
+                </body></html>
+                """);
 
         tb.writeFile("overview.html",
-            "<html><head><title>Overview</title></head><body>\n"
-            + "<h1>Overview</h1>\n"
-            + "{@index test.name.3 additional info}\n"
-            + "</body></html>\n");
+            """
+                <html><head><title>Overview</title></head><body>
+                <h1>Overview</h1>
+                {@index test.name.3 additional info}
+                </body></html>
+                """);
 
 
         javadoc("-d", "out",
@@ -88,22 +95,32 @@ public class TestIndexInPackageFiles extends JavadocTester {
         // to match the A-Z index files checked here.
 
         checkOutput("p/q/package-summary.html", true,
-            "<span id=\"test.name.1\" class=\"search-tag-result\">test.name.1</span>",
-            "<span id=\"test.property.1\" class=\"search-tag-result\">test.property.1</span>");
+            """
+                <span id="test.name.1" class="search-tag-result">test.name.1</span>""",
+            """
+                <span id="test.property.1" class="search-tag-result">test.property.1</span>""");
 
         checkOutput("p/q/doc-files/extra.html", true,
-            "<span id=\"test.name.2\" class=\"search-tag-result\">test.name.2</span>",
-            "<span id=\"test.property.2\" class=\"search-tag-result\">test.property.2</span>");
+            """
+                <span id="test.name.2" class="search-tag-result">test.name.2</span>""",
+            """
+                <span id="test.property.2" class="search-tag-result">test.property.2</span>""");
 
         checkOutput("index.html", true,
-            "<span id=\"test.name.3\" class=\"search-tag-result\">test.name.3</span>");
+            """
+                <span id="test.name.3" class="search-tag-result">test.name.3</span>""");
 
         checkOutput("index-all.html", true,
-            "<span class=\"search-tag-link\"><a href=\"p/q/package-summary.html#test.name.1\">test.name.1</a></span>",
-            "<span class=\"search-tag-link\"><a href=\"p/q/doc-files/extra.html#test.name.2\">test.name.2</a></span>",
-            "<span class=\"search-tag-link\"><a href=\"index.html#test.name.3\">test.name.3</a></span> - Search tag in Overview</dt>",
-            "<span class=\"search-tag-link\"><a href=\"p/q/package-summary.html#test.property.1\">test.property.1</a></span>",
-            "<span class=\"search-tag-link\"><a href=\"p/q/doc-files/extra.html#test.property.2\">test.property.2</a></span>");
+            """
+                <span class="search-tag-link"><a href="p/q/package-summary.html#test.name.1">test.name.1</a></span>""",
+            """
+                <span class="search-tag-link"><a href="p/q/doc-files/extra.html#test.name.2">test.name.2</a></span>""",
+            """
+                <span class="search-tag-link"><a href="index.html#test.name.3">test.name.3</a></span> - Search tag in Overview</dt>""",
+            """
+                <span class="search-tag-link"><a href="p/q/package-summary.html#test.property.1">test.property.1</a></span>""",
+            """
+                <span class="search-tag-link"><a href="p/q/doc-files/extra.html#test.property.2">test.property.2</a></span>""");
     }
 }
 

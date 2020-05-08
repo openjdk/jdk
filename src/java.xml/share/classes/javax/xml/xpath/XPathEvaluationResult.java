@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,15 +85,28 @@ public interface XPathEvaluationResult<T> {
         /**
          * Compares this type to the specified class type.
          * @param clsType class type
-         * @return true if the argument is not null and is a class type that
+         * @return true if the argument is not null and is a class type or accepted subtype that
          * matches that this type represents, false otherwise.
          */
         private boolean equalsClassType(Class<?> clsType) {
-            Objects.nonNull(clsType);
-            if (clsType.isAssignableFrom(this.clsType)) {
+            if (Objects.nonNull(clsType) && this.clsType.isAssignableFrom(clsType)) {
+                if (this.clsType == Number.class) {
+                    return isAcceptedNumberSubType(clsType);
+                }
                 return true;
             }
             return false;
+        }
+
+        /**
+         * Compares the specified class type to accepted subtypes of number.
+         * @param clsType class type
+         * @return true if class type is an accepted subtype of Number, false otherwise
+         */
+        private boolean isAcceptedNumberSubType(Class<?> clsType) {
+            return clsType.isAssignableFrom(Double.class) ||
+                    clsType.isAssignableFrom(Integer.class) ||
+                    clsType.isAssignableFrom(Long.class);
         }
 
         /**
@@ -103,7 +116,7 @@ public interface XPathEvaluationResult<T> {
          * @return the QName type that matches with the specified class type,
          * null if there is no match
          */
-        static public QName getQNameType(Class<?> clsType) {
+            static public QName getQNameType(Class<?> clsType) {
             for (XPathResultType type : XPathResultType.values()) {
                 if (type.equalsClassType(clsType)) {
                     return type.qnameType;

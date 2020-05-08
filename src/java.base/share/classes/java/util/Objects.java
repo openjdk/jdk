@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,6 @@ import java.util.function.Supplier;
  * include {@code null}-safe or {@code null}-tolerant methods for computing the
  * hash code of an object, returning a string for an object, comparing two
  * objects, and checking if indexes or sub-range values are out of bounds.
- *
- * @apiNote
- * Static methods such as {@link Objects#checkIndex},
- * {@link Objects#checkFromToIndex}, and {@link Objects#checkFromIndexSize} are
- * provided for the convenience of checking if values corresponding to indexes
- * and sub-ranges are out of bounds.
- * Variations of these static methods support customization of the runtime
- * exception, and corresponding exception detail message, that is thrown when
- * values are out of bounds.  Such methods accept a functional interface
- * argument, instances of {@code BiFunction}, that maps out-of-bound values to a
- * runtime exception.  Care should be taken when using such methods in
- * combination with an argument that is a lambda expression, method reference or
- * class that capture values.  In such cases the cost of capture, related to
- * functional interface allocation, may exceed the cost of checking bounds.
  *
  * @since 1.7
  */

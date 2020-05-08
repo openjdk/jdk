@@ -216,7 +216,7 @@ define SetupJavaCompilationBody
 
       # The port file contains the tcp/ip on which the server listens
       # and the cookie necessary to talk to the server.
-      $1_JAVA_SERVER_FLAGS := --server:portfile=$$(SJAVAC_SERVER_DIR)/server.port,sjavac=$$($1_ESCAPED_CMD)
+      $1_JAVA_SERVER_FLAGS := --server:portfile=$$(JAVAC_SERVER_DIR)/server.port,sjavac=$$($1_ESCAPED_CMD)
 
       # Always use small to launch client
       $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC) $$($1_JAVA_SERVER_FLAGS)

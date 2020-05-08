@@ -273,19 +273,7 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createJavaProcessBuilder(List<String> command) {
-        return createJavaProcessBuilder(false, command);
-    }
-
-    /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     *
-     * @param addTestVmAndJavaOptions If true, adds test.vm.opts and test.java.opts
-     *        to the java arguments.
-     * @param command Arguments to pass to the java command.
-     * @return The ProcessBuilder instance representing the java command.
-     */
-    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, List<String> command) {
-        return createJavaProcessBuilder(addTestVmAndJavaOptions, command.toArray(String[]::new));
+        return createJavaProcessBuilder(command.toArray(String[]::new));
     }
 
     /**
@@ -295,18 +283,6 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createJavaProcessBuilder(String... command) {
-        return createJavaProcessBuilder(false, command);
-    }
-
-    /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     *
-     * @param addTestVmAndJavaOptions If true, adds test.vm.opts and test.java.opts
-     *        to the java arguments.
-     * @param command Arguments to pass to the java command.
-     * @return The ProcessBuilder instance representing the java command.
-     */
-    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -314,10 +290,6 @@ public final class ProcessTools {
 
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
-
-        if (addTestVmAndJavaOptions) {
-            Collections.addAll(args, Utils.getTestJavaOpts());
-        }
 
         Collections.addAll(args, command);
 
@@ -339,6 +311,36 @@ public final class ProcessTools {
             }
             System.out.println();
         }
+    }
+
+    /**
+     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
+     *
+     * The command line will be like:
+     * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
+     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createTestJvm(List<String> command) {
+        return createTestJvm(command.toArray(String[]::new));
+    }
+
+    /**
+     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
+     *
+     * The command line will be like:
+     * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
+     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createTestJvm(String... command) {
+        return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
     }
 
     /**
@@ -372,7 +374,7 @@ public final class ProcessTools {
      * @return The output from the process.
      */
     public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createJavaProcessBuilder(true, cmds);
+        ProcessBuilder pb = createTestJvm(cmds);
         return executeProcess(pb);
     }
 

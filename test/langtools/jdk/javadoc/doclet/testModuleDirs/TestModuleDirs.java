@@ -109,12 +109,15 @@ public class TestModuleDirs extends JavadocTester {
                 "ma/module-summary.html",
                 "ma/pa/package-summary.html");
         checkOutput("ma/module-summary.html", false,
-                "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
-                + "<li><a href=\"../allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
-                + "</ul>\n");
+                """
+                    <ul class="navList" id="allclasses_navbar_top">
+                    <li><a href="../allclasses-noframe.html">All&nbsp;Classes</a></li>
+                    </ul>
+                    """);
         checkOutput("ma/pa/package-summary.html", true,
-                "<li><a href=\"../../deprecated-list.html\">Deprecated</a></li>\n"
-                + "<li><a href=\"../../index-all.html\">Index</a></li>");
+                """
+                    <li><a href="../../deprecated-list.html">Deprecated</a></li>
+                    <li><a href="../../index-all.html">Index</a></li>""");
     }
 }
 

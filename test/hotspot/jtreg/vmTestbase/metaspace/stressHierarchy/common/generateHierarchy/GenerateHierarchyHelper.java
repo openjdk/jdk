@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package metaspace.stressHierarchy.common.generateHierarchy;
 import java.util.*;
 
 import vm.share.InMemoryJavaCompiler;
+import jdk.test.lib.Utils;
 
 public class GenerateHierarchyHelper {
 
@@ -41,7 +42,7 @@ public class GenerateHierarchyHelper {
 
         private static final int EDGE_IN_MIXED_CASE = 30;
 
-        private static Random random = new Random();
+        private static Random random = Utils.getRandomInstance();
 
         public static TreeDescriptor generateHierarchy(int depth, int minLevelSize, int maxLevelSize, Type type) {
             TreeDescriptor tree = new TreeDescriptor();

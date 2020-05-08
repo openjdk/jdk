@@ -46,15 +46,20 @@ public class TestModifierEx extends JavadocTester {
                 "-package", "pkg1");
         checkExit(Exit.OK);
         checkOutput("pkg1/Abstract.html", true,
-                "<pre>public abstract class <span class=\"type-name-label\">Abstract</span>");
+                """
+                    <pre>public abstract class <span class="type-name-label">Abstract</span>""");
         checkOutput("pkg1/Interface.html", true,
-                "<pre>interface <span class=\"type-name-label\">Interface</span></pre>");
+                """
+                    <pre>interface <span class="type-name-label">Interface</span></pre>""");
         checkOutput("pkg1/Interface.Kind.html", true,
-                "<pre>public static interface <span class=\"type-name-label\">Interface.Kind</span></pre>");
+                """
+                    <pre>public static interface <span class="type-name-label">Interface.Kind</span></pre>""");
         checkOutput("pkg1/Enum.html", true,
-                "<pre>public enum <span class=\"type-name-label\">Enum</span>");
+                """
+                    <pre>public enum <span class="type-name-label">Enum</span>""");
         checkOutput("pkg1/Klass.StaticEnum.html", true,
-                "<pre>public static enum <span class=\"type-name-label\">Klass.StaticEnum</span>");
+                """
+                    <pre>public static enum <span class="type-name-label">Klass.StaticEnum</span>""");
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import sun.awt.SunToolkit;
  * @bug 8204142
  * @author Sergey Bylokhov
  * @key headful
- * @modules java.desktop/sun.awt
+ * @modules java.desktop/java.awt:open java.desktop/sun.awt
  * @run main/othervm/timeout=30 MultipleContextsUnitTest
  */
 public final class MultipleContextsUnitTest {

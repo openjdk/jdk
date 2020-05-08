@@ -180,6 +180,30 @@ public final class Utils {
         return String.format("%d%s%s", value, separation, result.text);
     }
 
+    // This method reduces the number of loaded classes
+    // compared to DateTimeFormatter
+    static String formatDateTime(LocalDateTime time) {
+        StringBuilder sb = new StringBuilder(19);
+        sb.append(time.getYear() / 100);
+        appendPadded(sb, time.getYear() % 100, true);
+        appendPadded(sb, time.getMonth().getValue(), true);
+        appendPadded(sb, time.getDayOfMonth(), true);
+        appendPadded(sb, time.getHour(), true);
+        appendPadded(sb, time.getMinute(), true);
+        appendPadded(sb, time.getSecond(), false);
+        return sb.toString();
+    }
+
+    private static void appendPadded(StringBuilder text, int number, boolean separator) {
+        if (number < 10) {
+            text.append('0');
+        }
+        text.append(number);
+        if (separator) {
+            text.append('_');
+        }
+    }
+
     public static long parseTimespanWithInfinity(String s) {
         if (INFINITY.equals(s)) {
             return Long.MAX_VALUE;
@@ -604,7 +628,7 @@ public final class Utils {
 
     public static String makeFilename(Recording recording) {
         String pid = JVM.getJVM().getPid();
-        String date = Repository.REPO_DATE_FORMAT.format(LocalDateTime.now());
+        String date = formatDateTime(LocalDateTime.now());
         String idText = recording == null ? "" :  "-id-" + Long.toString(recording.getId());
         return "hotspot-" + "pid-" + pid + idText + "-" + date + ".jfr";
     }

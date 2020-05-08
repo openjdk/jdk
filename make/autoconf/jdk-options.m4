@@ -630,3 +630,59 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 
   AC_SUBST(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)
 ])
+
+################################################################################
+#
+# Check and set options related to reproducible builds.
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
+[
+  AC_ARG_WITH([source-date], [AS_HELP_STRING([--with-source-date],
+      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated@:>@])],
+      [with_source_date_present=true], [with_source_date_present=false])
+
+  AC_MSG_CHECKING([what source date to use])
+
+  if test "x$with_source_date" = xyes; then
+    AC_MSG_ERROR([--with-source-date must have a value])
+  elif test "x$with_source_date" = xupdated || test "x$with_source_date" = x; then
+    # Tell the makefiles to update at each build
+    SOURCE_DATE=updated
+    AC_MSG_RESULT([determined at build time, from 'updated'])
+  elif test "x$with_source_date" = xcurrent; then
+    # Set the current time
+    SOURCE_DATE=$($DATE +"%s")
+    AC_MSG_RESULT([$SOURCE_DATE, from 'current'])
+  elif test "x$with_source_date" = xversion; then
+    # Use the date from version-numbers
+    UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $DEFAULT_VERSION_DATE)
+    if test "x$SOURCE_DATE" = x; then
+      AC_MSG_RESULT([unavailable])
+      AC_MSG_ERROR([Cannot convert DEFAULT_VERSION_DATE to timestamp])
+    fi
+    AC_MSG_RESULT([$SOURCE_DATE, from 'version'])
+  else
+    # It's a timestamp, an ISO-8601 date, or an invalid string
+    # Additional [] needed to keep m4 from mangling shell constructs.
+    if [ [[ "$with_source_date" =~ ^[0-9][0-9]*$ ]] ] ; then
+      SOURCE_DATE=$with_source_date
+      AC_MSG_RESULT([$SOURCE_DATE, from timestamp on command line])
+    else
+      UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $with_source_date)
+      if test "x$SOURCE_DATE" != x; then
+        AC_MSG_RESULT([$SOURCE_DATE, from ISO-8601 date on command line])
+      else
+        AC_MSG_RESULT([unavailable])
+        AC_MSG_ERROR([Cannot parse date string "$with_source_date"])
+      fi
+    fi
+  fi
+
+  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $with_source_date_present,
+      RESULT: ENABLE_REPRODUCIBLE_BUILD,
+      DESC: [enable reproducible builds (not yet fully functional)],
+      DEFAULT_DESC: [enabled if --with-source-date is given])
+
+  AC_SUBST(SOURCE_DATE)
+  AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
+])

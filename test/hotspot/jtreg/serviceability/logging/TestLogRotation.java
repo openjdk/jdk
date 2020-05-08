@@ -71,8 +71,7 @@ public class TestLogRotation {
     }
 
     public static void runTest(int numberOfFiles) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-cp", System.getProperty("java.class.path"),
                 "-Xlog:gc=debug:" + logFileName
                         + "::filesize=" + logFileSizeK + "k"

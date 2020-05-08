@@ -3282,11 +3282,10 @@ return mh1;
          * @since 1.8
          */
         public MethodHandleInfo revealDirect(MethodHandle target) {
-            MemberName member = target.internalMemberName();
-            if (member == null || (!member.isResolved() &&
-                                   !member.isMethodHandleInvoke() &&
-                                   !member.isVarHandleMethodInvoke()))
+            if (!target.isCrackable()) {
                 throw newIllegalArgumentException("not a direct method handle");
+            }
+            MemberName member = target.internalMemberName();
             Class<?> defc = member.getDeclaringClass();
             byte refKind = member.getReferenceKind();
             assert(MethodHandleNatives.refKindIsValid(refKind));

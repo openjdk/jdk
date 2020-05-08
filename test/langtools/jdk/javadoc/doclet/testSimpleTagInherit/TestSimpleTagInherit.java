@@ -59,9 +59,11 @@ public class TestSimpleTagInherit extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/TestClass.html", true,
-                "<dt><em>Custom:</em></dt>\n"
-                + "<dd>doc for BaseClass class</dd>",
-                "<dt><em>Custom:</em></dt>\n"
-                + "<dd>doc for BaseClass method</dd>");
+                """
+                    <dt><em>Custom:</em></dt>
+                    <dd>doc for BaseClass class</dd>""",
+                """
+                    <dt><em>Custom:</em></dt>
+                    <dd>doc for BaseClass method</dd>""");
     }
 }

@@ -485,21 +485,19 @@ public class TestMemoryOptions {
             final String flightRecorderOptions = tc.getTestString();
             ProcessBuilder pb;
             if (flightRecorderOptions != null) {
-                pb = ProcessTools.createJavaProcessBuilder(true,
-                                                           "--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
-                                                           "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                                                           flightRecorderOptions,
-                                                           "-XX:StartFlightRecording",
-                                                           SUT.class.getName(),
-                                                           tc.getTestName());
+                pb = ProcessTools.createTestJvm("--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
+                                                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                                                flightRecorderOptions,
+                                                "-XX:StartFlightRecording",
+                                                SUT.class.getName(),
+                                                tc.getTestName());
             } else {
                 // default, no FlightRecorderOptions passed
-                pb = ProcessTools.createJavaProcessBuilder(true,
-                                                           "--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
-                                                           "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                                                           "-XX:StartFlightRecording",
-                                                           SUT.class.getName(),
-                                                           tc.getTestName());
+                pb = ProcessTools.createTestJvm("--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
+                                                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                                                "-XX:StartFlightRecording",
+                                                SUT.class.getName(),
+                                                tc.getTestName());
             }
 
             System.out.println("Driver launching SUT with string: " + flightRecorderOptions != null ? flightRecorderOptions : "default");

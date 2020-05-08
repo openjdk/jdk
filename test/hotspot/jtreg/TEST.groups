@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,8 @@ hotspot_cds_relocation = \
   runtime/modules/PatchModule/PatchModuleCDS.java \
   runtime/modules/PatchModule/PatchModuleClassList.java \
   runtime/NMT \
-  serviceability/sa
+  serviceability/sa \
+ -runtime/cds/DeterministicDump.java
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
@@ -376,17 +377,15 @@ hotspot_appcds_with_jfr = \
  -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java
 
 tier1_serviceability = \
-  serviceability/dcmd/compiler \
+  serviceability/ \
   -serviceability/dcmd/compiler/CompilerQueueTest.java \
-  serviceability/jvmti/RedefineClasses \
   -serviceability/jvmti/RedefineClasses/RedefineLeak.java \
   -serviceability/jvmti/RedefineClasses/RedefinePreviousVersions.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \
   -serviceability/jvmti/RedefineClasses/TestRedefineObject.java \
-  serviceability/logging \
-  serviceability/sa \
   -serviceability/sa/ClhsdbScanOops.java \
+  -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
 

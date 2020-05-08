@@ -33,9 +33,6 @@
 #include "runtime/handles.inline.hpp"
 
 CompileTask*  CompileTask::_task_free_list = NULL;
-#ifdef ASSERT
-int CompileTask::_num_allocated_tasks = 0;
-#endif
 
 /**
  * Allocate a CompileTask, from the free list if possible.
@@ -50,8 +47,6 @@ CompileTask* CompileTask::allocate() {
     task->set_next(NULL);
   } else {
     task = new CompileTask();
-    DEBUG_ONLY(_num_allocated_tasks++;)
-    assert (WhiteBoxAPI || JVMCI_ONLY(UseJVMCICompiler ||) _num_allocated_tasks < 10000, "Leaking compilation tasks?");
     task->set_next(NULL);
     task->set_is_free(true);
   }

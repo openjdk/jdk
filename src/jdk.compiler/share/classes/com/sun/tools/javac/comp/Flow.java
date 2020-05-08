@@ -30,7 +30,6 @@ package com.sun.tools.javac.comp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -44,6 +43,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
+import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
@@ -697,9 +697,12 @@ public class Flow {
             pendingExits = new ListBuffer<>();
             scan(tree.selector);
             Set<Object> constants = null;
-            if ((tree.selector.type.tsym.flags() & ENUM) != 0) {
+            TypeSymbol selectorSym = tree.selector.type.tsym;
+            if ((selectorSym.flags() & ENUM) != 0) {
                 constants = new HashSet<>();
-                for (Symbol s : tree.selector.type.tsym.members().getSymbols(s -> (s.flags() & ENUM) != 0)) {
+                Filter<Symbol> enumConstantFilter =
+                        s -> (s.flags() & ENUM) != 0 && s.kind == Kind.VAR;
+                for (Symbol s : selectorSym.members().getSymbols(enumConstantFilter)) {
                     constants.add(s.name);
                 }
             }
@@ -1266,7 +1269,8 @@ public class Flow {
                         ctypes = ctypes.append(exc);
                         if (types.isSameType(exc, syms.objectType))
                             continue;
-                        checkCaughtType(l.head.pos(), exc, thrownInTry, caughtInTry);
+                        var pos = subClauses.size() > 1 ? ct.pos() : l.head.pos();
+                        checkCaughtType(pos, exc, thrownInTry, caughtInTry);
                         caughtInTry = chk.incl(exc, caughtInTry);
                     }
                 }

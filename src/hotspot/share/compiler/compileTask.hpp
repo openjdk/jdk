@@ -75,10 +75,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  private:
   static CompileTask* _task_free_list;
-#ifdef ASSERT
-  static int          _num_allocated_tasks;
-#endif
-
   Monitor*     _lock;
   uint         _compile_id;
   Method*      _method;

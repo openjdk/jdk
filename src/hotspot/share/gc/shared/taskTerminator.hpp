@@ -57,9 +57,8 @@ class TaskTerminator : public CHeapObj<mtGC> {
   volatile uint _offered_termination;
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uint));
 
-#ifdef ASSERT
-  bool peek_in_queue_set();
-#endif
+  void assert_queue_set_empty() const NOT_DEBUG_RETURN;
+
   void yield();
 
   Monitor*    _blocker;

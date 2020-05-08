@@ -26,8 +26,8 @@ package java.rmi;
 
 /**
  * An <code>AlreadyBoundException</code> is thrown if an attempt
- * is made to bind an object in the registry to a name that already
- * has an associated binding.
+ * is made to bind an object to a name that already
+ * has an associated binding in the registry.
  *
  * @since   1.1
  * @author  Ann Wollrath

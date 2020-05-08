@@ -71,10 +71,11 @@ public class TestModuleServicesLink extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
-                + "<li>Modules&nbsp;|&nbsp;</li>\n"
-                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
-                + "<li><a href=\"#services.summary\">Services</a></li>");
+                """
+                    <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
+                    <li>Modules&nbsp;|&nbsp;</li>
+                    <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#services.summary">Services</a></li>""");
 
     }
 
@@ -95,10 +96,11 @@ public class TestModuleServicesLink extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
-                + "<li>Modules&nbsp;|&nbsp;</li>\n"
-                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
-                + "<li><a href=\"#services.summary\">Services</a></li>");
+                """
+                    <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
+                    <li>Modules&nbsp;|&nbsp;</li>
+                    <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#services.summary">Services</a></li>""");
 
     }
 
@@ -117,10 +119,11 @@ public class TestModuleServicesLink extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m/module-summary.html", true,
-                "<li>Description&nbsp;|&nbsp;</li>\n"
-                + "<li>Modules&nbsp;|&nbsp;</li>\n"
-                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
-                + "<li>Services</li>");
+                """
+                    <li>Description&nbsp;|&nbsp;</li>
+                    <li>Modules&nbsp;|&nbsp;</li>
+                    <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
+                    <li>Services</li>""");
     }
 
 }

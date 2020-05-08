@@ -29,6 +29,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
@@ -79,6 +80,10 @@ void Klass::set_is_cloneable() {
 void Klass::set_name(Symbol* n) {
   _name = n;
   if (_name != NULL) _name->increment_refcount();
+
+  if (Arguments::is_dumping_archive() && is_instance_klass()) {
+    SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
+  }
 }
 
 bool Klass::is_subclass_of(const Klass* k) const {

@@ -27,6 +27,7 @@
 #include <new>
 
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"

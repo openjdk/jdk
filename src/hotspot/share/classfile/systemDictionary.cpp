@@ -2336,12 +2336,14 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     InstanceKlass* klass2 = find_class(d_hash2, constraint_name, dictionary2);
     bool result = constraints()->add_entry(constraint_name, klass1, class_loader1,
                                            klass2, class_loader2);
+#if INCLUDE_CDS
     if (Arguments::is_dumping_archive() && klass_being_linked != NULL &&
         !klass_being_linked->is_shared()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
                                      class_loader1, class_loader2, THREAD);
     }
+#endif // INCLUDE_CDS
     if (Signature::is_array(class_name)) {
       constraint_name->decrement_refcount();
     }

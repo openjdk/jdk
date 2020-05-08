@@ -50,16 +50,22 @@ public class TestLists extends JavadocTester {
     public void testMemberLists(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
-                "package p; public class C {\n"
-                + "  public C() { }\n"
-                + "  public C(int i) { }\n"
-                + "  public int f1;\n"
-                + "  public int f2;\n"
-                + "  public void m1() { }\n"
-                + "  public void m2() { }\n"
-                + "}\n",
-                "package p; public enum E { E1, E2 }\n",
-                "package p; public @interface A { int value(); }\n"
+                """
+                    package p; public class C {
+                      public C() { }
+                      public C(int i) { }
+                      public int f1;
+                      public int f2;
+                      public void m1() { }
+                      public void m2() { }
+                    }
+                    """,
+                """
+                    package p; public enum E { E1, E2 }
+                    """,
+                """
+                    package p; public @interface A { int value(); }
+                    """
         );
 
         javadoc("-d", base.resolve("out").toString(),
@@ -68,50 +74,64 @@ public class TestLists extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C.html", true,
-                "<h2>Field Details</h2>\n"
-                + "<ul class=\"member-list\">\n"
-                + "<li>\n"
-                + "<section class=\"detail\" id=\"f1\">\n"
-                + "<h3>f1</h3>\n",
-                "<h2>Constructor Details</h2>\n"
-                + "<ul class=\"member-list\">\n"
-                + "<li>\n"
-                + "<section class=\"detail\" id=\"&lt;init&gt;()\">\n"
-                + "<h3>C</h3>",
-                "<section class=\"method-details\" id=\"method.detail\">\n"
-                + "<h2>Method Details</h2>\n"
-                + "<ul class=\"member-list\">\n"
-                + "<li>\n"
-                + "<section class=\"detail\" id=\"m1()\">\n"
-                + "<h3>m1</h3>\n");
+                """
+                    <h2>Field Details</h2>
+                    <ul class="member-list">
+                    <li>
+                    <section class="detail" id="f1">
+                    <h3>f1</h3>
+                    """,
+                """
+                    <h2>Constructor Details</h2>
+                    <ul class="member-list">
+                    <li>
+                    <section class="detail" id="&lt;init&gt;()">
+                    <h3>C</h3>""",
+                """
+                    <section class="method-details" id="method.detail">
+                    <h2>Method Details</h2>
+                    <ul class="member-list">
+                    <li>
+                    <section class="detail" id="m1()">
+                    <h3>m1</h3>
+                    """);
 
         checkOutput("p/E.html", true,
-                "<h2>Enum Constant Details</h2>\n"
-                + "<ul class=\"member-list\">\n"
-                + "<li>\n"
-                + "<section class=\"detail\" id=\"E1\">\n");
+                """
+                    <h2>Enum Constant Details</h2>
+                    <ul class="member-list">
+                    <li>
+                    <section class="detail" id="E1">
+                    """);
 
         checkOutput("p/A.html", true,
-                "<h2>Element Details</h2>\n"
-                + "<ul class=\"member-list\">\n"
-                + "<li>\n"
-                + "<section class=\"detail\" id=\"value()\">");
+                """
+                    <h2>Element Details</h2>
+                    <ul class="member-list">
+                    <li>
+                    <section class="detail" id="value()">""");
     }
 
     @Test
     public void testDetailLists(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
-                "package p; public class C {\n"
-                + "  public C() { }\n"
-                + "  public C(int i) { }\n"
-                + "  public int f1;\n"
-                + "  public int f2;\n"
-                + "  public void m1() { }\n"
-                + "  public void m2() { }\n"
-                + "}\n",
-                "package p; public enum E { E1, E2 }\n",
-                "package p; public @interface A { int value(); }\n"
+                """
+                    package p; public class C {
+                      public C() { }
+                      public C(int i) { }
+                      public int f1;
+                      public int f2;
+                      public void m1() { }
+                      public void m2() { }
+                    }
+                    """,
+                """
+                    package p; public enum E { E1, E2 }
+                    """,
+                """
+                    package p; public @interface A { int value(); }
+                    """
         );
 
         javadoc("-d", base.resolve("out").toString(),
@@ -120,54 +140,64 @@ public class TestLists extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C.html", true,
-                "<section class=\"details\">\n"
-                + "<ul class=\"details-list\">\n"
-                + "<!-- ============ FIELD DETAIL =========== -->\n"
-                + "<li>\n"
-                + "<section class=\"field-details\" id=\"field.detail\">\n"
-                + "<h2>Field Details</h2>\n"
-                + "<ul class=\"member-list\">",
-                "</ul>\n"
-                + "</section>\n"
-                + "</li>\n"
-                + "<!-- ========= CONSTRUCTOR DETAIL ======== -->\n"
-                + "<li>\n"
-                + "<section class=\"constructor-details\" id=\"constructor.detail\">\n"
-                + "<h2>Constructor Details</h2>\n"
-                + "<ul class=\"member-list\">");
+                """
+                    <section class="details">
+                    <ul class="details-list">
+                    <!-- ============ FIELD DETAIL =========== -->
+                    <li>
+                    <section class="field-details" id="field.detail">
+                    <h2>Field Details</h2>
+                    <ul class="member-list">""",
+                """
+                    </ul>
+                    </section>
+                    </li>
+                    <!-- ========= CONSTRUCTOR DETAIL ======== -->
+                    <li>
+                    <section class="constructor-details" id="constructor.detail">
+                    <h2>Constructor Details</h2>
+                    <ul class="member-list">""");
 
         checkOutput("p/E.html", true,
-                "<section class=\"details\">\n"
-                + "<ul class=\"details-list\">\n"
-                + "<!-- ============ ENUM CONSTANT DETAIL =========== -->\n"
-                + "<li>\n"
-                + "<section class=\"constant-details\" id=\"enum.constant.detail\">\n"
-                + "<h2>Enum Constant Details</h2>\n"
-                + "<ul class=\"member-list\">");
+                """
+                    <section class="details">
+                    <ul class="details-list">
+                    <!-- ============ ENUM CONSTANT DETAIL =========== -->
+                    <li>
+                    <section class="constant-details" id="enum.constant.detail">
+                    <h2>Enum Constant Details</h2>
+                    <ul class="member-list">""");
 
         checkOutput("p/A.html", true,
-                "<ul class=\"details-list\">\n"
-                + "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->\n"
-                + "<li>\n"
-                + "<section class=\"member-details\">\n"
-                + "<h2>Element Details</h2>\n"
-                + "<ul class=\"member-list\">");
+                """
+                    <ul class="details-list">
+                    <!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->
+                    <li>
+                    <section class="member-details">
+                    <h2>Element Details</h2>
+                    <ul class="member-list">""");
     }
 
     @Test
     public void testSummaryLists(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
-                "package p; public class C {\n"
-                        + "  public C() { }\n"
-                        + "  public C(int i) { }\n"
-                        + "  public int f1;\n"
-                        + "  public int f2;\n"
-                        + "  public void m1() { }\n"
-                        + "  public void m2() { }\n"
-                        + "}\n",
-                "package p; public enum E { E1, E2 }\n",
-                "package p; public @interface A { int value(); }\n"
+                """
+                    package p; public class C {
+                      public C() { }
+                      public C(int i) { }
+                      public int f1;
+                      public int f2;
+                      public void m1() { }
+                      public void m2() { }
+                    }
+                    """,
+                """
+                    package p; public enum E { E1, E2 }
+                    """,
+                """
+                    package p; public @interface A { int value(); }
+                    """
         );
 
         javadoc("-d", base.resolve("out").toString(),
@@ -176,42 +206,46 @@ public class TestLists extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C.html", true,
-                "<section class=\"summary\">\n"
-                + "<ul class=\"summary-list\">\n"
-                + "<!-- =========== FIELD SUMMARY =========== -->\n"
-                + "<li>\n"
-                + "<section class=\"field-summary\" id=\"field.summary\">\n"
-                + "<h2>Field Summary</h2>\n"
-                + "<div class=\"member-summary\">\n"
-                + "<table class=\"summary-table\">",
-                "</section>\n"
-                + "</li>\n"
-                + "<!-- ======== CONSTRUCTOR SUMMARY ======== -->\n"
-                + "<li>\n"
-                + "<section class=\"constructor-summary\" id=\"constructor.summary\">\n"
-                + "<h2>Constructor Summary</h2>\n"
-                + "<div class=\"member-summary\">\n"
-                + "<table class=\"summary-table\">");
+                """
+                    <section class="summary">
+                    <ul class="summary-list">
+                    <!-- =========== FIELD SUMMARY =========== -->
+                    <li>
+                    <section class="field-summary" id="field.summary">
+                    <h2>Field Summary</h2>
+                    <div class="member-summary">
+                    <table class="summary-table">""",
+                """
+                    </section>
+                    </li>
+                    <!-- ======== CONSTRUCTOR SUMMARY ======== -->
+                    <li>
+                    <section class="constructor-summary" id="constructor.summary">
+                    <h2>Constructor Summary</h2>
+                    <div class="member-summary">
+                    <table class="summary-table">""");
 
         checkOutput("p/E.html", true,
-                "</section>\n"
-                + "</li>\n"
-                + "<!-- =========== ENUM CONSTANT SUMMARY =========== -->\n"
-                + "<li>\n"
-                + "<section class=\"constants-summary\" id=\"enum.constant.summary\">\n"
-                + "<h2>Enum Constant Summary</h2>\n"
-                + "<div class=\"member-summary\">\n"
-                + "<table class=\"summary-table\">");
+                """
+                    </section>
+                    </li>
+                    <!-- =========== ENUM CONSTANT SUMMARY =========== -->
+                    <li>
+                    <section class="constants-summary" id="enum.constant.summary">
+                    <h2>Enum Constant Summary</h2>
+                    <div class="member-summary">
+                    <table class="summary-table">""");
 
         checkOutput("p/A.html", true,
-                "<section class=\"summary\">\n"
-                + "<ul class=\"summary-list\">\n"
-                + "<!-- =========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY =========== -->\n"
-                + "<li>\n"
-                + "<section class=\"member-summary\" id=\"annotation.type.required.element.summary\">\n"
-                + "<h2>Required Element Summary</h2>\n"
-                + "<div class=\"member-summary\">\n"
-                + "<table class=\"summary-table\">");
+                """
+                    <section class="summary">
+                    <ul class="summary-list">
+                    <!-- =========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY =========== -->
+                    <li>
+                    <section class="member-summary" id="annotation.type.required.element.summary">
+                    <h2>Required Element Summary</h2>
+                    <div class="member-summary">
+                    <table class="summary-table">""");
 
     }
 }

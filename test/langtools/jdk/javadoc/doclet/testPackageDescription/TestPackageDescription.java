@@ -48,7 +48,9 @@ public class TestPackageDescription extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/package-summary.html", true,
-                "<section class=\"package-description\" id=\"package.description\">\n"
-                + "<div class=\"block\">package description</div>\n");
+                """
+                    <section class="package-description" id="package.description">
+                    <div class="block">package description</div>
+                    """);
     }
 }

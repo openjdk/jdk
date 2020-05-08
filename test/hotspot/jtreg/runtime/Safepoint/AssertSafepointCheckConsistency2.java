@@ -25,17 +25,17 @@
  * @test
  * @bug 8047290
  * @summary Ensure that a Monitor::lock fires an assert when it incorrectly acquires a lock which must never have safepoint checks.
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main AssertSafepointCheckConsistency2
+ * @run driver AssertSafepointCheckConsistency2
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 
 import sun.hotspot.WhiteBox;
 
@@ -43,19 +43,20 @@ public class AssertSafepointCheckConsistency2 {
     public static void main(String args[]) throws Exception {
         if (args.length > 0) {
             WhiteBox.getWhiteBox().assertMatchingSafepointCalls(false, false);
+            return;
         }
-        if (Platform.isDebugBuild()){
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                  "-Xbootclasspath/a:.",
-                  "-XX:+UnlockDiagnosticVMOptions",
-                  "-XX:+WhiteBoxAPI",
-                  "-XX:-CreateCoredumpOnCrash",
-                  "-Xmx128m",
-                  "AssertSafepointCheckConsistency2",
-                  "test");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+              "-Xbootclasspath/a:.",
+              "-XX:+UnlockDiagnosticVMOptions",
+              "-XX:+WhiteBoxAPI",
+              "-XX:-CreateCoredumpOnCrash",
+              "-Xmx128m",
+              "AssertSafepointCheckConsistency2",
+              "test");
 
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("assert").shouldContain("never");
-        }
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("assert")
+              .shouldContain("never")
+              .shouldNotHaveExitValue(0);
     }
 }

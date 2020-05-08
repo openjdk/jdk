@@ -112,12 +112,18 @@ public class TestSerialTag extends JavadocTester {
         tb.writeJavaFiles(dir,
             "/** This is package p;\n * " + tag + "\n */\n"
             + "package p;",
-            "/** This is class p.C1;\n */\n"
-            + "package p; public class C1 implements java.io.Serializable { }",
-            "/** This is package q;\n */\n"
-            + "package q;",
-            "/** This is class q.C2;\n */\n"
-            + "package q; public class C2 implements java.io.Serializable { }"
+            """
+                /** This is class p.C1;
+                 */
+                package p; public class C1 implements java.io.Serializable { }""",
+            """
+                /** This is package q;
+                 */
+                package q;""",
+            """
+                /** This is class q.C2;
+                 */
+                package q; public class C2 implements java.io.Serializable { }"""
         );
 
         return srcDir;

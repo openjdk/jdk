@@ -310,6 +310,9 @@ $(function() {
             }
         },
         autoFocus: true,
+        focus: function(event, ui) {
+            return false;
+        },
         position: {
             collision: "flip"
         },

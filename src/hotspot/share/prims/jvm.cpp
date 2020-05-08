@@ -3733,6 +3733,29 @@ JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   HeapShared::initialize_from_archived_subgraph(k);
 JVM_END
 
+JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())
+  JVMWrapper("JVM_GetRandomSeedForCDSDump");
+  if (DumpSharedSpaces) {
+    const char* release = Abstract_VM_Version::vm_release();
+    const char* dbg_level = Abstract_VM_Version::jdk_debug_level();
+    const char* version = VM_Version::internal_vm_info_string();
+    jlong seed = (jlong)(java_lang_String::hash_code((const jbyte*)release, (int)strlen(release)) ^
+                         java_lang_String::hash_code((const jbyte*)dbg_level, (int)strlen(dbg_level)) ^
+                         java_lang_String::hash_code((const jbyte*)version, (int)strlen(version)));
+    seed += (jlong)Abstract_VM_Version::vm_major_version();
+    seed += (jlong)Abstract_VM_Version::vm_minor_version();
+    seed += (jlong)Abstract_VM_Version::vm_security_version();
+    seed += (jlong)Abstract_VM_Version::vm_patch_version();
+    if (seed == 0) { // don't let this ever be zero.
+      seed = 0x87654321;
+    }
+    log_debug(cds)("JVM_GetRandomSeedForCDSDump() = " JLONG_FORMAT, seed);
+    return seed;
+  } else {
+    return 0;
+  }
+JVM_END
+
 // Returns an array of all live Thread objects (VM internal JavaThreads,
 // jvmti agent threads, and JNI attaching threads  are skipped)
 // See CR 6404306 regarding JNI attaching threads

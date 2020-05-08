@@ -42,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class UnsupportedClassFileVersion implements Opcodes {
     public static void main(String... args) throws Exception {
         writeClassFile();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-cp", ".",  "ClassFile");
+        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "ClassFile");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("ClassFile has been compiled by a more recent version of the " +
                             "Java Runtime (class file version 99.0), this version of " +

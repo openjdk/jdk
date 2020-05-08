@@ -127,8 +127,10 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     }
 
     public DocletEnvironment getEnvironment(ToolOptions toolOptions,
-            List<String> javaNames,
-            Iterable<? extends JavaFileObject> fileObjects) throws ToolException {
+                                            List<String> javaNames,
+                                            Iterable<? extends JavaFileObject> fileObjects)
+            throws ToolException
+    {
         toolEnv = ToolEnvironment.instance(context);
         toolEnv.initialize(toolOptions);
         ElementsTable etable = new ElementsTable(context, toolOptions);

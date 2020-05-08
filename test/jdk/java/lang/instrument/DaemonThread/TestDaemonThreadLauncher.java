@@ -29,7 +29,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestDaemonThreadLauncher {
     public static void main(String args[]) throws Exception {
         for(int i=0; i<50; i++) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-javaagent:DummyAgent.jar", "TestDaemonThread", ".");
+            ProcessBuilder pb = ProcessTools.createTestJvm("-javaagent:DummyAgent.jar", "TestDaemonThread", ".");
             OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
             analyzer.shouldNotContain("ASSERTION FAILED");
             analyzer.shouldHaveExitValue(0);

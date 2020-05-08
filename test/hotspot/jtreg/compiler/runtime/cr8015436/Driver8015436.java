@@ -30,8 +30,8 @@ public class Driver8015436 {
     public static void main(String args[]) {
         OutputAnalyzer oa;
         try {
-            oa = ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
-                    /* add test vm options */ true, Test8015436.class.getName()));
+            oa = ProcessTools.executeProcess(ProcessTools.createTestJvm(
+                    Test8015436.class.getName()));
         } catch (Exception ex) {
             throw new Error("TESTBUG: exception while running child process: " + ex, ex);
         }

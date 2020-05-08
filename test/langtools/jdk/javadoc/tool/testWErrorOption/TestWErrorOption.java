@@ -75,9 +75,11 @@ public class TestWErrorOption extends JavadocTester {
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
                 "C.java:6: warning - @return tag cannot be used in method with void return type.",
-                "javadoc: error - warnings found and -Werror specified\n"
-                + "1 error\n"
-                + "1 warning\n");
+                """
+                    javadoc: error - warnings found and -Werror specified
+                    1 error
+                    1 warning
+                    """);
     }
 
     @Test
@@ -86,19 +88,22 @@ public class TestWErrorOption extends JavadocTester {
                 "--help");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                "-Werror       Report an error if any warnings occur\n");
+                """
+                    -Werror       Report an error if any warnings occur
+                    """);
     }
 
     private void generateSrc(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
-                  "package p;\n"
-                + "public class C {\n"
-                + "  /** Comment.\n"
-                + "   *  @return warning\n"
-                + "   */\n"
-                + "  public void m() { }\n"
-                + "}");
+                  """
+                      package p;
+                      public class C {
+                        /** Comment.
+                         *  @return warning
+                         */
+                        public void m() { }
+                      }""");
     }
 }
 

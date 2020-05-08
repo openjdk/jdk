@@ -83,10 +83,13 @@ public class DeployParams {
         if (!Files.isSymbolicLink(root.toPath())) {
             if (root.isDirectory()) {
                 File[] children = root.listFiles();
-                if (children != null) {
+                if (children != null && children.length > 0) {
                     for (File f : children) {
                         files.addAll(expandFileset(f));
                     }
+                } else {
+                    // Include empty folders
+                    files.add(root);
                 }
             } else {
                 files.add(root);
@@ -293,6 +296,17 @@ public class DeployParams {
             File licenseFile = new File(license);
             if (!licenseFile.exists()) {
                 throw new PackagerException("ERR_LicenseFileNotExit");
+            }
+        }
+
+        // Validate icon file if set
+        String icon = (String)bundlerArguments.get(
+                Arguments.CLIOptions.ICON.getId());
+        if (icon != null) {
+            File iconFile = new File(icon);
+            if (!iconFile.exists()) {
+                throw new PackagerException("ERR_IconFileNotExit",
+                        iconFile.getAbsolutePath());
             }
         }
     }

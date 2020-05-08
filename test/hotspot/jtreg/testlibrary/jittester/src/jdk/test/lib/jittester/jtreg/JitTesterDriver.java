@@ -47,7 +47,7 @@ public class JitTesterDriver {
         }
         OutputAnalyzer oa;
         try {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, args);
+            ProcessBuilder pb = ProcessTools.createTestJvm(args);
             oa = new OutputAnalyzer(pb.start());
         } catch (Exception e) {
             throw new Error("Unexpected exception on test jvm start :" + e, e);

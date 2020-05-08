@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8206986
+ * @bug 8206986 8243548
  * @summary Verify that an switch expression over enum can be exhaustive without default.
  * @compile ExhaustiveEnumSwitch.java
  * @compile ExhaustiveEnumSwitchExtra.java
@@ -56,4 +56,12 @@ public class ExhaustiveEnumSwitch {
 }
 enum ExhaustiveEnumSwitchEnum {
     A, B;
+    class NestedClass {}
+    enum NestedEnum {}
+    interface NestedInterface {}
+    @interface NestedAnnotation {}
+    void nestedMethod() {}
+    static void nestedStaticMethod() {}
+    int nestedField;
+    static int nestedStaticField;
 }

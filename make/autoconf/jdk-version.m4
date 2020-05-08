@@ -36,7 +36,7 @@
 AC_DEFUN([JDKVER_CHECK_AND_SET_NUMBER],
 [
   # Additional [] needed to keep m4 from mangling shell constructs.
-  if [ ! [[ "$2" =~ ^0*([1-9][0-9]*)|(0)$ ]] ] ; then
+  if [ ! [[ "$2" =~ ^0*([1-9][0-9]*)$|^0*(0)$ ]] ] ; then
     AC_MSG_ERROR(["$2" is not a valid numerical value for $1])
   fi
   # Extract the version number without leading zeros.

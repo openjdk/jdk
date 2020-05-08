@@ -64,10 +64,12 @@ public class TestDocFiles extends JavadocTester {
         tb.writeFile(pkgDocFiles.resolve("pkg-file.txt"),
                 "package text file\n");
         tb.writeFile(pkgDocFiles.resolve("pkg-file.html"),
-                "<html>\n"
-                + "<head><title>Package HTML file</title></head>\n"
-                + "<body><h1>Package HTML file</h1>File content</body>\n"
-                + "</html>\n");
+                """
+                    <html>
+                    <head><title>Package HTML file</title></head>
+                    <body><h1>Package HTML file</h1>File content</body>
+                    </html>
+                    """);
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
@@ -99,20 +101,24 @@ public class TestDocFiles extends JavadocTester {
         tb.writeFile(mdlDocFiles.resolve("mdl-file.txt"),
                 "module text file\n");
         tb.writeFile(mdlDocFiles.resolve("mdl-file.html"),
-                "<html>\n"
-                + "<head><title>Module HTML file</title></head>\n"
-                + "<body><h1>Module HTML file</h1>File content</body>\n"
-                + "</html>\n");
+                """
+                    <html>
+                    <head><title>Module HTML file</title></head>
+                    <body><h1>Module HTML file</h1>File content</body>
+                    </html>
+                    """);
 
         // write the doc files for a package in the module
         Path pkgDocFiles = src.resolve("p").resolve("doc-files");
         tb.writeFile(pkgDocFiles.resolve("pkg-file.txt"),
                 "package text file\n");
         tb.writeFile(pkgDocFiles.resolve("pkg-file.html"),
-                "<html>\n"
-                + "<head><title>Package HTML file</title></head>\n"
-                + "<body><h1>Package HTML file</h1>File content</body>\n"
-                + "</html>\n");
+                """
+                    <html>
+                    <head><title>Package HTML file</title></head>
+                    <body><h1>Package HTML file</h1>File content</body>
+                    </html>
+                    """);
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),

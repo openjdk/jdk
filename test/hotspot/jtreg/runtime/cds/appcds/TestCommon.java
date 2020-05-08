@@ -238,7 +238,7 @@ public class TestCommon extends CDSTestUtils {
             }
         }
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
+        ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }
@@ -384,7 +384,7 @@ public class TestCommon extends CDSTestUtils {
             }
         }
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
+        ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }

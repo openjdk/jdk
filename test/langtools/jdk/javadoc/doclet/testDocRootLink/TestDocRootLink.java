@@ -55,28 +55,38 @@ public class TestDocRootLink extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/C1.html", true,
-            "Refer <a href=\"../../technotes/guides/index.html\">Here</a>",
-            "This <a href=\"../pkg2/C2.html\">Here</a> should not be replaced\n" +
-            " with an absolute link.",
-            "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and\n" +
-            " <a href=\"../pkg2/C2.html\">Link 2</a>.");
+            """
+                Refer <a href="../../technotes/guides/index.html">Here</a>""",
+            """
+                This <a href="../pkg2/C2.html">Here</a> should not be replaced
+                 with an absolute link.""",
+            """
+                Testing <a href="../technotes/guides/index.html">Link 1</a> and
+                 <a href="../pkg2/C2.html">Link 2</a>.""");
 
         checkOutput("pkg1/package-summary.html", true,
-            "<a href=\"../../technotes/guides/index.html\">\n" +
-            "            Test document 1</a>",
-            "<a href=\"../pkg2/C2.html\">\n" +
-            "            Another Test document 1</a>",
-            "<a href=\"../technotes/guides/index.html\">\n" +
-            "            Another Test document 2.</a>");
+            """
+                <a href="../../technotes/guides/index.html">
+                            Test document 1</a>""",
+            """
+                <a href="../pkg2/C2.html">
+                            Another Test document 1</a>""",
+            """
+                <a href="../technotes/guides/index.html">
+                            Another Test document 2.</a>""");
 
         // TODO: should this check *any* reference to http://download.oracle.com/
         checkOutput("pkg1/C1.html", false,
-            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">");
+            """
+                <a href="http://download.oracle.com/javase/7/docs/technotes/guides/index.html">""",
+            """
+                <a href="http://download.oracle.com/javase/7/docs/pkg2/C2.html">""");
 
         checkOutput("pkg1/package-summary.html", false,
-            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">");
+            """
+                <a href="http://download.oracle.com/javase/7/docs/technotes/guides/index.html">""",
+            """
+                <a href="http://download.oracle.com/javase/7/docs/pkg2/C2.html">""");
     }
 
     @Test
@@ -88,26 +98,36 @@ public class TestDocRootLink extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg2/C2.html", true,
-            "Refer <a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">Here</a>",
-            "This <a href=\"../pkg1/C1.html\">Here</a> should not be replaced\n" +
-            " with an absolute link.",
-            "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and\n" +
-            " <a href=\"../pkg1/C1.html\">Link 2</a>.");
+            """
+                Refer <a href="http://download.oracle.com/javase/7/docs/technotes/guides/index.html">Here</a>""",
+            """
+                This <a href="../pkg1/C1.html">Here</a> should not be replaced
+                 with an absolute link.""",
+            """
+                Testing <a href="../technotes/guides/index.html">Link 1</a> and
+                 <a href="../pkg1/C1.html">Link 2</a>.""");
 
         checkOutput("pkg2/package-summary.html", true,
-            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">\n" +
-            "            Test document 1</a>",
-            "<a href=\"../pkg1/C1.html\">\n" +
-            "            Another Test document 1</a>",
-            "<a href=\"../technotes/guides/index.html\">\n" +
-            "            Another Test document 2.</a>");
+            """
+                <a href="http://download.oracle.com/javase/7/docs/technotes/guides/index.html">
+                            Test document 1</a>""",
+            """
+                <a href="../pkg1/C1.html">
+                            Another Test document 1</a>""",
+            """
+                <a href="../technotes/guides/index.html">
+                            Another Test document 2.</a>""");
 
         checkOutput("pkg2/C2.html", false,
-            "<a href=\"../../technotes/guides/index.html\">",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">");
+            """
+                <a href="../../technotes/guides/index.html">""",
+            """
+                <a href="http://download.oracle.com/javase/7/docs/pkg1/C1.html">""");
 
         checkOutput("pkg2/package-summary.html", false,
-            "<a href=\"../../technotes/guides/index.html\">",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">");
+            """
+                <a href="../../technotes/guides/index.html">""",
+            """
+                <a href="http://download.oracle.com/javase/7/docs/pkg1/C1.html">""");
     }
 }

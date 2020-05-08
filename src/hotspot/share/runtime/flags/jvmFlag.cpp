@@ -426,7 +426,7 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) {
     //     double MinRAMPercentage                                   [ 0.000                     ...                   100.000 ]                            {product} {default}
     //      uintx MinSurvivorRatio                                   [ 3                         ...      18446744073709551615 ]                            {product} {default}
     //     size_t MinTLABSize                                        [ 1                         ...       9223372036854775807 ]                            {product} {default}
-    //       intx MonitorBound                                       [ 0                         ...                2147483647 ]                            {product} {default}
+    //       intx MaxInlineSize                                      [ 0                         ...                2147483647 ]                            {product} {default}
     //  |         |                                                  |                                                           |                                    |               |
     //  |         |                                                  |                                                           |                                    |               +-- col7
     //  |         |                                                  |                                                           |                                    +-- col6

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,14 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.naming.CommunicationException;
+import javax.naming.NamingException;
 import java.util.concurrent.TimeUnit;
 
 final class LdapRequest {
 
     private final static BerDecoder EOF = new BerDecoder(new byte[]{}, -1, 0);
+    private final static String CLOSE_MSG = "LDAP connection has been closed";
+    private final static String TIMEOUT_MSG_FMT = "LDAP response read timed out, timeout used: %d ms.";
 
     LdapRequest next;   // Set/read in synchronized Connection methods
     final int msgId;          // read-only
@@ -95,14 +98,22 @@ final class LdapRequest {
         return pauseAfterReceipt;
     }
 
-    BerDecoder getReplyBer(long millis) throws CommunicationException,
+    /**
+     * Read reply BER
+     * @param millis timeout, infinite if the value is negative
+     * @return BerDecoder if reply was read successfully
+     * @throws CommunicationException request has been canceled and request does not need to be abandoned
+     * @throws NamingException request has been closed or timed out. Request does need to be abandoned
+     * @throws InterruptedException LDAP operation has been interrupted
+     */
+    BerDecoder getReplyBer(long millis) throws NamingException,
                                                InterruptedException {
         if (cancelled) {
             throw new CommunicationException("Request: " + msgId +
                 " cancelled");
         }
         if (isClosed()) {
-            return null;
+            throw new NamingException(CLOSE_MSG);
         }
 
         BerDecoder result = millis > 0 ?
@@ -113,7 +124,15 @@ final class LdapRequest {
                 " cancelled");
         }
 
-        return result == EOF ? null : result;
+        // poll from 'replies' blocking queue ended-up with timeout
+        if (result == null) {
+            throw new NamingException(String.format(TIMEOUT_MSG_FMT, millis));
+        }
+        // Unexpected EOF can be caused by connection closure or cancellation
+        if (result == EOF) {
+            throw new NamingException(CLOSE_MSG);
+        }
+        return result;
     }
 
     boolean hasSearchCompleted() {

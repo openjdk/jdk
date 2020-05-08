@@ -252,6 +252,11 @@ class ClassLoader: AllStatic {
   static void load_zip_library();
   static void load_jimage_library();
 
+ private:
+  static int  _libzip_loaded; // used to sync loading zip.
+  static void release_load_zip_library();
+  static inline void load_zip_library_if_needed();
+
  public:
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool throw_exception,

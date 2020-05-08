@@ -62,6 +62,20 @@ abstract class DelegatingMethodHandle extends MethodHandle {
     }
 
     @Override
+    boolean isCrackable() {
+        MemberName member = internalMemberName();
+        return member != null &&
+                (member.isResolved() ||
+                 member.isMethodHandleInvoke() ||
+                 member.isVarHandleMethodInvoke());
+    }
+
+    @Override
+    MethodHandle viewAsType(MethodType newType, boolean strict) {
+        return getTarget().viewAsType(newType, strict);
+    }
+
+    @Override
     boolean isInvokeSpecial() {
         return getTarget().isInvokeSpecial();
     }

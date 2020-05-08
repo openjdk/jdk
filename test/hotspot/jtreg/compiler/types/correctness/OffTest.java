@@ -86,7 +86,7 @@ public class OffTest {
         OPTIONS[TYPE_PROFILE_INDEX] = typeProfileLevel;
         OPTIONS[USE_TYPE_SPECULATION_INDEX] = useTypeSpeculation;
         OPTIONS[PROFILING_TYPE_INDEX] = type.name();
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(/* addTestVmOptions= */ true, OPTIONS);
+        ProcessBuilder processBuilder = ProcessTools.createTestJvm(OPTIONS);
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(processBuilder.start());
         outputAnalyzer.shouldHaveExitValue(0);
     }

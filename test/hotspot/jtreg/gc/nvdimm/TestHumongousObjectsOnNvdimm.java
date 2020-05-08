@@ -72,7 +72,7 @@ public class TestHumongousObjectsOnNvdimm {
         Collections.addAll(flags, extraFlags);
         flags.add(HumongousObjectTest.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
+        ProcessBuilder pb = ProcessTools.createTestJvm(flags);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);

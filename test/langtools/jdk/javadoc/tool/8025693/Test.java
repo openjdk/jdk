@@ -37,14 +37,18 @@ public class Test {
 
     final File baseFile = new File("src/Base.java");
     final String baseText =
-        "package p;\n" +
-        "public class Base { static { } }\n";
+        """
+            package p;
+            public class Base { static { } }
+            """;
 
     final File srcFile = new File("src/C.java");
     final String srcText =
-        "package p;\n" +
-        "/** comment */\n" +
-        "public abstract class C extends Base { }\n";
+        """
+            package p;
+            /** comment */
+            public abstract class C extends Base { }
+            """;
 
     void run() throws Exception {
         File classesDir = new File("classes");

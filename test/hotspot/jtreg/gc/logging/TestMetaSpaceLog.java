@@ -84,8 +84,7 @@ public class TestMetaSpaceLog {
     String testSrc= "-Dtest.src=" + System.getProperty("test.src", ".");
 
     ProcessBuilder pb =
-      ProcessTools.createJavaProcessBuilder(
-          true,
+      ProcessTools.createTestJvm(
           "-Xlog:gc*",
           "-Xbootclasspath/a:.",
           "-XX:+UnlockDiagnosticVMOptions",

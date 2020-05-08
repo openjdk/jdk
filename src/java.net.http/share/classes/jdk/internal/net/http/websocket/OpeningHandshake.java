@@ -188,7 +188,7 @@ public class OpeningHandshake {
 
     public CompletableFuture<Result> send() {
         PrivilegedAction<CompletableFuture<Result>> pa = () ->
-                client.sendAsync(this.request, BodyHandlers.discarding())
+                client.sendAsync(this.request, BodyHandlers.ofString())
                       .thenCompose(this::resultFrom);
         return AccessController.doPrivileged(pa);
     }

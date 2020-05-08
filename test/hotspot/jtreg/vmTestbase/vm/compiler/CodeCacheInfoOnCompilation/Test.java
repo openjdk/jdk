@@ -46,7 +46,7 @@ public class Test {
     private static String REGEXP = "^(CodeCache|(CodeHeap.*)): size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb";
 
     public static void main(String[] args) throws Exception {
-        var pb = ProcessTools.createJavaProcessBuilder(true,
+        var pb = ProcessTools.createTestJvm(
                 "-XX:-PrintCodeCache",
                 "-XX:+PrintCodeCacheOnCompilation",
                 "-XX:-Inline",

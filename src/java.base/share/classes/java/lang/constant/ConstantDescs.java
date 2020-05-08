@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,18 @@ public final class ConstantDescs {
             = ofConstantBootstrap(CD_ConstantBootstraps, "enumConstant",
             CD_Enum);
 
+    /**
+     * {@link MethodHandleDesc} representing {@link ConstantBootstraps#getStaticFinal(Lookup, String, Class, Class) ConstantBootstraps.getStaticFinal}
+     * @since 15
+     */
+    public static final DirectMethodHandleDesc BSM_GET_STATIC_FINAL
+            = ofConstantBootstrap(CD_ConstantBootstraps, "getStaticFinal",
+            CD_Object, CD_Class);
+
     /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#nullConstant(Lookup, String, Class) ConstantBootstraps.nullConstant} */
     public static final DirectMethodHandleDesc BSM_NULL_CONSTANT
             = ofConstantBootstrap(CD_ConstantBootstraps, "nullConstant",
-                                  ConstantDescs.CD_Object);
+            CD_Object);
 
     /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#fieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.fieldVarHandle} */
     public static final DirectMethodHandleDesc BSM_VARHANDLE_FIELD
@@ -218,6 +226,14 @@ public final class ConstantDescs {
     public static final DirectMethodHandleDesc BSM_INVOKE
             = ofConstantBootstrap(CD_ConstantBootstraps, "invoke",
             CD_Object, CD_MethodHandle, CD_Object.arrayType());
+
+    /**
+     * {@link MethodHandleDesc} representing {@link ConstantBootstraps#explicitCast(Lookup, String, Class, Object)} ConstantBootstraps.explicitCast}
+     * @since 15
+     */
+    public static final DirectMethodHandleDesc BSM_EXPLICIT_CAST
+            = ofConstantBootstrap(CD_ConstantBootstraps, "explicitCast",
+            CD_Object, CD_Object);
 
     /** {@link ClassDesc} representing the primitive type {@code int} */
     public static final ClassDesc CD_int = ClassDesc.ofDescriptor("I");
@@ -250,6 +266,22 @@ public final class ConstantDescs {
     public static final ConstantDesc NULL
             = DynamicConstantDesc.ofNamed(ConstantDescs.BSM_NULL_CONSTANT,
                                           DEFAULT_NAME, ConstantDescs.CD_Object);
+
+    /**
+     * Nominal descriptor representing the constant {@linkplain Boolean#TRUE}
+     * @since 15
+     */
+    public static final DynamicConstantDesc<Boolean> TRUE
+            = DynamicConstantDesc.ofNamed(BSM_GET_STATIC_FINAL,
+                                          "TRUE", CD_Boolean, CD_Boolean);
+
+    /**
+     * Nominal descriptor representing the constant {@linkplain Boolean#TRUE}
+     * @since 15
+     */
+    public static final DynamicConstantDesc<Boolean> FALSE
+            = DynamicConstantDesc.ofNamed(BSM_GET_STATIC_FINAL,
+                                          "FALSE", CD_Boolean, CD_Boolean);
 
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",

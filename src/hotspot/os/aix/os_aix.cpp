@@ -1180,14 +1180,6 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
-#ifndef PRODUCT
-    fdStream out(defaultStream::output_fd());
-    out.print_raw("Current thread is ");
-    char buf[16];
-    jio_snprintf(buf, sizeof(buf), UINTX_FORMAT, os::current_thread_id());
-    out.print_raw_cr(buf);
-    out.print_raw_cr("Dumping core ...");
-#endif
     ::abort(); // dump core
   }
 
@@ -3549,10 +3541,9 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-  if (UseNUMA) {
-    UseNUMA = false;
-    warning("NUMA optimizations are not available on this OS.");
-  }
+  // Not supported.
+  FLAG_SET_ERGO(UseNUMA, false);
+  FLAG_SET_ERGO(UseNUMAInterleaving, false);
 
   if (MaxFDLimit) {
     // Set the number of file descriptors to max. print out error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @bug 8184765
  * @summary make sure the SystemDictionary gets resized when load factor is too high
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile TriggerResize.java
- * @requires (vm.debug == true)
  * @run driver TestResize
  */
 
@@ -112,16 +112,14 @@ public class TestResize {
   }
 
   public static void main(String[] args) throws Exception {
-    if (Platform.isDebugBuild()) {
-      // -XX:+PrintSystemDictionaryAtExit will print the details of system dictionary,
-      // that will allow us to calculate the table's load factor.
-      // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
-      // that will allow us to detect if the system dictionary resized.
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
-                                                                "-Xlog:safepoint+cleanup",
-                                                                "TriggerResize",
-                                                                "50000");
-      analyzeOutputOn(pb);
-    }
+    // -XX:+PrintSystemDictionaryAtExit will print the details of system dictionary,
+    // that will allow us to calculate the table's load factor.
+    // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
+    // that will allow us to detect if the system dictionary resized.
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+                                                              "-Xlog:safepoint+cleanup",
+                                                              "TriggerResize",
+                                                              "50000");
+    analyzeOutputOn(pb);
   }
 }

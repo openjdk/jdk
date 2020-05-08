@@ -66,7 +66,8 @@ public class TestGenericMethodLinkTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/A.html", true,
-                "<a href=\"A.html\" title=\"class in pkg\"><code>A</code></a>");
+                """
+                    <a href="A.html" title="class in pkg"><code>A</code></a>""");
     }
 
     void createTestClass(Path srcDir) throws Exception {

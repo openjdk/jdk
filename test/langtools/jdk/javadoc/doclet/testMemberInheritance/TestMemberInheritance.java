@@ -51,137 +51,165 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg/SubClass.html", true,
                 // Public field should be inherited
-                "<a href=\"BaseClass.html#pubField\">",
+                """
+                    <a href="BaseClass.html#pubField">""",
                 // Public method should be inherited
-                "<a href=\"BaseClass.html#pubMethod()\">",
+                """
+                    <a href="BaseClass.html#pubMethod()">""",
                 // Public inner class should be inherited.
-                "<a href=\"BaseClass.pubInnerClass.html\" title=\"class in pkg\">",
+                """
+                    <a href="BaseClass.pubInnerClass.html" title="class in pkg">""",
                 // Protected field should be inherited
-                "<a href=\"BaseClass.html#proField\">",
+                """
+                    <a href="BaseClass.html#proField">""",
                 // Protected method should be inherited
-                "<a href=\"BaseClass.html#proMethod()\">",
+                """
+                    <a href="BaseClass.html#proMethod()">""",
                 // Protected inner class should be inherited.
-                "<a href=\"BaseClass.proInnerClass.html\" title=\"class in pkg\">",
+                """
+                    <a href="BaseClass.proInnerClass.html" title="class in pkg">""",
                 // New labels as of 1.5.0
-                "Nested classes/interfaces inherited from class&nbsp;pkg."
-                + "<a href=\"BaseClass.html\" title=\"class in pkg\">BaseClass</a>",
-                "Nested classes/interfaces inherited from interface&nbsp;pkg."
-                + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>");
+                """
+                    Nested classes/interfaces inherited from class&nbsp;pkg.<a href="BaseClass.html" title="class in pkg">BaseClass</a>""",
+                """
+                    Nested classes/interfaces inherited from interface&nbsp;pkg.<a href="BaseInterfa\
+                    ce.html" title="interface in pkg">BaseInterface</a>""");
 
         checkOutput("pkg/BaseClass.html", true,
                 // Test overriding/implementing methods with generic parameters.
-                "<dl class=\"notes\">\n"
-                + "<dt>Specified by:</dt>\n"
-                + "<dd><code><a href=\"BaseInterface.html#getAnnotation(java.lang.Class)\">"
-                + "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>"
-                + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">"
-                + "BaseInterface</a></code></dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>Specified by:</dt>
+                    <dd><code><a href="BaseInterface.html#getAnnotation(java.lang.Class)">getAnnotat\
+                    ion</a></code>&nbsp;in interface&nbsp;<code><a href="BaseInterface.html" title="\
+                    interface in pkg">BaseInterface</a></code></dd>
+                    </dl>""");
 
         checkOutput("diamond/Z.html", true,
                 // Test diamond inheritance member summary (6256068)
-                "<code><a href=\"A.html#aMethod()\">aMethod</a></code>");
+                """
+                    <code><a href="A.html#aMethod()">aMethod</a></code>""");
 
         checkOutput("inheritDist/C.html", true,
                 // Test that doc is inherited from closed parent (6270645)
                 "<div class=\"block\">m1-B</div>");
 
         checkOutput("pkg/SubClass.html", false,
-                "<a href=\"BaseClass.html#staticMethod()\">staticMethod</a></code>");
+                """
+                    <a href="BaseClass.html#staticMethod()">staticMethod</a></code>""");
 
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
-                "<td class=\"col-first\"><code>static java.time.Period</code></td>\n"
-                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
-                + "<a href=\"#between(java.time.LocalDate,java.time.LocalDate)\">"
-                + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
-                + "java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
+                """
+                    <td class="col-first"><code>static java.time.Period</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#between(java.time.LocalDate,java.time.LocalDate)">between</a></span>&#8203;(ja\
+                    va.time.LocalDate&nbsp;startDateInclusive,
+                    java.time.LocalDate&nbsp;endDateExclusive)</code></th>""");
 
         checkOutput("pkg1/Implementer.html", false,
-                "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"Interface.html\""
-                + " title=\"interface in pkg1\">Interface</a></h3>\n"
-                + "<code><a href=\"Interface.html#between(java.time.chrono.ChronoLocalDate"
-                + ",java.time.chrono.ChronoLocalDate)\">between</a></code>"
+                """
+                    <h3>Methods inherited from interface&nbsp;pkg1.<a href="Interface.html" title="interface in pkg1">Interface</a></h3>
+                    <code><a href="Interface.html#between(java.time.chrono.ChronoLocalDate,java.time\
+                    .chrono.ChronoLocalDate)">between</a></code>"""
         );
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<section class=\"description\">\n<hr>\n"
-                + "<pre>public abstract class <span class=\"type-name-label\">"
-                + "DocumentedNonGenericChild</span>\n"
-                + "extends java.lang.Object</pre>\n"
-                + "</section>");
+                """
+                    <section class="description">
+                    <hr>
+                    <pre>public abstract class <span class="type-name-label">DocumentedNonGenericChild</span>
+                    extends java.lang.Object</pre>
+                    </section>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<td class=\"col-first\"><code>protected abstract java.lang.String</code></td>\n"
-                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
-                + "<a href=\"#parentMethod(T)\">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>\n"
-                + "<td class=\"col-last\">\n"
-                + "<div class=\"block\">Returns some value with an inherited search tag.</div>\n"
-                + "</td>\n");
+                """
+                    <td class="col-first"><code>protected abstract java.lang.String</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#parentMethod(T)">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code\
+                    ></th>
+                    <td class="col-last">
+                    <div class="block">Returns some value with an inherited search tag.</div>
+                    </td>
+                    """);
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<section class=\"detail\" id=\"parentMethod(T)\">\n"
-                + "<h3 id=\"parentMethod(java.lang.Object)\">parentMethod</h3>\n"
-                + "<div class=\"member-signature\"><span class=\"modifiers\">protected abstract</span>"
-                + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
-                + "<span class=\"member-name\">parentMethod</span>&#8203;"
-                + "(<span class=\"parameters\">java.lang.String&nbsp;t)</span>\n"
-                + "                                          "
-                + "throws <span class=\"exceptions\">java.lang.IllegalArgumentException,\n"
-                + "java.lang.InterruptedException,\n"
-                + "java.lang.IllegalStateException</span></div>\n"
-                + "<div class=\"block\">Returns some value with an <span id=\"inheritedsearchtag\" "
-                + "class=\"search-tag-result\">inherited search tag</span>.</div>");
+                """
+                    <section class="detail" id="parentMethod(T)">
+                    <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
+                    <div class="member-signature"><span class="modifiers">protected abstract</span>&\
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
+                    name">parentMethod</span>&#8203;(<span class="parameters">java.lang.String&nbsp;\
+                    t)</span>
+                                                              throws <span class="exceptions">java.lang.IllegalArgumentException,
+                    java.lang.InterruptedException,
+                    java.lang.IllegalStateException</span></div>
+                    <div class="block">Returns some value with an <span id="inheritedsearchtag" clas\
+                    s="search-tag-result">inherited search tag</span>.</div>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<dt>Throws:</dt>\n"
-                + "<dd><code>java.lang.InterruptedException</code> - a generic error</dd>\n"
-                + "<dd><code>java.lang.IllegalStateException</code> - illegal state</dd>\n"
-                + "<dd><code>java.lang.IllegalArgumentException</code></dd>");
+                """
+                    <dt>Throws:</dt>
+                    <dd><code>java.lang.InterruptedException</code> - a generic error</dd>
+                    <dd><code>java.lang.IllegalStateException</code> - illegal state</dd>
+                    <dd><code>java.lang.IllegalArgumentException</code></dd>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<td class=\"col-first\"><code>java.lang.String</code></td>\n"
-                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
-                + "<a href=\"#parentField\">parentField</a></span></code></th>\n"
-                + "<td class=\"col-last\">\n"
-                + "<div class=\"block\">A field.</div>",
-                "<section class=\"detail\" id=\"parentField\">\n"
-                + "<h3>parentField</h3>\n"
-                + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"return-type\">java.lang.String</span>&nbsp;<span class=\"member-name\">parentField</span></div>\n"
-                + "<div class=\"block\">A field.</div>\n"
-                + "</section>");
+                """
+                    <td class="col-first"><code>java.lang.String</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#parentField">parentField</a></span></code></th>
+                    <td class="col-last">
+                    <div class="block">A field.</div>""",
+                """
+                    <section class="detail" id="parentField">
+                    <h3>parentField</h3>
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                    lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">parent\
+                    Field</span></div>
+                    <div class="block">A field.</div>
+                    </section>""");
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
-                "<td class=\"col-first\"><code>java.lang.String</code></td>\n"
-                + "<th class=\"col-second\" scope=\"row\"><code><span class=\"member-name-link\">"
-                + "<a href=\"#method(T)\">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>",
-                "<section class=\"detail\" id=\"method(T)\">\n"
-                + "<h3 id=\"method(java.lang.Object)\">method</h3>\n"
-                + "<div class=\"member-signature\"><span class=\"modifiers\">public</span>"
-                + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
-                + "<span class=\"member-name\">method</span>&#8203;(<span class=\"parameters\">"
-                + "java.lang.String&nbsp;t)</span></div>\n"
-                + "</section>");
+                """
+                    <td class="col-first"><code>java.lang.String</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#method(T)">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>""",
+                """
+                    <section class="detail" id="method(T)">
+                    <h3 id="method(java.lang.Object)">method</h3>
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                    lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">method\
+                    </span>&#8203;(<span class="parameters">java.lang.String&nbsp;t)</span></div>
+                    </section>""");
 
         checkOutput("index-all.html", true,
-                "<dt><span class=\"member-name-link\"><a href=\"pkg2/DocumentedNonGenericChild.html#parentField\">"
-                + "parentField</a></span> - Variable in class pkg2.<a href=\"pkg2/DocumentedNonGenericChild.html\" "
-                + "title=\"class in pkg2\">DocumentedNonGenericChild</a></dt>\n"
-                + "<dd>\n<div class=\"block\">A field.</div>\n"
-                + "</dd>\n",
-                "<dt><span class=\"member-name-link\"><a href=\"pkg2/DocumentedNonGenericChild.html#parentMethod(T)\">"
-                + "parentMethod(String)</a></span> - Method in class pkg2.<a "
-                + "href=\"pkg2/DocumentedNonGenericChild.html\" title=\"class in pkg2\">DocumentedNonGenericChild</a></dt>\n"
-                + "<dd>\n<div class=\"block\">Returns some value with an inherited search tag.</div>\n"
-                + "</dd>");
+                """
+                    <dt><span class="member-name-link"><a href="pkg2/DocumentedNonGenericChild.html#\
+                    parentField">parentField</a></span> - Variable in class pkg2.<a href="pkg2/Docum\
+                    entedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></\
+                    dt>
+                    <dd>
+                    <div class="block">A field.</div>
+                    </dd>
+                    """,
+                """
+                    <dt><span class="member-name-link"><a href="pkg2/DocumentedNonGenericChild.html#\
+                    parentMethod(T)">parentMethod(String)</a></span> - Method in class pkg2.<a href=\
+                    "pkg2/DocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonGeneric\
+                    Child</a></dt>
+                    <dd>
+                    <div class="block">Returns some value with an inherited search tag.</div>
+                    </dd>""");
         checkOutput("member-search-index.js", true,
-                "{\"p\":\"pkg2\",\"c\":\"DocumentedNonGenericChild\",\"l\":\"parentField\"}",
-                "{\"p\":\"pkg2\",\"c\":\"DocumentedNonGenericChild\",\"l\":\"parentMethod(String)"
-                + "\",\"u\":\"parentMethod(T)\"}");
+                """
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                """
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         checkOutput("tag-search-index.js", true,
-                "{\"l\":\"inherited search tag\",\"h\":\"pkg2.UndocumentedGenericParent.parentMethod(String)\","
-                + "\"u\":\"pkg2/DocumentedNonGenericChild.html#inheritedsearchtag\"}");
+                """
+                    {"l":"inherited search tag","h":"pkg2.UndocumentedGenericParent.parentMethod(Str\
+                    ing)","u":"pkg2/DocumentedNonGenericChild.html#inheritedsearchtag"}""");
 
     }
 
@@ -194,37 +222,46 @@ public class TestMemberInheritance extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<section class=\"detail\" id=\"parentMethod(T)\">\n"
-                + "<h3 id=\"parentMethod(java.lang.Object)\">parentMethod</h3>\n"
-                + "<div class=\"member-signature\"><span class=\"modifiers\">protected abstract</span>"
-                + "&nbsp;<span class=\"return-type\">java.lang.String</span>&nbsp;"
-                + "<span class=\"member-name\">parentMethod</span>&#8203;"
-                + "(<span class=\"parameters\">java.lang.String&nbsp;t)</span>\n"
-                + "                                          "
-                + "throws <span class=\"exceptions\">java.lang.IllegalArgumentException,\n"
-                + "java.lang.InterruptedException,\n"
-                + "java.lang.IllegalStateException</span></div>\n"
-                + "<div class=\"block\">Returns some value with an <span id=\"inheritedsearchtag\" "
-                + "class=\"search-tag-result\">inherited search tag</span>.</div>");
+                """
+                    <section class="detail" id="parentMethod(T)">
+                    <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
+                    <div class="member-signature"><span class="modifiers">protected abstract</span>&\
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
+                    name">parentMethod</span>&#8203;(<span class="parameters">java.lang.String&nbsp;\
+                    t)</span>
+                                                              throws <span class="exceptions">java.lang.IllegalArgumentException,
+                    java.lang.InterruptedException,
+                    java.lang.IllegalStateException</span></div>
+                    <div class="block">Returns some value with an <span id="inheritedsearchtag" clas\
+                    s="search-tag-result">inherited search tag</span>.</div>""");
 
         checkOutput("index-files/index-9.html", true,
-                "<dt><span class=\"member-name-link\"><a href=\"../pkg2/DocumentedNonGenericChild.html#parentField\">"
-                + "parentField</a></span> - Variable in class pkg2.<a href=\"../pkg2/DocumentedNonGenericChild.html\" "
-                + "title=\"class in pkg2\">DocumentedNonGenericChild</a></dt>\n"
-                + "<dd>\n<div class=\"block\">A field.</div>\n"
-                + "</dd>\n",
-                "<dt><span class=\"member-name-link\"><a href=\"../pkg2/DocumentedNonGenericChild.html#parentMethod(T)\">"
-                + "parentMethod(String)</a></span> - Method in class pkg2.<a "
-                + "href=\"../pkg2/DocumentedNonGenericChild.html\" title=\"class in pkg2\">DocumentedNonGenericChild</a></dt>\n"
-                + "<dd>\n<div class=\"block\">Returns some value with an inherited search tag.</div>\n"
-                + "</dd>");
+                """
+                    <dt><span class="member-name-link"><a href="../pkg2/DocumentedNonGenericChild.ht\
+                    ml#parentField">parentField</a></span> - Variable in class pkg2.<a href="../pkg2\
+                    /DocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild\
+                    </a></dt>
+                    <dd>
+                    <div class="block">A field.</div>
+                    </dd>
+                    """,
+                """
+                    <dt><span class="member-name-link"><a href="../pkg2/DocumentedNonGenericChild.ht\
+                    ml#parentMethod(T)">parentMethod(String)</a></span> - Method in class pkg2.<a hr\
+                    ef="../pkg2/DocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonG\
+                    enericChild</a></dt>
+                    <dd>
+                    <div class="block">Returns some value with an inherited search tag.</div>
+                    </dd>""");
         checkOutput("member-search-index.js", true,
-                "{\"p\":\"pkg2\",\"c\":\"DocumentedNonGenericChild\",\"l\":\"parentField\"}",
-                "{\"p\":\"pkg2\",\"c\":\"DocumentedNonGenericChild\",\"l\":\"parentMethod(String)"
-                + "\",\"u\":\"parentMethod(T)\"}");
+                """
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                """
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         checkOutput("tag-search-index.js", true,
-                "{\"l\":\"inherited search tag\",\"h\":\"pkg2.UndocumentedGenericParent.parentMethod(String)\","
-                + "\"u\":\"pkg2/DocumentedNonGenericChild.html#inheritedsearchtag\"}");
+                """
+                    {"l":"inherited search tag","h":"pkg2.UndocumentedGenericParent.parentMethod(Str\
+                    ing)","u":"pkg2/DocumentedNonGenericChild.html#inheritedsearchtag"}""");
     }
 
 }

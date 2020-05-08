@@ -51,18 +51,26 @@ public class TestOverriddenDeprecatedMethods extends JavadocTester {
 
         checkOrder("pkg1/SubClass.html",
                 "Method Summary",
-                "Methods declared in class&nbsp;pkg1.<a href=\"BaseClass.html\" title=\"class in pkg1\">"
-                + "BaseClass</a>",
-                "<a href=\"BaseClass.html#func3()\">func3</a>");
+                """
+                    Methods declared in class&nbsp;pkg1.<a href="BaseClass.html" title="class in pkg1">BaseClass</a>""",
+                """
+                    <a href="BaseClass.html#func3()">func3</a>""");
 
         checkOrder("pkg1/SubClass.html",
                 "Method Detail",
-                "<span class=\"annotations\">@Deprecated\n</span><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">func1</span>()",
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span></div>",
-                "<span class=\"annotations\">@Deprecated\n</span><span class=\"modifiers\">public</span>&nbsp;"
-                + "<span class=\"return-type\">void</span>&nbsp;<span class=\"member-name\">func2</span>()",
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span></div>",
-                "<div class=\"block\">deprecated with comments</div>");
+                """
+                    <span class="annotations">@Deprecated
+                    </span><span class="modifiers">public</span>&nbsp;<span class="return-type">void\
+                    </span>&nbsp;<span class="member-name">func1</span>()""",
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""",
+                """
+                    <span class="annotations">@Deprecated
+                    </span><span class="modifiers">public</span>&nbsp;<span class="return-type">void\
+                    </span>&nbsp;<span class="member-name">func2</span>()""",
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""",
+                """
+                    <div class="block">deprecated with comments</div>""");
     }
 }

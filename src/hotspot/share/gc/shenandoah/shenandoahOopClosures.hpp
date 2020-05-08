@@ -26,7 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
 
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStrDedupQueue.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"

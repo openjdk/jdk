@@ -189,7 +189,7 @@ public class ResumptionUpdateBoundValues {
             System.out.println("test.java.opts: " +
                     System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+            ProcessBuilder pb = ProcessTools.createTestJvm(
                     Utils.addTestJavaOpts("ResumptionUpdateBoundValues", "p"));
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);

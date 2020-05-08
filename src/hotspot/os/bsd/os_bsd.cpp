@@ -1070,14 +1070,6 @@ void os::shutdown() {
 void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
-#ifndef PRODUCT
-    fdStream out(defaultStream::output_fd());
-    out.print_raw("Current thread is ");
-    char buf[16];
-    jio_snprintf(buf, sizeof(buf), UINTX_FORMAT, os::current_thread_id());
-    out.print_raw_cr(buf);
-    out.print_raw_cr("Dumping core ...");
-#endif
     ::abort(); // dump core
   }
 
@@ -3139,6 +3131,10 @@ jint os::init_2(void) {
   if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
+
+  // Not supported.
+  FLAG_SET_ERGO(UseNUMA, false);
+  FLAG_SET_ERGO(UseNUMAInterleaving, false);
 
   if (MaxFDLimit) {
     // set the number of file descriptors to max. print out error

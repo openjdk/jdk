@@ -105,8 +105,7 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
     private static void doTestCustomBase(String baseArchiveName, String topArchiveName) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("strConcatApp.jar");
         // dump class list by running the StrConcatApp
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
             "-XX:DumpLoadedClassList=" + classList,
             "-cp",
             appJar,

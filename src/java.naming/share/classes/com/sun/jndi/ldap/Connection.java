@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,22 +419,34 @@ public final class Connection implements Runnable {
             }
         }
 
+        NamingException namingException = null;
         try {
             // if no timeout is set so we wait infinitely until
-            // a response is received
+            // a response is received OR until the connection is closed or cancelled
             // http://docs.oracle.com/javase/8/docs/technotes/guides/jndi/jndi-ldap.html#PROP
             rber = ldr.getReplyBer(readTimeout);
         } catch (InterruptedException ex) {
             throw new InterruptedNamingException(
                 "Interrupted during LDAP operation");
+        } catch (CommunicationException ce) {
+            // Re-throw
+            throw ce;
+        } catch (NamingException ne) {
+            // Connection is timed out OR closed/cancelled
+            namingException = ne;
+            rber = null;
         }
 
         if (rber == null) {
             abandonRequest(ldr, null);
-            throw new NamingException(
-                    "LDAP response read timed out, timeout used:"
-                            + readTimeout + "ms." );
-
+        }
+        // namingException can be not null in the following cases:
+        //  a) The response is timed-out
+        //  b) LDAP request connection has been closed or cancelled
+        // The exception message is initialized in LdapRequest::getReplyBer
+        if (namingException != null) {
+            // Re-throw NamingException after all cleanups are done
+            throw namingException;
         }
         return rber;
     }
@@ -853,15 +865,6 @@ public final class Connection implements Runnable {
                     inbuf = Arrays.copyOf(inbuf, offset + left.length);
                     System.arraycopy(left, 0, inbuf, offset, left.length);
                     offset += left.length;
-/*
-if (dump > 0) {
-System.err.println("seqlen: " + seqlen);
-System.err.println("bufsize: " + offset);
-System.err.println("bytesleft: " + bytesleft);
-System.err.println("bytesread: " + bytesread);
-}
-*/
-
 
                     try {
                         retBer = new BerDecoder(inbuf, 0, offset);
@@ -969,36 +972,4 @@ System.err.println("bytesread: " + bytesread);
         }
         return buf;
     }
-
-    // This code must be uncommented to run the LdapAbandonTest.
-    /*public void sendSearchReqs(String dn, int numReqs) {
-        int i;
-        String attrs[] = null;
-        for(i = 1; i <= numReqs; i++) {
-            BerEncoder ber = new BerEncoder(2048);
-
-            try {
-            ber.beginSeq(Ber.ASN_SEQUENCE | Ber.ASN_CONSTRUCTOR);
-                ber.encodeInt(i);
-                ber.beginSeq(LdapClient.LDAP_REQ_SEARCH);
-                    ber.encodeString(dn == null ? "" : dn);
-                    ber.encodeInt(0, LdapClient.LBER_ENUMERATED);
-                    ber.encodeInt(3, LdapClient.LBER_ENUMERATED);
-                    ber.encodeInt(0);
-                    ber.encodeInt(0);
-                    ber.encodeBoolean(true);
-                    LdapClient.encodeFilter(ber, "");
-                    ber.beginSeq(Ber.ASN_SEQUENCE | Ber.ASN_CONSTRUCTOR);
-                        ber.encodeStringArray(attrs);
-                    ber.endSeq();
-                ber.endSeq();
-            ber.endSeq();
-            writeRequest(ber, i);
-            //System.err.println("wrote request " + i);
-            } catch (Exception ex) {
-            //System.err.println("ldap.search: Caught " + ex + " building req");
-            }
-
-        }
-    } */
 }

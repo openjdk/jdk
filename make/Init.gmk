@@ -226,6 +226,9 @@ else # HAS_SPEC=true
   # Parse COMPARE_BUILD (for makefile development)
   $(eval $(call ParseCompareBuild))
 
+  # Setup reproducible build environment
+  $(eval $(call SetupReproducibleBuild))
+
   # If no LOG= was given on command line, but we have a non-standard default
   # value, use that instead and re-parse log level.
   ifeq ($(LOG), )

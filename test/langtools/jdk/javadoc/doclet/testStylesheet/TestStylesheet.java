@@ -65,181 +65,199 @@ public class TestStylesheet extends JavadocTester {
         // TODO: most of this test seems a bit silly, since javadoc is simply
         // copying in the stylesheet from the source directory
         checkOutput("stylesheet.css", true,
-                "body {\n"
-                + "    background-color:#ffffff;\n"
-                + "    color:#353833;\n"
-                + "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;\n"
-                + "    font-size:14px;\n"
-                + "    margin:0;\n"
-                + "    padding:0;\n"
-                + "    height:100%;\n"
-                + "    width:100%;\n"
-                + "}",
-                "iframe {\n"
-                + "    margin:0;\n"
-                + "    padding:0;\n"
-                + "    height:100%;\n"
-                + "    width:100%;\n"
-                + "    overflow-y:scroll;\n"
-                + "    border:none;\n"
-                + "}",
+                """
+                    body {
+                        background-color:#ffffff;
+                        color:#353833;
+                        font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
+                        font-size:14px;
+                        margin:0;
+                        padding:0;
+                        height:100%;
+                        width:100%;
+                    }""",
+                """
+                    iframe {
+                        margin:0;
+                        padding:0;
+                        height:100%;
+                        width:100%;
+                        overflow-y:scroll;
+                        border:none;
+                    }""",
                 "ul {\n"
                 + "    list-style-type:disc;\n"
                 + "}",
-                ".overview-summary caption, .member-summary caption, .type-summary caption,\n"
-                + ".use-summary caption, .constants-summary caption, .deprecated-summary caption,\n"
-                + ".requires-summary caption, .packages-summary caption, .provides-summary caption,\n"
-                + ".uses-summary caption, .system-properties-summary caption {\n"
-                + "    position:relative;\n"
-                + "    text-align:left;\n"
-                + "    background-repeat:no-repeat;\n"
-                + "    color:#253441;\n"
-                + "    font-weight:bold;\n"
-                + "    clear:none;\n"
-                + "    overflow:hidden;\n"
-                + "    padding:0px;\n"
-                + "    padding-top:10px;\n"
-                + "    padding-left:1px;\n"
-                + "    margin:0px;\n"
-                + "    white-space:pre;\n"
-                + "}",
-                ".overview-summary caption span, .member-summary caption span, .type-summary caption span,\n"
-                + ".use-summary caption span, .constants-summary caption span, .deprecated-summary caption span,\n"
-                + ".requires-summary caption span, .packages-summary caption span, .provides-summary caption span,\n"
-                + ".uses-summary caption span, .system-properties-summary caption span {\n"
-                + "    white-space:nowrap;\n"
-                + "    padding-top:5px;\n"
-                + "    padding-left:12px;\n"
-                + "    padding-right:12px;\n"
-                + "    padding-bottom:7px;\n"
-                + "    display:inline-block;\n"
-                + "    float:left;\n"
-                + "    background-color:#F8981D;\n"
-                + "    border: none;\n"
-                + "    height:16px;\n"
-                + "}",
-                "div.table-tabs > button {\n"
-                + "   border: none;\n"
-                + "   cursor: pointer;\n"
-                + "   padding: 5px 12px 7px 12px;\n"
-                + "   font-weight: bold;\n"
-                + "   margin-right: 3px;\n"
-                + "}\n"
-                + "div.table-tabs > button.active-table-tab {\n"
-                + "   background: #F8981D;\n"
-                + "   color: #253441;\n"
-                + "}\n"
-                + "div.table-tabs > button.table-tab {\n"
-                + "   background: #4D7A97;\n"
-                + "   color: #FFFFFF;\n"
-                + "}",
+                """
+                    .overview-summary caption, .member-summary caption, .type-summary caption,
+                    .use-summary caption, .constants-summary caption, .deprecated-summary caption,
+                    .requires-summary caption, .packages-summary caption, .provides-summary caption,
+                    .uses-summary caption, .system-properties-summary caption {
+                        position:relative;
+                        text-align:left;
+                        background-repeat:no-repeat;
+                        color:#253441;
+                        font-weight:bold;
+                        clear:none;
+                        overflow:hidden;
+                        padding:0px;
+                        padding-top:10px;
+                        padding-left:1px;
+                        margin:0px;
+                        white-space:pre;
+                    }""",
+                """
+                    .overview-summary caption span, .member-summary caption span, .type-summary caption span,
+                    .use-summary caption span, .constants-summary caption span, .deprecated-summary caption span,
+                    .requires-summary caption span, .packages-summary caption span, .provides-summary caption span,
+                    .uses-summary caption span, .system-properties-summary caption span {
+                        white-space:nowrap;
+                        padding-top:5px;
+                        padding-left:12px;
+                        padding-right:12px;
+                        padding-bottom:7px;
+                        display:inline-block;
+                        float:left;
+                        background-color:#F8981D;
+                        border: none;
+                        height:16px;
+                    }""",
+                """
+                    div.table-tabs > button {
+                       border: none;
+                       cursor: pointer;
+                       padding: 5px 12px 7px 12px;
+                       font-weight: bold;
+                       margin-right: 3px;
+                    }
+                    div.table-tabs > button.active-table-tab {
+                       background: #F8981D;
+                       color: #253441;
+                    }
+                    div.table-tabs > button.table-tab {
+                       background: #4D7A97;
+                       color: #FFFFFF;
+                    }""",
                 // Test the formatting styles for proper content display in use and constant values pages.
-                ".overview-summary td.col-first, .overview-summary th.col-first,\n"
-                + ".requires-summary td.col-first, .requires-summary th.col-first,\n"
-                + ".packages-summary td.col-first, .packages-summary td.col-second, .packages-summary th.col-first, .packages-summary th,\n"
-                + ".uses-summary td.col-first, .uses-summary th.col-first,\n"
-                + ".provides-summary td.col-first, .provides-summary th.col-first,\n"
-                + ".member-summary td.col-first, .member-summary th.col-first,\n"
-                + ".member-summary td.col-second, .member-summary th.col-second, .member-summary th.col-constructor-name,\n"
-                + ".type-summary td.col-first, .type-summary th.col-first {\n"
-                + "    vertical-align:top;\n"
-                + "}",
-                ".overview-summary td, .member-summary td, .type-summary td,\n"
-                + ".use-summary td, .constants-summary td, .deprecated-summary td,\n"
-                + ".requires-summary td, .packages-summary td, .provides-summary td,\n"
-                + ".uses-summary td, .system-properties-summary td {\n"
-                + "    text-align:left;\n"
-                + "    padding:0px 0px 12px 10px;\n"
-                + "}",
+                """
+                    .overview-summary td.col-first, .overview-summary th.col-first,
+                    .requires-summary td.col-first, .requires-summary th.col-first,
+                    .packages-summary td.col-first, .packages-summary td.col-second, .packages-summary th.col-first, .packages-summary th,
+                    .uses-summary td.col-first, .uses-summary th.col-first,
+                    .provides-summary td.col-first, .provides-summary th.col-first,
+                    .member-summary td.col-first, .member-summary th.col-first,
+                    .member-summary td.col-second, .member-summary th.col-second, .member-summary th.col-constructor-name,
+                    .type-summary td.col-first, .type-summary th.col-first {
+                        vertical-align:top;
+                    }""",
+                """
+                    .overview-summary td, .member-summary td, .type-summary td,
+                    .use-summary td, .constants-summary td, .deprecated-summary td,
+                    .requires-summary td, .packages-summary td, .provides-summary td,
+                    .uses-summary td, .system-properties-summary td {
+                        text-align:left;
+                        padding:0px 0px 12px 10px;
+                    }""",
                 "@import url('resources/fonts/dejavu.css');",
-                ".search-tag-result:target {\n"
-                + "    background-color:yellow;\n"
-                + "}",
-                "a[href]:hover, a[href]:focus {\n"
-                + "    text-decoration:none;\n"
-                + "    color:#bb7a2a;\n"
-                + "}",
-                "td.col-first a:link, td.col-first a:visited,\n"
-                + "td.col-second a:link, td.col-second a:visited,\n"
-                + "th.col-first a:link, th.col-first a:visited,\n"
-                + "th.col-second a:link, th.col-second a:visited,\n"
-                + "th.col-constructor-name a:link, th.col-constructor-name a:visited,\n"
-                + "th.col-deprecated-item-name a:link, th.col-deprecated-item-name a:visited,\n"
-                + ".constant-values-container td a:link, .constant-values-container td a:visited,\n"
-                + ".all-classes-container td a:link, .all-classes-container td a:visited,\n"
-                + ".all-packages-container td a:link, .all-packages-container td a:visited {\n"
-                + "    font-weight:bold;\n"
-                + "}",
-                ".deprecation-block {\n"
-                + "    font-size:14px;\n"
-                + "    font-family:'DejaVu Serif', Georgia, \"Times New Roman\", Times, serif;\n"
-                + "    border-style:solid;\n"
-                + "    border-width:thin;\n"
-                + "    border-radius:10px;\n"
-                + "    padding:10px;\n"
-                + "    margin-bottom:10px;\n"
-                + "    margin-right:10px;\n"
-                + "    display:inline-block;\n"
-                + "}",
-                "#reset {\n"
-                + "    background-color: rgb(255,255,255);\n"
-                + "    background-image:url('resources/x.png');\n"
-                + "    background-position:center;\n"
-                + "    background-repeat:no-repeat;\n"
-                + "    background-size:12px;\n"
-                + "    border:0 none;\n"
-                + "    width:16px;\n"
-                + "    height:16px;\n"
-                + "    position:relative;\n"
-                + "    left:-4px;\n"
-                + "    top:-4px;\n"
-                + "    font-size:0px;\n"
-                + "}",
-                ".watermark {\n"
-                + "    color:#545454;\n"
-                + "}");
+                """
+                    .search-tag-result:target {
+                        background-color:yellow;
+                    }""",
+                """
+                    a[href]:hover, a[href]:focus {
+                        text-decoration:none;
+                        color:#bb7a2a;
+                    }""",
+                """
+                    td.col-first a:link, td.col-first a:visited,
+                    td.col-second a:link, td.col-second a:visited,
+                    th.col-first a:link, th.col-first a:visited,
+                    th.col-second a:link, th.col-second a:visited,
+                    th.col-constructor-name a:link, th.col-constructor-name a:visited,
+                    th.col-deprecated-item-name a:link, th.col-deprecated-item-name a:visited,
+                    .constant-values-container td a:link, .constant-values-container td a:visited,
+                    .all-classes-container td a:link, .all-classes-container td a:visited,
+                    .all-packages-container td a:link, .all-packages-container td a:visited {
+                        font-weight:bold;
+                    }""",
+                """
+                    .deprecation-block {
+                        font-size:14px;
+                        font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+                        border-style:solid;
+                        border-width:thin;
+                        border-radius:10px;
+                        padding:10px;
+                        margin-bottom:10px;
+                        margin-right:10px;
+                        display:inline-block;
+                    }""",
+                """
+                    #reset {
+                        background-color: rgb(255,255,255);
+                        background-image:url('resources/x.png');
+                        background-position:center;
+                        background-repeat:no-repeat;
+                        background-size:12px;
+                        border:0 none;
+                        width:16px;
+                        height:16px;
+                        position:relative;
+                        left:-4px;
+                        top:-4px;
+                        font-size:0px;
+                    }""",
+                """
+                    .watermark {
+                        color:#545454;
+                    }""");
 
         checkOutput("pkg/A.html", true,
                 // Test whether a link to the stylesheet file is inserted properly
                 // in the class documentation.
-                "<link rel=\"stylesheet\" type=\"text/css\" "
-                + "href=\"../stylesheet.css\" title=\"Style\">",
-                "<div class=\"block\">Test comment for a class which has an <a name=\"named_anchor\">"
-                + "anchor_with_name</a> and\n"
-                + " an <a id=\"named_anchor1\">anchor_with_id</a>.</div>");
+                """
+                    <link rel="stylesheet" type="text/css" href="../stylesheet.css" title="Style">""",
+                """
+                    <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
+                     an <a id="named_anchor1">anchor_with_id</a>.</div>""");
 
         checkOutput("pkg/package-summary.html", true,
-                "<td class=\"col-last\">\n"
-                + "<div class=\"block\">Test comment for a class which has an <a name=\"named_anchor\">"
-                + "anchor_with_name</a> and\n"
-                + " an <a id=\"named_anchor1\">anchor_with_id</a>.</div>\n"
-                + "</td>");
+                """
+                    <td class="col-last">
+                    <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
+                     an <a id="named_anchor1">anchor_with_id</a>.</div>
+                    </td>""");
 
         checkOutput("index.html", true,
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" title=\"Style\">");
+                """
+                    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">""");
 
         checkOutput("stylesheet.css", false,
-                "* {\n"
-                + "    margin:0;\n"
-                + "    padding:0;\n"
-                + "}",
-                "a:active {\n"
-                + "    text-decoration:none;\n"
-                + "    color:#4A6782;\n"
-                + "}",
-                "a[name]:hover {\n"
-                + "    text-decoration:none;\n"
-                + "    color:#353833;\n"
-                + "}",
-                "td.col-first a:link, td.col-first a:visited,\n"
-                + "td.col-second a:link, td.col-second a:visited,\n"
-                + "th.col-first a:link, th.col-first a:visited,\n"
-                + "th.col-second a:link, th.col-second a:visited,\n"
-                + "th.col-constructor-name a:link, th.col-constructor-name a:visited,\n"
-                + "td.col-last a:link, td.col-last a:visited,\n"
-                + ".constant-values-container td a:link, .constant-values-container td a:visited {\n"
-                + "    font-weight:bold;\n"
-                + "}");
+                """
+                    * {
+                        margin:0;
+                        padding:0;
+                    }""",
+                """
+                    a:active {
+                        text-decoration:none;
+                        color:#4A6782;
+                    }""",
+                """
+                    a[name]:hover {
+                        text-decoration:none;
+                        color:#353833;
+                    }""",
+                """
+                    td.col-first a:link, td.col-first a:visited,
+                    td.col-second a:link, td.col-second a:visited,
+                    th.col-first a:link, th.col-first a:visited,
+                    th.col-second a:link, th.col-second a:visited,
+                    th.col-constructor-name a:link, th.col-constructor-name a:visited,
+                    td.col-last a:link, td.col-last a:visited,
+                    .constant-values-container td a:link, .constant-values-container td a:visited {
+                        font-weight:bold;
+                    }""");
     }
 
     ToolBox tb = new ToolBox();
@@ -249,17 +267,21 @@ public class TestStylesheet extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module mA { exports p; }",
-                "package p; public class C {\n"
-                + "public C() { }\n"
-                + "public C(int i) { }\n"
-                + "public int f1;\n"
-                + "public int f2;\n"
-                + "public int m1() { }\n"
-                + "public int m2(int i) { }\n"
-                + "}\n",
-                "package p; public @interface Anno {\n"
-                + "public int value();\n"
-                + "}\n"
+                """
+                    package p; public class C {
+                    public C() { }
+                    public C(int i) { }
+                    public int f1;
+                    public int f2;
+                    public int m1() { }
+                    public int m2(int i) { }
+                    }
+                    """,
+                """
+                    package p; public @interface Anno {
+                    public int value();
+                    }
+                    """
         );
 
         javadoc("-d", base.resolve("out").toString(),

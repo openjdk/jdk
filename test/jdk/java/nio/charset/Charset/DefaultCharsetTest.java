@@ -54,7 +54,7 @@ import static org.testng.Assert.assertTrue;
 public class DefaultCharsetTest {
 
     private static final ProcessBuilder pb
-            = ProcessTools.createJavaProcessBuilder(true, Default.class.getName());
+            = ProcessTools.createTestJvm(Default.class.getName());
     private static final Map<String, String> env = pb.environment();
     private static String UNSUPPORTED = null;
 

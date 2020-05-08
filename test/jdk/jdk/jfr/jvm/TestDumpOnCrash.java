@@ -110,7 +110,7 @@ public class TestDumpOnCrash {
     private static long runProcess(Class<?> crasher, String signal, boolean disk) throws Exception {
         System.out.println("Test case for crasher " + crasher.getName());
         final String flightRecordingOptions = "dumponexit=true,disk=" + Boolean.toString(disk);
-        Process p = ProcessTools.createJavaProcessBuilder(true,
+        Process p = ProcessTools.createTestJvm(
                 "-Xmx64m",
                 "-XX:-CreateCoredumpOnCrash",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",

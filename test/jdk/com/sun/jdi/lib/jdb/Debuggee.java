@@ -69,7 +69,6 @@ public class Debuggee implements Closeable {
         private String transport = "dt_socket";
         private String address = null;
         private boolean suspended = true;
-        private boolean addTestVmAndJavaOptions = true;
 
         private Launcher(String mainClass) {
             this.mainClass = mainClass;
@@ -101,11 +100,6 @@ public class Debuggee implements Closeable {
             suspended = value;
             return this;
         }
-        // default is "true"
-        public Launcher addTestVmAndJavaOptions(boolean value) {
-            addTestVmAndJavaOptions = value;
-            return this;
-        }
 
         public ProcessBuilder prepare() {
             List<String> debuggeeArgs = new LinkedList<>();
@@ -117,8 +111,7 @@ public class Debuggee implements Closeable {
                     + ",server=y,suspend=" + (suspended ? "y" : "n"));
             debuggeeArgs.addAll(options);
             debuggeeArgs.add(mainClass);
-            return ProcessTools.createJavaProcessBuilder(addTestVmAndJavaOptions,
-                    debuggeeArgs.toArray(new String[0]));
+            return ProcessTools.createTestJvm(debuggeeArgs);
         }
 
         public Debuggee launch(String name) {

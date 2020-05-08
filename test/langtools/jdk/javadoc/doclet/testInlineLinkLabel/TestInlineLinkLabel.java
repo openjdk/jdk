@@ -49,8 +49,10 @@ public class TestInlineLinkLabel extends JavadocTester {
 
         checkOutput("pkg/C1.html", true,
                 //Search for the label to the package link.
-                "<a href=\"package-summary.html\"><code>Here is a link to a package</code></a>",
+                """
+                    <a href="package-summary.html"><code>Here is a link to a package</code></a>""",
                 //Search for the label to the class link
-                "<a href=\"C2.html\" title=\"class in pkg\"><code>Here is a link to a class</code></a>");
+                """
+                    <a href="C2.html" title="class in pkg"><code>Here is a link to a class</code></a>""");
     }
 }

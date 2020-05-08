@@ -88,7 +88,7 @@ public class TestJmapCore {
     }
 
     static void test(String type) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-XX:+CreateCoredumpOnCrash",
+        ProcessBuilder pb = ProcessTools.createTestJvm("-XX:+CreateCoredumpOnCrash",
                 "-Xmx512m", "-XX:MaxMetaspaceSize=64m", "-XX:+CrashOnOutOfMemoryError",
                 TestJmapCore.class.getName(), type);
 

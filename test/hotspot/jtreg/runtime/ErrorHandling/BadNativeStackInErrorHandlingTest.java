@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -36,16 +35,15 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8194652
  * @summary Printing native stack shows an "error occurred during error reporting".
  * @modules java.base/jdk.internal.misc
+ * @requires vm.debug
+ * @requires vm.flavor != "zero"
  * @library /test/lib
+ * @run driver BadNativeStackInErrorHandlingTest
  */
 
 // This test was adapted from SafeFetchInErrorHandlingTest.java.
 public class BadNativeStackInErrorHandlingTest {
   public static void main(String[] args) throws Exception {
-    if (!Platform.isDebugBuild() || Platform.isZero()) {
-      return;
-    }
-
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",

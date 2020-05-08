@@ -49,11 +49,11 @@ public class TestConstructorIndent extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("C.html", true,
-                "<div class=\"block\">"
-                + "This is just a simple constructor.</div>\n"
-                + "<dl class=\"notes\">\n"
-                + "<dt>Parameters:</dt>\n"
-                + "<dd><code>i</code> - a param.</dd>\n"
-                + "</dl>");
+                """
+                    <div class="block">This is just a simple constructor.</div>
+                    <dl class="notes">
+                    <dt>Parameters:</dt>
+                    <dd><code>i</code> - a param.</dd>
+                    </dl>""");
     }
 }

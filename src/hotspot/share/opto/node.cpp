@@ -1594,6 +1594,11 @@ Node* find_node(Node* n, int idx) {
   return n->find(idx);
 }
 
+// call this from debugger with root node as default:
+Node* find_node(int idx) {
+  return Compile::current()->root()->find(idx);
+}
+
 //------------------------------find-------------------------------------------
 Node* Node::find(int idx) const {
   ResourceArea *area = Thread::current()->resource_area();

@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase metaspace/flags/maxMetaspaceSize.
  *
@@ -39,8 +40,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestMaxMetaspaceSize {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createJavaProcessBuilder(true, "-XX:MaxMetaspaceSize=100m",
-                                                  maxMetaspaceSize.class.getName());
+            ProcessTools.createTestJvm("-XX:MaxMetaspaceSize=100m",
+                                       maxMetaspaceSize.class.getName());
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
         if (out.getExitValue() == 0) {

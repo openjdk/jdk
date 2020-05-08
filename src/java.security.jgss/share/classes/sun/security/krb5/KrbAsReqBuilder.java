@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,9 @@ public final class KrbAsReqBuilder {
         }
         options = (options == null) ? new KDCOptions() : options;
         if (referralsState.isEnabled()) {
-            options.set(KDCOptions.CANONICALIZE, true);
+            if (referralsState.sendCanonicalize()) {
+                options.set(KDCOptions.CANONICALIZE, true);
+            }
             extraPAs = new PAData[]{ new PAData(Krb5.PA_REQ_ENC_PA_REP,
                     new byte[]{}) };
         } else {
@@ -333,7 +335,7 @@ public final class KrbAsReqBuilder {
         boolean preAuthFailedOnce = false;
         KdcComm comm = null;
         EncryptionKey pakey = null;
-        ReferralsState referralsState = new ReferralsState();
+        ReferralsState referralsState = new ReferralsState(this);
         while (true) {
             if (referralsState.refreshComm()) {
                 comm = new KdcComm(refCname.getRealmAsString());
@@ -379,43 +381,88 @@ public final class KrbAsReqBuilder {
         }
     }
 
-    private final class ReferralsState {
+    static final class ReferralsState {
+        private static boolean canonicalizeConfig;
         private boolean enabled;
+        private boolean sendCanonicalize;
+        private boolean isEnterpriseCname;
         private int count;
         private boolean refreshComm;
+        private KrbAsReqBuilder reqBuilder;
 
-        ReferralsState() throws KrbException {
-            if (Config.DISABLE_REFERRALS) {
-                if (refCname.getNameType() == PrincipalName.KRB_NT_ENTERPRISE) {
-                    throw new KrbException("NT-ENTERPRISE principals only allowed" +
-                            " when referrals are enabled.");
+        static {
+            initStatic();
+        }
+
+        // Config may be refreshed while running so the setting
+        // value may need to be updated. See Config::refresh.
+        static void initStatic() {
+            canonicalizeConfig = false;
+            try {
+                canonicalizeConfig = Config.getInstance()
+                        .getBooleanObject("libdefaults", "canonicalize") ==
+                        Boolean.TRUE;
+            } catch (KrbException e) {
+                if (Krb5.DEBUG) {
+                    System.out.println("Exception in getting canonicalize," +
+                            " using default value " +
+                            Boolean.valueOf(canonicalizeConfig) + ": " +
+                            e.getMessage());
                 }
-                enabled = false;
-            } else {
-                enabled = true;
+            }
+        }
+
+        ReferralsState(KrbAsReqBuilder reqBuilder) throws KrbException {
+            this.reqBuilder = reqBuilder;
+            sendCanonicalize = canonicalizeConfig;
+            isEnterpriseCname = reqBuilder.refCname.getNameType() ==
+                    PrincipalName.KRB_NT_ENTERPRISE;
+            updateStatus();
+            if (!enabled && isEnterpriseCname) {
+                throw new KrbException("NT-ENTERPRISE principals only" +
+                        " allowed when referrals are enabled.");
             }
             refreshComm = true;
+        }
+
+        private void updateStatus() {
+            enabled = !Config.DISABLE_REFERRALS &&
+                    (isEnterpriseCname || sendCanonicalize);
         }
 
         boolean handleError(KrbException ke) throws RealmException {
             if (enabled) {
                 if (ke.returnCode() == Krb5.KRB_ERR_WRONG_REALM) {
                     Realm referredRealm = ke.getError().getClientRealm();
-                    if (req.getMessage().reqBody.kdcOptions.get(KDCOptions.CANONICALIZE) &&
-                            referredRealm != null && referredRealm.toString().length() > 0 &&
+                    if (referredRealm != null &&
+                            !referredRealm.toString().isEmpty() &&
                             count < Config.MAX_REFERRALS) {
-                        refCname = new PrincipalName(refCname.getNameType(),
-                                refCname.getNameStrings(), referredRealm);
+                        // A valid referral was received while referrals
+                        // were enabled. Change the cname realm to the referred
+                        // realm and set refreshComm to send a new request.
+                        reqBuilder.refCname = new PrincipalName(
+                                reqBuilder.refCname.getNameType(),
+                                reqBuilder.refCname.getNameStrings(),
+                                referredRealm);
                         refreshComm = true;
                         count++;
                         return true;
                     }
                 }
-                if (count < Config.MAX_REFERRALS &&
-                        refCname.getNameType() != PrincipalName.KRB_NT_ENTERPRISE) {
-                    // Server may raise an error if CANONICALIZE is true.
-                    // Try CANONICALIZE false.
-                    enabled = false;
+                if (count < Config.MAX_REFERRALS && sendCanonicalize) {
+                    if (Krb5.DEBUG) {
+                        System.out.println("KrbAsReqBuilder: AS-REQ failed." +
+                                " Retrying with CANONICALIZE false.");
+                    }
+
+                    // Server returned an unexpected error with
+                    // CANONICALIZE true. Retry with false.
+                    sendCanonicalize = false;
+
+                    // Setting CANONICALIZE to false may imply that referrals
+                    // are now disabled (if cname is not of NT-ENTERPRISE type).
+                    updateStatus();
+
                     return true;
                 }
             }
@@ -430,6 +477,10 @@ public final class KrbAsReqBuilder {
 
         boolean isEnabled() {
             return enabled;
+        }
+
+        boolean sendCanonicalize() {
+            return sendCanonicalize;
         }
     }
 

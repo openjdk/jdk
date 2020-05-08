@@ -174,4 +174,20 @@ public class JmodArchive implements Archive {
 
         return new JmodEntry(path, resourceName, type, entry);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(file, moduleName);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof JmodArchive) {
+            JmodArchive other = (JmodArchive)obj;
+            return Objects.equals(file, other.file) &&
+                   Objects.equals(moduleName, other.moduleName);
+        }
+
+        return false;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase metaspace/stressDictionary.
  * VM Testbase keywords: [nonconcurrent, javac]
@@ -60,6 +61,10 @@ public class StressDictionary extends GCTestBase {
     private static byte[] bytecode;
 
     private class FillingDictionaryWorker implements Callable<Object> {
+        private final Random random;
+        public FillingDictionaryWorker(long seed) {
+            this.random = new Random(seed);
+        }
         @Override
         public Object call() throws Exception {
             while (stresser.continueExecution()) {
@@ -117,7 +122,7 @@ public class StressDictionary extends GCTestBase {
         bytecode = generateAndCompile();
         List<Callable<Object>> tasks = new LinkedList<Callable<Object>>();
         for (int i = 0; i < NUMBER_OF_CORRUPTING_THREADS; i++) {
-            tasks.add(this.new FillingDictionaryWorker());
+            tasks.add(this.new FillingDictionaryWorker(random.nextLong()));
         }
         for (int i = 0; i < NUMBER_OF_NOT_CORRUPTING_THREADS; i++) {
             tasks.add(this.new RegularWorker());

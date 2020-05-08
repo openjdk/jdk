@@ -46,7 +46,8 @@ public class TestDocRootInlineTag extends JavadocTester {
     public void test() {
         String uri = "http://www.java.sun.com/j2se/1.4/docs/api";
 
-        javadoc("-bottom", "The value of @docRoot is \"{@docRoot}\"",
+        javadoc("-bottom", """
+            The value of @docRoot is "{@docRoot}\"""",
                 "-d", "out",
                 "-source", "8",
                 "-sourcepath", testSrc,
@@ -55,14 +56,16 @@ public class TestDocRootInlineTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("TestDocRootTag.html", true,
-                "<a href=\"" + uri + "/java/io/File.html\" "
-                + "title=\"class or interface in java.io\" class=\"external-link\"><code>File</code></a>",
-                "<a href=\"./index-all.html\">index</a>",
-                "<a href=\"" + uri + "/java/io/File.html\" "
-                + "title=\"class or interface in java.io\" class=\"external-link\"><code>Second File Link</code></a>",
+                "<a href=\"" + uri + """
+                    /java/io/File.html" title="class or interface in java.io" class="external-link"><code>File</code></a>""",
+                """
+                    <a href="./index-all.html">index</a>""",
+                "<a href=\"" + uri + """
+                    /java/io/File.html" title="class or interface in java.io" class="external-link"><code>Second File Link</code></a>""",
                 "The value of @docRoot is \"./\"");
 
         checkOutput("index-all.html", true,
-                "My package page is <a href=\"./pkg/package-summary.html\">here</a>");
+                """
+                    My package page is <a href="./pkg/package-summary.html">here</a>""");
     }
 }

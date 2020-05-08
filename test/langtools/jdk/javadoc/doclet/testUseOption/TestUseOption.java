@@ -82,21 +82,25 @@ public class TestUseOption extends JavadocTester {
           "that return types with arguments of type"
         );
         checkOutput("pkg1/class-use/UsedClass.html", true,
-          "<a href=\"../C1.html#methodInC1ReturningType()\">methodInC1ReturningType</a>"
+          """
+              <a href="../C1.html#methodInC1ReturningType()">methodInC1ReturningType</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-          "Classes in <a href=\"../package-summary.html\">pkg1</a> that implement " +
-          "<a href=\"../UsedInterface.html\" title=\"interface in pkg1\">UsedInterface</a>"
+          """
+              Classes in <a href="../package-summary.html">pkg1</a> that implement <a href="..\
+              /UsedInterface.html" title="interface in pkg1">UsedInterface</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterfaceA.html", true,
-          "Classes in <a href=\"../package-summary.html\">pkg1</a> that implement " +
-          "<a href=\"../UsedInterfaceA.html\" title=\"interface in pkg1\">UsedInterfaceA</a>"
+          """
+              Classes in <a href="../package-summary.html">pkg1</a> that implement <a href="..\
+              /UsedInterfaceA.html" title="interface in pkg1">UsedInterfaceA</a>"""
         );
         checkOutput("pkg1/class-use/UsedClass.html", false,
            "methodInC1Protected"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-           "<a href=\"../AnAbstract.html\" title=\"class in pkg1\">AnAbstract</a>"
+           """
+               <a href="../AnAbstract.html" title="class in pkg1">AnAbstract</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             "../C10.html#withReturningTypeParameters()"
@@ -105,34 +109,40 @@ public class TestUseOption extends JavadocTester {
             "../C10.html#withTypeParametersOfType(java.lang.Class)"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "\"../package-summary.html\">pkg1</a> that return " +
-            "<a href=\"../UsedInterface.html\" title=\"interface in pkg1\""
+            """
+                "../package-summary.html">pkg1</a> that return <a href="../UsedInterface.html" title="interface in pkg1\""""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../C10.html#addAll(pkg1.UsedInterface...)\">addAll</a>"
+            """
+                <a href="../C10.html#addAll(pkg1.UsedInterface...)">addAll</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../C10.html#create(pkg1.UsedInterfaceA,pkg1." +
-            "UsedInterface,java.lang.String)\">"
+            """
+                <a href="../C10.html#create(pkg1.UsedInterfaceA,pkg1.UsedInterface,java.lang.String)">"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../C10.html#withTypeParametersOfType(java.lang.Class)\">" +
-            "withTypeParametersOfType</a>"
+            """
+                <a href="../C10.html#withTypeParametersOfType(java.lang.Class)">withTypeParametersOfType</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "Subinterfaces of <a href=\"../UsedInterface.html\" title=\"interface in pkg1\">"
-            + "UsedInterface</a> in <a href=\"../package-summary.html\">pkg1",
-            "<td class=\"col-first\"><code>interface&nbsp;</code></td>\n<th class=\"col-second\" scope=\"row\">"
-            + "<code><span class=\"member-name-link\"><a href=\"../SubInterface.html\" "
-            + "title=\"interface in pkg1\">SubInterface</a>&lt;T&gt;</span></code></th>"
+            """
+                Subinterfaces of <a href="../UsedInterface.html" title="interface in pkg1">UsedI\
+                nterface</a> in <a href="../package-summary.html">pkg1""",
+            """
+                <td class="col-first"><code>interface&nbsp;</code></td>
+                <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                "../SubInterface.html" title="interface in pkg1">SubInterface</a>&lt;T&gt;</span\
+                ></code></th>"""
         );
         checkOutput("pkg1/class-use/UsedThrowable.html", true,
-            "Methods in <a href=\"../package-summary.html\">pkg1</a> that throw "
-            + "<a href=\"../UsedThrowable.html\" title=\"class in pkg1\">UsedThrowable</a>",
-            "<td class=\"col-first\"><code>void</code></td>\n<th class=\"col-second\" scope=\"row\"><span class="
-            + "\"type-name-label\">C1.</span><code><span class=\"member-name-link\">"
-            + "<a href=\"../C1.html#methodInC1ThrowsThrowable()\">methodInC1ThrowsThrowable"
-            + "</a></span>()</code></th>"
+            """
+                Methods in <a href="../package-summary.html">pkg1</a> that throw <a href="../Use\
+                dThrowable.html" title="class in pkg1">UsedThrowable</a>""",
+            """
+                <td class="col-first"><code>void</code></td>
+                <th class="col-second" scope="row"><span class="type-name-label">C1.</span><code\
+                ><span class="member-name-link"><a href="../C1.html#methodInC1ThrowsThrowable()"\
+                >methodInC1ThrowsThrowable</a></span>()</code></th>"""
         );
     }
 
@@ -145,18 +155,22 @@ public class TestUseOption extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("class-use/UsedInC.html", true,
-                "Uses of <a href=\"../UsedInC.html\" title=\"class in &lt;Unnamed&gt;\">"
-                + "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
+                """
+                    Uses of <a href="../UsedInC.html" title="class in &lt;Unnamed&gt;">UsedInC</a> i\
+                    n <a href="../package-summary.html">&lt;Unnamed&gt;</a>"""
         );
         checkOutput("class-use/UsedInC.html", true,
-                "<li>\n"
-                + "<section class=\"detail\" id=\"unnamed.package\">\n"
+                """
+                    <li>
+                    <section class="detail" id="unnamed.package">
+                    """
         );
         checkOutput("package-use.html", true,
-                "<th class=\"col-first\" scope=\"row\">"
-                + "<a href=\"class-use/UsedInC.html#unnamed.package\">UsedInC</a></th>",
-                "<th class=\"col-first\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>\n"
-                + "<td class=\"col-last\">&nbsp;</td>"
+                """
+                    <th class="col-first" scope="row"><a href="class-use/UsedInC.html#unnamed.package">UsedInC</a></th>""",
+                """
+                    <th class="col-first" scope="row"><a href="#unnamed.package">&lt;Unnamed&gt;</a></th>
+                    <td class="col-last">&nbsp;</td>"""
         );
     }
 
@@ -168,9 +182,13 @@ public class TestUseOption extends JavadocTester {
                 "-package", "unique");
         checkExit(Exit.OK);
         checkUnique("unique/class-use/UseMe.html",
-                "<a href=\"../C1.html#umethod1(unique.UseMe,unique.UseMe%5B%5D)\">",
-                "<a href=\"../C1.html#umethod2(unique.UseMe,unique.UseMe)\">",
-                "<a href=\"../C1.html#umethod3(unique.UseMe,unique.UseMe)\">",
-                "<a href=\"../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)\">");
+                """
+                    <a href="../C1.html#umethod1(unique.UseMe,unique.UseMe%5B%5D)">""",
+                """
+                    <a href="../C1.html#umethod2(unique.UseMe,unique.UseMe)">""",
+                """
+                    <a href="../C1.html#umethod3(unique.UseMe,unique.UseMe)">""",
+                """
+                    <a href="../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)">""");
     }
 }

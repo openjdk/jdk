@@ -59,7 +59,7 @@ public class TestAllocateOldGenAt {
     ArrayList<String> flags = new ArrayList<>();
     Collections.addAll(flags, commonFlags);
     Collections.addAll(flags, extraFlags);
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, flags);
+    ProcessBuilder pb = ProcessTools.createTestJvm(flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(0);

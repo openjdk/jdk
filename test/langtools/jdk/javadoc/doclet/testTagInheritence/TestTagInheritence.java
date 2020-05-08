@@ -62,10 +62,12 @@ public class TestTagInheritence extends JavadocTester {
 
         //First sentence test (6253614)
         checkOutput("firstSentence/B.html", true,
-                "<div class=\"block\">First sentence.</div>");
+                """
+                    <div class="block">First sentence.</div>""");
 
         //Another first sentence test (6253604)
         checkOutput("firstSentence2/C.html", true,
-                "<div class=\"block\">First sentence.</div>");
+                """
+                    <div class="block">First sentence.</div>""");
     }
 }

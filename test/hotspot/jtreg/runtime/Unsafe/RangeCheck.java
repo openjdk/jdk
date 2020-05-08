@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,22 @@
  * @test
  * @bug 8001071
  * @summary Add simple range check into VM implemenation of Unsafe access methods
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run driver RangeCheck
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 
 import jdk.internal.misc.Unsafe;
 
 public class RangeCheck {
 
     public static void main(String args[]) throws Exception {
-        if (!Platform.isDebugBuild()) {
-            System.out.println("Testing assert which requires a debug build. Passing silently.");
-            return;
-        }
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-Xmx128m",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:-CreateCoredumpOnCrash",
@@ -54,6 +49,7 @@ public class RangeCheck {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldMatch("assert\\(byte_offset < p_size\\) failed: Unsafe access: offset \\d+ > object's size \\d+");
+        output.shouldNotHaveExitValue(0);
     }
 
     public static class DummyClassWithMainRangeCheck {

@@ -64,13 +64,15 @@ public class TestSinceTag extends JavadocTester {
 
     void checkSince(boolean on) {
         checkOutput("pkg1/C1.html", on,
-                "<dl class=\"notes\">\n"
-                + "<dt>Since:</dt>\n"
-                + "<dd>JDK1.0</dd>");
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>JDK1.0</dd>""");
 
         checkOutput("serialized-form.html", on,
-                "<dl class=\"notes\">\n"
-                + "<dt>Since:</dt>\n"
-                + "<dd>1.4</dd>");
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>1.4</dd>""");
     }
 }

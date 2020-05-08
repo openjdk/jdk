@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6714324
  * @summary tests if removing a Tab from JTabbedComponent, clears the reference
  * to the Page (AccessibleContext) object.
+ * @modules java.desktop/java.awt:open
  * @run main TabbedPaneMemLeak
  */
 import javax.accessibility.Accessible;

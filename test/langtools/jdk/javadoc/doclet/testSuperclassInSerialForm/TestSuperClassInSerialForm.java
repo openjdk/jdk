@@ -49,7 +49,8 @@ public class TestSuperClassInSerialForm extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
-                "<a href=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</a>"
-                + " extends <a href=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</a>");
+                """
+                    <a href="pkg/SubClass.html" title="class in pkg">pkg.SubClass</a> extends <a hre\
+                    f="pkg/SuperClass.html" title="class in pkg">SuperClass</a>""");
     }
 }

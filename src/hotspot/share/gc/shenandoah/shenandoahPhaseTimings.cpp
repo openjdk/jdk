@@ -27,7 +27,7 @@
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/orderAccess.hpp"
@@ -57,7 +57,7 @@ ShenandoahPhaseTimings::ShenandoahPhaseTimings(uint max_workers) :
     _worker_data[i] = NULL;
     SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_NULL)
 #undef SHENANDOAH_WORKER_DATA_NULL
-    _cycle_data[i] = 0;
+    _cycle_data[i] = uninitialized();
   }
 
   // Then punch in the worker-related data.
@@ -134,7 +134,7 @@ bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
 void ShenandoahPhaseTimings::set_cycle_data(Phase phase, double time) {
 #ifdef ASSERT
   double d = _cycle_data[phase];
-  assert(d == 0, "Should not be set yet: %s, current value: %lf", phase_name(phase), d);
+  assert(d == uninitialized(), "Should not be set yet: %s, current value: %lf", phase_name(phase), d);
 #endif
   _cycle_data[phase] = time;
 }
@@ -175,23 +175,44 @@ void ShenandoahPhaseTimings::flush_par_workers_to_cycle() {
   for (uint pi = 0; pi < _num_phases; pi++) {
     Phase phase = Phase(pi);
     if (is_worker_phase(phase)) {
-      double s = 0;
+      double s = uninitialized();
       for (uint i = 1; i < _num_par_phases; i++) {
-        double t = worker_data(phase, ParPhase(i))->sum();
-        // add to each line in phase
-        set_cycle_data(Phase(phase + i + 1), t);
-        s += t;
+        ShenandoahWorkerData* wd = worker_data(phase, ParPhase(i));
+        double ws = uninitialized();
+        for (uint c = 0; c < _max_workers; c++) {
+          double v = wd->get(c);
+          if (v != ShenandoahWorkerData::uninitialized()) {
+            if (ws == uninitialized()) {
+              ws = v;
+            } else {
+              ws += v;
+            }
+          }
+        }
+        if (ws != uninitialized()) {
+          // add to each line in phase
+          set_cycle_data(Phase(phase + i + 1), ws);
+          if (s == uninitialized()) {
+            s = ws;
+          } else {
+            s += ws;
+          }
+        }
       }
-      // add to total for phase
-      set_cycle_data(Phase(phase + 1), s);
+      if (s != uninitialized()) {
+        // add to total for phase
+        set_cycle_data(Phase(phase + 1), s);
+      }
     }
   }
 }
 
 void ShenandoahPhaseTimings::flush_cycle_to_global() {
   for (uint i = 0; i < _num_phases; i++) {
-    _global_data[i].add(_cycle_data[i]);
-    _cycle_data[i] = 0;
+    if (_cycle_data[i] != uninitialized()) {
+      _global_data[i].add(_cycle_data[i]);
+      _cycle_data[i] = uninitialized();
+    }
     if (_worker_data[i] != NULL) {
       _worker_data[i]->reset();
     }

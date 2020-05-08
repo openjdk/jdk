@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Test launches unit tests inside vm concurrently
+ * @requires vm.debug
+ * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -32,7 +34,6 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI RunUnitTestsConcurrently 30 15000
  */
 
-import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 
 public class RunUnitTestsConcurrently {
@@ -45,15 +46,12 @@ public class RunUnitTestsConcurrently {
     @Override
     public void run() {
       while (System.currentTimeMillis() - timeStamp < timeout) {
-        WhiteBox.getWhiteBox().runMemoryUnitTests();
+        wb.runMemoryUnitTests();
       }
     }
   }
 
   public static void main(String[] args) throws InterruptedException {
-    if (!Platform.isDebugBuild() || !Platform.is64bit()) {
-      return;
-    }
     wb = WhiteBox.getWhiteBox();
     System.out.println("Starting threads");
 

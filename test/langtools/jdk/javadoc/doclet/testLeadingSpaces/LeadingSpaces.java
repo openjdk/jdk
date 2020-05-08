@@ -53,13 +53,14 @@ public class LeadingSpaces extends JavadocTester {
                 testSrc("LeadingSpaces.java"));
         checkExit(Exit.OK);
         checkOutput("LeadingSpaces.html", true,
-                  "        1\n"
-                + "          2\n"
-                + "            3\n"
-                + "              4\n"
-                + "                5\n"
-                + "                  6\n"
-                + "                    7");
+                  """
+                      \s       1
+                                2
+                                  3
+                                    4
+                                      5
+                                        6
+                                          7""");
     }
 
     /**

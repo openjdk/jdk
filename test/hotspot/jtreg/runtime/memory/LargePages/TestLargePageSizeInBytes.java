@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test TestLargePageSizeInBytes
  * @summary Tests that the flag -XX:LargePageSizeInBytes does not cause warnings on Solaris
  * @bug 8049536
+ * @requires os.family == "solaris"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -31,7 +32,6 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestLargePageSizeInBytes {
@@ -39,11 +39,6 @@ public class TestLargePageSizeInBytes {
     private static long G = 1024L * M;
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isSolaris()) {
-            // We only use the syscall mencntl on Solaris
-            return;
-        }
-
         testLargePageSizeInBytes(4 * M);
         testLargePageSizeInBytes(256 * M);
         testLargePageSizeInBytes(512 * M);

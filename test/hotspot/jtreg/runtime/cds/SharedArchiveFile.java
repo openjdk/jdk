@@ -41,20 +41,20 @@ import jdk.test.lib.process.OutputAnalyzer;
 // methods to form command line to create/use shared archive.
 public class SharedArchiveFile {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                                 "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                                 "-Xshare:dump", "-Xlog:cds");
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
         CDSTestUtils.checkDump(out);
 
         // -XX:+DumpSharedSpaces should behave the same as -Xshare:dump
-        pb = ProcessTools.createJavaProcessBuilder(true,
+        pb = ProcessTools.createTestJvm(
                                 "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                                 "-XX:+DumpSharedSpaces", "-Xlog:cds");
         out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
         CDSTestUtils.checkDump(out);
 
-        pb = ProcessTools.createJavaProcessBuilder(true,
+        pb = ProcessTools.createTestJvm(
                               "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                               "-Xshare:on", "-version");
         out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");

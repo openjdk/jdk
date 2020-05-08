@@ -98,7 +98,7 @@ public class ClhsdbCDSCore {
                List<String> options = new ArrayList<>();
                options.addAll(Arrays.asList(jArgs));
                crashOut =
-                   ProcessTools.executeProcess(getTestJavaCommandlineWithPrefix(
+                   ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
                    RUN_SHELL_NO_LIMIT, options.toArray(new String[0])));
             } catch (Throwable t) {
                throw new Error("Can't execute the java cds process.", t);
@@ -253,9 +253,9 @@ public class ClhsdbCDSCore {
         return null;
     }
 
-    private static String[] getTestJavaCommandlineWithPrefix(String prefix, String... args) {
+    private static String[] getTestJvmCommandlineWithPrefix(String prefix, String... args) {
         try {
-            String cmd = ProcessTools.getCommandLine(ProcessTools.createJavaProcessBuilder(true, args));
+            String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(args));
             return new String[]{"sh", "-c", prefix + cmd};
         } catch (Throwable t) {
             throw new Error("Can't create process builder: " + t, t);

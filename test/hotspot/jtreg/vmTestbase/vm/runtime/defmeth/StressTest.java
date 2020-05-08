@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
+import jdk.test.lib.Utils;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /*
@@ -54,7 +55,7 @@ public class StressTest implements Runnable {
     private StressOptions opts = new StressOptions();
 
     @Option(name="seed", default_value="0", description="force deterministic behavior")
-    private int seed;
+    private long seed;
 
     @Option(name="redefine", default_value="false", description="use scenarios w/ class redefinition")
     private boolean doRedefine;
@@ -72,7 +73,7 @@ public class StressTest implements Runnable {
         private Throwable reason;
         private volatile long executedTests = 0;
 
-        public Worker(String id, int seed) {
+        public Worker(String id, long seed) {
             setName(id);
             this.rand = new Random(seed);
         }
@@ -215,7 +216,7 @@ public class StressTest implements Runnable {
     private void startWorkers() {
         Random rand;
         if (seed == 0) {
-            seed = (new Random()).nextInt();
+            seed = Utils.SEED;
         }
 
         System.out.printf("Seed: %d\n", seed);
@@ -247,7 +248,7 @@ public class StressTest implements Runnable {
         for (int i = 0; i < workers.length; i++) {
             workers[i] = new Worker(
                     String.format("Worker #%d/%d", i+1, workers.length),
-                    rand.nextInt());
+                    rand.nextLong());
         }
 
         for (Worker worker : workers) {

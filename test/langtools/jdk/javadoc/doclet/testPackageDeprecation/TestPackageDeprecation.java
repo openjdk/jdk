@@ -49,12 +49,14 @@ public class TestPackageDeprecation extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"deprecation-block\"><span class=\"deprecated-label\">Deprecated.</span>\n"
-                + "<div class=\"deprecation-comment\">This package is Deprecated.</div>"
+                """
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">This package is Deprecated.</div>"""
         );
 
         checkOutput("deprecated-list.html", true,
-            "<li><a href=\"#package\">Packages</a></li>"
+            """
+                <li><a href="#package">Packages</a></li>"""
         );
     }
 
@@ -70,7 +72,8 @@ public class TestPackageDeprecation extends JavadocTester {
         checkOutput("index.html", false,
                 "pkg1");
         checkOutput("class-use/C2.ModalExclusionType.html", true,
-                "<th class=\"col-first\" scope=\"row\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></th>");
+                """
+                    <th class="col-first" scope="row"><a href="#unnamed.package">&lt;Unnamed&gt;</a></th>""");
 
         checkFiles(false,
                 "pkg1/package-summary.html",

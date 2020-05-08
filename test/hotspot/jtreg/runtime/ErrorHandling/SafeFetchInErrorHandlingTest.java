@@ -28,7 +28,6 @@ import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 /*
@@ -37,19 +36,15 @@ import jdk.test.lib.process.ProcessTools;
  * @summary SafeFetch32 and SafeFetchN do not work in error handling
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.debug
+ * @requires vm.flavor != "zero"
  * @author Thomas Stuefe (SAP)
  * @run driver SafeFetchInErrorHandlingTest
  */
 
 public class SafeFetchInErrorHandlingTest {
 
-
   public static void main(String[] args) throws Exception {
-
-    if (!Platform.isDebugBuild() || Platform.isZero()) {
-      return;
-    }
-
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",

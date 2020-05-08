@@ -49,14 +49,15 @@ public class TestThrowsTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-            "<dd><code><a href=\"T1.html\" title=\"class in pkg\">T1</a></code> - the first throws tag.</dd>\n" +
-            "<dd><code><a href=\"T2.html\" title=\"class in pkg\">T2</a></code> - the second throws tag.</dd>\n" +
-            "<dd><code><a href=\"T3.html\" title=\"class in pkg\">T3</a></code> - the third throws tag.</dd>\n" +
-            "<dd><code><a href=\"T4.html\" title=\"class in pkg\">T4</a></code> - the fourth throws tag.</dd>\n" +
-            "<dd><code><a href=\"T5.html\" title=\"class in pkg\">T5</a></code> - the first inherited throws tag.</dd>\n" +
-            "<dd><code><a href=\"T6.html\" title=\"class in pkg\">T6</a></code> - the second inherited throws tag.</dd>\n" +
-            "<dd><code><a href=\"T7.html\" title=\"class in pkg\">T7</a></code> - the third inherited throws tag.</dd>\n" +
-            "<dd><code><a href=\"T8.html\" title=\"class in pkg\">T8</a></code> - the fourth inherited throws tag.</dd>"
+            """
+                <dd><code><a href="T1.html" title="class in pkg">T1</a></code> - the first throws tag.</dd>
+                <dd><code><a href="T2.html" title="class in pkg">T2</a></code> - the second throws tag.</dd>
+                <dd><code><a href="T3.html" title="class in pkg">T3</a></code> - the third throws tag.</dd>
+                <dd><code><a href="T4.html" title="class in pkg">T4</a></code> - the fourth throws tag.</dd>
+                <dd><code><a href="T5.html" title="class in pkg">T5</a></code> - the first inherited throws tag.</dd>
+                <dd><code><a href="T6.html" title="class in pkg">T6</a></code> - the second inherited throws tag.</dd>
+                <dd><code><a href="T7.html" title="class in pkg">T7</a></code> - the third inherited throws tag.</dd>
+                <dd><code><a href="T8.html" title="class in pkg">T8</a></code> - the fourth inherited throws tag.</dd>"""
         );
     }
 }

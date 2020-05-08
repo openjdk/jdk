@@ -400,11 +400,6 @@ class HandshakeALotClosure : public HandshakeClosure {
   }
 };
 
-void VMThread::check_for_forced_cleanup() {
-  MonitorLocker mq(VMOperationQueue_lock,  Mutex::_no_safepoint_check_flag);
-  mq.notify();
-}
-
 VM_Operation* VMThread::no_op_safepoint() {
   // Check for handshakes first since we may need to return a VMop.
   if (HandshakeALot) {
@@ -415,8 +410,7 @@ VM_Operation* VMThread::no_op_safepoint() {
   long interval_ms = SafepointTracing::time_since_last_safepoint_ms();
   bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
                            (interval_ms >= GuaranteedSafepointInterval);
-  if ((max_time_exceeded && SafepointSynchronize::is_cleanup_needed()) ||
-      SafepointSynchronize::is_forced_cleanup_needed()) {
+  if (max_time_exceeded && SafepointSynchronize::is_cleanup_needed()) {
     return &cleanup_op;
   }
   if (SafepointALot) {

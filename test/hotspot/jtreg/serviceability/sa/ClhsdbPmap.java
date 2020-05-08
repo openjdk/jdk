@@ -57,7 +57,7 @@ public class ClhsdbPmap {
                     List.of("Not available on Mac OS X"));
             } else {
                 expStrMap.put("pmap",
-                    List.of("jvm", "java", "net", "nio", "jimage", "zip"));
+                    List.of("jvm", "java", "net", "nio", "jimage"));
             }
 
             test.run(theApp.getPid(), cmds, expStrMap, null);

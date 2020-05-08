@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,20 +62,7 @@ import java.io.*;
  * to inform the debugger of checks finished, and both end.             <BR>
  */
 
-public class nestedtypes002 {
-
-    //----------------------------------------------------- templete section
-    static final int PASSED = 0;
-    static final int FAILED = 2;
-    static final int PASS_BASE = 95;
-
-    //----------------------------------------------------- templete parameters
-    static final String
-    sHeader1 = "\n==> nsk/jdi/ReferenceType/nestedTypes/nestedtypes002 ",
-    sHeader2 = "--> debugger: ",
-    sHeader3 = "##> debugger: ";
-
-    //----------------------------------------------------- main method
+public class nestedtypes002 extends JDIBase {
 
     public static void main (String argv[]) {
 
@@ -89,20 +76,6 @@ public class nestedtypes002 {
         return new nestedtypes002().runThis(argv, out);
     }
 
-    //--------------------------------------------------   log procedures
-
-    private static Log  logHandler;
-
-    private static void log1(String message) {
-        logHandler.display(sHeader1 + message);
-    }
-    private static void log2(String message) {
-        logHandler.display(sHeader2 + message);
-    }
-    private static void log3(String message) {
-        logHandler.complain(sHeader3 + message);
-    }
-
     //  ************************************************    test parameters
 
     private String debuggeeName =
@@ -111,24 +84,6 @@ public class nestedtypes002 {
     String mName = "nsk.jdi.ReferenceType.nestedTypes";
 
     //====================================================== test program
-    //------------------------------------------------------ common section
-
-    static Debugee          debuggee;
-    static ArgumentHandler  argsHandler;
-
-    static int waitTime;
-
-    static VirtualMachine      vm            = null;
-    static EventRequestManager eventRManager = null;
-    static EventQueue          eventQueue    = null;
-    static EventSet            eventSet      = null;
-    static EventIterator       eventIterator = null;
-
-    static ReferenceType       debuggeeClass = null;
-
-    static int  testExitCode = PASSED;
-
-    //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
 
@@ -245,7 +200,6 @@ public class nestedtypes002 {
 
     }
 
-    private static BreakpointEvent bpEvent;
 
     private void testRun()
                  throws JDITestRuntimeException, Exception {
@@ -253,7 +207,7 @@ public class nestedtypes002 {
         eventRManager = vm.eventRequestManager();
 
         ClassPrepareRequest cpRequest = eventRManager.createClassPrepareRequest();
-        cpRequest.setSuspendPolicy( EventRequest.SUSPEND_EVENT_THREAD);
+        cpRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
         cpRequest.addClassFilter(debuggeeName);
 
         cpRequest.enable();
@@ -265,24 +219,24 @@ public class nestedtypes002 {
         debuggeeClass = event.referenceType();
 
         if (!debuggeeClass.name().equals(debuggeeName))
-           throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
+            throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
         String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
+        String lineForComm = "lineForComm";
         BreakpointRequest bpRequest;
 
         try {
             bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        } catch ( Exception e ) {
+                    debuggeeClass,
+                    bPointMethod, lineForComm, "zero");
+        } catch (Exception e) {
             throw e;
         }
         bpRequest.enable();
 
-    //------------------------------------------------------  testing section
+        //------------------------------------------------------  testing section
 
         log1("     TESTING BEGINS");
 
@@ -292,7 +246,7 @@ public class nestedtypes002 {
             breakpointForCommunication();
 
             int instruction = ((IntegerValue)
-                               (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
+                    (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
 
             if (instruction == 0) {
                 vm.resume();
@@ -303,9 +257,9 @@ public class nestedtypes002 {
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
 
-            ReferenceType testedType  = null;
-            List          nestedTypes = null;
-            String        typeForCheck;
+            ReferenceType testedType = null;
+            List nestedTypes = null;
+            String typeForCheck;
 
 
             log2("----- Case for testing: ArrayType");
@@ -322,7 +276,7 @@ public class nestedtypes002 {
             }
 
             log2("      getting: ReferenceType testedType  = (ReferenceType) classList.get(0);");
-            testedType  = (ReferenceType) classes.get(0);
+            testedType = (ReferenceType) classes.get(0);
 
             log2("      getting: List nestedTypes = testedType.nestedTypes();");
             nestedTypes = testedType.nestedTypes();
@@ -335,17 +289,17 @@ public class nestedtypes002 {
             log2("----- Cases for testing: primitive classes");
 
             String names[] = {
-                                 "bl",
-                                 "bt",
-                                 "ch",
-                                 "db",
-                                 "fl",
-                                 "in",
-                                 "ln",
-                                 "sh"
-                             };
+                    "bl",
+                    "bt",
+                    "ch",
+                    "db",
+                    "fl",
+                    "in",
+                    "ln",
+                    "sh"
+            };
 
-            Method testMethod = (Method)debuggeeClass.methodsByName("main").get(0);
+            Method testMethod = (Method) debuggeeClass.methodsByName("main").get(0);
             // bpEvent should be assigned while getting of BreakpointEvent
             if (bpEvent == null) {
                 throw new JDITestRuntimeException("bpEvent is null");
@@ -356,7 +310,7 @@ public class nestedtypes002 {
             try {
                 frame = bpEvent.thread().frame(1);
             } catch (Exception e) {
-                throw new JDITestRuntimeException("Unexpected exception while getting stack frame: " + e );
+                throw new JDITestRuntimeException("Unexpected exception while getting stack frame: " + e);
             }
             if (frame.location().method() != testMethod) {
                 throw new JDITestRuntimeException("Cannot take frame of main method");
@@ -368,17 +322,17 @@ public class nestedtypes002 {
                 LocalVariable lVar = null;
                 try {
                     lVar = frame.visibleVariableByName(names[i1]);
-                } catch (Exception e ) {
-                    throw new JDITestRuntimeException("Unexpected exception while searching for field " + names[i1] + " : " + e  );
+                } catch (Exception e) {
+                    throw new JDITestRuntimeException("Unexpected exception while searching for field " + names[i1] + " : " + e);
                 }
                 Value val = null;
                 try {
                     val = frame.getValue(lVar);
-                } catch (Exception e ) {
-                    throw new JDITestRuntimeException("Unexpected exception while getting value of field " + names[i1] + " : " + e  );
+                } catch (Exception e) {
+                    throw new JDITestRuntimeException("Unexpected exception while getting value of field " + names[i1] + " : " + e);
                 }
 
-                testedType = ((ClassObjectReference)val).reflectedType();
+                testedType = ((ClassObjectReference) val).reflectedType();
 
                 log2("      checking nestedTypes() for ClassObjectReference of : " + testedType.name());
                 nestedTypes = testedType.nestedTypes();
@@ -393,99 +347,6 @@ public class nestedtypes002 {
         }
         log1("    TESTING ENDS");
         return;
-    }
-
-   /*
-    * private BreakpointRequest settingBreakpoint(ThreadReference, ReferenceType,
-    *                                             String, String, String)
-    *
-    * It sets up a breakpoint at given line number within a given method in a given class
-    * for a given thread.
-    *
-    * Return value: BreakpointRequest object  in case of success
-    *
-    * JDITestRuntimeException   in case of an Exception thrown within the method
-    */
-
-    private BreakpointRequest settingBreakpoint ( ThreadReference thread,
-                                                  ReferenceType testedClass,
-                                                  String methodName,
-                                                  String bpLine,
-                                                  String property)
-            throws JDITestRuntimeException {
-
-        log2("......setting up a breakpoint:");
-        log2("       thread: " + thread + "; class: " + testedClass +
-                        "; method: " + methodName + "; line: " + bpLine);
-
-        List              alllineLocations = null;
-        Location          lineLocation     = null;
-        BreakpointRequest breakpRequest    = null;
-
-        try {
-            Method  method  = (Method) testedClass.methodsByName(methodName).get(0);
-
-            alllineLocations = method.allLineLocations();
-
-            int n =
-                ( (IntegerValue) testedClass.getValue(testedClass.fieldByName(bpLine) ) ).value();
-            if (n > alllineLocations.size()) {
-                log3("ERROR:  TEST_ERROR_IN_settingBreakpoint(): number is out of bound of method's lines");
-            } else {
-                lineLocation = (Location) alllineLocations.get(n);
-                try {
-                    breakpRequest = eventRManager.createBreakpointRequest(lineLocation);
-                    breakpRequest.putProperty("number", property);
-                    breakpRequest.addThreadFilter(thread);
-                    breakpRequest.setSuspendPolicy( EventRequest.SUSPEND_EVENT_THREAD);
-                } catch ( Exception e1 ) {
-                    log3("ERROR: inner Exception within settingBreakpoint() : " + e1);
-                    breakpRequest    = null;
-                }
-            }
-        } catch ( Exception e2 ) {
-            log3("ERROR: ATTENTION:  outer Exception within settingBreakpoint() : " + e2);
-            breakpRequest    = null;
-        }
-
-        if (breakpRequest == null) {
-            log2("      A BREAKPOINT HAS NOT BEEN SET UP");
-            throw new JDITestRuntimeException("**FAILURE to set up a breakpoint**");
-        }
-
-        log2("      a breakpoint has been set up");
-        return breakpRequest;
-    }
-
-
-    private void getEventSet()
-                 throws JDITestRuntimeException {
-        try {
-//            log2("       eventSet = eventQueue.remove(waitTime);");
-            eventSet = eventQueue.remove(waitTime);
-            if (eventSet == null) {
-                throw new JDITestRuntimeException("** TIMEOUT while waiting for event **");
-            }
-//            log2("       eventIterator = eventSet.eventIterator;");
-            eventIterator = eventSet.eventIterator();
-        } catch ( Exception e ) {
-            throw new JDITestRuntimeException("** EXCEPTION while waiting for event ** : " + e);
-        }
-    }
-
-
-    private void breakpointForCommunication()
-                 throws JDITestRuntimeException {
-
-        log2("breakpointForCommunication");
-        getEventSet();
-
-        Event event = eventIterator.nextEvent();
-        if ( event instanceof BreakpointEvent) {
-            bpEvent = (BreakpointEvent)event;
-            return;
-        }
-        throw new JDITestRuntimeException("** event IS NOT a breakpoint **");
     }
 
 }

@@ -37,7 +37,7 @@ public class CallerFromMain {
     private static final StackWalker sw = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "CallerFromMain");
+            ProcessBuilder pb = ProcessTools.createTestJvm("CallerFromMain");
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             System.out.println(output.getOutput());
             output.shouldHaveExitValue(0);

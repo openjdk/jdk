@@ -49,7 +49,7 @@ public class MacJNUEncoding {
 
         final String locale = args[2];
         System.out.println("Running test for locale: " + locale);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+        ProcessBuilder pb = ProcessTools.createTestJvm(
                 ExpectedEncoding.class.getName(), args[0], args[1]);
         Map<String, String> env = pb.environment();
         env.put("LANG", locale);

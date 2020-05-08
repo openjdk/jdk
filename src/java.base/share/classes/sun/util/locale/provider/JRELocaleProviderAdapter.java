@@ -445,7 +445,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             return Collections.emptySet();
         }
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
-        Set<String> tagset = new HashSet<>(Math.max((int)(tokens.countTokens() / 0.75f) + 1, 16));
+        Set<String> tagset = new HashSet<>((tokens.countTokens() * 4 + 2) / 3);
         while (tokens.hasMoreTokens()) {
             tagset.add(tokens.nextToken());
         }

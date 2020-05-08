@@ -49,28 +49,30 @@ public class TestPackageSummary extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/package-summary.html", true,
-                "<tbody>\n"
-                + "<tr class=\"alt-color\">\n"
-                + "<th class=\"col-first\" scope=\"row\"><a href=\"C0.html\" title=\"class in pkg\">C0</a></th>\n"
-                + "<td class=\"col-last\">&nbsp;</td>\n"
-                + "</tr>\n"
-                + "<tr class=\"row-color\">\n"
-                + "<th class=\"col-first\" scope=\"row\"><a href=\"C1.html\" title=\"class in pkg\">C1</a></th>\n"
-                + "<td class=\"col-last\">&nbsp;</td>\n"
-                + "</tr>\n"
-                + "<tr class=\"alt-color\">\n"
-                + "<th class=\"col-first\" scope=\"row\"><a href=\"C2.html\" title=\"class in pkg\">C2</a></th>\n"
-                + "<td class=\"col-last\">&nbsp;</td>\n"
-                + "</tr>\n"
-                + "<tr class=\"row-color\">\n"
-                + "<th class=\"col-first\" scope=\"row\"><a href=\"C3.html\" title=\"class in pkg\">C3</a></th>\n"
-                + "<td class=\"col-last\">&nbsp;</td>\n"
-                + "</tr>\n"
-                + "<tr class=\"alt-color\">\n"
-                + "<th class=\"col-first\" scope=\"row\"><a href=\"C4.html\" title=\"class in pkg\">C4</a></th>\n"
-                + "<td class=\"col-last\">&nbsp;</td>\n"
-                + "</tr>\n"
-                + "</tbody>\n"
+                """
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="C0.html" title="class in pkg">C0</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-first" scope="row"><a href="C1.html" title="class in pkg">C1</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="C2.html" title="class in pkg">C2</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-first" scope="row"><a href="C3.html" title="class in pkg">C3</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="C4.html" title="class in pkg">C4</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    </tbody>
+                    """
         );
     }
 }

@@ -49,8 +49,11 @@ public class TestWarnBadParamNames extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true,
-                "warning - @param argument \"int\" is not a parameter name.",
-                "warning - @param argument \"IDontExist\" is not a parameter name.",
-                "warning - Parameter \"arg\" is documented more than once.");
+                """
+                    warning - @param argument "int" is not a parameter name.""",
+                """
+                    warning - @param argument "IDontExist" is not a parameter name.""",
+                """
+                    warning - Parameter "arg" is documented more than once.""");
     }
 }

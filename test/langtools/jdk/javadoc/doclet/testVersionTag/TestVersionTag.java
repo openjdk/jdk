@@ -51,11 +51,13 @@ public class TestVersionTag extends JavadocTester {
     TestVersionTag() throws Exception {
         src = Files.createDirectories(Paths.get("src"));
         tb.writeJavaFiles(src,
-                  "package pkg;\n"
-                + "/** Introduction. \n"
-                + " * @version 1.2.3\n"
-                + " */\n"
-                + "public class Test { }\n");
+                  """
+                      package pkg;
+                      /** Introduction.\s
+                       * @version 1.2.3
+                       */
+                      public class Test { }
+                      """);
     }
 
     @Test
@@ -81,9 +83,10 @@ public class TestVersionTag extends JavadocTester {
 
     void checkVersion(boolean on) {
         checkOutput("pkg/Test.html", on,
-                "<dl class=\"notes\">\n"
-                + "<dt>Version:</dt>\n"
-                + "<dd>1.2.3</dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>Version:</dt>
+                    <dd>1.2.3</dd>
+                    </dl>""");
     }
 }

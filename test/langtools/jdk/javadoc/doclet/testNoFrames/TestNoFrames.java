@@ -58,7 +58,8 @@ public class TestNoFrames extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true,
-                "javadoc: warning - The --no-frames option is no longer required and may be removed\n"
-                + "in a future release.");
+                """
+                    javadoc: warning - The --no-frames option is no longer required and may be removed
+                    in a future release.""");
     }
 }

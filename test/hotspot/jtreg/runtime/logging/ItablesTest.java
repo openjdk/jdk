@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8141564
  * @summary itables=trace should have logging from each of the statements
  *          in the code
+ * @requires vm.debug
  * @library /test/lib
  * @compile ClassB.java
  *          ItablesVtableTest.java
@@ -36,27 +37,24 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 
 public class ItablesTest {
     public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ClassB");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain(": Initializing itables for ClassB");
-            output.shouldContain(": Initializing itable indices for interface ");
-            output.shouldContain("itable index ");
-            output.shouldContain("target: ClassB.Method1()V, method_holder: ClassB target_method flags: public");
-            output.shouldContain("invokeinterface resolved interface method: caller-class");
-            output.shouldContain("invokespecial resolved method: caller-class:ClassB");
-            output.shouldContain("invokespecial selected method: resolved-class:ClassB");
-            output.shouldContain("invokeinterface selected method: receiver-class");
-            output.shouldHaveExitValue(0);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ClassB");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain(": Initializing itables for ClassB");
+        output.shouldContain(": Initializing itable indices for interface ");
+        output.shouldContain("itable index ");
+        output.shouldContain("target: ClassB.Method1()V, method_holder: ClassB target_method flags: public");
+        output.shouldContain("invokeinterface resolved interface method: caller-class");
+        output.shouldContain("invokespecial resolved method: caller-class:ClassB");
+        output.shouldContain("invokespecial selected method: resolved-class:ClassB");
+        output.shouldContain("invokeinterface selected method: receiver-class");
+        output.shouldHaveExitValue(0);
 
-            pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ItablesVtableTest");
-            output = new OutputAnalyzer(pb.start());
-            output.shouldContain("vtable index ");
-            output.shouldHaveExitValue(0);
-        }
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ItablesVtableTest");
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("vtable index ");
+        output.shouldHaveExitValue(0);
     }
 }

@@ -82,19 +82,21 @@ public class TestJavaFxMode extends JavadocTester {
                 "javafx.beans.property.Property", "<a href=\"#prop\">prop</a></span>",
                 "Method Summary",
                 "<a href=\"#getProp()\">getProp</a>", "Gets the value of the property prop.",
-                "<a href=\"#propProperty()\">propProperty</a>", "Sets the value of the property prop.");
+                """
+                    <a href="#propProperty()">propProperty</a>""", "Sets the value of the property prop.");
     }
 
     void createTestClass(Path src) throws Exception {
         tb.writeJavaFiles(src,
-                "package pkg;\n"
-                + "import javafx.beans.property.Property;\n"
-                + "public class A {\n"
-                + "    public Property prop;\n"
-                + "    public Property propProperty(){return null;}\n"
-                + "    public Property getProp(){return null;}\n"
-                + "    public void setProp(Property prop){}\n"
-                + "}");
+                """
+                    package pkg;
+                    import javafx.beans.property.Property;
+                    public class A {
+                        public Property prop;
+                        public Property propProperty(){return null;}
+                        public Property getProp(){return null;}
+                        public void setProp(Property prop){}
+                    }""");
     }
 
 }

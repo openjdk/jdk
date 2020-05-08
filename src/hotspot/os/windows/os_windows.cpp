@@ -4096,10 +4096,13 @@ jint os::init_2(void) {
     UseNUMA = false; // We don't fully support this yet
   }
 
-  if (UseNUMAInterleaving) {
-    // first check whether this Windows OS supports VirtualAllocExNuma, if not ignore this flag
-    bool success = numa_interleaving_init();
-    if (!success) UseNUMAInterleaving = false;
+  if (UseNUMAInterleaving || (UseNUMA && FLAG_IS_DEFAULT(UseNUMAInterleaving))) {
+    if (!numa_interleaving_init()) {
+      FLAG_SET_ERGO(UseNUMAInterleaving, false);
+    } else if (!UseNUMAInterleaving) {
+      // When NUMA requested, not-NUMA-aware allocations default to interleaving.
+      FLAG_SET_ERGO(UseNUMAInterleaving, true);
+    }
   }
 
   if (initSock() != JNI_OK) {

@@ -88,6 +88,7 @@ public class IterationCount {
 
     private static void executeCommand(List<String> cmd, String expectedCount)
             throws Throwable {
+        cmd.add("--add-opens=java.base/com.sun.crypto.provider=ALL-UNNAMED");
         cmd.add(IterationCount.class.getName());
         cmd.add(clientStr);
         cmd.add(expectedCount);

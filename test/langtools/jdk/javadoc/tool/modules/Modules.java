@@ -467,10 +467,12 @@ public class Modules extends ModuleTestBase {
                 .write(src);
 
         // build the patching module
-        tb.writeJavaFiles(patchSrc, "package pkg1;\n" +
-                "/** Class A */ public class A extends java.util.ArrayList { }");
-        tb.writeJavaFiles(patchSrc, "package pkg1;\n"
-                + "/** Class B */ public class B { }");
+        tb.writeJavaFiles(patchSrc, """
+            package pkg1;
+            /** Class A */ public class A extends java.util.ArrayList { }""");
+        tb.writeJavaFiles(patchSrc, """
+            package pkg1;
+            /** Class B */ public class B { }""");
 
         execTask("--module-source-path", src.toString(),
                 "--patch-module", "java.base=" + patchSrc.toString(),

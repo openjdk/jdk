@@ -122,11 +122,12 @@ public class TestRedirectLinks extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
         checkOutput("pkg/B.html", true,
-                "<a href=\"" + apiURL + "/java.base/java/lang/String.html\" "
-                        + "title=\"class or interface in java.lang\" class=\"external-link\">Link-Plain to String Class</a>");
+                "<a href=\"" + apiURL + """
+                    /java.base/java/lang/String.html" title="class or interface in java.lang" class=\
+                    "external-link">Link-Plain to String Class</a>""");
         checkOutput("pkg/C.html", true,
-                "<a href=\"" + apiURL + "/java.base/java/lang/Object.html\" "
-                        + "title=\"class or interface in java.lang\" class=\"external-link\">Object</a>");
+                "<a href=\"" + apiURL + """
+                    /java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>""");
     }
 
     private Path libApi = Path.of("libApi");
@@ -216,11 +217,11 @@ public class TestRedirectLinks extends JavadocTester {
             checkOutput(Output.OUT, true,
                     "javadoc: warning - URL " + oldURL + "/element-list was redirected to " + newURL + "/element-list");
             checkOutput("mC/p5/C5.html", true,
-                    "extends <a href=\"" + oldURL + "/mA/p1/C1.html\" " +
-                            "title=\"class or interface in p1\" class=\"external-link\">C1</a>");
+                    "extends <a href=\"" + oldURL + """
+                        /mA/p1/C1.html" title="class or interface in p1" class="external-link">C1</a>""");
             checkOutput("mC/p6/C6.html", true,
-                    "<a href=\"" + oldURL + "/mB/p4/C4.html\" " +
-                            "title=\"class or interface in p4\" class=\"external-link\">C4</a>");
+                    "<a href=\"" + oldURL + """
+                        /mB/p4/C4.html" title="class or interface in p4" class="external-link">C4</a>""");
         } finally {
             if (oldServer != null) {
                 out.println("Stopping old server on " + oldServer.getAddress());

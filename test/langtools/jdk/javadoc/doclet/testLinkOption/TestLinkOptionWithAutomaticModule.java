@@ -103,8 +103,9 @@ public class TestLinkOptionWithAutomaticModule extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
         checkOutput("p/MyClass.html", true,
-                "extends <a href=\"http://myWebsite/lib/LibClass.html\" "
-                + "title=\"class or interface in lib\" class=\"external-link\">LibClass</a>");
+                """
+                    extends <a href="http://myWebsite/lib/LibClass.html" title="class or interface i\
+                    n lib" class="external-link">LibClass</a>""");
     }
 
     @Test
@@ -127,8 +128,9 @@ public class TestLinkOptionWithAutomaticModule extends JavadocTester {
                 "--module", "my.module");
         checkExit(Exit.OK);
         checkOutput("my.module/p/MyClass.html", true,
-                "extends <a href=\"http://myWebsite/lib/LibClass.html\" "
-                + "title=\"class or interface in lib\" class=\"external-link\">LibClass</a>");
+                """
+                    extends <a href="http://myWebsite/lib/LibClass.html" title="class or interface i\
+                    n lib" class="external-link">LibClass</a>""");
     }
 
     @Test
@@ -151,7 +153,8 @@ public class TestLinkOptionWithAutomaticModule extends JavadocTester {
                 "--module", "my.module");
         checkExit(Exit.OK);
         checkOutput("my.module/p/MyClass.html", true,
-                "extends <a href=\"http://myWebsite/lib/LibClass.html\" "
-                + "title=\"class or interface in lib\" class=\"external-link\">LibClass</a>");
+                """
+                    extends <a href="http://myWebsite/lib/LibClass.html" title="class or interface i\
+                    n lib" class="external-link">LibClass</a>""");
     }
 }

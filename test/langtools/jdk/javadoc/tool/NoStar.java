@@ -70,7 +70,14 @@ public class NoStar implements Doclet
         DocCommentTree docCommentTree = trees.getDocCommentTree(self);
         String c = docCommentTree.getFullBody().toString();
         System.out.println("\"" + c + "\"");
-        return c.equals("First sentence.\n0\n 1\n  2\n   3\n    4\n     5");
+        return c.equals("""
+            First sentence.
+            0
+             1
+              2
+               3
+                4
+                 5""");
     }
 
     @Override

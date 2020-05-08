@@ -48,7 +48,7 @@ public class TestMultiANewArray {
         int cfv = Integer.parseInt(args[0]);
         writeClassFile(cfv);
         System.err.println("Running with cfv: " + cfv);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-cp", ".",  "ClassFile");
+        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "ClassFile");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("VerifyError");
         output.shouldHaveExitValue(1);

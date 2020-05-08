@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8188225
+ * @bug 8188225 8243557
  * @summary Tests for shell error translation
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -64,6 +64,12 @@ public class ErrorTranslationTest extends ReplToolTesting {
         test(
                 a -> assertDiagnostic(a, "var broken = () -> {};", newExpectedDiagnostic(0, 22, 0, -1, -1, Diagnostic.Kind.ERROR)),
                 a -> assertDiagnostic(a, "void t () { var broken = () -> {}; }", newExpectedDiagnostic(12, 34, 0, -1, -1, Diagnostic.Kind.ERROR))
+        );
+    }
+
+    public void testExceptionErrors() {
+        test(
+                a -> assertDiagnostic(a, "try { } catch (IllegalStateException | java.io.IOException ex) { }", newExpectedDiagnostic(39, 58, -1, -1, -1, Diagnostic.Kind.ERROR))
         );
     }
 

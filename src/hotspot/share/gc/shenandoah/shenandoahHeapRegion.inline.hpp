@@ -114,4 +114,22 @@ inline size_t ShenandoahHeapRegion::garbage() const {
   return result;
 }
 
+inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
+  HeapWord* watermark = Atomic::load_acquire(&_update_watermark);
+  assert(bottom() <= watermark && watermark <= top(), "within bounds");
+  return watermark;
+}
+
+inline void ShenandoahHeapRegion::set_update_watermark(HeapWord* w) {
+  assert(bottom() <= w && w <= top(), "within bounds");
+  Atomic::release_store(&_update_watermark, w);
+}
+
+// Fast version that avoids synchronization, only to be used at safepoints.
+inline void ShenandoahHeapRegion::set_update_watermark_at_safepoint(HeapWord* w) {
+  assert(bottom() <= w && w <= top(), "within bounds");
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  _update_watermark = w;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

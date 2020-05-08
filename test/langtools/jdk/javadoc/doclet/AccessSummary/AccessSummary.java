@@ -55,14 +55,17 @@ public class AccessSummary extends JavadocTester {
 
     void checkSummary(boolean found) {
         checkOutput("index.html", found,
-                 "summary=\"Package Summary table, listing packages, and an explanation\"");
+                 """
+                     summary="Package Summary table, listing packages, and an explanation\"""");
 
         // Test that the summary attribute appears or not
         checkOutput("p1/C1.html", found,
-                 "summary=\"Constructor Summary table, listing constructors, and an explanation\"");
+                 """
+                     summary="Constructor Summary table, listing constructors, and an explanation\"""");
 
         // Test that the summary attribute appears or not
         checkOutput("constant-values.html", found,
-                 "summary=\"Constant Field Values table, listing constant fields, and values\"");
+                 """
+                     summary="Constant Field Values table, listing constant fields, and values\"""");
     }
 }

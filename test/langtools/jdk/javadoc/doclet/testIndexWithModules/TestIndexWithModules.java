@@ -76,7 +76,8 @@ public class TestIndexWithModules extends JavadocTester {
         checkOrder("index.html",
                 "The overview summary page header",
                 "Modules",
-                "<a href=\"m1/module-summary.html\">m1</a>");
+                """
+                    <a href="m1/module-summary.html">m1</a>""");
 
     }
 
@@ -94,9 +95,12 @@ public class TestIndexWithModules extends JavadocTester {
                 "window.location.replace('index.html')");
         checkOrder("index.html",
                 "Modules",
-                "<a href=\"m1/module-summary.html\">m1</a>",
-                "<a href=\"m3/module-summary.html\">m3</a>",
-                "<a href=\"m4/module-summary.html\">m4</a>");
+                """
+                    <a href="m1/module-summary.html">m1</a>""",
+                """
+                    <a href="m3/module-summary.html">m3</a>""",
+                """
+                    <a href="m4/module-summary.html">m4</a>""");
     }
 
     //multiple modules with out frames
@@ -111,9 +115,12 @@ public class TestIndexWithModules extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("index.html",
                 "Modules",
-                "<a href=\"m1/module-summary.html\">m1</a>",
-                "<a href=\"m3/module-summary.html\">m3</a>",
-                "<a href=\"m4/module-summary.html\">m4</a>");
+                """
+                    <a href="m1/module-summary.html">m1</a>""",
+                """
+                    <a href="m3/module-summary.html">m3</a>""",
+                """
+                    <a href="m4/module-summary.html">m4</a>""");
     }
 
     @Test
@@ -148,8 +155,10 @@ public class TestIndexWithModules extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("index.html",
                 "Packages",
-                "<a href=\"P1/package-summary.html\">P1</a>",
-                "<a href=\"P2/package-summary.html\">P2</a>");
+                """
+                    <a href="P1/package-summary.html">P1</a>""",
+                """
+                    <a href="P2/package-summary.html">P2</a>""");
 
     }
 

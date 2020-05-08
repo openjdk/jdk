@@ -132,13 +132,15 @@ public class PatchModules extends ModuleTestBase {
         Path patchSrc = base.resolve("patch");
 
         // build the patching sources
-        tb.writeJavaFiles(patchSrc, "package java.util;\n" +
-                "/** Class Collection */\n" +
-                "public interface Collection<K> {}");
+        tb.writeJavaFiles(patchSrc, """
+            package java.util;
+            /** Class Collection */
+            public interface Collection<K> {}""");
 
-        tb.writeJavaFiles(patchSrc, "package java.util;\n"
-                + "/** Class MyCollection */\n" +
-                "public interface MyCollection<K> extends Collection {}");
+        tb.writeJavaFiles(patchSrc, """
+            package java.util;
+            /** Class MyCollection */
+            public interface MyCollection<K> extends Collection {}""");
 
         execTask("-hasDocComments", "--patch-module", "java.base=" + patchSrc.toString(),
                 "java.util");
@@ -161,10 +163,12 @@ public class PatchModules extends ModuleTestBase {
                 .write(src);
 
         // build the patching module
-        tb.writeJavaFiles(patchSrc, "package pkg1;\n" +
-                "/** Class A */ public class A extends java.util.ArrayList { }");
-        tb.writeJavaFiles(patchSrc, "package pkg1;\n"
-                + "/** Class B */ public class B { }");
+        tb.writeJavaFiles(patchSrc, """
+            package pkg1;
+            /** Class A */ public class A extends java.util.ArrayList { }""");
+        tb.writeJavaFiles(patchSrc, """
+            package pkg1;
+            /** Class B */ public class B { }""");
 
         Path m1src = Paths.get(src.toString(), "m1");
 
@@ -190,10 +194,12 @@ public class PatchModules extends ModuleTestBase {
                 .write(src);
 
         // build the patching module
-        tb.writeJavaFiles(patchSrc, "package pkg1;\n" +
-                "/** Class A */ public class A extends java.util.ArrayList { }");
-        tb.writeJavaFiles(patchSrc, "package pkg1;\n"
-                + "/** Class B */ public class B { }");
+        tb.writeJavaFiles(patchSrc, """
+            package pkg1;
+            /** Class A */ public class A extends java.util.ArrayList { }""");
+        tb.writeJavaFiles(patchSrc, """
+            package pkg1;
+            /** Class B */ public class B { }""");
 
 
         execTask("--module-source-path", src.toString(),

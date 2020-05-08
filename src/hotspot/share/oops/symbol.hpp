@@ -168,7 +168,8 @@ class Symbol : public MetaspaceObj {
   bool is_permanent() const {
     return (refcount() == PERM_REFCOUNT);
   }
-  void set_permanent();
+  void update_identity_hash() NOT_CDS_RETURN;
+  void set_permanent() NOT_CDS_RETURN;
   void make_permanent();
 
   // Function char_at() returns the Symbol's selected u1 byte as a char type.

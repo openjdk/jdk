@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 8195100
  * @summary a short lived Symbol should be cleaned up
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires (vm.debug == true)
+ * @run driver ShortLivedSymbolCleanup
  */
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.util.Scanner;
@@ -88,19 +88,14 @@ public class ShortLivedSymbolCleanup {
   }
 
   public static void main(String[] args) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:symboltable=trace",
+                                                              "-version");
+    int size = getSymbolTableSize(pb);
 
-      if (Platform.isDebugBuild()) {
-        {
-          ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:symboltable=trace",
-                                                                    "-version");
-          int size = getSymbolTableSize(pb);
-
-          pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSymbolTableSizeHistogram",
-                                                                    LotsOfTempSymbols.class.getName(),
-                                                                    Integer.toString(size));
-          analyzeOutputOn(size, pb);
-        }
-     }
+    pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSymbolTableSizeHistogram",
+                                               LotsOfTempSymbols.class.getName(),
+                                               Integer.toString(size));
+    analyzeOutputOn(size, pb);
   }
 
   static class LotsOfTempSymbols {
