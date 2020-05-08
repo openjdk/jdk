@@ -875,7 +875,6 @@ javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.ja
 javax/swing/JMenuItem/6249972/bug6249972.java 8233640 macosx-all
 javax/swing/JMenuItem/4171437/bug4171437.java 8233641 macosx-all
 javax/swing/JMenu/4692443/bug4692443.java 8171998 macosx-all
-javax/swing/JMenu/4515762/bug4515762.java 8233643 macosx-all
 javax/swing/JColorChooser/Test8051548.java 8233647 macosx-all
 javax/swing/plaf/synth/7158712/bug7158712.java 8238720 windows-all
 javax/swing/plaf/basic/BasicComboPopup/JComboBoxPopupLocation/JComboBoxPopupLocation.java 8238720 windows-all

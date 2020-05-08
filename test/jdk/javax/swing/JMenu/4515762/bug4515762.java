@@ -121,6 +121,7 @@ public class bug4515762 {
                     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     frame.pack();
                     frame.setVisible(true);
+                    frame.toFront();
                 }
             });
 
@@ -140,6 +141,7 @@ public class bug4515762 {
             actionExpected = true;
             Util.hitMnemonics(robot, KeyEvent.VK_U);
 
+            robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_S);
             robot.keyRelease(KeyEvent.VK_S);
             robot.waitForIdle();
@@ -147,6 +149,8 @@ public class bug4515762 {
             checkAction();
 
             Util.hitMnemonics(robot, KeyEvent.VK_U);
+            robot.waitForIdle();
+
             robot.keyPress(KeyEvent.VK_M);
             robot.keyRelease(KeyEvent.VK_M);
             robot.waitForIdle();
@@ -154,17 +158,21 @@ public class bug4515762 {
             checkAction();
 
             Util.hitMnemonics(robot, KeyEvent.VK_U);
+            robot.waitForIdle();
             Util.hitKeys(robot, KeyEvent.VK_T);
             robot.waitForIdle();
 
             checkAction();
+
             Util.hitMnemonics(robot, KeyEvent.VK_U);
+            robot.waitForIdle();
             Util.hitKeys(robot, KeyEvent.VK_W);
             robot.waitForIdle();
 
             checkAction();
 
             Util.hitMnemonics(robot, KeyEvent.VK_U);
+            robot.waitForIdle();
             Util.hitKeys(robot, KeyEvent.VK_U);
             robot.waitForIdle();
 
