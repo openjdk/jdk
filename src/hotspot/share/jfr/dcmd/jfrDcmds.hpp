@@ -151,9 +151,13 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   DCmdArgument<MemorySizeArgument> _memory_size;
   DCmdArgument<MemorySizeArgument> _max_chunk_size;
   DCmdArgument<bool>  _sample_threads;
+  bool _verbose;
 
  public:
   JfrConfigureFlightRecorderDCmd(outputStream* output, bool heap);
+  void set_verbose(bool verbose) {
+    _verbose = verbose;
+  }
   static const char* name() {
     return "JFR.configure";
   }
