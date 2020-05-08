@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142968 8166568 8166286 8170618 8168149
+ * @bug 8142968 8166568 8166286 8170618 8168149 8240910
  * @summary Basic test for jmod
  * @library /test/lib
  * @modules jdk.compiler
@@ -59,6 +59,10 @@ public class JmodTest {
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
         .orElseThrow(() ->
             new RuntimeException("jmod tool not found")
+        );
+    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
         );
 
     static final String TEST_SRC = System.getProperty("test.src", ".");
@@ -429,6 +433,25 @@ public class JmodTest {
         jmod("create",
              "--class-path", cp,
              "--libs", lp.toString() + pathSeparator + lp.toString(),
+             jmod.toString())
+             .assertSuccess()
+             .resultChecker(r ->
+                 assertContains(r.output, "Warning: ignoring duplicate entry")
+             );
+    }
+
+    @Test
+    public void testDuplicateEntriesFromJarFile() throws IOException {
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path jar = Paths.get("foo.jar");
+        Path jmod = MODS_DIR.resolve("testDuplicates.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jar);
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        // create JAR file
+        assertTrue(JAR_TOOL.run(System.out, System.err, "cf", jar.toString(), "-C", cp, ".") == 0);
+
+        jmod("create",
+             "--class-path", jar.toString() + pathSeparator + jar.toString(),
              jmod.toString())
              .assertSuccess()
              .resultChecker(r ->

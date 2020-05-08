@@ -757,21 +757,17 @@ public class JmodTask {
                         throws IOException
                     {
                         Path relPath = path.relativize(file);
-                        if (relPath.toString().equals(MODULE_INFO)
-                                && !Section.CLASSES.equals(section))
-                            warning("warn.ignore.entry", MODULE_INFO, section);
-
-                        if (!relPath.toString().equals(MODULE_INFO)
-                                && !matches(relPath, excludes)) {
-                            try (InputStream in = Files.newInputStream(file)) {
-                                out.writeEntry(in, section, relPath.toString());
-                            } catch (IOException x) {
-                                if (x.getMessage().contains("duplicate entry")) {
-                                    warning("warn.ignore.duplicate.entry",
-                                            relPath.toString(), section);
-                                    return FileVisitResult.CONTINUE;
+                        String name = relPath.toString();
+                        if (name.equals(MODULE_INFO)) {
+                            if (!Section.CLASSES.equals(section))
+                                warning("warn.ignore.entry", name, section);
+                        } else if (!matches(relPath, excludes)) {
+                            if (out.contains(section, name)) {
+                                warning("warn.ignore.duplicate.entry", name, section);
+                            } else {
+                                try (InputStream in = Files.newInputStream(file)) {
+                                    out.writeEntry(in, section, name);
                                 }
-                                throw x;
                             }
                         }
                         return FileVisitResult.CONTINUE;
@@ -808,7 +804,14 @@ public class JmodTask {
             public boolean test(JarEntry je) {
                 String name = je.getName();
                 // ## no support for excludes. Is it really needed?
-                return !name.endsWith(MODULE_INFO) && !je.isDirectory();
+                if (name.endsWith(MODULE_INFO) || je.isDirectory()) {
+                    return false;
+                }
+                if (out.contains(Section.CLASSES, name)) {
+                    warning("warn.ignore.duplicate.entry", name, Section.CLASSES);
+                    return false;
+                }
+                return true;
             }
         }
     }
