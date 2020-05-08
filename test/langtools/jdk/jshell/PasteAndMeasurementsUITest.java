@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8182297
+ * @bug 8182297 8242919
  * @summary Verify that pasting multi-line snippets works properly.
  * @library /tools/lib
  * @modules
@@ -31,6 +31,7 @@
  *     java.base/java.io:open
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
+ *     jdk.internal.le/jdk.internal.org.jline.reader.impl
  *     jdk.jshell/jdk.internal.jshell.tool.resources:open
  *     jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
@@ -42,6 +43,7 @@
 import java.io.Console;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import jdk.internal.org.jline.reader.impl.LineReaderImpl;
 
 import org.testng.annotations.Test;
 
@@ -73,4 +75,18 @@ public class PasteAndMeasurementsUITest extends UITesting {
         });
     }
         private static final String LOC = "\033[12;1R";
+
+    public void testBracketedPaste() throws Exception {
+        Field cons = System.class.getDeclaredField("cons");
+        cons.setAccessible(true);
+        Constructor console = Console.class.getDeclaredConstructor();
+        console.setAccessible(true);
+        cons.set(null, console.newInstance());
+        doRunTest((inputSink, out) -> {
+            inputSink.write(LineReaderImpl.BRACKETED_PASTE_BEGIN +
+                            "int i;" +
+                            LineReaderImpl.BRACKETED_PASTE_END);
+            waitOutput(out,       "int i;");
+        });
+    }
 }
