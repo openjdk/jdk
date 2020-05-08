@@ -782,7 +782,10 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    if test "x$FLAGS_CPU" = xarm; then
+    if test "x$FLAGS_CPU" = xaarch64; then
+      # -Wno-psabi to get rid of annoying "note: parameter passing for argument of type '<type> changed in GCC 9.1"
+      $1_CFLAGS_CPU="-Wno-psabi"
+    elif test "x$FLAGS_CPU" = xarm; then
       # -Wno-psabi to get rid of annoying "note: the mangling of 'va_list' has changed in GCC 4.4"
       $1_CFLAGS_CPU="-fsigned-char -Wno-psabi $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS -DJDK_ARCH_ABI_PROP_NAME='\"\$(JDK_ARCH_ABI_PROP_NAME)\"'"
       $1_CFLAGS_CPU_JVM="-DARM"
