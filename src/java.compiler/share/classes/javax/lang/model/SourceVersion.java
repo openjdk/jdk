@@ -325,7 +325,7 @@ public enum SourceVersion {
      * literal in any segment.
      *
      * This method returns {@code true} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>
+     * keywords</i> and <i>restricted identifiers</i>.
      *
      * @param name the string to check
      * @return {@code true} if this string is a
@@ -351,7 +351,7 @@ public enum SourceVersion {
      * literal in any segment.
      *
      * This method returns {@code true} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>
+     * keywords</i> and <i>restricted identifiers</i>.
      *
      * @param name the string to check
      * @param version the version to use
