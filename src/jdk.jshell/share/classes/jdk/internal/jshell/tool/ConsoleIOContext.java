@@ -76,6 +76,8 @@ import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.TerminalBuilder;
 import jdk.internal.org.jline.utils.Display;
+import jdk.internal.org.jline.utils.NonBlocking;
+import jdk.internal.org.jline.utils.NonBlockingInputStreamImpl;
 import jdk.internal.org.jline.utils.NonBlockingReader;
 import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.Snippet;
@@ -103,14 +105,20 @@ class ConsoleIOContext extends IOContext {
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
                                                   ex -> repl.hard("Error on input: %s", ex));
+        InputStream nonBlockingInput = new NonBlockingInputStreamImpl(null, input) {
+            @Override
+            public int readBuffered(byte[] b) throws IOException {
+                return input.read(b);
+            }
+        };
         Terminal terminal;
         if (System.getProperty("test.jdk") != null) {
-            terminal = new TestTerminal(input, cmdout);
+            terminal = new TestTerminal(nonBlockingInput, cmdout);
             input.setInputStream(cmdin);
         } else {
             terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
                 input.setInputStream(in);
-                return input;
+                return nonBlockingInput;
             }).build();
         }
         originalAttributes = terminal.getAttributes();
@@ -827,7 +835,7 @@ class ConsoleIOContext extends IOContext {
 
     private boolean fixes() {
         try {
-            int c = in.getTerminal().input().read();
+            int c = in.getTerminal().reader().read();
 
             if (c == (-1)) {
                 return true; //TODO: true or false???
@@ -1234,11 +1242,11 @@ class ConsoleIOContext extends IOContext {
 
         private static final int DEFAULT_HEIGHT = 24;
 
-        public TestTerminal(StopDetectingInputStream input, OutputStream output) throws Exception {
+        private final NonBlockingReader inputReader;
+
+        public TestTerminal(InputStream input, OutputStream output) throws Exception {
             super("test", "ansi", output, Charset.forName("UTF-8"));
-//            setAnsiSupported(true);
-//            setEchoEnabled(false);
-//            this.input = input;
+            this.inputReader = NonBlocking.nonBlocking(getName(), input, encoding());
             Attributes a = new Attributes(getAttributes());
             a.setLocalFlag(LocalFlag.ECHO, false);
             setAttributes(attributes);
@@ -1252,18 +1260,18 @@ class ConsoleIOContext extends IOContext {
                 // ignore
             }
             setSize(new Size(80, h));
-            new Thread(() -> {
-                int r;
+        }
 
-                try {
-                    while ((r = input.read()) != (-1)) {
-                        processInputByte(r);
-                    }
-                    slaveInput.close();
-                } catch (IOException ex) {
-                    throw new IllegalStateException(ex);
-                }
-            }).start();
+        @Override
+        public NonBlockingReader reader() {
+            return inputReader;
+        }
+
+        @Override
+        protected void doClose() throws IOException {
+            super.doClose();
+            slaveInput.close();
+            inputReader.close();
         }
 
     }

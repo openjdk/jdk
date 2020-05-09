@@ -366,6 +366,7 @@ bool JfrOptionSet::configure(TRAPS) {
   configure._sample_threads.set_is_set(_dcmd_sample_threads.is_set());
   configure._sample_threads.set_value(_dcmd_sample_threads.value());
 
+  configure.set_verbose(false);
   configure.execute(DCmd_Source_Internal, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {

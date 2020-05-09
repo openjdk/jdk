@@ -34,6 +34,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import jdk.internal.jmod.JmodFile;
@@ -44,6 +48,8 @@ import static jdk.internal.jmod.JmodFile.*;
  * Output stream to write to JMOD file
  */
 class JmodOutputStream extends OutputStream implements AutoCloseable {
+    private final Map<Section, Set<String>> entries = new HashMap<>();
+
     /**
      * This method creates (or overrides, if exists) the JMOD file,
      * returning the the output stream to write to the JMOD file.
@@ -110,11 +116,20 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         zos.closeEntry();
     }
 
-    private ZipEntry newEntry(Section section, String path) {
+    private ZipEntry newEntry(Section section, String path) throws IOException {
+        if (contains(section, path)) {
+            throw new IOException("duplicate entry: " + path + " in section " + section);
+        }
         String prefix = section.jmodDir();
         String name = Paths.get(prefix, path).toString()
                            .replace(File.separatorChar, '/');
+        entries.get(section).add(path);
         return new ZipEntry(name);
+    }
+
+    public boolean contains(Section section, String path) {
+        Set<String> set = entries.computeIfAbsent(section, k -> new HashSet<>());
+        return set.contains(path);
     }
 
     @Override
