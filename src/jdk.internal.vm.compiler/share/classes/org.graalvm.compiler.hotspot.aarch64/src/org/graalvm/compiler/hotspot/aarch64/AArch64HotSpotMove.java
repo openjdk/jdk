@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,9 @@ public class AArch64HotSpotMove {
             Register resultRegister = asRegister(result);
             Register ptr = asRegister(input);
             Register base = (isRegister(baseRegister) ? asRegister(baseRegister) : zr);
+            boolean pic = GeneratePIC.getValue(crb.getOptions());
             // result = (ptr - base) >> shift
-            if (!encoding.hasBase()) {
+            if (!pic && !encoding.hasBase()) {
                 if (encoding.hasShift()) {
                     masm.lshr(64, resultRegister, ptr, encoding.getShift());
                 } else {
@@ -189,7 +190,8 @@ public class AArch64HotSpotMove {
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             Register inputRegister = asRegister(input);
             Register resultRegister = asRegister(result);
-            Register base = encoding.hasBase() ? asRegister(baseRegister) : null;
+            boolean pic = GeneratePIC.getValue(crb.getOptions());
+            Register base = pic || encoding.hasBase() ? asRegister(baseRegister) : null;
             emitUncompressCode(masm, inputRegister, resultRegister, base, encoding.getShift(), nonNull);
         }
 
