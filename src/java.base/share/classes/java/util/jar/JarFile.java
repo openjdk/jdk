@@ -503,11 +503,11 @@ public class JarFile extends ZipFile {
         if (isMultiRelease()) {
             JarEntry je = getVersionedEntry(name, null);
             if (je == null) {
-                je = getEntry0(name);
+                je = (JarEntry)super.getEntry(name);
             }
             return je;
         } else {
-            return getEntry0(name);
+            return super.getEntry(name);
         }
     }
 
@@ -519,7 +519,7 @@ public class JarFile extends ZipFile {
      *         may be thrown if the jar file has been closed
      */
     public Enumeration<JarEntry> entries() {
-        return JUZFA.entries(this, JarFileEntry::new);
+        return JUZFA.entries(this);
     }
 
     /**
@@ -532,7 +532,7 @@ public class JarFile extends ZipFile {
      * @since 1.8
      */
     public Stream<JarEntry> stream() {
-        return JUZFA.stream(this, JarFileEntry::new);
+        return JUZFA.stream(this);
     }
 
     /**
@@ -563,19 +563,11 @@ public class JarFile extends ZipFile {
         return stream();
     }
 
-    /*
-     * Invokes {@ZipFile}'s getEntry to Return a {@code JarFileEntry} for the
-     * given entry name or {@code null} if not found.
+    /**
+     * Creates a ZipEntry suitable for the given ZipFile.
      */
-    private JarFileEntry getEntry0(String name) {
-        // Not using a lambda/method reference here to optimize startup time
-        Function<String, JarEntry> newJarFileEntryFn = new Function<>() {
-            @Override
-            public JarEntry apply(String name) {
-                return new JarFileEntry(name);
-            }
-        };
-        return (JarFileEntry)JUZFA.getEntry(this, name, newJarFileEntryFn);
+    JarEntry entryFor(String name) {
+        return new JarFileEntry(name);
     }
 
     private String getBasename(String name) {
@@ -613,7 +605,8 @@ public class JarFile extends ZipFile {
                     if (version < BASE_VERSION_FEATURE) {
                         break;
                     }
-                    JarFileEntry vje = getEntry0(META_INF_VERSIONS + version + "/" + name);
+                    JarFileEntry vje = (JarFileEntry)super.getEntry(
+                            META_INF_VERSIONS + version + "/" + name);
                     if (vje != null) {
                         return vje.withBasename(name);
                     }
@@ -926,7 +919,7 @@ public class JarFile extends ZipFile {
             // initialization
             String name = JUZFA.getManifestName(this, false);
             if (name != null) {
-                this.manEntry = getEntry0(name);
+                this.manEntry = (JarEntry)super.getEntry(name);
             }
         }
         return manEntry;
@@ -1093,12 +1086,11 @@ public class JarFile extends ZipFile {
     Enumeration<JarEntry> entries2() {
         ensureInitialization();
         if (jv != null) {
-            return jv.entries2(this, JUZFA.entries(JarFile.this,
-                                                   JarFileEntry::new));
+            return jv.entries2(this, JUZFA.entries(JarFile.this));
         }
 
         // screen out entries which are never signed
-        final var unfilteredEntries = JUZFA.entries(JarFile.this, JarFileEntry::new);
+        final var unfilteredEntries = JUZFA.entries(JarFile.this);
 
         return new Enumeration<>() {
 

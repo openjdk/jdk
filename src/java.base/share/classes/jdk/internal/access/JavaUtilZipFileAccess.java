@@ -27,7 +27,6 @@ package jdk.internal.access;
 
 import java.util.Enumeration;
 import java.util.List;
-import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
@@ -38,9 +37,8 @@ public interface JavaUtilZipFileAccess {
     public List<String> getManifestAndSignatureRelatedFiles(JarFile zip);
     public String getManifestName(JarFile zip, boolean onlyIfSignatureRelatedFiles);
     public int[] getMetaInfVersions(JarFile zip);
-    public JarEntry getEntry(ZipFile zip, String name, Function<String, JarEntry> func);
-    public Enumeration<JarEntry> entries(ZipFile zip, Function<String, JarEntry> func);
-    public Stream<JarEntry> stream(ZipFile zip, Function<String, JarEntry> func);
+    public Enumeration<JarEntry> entries(ZipFile zip);
+    public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
 }
 

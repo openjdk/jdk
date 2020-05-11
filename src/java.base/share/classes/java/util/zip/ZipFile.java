@@ -55,13 +55,13 @@ import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.access.JavaUtilZipFileAccess;
+import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
@@ -321,27 +321,13 @@ public class ZipFile implements ZipConstants, Closeable {
      * @throws IllegalStateException if the zip file has been closed
      */
     public ZipEntry getEntry(String name) {
-        return getEntry(name, ZipEntry::new);
-    }
-
-    /*
-     * Returns the zip file entry for the specified name, or null
-     * if not found.
-     *
-     * @param name the name of the entry
-     * @param func the function that creates the returned entry
-     *
-     * @return the zip file entry, or null if not found
-     * @throws IllegalStateException if the zip file has been closed
-     */
-    private ZipEntry getEntry(String name, Function<String, ? extends ZipEntry> func) {
         Objects.requireNonNull(name, "name");
         ZipEntry entry = null;
         synchronized (this) {
             ensureOpen();
             int pos = res.zsrc.getEntryPos(name, true);
             if (pos != -1) {
-                entry = getZipEntry(name, pos, func);
+                entry = getZipEntry(name, pos);
             }
         }
         return entry;
@@ -487,11 +473,9 @@ public class ZipFile implements ZipConstants, Closeable {
 
         private int i = 0;
         private final int entryCount;
-        private final Function<String, T> gen;
 
-        public ZipEntryIterator(int entryCount, Function<String, T> gen) {
+        public ZipEntryIterator(int entryCount) {
             this.entryCount = entryCount;
-            this.gen = gen;
         }
 
         @Override
@@ -518,7 +502,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
-                return (T)getZipEntry(null, res.zsrc.getEntryPos(i++ * 3), gen);
+                return (T)getZipEntry(null, res.zsrc.getEntryPos(i++ * 3));
             }
         }
 
@@ -536,14 +520,14 @@ public class ZipFile implements ZipConstants, Closeable {
     public Enumeration<? extends ZipEntry> entries() {
         synchronized (this) {
             ensureOpen();
-            return new ZipEntryIterator<ZipEntry>(res.zsrc.total, ZipEntry::new);
+            return new ZipEntryIterator<ZipEntry>(res.zsrc.total);
         }
     }
 
-    private Enumeration<JarEntry> entries(Function<String, JarEntry> func) {
+    private Enumeration<JarEntry> jarEntries() {
         synchronized (this) {
             ensureOpen();
-            return new ZipEntryIterator<JarEntry>(res.zsrc.total, func);
+            return new ZipEntryIterator<JarEntry>(res.zsrc.total);
         }
     }
 
@@ -590,7 +574,7 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> getZipEntry(null, pos, ZipEntry::new)), false);
+                pos -> getZipEntry(null, pos)), false);
        }
     }
 
@@ -625,16 +609,15 @@ public class ZipFile implements ZipConstants, Closeable {
      * Entries appear in the {@code Stream} in the order they appear in
      * the central directory of the jar file.
      *
-     * @param func the function that creates the returned entry
      * @return an ordered {@code Stream} of entries in this zip file
      * @throws IllegalStateException if the zip file has been closed
      * @since 10
      */
-    private Stream<JarEntry> stream(Function<String, JarEntry> func) {
+    private Stream<JarEntry> jarStream() {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> (JarEntry)getZipEntry(null, pos, func)), false);
+                pos -> (JarEntry)getZipEntry(null, pos)), false);
         }
     }
 
@@ -642,8 +625,7 @@ public class ZipFile implements ZipConstants, Closeable {
     private int lastEntryPos;
 
     /* Check ensureOpen() before invoking this method */
-    private ZipEntry getZipEntry(String name, int pos,
-                                 Function<String, ? extends ZipEntry> func) {
+    private ZipEntry getZipEntry(String name, int pos) {
         byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
@@ -663,7 +645,12 @@ public class ZipFile implements ZipConstants, Closeable {
             // invoked from iterator, use the entry name stored in cen
             name = zc.toString(cen, pos + CENHDR, nlen);
         }
-        ZipEntry e = func.apply(name);    //ZipEntry e = new ZipEntry(name);
+        ZipEntry e;
+        if (this instanceof JarFile) {
+            e = Source.JUJA.entryFor((JarFile)this, name);
+        } else {
+            e = new ZipEntry(name);
+        }
         e.flag = CENFLG(cen, pos);
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
@@ -1094,19 +1081,12 @@ public class ZipFile implements ZipConstants, Closeable {
                     return ((ZipFile)jar).getMetaInfVersions();
                 }
                 @Override
-                public JarEntry getEntry(ZipFile zip, String name,
-                    Function<String, JarEntry> func) {
-                    return (JarEntry)zip.getEntry(name, func);
+                public Enumeration<JarEntry> entries(ZipFile zip) {
+                    return zip.jarEntries();
                 }
                 @Override
-                public Enumeration<JarEntry> entries(ZipFile zip,
-                    Function<String, JarEntry> func) {
-                    return zip.entries(func);
-                }
-                @Override
-                public Stream<JarEntry> stream(ZipFile zip,
-                    Function<String, JarEntry> func) {
-                    return zip.stream(func);
+                public Stream<JarEntry> stream(ZipFile zip) {
+                    return zip.jarStream();
                 }
                 @Override
                 public Stream<String> entryNameStream(ZipFile zip) {
@@ -1118,6 +1098,9 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     private static class Source {
+        // While this is only used from ZipFile, defining it there would cause
+        // a bootstrap cycle that would leave this initialized as null
+        private static final JavaUtilJarAccess JUJA = SharedSecrets.javaUtilJarAccess();
         // "META-INF/".length()
         private static final int META_INF_LENGTH = 9;
         private static final int[] EMPTY_META_VERSIONS = new int[0];

@@ -46,4 +46,5 @@ public interface JavaUtilJarAccess {
     public Attributes getTrustedAttributes(Manifest man, String name);
     public void ensureInitialization(JarFile jar);
     public boolean isInitializing();
+    public JarEntry entryFor(JarFile file, String name);
 }
