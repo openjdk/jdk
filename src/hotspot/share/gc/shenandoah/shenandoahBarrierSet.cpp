@@ -31,7 +31,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/iterator.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #ifdef COMPILER1

@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
 
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
 class ShenandoahCompactHeuristics : public ShenandoahHeuristics {
 public:
