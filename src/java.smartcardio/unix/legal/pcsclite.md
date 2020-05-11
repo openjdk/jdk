@@ -1,4 +1,4 @@
-## PC/SC Lite v1.8.24
+## PC/SC Lite v1.8.26
 
 ### PC/SC Lite License
 <pre>
