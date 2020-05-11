@@ -16,7 +16,7 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.hasJFR
  * @modules jdk.jfr
  * @library /test/lib
- * @run main jdk.jfr.startupargs.TestOptionsWithLocale
+ * @run main/othervm jdk.jfr.startupargs.TestOptionsWithLocale
  */
 public class TestOptionsWithLocale {
 
@@ -29,6 +29,13 @@ public class TestOptionsWithLocale {
     }
 
     public static void main(String... args) throws IOException {
+        // Can only run test if jdk.localedata is available.
+        // Can't specify @module jdk.jfr jdk.localedata, because
+        // --limit-modules jdk.jfr,jdk.localedata prevents the product issue.
+        if (ModuleLayer.boot().findModule("jdk.localedata").isEmpty()) {
+            return;
+        }
+
         ProcessBuilder pb = ProcessTools.createTestJvm(
                 "-Duser.country=DE",
                 "-Duser.language=de",
