@@ -482,7 +482,7 @@ public:
   static void compute_java_loaders(TRAPS);
 
   // Register a new class loader
-  static ClassLoaderData* register_loader(Handle class_loader);
+  static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
 protected:
   // Mirrors for primitive classes (created eagerly)
   static oop check_mirror(oop m) {

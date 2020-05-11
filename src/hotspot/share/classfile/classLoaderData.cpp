@@ -877,12 +877,6 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
   }
 }
 
-// These CLDs are to contain non-strong hidden classes or unsafe anonymous classes used for JSR292
-ClassLoaderData* ClassLoaderData::has_class_mirror_holder_cld(Handle loader) {
-  // Add a new class loader data to the graph.
-  return ClassLoaderDataGraph::add(loader, true);
-}
-
 // Caller needs ResourceMark
 // If the class loader's _name has not been explicitly set, the class loader's
 // qualified class name is returned.
