@@ -897,7 +897,6 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 # core_tools
 
 tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
-tools/jpackage/windows/WinUpgradeUUIDTest.java#id1              8244620 windows-all
 
 ############################################################################
 
