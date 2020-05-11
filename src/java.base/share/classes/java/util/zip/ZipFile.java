@@ -45,6 +45,8 @@ import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -66,6 +68,7 @@ import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.UTF_8;
+import sun.security.util.SignatureFileVerifier;
 
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
@@ -1010,29 +1013,49 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the names of all non-directory entries that begin with
-     * "META-INF/" (case ignored). This method is used in JarFile, via
-     * SharedSecrets, as an optimization when looking up manifest and
-     * signature file entries. Returns null if no entries were found.
+     * Returns the names of the META-INF/MANIFEST.MF entry - if exists -
+     * and any signature-related files under META-INF. This method is used in
+     * JarFile, via SharedSecrets, as an optimization.
      */
-    private String[] getMetaInfEntryNames() {
+    private List<String> getManifestAndSignatureRelatedFiles() {
         synchronized (this) {
             ensureOpen();
             Source zsrc = res.zsrc;
-            if (zsrc.metanames == null) {
-                return null;
+            int[] metanames = zsrc.signatureMetaNames;
+            List<String> files = null;
+            if (zsrc.manifestPos >= 0) {
+                files = new ArrayList<>();
+                files.add(getEntryName(zsrc.manifestPos));
             }
-            String[] names = new String[zsrc.metanames.length];
-            byte[] cen = zsrc.cen;
-            for (int i = 0; i < names.length; i++) {
-                int pos = zsrc.metanames[i];
-                // This will only be invoked on JarFile, which is guaranteed
-                // to use (or be compatible with) UTF-8 encoding.
-                names[i] = new String(cen, pos + CENHDR, CENNAM(cen, pos),
-                                      UTF_8.INSTANCE);
+            if (metanames != null) {
+                if (files == null) {
+                    files = new ArrayList<>();
+                }
+                for (int i = 0; i < metanames.length; i++) {
+                    files.add(getEntryName(metanames[i]));
+                }
             }
-            return names;
+            return files == null ? List.of() : files;
         }
+    }
+
+    /**
+     * Returns the name of the META-INF/MANIFEST.MF entry, ignoring
+     * case. If {@code onlyIfSignatureRelatedFiles} is true, we only return the
+     * manifest if there is also at least one signature-related file.
+     * This method is used in JarFile, via SharedSecrets, as an optimization
+     * when looking up the manifest file.
+     */
+    private String getManifestName(boolean onlyIfSignatureRelatedFiles) {
+        synchronized (this) {
+            ensureOpen();
+            Source zsrc = res.zsrc;
+            int pos = zsrc.manifestPos;
+            if (pos >= 0 && (!onlyIfSignatureRelatedFiles || zsrc.signatureMetaNames != null)) {
+                return getEntryName(pos);
+            }
+        }
+        return null;
     }
 
     /**
@@ -1059,8 +1082,12 @@ public class ZipFile implements ZipConstants, Closeable {
                     return zip.res.zsrc.startsWithLoc;
                 }
                 @Override
-                public String[] getMetaInfEntryNames(JarFile jar) {
-                    return ((ZipFile)jar).getMetaInfEntryNames();
+                public List<String> getManifestAndSignatureRelatedFiles(JarFile jar) {
+                    return ((ZipFile)jar).getManifestAndSignatureRelatedFiles();
+                }
+                @Override
+                public String getManifestName(JarFile jar, boolean onlyIfHasSignatureRelatedFiles) {
+                    return ((ZipFile)jar).getManifestName(onlyIfHasSignatureRelatedFiles);
                 }
                 @Override
                 public int[] getMetaInfVersions(JarFile jar) {
@@ -1105,7 +1132,8 @@ public class ZipFile implements ZipConstants, Closeable {
         private long locpos;                 // position of first LOC header (usually 0)
         private byte[] comment;              // zip file comment
                                              // list of meta entries in META-INF dir
-        private int[] metanames;
+        private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
+        private int[] signatureMetaNames;    // positions of signature related entries, if such exist
         private int[] metaVersions;          // list of unique versions found in META-INF/versions/
         private final boolean startsWithLoc; // true, if zip file starts with LOCSIG (usually true)
 
@@ -1254,7 +1282,8 @@ public class ZipFile implements ZipConstants, Closeable {
             cen = null;
             entries = null;
             table = null;
-            metanames = null;
+            manifestPos = -1;
+            signatureMetaNames = null;
             metaVersions = EMPTY_META_VERSIONS;
         }
 
@@ -1438,7 +1467,7 @@ public class ZipFile implements ZipConstants, Closeable {
             int next;
 
             // list for all meta entries
-            ArrayList<Integer> metanamesList = null;
+            ArrayList<Integer> signatureNames = null;
             // Set of all version numbers seen in META-INF/versions/
             Set<Integer> metaVersionsSet = null;
 
@@ -1476,19 +1505,27 @@ public class ZipFile implements ZipConstants, Closeable {
                 idx = addEntry(idx, hash, next, pos);
                 // Adds name to metanames.
                 if (isMetaName(cen, entryPos, nlen)) {
-                    if (metanamesList == null)
-                        metanamesList = new ArrayList<>(4);
-                    metanamesList.add(pos);
+                    // nlen is at least META_INF_LENGTH
+                    if (isManifestName(cen, entryPos + META_INF_LENGTH,
+                            nlen - META_INF_LENGTH)) {
+                        manifestPos = pos;
+                    } else {
+                        if (isSignatureRelated(cen, entryPos, nlen)) {
+                            if (signatureNames == null)
+                                signatureNames = new ArrayList<>(4);
+                            signatureNames.add(pos);
+                        }
 
-                    // If this is a versioned entry, parse the version
-                    // and store it for later. This optimizes lookup
-                    // performance in multi-release jar files
-                    int version = getMetaVersion(cen,
-                        entryPos + META_INF_LENGTH, nlen - META_INF_LENGTH);
-                    if (version > 0) {
-                        if (metaVersionsSet == null)
-                            metaVersionsSet = new TreeSet<>();
-                        metaVersionsSet.add(version);
+                        // If this is a versioned entry, parse the version
+                        // and store it for later. This optimizes lookup
+                        // performance in multi-release jar files
+                        int version = getMetaVersion(cen,
+                            entryPos + META_INF_LENGTH, nlen - META_INF_LENGTH);
+                        if (version > 0) {
+                            if (metaVersionsSet == null)
+                                metaVersionsSet = new TreeSet<>();
+                            metaVersionsSet.add(version);
+                        }
                     }
                 }
                 // skip ext and comment
@@ -1497,10 +1534,11 @@ public class ZipFile implements ZipConstants, Closeable {
                 i++;
             }
             total = i;
-            if (metanamesList != null) {
-                metanames = new int[metanamesList.size()];
-                for (int j = 0, len = metanames.length; j < len; j++) {
-                    metanames[j] = metanamesList.get(j);
+            if (signatureNames != null) {
+                int len = signatureNames.size();
+                signatureMetaNames = new int[len];
+                for (int j = 0; j < len; j++) {
+                    signatureMetaNames[j] = signatureNames.get(j);
                 }
             }
             if (metaVersionsSet != null) {
@@ -1580,7 +1618,8 @@ public class ZipFile implements ZipConstants, Closeable {
          * beginning with "META-INF/", disregarding ASCII case.
          */
         private static boolean isMetaName(byte[] name, int off, int len) {
-            // Use the "oldest ASCII trick in the book"
+            // Use the "oldest ASCII trick in the book":
+            // ch | 0x20 == Character.toLowerCase(ch)
             return len > META_INF_LENGTH       // "META-INF/".length()
                 && name[off + len - 1] != '/'  // non-directory
                 && (name[off++] | 0x20) == 'm'
@@ -1592,6 +1631,52 @@ public class ZipFile implements ZipConstants, Closeable {
                 && (name[off++] | 0x20) == 'n'
                 && (name[off++] | 0x20) == 'f'
                 && (name[off]         ) == '/';
+        }
+
+        /*
+         * Check if the bytes represents a name equals to MANIFEST.MF
+         */
+        private static boolean isManifestName(byte[] name, int off, int len) {
+            return (len == 11 // "MANIFEST.MF".length()
+                    && (name[off++] | 0x20) == 'm'
+                    && (name[off++] | 0x20) == 'a'
+                    && (name[off++] | 0x20) == 'n'
+                    && (name[off++] | 0x20) == 'i'
+                    && (name[off++] | 0x20) == 'f'
+                    && (name[off++] | 0x20) == 'e'
+                    && (name[off++] | 0x20) == 's'
+                    && (name[off++] | 0x20) == 't'
+                    && (name[off++]       ) == '.'
+                    && (name[off++] | 0x20) == 'm'
+                    && (name[off]   | 0x20) == 'f');
+        }
+
+        private static boolean isSignatureRelated(byte[] name, int off, int len) {
+            // Only called when isMetaName(name, off, len) is true, which means
+            // len is at least META_INF_LENGTH
+            // assert isMetaName(name, off, len)
+            boolean signatureRelated = false;
+            if (name[off + len - 3] == '.') {
+                // Check if entry ends with .EC and .SF
+                int b1 = name[off + len - 2] | 0x20;
+                int b2 = name[off + len - 1] | 0x20;
+                if ((b1 == 'e' && b2 == 'c') || (b1 == 's' && b2 == 'f')) {
+                    signatureRelated = true;
+                }
+            } else if (name[off + len - 4] == '.') {
+                // Check if entry ends with .DSA and .RSA
+                int b1 = name[off + len - 3] | 0x20;
+                int b2 = name[off + len - 2] | 0x20;
+                int b3 = name[off + len - 1] | 0x20;
+                if ((b1 == 'r' || b1 == 'd') && b2 == 's' && b3 == 'a') {
+                    signatureRelated = true;
+                }
+            }
+            // Above logic must match SignatureFileVerifier.isBlockOrSF
+            assert(signatureRelated == SignatureFileVerifier
+                .isBlockOrSF(new String(name, off, len, UTF_8.INSTANCE)
+                    .toUpperCase(Locale.ENGLISH)));
+            return signatureRelated;
         }
 
         /*
