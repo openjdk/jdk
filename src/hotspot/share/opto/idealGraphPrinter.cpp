@@ -92,21 +92,47 @@ IdealGraphPrinter *IdealGraphPrinter::printer() {
 }
 
 void IdealGraphPrinter::clean_up() {
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *p = jtiwh.next(); ) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* p = jtiwh.next(); ) {
     if (p->is_Compiler_thread()) {
-      CompilerThread *c = (CompilerThread *)p;
-      IdealGraphPrinter *printer = c->ideal_graph_printer();
+      CompilerThread* c = (CompilerThread*)p;
+      IdealGraphPrinter* printer = c->ideal_graph_printer();
       if (printer) {
         delete printer;
       }
       c->set_ideal_graph_printer(NULL);
     }
   }
+  IdealGraphPrinter* debug_file_printer = Compile::debug_file_printer();
+  if (debug_file_printer != NULL) {
+    delete debug_file_printer;
+  }
+  IdealGraphPrinter* debug_network_printer = Compile::debug_network_printer();
+  if (debug_network_printer != NULL) {
+    delete debug_network_printer;
+  }
 }
 
-// Constructor, either file or network output
+// Either print methods to file specified with PrintIdealGraphFile or otherwise over the network to the IGV
 IdealGraphPrinter::IdealGraphPrinter() {
+  init(PrintIdealGraphFile, true, false);
+}
 
+// Either print methods to the specified file 'file_name' or if NULL over the network to the IGV. If 'append'
+// is set, the next phase is directly appended to the specified file 'file_name'. This is useful when doing
+// replay compilation with a tool like rr that cannot alter the current program state but only the file.
+IdealGraphPrinter::IdealGraphPrinter(Compile* compile, const char* file_name, bool append) {
+  assert(!append || (append && file_name != NULL), "can only use append flag when printing to file");
+  init(file_name, false, append);
+  C = compile;
+  if (append) {
+    // When directly appending the next graph, we only need to set _current_method and not set up a new method
+    _current_method = C->method();
+  } else {
+    begin_method();
+  }
+}
+
+void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, bool append) {
   // By default dump both ins and outs since dead or unreachable code
   // needs to appear in the graph.  There are also some special cases
   // in the mach where kill projections have no users but should
@@ -117,60 +143,21 @@ IdealGraphPrinter::IdealGraphPrinter() {
   buffer[0] = 0;
   _depth = 0;
   _current_method = NULL;
-  assert(!_current_method, "current method must be initialized to NULL");
-  _stream = NULL;
+  _network_stream = NULL;
 
-  if (PrintIdealGraphFile != NULL) {
-    ThreadCritical tc;
-    // User wants all output to go to files
-    if (_file_count != 0) {
-      ResourceMark rm;
-      stringStream st;
-      const char* dot = strrchr(PrintIdealGraphFile, '.');
-      if (dot) {
-        st.write(PrintIdealGraphFile, dot - PrintIdealGraphFile);
-        st.print("%d%s", _file_count, dot);
-      } else {
-        st.print("%s%d", PrintIdealGraphFile, _file_count);
-      }
-      fileStream *stream = new (ResourceObj::C_HEAP, mtCompiler) fileStream(st.as_string());
-      _output = stream;
-    } else {
-      fileStream *stream = new (ResourceObj::C_HEAP, mtCompiler) fileStream(PrintIdealGraphFile);
-      _output = stream;
-    }
-    _file_count++;
+  if (file_name != NULL) {
+    init_file_stream(file_name, use_multiple_files, append);
   } else {
-    _stream = new (ResourceObj::C_HEAP, mtCompiler) networkStream();
-
-    // Try to connect to visualizer
-    if (_stream->connect(PrintIdealGraphAddress, PrintIdealGraphPort)) {
-      char c = 0;
-      _stream->read(&c, 1);
-      if (c != 'y') {
-        tty->print_cr("Client available, but does not want to receive data!");
-        _stream->close();
-        delete _stream;
-        _stream = NULL;
-        return;
-      }
-      _output = _stream;
-    } else {
-      // It would be nice if we could shut down cleanly but it should
-      // be an error if we can't connect to the visualizer.
-      fatal("Couldn't connect to visualizer at %s:" INTX_FORMAT,
-            PrintIdealGraphAddress, PrintIdealGraphPort);
-    }
+    init_network_stream();
   }
-
   _xml = new (ResourceObj::C_HEAP, mtCompiler) xmlStream(_output);
-
-  head(TOP_ELEMENT);
+  if (!append) {
+    head(TOP_ELEMENT);
+  }
 }
 
 // Destructor, close file or network stream
 IdealGraphPrinter::~IdealGraphPrinter() {
-
   tail(TOP_ELEMENT);
 
   // tty->print_cr("Walk time: %d", (int)_walk_time.milliseconds());
@@ -182,12 +169,12 @@ IdealGraphPrinter::~IdealGraphPrinter() {
     _xml = NULL;
   }
 
-  if (_stream) {
-    delete _stream;
-    if (_stream == _output) {
+  if (_network_stream) {
+    delete _network_stream;
+    if (_network_stream == _output) {
       _output = NULL;
     }
-    _stream = NULL;
+    _network_stream = NULL;
   }
 
   if (_output) {
@@ -285,12 +272,9 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
 }
 
 void IdealGraphPrinter::print_inline_tree(InlineTree *tree) {
-
-  if (tree == NULL) return;
-
-  ciMethod *method = tree->method();
-  print_method(tree->method(), tree->caller_bci(), tree);
-
+  if (tree != NULL) {
+    print_method(tree->method(), tree->caller_bci(), tree);
+  }
 }
 
 void IdealGraphPrinter::print_inlining() {
@@ -342,9 +326,6 @@ void IdealGraphPrinter::begin_method() {
 
 // Has to be called whenever a method has finished compilation
 void IdealGraphPrinter::end_method() {
-
-  nmethod* method = (nmethod*)this->_current_method->code();
-
   tail(GROUP_ELEMENT);
   _current_method = NULL;
   _xml->flush();
@@ -713,6 +694,61 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
 // Should method be printed?
 bool IdealGraphPrinter::should_print(int level) {
   return C->directive()->IGVPrintLevelOption >= level;
+}
+
+void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files, bool append) {
+  ThreadCritical tc;
+  if (use_multiple_files && _file_count != 0) {
+    assert(!append, "append should only be used for debugging with a single file");
+    ResourceMark rm;
+    stringStream st;
+    const char* dot = strrchr(file_name, '.');
+    if (dot) {
+      st.write(file_name, dot - file_name);
+      st.print("%d%s", _file_count, dot);
+    } else {
+      st.print("%s%d", file_name, _file_count);
+    }
+    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(st.as_string(), "w");
+  } else {
+    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, append ? "a" : "w");
+  }
+  if (use_multiple_files) {
+    assert(!append, "append should only be used for debugging with a single file");
+    _file_count++;
+  }
+}
+
+void IdealGraphPrinter::init_network_stream() {
+  _network_stream = new (ResourceObj::C_HEAP, mtCompiler) networkStream();
+  // Try to connect to visualizer
+  if (_network_stream->connect(PrintIdealGraphAddress, PrintIdealGraphPort)) {
+    char c = 0;
+    _network_stream->read(&c, 1);
+    if (c != 'y') {
+      tty->print_cr("Client available, but does not want to receive data!");
+      _network_stream->close();
+      delete _network_stream;
+      _network_stream = NULL;
+      return;
+    }
+    _output = _network_stream;
+  } else {
+    // It would be nice if we could shut down cleanly but it should
+    // be an error if we can't connect to the visualizer.
+    fatal("Couldn't connect to visualizer at %s:" INTX_FORMAT,
+          PrintIdealGraphAddress, PrintIdealGraphPort);
+  }
+}
+
+void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
+  assert(C != NULL, "must already be set");
+  if (current_method != _current_method) {
+    // If a different method, end the old and begin with the new one.
+    end_method();
+    _current_method = NULL;
+    begin_method();
+  }
 }
 
 extern const char *NodeClassNames[];

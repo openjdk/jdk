@@ -4545,7 +4545,6 @@ void CloneMap::dump(node_idx_t key) const {
   }
 }
 
-
 // Move Allocate nodes to the start of the list
 void Compile::sort_macro_nodes() {
   int count = macro_count();
@@ -4562,3 +4561,79 @@ void Compile::sort_macro_nodes() {
     }
   }
 }
+
+
+#ifndef PRODUCT
+IdealGraphPrinter* Compile::_debug_file_printer = NULL;
+IdealGraphPrinter* Compile::_debug_network_printer = NULL;
+
+// Called from debugger. Prints method to the default file with the default phase name.
+// This works regardless of any Ideal Graph Visualizer flags set or not.
+void igv_print() {
+  Compile::current()->igv_print_method_to_file();
+}
+
+// Same as igv_print() above but with a specified phase name.
+void igv_print(const char* phase_name) {
+  Compile::current()->igv_print_method_to_file(phase_name);
+}
+
+// Called from debugger. Prints method with the default phase name to the default network or the one specified with
+// the network flags for the Ideal Graph Visualizer, or to the default file depending on the 'network' argument.
+// This works regardless of any Ideal Graph Visualizer flags set or not.
+void igv_print(bool network) {
+  if (network) {
+    Compile::current()->igv_print_method_to_network();
+  } else {
+    Compile::current()->igv_print_method_to_file();
+  }
+}
+
+// Same as igv_print(bool network) above but with a specified phase name.
+void igv_print(bool network, const char* phase_name) {
+  if (network) {
+    Compile::current()->igv_print_method_to_network(phase_name);
+  } else {
+    Compile::current()->igv_print_method_to_file(phase_name);
+  }
+}
+
+// Called from debugger. Normal write to the default _printer. Only works if Ideal Graph Visualizer printing flags are set.
+void igv_print_default() {
+  Compile::current()->print_method(PHASE_DEBUG, 0, 0);
+}
+
+// Called from debugger, especially when replaying a trace in which the program state cannot be altered like with rr replay.
+// A method is appended to an existing default file with the default phase name. This means that igv_append() must follow
+// an earlier igv_print(*) call which sets up the file. This works regardless of any Ideal Graph Visualizer flags set or not.
+void igv_append() {
+  Compile::current()->igv_print_method_to_file("Debug", true);
+}
+
+// Same as igv_append() above but with a specified phase name.
+void igv_append(const char* phase_name) {
+  Compile::current()->igv_print_method_to_file(phase_name, true);
+}
+
+void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
+  const char* file_name = "custom_debug.xml";
+  if (_debug_file_printer == NULL) {
+    _debug_file_printer = new IdealGraphPrinter(C, file_name, append);
+  } else {
+    _debug_file_printer->update_compiled_method(C->method());
+  }
+  tty->print_cr("Method %s to %s", append ? "appended" : "printed", file_name);
+  _debug_file_printer->print_method(phase_name, 0);
+}
+
+void Compile::igv_print_method_to_network(const char* phase_name) {
+  if (_debug_network_printer == NULL) {
+    _debug_network_printer = new IdealGraphPrinter(C);
+  } else {
+    _debug_network_printer->update_compiled_method(C->method());
+  }
+  tty->print_cr("Method printed over network stream to IGV");
+  _debug_network_printer->print_method(phase_name, 0);
+}
+#endif
+

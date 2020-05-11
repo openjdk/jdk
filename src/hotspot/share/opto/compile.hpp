@@ -317,6 +317,8 @@ class Compile : public Phase {
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _printer;
+  static IdealGraphPrinter* _debug_file_printer;
+  static IdealGraphPrinter* _debug_network_printer;
 #endif
 
 
@@ -639,15 +641,22 @@ class Compile : public Phase {
     if (should_print(level)) {
       char output[1024];
       if (idx != 0) {
-        sprintf(output, "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
+        jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
       } else {
-        sprintf(output, "%s", CompilerPhaseTypeHelper::to_string(cpt));
+        jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
       }
       _printer->print_method(output, level);
     }
 #endif
     C->_latest_stage_start_counter.stamp();
   }
+
+#ifndef PRODUCT
+  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
+  void igv_print_method_to_network(const char* phase_name = "Debug");
+  static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
+  static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
+#endif
 
   void end_method(int level = 1) {
     EventCompilerPhase event;

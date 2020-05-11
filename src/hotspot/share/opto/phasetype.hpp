@@ -59,6 +59,7 @@ enum CompilerPhaseType {
   PHASE_ADD_UNSAFE_BARRIER,
   PHASE_END,
   PHASE_FAILURE,
+  PHASE_DEBUG,
 
   PHASE_NUM_TYPES
 };
@@ -100,6 +101,7 @@ class CompilerPhaseTypeHelper {
       case PHASE_ADD_UNSAFE_BARRIER:         return "Add barrier to unsafe op";
       case PHASE_END:                        return "End";
       case PHASE_FAILURE:                    return "Failure";
+      case PHASE_DEBUG:                      return "Debug";
       default:
         ShouldNotReachHere();
         return NULL;
