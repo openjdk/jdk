@@ -25,13 +25,14 @@
 #ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
 #define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
 
-#include "gc/shenandoah/mode/shenandoahNormalMode.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
 class ShenandoahHeuristics;
 
-class ShenandoahIUMode : public ShenandoahNormalMode {
+class ShenandoahIUMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
+  virtual ShenandoahHeuristics* initialize_heuristics() const;
 
   virtual const char* name()     { return "Incremental-Update"; }
   virtual bool is_diagnostic()   { return false; }

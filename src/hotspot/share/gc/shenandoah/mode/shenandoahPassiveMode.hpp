@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
 #define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
 
-#include "gc/shenandoah/mode/shenandoahNormalMode.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-class ShenandoahPassiveMode : public ShenandoahNormalMode {
+class ShenandoahPassiveMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
   virtual ShenandoahHeuristics* initialize_heuristics() const;
