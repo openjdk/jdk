@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHNORMALMODE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHNORMALMODE_HPP
+#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHNORMALMODE_HPP
+#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHNORMALMODE_HPP
 
-#include "gc/shenandoah/shenandoahMode.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
 class ShenandoahHeuristics;
 
@@ -38,4 +38,4 @@ public:
   virtual bool is_experimental() { return false; }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHNORMALMODE_HPP
+#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHNORMALMODE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,18 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
-#include "gc/shenandoah/shenandoahIUMode.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahNormalMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-void ShenandoahIUMode::initialize_flags() const {
+void ShenandoahNormalMode::initialize_flags() const {
   if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
     FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
-  }
-
-  if (FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier)) {
-    FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
-  }
-  if (FLAG_IS_DEFAULT(ShenandoahSATBBarrier)) {
-    FLAG_SET_DEFAULT(ShenandoahSATBBarrier, false);
   }
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
@@ -50,8 +43,26 @@ void ShenandoahIUMode::initialize_flags() const {
 
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
-  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahSATBBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValEnqueueBarrier);
+  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahStoreValEnqueueBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
+}
+
+ShenandoahHeuristics* ShenandoahNormalMode::initialize_heuristics() const {
+  if (ShenandoahGCHeuristics != NULL) {
+    if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+      return new ShenandoahAggressiveHeuristics();
+    } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
+      return new ShenandoahStaticHeuristics();
+    } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
+      return new ShenandoahAdaptiveHeuristics();
+    } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
+      return new ShenandoahCompactHeuristics();
+    } else {
+      vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
+    }
+  }
+  ShouldNotReachHere();
+  return NULL;
 }

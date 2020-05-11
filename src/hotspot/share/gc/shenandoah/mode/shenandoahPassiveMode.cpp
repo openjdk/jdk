@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
