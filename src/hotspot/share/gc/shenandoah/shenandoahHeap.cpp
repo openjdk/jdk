@@ -65,8 +65,8 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/mode/shenandoahIUMode.hpp"
-#include "gc/shenandoah/mode/shenandoahNormalMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
+#include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -398,8 +398,8 @@ jint ShenandoahHeap::initialize() {
 
 void ShenandoahHeap::initialize_heuristics() {
   if (ShenandoahGCMode != NULL) {
-    if (strcmp(ShenandoahGCMode, "normal") == 0) {
-      _gc_mode = new ShenandoahNormalMode();
+    if (strcmp(ShenandoahGCMode, "satb") == 0) {
+      _gc_mode = new ShenandoahSATBMode();
     } else if (strcmp(ShenandoahGCMode, "iu") == 0) {
       _gc_mode = new ShenandoahIUMode();
     } else if (strcmp(ShenandoahGCMode, "passive") == 0) {
