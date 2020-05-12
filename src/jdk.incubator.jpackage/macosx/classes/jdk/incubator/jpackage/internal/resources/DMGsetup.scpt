@@ -17,7 +17,7 @@ tell application "Finder"
   set background picture of theViewOptions to POSIX file "DEPLOY_BG_FILE"
 
   -- Create alias for install location
-  make new alias file at POSIX file "DEPLOY_VOLUME_PATH" to DEPLOY_INSTALL_LOCATION with properties {name:"DEPLOY_INSTALL_NAME"}
+  make new alias file at POSIX file "DEPLOY_VOLUME_PATH" to POSIX file "DEPLOY_INSTALL_LOCATION" with properties {name:"DEPLOY_INSTALL_NAME"}
 
   set allTheFiles to the name of every item of theWindow
   repeat with theFile in allTheFiles
@@ -25,7 +25,7 @@ tell application "Finder"
     if theFilePath is "/DEPLOY_APPLICATION_NAME.app" then
       -- Position application location
       set position of item theFile of theWindow to {120, 130}
-    else if theFilePath is "/DEPLOY_INSTALL_NAME" then
+    else if theFilePath is "DEPLOY_INSTALL_NAME" then
       -- Position install location
       set position of item theFile of theWindow to {390, 130}
     else

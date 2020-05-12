@@ -83,6 +83,17 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             params -> "",
             null);
 
+    public static final BundlerParamInfo<String> MAC_INSTALL_DIR =
+            new StandardBundlerParam<>(
+            "mac-install-dir",
+            String.class,
+             params -> {
+                 String dir = INSTALL_DIR.fetchFrom(params);
+                 return (dir != null) ? dir : "/Applications";
+             },
+            (s, p) -> s
+    );
+
     public static final BundlerParamInfo<String> INSTALLER_NAME =
             new StandardBundlerParam<> (
             "mac.installerName",

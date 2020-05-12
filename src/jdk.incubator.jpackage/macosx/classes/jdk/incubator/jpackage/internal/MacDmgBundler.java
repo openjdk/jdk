@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.*;
 import static jdk.incubator.jpackage.internal.MacAppImageBuilder.ICON_ICNS;
+import static jdk.incubator.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
@@ -116,8 +117,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
 
-        data.put("DEPLOY_INSTALL_LOCATION", "(path to applications folder)");
-        data.put("DEPLOY_INSTALL_NAME", "Applications");
+        data.put("DEPLOY_INSTALL_LOCATION", MAC_INSTALL_DIR.fetchFrom(params));
+        data.put("DEPLOY_INSTALL_NAME", MAC_INSTALL_DIR.fetchFrom(params));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
