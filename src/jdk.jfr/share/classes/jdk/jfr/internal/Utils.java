@@ -350,7 +350,7 @@ public final class Utils {
         return (long) (nanos * JVM.getJVM().getTimeConversionFactor());
     }
 
-    static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
+    public static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
         try {
             Field f = eventClass.getDeclaredField(EventInstrumentation.FIELD_EVENT_HANDLER);

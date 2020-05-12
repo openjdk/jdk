@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@ package jdk.jfr.internal.instrument;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import jdk.jfr.events.FileForceEvent;
-import jdk.jfr.events.FileReadEvent;
-import jdk.jfr.events.FileWriteEvent;
+import jdk.jfr.events.Handlers;
+import jdk.jfr.internal.handlers.EventHandler;
 
 /**
  * See {@link JITracer} for an explanation of this code.
@@ -46,42 +45,44 @@ final class FileChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void force(boolean metaData) throws IOException {
-        FileForceEvent event = FileForceEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_FORCE;
+        if (!handler.isEnabled()) {
             force(metaData);
             return;
         }
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             force(metaData);
         } finally {
-            event.path = path;
-            event.metaData = metaData;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                handler.write(start, duration, path, metaData);
+            }
         }
     }
 
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(ByteBuffer dst) throws IOException {
-        FileReadEvent event = FileReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_READ;
+        if (!handler.isEnabled()) {
             return read(dst);
         }
         int bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(dst);
         } finally {
-            if (bytesRead < 0) {
-                event.endOfFile = true;
-            } else {
-                event.bytesRead = bytesRead;
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    handler.write(start, duration, path, 0L, true);
+                } else {
+                    handler.write(start, duration, path, bytesRead, false);
+                }
             }
-            event.path = path;
-            event.commit();
-            event.reset();
         }
         return bytesRead;
     }
@@ -89,23 +90,24 @@ final class FileChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(ByteBuffer dst, long position) throws IOException {
-        FileReadEvent event = FileReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_READ;
+        if (!handler.isEnabled()) {
             return read(dst, position);
         }
         int bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(dst, position);
         } finally {
-            if (bytesRead < 0) {
-                event.endOfFile = true;
-            } else {
-                event.bytesRead = bytesRead;
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    handler.write(start, duration, path, 0L, true);
+                } else {
+                    handler.write(start, duration, path, bytesRead, false);
+                }
             }
-            event.path = path;
-            event.commit();
-            event.reset();
         }
         return bytesRead;
     }
@@ -113,23 +115,24 @@ final class FileChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        FileReadEvent event = FileReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_READ;
+        if (!handler.isEnabled()) {
             return read(dsts, offset, length);
         }
         long bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(dsts, offset, length);
         } finally {
-            if (bytesRead < 0) {
-                event.endOfFile = true;
-            } else {
-                event.bytesRead = bytesRead;
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    handler.write(start, duration, path, 0L, true);
+                } else {
+                    handler.write(start, duration, path, bytesRead, false);
+                }
             }
-            event.path = path;
-            event.commit();
-            event.reset();
         }
         return bytesRead;
     }
@@ -137,19 +140,21 @@ final class FileChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int write(ByteBuffer src) throws IOException {
-        FileWriteEvent event = FileWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_WRITE;
+        if (!handler.isEnabled()) {
             return write(src);
         }
         int bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesWritten = write(src);
         } finally {
-            event.bytesWritten = bytesWritten > 0 ? bytesWritten : 0;
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                long bytes = bytesWritten > 0 ? bytesWritten : 0;
+                handler.write(start, duration, path, bytes);
+            }
         }
         return bytesWritten;
     }
@@ -157,20 +162,22 @@ final class FileChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int write(ByteBuffer src, long position) throws IOException {
-        FileWriteEvent event = FileWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_WRITE;
+        if (!handler.isEnabled()) {
             return write(src, position);
         }
 
         int bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesWritten = write(src, position);
         } finally {
-            event.bytesWritten = bytesWritten > 0 ? bytesWritten : 0;
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                long bytes = bytesWritten > 0 ? bytesWritten : 0;
+                handler.write(start, duration, path, bytes);
+            }
         }
         return bytesWritten;
     }
@@ -178,19 +185,21 @@ final class FileChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        FileWriteEvent event = FileWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_WRITE;
+        if (!handler.isEnabled()) {
             return write(srcs, offset, length);
         }
         long bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesWritten = write(srcs, offset, length);
         } finally {
-            event.bytesWritten = bytesWritten > 0 ? bytesWritten : 0;
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                long bytes = bytesWritten > 0 ? bytesWritten : 0;
+                handler.write(start, duration, path, bytes);
+            }
         }
         return bytesWritten;
     }

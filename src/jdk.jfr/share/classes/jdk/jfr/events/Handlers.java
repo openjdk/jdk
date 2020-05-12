@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,15 @@
  */
 
 package jdk.jfr.events;
+import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.Utils;
 
-import jdk.jfr.Category;
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-import jdk.jfr.DataAmount;
-import jdk.jfr.Name;
-import jdk.jfr.internal.Type;
-
-@Name(Type.EVENT_NAME_PREFIX + "FileRead")
-@Label("File Read")
-@Category("Java Application")
-@Description("Reading data from a file")
-public final class FileReadEvent extends AbstractJDKEvent {
-
-    // The order of these fields must be the same as the parameters in
-    // EventHandler::write(..., String, long, boolean)
-
-    @Label("Path")
-    @Description("Full path of the file")
-    public String path;
-
-    @Label("Bytes Read")
-    @Description("Number of bytes read from the file (possibly 0)")
-    @DataAmount
-    public long bytesRead;
-
-    @Label("End of File")
-    @Description("If end of file was reached")
-    public boolean endOfFile;
+public final class Handlers {
+    public final static EventHandler SOCKET_READ = Utils.getHandler(SocketReadEvent.class);
+    public final static EventHandler SOCKET_WRITE = Utils.getHandler(SocketWriteEvent.class);
+    public final static EventHandler FILE_READ = Utils.getHandler(FileReadEvent.class);
+    public final static EventHandler FILE_WRITE = Utils.getHandler(FileWriteEvent.class);
+    public final static EventHandler FILE_FORCE = Utils.getHandler(FileForceEvent.class);
+    public final static EventHandler ERROR_THROWN = Utils.getHandler(ErrorThrownEvent.class);
+    public final static EventHandler EXCEPTION_THROWN = Utils.getHandler(ExceptionThrownEvent.class);
 }

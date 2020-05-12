@@ -114,4 +114,32 @@ public abstract class EventHandler {
     public boolean setRegistered(boolean registered) {
        return platformEventType.setRegistered(registered);
     }
+
+    public void write(long start, long duration, String host, String address, int port, long timeout, long bytesRead, boolean endOfSTream) {
+        throwError("SocketReadEvent");
+    }
+
+    public void write(long start, long duration, String host, String address, int port, long bytesWritten) {
+        throwError("SocketWriteEvent");
+    }
+
+    public void write(long start, long duration, String path, boolean metadata) {
+        throwError("FileForceEvent");
+    }
+
+    public void write(long start, long duration, String path, long bytesRead, boolean endOfFile) {
+        throwError("FileReadEvent");
+    }
+
+    public void write(long start, long duration, String path, long bytesWritten) {
+        throwError("FileWriteEvent");
+    }
+
+    public void write(long start, long duration, String path, Class<?> exceptionClass)  {
+        throwError("ExceptionThrownEvent or ErrorThrownEvent");
+    }
+
+    private void throwError(String classes) {
+        throw new InternalError("Method parameters don't match fields in class " + classes);
+    }
 }
