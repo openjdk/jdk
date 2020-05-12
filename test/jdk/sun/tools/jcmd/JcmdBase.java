@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.util.Arrays;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolLauncher;
@@ -95,6 +96,7 @@ public final class JcmdBase {
     private static final OutputAnalyzer jcmd(boolean requestToCurrentProcess,
             String[] vmArgs, String[] jcmdArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         if (vmArgs != null) {
             for (String vmArg : vmArgs) {
                 launcher.addVMArg(vmArg);

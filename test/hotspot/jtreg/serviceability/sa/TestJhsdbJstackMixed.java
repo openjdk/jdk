@@ -132,6 +132,7 @@ public class TestJhsdbJstackMixed {
         for (int i = 0; i < MAX_ITERATIONS; i++) {
             JDKToolLauncher launcher = JDKToolLauncher
                     .createUsingTestJDK("jhsdb");
+            launcher.addVMArgs(Utils.getTestJavaOpts());
             launcher.addToolArg("jstack");
             launcher.addToolArg("--mixed");
             launcher.addToolArg("--pid");

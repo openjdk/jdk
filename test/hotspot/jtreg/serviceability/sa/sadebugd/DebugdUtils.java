@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
 
 
 public class DebugdUtils {
@@ -43,6 +44,7 @@ public class DebugdUtils {
 
     public void attach(long pid) throws IOException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
         jhsdbLauncher.addToolArg("debugd");
         jhsdbLauncher.addToolArg("--pid");
         jhsdbLauncher.addToolArg(Long.toString(pid));

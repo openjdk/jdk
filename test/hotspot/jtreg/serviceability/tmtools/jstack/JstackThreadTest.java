@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public class JstackThreadTest {
     thread.start();
     ProcessBuilder processBuilder = new ProcessBuilder();
     JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
+    launcher.addVMArgs(jdk.test.lib.Utils.getTestJavaOpts());
     launcher.addToolArg("-l");
     launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
     processBuilder.command(launcher.getCommand());

@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import java.io.IOException;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
@@ -114,6 +115,7 @@ public class JInfoTest {
 
     private static OutputAnalyzer jinfo(String... toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jinfo");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);

@@ -21,10 +21,10 @@
  * questions.
  */
 
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
@@ -58,7 +58,9 @@ public class TestSysProps {
     public static void countProps(String[] propLines, int expectedCount, String cmdName) {
         int numProps = 0;
         for (String propLine : propLines) {
-            if (propLine.indexOf("=") != -1) {
+            // Ignore the debug output lines (they start with '[' and printed
+            // in the output when the test is run with -Xlog VM option).
+            if (!propLine.startsWith("[") && propLine.indexOf("=") != -1) {
                 numProps++;
             }
         }
@@ -79,6 +81,7 @@ public class TestSysProps {
             // Get properties using the SA version of jinfo
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+            jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
             jhsdbLauncher.addToolArg("jinfo");
             jhsdbLauncher.addToolArg("--sysprops");
             jhsdbLauncher.addToolArg("--pid");
@@ -99,6 +102,7 @@ public class TestSysProps {
             // Get the properties using the Attach API version of jinfo
 
             JDKToolLauncher jinfoLauncher = JDKToolLauncher.createUsingTestJDK("jinfo");
+            jinfoLauncher.addVMArgs(Utils.getTestJavaOpts());
             jinfoLauncher.addToolArg("-sysprops");
             jinfoLauncher.addToolArg(Long.toString(app.getPid()));
 

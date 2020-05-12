@@ -94,6 +94,7 @@ public class SADebugDTest {
                 testResult = false;
                 portInUse = false;
                 JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+                jhsdbLauncher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
                 jhsdbLauncher.addToolArg("debugd");
                 jhsdbLauncher.addToolArg("--pid");
                 jhsdbLauncher.addToolArg(Long.toString(app.getPid()));

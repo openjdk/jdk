@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 import java.io.IOException;
 import java.nio.file.Path;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -40,6 +41,7 @@ public class RemovingUnixDomainSocketTest {
 
     private static void runJCmd(long pid) throws InterruptedException, IOException {
         JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
+        jcmd.addVMArgs(Utils.getTestJavaOpts());
         jcmd.addToolArg(Long.toString(pid));
         jcmd.addToolArg("VM.version");
 
@@ -53,7 +55,7 @@ public class RemovingUnixDomainSocketTest {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        out.stderrShouldBeEmpty();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
     }
 
     public static void main(String... args) throws Exception {

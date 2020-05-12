@@ -27,11 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.SA.SATestUtils;
 import jtreg.SkippedException;
 
 /**
@@ -70,6 +69,7 @@ public class ClhsdbDumpclass {
 
             // Run javap on the generated class file to make sure it's valid.
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("javap");
+            launcher.addVMArgs(Utils.getTestJavaOpts());
             launcher.addToolArg(APP_DOT_CLASSNAME);
             System.out.println("> javap " + APP_DOT_CLASSNAME);
             List<String> cmdStringList = Arrays.asList(launcher.getCommand());

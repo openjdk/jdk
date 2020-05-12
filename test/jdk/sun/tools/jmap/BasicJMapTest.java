@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -179,6 +180,7 @@ public class BasicJMapTest {
 
     private static OutputAnalyzer jmap(String... toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jmap");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);
