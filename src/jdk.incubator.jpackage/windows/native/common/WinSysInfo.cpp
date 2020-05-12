@@ -114,6 +114,16 @@ HMODULE getCurrentModuleHandle()
     return hmodule;
 }
 
+void setEnvVariable(const tstring& name, const tstring& value)
+{
+    if (!SetEnvironmentVariable(name.c_str(), value.c_str())) {
+        JP_THROW(SysError(tstrings::any()
+                << "SetEnvironmentVariable("
+                << name << ", " << value
+                << ") failed", SetEnvironmentVariable));
+    }
+}
+
 tstring getCurrentModulePath()
 {
     return getModulePath(getCurrentModuleHandle());
