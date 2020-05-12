@@ -1010,8 +1010,12 @@ public:
 // Machine-specific versions of halt nodes
 class MachHaltNode : public MachReturnNode {
 public:
+  bool _reachable;
   const char* _halt_reason;
   virtual JVMState* jvms() const;
+  bool is_reachable() const {
+    return _reachable;
+  }
 };
 
 class MachMemBarNode : public MachNode {

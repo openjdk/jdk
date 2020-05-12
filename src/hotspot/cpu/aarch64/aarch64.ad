@@ -15285,9 +15285,9 @@ instruct ShouldNotReachHere() %{
   format %{ "ShouldNotReachHere" %}
 
   ins_encode %{
-    // +1 so NativeInstruction::is_sigill_zombie_not_entrant() doesn't
-    // return true
-    __ dpcs1(0xdead + 1);
+    if (is_reachable()) {
+      __ dpcs1(0xdead + 1);
+    }
   %}
 
   ins_pipe(pipe_class_default);

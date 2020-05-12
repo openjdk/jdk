@@ -62,7 +62,8 @@ Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //=============================================================================
-HaltNode::HaltNode(Node* ctrl, Node* frameptr, const char* halt_reason) : Node(TypeFunc::Parms), _halt_reason(halt_reason) {
+HaltNode::HaltNode(Node* ctrl, Node* frameptr, const char* halt_reason, bool reachable)
+                        : Node(TypeFunc::Parms), _halt_reason(halt_reason), _reachable(reachable) {
   init_class_id(Class_Halt);
   Node* top = Compile::current()->top();
   init_req(TypeFunc::Control,  ctrl        );

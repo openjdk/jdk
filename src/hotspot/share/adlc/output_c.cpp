@@ -3941,6 +3941,7 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
   if (inst->is_ideal_halt()) {
     fprintf(fp_cpp, "%s node->_halt_reason = _leaf->as_Halt()->_halt_reason;\n", indent);
+    fprintf(fp_cpp, "%s node->_reachable   = _leaf->as_Halt()->_reachable;\n", indent);
   }
   if (inst->is_ideal_jump()) {
     fprintf(fp_cpp, "%s node->_probs = _leaf->as_Jump()->_probs;\n", indent);
