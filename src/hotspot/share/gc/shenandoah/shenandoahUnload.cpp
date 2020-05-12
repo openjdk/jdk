@@ -143,13 +143,9 @@ public:
 };
 
 void ShenandoahUnload::unload() {
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Why we here?");
-
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  if (!heap->is_concurrent_weak_root_in_progress()) {
-    return;
-  }
+  assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Filtered by caller");
+  assert(heap->is_concurrent_weak_root_in_progress(), "Filtered by caller");
 
   // Unlink stale metadata and nmethods
   {
