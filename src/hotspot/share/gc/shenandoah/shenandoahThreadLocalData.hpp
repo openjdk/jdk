@@ -55,7 +55,7 @@ private:
     _gclab_size(0),
     _worker_id(INVALID_WORKER_ID),
     _force_satb_flush(false),
-    _disarmed_value(ShenandoahCodeRoots::disarmed_value()) {
+    _disarmed_value(0) {
 
     // At least on x86_64, nmethod entry barrier encodes _disarmed_value offset
     // in instruction as disp8 immed
