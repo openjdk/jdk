@@ -31,6 +31,7 @@
  * @run testng/othervm SetLoopbackOption
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SetLoopbackOption
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SetLoopbackOption
+ * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SetLoopbackOption
  */
 
 import java.io.FileDescriptor;

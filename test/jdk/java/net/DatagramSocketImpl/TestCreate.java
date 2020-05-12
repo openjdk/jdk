@@ -60,10 +60,10 @@ public class TestCreate {
         Iterator<CustomDatagramSocketImpl> iterator = List.of(dsi2, dsi3).iterator();
         DatagramSocket.setDatagramSocketImplFactory(() -> iterator.next());
 
-        DatagramSocket ds2 = new DatagramSocket();
+        DatagramSocket ds2 = new DatagramSocket(null);
         assertTrue(dsi2.created.get(), "new DatagramSocket()");
 
-        MulticastSocket ds3 = new MulticastSocket();
+        MulticastSocket ds3 = new MulticastSocket(null);
         assertTrue(dsi3.created.get(), "new MulticastSocket()");
     }
 

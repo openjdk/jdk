@@ -27,6 +27,8 @@
  * @library /test/lib
  * @summary Test that MutlicastSocket.joinGroup is working for
  *          various multicast and non-multicast addresses.
+ * @run main MulticastAddresses
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl MulticastAddresses
  */
 
 import jdk.test.lib.NetworkConfiguration;

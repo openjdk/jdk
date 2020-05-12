@@ -24,6 +24,8 @@
 /* @test
  * @bug 4148757
  * @summary Make sure TTL can be set to 0
+ * @run main SetTTLTo0
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl SetTTLTo0
  */
 
 import java.net.*;

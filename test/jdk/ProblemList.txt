@@ -627,8 +627,6 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-all
 
-java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
-
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
 
@@ -637,8 +635,6 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 # jdk_nio
 
 java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
-
-java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
 java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
 

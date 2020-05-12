@@ -47,7 +47,8 @@ import static org.testng.Assert.expectThrows;
  *          DatagramSocketAdaptor and DatagramChannel all
  *          throw expected Execption when passed a DatagramPacket
  *          with invalid details
- * @run testng/othervm SendCheck
+ * @run testng SendCheck
+ * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendCheck
  */
 
 public class SendCheck {

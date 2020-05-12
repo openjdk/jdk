@@ -25,6 +25,8 @@
  * @test
  * @bug 6505016
  * @summary Socket spec should clarify what getInetAddress/getPort/etc return after the Socket is closed
+ * @run main TestAfterClose
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl TestAfterClose
  */
 
 import java.net.*;

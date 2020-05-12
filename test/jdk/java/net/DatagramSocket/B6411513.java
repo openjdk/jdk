@@ -70,6 +70,9 @@ public class B6411513 {
             System.out.print("disconnect...");
             s.disconnect();
 
+            System.out.println("local addr: " + s.getLocalAddress());
+            System.out.println("local port: " + s.getLocalPort());
+
             byte[] data = { 0, 1, 2 };
             DatagramPacket p = new DatagramPacket(data, data.length,
                     s.getLocalAddress(), s.getLocalPort());
