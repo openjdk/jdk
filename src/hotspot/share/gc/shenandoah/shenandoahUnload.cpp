@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -135,30 +136,6 @@ void ShenandoahUnload::prepare() {
   DependencyContext::cleaning_start();
 }
 
-void ShenandoahUnload::unlink() {
-  SuspendibleThreadSetJoiner sts;
-  bool unloading_occurred;
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  {
-    MutexLocker cldg_ml(ClassLoaderDataGraph_lock);
-    unloading_occurred = SystemDictionary::do_unloading(heap->gc_timer());
-  }
-
-  Klass::clean_weak_klass_links(unloading_occurred);
-  ShenandoahCodeRoots::unlink(ShenandoahHeap::heap()->workers(), unloading_occurred);
-  DependencyContext::cleaning_end();
-}
-
-void ShenandoahUnload::purge() {
-  {
-    SuspendibleThreadSetJoiner sts;
-    ShenandoahCodeRoots::purge(ShenandoahHeap::heap()->workers());
-  }
-
-  ClassLoaderDataGraph::purge();
-  CodeCache::purge_exception_caches();
-}
-
 class ShenandoahUnloadRendezvousClosure : public HandshakeClosure {
 public:
   ShenandoahUnloadRendezvousClosure() : HandshakeClosure("ShenandoahUnloadRendezvous") {}
@@ -167,19 +144,65 @@ public:
 
 void ShenandoahUnload::unload() {
   assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Why we here?");
-  if (!ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (!heap->is_concurrent_weak_root_in_progress()) {
     return;
   }
 
   // Unlink stale metadata and nmethods
-  unlink();
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_unlink);
+
+    SuspendibleThreadSetJoiner sts;
+    bool unloadingOccurred;
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_unlink_sd);
+      MutexLocker cldgMl(ClassLoaderDataGraph_lock);
+      unloadingOccurred = SystemDictionary::do_unloading(heap->gc_timer());
+    }
+
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_unlink_weak_klass);
+      Klass::clean_weak_klass_links(unloadingOccurred);
+    }
+
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_unlink_code_roots);
+      ShenandoahCodeRoots::unlink(heap->workers(), unloadingOccurred);
+    }
+
+    DependencyContext::cleaning_end();
+  }
 
   // Make sure stale metadata and nmethods are no longer observable
-  ShenandoahUnloadRendezvousClosure cl;
-  Handshake::execute(&cl);
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_rendezvous);
+    ShenandoahUnloadRendezvousClosure cl;
+    Handshake::execute(&cl);
+  }
 
   // Purge stale metadata and nmethods that were unlinked
-  purge();
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge);
+
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_coderoots);
+      SuspendibleThreadSetJoiner sts;
+      ShenandoahCodeRoots::purge(heap->workers());
+    }
+
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_cldg);
+      ClassLoaderDataGraph::purge();
+    }
+
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_ec);
+      CodeCache::purge_exception_caches();
+    }
+  }
 }
 
 void ShenandoahUnload::finish() {

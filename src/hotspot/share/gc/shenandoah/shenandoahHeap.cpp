@@ -2878,7 +2878,7 @@ void ShenandoahHeap::entry_weak_roots() {
 
 void ShenandoahHeap::entry_class_unloading() {
   static const char* msg = "Concurrent class unloading";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_class_unloading);
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_class_unload);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
