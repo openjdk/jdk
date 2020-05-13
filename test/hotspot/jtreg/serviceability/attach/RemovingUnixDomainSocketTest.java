@@ -29,15 +29,21 @@
  * @run main RemovingUnixDomainSocketTest
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class RemovingUnixDomainSocketTest {
+
+    // timeout (in seconds)
+    private static final long timeout = Utils.adjustTimeout(60);
 
     private static void runJCmd(long pid) throws InterruptedException, IOException {
         JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
@@ -45,17 +51,22 @@ public class RemovingUnixDomainSocketTest {
         jcmd.addToolArg(Long.toString(pid));
         jcmd.addToolArg("VM.version");
 
-        ProcessBuilder pb = new ProcessBuilder(jcmd.getCommand());
-        Process jcmdProc = pb.start();
+        Process jcmdProc = ProcessTools.startProcess("jcmd", new ProcessBuilder(jcmd.getCommand()));
 
         OutputAnalyzer out = new OutputAnalyzer(jcmdProc);
 
-        jcmdProc.waitFor();
+        if (!jcmdProc.waitFor(timeout, TimeUnit.SECONDS)) {
+            log("jcmd is still running after " + timeout + " seconds, terminating...");
+            jcmdProc.destroy();
+            jcmdProc.waitFor();
+        }
 
-        System.out.println(out.getStdout());
-        System.err.println(out.getStderr());
+        log("jcmd stdout: [" + out.getStdout() + "];\n" +
+            "jcmd  stderr: [" + out.getStderr() + "]\n" +
+            "jcmd  exitValue = " + out.getExitValue());
 
-        out.stderrShouldBeEmptyIgnoreVMWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings()
+                .stderrShouldBeEmpty();
     }
 
     public static void main(String... args) throws Exception {
@@ -67,10 +78,10 @@ public class RemovingUnixDomainSocketTest {
             runJCmd(app.getPid());
 
             // Remove unix domain socket file
-            var sockFile = Path.of(System.getProperty("java.io.tmpdir"),
+            File sockFile = Path.of(System.getProperty("java.io.tmpdir"),
                                    ".java_pid" + app.getPid())
                                .toFile();
-            System.out.println("Remove " + sockFile.toString());
+            log("Remove " + sockFile.toString());
             sockFile.delete();
 
             // Access to Attach Listener again
@@ -80,4 +91,7 @@ public class RemovingUnixDomainSocketTest {
         }
     }
 
+    static void log(Object s) {
+        System.out.println(String.valueOf(s));
+    }
 }

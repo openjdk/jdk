@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.UUID;
 
@@ -224,7 +225,11 @@ public class LingeredApp {
     public void waitAppTerminate() {
         // This code is modeled after tail end of ProcessTools.getOutput().
         try {
-            appProcess.waitFor();
+            // If the app hangs, we don't want to wait for the to test timeout.
+            if (!appProcess.waitFor(Utils.adjustTimeout(appWaitTime), TimeUnit.SECONDS)) {
+                appProcess.destroy();
+                appProcess.waitFor();
+            }
             outPumperThread.join();
             errPumperThread.join();
         } catch (InterruptedException e) {
@@ -270,7 +275,7 @@ public class LingeredApp {
     }
 
     /**
-     * Waits the application to start with the default timeout.
+     * Waits for the application to start with the default timeout.
      */
     public void waitAppReady() throws IOException {
         waitAppReady(appWaitTime);

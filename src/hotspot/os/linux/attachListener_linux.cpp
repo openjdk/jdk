@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class LinuxAttachListener: AllStatic {
   static bool _has_path;
 
   // the file descriptor for the listening socket
-  static int _listener;
+  static volatile int _listener;
 
   static bool _atexit_registered;
 
@@ -127,7 +127,7 @@ class LinuxAttachOperation: public AttachOperation {
 // statics
 char LinuxAttachListener::_path[UNIX_PATH_MAX];
 bool LinuxAttachListener::_has_path;
-int LinuxAttachListener::_listener = -1;
+volatile int LinuxAttachListener::_listener = -1;
 bool LinuxAttachListener::_atexit_registered = false;
 
 // Supporting class to help split a buffer into individual components
@@ -502,9 +502,13 @@ bool AttachListener::check_socket_file() {
     listener_cleanup();
 
     // wait to terminate current attach listener instance...
-    while (AttachListener::transit_state(AL_INITIALIZING,
-                                         AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
-      os::naked_yield();
+    {
+      // avoid deadlock if AttachListener thread is blocked at safepoint
+      ThreadBlockInVM tbivm(JavaThread::current());
+      while (AttachListener::transit_state(AL_INITIALIZING,
+                                           AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
+        os::naked_yield();
+      }
     }
     return is_init_trigger();
   }
