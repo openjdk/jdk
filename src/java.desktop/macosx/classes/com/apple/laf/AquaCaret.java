@@ -25,15 +25,23 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
-import java.beans.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
-import javax.swing.*;
+import javax.swing.JEditorPane;
+import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
-import javax.swing.text.*;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.Highlighter;
+import javax.swing.text.JTextComponent;
+import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaCaret extends DefaultCaret
@@ -151,7 +159,8 @@ public class AquaCaret extends DefaultCaret
     // see radar # 3125390
     @Override
     public void mousePressed(final MouseEvent e) {
-        if (!e.isPopupTrigger()) {
+        if (!e.isPopupTrigger() && !(SwingUtilities.isLeftMouseButton(e) &&
+                e.getClickCount() == 3)) {
             super.mousePressed(e);
             shouldSelectAllOnFocus = false;
         }
