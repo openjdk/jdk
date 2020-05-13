@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordingFile;
-import jdk.nashorn.api.scripting.JSObject;
+import jdk.jfr.tool.JSONValue.JSONArray;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -51,8 +48,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
- * @modules jdk.scripting.nashorn
- *          jdk.jfr
+ * @modules jdk.jfr
  *
  * @run main/othervm jdk.jfr.tool.TestPrintJSON
  */
@@ -65,42 +61,36 @@ public class TestPrintJSON {
         OutputAnalyzer output = ExecuteHelper.jfr("print", "--json", "--stack-depth", "999", recordingFile.toString());
         String json = output.getStdout();
 
-        // Parse JSON using Nashorn
-        String statement = "var jsonObject = " + json;
-        ScriptEngineManager factory = new ScriptEngineManager();
-        ScriptEngine engine = factory.getEngineByName("nashorn");
-        engine.eval(statement);
-        JSObject o = (JSObject) engine.get("jsonObject");
-        JSObject recording = (JSObject) o.getMember("recording");
-        JSObject jsonEvents = (JSObject) recording.getMember("events");
-
+        JSONValue o = JSONValue.parse(json);
+        JSONValue recording = o.get("recording");
+        JSONArray jsonEvents = recording.get("events").asArray();
         List<RecordedEvent> events = RecordingFile.readAllEvents(recordingFile);
         Collections.sort(events, (e1, e2) -> e1.getEndTime().compareTo(e2.getEndTime()));
         // Verify events are equal
         Iterator<RecordedEvent> it = events.iterator();
-
-        for (Object jsonEvent : jsonEvents.values()) {
+        for (JSONValue jsonEvent : jsonEvents) {
             RecordedEvent recordedEvent = it.next();
             String typeName = recordedEvent.getEventType().getName();
-            Asserts.assertEquals(typeName, ((JSObject) jsonEvent).getMember("type").toString());
+            Asserts.assertEquals(typeName,  jsonEvent.get("type").asString());
             assertEquals(jsonEvent, recordedEvent);
         }
-        Asserts.assertFalse(events.size() != jsonEvents.values().size(), "Incorrect number of events");
+        Asserts.assertFalse(events.size() != jsonEvents.size(), "Incorrect number of events");
     }
 
     private static void assertEquals(Object jsonObject, Object jfrObject) throws Exception {
         // Check object
         if (jfrObject instanceof RecordedObject) {
-            JSObject values = (JSObject) ((JSObject) jsonObject).getMember("values");
+            JSONValue values = ((JSONValue)jsonObject).get("values");
             RecordedObject recObject = (RecordedObject) jfrObject;
-            Asserts.assertEquals(values.values().size(), recObject.getFields().size());
+            Asserts.assertEquals(values.size(), recObject.getFields().size());
             for (ValueDescriptor v : recObject.getFields()) {
                 String name = v.getName();
-                Object jsonValue = values.getMember(name);
+                Object jsonValue = values.get(name);
                 Object expectedValue = recObject.getValue(name);
                 if (v.getAnnotation(Timestamp.class) != null) {
                     // Make instant of OffsetDateTime
-                    jsonValue = OffsetDateTime.parse("" + jsonValue).toInstant().toString();
+                    String text = ((JSONValue)jsonValue).asString();
+                    jsonValue = OffsetDateTime.parse(text).toInstant().toString();
                     expectedValue = recObject.getInstant(name);
                 }
                 if (v.getAnnotation(Timespan.class) != null) {
@@ -113,9 +103,9 @@ public class TestPrintJSON {
         // Check array
         if (jfrObject != null && jfrObject.getClass().isArray()) {
             Object[] jfrArray = (Object[]) jfrObject;
-            JSObject jsArray = (JSObject) jsonObject;
+            JSONArray jsArray = ((JSONArray)jsonObject);
             for (int i = 0; i < jfrArray.length; i++) {
-                assertEquals(jsArray.getSlot(i), jfrArray[i]);
+                assertEquals(jsArray.get(i), jfrArray[i]);
             }
             return;
         }
