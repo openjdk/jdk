@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ jint
 readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     jint nread;
     char ret;
-    FD fd = GET_FD(this, fid);
+    FD fd = getFD(env, this, fid);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
@@ -101,7 +101,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         buf = stackBuf;
     }
 
-    fd = GET_FD(this, fid);
+    fd = getFD(env, this, fid);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         nread = -1;
@@ -127,7 +127,7 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
     // Discard the 24 high-order bits of byte. See OutputStream#write(int)
     char c = (char) byte;
     jint n;
-    FD fd = GET_FD(this, fid);
+    FD fd = getFD(env, this, fid);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
@@ -178,7 +178,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     if (!(*env)->ExceptionOccurred(env)) {
         off = 0;
         while (len > 0) {
-            fd = GET_FD(this, fid);
+            fd = getFD(env, this, fid);
             if (fd == -1) {
                 JNU_ThrowIOException(env, "Stream Closed");
                 break;

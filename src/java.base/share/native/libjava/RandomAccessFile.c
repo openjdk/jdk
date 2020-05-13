@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ Java_java_io_RandomAccessFile_getFilePointer(JNIEnv *env, jobject this) {
     FD fd;
     jlong ret;
 
-    fd = GET_FD(this, raf_fd);
+    fd = getFD(env, this, raf_fd);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
@@ -111,7 +111,7 @@ Java_java_io_RandomAccessFile_length(JNIEnv *env, jobject this) {
     FD fd;
     jlong length = jlong_zero;
 
-    fd = GET_FD(this, raf_fd);
+    fd = getFD(env, this, raf_fd);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
@@ -128,7 +128,7 @@ Java_java_io_RandomAccessFile_seek0(JNIEnv *env,
 
     FD fd;
 
-    fd = GET_FD(this, raf_fd);
+    fd = getFD(env, this, raf_fd);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
@@ -147,7 +147,7 @@ Java_java_io_RandomAccessFile_setLength(JNIEnv *env, jobject this,
     FD fd;
     jlong cur;
 
-    fd = GET_FD(this, raf_fd);
+    fd = getFD(env, this, raf_fd);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
