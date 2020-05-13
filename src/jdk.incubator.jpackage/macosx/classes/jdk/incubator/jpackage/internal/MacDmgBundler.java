@@ -310,18 +310,28 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         File mountedRoot = new File(imagesRoot.getAbsolutePath(),
                     APP_NAME.fetchFrom(params));
-
         try {
-            // volume icon
-            File volumeIconFile = new File(mountedRoot, ".VolumeIcon.icns");
-            IOUtils.copyFile(getConfig_VolumeIcon(params),
-                    volumeIconFile);
-
             // background image
             File bgdir = new File(mountedRoot, BACKGROUND_IMAGE_FOLDER);
             bgdir.mkdirs();
             IOUtils.copyFile(getConfig_VolumeBackground(params),
                     new File(bgdir, BACKGROUND_IMAGE));
+
+            // We will not consider setting background image and creating link
+            // to install-dir in DMG as critical error, since it can fail in
+            // headless enviroment.
+            try {
+                pb = new ProcessBuilder("osascript",
+                        getConfig_VolumeScript(params).getAbsolutePath());
+                IOUtils.exec(pb);
+            } catch (IOException ex) {
+                Log.verbose(ex);
+            }
+
+            // volume icon
+            File volumeIconFile = new File(mountedRoot, ".VolumeIcon.icns");
+            IOUtils.copyFile(getConfig_VolumeIcon(params),
+                    volumeIconFile);
 
             // Indicate that we want a custom icon
             // NB: attributes of the root directory are ignored
@@ -356,16 +366,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 Log.verbose(I18N.getString("message.setfile.dmg"));
             }
 
-            // We will not consider setting background image and creating link to
-            // /Application folder in DMG as critical error, since it can fail in
-            // headless enviroment.
-            try {
-                pb = new ProcessBuilder("osascript",
-                        getConfig_VolumeScript(params).getAbsolutePath());
-                IOUtils.exec(pb);
-            } catch (IOException ex) {
-                Log.verbose(ex);
-            }
         } finally {
             // Detach the temporary image
             pb = new ProcessBuilder(
@@ -493,5 +493,4 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     public boolean isDefault() {
         return true;
     }
-
 }
