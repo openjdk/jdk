@@ -592,7 +592,7 @@ bool PSScavenge::invoke_no_policy() {
           counters->update_survivor_overflowed(_survivor_overflow);
         }
 
-        size_t max_young_size = young_gen->max_size();
+        size_t max_young_size = young_gen->max_gen_size();
 
         // Deciding a free ratio in the young generation is tricky, so if
         // MinHeapFreeRatio or MaxHeapFreeRatio are in use (implicating
@@ -600,7 +600,8 @@ bool PSScavenge::invoke_no_policy() {
         // should then limit our young generation size using NewRatio to have it
         // follow the old generation size.
         if (MinHeapFreeRatio != 0 || MaxHeapFreeRatio != 100) {
-          max_young_size = MIN2(old_gen->capacity_in_bytes() / NewRatio, young_gen->max_size());
+          max_young_size = MIN2(old_gen->capacity_in_bytes() / NewRatio,
+                                young_gen->max_gen_size());
         }
 
         size_t survivor_limit =
@@ -625,12 +626,12 @@ bool PSScavenge::invoke_no_policy() {
         // Don't check if the size_policy is ready at this
         // level.  Let the size_policy check that internally.
         if (UseAdaptiveGenerationSizePolicyAtMinorCollection &&
-            (AdaptiveSizePolicy::should_update_eden_stats(gc_cause))) {
+            AdaptiveSizePolicy::should_update_eden_stats(gc_cause)) {
           // Calculate optimal free space amounts
-          assert(young_gen->max_size() >
-            young_gen->from_space()->capacity_in_bytes() +
-            young_gen->to_space()->capacity_in_bytes(),
-            "Sizes of space in young gen are out-of-bounds");
+          assert(young_gen->max_gen_size() >
+                 young_gen->from_space()->capacity_in_bytes() +
+                 young_gen->to_space()->capacity_in_bytes(),
+                 "Sizes of space in young gen are out-of-bounds");
 
           size_t young_live = young_gen->used_in_bytes();
           size_t eden_live = young_gen->eden_space()->used_in_bytes();

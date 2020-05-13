@@ -40,25 +40,27 @@
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
                    size_t max_size, const char* perf_data_name, int level):
-  _init_gen_size(initial_size), _min_gen_size(min_size),
+  _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
-  initialize(rs, GenAlignment, perf_data_name, level);
+  initialize(rs, initial_size, GenAlignment, perf_data_name, level);
 }
 
-void PSOldGen::initialize(ReservedSpace rs, size_t alignment,
+void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
                           const char* perf_data_name, int level) {
-  initialize_virtual_space(rs, alignment);
+  initialize_virtual_space(rs, initial_size, alignment);
   initialize_work(perf_data_name, level);
 
-  // The old gen can grow to gen_size_limit().  _reserve reflects only
+  // The old gen can grow to max_gen_size().  _reserve reflects only
   // the current maximum that can be committed.
-  assert(_reserved.byte_size() <= gen_size_limit(), "Consistency check");
+  assert(_reserved.byte_size() <= max_gen_size(), "Consistency check");
 
   initialize_performance_counters(perf_data_name, level);
 }
 
-void PSOldGen::initialize_virtual_space(ReservedSpace rs, size_t alignment) {
+void PSOldGen::initialize_virtual_space(ReservedSpace rs,
+                                        size_t initial_size,
+                                        size_t alignment) {
 
   if(ParallelArguments::is_heterogeneous_heap()) {
     _virtual_space = new PSFileBackedVirtualSpace(rs, alignment, AllocateOldGenAt);
@@ -68,7 +70,7 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs, size_t alignment) {
   } else {
     _virtual_space = new PSVirtualSpace(rs, alignment);
   }
-  if (!_virtual_space->expand_by(_init_gen_size)) {
+  if (!_virtual_space->expand_by(initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                                   "object heap");
   }
@@ -80,8 +82,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   //
 
   MemRegion limit_reserved((HeapWord*)virtual_space()->low_boundary(),
-    heap_word_size(_max_gen_size));
-  assert(limit_reserved.byte_size() == _max_gen_size,
+                           heap_word_size(max_gen_size()));
+  assert(limit_reserved.byte_size() == max_gen_size(),
     "word vs bytes confusion");
   //
   // Object start stuff
@@ -137,8 +139,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
   // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1, _min_gen_size,
-                                           _max_gen_size, virtual_space());
+  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1, min_gen_size(),
+                                           max_gen_size(), virtual_space());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
                                       _object_space, _gen_counters);
@@ -299,12 +301,12 @@ void PSOldGen::resize(size_t desired_free_space) {
   size_t new_size = used_in_bytes() + desired_free_space;
   if (new_size < used_in_bytes()) {
     // Overflowed the addition.
-    new_size = gen_size_limit();
+    new_size = max_gen_size();
   }
   // Adjust according to our min and max
-  new_size = clamp(new_size, min_gen_size(), gen_size_limit());
+  new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
-  assert(gen_size_limit() >= reserved().byte_size(), "max new size problem?");
+  assert(max_gen_size() >= reserved().byte_size(), "max new size problem?");
   new_size = align_up(new_size, alignment);
 
   const size_t current_size = capacity_in_bytes();
@@ -314,7 +316,7 @@ void PSOldGen::resize(size_t desired_free_space) {
     " new size: " SIZE_FORMAT " current size " SIZE_FORMAT
     " gen limits: " SIZE_FORMAT " / " SIZE_FORMAT,
     desired_free_space, used_in_bytes(), new_size, current_size,
-    gen_size_limit(), min_gen_size());
+    max_gen_size(), min_gen_size());
 
   if (new_size == current_size) {
     // No change requested
@@ -356,10 +358,6 @@ void PSOldGen::post_resize() {
 
   assert(new_word_size == heap_word_size(object_space()->capacity_in_bytes()),
     "Sanity");
-}
-
-size_t PSOldGen::gen_size_limit() {
-  return _max_gen_size;
 }
 
 void PSOldGen::print() const { print_on(tty);}

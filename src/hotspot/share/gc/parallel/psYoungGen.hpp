@@ -46,7 +46,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   MutableSpace* _to_space;
 
   // Sizing information, in bytes, set in constructor
-  const size_t _init_gen_size;
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
@@ -78,9 +77,9 @@ class PSYoungGen : public CHeapObj<mtGC> {
   // the location the live data in the generation.
   size_t available_to_live();
 
-  void initialize(ReservedSpace rs, size_t alignment);
+  void initialize(ReservedSpace rs, size_t inital_size, size_t alignment);
   void initialize_work();
-  void initialize_virtual_space(ReservedSpace rs, size_t alignment);
+  void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
 
  public:
   // Initialize the generation.
@@ -104,9 +103,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   MutableSpace*   to_space() const      { return _to_space; }
   PSVirtualSpace* virtual_space() const { return _virtual_space; }
 
-  // For Adaptive size policy
-  size_t min_gen_size() { return _min_gen_size; }
-
   // Called during/after GC
   void swap_spaces();
 
@@ -125,11 +121,8 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t used_in_words() const;
   size_t free_in_words() const;
 
-  // The max this generation can grow to
-  size_t max_size() const { return _reserved.byte_size(); }
-
-  // The max this generation can grow to
-  size_t gen_size_limit() const { return _max_gen_size; }
+  size_t min_gen_size() const { return _min_gen_size; }
+  size_t max_gen_size() const { return _max_gen_size; }
 
   bool is_maximal_no_gc() const {
     return true;  // Never expands except at a GC
