@@ -525,7 +525,6 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
     assert(((decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0 || !ShenandoahSATBBarrier) && (decorators & C2_ARRAY_COPY) != 0, "unexpected caller of this code");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     PhaseGVN& gvn =  opt_access.gvn();
-    MergeMemNode* mm = opt_access.mem();
 
     if (ShenandoahStoreValEnqueueBarrier) {
       Node* enqueue = gvn.transform(new ShenandoahEnqueueBarrierNode(val.node()));

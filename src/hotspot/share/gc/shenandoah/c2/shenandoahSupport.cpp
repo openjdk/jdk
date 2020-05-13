@@ -788,7 +788,6 @@ Node* ShenandoahBarrierC2Support::find_bottom_mem(Node* ctrl, PhaseIdealLoop* ph
   Node* c = ctrl;
   do {
     if (c->is_Region()) {
-      Node* phi_bottom = NULL;
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax && mem == NULL; i++) {
         Node* u = c->fast_out(i);
         if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
@@ -1672,7 +1671,6 @@ void ShenandoahBarrierC2Support::move_gc_state_test_out_of_loop(IfNode* iff, Pha
     bol->set_req(1, cmp);
     phase->register_new_node(bol, entry_c);
 
-    Node* old_bol =iff->in(1);
     phase->igvn().replace_input_of(iff, 1, bol);
   }
 }
@@ -2263,7 +2261,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
     iteration++;
     assert(iteration <= 2+max_depth || _phase->C->has_irreducible_loop() || has_never_branch(_phase->C->root()), "");
     if (trace) { tty->print_cr("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"); }
-    IdealLoopTree* last_updated_ilt = NULL;
+
     for (int i = rpo_list.size() - 1; i >= 0; i--) {
       Node* c = rpo_list.at(i);
 
