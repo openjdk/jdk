@@ -33,7 +33,11 @@
 import java.awt.Robot;
 import java.awt.BorderLayout;
 import java.awt.ContainerOrderFocusTraversalPolicy;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import javax.swing.JSpinner;
 import javax.swing.JSpinner.DefaultEditor;
@@ -44,17 +48,19 @@ public class JSpinnerButtonFocusTest {
     static JFrame frame;
     static Robot robot;
     static JSpinner spinner1, spinner2;
-    static DefaultEditor editor2;
-    static boolean jTextFieldFocusStatus;
+    static DefaultEditor editor1, editor2;
+    static volatile boolean isJTextFieldFocused;
+    static volatile CountDownLatch latch1;
 
     public static void main(String args[]) throws Exception {
 
-        for (UIManager.LookAndFeelInfo LF : UIManager.getInstalledLookAndFeels()) {
+        for (UIManager.LookAndFeelInfo LF :
+                UIManager.getInstalledLookAndFeels()) {
+            latch1 = new CountDownLatch(1);
             try {
                 UIManager.setLookAndFeel(LF.getClassName());
                 robot = new Robot();
                 robot.setAutoDelay(50);
-                robot.setAutoWaitForIdle(true);
 
                 SwingUtilities.invokeAndWait(() -> {
                     frame = new JFrame();
@@ -65,7 +71,8 @@ public class JSpinnerButtonFocusTest {
                     frame.getContentPane().add(spinner1, BorderLayout.NORTH);
                     frame.getContentPane().add(spinner2, BorderLayout.SOUTH);
 
-                    ((DefaultEditor)spinner1.getEditor()).setFocusable(false);
+                    editor1 = ((DefaultEditor)spinner1.getEditor());
+                    editor1.setFocusable(false);
                     spinner1.setFocusable(false);
 
                     editor2 = (DefaultEditor) spinner2.getEditor();
@@ -76,34 +83,45 @@ public class JSpinnerButtonFocusTest {
                             new ContainerOrderFocusTraversalPolicy());
                     frame.setFocusTraversalPolicyProvider(true);
 
+                    frame.setAlwaysOnTop(true);
                     frame.pack();
                     frame.setVisible(true);
                 });
-
-                robot.waitForIdle();
-                pressTab(5);
                 robot.waitForIdle();
 
-                SwingUtilities.invokeAndWait(() -> {
-                    jTextFieldFocusStatus = editor2.getTextField().isFocusOwner();
+                editor1.getTextField().addFocusListener(new FocusAdapter() {
+                    @Override
+                    public void focusGained(FocusEvent e) {
+                        super.focusGained(e);
+                        robot.keyPress(KeyEvent.VK_TAB);
+                        robot.keyRelease(KeyEvent.VK_TAB);
+                        latch1.countDown();
+                    }
                 });
 
-                if (!jTextFieldFocusStatus) {
-                    throw new RuntimeException(
-                            "Spinner's Text Field doesn't have focus ");
+                SwingUtilities.invokeAndWait(() -> {
+                    editor1.getTextField().requestFocusInWindow();
+                });
+
+                if (!latch1.await(15, TimeUnit.MINUTES)) {
+                    throw new RuntimeException(LF.getClassName() +
+                            ": Timeout waiting for editor1 to gain focus.");
+                }
+
+                robot.waitForIdle();
+                SwingUtilities.invokeAndWait(() -> {
+                    isJTextFieldFocused = editor2.getTextField().isFocusOwner();
+                });
+
+                if (!isJTextFieldFocused) {
+                    throw new RuntimeException(LF.getClassName() +
+                            ": Spinner's Text Field doesn't have focus ");
                 }
             } finally {
-                if(frame != null){
+                if (frame != null) {
                     SwingUtilities.invokeAndWait(frame::dispose);
                 }
             }
-        }
-    }
-
-    public static void pressTab(int n) {
-        for (int i = 0; i < n; i++) {
-            robot.keyPress(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_TAB);
         }
     }
 }
