@@ -266,6 +266,8 @@ final class Grapheme {
                 case 0x0D4E:
                 case 0x111C2:
                 case 0x111C3:
+                case 0x1193F:
+                case 0x11941:
                 case 0x11A3A:
                 case 0x11A84:
                 case 0x11A85:

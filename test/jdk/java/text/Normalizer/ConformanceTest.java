@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug  4221795 6565620 6959267 7070436 7198195 8032446 8174270 8221431
+ * @bug  4221795 6565620 6959267 7070436 7198195 8032446 8174270 8221431 8239383
  * @summary Confirm Normalizer's fundamental behavior
  * @library /lib/testlibrary/java/lang
  * @modules java.base/sun.text java.base/jdk.internal.icu.text
@@ -126,7 +126,7 @@ public class ConformanceTest {
      *
      * This testdata is for sun.text.Normalize(UNICODE_LATEST)
      */
-    static final String DATA_LATEST = "NormalizationTest-Latest.txt";
+    static final String DATA_LATEST = "NormalizationTest.txt";
 
     /*
      * Conformance test datafile in ICU4J 3.2.

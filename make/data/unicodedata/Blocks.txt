@@ -1,5 +1,5 @@
-# Blocks-12.1.0.txt
-# Date: 2019-03-08, 23:59:00 GMT [KW]
+# Blocks-13.0.0.txt
+# Date: 2019-07-10, 19:06:00 GMT [KW]
 # Copyright (c) 2019 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 #
@@ -237,8 +237,10 @@ FFF0..FFFF; Specials
 10C80..10CFF; Old Hungarian
 10D00..10D3F; Hanifi Rohingya
 10E60..10E7F; Rumi Numeral Symbols
+10E80..10EBF; Yezidi
 10F00..10F2F; Old Sogdian
 10F30..10F6F; Sogdian
+10FB0..10FDF; Chorasmian
 10FE0..10FFF; Elymaic
 11000..1107F; Brahmi
 11080..110CF; Kaithi
@@ -260,6 +262,7 @@ FFF0..FFFF; Specials
 11700..1173F; Ahom
 11800..1184F; Dogra
 118A0..118FF; Warang Citi
+11900..1195F; Dives Akuru
 119A0..119FF; Nandinagari
 11A00..11A4F; Zanabazar Square
 11A50..11AAF; Soyombo
@@ -269,6 +272,7 @@ FFF0..FFFF; Specials
 11D00..11D5F; Masaram Gondi
 11D60..11DAF; Gunjala Gondi
 11EE0..11EFF; Makasar
+11FB0..11FBF; Lisu Supplement
 11FC0..11FFF; Tamil Supplement
 12000..123FF; Cuneiform
 12400..1247F; Cuneiform Numbers and Punctuation
@@ -285,6 +289,8 @@ FFF0..FFFF; Specials
 16FE0..16FFF; Ideographic Symbols and Punctuation
 17000..187FF; Tangut
 18800..18AFF; Tangut Components
+18B00..18CFF; Khitan Small Script
+18D00..18D8F; Tangut Supplement
 1B000..1B0FF; Kana Supplement
 1B100..1B12F; Kana Extended-A
 1B130..1B16F; Small Kana Extension
@@ -322,12 +328,14 @@ FFF0..FFFF; Specials
 1F900..1F9FF; Supplemental Symbols and Pictographs
 1FA00..1FA6F; Chess Symbols
 1FA70..1FAFF; Symbols and Pictographs Extended-A
+1FB00..1FBFF; Symbols for Legacy Computing
 20000..2A6DF; CJK Unified Ideographs Extension B
 2A700..2B73F; CJK Unified Ideographs Extension C
 2B740..2B81F; CJK Unified Ideographs Extension D
 2B820..2CEAF; CJK Unified Ideographs Extension E
 2CEB0..2EBEF; CJK Unified Ideographs Extension F
 2F800..2FA1F; CJK Compatibility Ideographs Supplement
+30000..3134F; CJK Unified Ideographs Extension G
 E0000..E007F; Tags
 E0100..E01EF; Variation Selectors Supplement
 F0000..FFFFF; Supplementary Private Use Area-A
