@@ -341,13 +341,14 @@ public class Start {
     @SuppressWarnings("deprecation")
     Result begin(String... argv) {
         // Preprocess @file arguments
+        List<String> allArgs;
         try {
-            argv = CommandLine.parse(argv);
+            allArgs = CommandLine.parse(List.of(argv));
         } catch (IOException e) {
             error("main.cant.read", e.getMessage());
             return ERROR;
         }
-        return begin(Arrays.asList(argv), Collections.emptySet());
+        return begin(allArgs, Collections.emptySet());
     }
 
     // Called by the JSR 199 API

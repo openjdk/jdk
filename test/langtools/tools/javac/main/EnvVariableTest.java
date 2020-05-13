@@ -35,6 +35,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.List;
 
 import toolbox.*;
 
@@ -135,14 +138,14 @@ public class EnvVariableTest extends TestRunner {
      * print the result.
      */
     public static class Tester {
-        private static final String[] EMPTY_ARRAY = new String[0];
+        private static final List<String> EMPTY_LIST = List.of();
         static String arrayToString(String... args) {
-            return String.join(", ", args);
+            return List.of(args).stream().collect(Collectors.joining(", "));
         }
         public static void main(String... args) throws IOException {
             try {
-                String[] argv = CommandLine.parse("JDK_JAVAC_OPTIONS", EMPTY_ARRAY);
-                System.out.print(arrayToString(argv));
+                List<String> argv = CommandLine.parse("JDK_JAVAC_OPTIONS", EMPTY_LIST);
+                System.out.print(argv.stream().collect(Collectors.joining(", ")));
             } catch (CommandLine.UnmatchedQuote ex) {
                 System.out.print("Exception: " + ex.variableName);
             }

@@ -56,10 +56,10 @@ public class CommandLine {
      * @return the arguments, with @files expanded
      * @throws IOException if there is a problem reading any of the @files
      */
-    public static String[] parse(String[] args) throws IOException {
+    public static List<String> parse(List<String> args) throws IOException {
         List<String> newArgs = new ArrayList<>();
-        appendParsedCommandArgs(newArgs, Arrays.asList(args));
-        return newArgs.toArray(new String[newArgs.size()]);
+        appendParsedCommandArgs(newArgs, args);
+        return newArgs;
     }
 
     private static void appendParsedCommandArgs(List<String> newArgs, List<String> args) throws IOException {
@@ -102,27 +102,6 @@ public class CommandLine {
         List<String> newArgs = new ArrayList<>();
         appendParsedCommandArgs(newArgs, inArgs);
         return newArgs;
-    }
-
-    /**
-     * Process the given environment variable and appends any Win32-style
-     * command files for the specified command line arguments and return
-     * the resulting arguments. A command file argument
-     * is of the form '@file' where 'file' is the name of the file whose
-     * contents are to be parsed for additional arguments. The contents of
-     * the command file are parsed using StreamTokenizer and the original
-     * '@file' argument replaced with the resulting tokens. Recursive command
-     * files are not supported. The '@' character itself can be quoted with
-     * the sequence '@@'.
-     * @param envVariable the env variable to process
-     * @param args the arguments that may contain @files
-     * @return the arguments, with environment variable's content and expansion of @files
-     * @throws IOException if there is a problem reading any of the @files
-     * @throws com.sun.tools.javac.main.CommandLine.UnmatchedQuote
-     */
-    public static String[] parse(String envVariable, String[] args) throws IOException, UnmatchedQuote {
-        List<String> out = parse(envVariable, Arrays.asList(args));
-        return out.toArray(new String[out.size()]);
     }
 
     private static void loadCmdFile(String name, List<String> args) throws IOException {

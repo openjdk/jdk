@@ -217,8 +217,9 @@ public class Main {
         }
 
         // prefix argv with contents of environment variable and expand @-files
+        Iterable<String> allArgs;
         try {
-            argv = CommandLine.parse(ENV_OPT_NAME, argv);
+            allArgs = CommandLine.parse(ENV_OPT_NAME, List.from(argv));
         } catch (UnmatchedQuote ex) {
             reportDiag(Errors.UnmatchedQuote(ex.variableName));
             return Result.CMDERR;
@@ -232,7 +233,7 @@ public class Main {
         }
 
         Arguments args = Arguments.instance(context);
-        args.init(ownName, argv);
+        args.init(ownName, allArgs);
 
         if (log.nerrors > 0)
             return Result.CMDERR;

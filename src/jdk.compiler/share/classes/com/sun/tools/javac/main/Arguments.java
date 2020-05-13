@@ -183,14 +183,14 @@ public class Arguments {
      * @param ownName the name of this tool; used to prefix messages
      * @param args the args to be processed
      */
-    public void init(String ownName, String... args) {
+    public void init(String ownName, Iterable<String> args) {
         this.ownName = ownName;
         errorMode = ErrorMode.LOG;
         files = new LinkedHashSet<>();
         deferredFileManagerOptions = new LinkedHashMap<>();
         fileObjects = null;
         classNames = new LinkedHashSet<>();
-        processArgs(List.from(args), Option.getJavaCompilerOptions(), cmdLineHelper, true, false);
+        processArgs(args, Option.getJavaCompilerOptions(), cmdLineHelper, true, false);
         if (errors) {
             log.printLines(PrefixKind.JAVAC, "msg.usage", ownName);
         }
