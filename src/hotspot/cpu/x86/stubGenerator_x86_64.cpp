@@ -1083,11 +1083,8 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpptr(c_rarg2, c_rarg3);
     __ jcc(Assembler::notZero, error);
 
-    // set r12 to heapbase for load_klass()
-    __ reinit_heapbase();
-
     // make sure klass is 'reasonable', which is not zero.
-    __ load_klass(rax, rax);  // get klass
+    __ load_klass(rax, rax, rscratch1);  // get klass
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, error); // if klass is NULL it is broken
 
@@ -2525,7 +2522,7 @@ class StubGenerator: public StubCodeGenerator {
     __ testptr(rax_oop, rax_oop);
     __ jcc(Assembler::zero, L_store_element);
 
-    __ load_klass(r11_klass, rax_oop);// query the object klass
+    __ load_klass(r11_klass, rax_oop, rscratch1);// query the object klass
     generate_type_check(r11_klass, ckoff, ckval, L_store_element);
     // ======== end loop ========
 
@@ -2689,8 +2686,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register dst_pos    = c_rarg3;  // destination position
 #ifndef _WIN64
     const Register length     = c_rarg4;
+    const Register rklass_tmp = r9;  // load_klass
 #else
     const Address  length(rsp, 6 * wordSize);  // elements count is on stack on Win64
+    const Register rklass_tmp = rdi;  // load_klass
 #endif
 
     { int modulus = CodeEntryAlignment;
@@ -2763,7 +2762,7 @@ class StubGenerator: public StubCodeGenerator {
     __ testl(r11_length, r11_length);
     __ jccb(Assembler::negative, L_failed_0);
 
-    __ load_klass(r10_src_klass, src);
+    __ load_klass(r10_src_klass, src, rklass_tmp);
 #ifdef ASSERT
     //  assert(src->klass() != NULL);
     {
@@ -2774,7 +2773,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(rax, dst);
+      __ load_klass(rax, dst, rklass_tmp);
       __ cmpq(rax, 0);
       __ jcc(Assembler::equal, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
@@ -2797,7 +2796,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::equal, L_objArray);
 
     //  if (src->klass() != dst->klass()) return -1;
-    __ load_klass(rax, dst);
+    __ load_klass(rax, dst, rklass_tmp);
     __ cmpq(r10_src_klass, rax);
     __ jcc(Assembler::notEqual, L_failed);
 
@@ -2896,7 +2895,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ load_klass(rax, dst);
+    __ load_klass(rax, dst, rklass_tmp);
     __ cmpq(r10_src_klass, rax); // usual case is exact equality
     __ jcc(Assembler::notEqual, L_checkcast_copy);
 
@@ -2924,7 +2923,7 @@ class StubGenerator: public StubCodeGenerator {
                              rax, L_failed);
 
       const Register r11_dst_klass = r11;
-      __ load_klass(r11_dst_klass, dst); // reload
+      __ load_klass(r11_dst_klass, dst, rklass_tmp); // reload
 
       // Marshal the base address arguments now, freeing registers.
       __ lea(from, Address(src, src_pos, TIMES_OOP,

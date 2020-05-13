@@ -59,7 +59,8 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   jmpb(next);
 
   bind(update);
-  load_klass(obj, obj);
+  Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+  load_klass(obj, obj, tmp_load_klass);
 
   xorptr(obj, mdo_addr);
   testptr(obj, TypeEntries::type_klass_mask);
@@ -1197,7 +1198,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
     if (UseBiasedLocking) {
-      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, false, done, &slow_case);
+      Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, rklass_decode_tmp, false, done, &slow_case);
     }
 
     // Load immediate 1 into swap_reg %rax

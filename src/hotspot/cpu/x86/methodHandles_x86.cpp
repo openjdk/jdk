@@ -74,7 +74,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   Klass* klass = SystemDictionary::well_known_klass(klass_id);
   Register temp = rdi;
   Register temp2 = noreg;
-  LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr
+  LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr and load_klass
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
@@ -82,7 +82,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   __ jcc(Assembler::zero, L_bad);
   __ push(temp); if (temp2 != noreg)  __ push(temp2);
 #define UNPUSH { if (temp2 != noreg)  __ pop(temp2);  __ pop(temp); }
-  __ load_klass(temp, obj);
+  __ load_klass(temp, obj, temp2);
   __ cmpptr(temp, ExternalAddress((address) klass_addr));
   __ jcc(Assembler::equal, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
@@ -352,7 +352,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       } else {
         // load receiver klass itself
         __ null_check(receiver_reg, oopDesc::klass_offset_in_bytes());
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -360,7 +360,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // Check the receiver against the MemberName.clazz
       if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
         // Did not load it above...
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {

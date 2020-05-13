@@ -32,7 +32,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @requires vm.hasJFR
  * @requires vm.gc == "Serial" | vm.gc == null
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseSerialGC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithSerial
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseSerialGC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithSerial
  */
 public class TestObjectCountAfterGCEventWithSerial {
     public static void main(String[] args) throws Exception {

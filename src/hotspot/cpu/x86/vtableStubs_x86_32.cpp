@@ -195,7 +195,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // get receiver klass (also an implicit null-check)
   assert(VtableStub::receiver_location() ==  rcx->as_VMReg(), "receiver expected in  rcx");
   address npe_addr = __ pc();
-  __ load_klass(recv_klass_reg, rcx);
+  __ load_klass(recv_klass_reg, rcx, noreg);
 
   start_pc = __ pc();
 
@@ -213,7 +213,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // Get selected method from declaring class and itable index
   const Register method = rbx;
-  __ load_klass(recv_klass_reg, rcx); // restore recv_klass_reg
+  __ load_klass(recv_klass_reg, rcx, noreg); // restore recv_klass_reg
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              recv_klass_reg, holder_klass_reg, itable_index,
                              // outputs: method, scan temp. reg

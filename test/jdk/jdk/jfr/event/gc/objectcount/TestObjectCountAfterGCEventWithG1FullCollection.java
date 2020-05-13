@@ -33,7 +33,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @requires (vm.gc == "G1" | vm.gc == null)
  *           & vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseG1GC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithG1FullCollection
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseG1GC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithG1FullCollection
  */
 public class TestObjectCountAfterGCEventWithG1FullCollection {
     public static void main(String[] args) throws Exception {

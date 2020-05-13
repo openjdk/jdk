@@ -2109,7 +2109,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     if (UseBiasedLocking) {
       // Note that oop_handle_reg is trashed during this call
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, oop_handle_reg, false, lock_done, &slow_path_lock);
+      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, oop_handle_reg, noreg, false, lock_done, &slow_path_lock);
     }
 
     // Load immediate 1 into swap_reg %rax,

@@ -56,4 +56,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
+#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
+
 #endif // CPU_S390_GLOBALDEFINITIONS_S390_HPP

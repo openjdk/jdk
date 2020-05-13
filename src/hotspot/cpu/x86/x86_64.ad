@@ -357,7 +357,7 @@ RegMask _STACK_OR_LONG_REG_mask;
 RegMask _STACK_OR_INT_REG_mask;
 
 static bool need_r12_heapbase() {
-  return UseCompressedOops || UseCompressedClassPointers;
+  return UseCompressedOops;
 }
 
 void reg_mask_init() {
@@ -1549,7 +1549,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   MacroAssembler masm(&cbuf);
   uint insts_size = cbuf.insts_size();
   if (UseCompressedClassPointers) {
-    masm.load_klass(rscratch1, j_rarg0);
+    masm.load_klass(rscratch1, j_rarg0, rscratch2);
     masm.cmpptr(rax, rscratch1);
   } else {
     masm.cmpptr(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
@@ -5956,7 +5956,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6006,7 +6006,7 @@ instruct storeNKlass(memory mem, rRegN src)
 
 instruct storeImmN0(memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == NULL && CompressedKlassPointers::base() == NULL);
+  predicate(CompressedOops::base() == NULL);
   match(Set mem (StoreN mem zero));
 
   ins_cost(125); // XXX
@@ -6049,7 +6049,7 @@ instruct storeImmNKlass(memory mem, immNKlass src)
 // Store Integer Immediate
 instruct storeImmI0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreI mem zero));
 
   ins_cost(125); // XXX
@@ -6074,7 +6074,7 @@ instruct storeImmI(memory mem, immI src)
 // Store Long Immediate
 instruct storeImmL0(memory mem, immL0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreL mem zero));
 
   ins_cost(125); // XXX
@@ -6099,7 +6099,7 @@ instruct storeImmL(memory mem, immL32 src)
 // Store Short/Char Immediate
 instruct storeImmC0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreC mem zero));
 
   ins_cost(125); // XXX
@@ -6125,7 +6125,7 @@ instruct storeImmI16(memory mem, immI16 src)
 // Store Byte Immediate
 instruct storeImmB0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreB mem zero));
 
   ins_cost(125); // XXX
@@ -6150,7 +6150,7 @@ instruct storeImmB(memory mem, immI8 src)
 // Store CMS card-mark Immediate
 instruct storeImmCM0_reg(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreCM mem zero));
 
   ins_cost(125); // XXX
@@ -6188,7 +6188,7 @@ instruct storeF(memory mem, regF src)
 // Store immediate Float value (it is faster than store from XMM register)
 instruct storeF0(memory mem, immF0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreF mem zero));
 
   ins_cost(25); // XXX
@@ -6238,7 +6238,7 @@ instruct storeD0_imm(memory mem, immD0 src)
 
 instruct storeD0(memory mem, immD0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreD mem zero));
 
   ins_cost(25); // XXX
@@ -6791,30 +6791,23 @@ instruct decodeHeapOop_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
 
 instruct encodeKlass_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
   match(Set dst (EncodePKlass src));
-  effect(KILL cr);
-  format %{ "encode_klass_not_null $dst,$src" %}
+  effect(TEMP dst, KILL cr);
+  format %{ "encode_and_move_klass_not_null $dst,$src" %}
   ins_encode %{
-    __ encode_klass_not_null($dst$$Register, $src$$Register);
+    __ encode_and_move_klass_not_null($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg_long);
 %}
 
 instruct decodeKlass_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
   match(Set dst (DecodeNKlass src));
-  effect(KILL cr);
-  format %{ "decode_klass_not_null $dst,$src" %}
+  effect(TEMP dst, KILL cr);
+  format %{ "decode_and_move_klass_not_null $dst,$src" %}
   ins_encode %{
-    Register s = $src$$Register;
-    Register d = $dst$$Register;
-    if (s != d) {
-      __ decode_klass_not_null(d, s);
-    } else {
-      __ decode_klass_not_null(d);
-    }
+    __ decode_and_move_klass_not_null($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg_long);
 %}
-
 
 //----------Conditional Move---------------------------------------------------
 // Jump
@@ -11723,7 +11716,6 @@ instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 instruct testP_mem_reg0(rFlagsReg cr, memory mem, immP0 zero)
 %{
   predicate(UseCompressedOops && (CompressedOops::base() == NULL) &&
-            (CompressedKlassPointers::base() == NULL) &&
             n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpP (LoadP mem) zero));
 
@@ -11819,7 +11811,7 @@ instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 
 instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == NULL && (CompressedKlassPointers::base() == NULL));
+  predicate(CompressedOops::base() == NULL);
   match(Set cr (CmpN (LoadN mem) zero));
 
   format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}
@@ -12466,15 +12458,15 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr, rRegP cx1) %{
   predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, TEMP cx1, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
+                 $scr$$Register, $cx1$$Register, noreg, _counters, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

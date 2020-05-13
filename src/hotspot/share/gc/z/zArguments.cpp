@@ -85,9 +85,8 @@ void ZArguments::initialize() {
   }
 #endif
 
-  // CompressedOops/UseCompressedClassPointers not supported
+  // CompressedOops not supported
   FLAG_SET_DEFAULT(UseCompressedOops, false);
-  FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
 
   // Verification before startup and after exit not (yet) supported
   FLAG_SET_DEFAULT(VerifyDuringStartup, false);
