@@ -777,32 +777,34 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, RestrictContended, true,                                    \
           "Restrict @Contended to trusted classes")                         \
                                                                             \
-  product(bool, UseBiasedLocking, true,                                     \
-          "Enable biased locking in JVM")                                   \
+  product(bool, UseBiasedLocking, false,                                    \
+          "(Deprecated) Enable biased locking in JVM")                      \
                                                                             \
   product(intx, BiasedLockingStartupDelay, 0,                               \
-          "Number of milliseconds to wait before enabling biased locking")  \
+          "(Deprecated) Number of milliseconds to wait before enabling "    \
+          "biased locking")                                                 \
           range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
           constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \
                                                                             \
   diagnostic(bool, PrintBiasedLockingStatistics, false,                     \
-          "Print statistics of biased locking in JVM")                      \
+          "(Deprecated) Print statistics of biased locking in JVM")         \
                                                                             \
   product(intx, BiasedLockingBulkRebiasThreshold, 20,                       \
-          "Threshold of number of revocations per type to try to "          \
-          "rebias all objects in the heap of that type")                    \
+          "(Deprecated) Threshold of number of revocations per type to "    \
+          "try to rebias all objects in the heap of that type")             \
           range(0, max_intx)                                                \
           constraint(BiasedLockingBulkRebiasThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingBulkRevokeThreshold, 40,                       \
-          "Threshold of number of revocations per type to permanently "     \
-          "revoke biases of all objects in the heap of that type")          \
+          "(Deprecated) Threshold of number of revocations per type to "    \
+          "permanently revoke biases of all objects in the heap of that "   \
+          "type")                                                           \
           range(0, max_intx)                                                \
           constraint(BiasedLockingBulkRevokeThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingDecayTime, 25000,                              \
-          "Decay time (in milliseconds) to re-enable bulk rebiasing of a "  \
-          "type after previous bulk rebias")                                \
+          "(Deprecated) Decay time (in milliseconds) to re-enable bulk "    \
+          "rebiasing of a type after previous bulk rebias")                 \
           range(500, max_intx)                                              \
           constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
