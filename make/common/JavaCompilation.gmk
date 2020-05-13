@@ -428,7 +428,7 @@ define SetupJavaCompilationBody
     # list of files.
     $$($1_FILELIST): $$($1_SRCS) $$($1_VARDEPS_FILE)
 		$$(call MakeDir, $$(@D))
-		$$(call LogWarn, Compiling $$($1_SRCS) files for $1)
+		$$(call LogWarn, Compiling $$(words $$($1_SRCS)) files for $1)
 		$$(eval $$(call ListPathsSafely, $1_SRCS, $$($1_FILELIST)))
 
     # Do the actual compilation
