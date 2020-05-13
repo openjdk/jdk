@@ -1109,9 +1109,12 @@ ifeq ($(INCLUDE_GRAAL), true)
 endif
 
 # This target builds the test image
-test-image: prepare-test-image \
-    test-image-jdk-jtreg-native test-image-failure-handler \
+test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk $(JVM_TEST_IMAGE_TARGETS)
+
+ifeq ($(BUILD_FAILURE_HANDLER), true)
+  test-image: test-image-failure-handler
+endif
 
 ifneq ($(JMH_CORE_JAR), )
   test-image: build-microbenchmark
