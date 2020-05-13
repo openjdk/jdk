@@ -31,6 +31,7 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"

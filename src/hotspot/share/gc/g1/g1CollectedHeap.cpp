@@ -41,6 +41,7 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
