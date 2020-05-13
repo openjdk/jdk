@@ -34,6 +34,11 @@
 #include "jdk_net_LinuxSocketOptions.h"
 
 /*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
+
+/*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    setQuickAck
  * Signature: (II)V
