@@ -1069,6 +1069,7 @@ bool FileMapInfo::open_for_read() {
   } else {
     _full_path = Arguments::GetSharedDynamicArchivePath();
   }
+  log_info(cds)("trying to map %s", _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {

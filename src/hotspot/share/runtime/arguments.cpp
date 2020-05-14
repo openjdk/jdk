@@ -3519,13 +3519,21 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
   return status;
 }
 
-void Arguments::set_shared_spaces_flags() {
+jint Arguments::set_shared_spaces_flags_and_archive_paths() {
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
     UseSharedSpaces = false;
   }
+#if INCLUDE_CDS
+  // Initialize shared archive paths which could include both base and dynamic archive paths
+  // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
+  if (!init_shared_archive_paths()) {
+    return JNI_ENOMEM;
+  }
+#endif  // INCLUDE_CDS
+  return JNI_OK;
 }
 
 #if INCLUDE_CDS
@@ -3541,7 +3549,8 @@ char* Arguments::get_default_shared_archive_path() {
   size_t file_sep_len = strlen(os::file_separator());
   const size_t len = jvm_path_len + file_sep_len + 20;
   default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  jio_snprintf(default_archive_path, len, "%s%sclasses.jsa",
+  jio_snprintf(default_archive_path, len,
+               UseCompressedOops ? "%s%sclasses.jsa": "%s%sclasses_nocoops.jsa",
                jvm_path, os::file_separator());
   return default_archive_path;
 }
@@ -3986,13 +3995,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return result;
   }
 
-#if INCLUDE_CDS
-  // Initialize shared archive paths which could include both base and dynamic archive paths
-  if (!init_shared_archive_paths()) {
-    return JNI_ENOMEM;
-  }
-#endif
-
   // Delay warning until here so that we've had a chance to process
   // the -XX:-PrintWarnings flag
   if (needs_hotspotrc_warning) {
@@ -4080,7 +4082,8 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  set_shared_spaces_flags();
+  result = set_shared_spaces_flags_and_archive_paths();
+  if (result != JNI_OK) return result;
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

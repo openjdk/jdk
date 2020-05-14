@@ -343,7 +343,7 @@ compare_general_files() {
         ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
         ! -name "*.lib" ! -name "*.jmod" ! -name "*.exe" \
         ! -name "*.obj" ! -name "*.o" ! -name "jspawnhelper" ! -name "*.a" \
-        ! -name "*.tar.gz" ! -name "classes.jsa" ! -name "gtestLauncher" \
+        ! -name "*.tar.gz" ! -name "*.jsa" ! -name "gtestLauncher" \
         ! -name "*.map" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
