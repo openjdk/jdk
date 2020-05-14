@@ -31,8 +31,10 @@
  * @bug 8231610
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar hello.jar Hello
- * @run driver DynamicArchiveRelocationTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicArchiveRelocationTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -93,7 +95,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
 
         // (1) Dump base archive (static)
 
-        OutputAnalyzer out = dumpBaseArchive(baseArchiveName, unlockArg, dumpBaseRelocArg, logArg);
+        OutputAnalyzer out = TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, dumpBaseRelocArg, logArg);
         if (dump_base_reloc) {
             out.shouldContain("ArchiveRelocationMode == 1: always allocate class space at an alternative address");
             out.shouldContain("Relocating archive from");

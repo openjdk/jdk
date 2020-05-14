@@ -28,8 +28,10 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar hello.jar Hello
- * @run driver SharedArchiveFileOption
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedArchiveFileOption
  */
 
 import java.io.File;
@@ -44,8 +46,8 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
         String topArchiveName = getNewArchiveName("top");
         String baseArchiveName = getNewArchiveName("base");
         baseArchiveName2 = getNewArchiveName("base2");
-        dumpBaseArchive(baseArchiveName);
-        dumpBaseArchive(baseArchiveName2);
+        TestCommon.dumpBaseArchive(baseArchiveName);
+        TestCommon.dumpBaseArchive(baseArchiveName2);
         doTest(baseArchiveName, topArchiveName);
     }
 

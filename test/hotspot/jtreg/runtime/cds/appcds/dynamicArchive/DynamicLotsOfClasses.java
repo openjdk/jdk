@@ -39,8 +39,8 @@ import java.util.ArrayList;
  * @build LoadClasses
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar loadclasses.jar LoadClasses
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
- * @run driver/timeout=500 DynamicLotsOfClasses
+ * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./whitebox.jar DynamicLotsOfClasses
  */
 
 public class DynamicLotsOfClasses extends DynamicArchiveTestBase {

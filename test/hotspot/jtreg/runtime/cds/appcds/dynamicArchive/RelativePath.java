@@ -27,9 +27,11 @@
  * @summary Test relative paths specified in the -cp.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @build sun.hotspot.WhiteBox
  * @compile ../test-classes/Hello.java
  * @compile ../test-classes/HelloMore.java
- * @run driver RelativePath
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. RelativePath
  */
 
 import java.io.File;

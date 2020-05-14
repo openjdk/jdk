@@ -60,7 +60,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
     static void testCustomBase() throws Exception {
         String topArchiveName = getNewArchiveName("top2");
         String baseArchiveName = getNewArchiveName("base");
-        dumpBaseArchive(baseArchiveName);
+        TestCommon.dumpBaseArchive(baseArchiveName);
         doTest(baseArchiveName, topArchiveName);
     }
 

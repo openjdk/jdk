@@ -283,6 +283,12 @@ public class CDSTestUtils {
         return output;
     }
 
+    // check result of dumping base archive
+    public static OutputAnalyzer checkBaseDump(OutputAnalyzer output) throws Exception {
+        output.shouldContain("Loading classes to share");
+        output.shouldHaveExitValue(0);
+        return output;
+    }
 
     // A commonly used convenience methods to create an archive and check the results
     // Creates an archive and checks for errors

@@ -29,9 +29,10 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build ArrayKlassesApp
- * @run driver ClassFileInstaller -jar ArrayKlasses.jar
- *             ArrayKlassesApp
- * @run driver ArrayKlasses
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar ArrayKlasses.jar ArrayKlassesApp
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ArrayKlasses
  */
 
 public class ArrayKlasses extends DynamicArchiveTestBase {

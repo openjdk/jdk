@@ -137,6 +137,22 @@ public class TestCommon extends CDSTestUtils {
         return createArchive(appJarDir, appJar, classList, suffix);
     }
 
+    /**
+     * Dump the base archive. The JDK's default class list is used (unless otherwise specified
+     * in cmdLineSuffix).
+     */
+    public static OutputAnalyzer dumpBaseArchive(String baseArchiveName, String ... cmdLineSuffix)
+        throws Exception
+    {
+        CDSOptions opts = new CDSOptions();
+        opts.setArchiveName(baseArchiveName);
+        opts.addSuffix(cmdLineSuffix);
+        opts.addSuffix("-Djava.class.path=");
+        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+        CDSTestUtils.checkBaseDump(out);
+        return out;
+    }
+
     // Create AppCDS archive using most common args - convenience method
     public static OutputAnalyzer createArchive(String appJar, String classList[],
                                                String... suffix) throws Exception {
@@ -157,6 +173,9 @@ public class TestCommon extends CDSTestUtils {
 
     // Simulate -Xshare:dump with -XX:ArchiveClassesAtExit. See comments around patchJarForDynamicDump()
     private static final Class tmp = DynamicDumpHelper.class;
+
+    // name of the base archive to be used for dynamic dump
+    private static String tempBaseArchive = null;
 
     // Create AppCDS archive using appcds options
     public static OutputAnalyzer createArchive(AppCDSOptions opts)
@@ -182,9 +201,14 @@ public class TestCommon extends CDSTestUtils {
         }
 
         if (DYNAMIC_DUMP) {
+            File baseArchive = null;
+            if (tempBaseArchive == null || !(new File(tempBaseArchive)).isFile()) {
+                tempBaseArchive = getNewArchiveName("tempBaseArchive");
+                dumpBaseArchive(tempBaseArchive);
+            }
             cmd.add("-Xshare:on");
+            cmd.add("-XX:SharedArchiveFile=" + tempBaseArchive);
             cmd.add("-XX:ArchiveClassesAtExit=" + opts.archiveName);
-
             cmd.add("-Xlog:cds");
             cmd.add("-Xlog:cds+dynamic");
             boolean mainModuleSpecified = false;
