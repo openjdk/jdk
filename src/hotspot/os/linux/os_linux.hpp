@@ -56,6 +56,8 @@ class Linux {
   static GrowableArray<int>* _cpu_to_node;
   static GrowableArray<int>* _nindex_to_node;
 
+  static size_t _default_large_page_size;
+
  protected:
 
   static julong _physical_memory;
@@ -81,7 +83,9 @@ class Linux {
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
 
-  static size_t find_large_page_size();
+  static size_t default_large_page_size();
+  static size_t find_default_large_page_size();
+  static size_t find_large_page_size(size_t page_size);
   static size_t setup_large_page_size();
 
   static bool setup_large_page_type(size_t page_size);
