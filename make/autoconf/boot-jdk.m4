@@ -392,8 +392,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
       JJS=""
       AC_MSG_NOTICE([Cannot use pandoc without jjs])
       ENABLE_PANDOC=false
+    else
+      AC_MSG_RESULT(ok)
     fi
-    AC_MSG_RESULT(ok)
     AC_SUBST(JJS)
   ])
 ])

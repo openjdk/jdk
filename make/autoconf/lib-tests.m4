@@ -77,6 +77,8 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JMH],
       AC_MSG_RESULT([no, error])
       AC_MSG_ERROR([$JMH_HOME does not exist or is not a directory])
     fi
+    AC_MSG_RESULT([yes, $JMH_HOME])
+
     UTIL_FIXUP_PATH([JMH_HOME])
 
     jar_names="jmh-core jmh-generator-annprocess jopt-simple commons-math3"
@@ -84,17 +86,14 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JMH],
       found_jar_files=$($ECHO $(ls $JMH_HOME/$jar-*.jar 2> /dev/null))
 
       if test "x$found_jar_files" = x; then
-        AC_MSG_RESULT([no])
         AC_MSG_ERROR([--with-jmh does not contain $jar-*.jar])
       elif ! test -e "$found_jar_files"; then
-        AC_MSG_RESULT([no])
         AC_MSG_ERROR([--with-jmh contain multiple $jar-*.jar: $found_jar_files])
       fi
 
       found_jar_var_name=found_${jar//-/_}
       eval $found_jar_var_name='"'$found_jar_files'"'
     done
-    AC_MSG_RESULT([yes])
 
     JMH_CORE_JAR=$found_jmh_core
     JMH_GENERATOR_JAR=$found_jmh_generator_annprocess
