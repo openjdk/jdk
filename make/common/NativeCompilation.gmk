@@ -267,6 +267,19 @@ else
 endif
 
 ################################################################################
+# GetEntitlementsFile
+# Find entitlements file for executable when signing on macosx. If no
+# specialized file is found, returns the default file.
+# $1 Executable to find entitlements file for.
+ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default.plist
+
+GetEntitlementsFile = \
+    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1)).plist, \
+      $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
+    )
+
+################################################################################
 # Create the recipe needed to compile a single native source file.
 #
 # Parameter 1 is the name of the rule, based on the name of the library/
@@ -1183,7 +1196,7 @@ define SetupNativeCompilationBody
                 # silently fail otherwise.
                 ifneq ($(CODESIGN), )
 		  $(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
-		  --entitlements $(TOPDIR)/make/data/macosxsigning/entitlements.plist $$@
+		      --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
   endif
 
