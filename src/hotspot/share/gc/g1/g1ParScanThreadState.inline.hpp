@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,14 +71,13 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   }
 }
 
-template <class T> inline void G1ParScanThreadState::push_on_queue(T* ref) {
-  assert(verify_ref(ref), "sanity");
-  _refs->push(ref);
+inline void G1ParScanThreadState::push_on_queue(ScannerTask task) {
+  verify_task(task);
+  _task_queue->push(task);
 }
 
-inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
-  assert(has_partial_array_mask(p), "invariant");
-  oop from_obj = clear_partial_array_mask(p);
+inline void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
+  oop from_obj = task.to_source_array();
 
   assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
   assert(from_obj->is_objArray(), "must be obj array");
@@ -105,8 +104,7 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
     to_obj_array->set_length(end);
     // Push the remainder before we process the range in case another
     // worker has run out of things to do and can steal it.
-    oop* from_obj_p = set_partial_array_mask(from_obj);
-    push_on_queue(from_obj_p);
+    push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   } else {
     assert(length == end, "sanity");
     // We'll process the final range for this object. Restore the length
@@ -127,35 +125,23 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
   to_obj_array->oop_iterate_range(&_scanner, start, end);
 }
 
-inline void G1ParScanThreadState::deal_with_reference(oop* ref_to_scan) {
-  if (!has_partial_array_mask(ref_to_scan)) {
-    do_oop_evac(ref_to_scan);
+inline void G1ParScanThreadState::dispatch_task(ScannerTask task) {
+  verify_task(task);
+  if (task.is_narrow_oop_ptr()) {
+    do_oop_evac(task.to_narrow_oop_ptr());
+  } else if (task.is_oop_ptr()) {
+    do_oop_evac(task.to_oop_ptr());
   } else {
-    do_oop_partial_array(ref_to_scan);
+    do_partial_array(task.to_partial_array_task());
   }
 }
 
-inline void G1ParScanThreadState::deal_with_reference(narrowOop* ref_to_scan) {
-  assert(!has_partial_array_mask(ref_to_scan), "NarrowOop* elements should never be partial arrays.");
-  do_oop_evac(ref_to_scan);
-}
-
-inline void G1ParScanThreadState::dispatch_reference(StarTask ref) {
-  assert(verify_task(ref), "sanity");
-  if (ref.is_narrow()) {
-    deal_with_reference((narrowOop*)ref);
-  } else {
-    deal_with_reference((oop*)ref);
-  }
-}
-
-void G1ParScanThreadState::steal_and_trim_queue(RefToScanQueueSet *task_queues) {
-  StarTask stolen_task;
+void G1ParScanThreadState::steal_and_trim_queue(ScannerTasksQueueSet *task_queues) {
+  ScannerTask stolen_task;
   while (task_queues->steal(_worker_id, stolen_task)) {
-    assert(verify_task(stolen_task), "sanity");
-    dispatch_reference(stolen_task);
+    dispatch_task(stolen_task);
 
-    // We've just processed a reference and we might have made
+    // We've just processed a task and we might have made
     // available new entries on the queues. So we have to make sure
     // we drain the queues as necessary.
     trim_queue();
@@ -163,24 +149,26 @@ void G1ParScanThreadState::steal_and_trim_queue(RefToScanQueueSet *task_queues) 
 }
 
 inline bool G1ParScanThreadState::needs_partial_trimming() const {
-  return !_refs->overflow_empty() || _refs->size() > _stack_trim_upper_threshold;
+  return !_task_queue->overflow_empty() ||
+         (_task_queue->size() > _stack_trim_upper_threshold);
 }
 
 inline bool G1ParScanThreadState::is_partially_trimmed() const {
-  return _refs->overflow_empty() && _refs->size() <= _stack_trim_lower_threshold;
+  return _task_queue->overflow_empty() &&
+         (_task_queue->size() <= _stack_trim_lower_threshold);
 }
 
 inline void G1ParScanThreadState::trim_queue_to_threshold(uint threshold) {
-  StarTask ref;
+  ScannerTask task;
   // Drain the overflow stack first, so other threads can potentially steal.
-  while (_refs->pop_overflow(ref)) {
-    if (!_refs->try_push_to_taskqueue(ref)) {
-      dispatch_reference(ref);
+  while (_task_queue->pop_overflow(task)) {
+    if (!_task_queue->try_push_to_taskqueue(task)) {
+      dispatch_task(task);
     }
   }
 
-  while (_refs->pop_local(ref, threshold)) {
-    dispatch_reference(ref);
+  while (_task_queue->pop_local(task, threshold)) {
+    dispatch_task(task);
   }
 }
 
@@ -220,7 +208,7 @@ inline void G1ParScanThreadState::remember_reference_into_optional_region(T* p) 
   assert(index < _num_optional_regions,
          "Trying to access optional region idx %u beyond " SIZE_FORMAT, index, _num_optional_regions);
   _oops_into_optional_regions[index].push_oop(p);
-  DEBUG_ONLY(verify_ref(p);)
+  verify_task(p);
 }
 
 G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const HeapRegion* hr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "utilities/ticks.hpp"
@@ -45,7 +46,7 @@ class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
-  RefToScanQueue* _refs;
+  ScannerTasksQueue* _task_queue;
   G1RedirtyCardsQueue _rdcq;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
@@ -114,15 +115,15 @@ public:
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
 
 #ifdef ASSERT
-  bool queue_is_empty() const { return _refs->is_empty(); }
+  bool queue_is_empty() const { return _task_queue->is_empty(); }
+#endif
 
-  bool verify_ref(narrowOop* ref) const;
-  bool verify_ref(oop* ref) const;
-  bool verify_task(StarTask ref) const;
-#endif // ASSERT
+  void verify_task(narrowOop* task) const NOT_DEBUG_RETURN;
+  void verify_task(oop* task) const NOT_DEBUG_RETURN;
+  void verify_task(PartialArrayScanTask task) const NOT_DEBUG_RETURN;
+  void verify_task(ScannerTask task) const NOT_DEBUG_RETURN;
 
-  template <class T> void do_oop_ext(T* ref);
-  template <class T> void push_on_queue(T* ref);
+  void push_on_queue(ScannerTask task);
 
   template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
     assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
@@ -158,43 +159,12 @@ public:
   size_t flush(size_t* surviving_young_words);
 
 private:
-  #define G1_PARTIAL_ARRAY_MASK 0x2
-
-  inline bool has_partial_array_mask(oop* ref) const {
-    return ((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) == G1_PARTIAL_ARRAY_MASK;
-  }
-
-  // We never encode partial array oops as narrowOop*, so return false immediately.
-  // This allows the compiler to create optimized code when popping references from
-  // the work queue.
-  inline bool has_partial_array_mask(narrowOop* ref) const {
-    assert(((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) != G1_PARTIAL_ARRAY_MASK, "Partial array oop reference encoded as narrowOop*");
-    return false;
-  }
-
-  // Only implement set_partial_array_mask() for regular oops, not for narrowOops.
-  // We always encode partial arrays as regular oop, to allow the
-  // specialization for has_partial_array_mask() for narrowOops above.
-  // This means that unintentional use of this method with narrowOops are caught
-  // by the compiler.
-  inline oop* set_partial_array_mask(oop obj) const {
-    assert(((uintptr_t)(void *)obj & G1_PARTIAL_ARRAY_MASK) == 0, "Information loss!");
-    return (oop*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
-  }
-
-  inline oop clear_partial_array_mask(oop* ref) const {
-    return cast_to_oop((intptr_t)ref & ~G1_PARTIAL_ARRAY_MASK);
-  }
-
-  inline void do_oop_partial_array(oop* p);
+  inline void do_partial_array(PartialArrayScanTask task);
 
   // This method is applied to the fields of the objects that have just been copied.
   template <class T> inline void do_oop_evac(T* p);
 
-  inline void deal_with_reference(oop* ref_to_scan);
-  inline void deal_with_reference(narrowOop* ref_to_scan);
-
-  inline void dispatch_reference(StarTask ref);
+  inline void dispatch_task(ScannerTask task);
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous
@@ -232,7 +202,7 @@ public:
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
 
-  inline void steal_and_trim_queue(RefToScanQueueSet *task_queues);
+  inline void steal_and_trim_queue(ScannerTasksQueueSet *task_queues);
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markWord m);
