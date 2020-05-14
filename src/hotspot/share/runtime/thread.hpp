@@ -1360,7 +1360,7 @@ class JavaThread: public Thread {
     _handshake.process_by_self();
   }
 
-  bool handshake_try_process(HandshakeOperation* op) {
+  HandshakeState::ProcessResult handshake_try_process(HandshakeOperation* op) {
     return _handshake.try_process(op);
   }
 

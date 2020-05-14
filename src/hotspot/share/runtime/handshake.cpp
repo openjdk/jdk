@@ -63,6 +63,94 @@ public:
   bool is_direct() { return _is_direct; }
 };
 
+// Performing handshakes requires a custom yielding strategy because without it
+// there is a clear performance regression vs plain spinning. We keep track of
+// when we last saw progress by looking at why each targeted thread has not yet
+// completed its handshake. After spinning for a while with no progress we will
+// yield, but as long as there is progress, we keep spinning. Thus we avoid
+// yielding when there is potential work to be done or the handshake is close
+// to being finished.
+class HandshakeSpinYield : public StackObj {
+ private:
+  jlong _start_time_ns;
+  jlong _last_spin_start_ns;
+  jlong _spin_time_ns;
+
+  int _result_count[2][HandshakeState::_number_states];
+  int _prev_result_pos;
+
+  int prev_result_pos() { return _prev_result_pos & 0x1; }
+  int current_result_pos() { return (_prev_result_pos + 1) & 0x1; }
+
+  void wait_raw(jlong now) {
+    // We start with fine-grained nanosleeping until a millisecond has
+    // passed, at which point we resort to plain naked_short_sleep.
+    if (now - _start_time_ns < NANOSECS_PER_MILLISEC) {
+      os::naked_short_nanosleep(10 * (NANOUNITS / MICROUNITS));
+    } else {
+      os::naked_short_sleep(1);
+    }
+  }
+
+  void wait_blocked(JavaThread* self, jlong now) {
+    ThreadBlockInVM tbivm(self);
+    wait_raw(now);
+  }
+
+  bool state_changed() {
+    for (int i = 0; i < HandshakeState::_number_states; i++) {
+      if (_result_count[0][i] != _result_count[1][i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void reset_state() {
+    _prev_result_pos++;
+    for (int i = 0; i < HandshakeState::_number_states; i++) {
+      _result_count[current_result_pos()][i] = 0;
+    }
+  }
+
+ public:
+  HandshakeSpinYield(jlong start_time) :
+    _start_time_ns(start_time), _last_spin_start_ns(start_time),
+    _spin_time_ns(0), _result_count(), _prev_result_pos(0) {
+
+    const jlong max_spin_time_ns = 100 /* us */ * (NANOUNITS / MICROUNITS);
+    int free_cpus = os::active_processor_count() - 1;
+    _spin_time_ns = (5 /* us */ * (NANOUNITS / MICROUNITS)) * free_cpus; // zero on UP
+    _spin_time_ns = _spin_time_ns > max_spin_time_ns ? max_spin_time_ns : _spin_time_ns;
+  }
+
+  void add_result(HandshakeState::ProcessResult pr) {
+    _result_count[current_result_pos()][pr]++;
+  }
+
+  void process() {
+    jlong now = os::javaTimeNanos();
+    if (state_changed()) {
+      reset_state();
+      // We spin for x amount of time since last state change.
+      _last_spin_start_ns = now;
+      return;
+    }
+    jlong wait_target = _last_spin_start_ns + _spin_time_ns;
+    if (wait_target < now) {
+      // On UP this is always true.
+      Thread* self = Thread::current();
+      if (self->is_Java_thread()) {
+        wait_blocked((JavaThread*)self, now);
+      } else {
+        wait_raw(now);
+      }
+      _last_spin_start_ns = os::javaTimeNanos();
+    }
+    reset_state();
+  }
+};
+
 class VM_Handshake: public VM_Operation {
   const jlong _handshake_timeout;
  public:
@@ -81,7 +169,7 @@ class VM_Handshake: public VM_Operation {
 bool VM_Handshake::handshake_has_timed_out(jlong start_time) {
   // Check if handshake operation has timed out
   if (_handshake_timeout > 0) {
-    return os::elapsed_counter() >= (start_time + _handshake_timeout);
+    return os::javaTimeNanos() >= (start_time + _handshake_timeout);
   }
   return false;
 }
@@ -117,10 +205,7 @@ class VM_HandshakeOneThread: public VM_Handshake {
     VM_Handshake(op), _target(target) {}
 
   void doit() {
-    jlong start_time_ns = 0;
-    if (log_is_enabled(Info, handshake)) {
-      start_time_ns = os::javaTimeNanos();
-    }
+    jlong start_time_ns = os::javaTimeNanos();
 
     ThreadsListHandle tlh;
     if (tlh.includes(_target)) {
@@ -131,13 +216,15 @@ class VM_HandshakeOneThread: public VM_Handshake {
     }
 
     log_trace(handshake)("JavaThread " INTPTR_FORMAT " signaled, begin attempt to process by VMThtread", p2i(_target));
-    jlong timeout_start_time = os::elapsed_counter();
-    bool by_vm_thread = false;
+    HandshakeState::ProcessResult pr = HandshakeState::_no_operation;
+    HandshakeSpinYield hsy(start_time_ns);
     do {
-      if (handshake_has_timed_out(timeout_start_time)) {
+      if (handshake_has_timed_out(start_time_ns)) {
         handle_timeout();
       }
-      by_vm_thread = _target->handshake_try_process(_op);
+      pr = _target->handshake_try_process(_op);
+      hsy.add_result(pr);
+      hsy.process();
     } while (!_op->is_completed());
 
     // This pairs up with the release store in do_handshake(). It prevents future
@@ -146,7 +233,7 @@ class VM_HandshakeOneThread: public VM_Handshake {
     // by the Handshakee.
     OrderAccess::acquire();
 
-    log_handshake_info(start_time_ns, _op->name(), 1, by_vm_thread ? 1 : 0);
+    log_handshake_info(start_time_ns, _op->name(), 1, (pr == HandshakeState::_success) ? 1 : 0);
   }
 
   VMOp_Type type() const { return VMOp_HandshakeOneThread; }
@@ -159,10 +246,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
   VM_HandshakeAllThreads(HandshakeOperation* op) : VM_Handshake(op) {}
 
   void doit() {
-    jlong start_time_ns = 0;
-    if (log_is_enabled(Info, handshake)) {
-      start_time_ns = os::javaTimeNanos();
-    }
+    jlong start_time_ns = os::javaTimeNanos();
     int handshake_executed_by_vm_thread = 0;
 
     JavaThreadIteratorWithHandle jtiwh;
@@ -180,10 +264,10 @@ class VM_HandshakeAllThreads: public VM_Handshake {
     _op->add_target_count(number_of_threads_issued - 1);
 
     log_trace(handshake)("Threads signaled, begin processing blocked threads by VMThread");
-    const jlong start_time = os::elapsed_counter();
+    HandshakeSpinYield hsy(start_time_ns);
     do {
       // Check if handshake operation has timed out
-      if (handshake_has_timed_out(start_time)) {
+      if (handshake_has_timed_out(start_time_ns)) {
         handle_timeout();
       }
 
@@ -194,10 +278,13 @@ class VM_HandshakeAllThreads: public VM_Handshake {
       for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
         // A new thread on the ThreadsList will not have an operation,
         // hence it is skipped in handshake_try_process.
-        if (thr->handshake_try_process(_op)) {
+        HandshakeState::ProcessResult pr = thr->handshake_try_process(_op);
+        if (pr == HandshakeState::_success) {
           handshake_executed_by_vm_thread++;
         }
+        hsy.add_result(pr);
       }
+      hsy.process();
     } while (!_op->is_completed());
 
     // This pairs up with the release store in do_handshake(). It prevents future
@@ -257,10 +344,7 @@ bool Handshake::execute_direct(HandshakeClosure* thread_cl, JavaThread* target) 
   JavaThread* self = JavaThread::current();
   HandshakeOperation op(thread_cl, /*is_direct*/ true);
 
-  jlong start_time_ns = 0;
-  if (log_is_enabled(Info, handshake)) {
-    start_time_ns = os::javaTimeNanos();
-  }
+  jlong start_time_ns = os::javaTimeNanos();
 
   ThreadsListHandle tlh;
   if (tlh.includes(target)) {
@@ -270,14 +354,17 @@ bool Handshake::execute_direct(HandshakeClosure* thread_cl, JavaThread* target) 
     return false;
   }
 
-  bool by_handshaker = false;
+  HandshakeState::ProcessResult pr =  HandshakeState::_no_operation;
+  HandshakeSpinYield hsy(start_time_ns);
   while (!op.is_completed()) {
-    by_handshaker = target->handshake_try_process(&op);
+    HandshakeState::ProcessResult pr = target->handshake_try_process(&op);
+    hsy.add_result(pr);
     // Check for pending handshakes to avoid possible deadlocks where our
     // target is trying to handshake us.
     if (SafepointMechanism::should_block(self)) {
       ThreadBlockInVM tbivm(self);
     }
+    hsy.process();
   }
 
   // This pairs up with the release store in do_handshake(). It prevents future
@@ -286,7 +373,7 @@ bool Handshake::execute_direct(HandshakeClosure* thread_cl, JavaThread* target) 
   // by the Handshakee.
   OrderAccess::acquire();
 
-  log_handshake_info(start_time_ns, op.name(), 1, by_handshaker ? 1 : 0);
+  log_handshake_info(start_time_ns, op.name(), 1,  (pr == HandshakeState::_success) ? 1 : 0);
 
   return op.executed();
 }
@@ -393,22 +480,22 @@ bool HandshakeState::claim_handshake(bool is_direct) {
   return false;
 }
 
-bool HandshakeState::try_process(HandshakeOperation* op) {
+HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* op) {
   bool is_direct = op->is_direct();
 
   if (!has_specific_operation(is_direct)){
     // JT has already cleared its handshake
-    return false;
+    return _no_operation;
   }
 
   if (!possibly_can_process_handshake()) {
     // JT is observed in an unsafe state, it must notice the handshake itself
-    return false;
+    return _not_safe;
   }
 
   // Claim the semaphore if there still an operation to be executed.
   if (!claim_handshake(is_direct)) {
-    return false;
+    return _state_busy;
   }
 
   // Check if the handshake operation is the same as the one we meant to execute. The
@@ -416,13 +503,13 @@ bool HandshakeState::try_process(HandshakeOperation* op) {
   // by another JavaThread might be in progress.
   if (is_direct && op != _operation_direct) {
     _processing_sem.signal();
-    return false;
+    return _no_operation;
   }
 
   // If we own the semaphore at this point and while owning the semaphore
   // can observe a safe state the thread cannot possibly continue without
   // getting caught by the semaphore.
-  bool executed = false;
+  ProcessResult pr = _not_safe;
   if (can_process_handshake()) {
     guarantee(!_processing_sem.trywait(), "we should already own the semaphore");
     log_trace(handshake)("Processing handshake by %s", Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
@@ -431,11 +518,11 @@ bool HandshakeState::try_process(HandshakeOperation* op) {
     DEBUG_ONLY(_active_handshaker = NULL;)
     // Disarm after we have executed the operation.
     clear_handshake(is_direct);
-    executed = true;
+    pr = _success;
   }
 
   // Release the thread
   _processing_sem.signal();
 
-  return executed;
+  return pr;
 }

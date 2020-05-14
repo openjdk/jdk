@@ -96,7 +96,15 @@ public:
       process_self_inner();
     }
   }
-  bool try_process(HandshakeOperation* op);
+
+  enum ProcessResult {
+    _no_operation = 0,
+    _not_safe,
+    _state_busy,
+    _success,
+    _number_states
+  };
+  ProcessResult try_process(HandshakeOperation* op);
 
 #ifdef ASSERT
   Thread* _active_handshaker;
