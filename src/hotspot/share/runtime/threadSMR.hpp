@@ -81,13 +81,33 @@ class ThreadClosure;
 // remains in scope. The target JavaThread * may have logically exited,
 // but that target JavaThread * will not be deleted until it is no
 // longer protected by a ThreadsListHandle.
-
+//
+// Once a JavaThread has removed itself from the main ThreadsList it is
+// no longer visited by GC. To ensure that thread's threadObj() oop remains
+// valid while the thread is still accessible from a ThreadsListHandle we
+// maintain a special list of exiting threads:
+// - In remove() we add the exiting thread to the list (under the Threads_lock).
+// - In wait_until_not_protected() we remove it from the list (again under the
+//   Threads_lock).
+// - Universe::oops_do walks the list (at a safepoint so VMThread holds
+//   Threads_lock) and visits the _threadObj oop of each JavaThread.
 
 // SMR Support for the Threads class.
 //
 class ThreadsSMRSupport : AllStatic {
   friend class VMStructs;
   friend class SafeThreadsListPtr;  // for _nested_thread_list_max, delete_notify(), release_stable_list_wake_up() access
+
+  // Helper class for the exiting thread list
+  class Holder : public CHeapObj<mtInternal> {
+   public:
+    JavaThread* _thread;
+    Holder* _next;
+    Holder(JavaThread* thread, Holder* next) : _thread(thread), _next(next) {}
+  };
+
+  // The list of exiting threads
+  static Holder* _exiting_threads;
 
   // The coordination between ThreadsSMRSupport::release_stable_list() and
   // ThreadsSMRSupport::smr_delete() uses the delete_lock in order to
@@ -149,6 +169,12 @@ class ThreadsSMRSupport : AllStatic {
   static void remove_thread(JavaThread *thread);
   static void smr_delete(JavaThread *thread);
   static void update_tlh_stats(uint millis);
+
+  // Exiting thread list maintenance
+  static void add_exiting_thread(JavaThread* thread);
+  static void remove_exiting_thread(JavaThread* thread);
+  DEBUG_ONLY(static bool contains_exiting_thread(JavaThread* thread);)
+  static void exiting_threads_oops_do(OopClosure* f);
 
   // Logging and printing support:
   static void log_statistics();

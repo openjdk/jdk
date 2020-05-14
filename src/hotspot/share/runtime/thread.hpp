@@ -1017,6 +1017,7 @@ class JavaThread: public Thread {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class WhiteBox;
+  friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
   oop            _threadObj;                     // The Java level thread object

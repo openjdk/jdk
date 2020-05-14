@@ -41,6 +41,9 @@
 #include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
+// List of exiting threads
+ThreadsSMRSupport::Holder* ThreadsSMRSupport::_exiting_threads = NULL;
+
 // The '_cnt', '_max' and '_times" fields are enabled via
 // -XX:+EnableThreadSMRStatistics:
 
@@ -923,10 +926,14 @@ void ThreadsSMRSupport::release_stable_list_wake_up(bool is_nested) {
 }
 
 void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
+
+  ThreadsSMRSupport::add_exiting_thread(thread);
+
   if (ThreadIdTable::is_initialized()) {
     jlong tid = SharedRuntime::get_java_tid(thread);
     ThreadIdTable::remove_thread(tid);
   }
+
   ThreadsList *new_list = ThreadsList::remove_thread(ThreadsSMRSupport::get_java_thread_list(), thread);
   if (EnableThreadSMRStatistics) {
     ThreadsSMRSupport::inc_java_thread_list_alloc_cnt();
@@ -991,6 +998,7 @@ void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
         // This is the common case.
         ThreadsSMRSupport::clear_delete_notify();
         ThreadsSMRSupport::delete_lock()->unlock();
+        ThreadsSMRSupport::remove_exiting_thread(thread);
         break;
       }
       if (!has_logged_once) {
@@ -1178,5 +1186,49 @@ void ThreadsSMRSupport::print_info_elements_on(outputStream* st, ThreadsList* t_
       st->cr();
     }
     cnt++;
+  }
+}
+
+void ThreadsSMRSupport::add_exiting_thread(JavaThread* thread) {
+  assert(thread == JavaThread::current(), "invariant");
+  assert(Threads_lock->owned_by_self(), "invariant");
+  assert(!contains_exiting_thread(thread), "invariant");
+  Holder* h = new Holder(thread, _exiting_threads);
+  _exiting_threads = h;
+}
+
+void ThreadsSMRSupport::remove_exiting_thread(JavaThread* thread) {
+  assert(thread == JavaThread::current(), "invariant");
+  assert(Threads_lock->owned_by_self(), "invariant");
+  // If a thread fails to initialize fully it can be deleted immediately
+  // so we won't remove it from the ThreadsList and so never add it to the
+  // exiting thread list - so we can't assert(contains_exiting_thread(p)) here.
+
+  for (Holder* current = _exiting_threads, **prev_next = &_exiting_threads;
+       current != NULL;
+       prev_next = &current->_next, current = current->_next) {
+    if (current->_thread == thread) {
+      *prev_next = current->_next;
+      delete current;
+      break;
+    }
+  }
+}
+
+#ifdef ASSERT
+bool ThreadsSMRSupport::contains_exiting_thread(JavaThread* thread) {
+  for (Holder* current = _exiting_threads; current != NULL; current = current->_next) {
+    if (current->_thread == thread) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
+void ThreadsSMRSupport::exiting_threads_oops_do(OopClosure* f) {
+  assert_locked_or_safepoint(Threads_lock);
+  for (Holder* current = _exiting_threads; current != NULL; current = current->_next) {
+    f->do_oop((oop*) &current->_thread->_threadObj);
   }
 }
