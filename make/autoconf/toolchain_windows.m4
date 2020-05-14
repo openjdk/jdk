@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2017 2019 2013 2015 2012 2010"
+VALID_VS_VERSIONS="2019 2017 2013 2015 2012 2010"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -101,8 +101,8 @@ VS_EDITIONS_2019="BuildTools Community Professional Enterprise"
 VS_SDK_INSTALLDIR_2019=
 VS_VS_PLATFORM_NAME_2019="v142"
 VS_SDK_PLATFORM_NAME_2019=
-VS_SUPPORTED_2019=false
-VS_TOOLSET_SUPPORTED_2019=false
+VS_SUPPORTED_2019=true
+VS_TOOLSET_SUPPORTED_2019=true
 
 ################################################################################
 
