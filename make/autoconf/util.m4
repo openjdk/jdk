@@ -534,7 +534,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
           # Otherwise we believe it is a complete path. Use it as it is.
           AC_MSG_NOTICE([Will use user supplied tool "$tool_command"])
           AC_MSG_CHECKING([for $tool_command])
-          if test ! -x "$tool_command"; then
+          if test ! -x "$tool_command" && test ! -x "$tool_command.exe"; then
             AC_MSG_RESULT([not found])
             AC_MSG_ERROR([User supplied tool $1="$tool_command" does not exist or is not executable])
           fi

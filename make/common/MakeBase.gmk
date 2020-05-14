@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -465,8 +465,13 @@ endif
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
 ifeq ($(call isTargetOs, windows), true)
-  FixPath = \
+  ifeq ($(call isBuildOsEnv, windows.wsl), true)
+    FixPath = \
+      $(shell $(WSLPATH) -m $1)
+  else
+    FixPath = \
       $(shell $(CYGPATH) -m $1)
+  endif
 else
   FixPath = \
       $1
