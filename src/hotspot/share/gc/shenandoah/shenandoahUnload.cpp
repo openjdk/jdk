@@ -136,12 +136,6 @@ void ShenandoahUnload::prepare() {
   DependencyContext::cleaning_start();
 }
 
-class ShenandoahUnloadRendezvousClosure : public HandshakeClosure {
-public:
-  ShenandoahUnloadRendezvousClosure() : HandshakeClosure("ShenandoahUnloadRendezvous") {}
-  void do_thread(Thread* thread) {}
-};
-
 void ShenandoahUnload::unload() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(), "Filtered by caller");
@@ -175,7 +169,7 @@ void ShenandoahUnload::unload() {
   // Make sure stale metadata and nmethods are no longer observable
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_rendezvous);
-    ShenandoahUnloadRendezvousClosure cl;
+    ShenandoahRendezvousClosure cl;
     Handshake::execute(&cl);
   }
 

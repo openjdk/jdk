@@ -1830,11 +1830,21 @@ public:
 
 void ShenandoahHeap::op_weak_roots() {
   if (is_concurrent_weak_root_in_progress()) {
-    // Concurrent weak root processing
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots);
-    workers()->run_task(&task);
-    if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-      set_concurrent_weak_root_in_progress(false);
+    {
+      // Concurrent weak root processing
+      ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
+      ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+      workers()->run_task(&task);
+      if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+        set_concurrent_weak_root_in_progress(false);
+      }
+    }
+
+    // Perform handshake to flush out dead oops
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
+      ShenandoahRendezvousClosure cl;
+      Handshake::execute(&cl);
     }
   }
 }
@@ -2865,8 +2875,6 @@ void ShenandoahHeap::entry_weak_roots() {
   static const char* msg = "Concurrent weak roots";
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_roots);
   EventMark em("%s", msg);
-
-  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots);
 
   ShenandoahWorkerScope scope(workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
