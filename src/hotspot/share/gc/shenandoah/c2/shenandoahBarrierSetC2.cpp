@@ -483,14 +483,14 @@ const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
 
 const TypeFunc* ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type() {
   const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
-  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;   // original load address
+  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM; // original field value
+  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // original load address
 
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
 
   // create result type (range)
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
+  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM;
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
 
   return TypeFunc::make(domain, range);
