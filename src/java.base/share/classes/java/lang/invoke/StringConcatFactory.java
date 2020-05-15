@@ -1724,12 +1724,7 @@ public final class StringConcatFactory {
         private static final long INITIAL_CODER;
 
         static {
-            try {
-                MethodHandle initCoder = JLA.stringConcatHelper("initialCoder", methodType(long.class));
-                INITIAL_CODER = (long) initCoder.invoke();
-            } catch (Throwable e) {
-                throw new AssertionError(e);
-            }
+            INITIAL_CODER = JLA.stringConcatInitialCoder();
 
             PREPENDERS = new ConcurrentHashMap<>();
             MIXERS = new ConcurrentHashMap<>();

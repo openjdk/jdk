@@ -2283,6 +2283,10 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
+            public long stringConcatInitialCoder() {
+                return StringConcatHelper.initialCoder();
+            }
+
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
