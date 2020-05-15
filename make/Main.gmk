@@ -261,7 +261,7 @@ endef
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
 $(eval $(call SetupTarget, hotspot-ide-project, \
-    MAKEFILE := ide/CreateVSProject, \
+    MAKEFILE := hotspot/ide/CreateVSProject, \
     DEPS := hotspot exploded-image, \
 ))
 
