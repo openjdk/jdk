@@ -263,6 +263,7 @@ $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 $(eval $(call SetupTarget, hotspot-ide-project, \
     MAKEFILE := hotspot/ide/CreateVSProject, \
     DEPS := hotspot exploded-image, \
+    ARGS := -I$(TOPDIR)/make/hotspot, \
 ))
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
