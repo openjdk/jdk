@@ -31,18 +31,30 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
   fi
 
+  AC_MSG_CHECKING([Windows version])
+  # Additional [] needed to keep m4 from mangling shell constructs.
+  [ WINDOWS_VERSION=`$CMD /c ver.exe | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
+  AC_MSG_RESULT([$WINDOWS_VERSION])
+
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     AC_MSG_CHECKING([cygwin release])
-    CYGWIN_VERSION=`$UNAME -r`
-    AC_MSG_RESULT([$CYGWIN_VERSION])
-    WINDOWS_ENV_VENDOR='cygwin'
-    WINDOWS_ENV_VERSION="$CYGWIN_VERSION"
+    CYGWIN_RELEASE=`$UNAME -r`
+    AC_MSG_RESULT([$CYGWIN_RELEASE])
 
-    CYGWIN_VERSION_OLD=`$ECHO $CYGWIN_VERSION | $GREP -e '^1\.[0-6]'`
+    AC_MSG_CHECKING([cygwin version])
+    CYGWIN_VERSION=`$UNAME -v`
+    AC_MSG_RESULT([$CYGWIN_VERSION])
+
+    # Additional [] needed to keep m4 from mangling shell constructs.
+    [ CYGWIN_VERSION_OLD=`$ECHO $CYGWIN_RELEASE | $GREP -e '^1\.[0-6]'` ]
     if test "x$CYGWIN_VERSION_OLD" != x; then
-      AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade.])
+      AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
+
+    WINDOWS_ENV_VENDOR='cygwin'
+    WINDOWS_ENV_VERSION="$CYGWIN_RELEASE, $CYGWIN_VERSION"
+
     if test "x$CYGPATH" = x; then
       AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
     fi
@@ -59,11 +71,15 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     fi
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     AC_MSG_CHECKING([msys release])
-    MSYS_VERSION=`$UNAME -r`
+    MSYS_RELEASE=`$UNAME -r`
+    AC_MSG_RESULT([$MSYS_RELEASE])
+
+    AC_MSG_CHECKING([msys version])
+    MSYS_VERSION=`$UNAME -v`
     AC_MSG_RESULT([$MSYS_VERSION])
 
     WINDOWS_ENV_VENDOR='msys'
-    WINDOWS_ENV_VERSION="$MSYS_VERSION"
+    WINDOWS_ENV_VERSION="$MSYS_RELEASE, $MSYS_VERSION"
 
     AC_MSG_CHECKING([msys root directory as unix-style path])
     # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
@@ -72,10 +88,6 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([$MSYS_ROOT_PATH])
     WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-    AC_MSG_CHECKING([Windows version])
-    # m4 replaces [ and ] so we use @<:@ and @:>@ instead
-    WINDOWS_VERSION=`$CMD /c ver.exe | $EGREP -o '(@<:@0-9@:>@+\.)+@<:@0-9@:>@+'`
-    AC_MSG_RESULT([$WINDOWS_VERSION])
 
     AC_MSG_CHECKING([WSL kernel version])
     WSL_KERNEL_VERSION=`$UNAME -v`
@@ -89,8 +101,8 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
     AC_MSG_RESULT([$WSL_DISTRIBUTION])
 
-    WINDOWS_ENV_VENDOR='WSL'
-    WINDOWS_ENV_VERSION="$WSL_DISTRIBUTION $WSL_KERNEL_VERSION $WSL_KERNEL_RELEASE (on Windows build $WINDOWS_VERSION)"
+    WINDOWS_ENV_VENDOR='wsl'
+    WINDOWS_ENV_VERSION="$WSL_KERNEL_RELEASE, $WSL_KERNEL_VERSION ($WSL_DISTRIBUTION)"
   else
     AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys, nor wsl was detected.])
   fi
