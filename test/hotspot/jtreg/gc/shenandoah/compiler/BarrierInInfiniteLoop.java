@@ -23,28 +23,58 @@
 
 /**
  * @test
- * @bug 8237837
+ * @bug 8237837 8244721
  * @summary  Shenandoah: assert(mem == __null) failed: only one safepoint
  * @key gc
  * @requires vm.flavor == "server"
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xcomp -XX:CompileOnly=BarrierInInfiniteLoop::test -XX:CompileCommand=quiet BarrierInInfiniteLoop
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xcomp -XX:CompileOnly=BarrierInInfiniteLoop::test1
+ *                   -XX:CompileOnly=BarrierInInfiniteLoop::test2 -XX:CompileOnly=BarrierInInfiniteLoop::test3 -XX:CompileCommand=quiet BarrierInInfiniteLoop
  *
  */
 
 public class BarrierInInfiniteLoop {
     private static Object field1 = new Object();
     private static Object field2 = new Object();
+    private static int field3;
 
     public static void main(String[] args) {
-        test(false);
+        test1(false);
+        test2(false, false);
+        test3(false);
     }
 
-    private static void test(boolean flag) {
+    private static void test1(boolean flag) {
         if (flag) {
             for (;;) {
                 field1 = field2;
+            }
+        }
+    }
+
+    private static void test2(boolean flag1, boolean flag2) {
+        if (flag1) {
+            for (;;) {
+                for (;;) {
+                    if (flag2) {
+                        break;
+                    }
+                    field1 = field2;
+                }
+            }
+        }
+    }
+
+    private static void test3(boolean flag) {
+        if (flag) {
+            for (;;) {
+                for (;;) {
+                    field3 = 42;
+                    if (field1 == field2) {
+                        break;
+                    }
+                }
             }
         }
     }
