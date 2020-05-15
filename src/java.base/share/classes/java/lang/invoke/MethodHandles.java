@@ -2227,8 +2227,8 @@ public class MethodHandles {
         }
 
         /**
-         * Displays the name of the class from which lookups are to be made.
-         * followed with "/" and the name of the {@linkplain #previousLookupClass()
+         * Displays the name of the class from which lookups are to be made,
+         * followed by "/" and the name of the {@linkplain #previousLookupClass()
          * previous lookup class} if present.
          * (The name is the one reported by {@link java.lang.Class#getName() Class.getName}.)
          * If there are restrictions on the access permitted to this lookup,
