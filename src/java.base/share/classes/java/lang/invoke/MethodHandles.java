@@ -256,12 +256,12 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-        }
 
-        if (!callerModule.isNamed() && targetModule.isNamed()) {
-            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-            if (logger != null) {
-                logger.logIfOpenedForIllegalAccess(caller, targetClass);
+            if (!callerModule.isNamed() && targetModule.isNamed()) {
+                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
+                if (logger != null) {
+                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
+                }
             }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
