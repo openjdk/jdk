@@ -1178,6 +1178,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       CallProjections projs;
       call->extract_projections(&projs, false, false);
 
+#ifdef ASSERT
+      VectorSet cloned(Thread::current()->resource_area());
+#endif
       Node* lrb_clone = lrb->clone();
       phase->register_new_node(lrb_clone, projs.catchall_catchproj);
       phase->set_ctrl(lrb, projs.fallthrough_catchproj);
@@ -1206,6 +1209,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             stack.set_index(idx+1);
             assert(!u->is_CFG(), "");
             stack.push(u, 0);
+            assert(!cloned.test_set(u->_idx), "only one clone");
             Node* u_clone = u->clone();
             int nb = u_clone->replace_edge(n, n_clone);
             assert(nb > 0, "should have replaced some uses");
@@ -1233,9 +1237,33 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
                 assert(nb > 0, "should have replaced some uses");
                 replaced = true;
               } else if (!phase->is_dominator(projs.fallthrough_catchproj, c)) {
-                phase->igvn().rehash_node_delayed(u);
-                int nb = u->replace_edge(n, create_phis_on_call_return(ctrl, c, n, n_clone, projs, phase));
-                assert(nb > 0, "should have replaced some uses");
+                if (u->is_If()) {
+                  // Can't break If/Bool/Cmp chain
+                  assert(n->is_Bool(), "unexpected If shape");
+                  assert(stack.node_at(stack.size()-2)->is_Cmp(), "unexpected If shape");
+                  assert(n_clone->is_Bool(), "unexpected clone");
+                  assert(clones.at(clones.size()-2)->is_Cmp(), "unexpected clone");
+                  Node* bol_clone = n->clone();
+                  Node* cmp_clone = stack.node_at(stack.size()-2)->clone();
+                  bol_clone->set_req(1, cmp_clone);
+
+                  Node* nn = stack.node_at(stack.size()-3);
+                  Node* nn_clone = clones.at(clones.size()-3);
+                  assert(nn->Opcode() == nn_clone->Opcode(), "mismatch");
+
+                  int nb = cmp_clone->replace_edge(nn, create_phis_on_call_return(ctrl, c, nn, nn_clone, projs, phase));
+                  assert(nb > 0, "should have replaced some uses");
+
+                  phase->register_new_node(bol_clone, u->in(0));
+                  phase->register_new_node(cmp_clone, u->in(0));
+
+                  phase->igvn().replace_input_of(u, 1, bol_clone);
+
+                } else {
+                  phase->igvn().rehash_node_delayed(u);
+                  int nb = u->replace_edge(n, create_phis_on_call_return(ctrl, c, n, n_clone, projs, phase));
+                  assert(nb > 0, "should have replaced some uses");
+                }
                 replaced = true;
               }
             }
