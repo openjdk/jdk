@@ -37,6 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.StringConcatFactory;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -62,6 +63,7 @@ import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ServicesCatalog;
@@ -2049,6 +2051,7 @@ public final class System {
      * @return JNI_OK for success, JNI_ERR for failure
      */
     private static int initPhase2(boolean printToStderr, boolean printStackTrace) {
+
         try {
             bootLayer = ModuleBootstrap.boot();
         } catch (Exception | Error e) {
@@ -2065,15 +2068,23 @@ public final class System {
 
     /*
      * Invoked by VM.  Phase 3 is the final system initialization:
-     * 1. set security manager
-     * 2. set system class loader
-     * 3. set TCCL
+     * 1. eagerly initialize bootstrap method factories that might interact
+     *    negatively with custom security managers and custom class loaders
+     * 2. set security manager
+     * 3. set system class loader
+     * 4. set TCCL
      *
      * This method must be called after the module system initialization.
      * The security manager and system class loader may be a custom class from
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
+
+        // Initialize the StringConcatFactory eagerly to avoid potential
+        // bootstrap circularity issues that could be caused by a custom
+        // SecurityManager
+        Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
+
         String smProp = System.getProperty("java.security.manager");
         if (smProp != null) {
             switch (smProp) {
