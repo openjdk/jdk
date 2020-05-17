@@ -36,37 +36,67 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class DeterministicDump {
     public static void main(String[] args) throws Exception {
-        for (int c = 0; c < 2; c++) { //  oop/klass compression
-            String sign = (c == 0) ?  "+" : "-";
-            String coop = "-XX:" + sign + "UseCompressedOops";
-            String ckls = "-XX:" + sign + "UseCompressedClassPointers";
+        doTest(false);
 
-            if (!Platform.is64bit()) {
-                coop = "-showversion"; // no-op
-                ckls = "-showversion"; // no-op
-            }
-
-            for (int gc = 0; gc < 2; gc++) { // should we trigger GC during dump
-                for (int i = 0; i < 2; i++) {
-                    String metaspaceSize = "-showversion"; // no-op
-                    if (gc == 1 && i == 1) {
-                        // This will cause GC to happen after we've allocated 1MB of metaspace objects
-                        // while processing the built-in SharedClassListFile.
-                        metaspaceSize = "-XX:MetaspaceSize=1M";
-                    }
-                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                                      coop, ckls, metaspaceSize,
-                                      "-XX:SharedArchiveFile=SharedArchiveFile" + i + ".jsa",
-                                      "-Xshare:dump", "-Xlog:cds=debug");
-                    OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile" + i);
-                    CDSTestUtils.checkDump(out);
-                }
-                compare("SharedArchiveFile0.jsa", "SharedArchiveFile1.jsa");
-            }
+        if (Platform.is64bit()) {
+            // There's no oop/klass compression on 32-bit.
+            doTest(true);
         }
+    }
+
+    public static void doTest(boolean compressed) throws Exception {
+        ArrayList<String> baseArgs = new ArrayList<>();
+
+        // Use the same heap size as make/Images.gmk
+        baseArgs.add("-Xmx128M");
+
+        if (Platform.is64bit()) {
+            // These options are available only on 64-bit.
+            String sign = (compressed) ?  "+" : "-";
+            baseArgs.add("-XX:" + sign + "UseCompressedOops");
+            baseArgs.add("-XX:" + sign + "UseCompressedClassPointers");
+        }
+
+        String baseArchive = dump(baseArgs);
+
+        // (1) Dump with the same args. Should produce the same archive.
+        String baseArchive2 = dump(baseArgs);
+        compare(baseArchive, baseArchive2);
+
+
+        // (2) This will cause GC to happen after we've allocated 1MB of metaspace objects
+        // while processing the built-in SharedClassListFile.
+        String withGCArchive = dump(baseArgs, "-XX:MetaspaceSize=1M");
+        compare(baseArchive, withGCArchive);
+
+        // (3) This will cause archive to be relocated during dump time. We should
+        //     still get the same bits. (This simulates relocation that happens when
+        //     Address Space Layout Randomization prevents the archive space to
+        //     be mapped at the default location)
+        String relocatedArchive = dump(baseArgs, "-XX:+UnlockDiagnosticVMOptions", "-XX:ArchiveRelocationMode=1");
+        compare(baseArchive, relocatedArchive);
+    }
+
+    static int id = 0;
+    static String dump(ArrayList<String> args, String... more) throws Exception {
+        String logName = "SharedArchiveFile" + (id++);
+        String archiveName = logName + ".jsa";
+        args = (ArrayList<String>)args.clone();
+        args.add("-XX:SharedArchiveFile=" + archiveName);
+        args.add("-Xshare:dump");
+        args.add("-Xlog:cds=debug");
+        for (String m : more) {
+            args.add(m);
+        }
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, logName);
+        CDSTestUtils.checkDump(out);
+
+        return archiveName;
     }
 
     static void compare(String file0, String file1) throws Exception {
