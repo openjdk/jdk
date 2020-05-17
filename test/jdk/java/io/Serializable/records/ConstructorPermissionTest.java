@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ public class ConstructorPermissionTest {
                 try { new Socket("localhost", 8080); }
                 catch (IOException unexpected) { throw new AssertionError(unexpected); }
             }
-            this.x = x;
         }
     }
 
@@ -80,7 +79,6 @@ public class ConstructorPermissionTest {
         public R3 {
             if (firstDataSetCreated)
                 ProcessHandle.current();
-            this.args = args;
         }
     }
 

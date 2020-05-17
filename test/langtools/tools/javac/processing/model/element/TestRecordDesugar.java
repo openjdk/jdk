@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ public class TestRecordDesugar extends JavacTestingAbstractProcessor {
                                    name = "modulus",
                                    type = TypeKind.DOUBLE),
 
-                      @ElementInfo(modifiers = {Modifier.PUBLIC},
+                      @ElementInfo(modifiers = {Modifier.PUBLIC, Modifier.FINAL},
                                    name = "toString",
                                    type = TypeKind.DECLARED,
                                    origin = Elements.Origin.EXPLICIT),
@@ -284,7 +284,7 @@ public class TestRecordDesugar extends JavacTestingAbstractProcessor {
                                    origin = Elements.Origin.EXPLICIT),
 
                       @ElementInfo(kind = ElementKind.CONSTRUCTOR,
-                                   modifiers = {Modifier.PUBLIC},
+                                   modifiers = {},
                                    name = "<init>",
                                    type = TypeKind.VOID,
                                    origin = Elements.Origin.MANDATED),
@@ -329,7 +329,7 @@ public class TestRecordDesugar extends JavacTestingAbstractProcessor {
                                    name = "modulus",
                                    type = TypeKind.DOUBLE),
 
-                      @ElementInfo(modifiers = {Modifier.PUBLIC},
+                      @ElementInfo(modifiers = {Modifier.PUBLIC, Modifier.FINAL},
                                    name = "toString",
                                    type = TypeKind.DECLARED,
                                    origin = Elements.Origin.EXPLICIT),

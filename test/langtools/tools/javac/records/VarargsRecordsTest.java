@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ import static org.testng.Assert.*;
  */
 @Test
 public class VarargsRecordsTest {
-    record RI(int... xs) { }
-    record RII(int x, int... xs) { }
-    record RX(int[] xs) { }
+    public record RI(int... xs) { }
+    public record RII(int x, int... xs) { }
+    public record RX(int[] xs) { }
 
     RI r1 = new RI();
     RI r2 = new RI(1);

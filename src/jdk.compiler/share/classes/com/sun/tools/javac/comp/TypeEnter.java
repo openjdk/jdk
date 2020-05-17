@@ -57,7 +57,6 @@ import static com.sun.tools.javac.code.TypeTag.ERROR;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 import static com.sun.tools.javac.code.TypeTag.*;
-import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
@@ -1025,7 +1024,6 @@ public class TypeEnter implements Completer {
             List<JCTree> defsToEnter = isRecord ?
                     tree.defs.diff(alreadyEntered) : tree.defs;
             memberEnter.memberEnter(defsToEnter, env);
-            List<JCTree> defsBeforeAddingNewMembers = tree.defs;
             if (isRecord) {
                 addRecordMembersIfNeeded(tree, env);
             }
@@ -1048,7 +1046,7 @@ public class TypeEnter implements Completer {
                         new TreeCopier<JCTree>(make.at(tree.pos)).copy(rec.getOriginalAnnos());
                 JCMethodDecl getter = make.at(tree.pos).
                         MethodDef(
-                                make.Modifiers(Flags.PUBLIC | Flags.GENERATED_MEMBER, originalAnnos),
+                                make.Modifiers(PUBLIC | Flags.GENERATED_MEMBER, originalAnnos),
                           tree.sym.name,
                           /* we need to special case for the case when the user declared the type as an ident
                            * if we don't do that then we can have issues if type annotations are applied to the
@@ -1123,7 +1121,7 @@ public class TypeEnter implements Completer {
         private void addRecordMembersIfNeeded(JCClassDecl tree, Env<AttrContext> env) {
             if (lookupMethod(tree.sym, names.toString, List.nil()) == null) {
                 JCMethodDecl toString = make.
-                    MethodDef(make.Modifiers(Flags.PUBLIC | Flags.RECORD | Flags.GENERATED_MEMBER),
+                    MethodDef(make.Modifiers(Flags.PUBLIC | Flags.RECORD | Flags.FINAL | Flags.GENERATED_MEMBER),
                               names.toString,
                               make.Type(syms.stringType),
                               List.nil(),
@@ -1223,9 +1221,6 @@ public class TypeEnter implements Completer {
                     (types.supertype(owner().type).tsym == syms.enumSym)) {
                     // constructors of true enums are private
                     flags = PRIVATE | GENERATEDCONSTR;
-                } else if ((owner().flags_field & RECORD) != 0) {
-                    // record constructors are public
-                    flags = PUBLIC | GENERATEDCONSTR;
                 } else {
                     flags = (owner().flags() & AccessFlags) | GENERATEDCONSTR;
                 }
@@ -1313,21 +1308,25 @@ public class TypeEnter implements Completer {
     }
 
     class RecordConstructorHelper extends BasicConstructorHelper {
-
-        List<VarSymbol> recordFieldSymbols;
+        boolean lastIsVarargs;
         List<JCVariableDecl> recordFieldDecls;
 
-        RecordConstructorHelper(TypeSymbol owner, List<JCVariableDecl> recordFieldDecls) {
+        RecordConstructorHelper(ClassSymbol owner, List<JCVariableDecl> recordFieldDecls) {
             super(owner);
             this.recordFieldDecls = recordFieldDecls;
-            this.recordFieldSymbols = recordFieldDecls.map(vd -> vd.sym);
+            this.lastIsVarargs = owner.getRecordComponents().stream().anyMatch(rc -> rc.isVarargs());
         }
 
         @Override
         public Type constructorType() {
             if (constructorType == null) {
-                List<Type> argtypes = recordFieldSymbols.map(v -> (v.flags_field & Flags.VARARGS) != 0 ? types.elemtype(v.type) : v.type);
-                constructorType = new MethodType(argtypes, syms.voidType, List.nil(), syms.methodClass);
+                ListBuffer<Type> argtypes = new ListBuffer<>();
+                JCVariableDecl lastField = recordFieldDecls.last();
+                for (JCVariableDecl field : recordFieldDecls) {
+                    argtypes.add(field == lastField && lastIsVarargs ? types.elemtype(field.sym.type) : field.sym.type);
+                }
+
+                constructorType = new MethodType(argtypes.toList(), syms.voidType, List.nil(), syms.methodClass);
             }
             return constructorType;
         }
@@ -1340,11 +1339,14 @@ public class TypeEnter implements Completer {
              */
             csym.flags_field |= Flags.COMPACT_RECORD_CONSTRUCTOR | GENERATEDCONSTR;
             ListBuffer<VarSymbol> params = new ListBuffer<>();
-            for (VarSymbol p : recordFieldSymbols) {
-                params.add(new VarSymbol(GENERATED_MEMBER | PARAMETER | RECORD | ((p.flags_field & Flags.VARARGS) != 0 ? Flags.VARARGS : 0), p.name, p.type, csym));
+            JCVariableDecl lastField = recordFieldDecls.last();
+            for (JCVariableDecl field : recordFieldDecls) {
+                params.add(new VarSymbol(
+                        GENERATED_MEMBER | PARAMETER | RECORD | (field == lastField && lastIsVarargs ? Flags.VARARGS : 0),
+                        field.name, field.sym.type, csym));
             }
             csym.params = params.toList();
-            csym.flags_field |= RECORD | PUBLIC;
+            csym.flags_field |= RECORD;
             return csym;
         }
 

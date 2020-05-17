@@ -1,5 +1,5 @@
-T5081785.java:29:9: compiler.err.enums.must.be.static
-T5081785.java:12:13: compiler.err.enums.must.be.static
-T5081785.java:19:27: compiler.err.enums.must.be.static
-T5081785.java:24:31: compiler.err.enums.must.be.static
+T5081785.java:29:9: compiler.err.static.declaration.not.allowed.in.inner.classes
+T5081785.java:12:13: compiler.err.static.declaration.not.allowed.in.inner.classes
+T5081785.java:19:27: compiler.err.static.declaration.not.allowed.in.inner.classes
+T5081785.java:24:31: compiler.err.static.declaration.not.allowed.in.inner.classes
 4 errors
