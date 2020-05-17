@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.net.ProtocolFamily;
 import java.net.ServerSocket;
 import java.net.SocketOption;
 import java.net.SocketAddress;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A selectable channel for stream-oriented listening sockets.
@@ -111,6 +113,34 @@ public abstract class ServerSocketChannel
      */
     public static ServerSocketChannel open() throws IOException {
         return SelectorProvider.provider().openServerSocketChannel();
+    }
+
+    /**
+     * Opens a server-socket channel.The {@code family} parameter specifies the
+     * {@link ProtocolFamily protocol family} of the channel's socket.
+     *
+     * <p> The new channel is created by invoking the {@link
+     * java.nio.channels.spi.SelectorProvider#openServerSocketChannel(ProtocolFamily)
+     * openServerSocketChannel(ProtocolFamily)} method of the system-wide default {@link
+     * java.nio.channels.spi.SelectorProvider} object. </p>
+     *
+     * @param   family
+     *          The protocol family
+     *
+     * @return  A new socket channel
+     *
+     * @throws  UnsupportedOperationException
+     *          If the specified protocol family is not supported. For example,
+     *          suppose the parameter is specified as {@link
+     *          java.net.StandardProtocolFamily#INET6 StandardProtocolFamily.INET6}
+     *          but IPv6 is not enabled on the platform.
+     * @throws  IOException
+     *          If an I/O error occurs
+     *
+     * @since 15
+     */
+    public static ServerSocketChannel open(ProtocolFamily family) throws IOException {
+        return SelectorProvider.provider().openServerSocketChannel(requireNonNull(family));
     }
 
     /**

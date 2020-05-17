@@ -28,10 +28,12 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
+import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
@@ -61,6 +63,9 @@ class ServerSocketChannelImpl
 {
     // Used to make native close and configure calls
     private static final NativeDispatcher nd = new SocketDispatcher();
+
+    // The protocol family of the socket
+    private final ProtocolFamily family;
 
     // Our file descriptor
     private final FileDescriptor fd;
@@ -95,10 +100,26 @@ class ServerSocketChannelImpl
 
     // -- End of fields protected by stateLock
 
-
     ServerSocketChannelImpl(SelectorProvider sp) {
+        this(sp, Net.isIPv6Available()
+                ? StandardProtocolFamily.INET6
+                : StandardProtocolFamily.INET);
+    }
+
+    ServerSocketChannelImpl(SelectorProvider sp, ProtocolFamily family) {
         super(sp);
-        this.fd = Net.serverSocket(true);
+        Objects.requireNonNull(family, "'family' is null");
+
+        if ((family != StandardProtocolFamily.INET) &&
+                (family != StandardProtocolFamily.INET6)) {
+            throw new UnsupportedOperationException("Protocol family not supported");
+        }
+        if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
+            throw new UnsupportedOperationException("IPv6 not available");
+        }
+
+        this.family = family;
+        this.fd = Net.serverSocket(family, true);
         this.fdVal = IOUtil.fdVal(fd);
     }
 
@@ -106,8 +127,13 @@ class ServerSocketChannelImpl
         throws IOException
     {
         super(sp);
+
+        this.family = Net.isIPv6Available()
+                ? StandardProtocolFamily.INET6
+                : StandardProtocolFamily.INET;
         this.fd =  fd;
         this.fdVal = IOUtil.fdVal(fd);
+
         if (bound) {
             synchronized (stateLock) {
                 localAddress = Net.localAddress(fd);
@@ -210,14 +236,17 @@ class ServerSocketChannelImpl
             ensureOpen();
             if (localAddress != null)
                 throw new AlreadyBoundException();
-            InetSocketAddress isa = (local == null)
-                                    ? new InetSocketAddress(0)
-                                    : Net.checkAddress(local);
+            InetSocketAddress isa;
+            if (local == null) {
+                isa = new InetSocketAddress(Net.anyLocalAddress(family), 0);
+            } else {
+                isa = Net.checkAddress(local, family);
+            }
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkListen(isa.getPort());
             NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
-            Net.bind(fd, isa.getAddress(), isa.getPort());
+            Net.bind(family, fd, isa.getAddress(), isa.getPort());
             Net.listen(fd, backlog < 1 ? 50 : backlog);
             localAddress = Net.localAddress(fd);
         }
@@ -358,7 +387,7 @@ class ServerSocketChannelImpl
             if (sm != null) {
                 sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
             }
-            return new SocketChannelImpl(provider(), newfd, isa);
+            return new SocketChannelImpl(provider(), family, newfd, isa);
         } catch (Exception e) {
             nd.close(newfd);
             throw e;

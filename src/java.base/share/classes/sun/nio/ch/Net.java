@@ -249,6 +249,57 @@ public class Net {
                                      port);
     }
 
+    private static final InetAddress anyLocalInet4Address;
+    private static final InetAddress anyLocalInet6Address;
+    private static final InetAddress inet4LoopbackAddress;
+    private static final InetAddress inet6LoopbackAddress;
+    static {
+        try {
+            anyLocalInet4Address = inet4FromInt(0);
+            assert anyLocalInet4Address instanceof Inet4Address
+                    && anyLocalInet4Address.isAnyLocalAddress();
+
+            anyLocalInet6Address = InetAddress.getByAddress(new byte[16]);
+            assert anyLocalInet6Address instanceof Inet6Address
+                    && anyLocalInet6Address.isAnyLocalAddress();
+
+            inet4LoopbackAddress = inet4FromInt(0x7f000001);
+            assert inet4LoopbackAddress instanceof Inet4Address
+                    && inet4LoopbackAddress.isLoopbackAddress();
+
+            byte[] bytes = new byte[16];
+            bytes[15] = 0x01;
+            inet6LoopbackAddress = InetAddress.getByAddress(bytes);
+            assert inet6LoopbackAddress instanceof Inet6Address
+                    && inet6LoopbackAddress.isLoopbackAddress();
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    static InetAddress inet4LoopbackAddress() {
+        return inet4LoopbackAddress;
+    }
+
+    static InetAddress inet6LoopbackAddress() {
+        return inet6LoopbackAddress;
+    }
+
+    /**
+     * Returns the wildcard address that corresponds to the given protocol family.
+     *
+     * @see InetAddress#isAnyLocalAddress()
+     */
+    static InetAddress anyLocalAddress(ProtocolFamily family) {
+        if (family == StandardProtocolFamily.INET) {
+            return anyLocalInet4Address;
+        } else if (family == StandardProtocolFamily.INET6) {
+            return anyLocalInet6Address;
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
     /**
      * Returns any IPv4 address of the given network interface, or
      * null if the interface does not have any IPv4 addresses.
@@ -467,7 +518,13 @@ public class Net {
     }
 
     static FileDescriptor serverSocket(boolean stream) {
-        return IOUtil.newFD(socket0(isIPv6Available(), stream, true, fastLoopback));
+        return serverSocket(UNSPEC, stream);
+    }
+
+    static FileDescriptor serverSocket(ProtocolFamily family, boolean stream) {
+        boolean preferIPv6 = isIPv6Available() &&
+            (family != StandardProtocolFamily.INET);
+        return IOUtil.newFD(socket0(preferIPv6, stream, true, fastLoopback));
     }
 
     // Due to oddities SO_REUSEADDR on windows reuse is ignored

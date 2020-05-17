@@ -36,6 +36,7 @@ import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 
@@ -315,4 +316,51 @@ public abstract class SelectorProvider {
         return null;
     }
 
+    /**
+     * Opens a socket channel.
+     *
+     * @implSpec The default implementation of this method first checks that
+     * the given protocol {@code family} is not {@code null},
+     * then throws {@link UnsupportedOperationException}.
+     *
+     * @param   family
+     *          The protocol family
+     *
+     * @return  The new channel
+     *
+     * @throws  UnsupportedOperationException
+     *          If the specified protocol family is not supported
+     * @throws  IOException
+     *          If an I/O error occurs
+     *
+     * @since 15
+     */
+    public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
+        Objects.requireNonNull(family);
+        throw new UnsupportedOperationException("Protocol family not supported");
+    }
+
+    /**
+     * Opens a server-socket channel.
+     *
+     * @implSpec The default implementation of this method first checks that
+     * the given protocol {@code family} is not {@code null},
+     * then throws {@link UnsupportedOperationException}.
+     *
+     * @param   family
+     *          The protocol family
+     *
+     * @return  The new channel
+     *
+     * @throws  UnsupportedOperationException
+     *          If the specified protocol family is not supported
+     * @throws  IOException
+     *          If an I/O error occurs
+     *
+     * @since 15
+     */
+    public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
+        Objects.requireNonNull(family);
+        throw new UnsupportedOperationException("Protocol family not supported");
+    }
 }
