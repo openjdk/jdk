@@ -254,8 +254,8 @@ public class UnionPathIterator extends LocPathIterator
    *
    * @param stream Input stream to read from
    *
-   * @throws java.io.IOException
-   * @throws javax.xml.transform.TransformerException
+   * @throws java.io.IOException in case of any IO related exceptions
+   * @throws ClassNotFoundException if Class of the serialized object cannot be found
    */
   private void readObject(java.io.ObjectInputStream stream)
           throws java.io.IOException, ClassNotFoundException
