@@ -28,11 +28,13 @@ package sun.security.x509;
 import java.io.*;
 import java.security.interfaces.RSAKey;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.EdDSAParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.*;
 import java.security.*;
+import java.security.interfaces.*;
 
 import sun.security.rsa.PSSParameters;
 import sun.security.util.*;
@@ -199,7 +201,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
             } else {
                 bytes.putNull();
             }*/
-            if (algid.equals(RSASSA_PSS_oid)) {
+            if (algid.equals(RSASSA_PSS_oid) || algid.equals(ed448_oid)
+                    || algid.equals(ed25519_oid)) {
                 // RFC 4055 3.3: when an RSASSA-PSS key does not require
                 // parameter validation, field is absent.
             } else {
@@ -588,6 +591,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if (name.equalsIgnoreCase("SHA512withECDSA")) {
             return AlgorithmId.sha512WithECDSA_oid;
         }
+        if (name.equalsIgnoreCase("ED25519")) {
+            return AlgorithmId.ed25519_oid;
+        }
+        if (name.equalsIgnoreCase("ED448")) {
+            return AlgorithmId.ed448_oid;
+        }
 
         return oidTable().get(name.toUpperCase(Locale.ENGLISH));
     }
@@ -902,6 +911,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier pbeWithSHA1AndRC2_40_oid =
             ObjectIdentifier.of("1.2.840.113549.1.12.1.6");
 
+    public static final ObjectIdentifier ed25519_oid =
+        ObjectIdentifier.of("1.3.101.112");
+    public static final ObjectIdentifier ed448_oid =
+        ObjectIdentifier.of("1.3.101.113");
+
     static {
         nameTable = new HashMap<>();
         nameTable.put(MD5_oid, "MD5");
@@ -921,6 +935,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(DSA_OIW_oid, "DSA");
         nameTable.put(EC_oid, "EC");
         nameTable.put(ECDH_oid, "ECDH");
+        nameTable.put(ed25519_oid, "ED25519");
+        nameTable.put(ed448_oid, "ED448");
 
         nameTable.put(AES_oid, "AES");
 
@@ -1044,6 +1060,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     + "withRSA";
             case "RSASSA-PSS":
                 return "RSASSA-PSS";
+            case "EDDSA":
+                return edAlgFromKey(k);
             default:
                 return null;
         }
@@ -1094,6 +1112,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
             return PSSParamsHolder.PSS_384_ID;
         } else if (spec == PSSParamsHolder.PSS_512_SPEC) {
             return PSSParamsHolder.PSS_512_ID;
+        } else if (spec instanceof EdDSAParameterSpec) {
+            return AlgorithmId.get(algName);
         } else {
             try {
                 AlgorithmParameters result =
@@ -1128,6 +1148,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
         } else {
             return null;
         }
+    }
+
+    private static String edAlgFromKey(PrivateKey k) {
+        if (k instanceof EdECPrivateKey) {
+            EdECPrivateKey edKey = (EdECPrivateKey) k;
+            return edKey.getParams().getName();
+        }
+        return "EdDSA";
     }
 
     // Values from SP800-57 part 1 rev 4 tables 2 and 3

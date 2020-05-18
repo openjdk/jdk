@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public final class SecurityProviderConstants {
     public static final int DEF_RSASSA_PSS_KEY_SIZE;
     public static final int DEF_DH_KEY_SIZE;
     public static final int DEF_EC_KEY_SIZE;
+    public static final int DEF_ED_KEY_SIZE;
 
     private static final String KEY_LENGTH_PROP =
         "jdk.security.defaultKeySize";
@@ -70,6 +71,7 @@ public final class SecurityProviderConstants {
         int rsaSsaPssKeySize = rsaKeySize; // default to same value as RSA
         int dhKeySize = 2048;
         int ecKeySize = 256;
+        int edKeySize = 255;
 
         if (keyLengthStr != null) {
             try {
@@ -106,6 +108,8 @@ public final class SecurityProviderConstants {
                         dhKeySize = value;
                     } else if (algoName.equals("EC")) {
                         ecKeySize = value;
+                    } else if (algoName.equalsIgnoreCase("EdDSA")) {
+                        edKeySize = value;
                     } else {
                         if (debug != null) {
                             debug.println("Ignoring unsupported algo in " +
@@ -132,5 +136,6 @@ public final class SecurityProviderConstants {
         DEF_RSASSA_PSS_KEY_SIZE = rsaSsaPssKeySize;
         DEF_DH_KEY_SIZE = dhKeySize;
         DEF_EC_KEY_SIZE = ecKeySize;
+        DEF_ED_KEY_SIZE = edKeySize;
     }
 }

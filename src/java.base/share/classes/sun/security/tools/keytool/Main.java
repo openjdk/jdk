@@ -1870,6 +1870,12 @@ public final class Main {
                     keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
                 } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+                } else if ("EdDSA".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_ED_KEY_SIZE;
+                } else if ("Ed25519".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 255;
+                } else if ("Ed448".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 448;
                 }
             } else {
                 if ("EC".equalsIgnoreCase(keyAlgName)) {

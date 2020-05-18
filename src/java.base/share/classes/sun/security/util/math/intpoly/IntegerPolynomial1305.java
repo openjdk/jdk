@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,8 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
         }
     }
 
-    private void modReduceIn(long[] limbs, int index, long x) {
+    @Override
+    protected void reduceIn(long[] limbs, long x, int index) {
         // this only works when BITS_PER_LIMB * NUM_LIMBS = POWER exactly
         long reducedValue = (x * SUBTRAHEND);
         limbs[index - NUM_LIMBS] += reducedValue;
@@ -166,13 +167,13 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
     protected void finalCarryReduceLast(long[] limbs) {
         long carry = limbs[numLimbs - 1] >> bitsPerLimb;
         limbs[numLimbs - 1] -= carry << bitsPerLimb;
-        modReduceIn(limbs, numLimbs, carry);
+        reduceIn(limbs, carry, numLimbs);
     }
 
     protected final void modReduce(long[] limbs, int start, int end) {
 
         for (int i = start; i < end; i++) {
-            modReduceIn(limbs, i, limbs[i]);
+            reduceIn(limbs, limbs[i], i);
             limbs[i] = 0;
         }
     }
@@ -203,7 +204,7 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
         long carry4 = carryValue(new4);
         limbs[4] = new4 - (carry4 << BITS_PER_LIMB);
 
-        modReduceIn(limbs, 5, carry4);
+        reduceIn(limbs, carry4, 5);
         carry(limbs);
     }
 

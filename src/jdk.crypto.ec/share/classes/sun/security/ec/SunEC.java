@@ -37,6 +37,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import sun.security.ec.ed.EdDSAAlgorithmParameters;
+import sun.security.ec.ed.EdDSAKeyFactory;
+import sun.security.ec.ed.EdDSAKeyPairGenerator;
+import sun.security.ec.ed.EdDSASignature;
 import sun.security.util.CurveDB;
 import sun.security.util.NamedCurve;
 
@@ -116,6 +121,15 @@ public final class SunEC extends Provider {
             String algo = getAlgorithm();
             try {
                 if (type.equals("Signature")) {
+
+                    if (algo.equalsIgnoreCase("EdDSA")) {
+                        return new EdDSASignature();
+                    } else if (algo.equalsIgnoreCase("Ed25519")) {
+                        return new EdDSASignature.Ed25519();
+                    } else if (algo.equalsIgnoreCase("Ed448")) {
+                        return new EdDSASignature.Ed448();
+                    }
+
                     boolean inP1363 = algo.endsWith("inP1363Format");
                     if (inP1363) {
                         algo = algo.substring(0, algo.length() - 13);
@@ -148,6 +162,12 @@ public final class SunEC extends Provider {
                         return new XDHKeyFactory.X25519();
                     } else if (algo.equals("X448")) {
                         return new XDHKeyFactory.X448();
+                    } else if (algo.equalsIgnoreCase("EdDSA")) {
+                        return new EdDSAKeyFactory();
+                    } else if (algo.equalsIgnoreCase("Ed25519")) {
+                        return new EdDSAKeyFactory.Ed25519();
+                    } else if (algo.equalsIgnoreCase("Ed448")) {
+                        return new EdDSAKeyFactory.Ed448();
                     }
                 } else  if (type.equals("AlgorithmParameters")) {
                     if (algo.equals("EC")) {
@@ -162,6 +182,12 @@ public final class SunEC extends Provider {
                         return new XDHKeyPairGenerator.X25519();
                     } else if (algo.equals("X448")) {
                         return new XDHKeyPairGenerator.X448();
+                    } else if (algo.equalsIgnoreCase("EdDSA")) {
+                        return new EdDSAKeyPairGenerator();
+                    } else if (algo.equalsIgnoreCase("Ed25519")) {
+                        return new EdDSAKeyPairGenerator.Ed25519();
+                    } else if (algo.equalsIgnoreCase("Ed448")) {
+                        return new EdDSAKeyPairGenerator.Ed448();
                     }
                 } else  if (type.equals("KeyAgreement")) {
                     if (algo.equals("ECDH")) {
@@ -184,8 +210,7 @@ public final class SunEC extends Provider {
     }
 
     public SunEC() {
-        super("SunEC", PROVIDER_VER,
-            "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
+        super("SunEC", PROVIDER_VER, "Sun Elliptic Curve provider");
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 putEntries();
@@ -255,6 +280,7 @@ public final class SunEC extends Provider {
             apAttrs));
 
         putXDHEntries();
+        putEdDSAEntries();
 
         /*
          * Signature engines
@@ -348,6 +374,41 @@ public final class SunEC extends Provider {
         putService(new ProviderService(this, "KeyAgreement",
             "X448", "sun.security.ec.XDHKeyAgreement.X448",
             new String[]{"1.3.101.111", "OID.1.3.101.111"}, ATTRS));
+
+    }
+
+    private void putEdDSAEntries() {
+
+        HashMap<String, String> ATTRS = new HashMap<>(1);
+        ATTRS.put("ImplementedIn", "Software");
+
+        /* EdDSA does not require native implementation */
+        putService(new ProviderService(this, "KeyFactory",
+            "EdDSA", "sun.security.ec.ed.EdDSAKeyFactory", null, ATTRS));
+        putService(new ProviderService(this, "KeyFactory",
+            "Ed25519", "sun.security.ec.ed.EdDSAKeyFactory.Ed25519",
+            new String[]{"1.3.101.112", "OID.1.3.101.112"}, ATTRS));
+        putService(new ProviderService(this, "KeyFactory",
+            "Ed448", "sun.security.ec.ed.EdDSAKeyFactory.Ed448",
+            new String[]{"1.3.101.113", "OID.1.3.101.113"}, ATTRS));
+
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "EdDSA", "sun.security.ec.ed.EdDSAKeyPairGenerator", null, ATTRS));
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "Ed25519", "sun.security.ec.ed.EdDSAKeyPairGenerator.Ed25519",
+            new String[]{"1.3.101.112", "OID.1.3.101.112"}, ATTRS));
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "Ed448", "sun.security.ec.ed.EdDSAKeyPairGenerator.Ed448",
+            new String[]{"1.3.101.113", "OID.1.3.101.113"}, ATTRS));
+
+        putService(new ProviderService(this, "Signature",
+            "EdDSA", "sun.security.ec.ed.EdDSASignature", null, ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "Ed25519", "sun.security.ec.ed.EdDSASignature.Ed25519",
+            new String[]{"1.3.101.112", "OID.1.3.101.112"}, ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "Ed448", "sun.security.ec.ed.EdDSASignature.Ed448",
+            new String[]{"1.3.101.113", "OID.1.3.101.113"}, ATTRS));
 
     }
 }

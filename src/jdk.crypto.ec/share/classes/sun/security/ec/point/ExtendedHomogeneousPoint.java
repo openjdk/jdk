@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,26 @@ package sun.security.ec.point;
 
 import sun.security.util.math.*;
 
+import java.math.BigInteger;
+
 /**
- * Elliptic curve point in projective coordinates (X, Y, Z) where
- * an affine point (x, y) is represented using any (X, Y, Z) s.t.
- * x = X/Z and y = Y/Z.
+ * Elliptic curve point in extended homogeneous coordinates (X, Y, T, Z) where
+ * an affine point (x, y) is represented using any (X, Y, T, Z) s.t.
+ * x = X/Z, y = Y/Z, and x*y = T/Z.
  */
-public abstract class ProjectivePoint
+public abstract class ExtendedHomogeneousPoint
     <T extends IntegerModuloP> implements Point {
 
     protected final T x;
     protected final T y;
+    protected final T t;
     protected final T z;
 
-    protected ProjectivePoint(T x, T y, T z) {
+    protected ExtendedHomogeneousPoint(T x, T y, T t, T z) {
 
         this.x = x;
         this.y = y;
+        this.t = t;
         this.z = z;
     }
 
@@ -49,15 +53,14 @@ public abstract class ProjectivePoint
     public IntegerFieldModuloP getField() {
         return this.x.getField();
     }
-
     @Override
     public Immutable fixed() {
-        return new Immutable(x.fixed(), y.fixed(), z.fixed());
+        return new Immutable(x.fixed(), y.fixed(), t.fixed(), z.fixed());
     }
 
     @Override
     public Mutable mutable() {
-        return new Mutable(x.mutable(), y.mutable(), z.mutable());
+        return new Mutable(x.mutable(), y.mutable(), t.mutable(), z.mutable());
     }
 
     public T getX() {
@@ -66,6 +69,10 @@ public abstract class ProjectivePoint
 
     public T getY() {
         return y;
+    }
+
+    public T getT() {
+        return t;
     }
 
     public T getZ() {
@@ -79,13 +86,13 @@ public abstract class ProjectivePoint
 
     private static
     <T1 extends IntegerModuloP, T2 extends IntegerModuloP>
-    boolean affineEquals(ProjectivePoint<T1> p1,
-                         ProjectivePoint<T2> p2) {
-        MutableIntegerModuloP x1 = p1.getX().mutable().setProduct(p2.getZ());
-        MutableIntegerModuloP x2 = p2.getX().mutable().setProduct(p1.getZ());
-        if (!x1.asBigInteger().equals(x2.asBigInteger())) {
-            return false;
-        }
+    boolean affineEquals(ExtendedHomogeneousPoint<T1> p1,
+                         ExtendedHomogeneousPoint<T2> p2) {
+       MutableIntegerModuloP x1 = p1.getX().mutable().setProduct(p2.getZ());
+       MutableIntegerModuloP x2 = p2.getX().mutable().setProduct(p1.getZ());
+       if (!x1.asBigInteger().equals(x2.asBigInteger())) {
+           return false;
+       }
 
         MutableIntegerModuloP y1 = p1.getY().mutable().setProduct(p2.getZ());
         MutableIntegerModuloP y2 = p2.getY().mutable().setProduct(p1.getZ());
@@ -97,60 +104,57 @@ public abstract class ProjectivePoint
     }
 
     public boolean affineEquals(Point p) {
-        if (p instanceof ProjectivePoint) {
+        if (p instanceof ExtendedHomogeneousPoint) {
             @SuppressWarnings("unchecked")
-            ProjectivePoint<IntegerModuloP> pp =
-                (ProjectivePoint<IntegerModuloP>) p;
-            return affineEquals(this, pp);
+            ExtendedHomogeneousPoint<IntegerModuloP> ehp =
+                (ExtendedHomogeneousPoint<IntegerModuloP>) p;
+            return affineEquals(this, ehp);
         }
 
         return asAffine().equals(p.asAffine());
     }
 
     public static class Immutable
-        extends ProjectivePoint<ImmutableIntegerModuloP>
+        extends ExtendedHomogeneousPoint<ImmutableIntegerModuloP>
         implements ImmutablePoint {
 
         public Immutable(ImmutableIntegerModuloP x,
                          ImmutableIntegerModuloP y,
+                         ImmutableIntegerModuloP t,
                          ImmutableIntegerModuloP z) {
-            super(x, y, z);
+            super(x, y, t, z);
         }
     }
 
     public static class Mutable
-        extends ProjectivePoint<MutableIntegerModuloP>
+        extends ExtendedHomogeneousPoint<MutableIntegerModuloP>
         implements MutablePoint {
 
         public Mutable(MutableIntegerModuloP x,
                        MutableIntegerModuloP y,
+                       MutableIntegerModuloP t,
                        MutableIntegerModuloP z) {
-            super(x, y, z);
-        }
-
-        public Mutable(IntegerFieldModuloP field) {
-            super(field.get0().mutable(),
-                field.get0().mutable(),
-                field.get0().mutable());
+            super(x, y, t, z);
         }
 
         @Override
         public Mutable conditionalSet(Point p, int set) {
-            if (!(p instanceof ProjectivePoint)) {
+            if (!(p instanceof ExtendedHomogeneousPoint)) {
                 throw new RuntimeException("Incompatible point");
             }
             @SuppressWarnings("unchecked")
-            ProjectivePoint<IntegerModuloP> pp =
-                (ProjectivePoint<IntegerModuloP>) p;
-            return conditionalSet(pp, set);
+            ExtendedHomogeneousPoint<IntegerModuloP> ehp =
+                (ExtendedHomogeneousPoint<IntegerModuloP>) p;
+            return conditionalSet(ehp, set);
         }
 
         private <T extends IntegerModuloP>
-        Mutable conditionalSet(ProjectivePoint<T> pp, int set) {
+        Mutable conditionalSet(ExtendedHomogeneousPoint<T> ehp, int set) {
 
-            x.conditionalSet(pp.x, set);
-            y.conditionalSet(pp.y, set);
-            z.conditionalSet(pp.z, set);
+            x.conditionalSet(ehp.x, set);
+            y.conditionalSet(ehp.y, set);
+            t.conditionalSet(ehp.t, set);
+            z.conditionalSet(ehp.z, set);
 
             return this;
         }
@@ -159,6 +163,7 @@ public abstract class ProjectivePoint
         public Mutable setValue(AffinePoint p) {
             x.setValue(p.getX());
             y.setValue(p.getY());
+            t.setValue(p.getX()).setProduct(p.getY());
             z.setValue(p.getX().getField().get1());
 
             return this;
@@ -166,25 +171,24 @@ public abstract class ProjectivePoint
 
         @Override
         public Mutable setValue(Point p) {
-            if (!(p instanceof ProjectivePoint)) {
-                throw new RuntimeException("Incompatible point");
-            }
+
             @SuppressWarnings("unchecked")
-            ProjectivePoint<IntegerModuloP> pp =
-                (ProjectivePoint<IntegerModuloP>) p;
-            return setValue(pp);
+            ExtendedHomogeneousPoint<IntegerModuloP> ehp =
+                (ExtendedHomogeneousPoint<IntegerModuloP>) p;
+
+            return setValue(ehp);
         }
 
         private <T extends IntegerModuloP>
-        Mutable setValue(ProjectivePoint<T> pp) {
+        Mutable setValue(ExtendedHomogeneousPoint<T> ehp) {
 
-            x.setValue(pp.x);
-            y.setValue(pp.y);
-            z.setValue(pp.z);
+            x.setValue(ehp.x);
+            y.setValue(ehp.y);
+            t.setValue(ehp.t);
+            z.setValue(ehp.z);
 
             return this;
         }
-
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
 package jdk.test.lib;
 
 import java.math.BigInteger;
+import java.security.spec.EdECPoint;
 
 /**
- * Utility class containing conversions between strings, arrays, and numeric
- * values.
+ * Utility class containing conversions between strings, arrays, numeric
+ * values, and other types.
  */
 
 public class Convert {
@@ -79,6 +80,36 @@ public class Convert {
             result = result.add(BigInteger.valueOf(curVal).shiftLeft(8 * i));
         }
         return result;
+    }
+
+    private static EdECPoint byteArrayToEdPoint(byte[] arr) {
+        byte msb = arr[arr.length - 1];
+        boolean xOdd = (msb & 0x80) != 0;
+        arr[arr.length - 1] &= (byte) 0x7F;
+        reverse(arr);
+        BigInteger y = new BigInteger(1, arr);
+        return new EdECPoint(xOdd, y);
+    }
+
+    public static EdECPoint hexStringToEdPoint(String str) {
+        return byteArrayToEdPoint(hexStringToByteArray(str));
+    }
+
+    private static void swap(byte[] arr, int i, int j) {
+        byte tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
+
+    private static void reverse(byte [] arr) {
+        int i = 0;
+        int j = arr.length - 1;
+
+        while (i < j) {
+            swap(arr, i, j);
+            i++;
+            j--;
+        }
     }
 }
 

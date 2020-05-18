@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,11 @@ public class SignatureBench extends CryptoBase {
 
 
     private String getKeyPairGeneratorName() {
-        String tail = algorithm.substring(algorithm.lastIndexOf("with") + 4);
+        int withIndex = algorithm.lastIndexOf("with");
+        if (withIndex < 0) {
+            return algorithm;
+        }
+        String tail = algorithm.substring(withIndex + 4);
         return "ECDSA".equals(tail) ? "EC" : tail;
     }
 
@@ -118,6 +122,16 @@ public class SignatureBench extends CryptoBase {
         private String algorithm;
 
         @Param({"160", "224", "256"})
+        private int keyLength;
+
+    }
+
+    public static class EdDSA extends SignatureBench {
+
+        @Param({"EdDSA"})
+        private String algorithm;
+
+        @Param({"255", "448"})
         private int keyLength;
 
     }

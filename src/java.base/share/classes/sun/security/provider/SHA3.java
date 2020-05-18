@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,14 +61,16 @@ abstract class SHA3 extends DigestBase {
         0x8000000000008080L, 0x80000001L, 0x8000000080008008L,
     };
 
+    private final byte suffix;
     private byte[] state = new byte[WIDTH];
     private long[] lanes = new long[DM*DM];
 
     /**
      * Creates a new SHA-3 object.
      */
-    SHA3(String name, int digestLength) {
-        super(name, digestLength, (WIDTH - (2 * digestLength)));
+    SHA3(String name, int digestLength, byte suffix, int c) {
+        super(name, digestLength, (WIDTH - c));
+        this.suffix = suffix;
     }
 
     /**
@@ -88,7 +90,7 @@ abstract class SHA3 extends DigestBase {
      */
     void implDigest(byte[] out, int ofs) {
         int numOfPadding =
-            setPaddingBytes(buffer, (int)(bytesProcessed % buffer.length));
+            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % buffer.length));
         if (numOfPadding < 1) {
             throw new ProviderException("Incorrect pad size: " + numOfPadding);
         }
@@ -112,13 +114,13 @@ abstract class SHA3 extends DigestBase {
      * pad10*1 algorithm (section 5.1) and the 2-bit suffix "01" required
      * for SHA-3 hash (section 6.1).
      */
-    private static int setPaddingBytes(byte[] in, int len) {
+    private static int setPaddingBytes(byte suffix, byte[] in, int len) {
         if (len != in.length) {
             // erase leftover values
             Arrays.fill(in, len, in.length, (byte)0);
             // directly store the padding bytes into the input
             // as the specified buffer is allocated w/ size = rateR
-            in[len] |= (byte) 0x06;
+            in[len] |= suffix;
             in[in.length - 1] |= (byte) 0x80;
         }
         return (in.length - len);
@@ -268,7 +270,7 @@ abstract class SHA3 extends DigestBase {
      */
     public static final class SHA224 extends SHA3 {
         public SHA224() {
-            super("SHA3-224", 28);
+            super("SHA3-224", 28, (byte)0x06, 56);
         }
     }
 
@@ -277,7 +279,7 @@ abstract class SHA3 extends DigestBase {
      */
     public static final class SHA256 extends SHA3 {
         public SHA256() {
-            super("SHA3-256", 32);
+            super("SHA3-256", 32, (byte)0x06, 64);
         }
     }
 
@@ -286,7 +288,7 @@ abstract class SHA3 extends DigestBase {
      */
     public static final class SHA384 extends SHA3 {
         public SHA384() {
-            super("SHA3-384", 48);
+            super("SHA3-384", 48, (byte)0x06, 96);
         }
     }
 
@@ -295,7 +297,7 @@ abstract class SHA3 extends DigestBase {
      */
     public static final class SHA512 extends SHA3 {
         public SHA512() {
-            super("SHA3-512", 64);
+            super("SHA3-512", 64, (byte)0x06, 128);
         }
     }
 }
