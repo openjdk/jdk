@@ -103,12 +103,12 @@ public final class MinimumSizeDPIVariation {
             throws Exception {
         if (!Platform.isOSX()) {
             for (String dpi : List.of("1.5", "1.75", "2", "2.5")) {
-                runPocess(dpi, comp, w, h);
+                runProcess(dpi, comp, w, h);
             }
         }
     }
 
-    private static void runPocess(String dpi, String comp, int w, int h)
+    private static void runProcess(String dpi, String comp, int w, int h)
             throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-Dsun.java2d.uiScale=" + dpi,
