@@ -140,6 +140,14 @@ public class AquaSpinnerUI extends SpinnerUI {
 
     protected void installListeners() {
         spinner.addPropertyChangeListener(getPropertyChangeListener());
+        JComponent editor = spinner.getEditor();
+        if (editor != null && editor instanceof JSpinner.DefaultEditor) {
+            JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
+            if (tf != null) {
+                tf.addFocusListener(getNextButtonHandler());
+                tf.addFocusListener(getPreviousButtonHandler());
+            }
+        }
     }
 
     protected void uninstallListeners() {
@@ -326,14 +334,16 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class ArrowButtonHandler extends AbstractAction implements MouseListener {
+    private static class ArrowButtonHandler extends AbstractAction implements FocusListener, MouseListener {
 
         final javax.swing.Timer autoRepeatTimer;
         final boolean isNext;
         JSpinner spinner = null;
+        JButton arrowButton = null;
 
         ArrowButtonHandler(final String name, final boolean isNext) {
             super(name);
+
             this.isNext = isNext;
             autoRepeatTimer = new javax.swing.Timer(60, this);
             autoRepeatTimer.setInitialDelay(300);
@@ -352,27 +362,36 @@ public class AquaSpinnerUI extends SpinnerUI {
             if (!(e.getSource() instanceof javax.swing.Timer)) {
                 // Most likely resulting from being in ActionMap.
                 spinner = eventToSpinner(e);
+                if (e.getSource() instanceof JButton) {
+                    arrowButton = (JButton)e.getSource();
+                }
+            } else {
+                if (arrowButton != null && !arrowButton.getModel().isPressed()
+                    && autoRepeatTimer.isRunning()) {
+                    autoRepeatTimer.stop();
+                    spinner = null;
+                    arrowButton = null;
+                }
             }
 
-            if (spinner == null) {
-                return;
-            }
+            if (spinner != null) {
 
-            try {
-                final int calendarField = getCalendarField(spinner);
-                spinner.commitEdit();
-                if (calendarField != -1) {
-                    ((SpinnerDateModel) spinner.getModel()).setCalendarField(calendarField);
+                try {
+                    final int calendarField = getCalendarField(spinner);
+                    spinner.commitEdit();
+                    if (calendarField != -1) {
+                        ((SpinnerDateModel) spinner.getModel()).setCalendarField(calendarField);
+                    }
+                    final Object value = (isNext) ? spinner.getNextValue() : spinner.getPreviousValue();
+                    if (value != null) {
+                        spinner.setValue(value);
+                        select(spinner);
+                    }
+                } catch (final IllegalArgumentException iae) {
+                    UIManager.getLookAndFeel().provideErrorFeedback(spinner);
+                } catch (final ParseException pe) {
+                    UIManager.getLookAndFeel().provideErrorFeedback(spinner);
                 }
-                final Object value = (isNext) ? spinner.getNextValue() : spinner.getPreviousValue();
-                if (value != null) {
-                    spinner.setValue(value);
-                    select(spinner);
-                }
-            } catch (final IllegalArgumentException iae) {
-                UIManager.getLookAndFeel().provideErrorFeedback(spinner);
-            } catch (final ParseException pe) {
-                UIManager.getLookAndFeel().provideErrorFeedback(spinner);
             }
         }
 
@@ -381,6 +400,9 @@ public class AquaSpinnerUI extends SpinnerUI {
          * associated with the value that is being incremented.
          */
         private void select(final JSpinner spinnerComponent) {
+            if (spinnerComponent == null) {
+                return;
+            }
             final JComponent editor = spinnerComponent.getEditor();
             if (!(editor instanceof JSpinner.DateEditor)) {
                 return;
@@ -487,6 +509,7 @@ public class AquaSpinnerUI extends SpinnerUI {
         @Override
         public void mouseReleased(final MouseEvent e) {
             autoRepeatTimer.stop();
+            arrowButton = null;
             spinner = null;
         }
 
@@ -531,6 +554,23 @@ public class AquaSpinnerUI extends SpinnerUI {
 
             if (child != null && SwingUtilities.isDescendingFrom(child, spinner)) {
                 child.requestFocus();
+            }
+        }
+
+        public void focusGained(FocusEvent e) {
+        }
+
+        public void focusLost(FocusEvent e) {
+            if (spinner == eventToSpinner(e)) {
+                if (autoRepeatTimer.isRunning()) {
+                    autoRepeatTimer.stop();
+                }
+                spinner = null;
+                if (arrowButton != null) {
+                    ButtonModel model = arrowButton.getModel();
+                    model.setPressed(false);
+                    arrowButton = null;
+                }
             }
         }
     }
@@ -726,6 +766,24 @@ public class AquaSpinnerUI extends SpinnerUI {
                     final JComponent newEditor = (JComponent) e.getNewValue();
                     ui.replaceEditor(oldEditor, newEditor);
                     ui.updateEnabledState();
+                    if (oldEditor instanceof JSpinner.DefaultEditor) {
+                        JTextField tf = ((JSpinner.DefaultEditor)oldEditor).getTextField();
+                        if (tf != null) {
+                            tf.removeFocusListener(getNextButtonHandler());
+                            tf.removeFocusListener(getPreviousButtonHandler());
+                        }
+                    }
+                    if (newEditor instanceof JSpinner.DefaultEditor) {
+                        JTextField tf = ((JSpinner.DefaultEditor)newEditor).getTextField();
+                        if (tf != null) {
+                            if (tf.getFont() instanceof UIResource) {
+                                Font font = spinner.getFont();
+                                tf.setFont(font == null ? null : new FontUIResource(font));
+                            }
+                            tf.addFocusListener(getNextButtonHandler());
+                            tf.addFocusListener(getPreviousButtonHandler());
+                        }
+                    }
                 } else if ("componentOrientation".equals(propertyName)) {
                     ComponentOrientation o
                             = (ComponentOrientation) e.getNewValue();
