@@ -83,17 +83,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             params -> "",
             null);
 
-    public static final BundlerParamInfo<String> MAC_INSTALL_DIR =
-            new StandardBundlerParam<>(
-            "mac-install-dir",
-            String.class,
-             params -> {
-                 String dir = INSTALL_DIR.fetchFrom(params);
-                 return (dir != null) ? dir : "/Applications";
-             },
-            (s, p) -> s
-    );
-
     public static final BundlerParamInfo<String> INSTALLER_NAME =
             new StandardBundlerParam<> (
             "mac.installerName",
@@ -110,6 +99,19 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 }
             },
             (s, p) -> s);
+
+    protected static String getInstallDir(
+            Map<String, ? super Object>  params) {
+        String returnValue = INSTALL_DIR.fetchFrom(params);
+        if (returnValue == null) {
+            if (StandardBundlerParam.isRuntimeInstaller(params)) {
+                returnValue = "/Library/Java/JavaVirtualMachines";
+            } else {
+               returnValue = "/Applications";
+            }
+        }
+        return returnValue;
+    }
 
     protected void validateAppImageAndBundeler(
             Map<String, ? super Object> params) throws ConfigException {

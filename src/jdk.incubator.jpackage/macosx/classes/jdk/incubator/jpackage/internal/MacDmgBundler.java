@@ -68,9 +68,9 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         File appImageDir = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
         try {
             appImageDir.mkdirs();
+            File appLocation = prepareAppBundle(params);
 
-            if (prepareAppBundle(params) != null &&
-                    prepareConfigFiles(params)) {
+            if (appLocation != null && prepareConfigFiles(params)) {
                 File configScript = getConfig_Script(params);
                 if (configScript.exists()) {
                     Log.verbose(MessageFormat.format(
@@ -79,7 +79,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     IOUtils.run("bash", configScript);
                 }
 
-                return buildDMG(params, outdir);
+                return buildDMG(params, appLocation, outdir);
             }
             return null;
         } catch (IOException ex) {
@@ -117,8 +117,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
 
-        data.put("DEPLOY_INSTALL_LOCATION", MAC_INSTALL_DIR.fetchFrom(params));
-        data.put("DEPLOY_INSTALL_NAME", MAC_INSTALL_DIR.fetchFrom(params));
+        data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
@@ -253,9 +252,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         return null;
     }
 
-    private File buildDMG(
-            Map<String, ? super Object> params, File outdir)
-            throws IOException {
+    private File buildDMG( Map<String, ? super Object> params,
+            File appLocation, File outdir) throws IOException {
         File imagesRoot = IMAGES_ROOT.fetchFrom(params);
         if (!imagesRoot.exists()) imagesRoot.mkdirs();
 
@@ -269,6 +267,24 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 StandardBundlerParam.getPredefinedAppImage(params);
         if (predefinedImage != null) {
             srcFolder = predefinedImage;
+        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            Path newRoot = Files.createTempDirectory(
+                TEMP_ROOT.fetchFrom(params).toPath(), "root-");
+
+            // first, is this already a runtime with
+            // <runtime>/Contents/Home - if so we need the Home dir
+            Path original = appLocation.toPath();
+            Path home = original.resolve("Contents/Home");
+            Path source = (Files.exists(home)) ? home : original;
+
+            // Then we need to put back the <NAME>/Content/Home
+            Path root = newRoot.resolve(
+                    MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
+            Path dest = root.resolve("Contents/Home");
+
+            IOUtils.copyRecursive(source, dest);
+
+            srcFolder = newRoot.toFile();
         }
 
         Log.verbose(MessageFormat.format(I18N.getString(

@@ -176,10 +176,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         Map<String, String> data = new HashMap<>();
 
-        Path appLocation = Path.of(MAC_INSTALL_DIR.fetchFrom(params),
+        Path appLocation = Path.of(getInstallDir(params),
                          APP_NAME.fetchFrom(params) + ".app", "Contents", "app");
 
-        data.put("INSTALL_LOCATION", MAC_INSTALL_DIR.fetchFrom(params));
+        data.put("INSTALL_LOCATION", getInstallDir(params));
         data.put("APP_LOCATION", appLocation.toString());
 
         createResource(TEMPLATE_PREINSTALL_SCRIPT, params)
@@ -406,7 +406,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--root",
                     root,
                     "--install-location",
-                    MAC_INSTALL_DIR.fetchFrom(params),
+                    getInstallDir(params),
                     "--analyze",
                     cpl.getAbsolutePath());
 
@@ -421,7 +421,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--root",
                     root,
                     "--install-location",
-                    MAC_INSTALL_DIR.fetchFrom(params),
+                    getInstallDir(params),
                     "--component-plist",
                     cpl.getAbsolutePath(),
                     "--scripts",
