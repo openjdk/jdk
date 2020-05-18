@@ -55,6 +55,8 @@ public class VMDeprecatedOptions {
         {"BiasedLockingBulkRevokeThreshold",    "40"},
         {"BiasedLockingDecayTime",              "25000"},
         {"UseOptoBiasInlining",                 "true"},
+        {"InitialBootClassLoaderMetaspaceSize", "2200000"},
+        {"UseLargePagesInMetaspace",            "true"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},

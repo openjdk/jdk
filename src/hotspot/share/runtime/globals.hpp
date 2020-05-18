@@ -178,7 +178,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Fail large pages individual allocation")                         \
                                                                             \
   product(bool, UseLargePagesInMetaspace, false,                            \
-          "Use large page memory in metaspace. "                            \
+          "(Deprecated) Use large page memory in metaspace. "               \
           "Only used if UseLargePages is enabled.")                         \
                                                                             \
   product(bool, UseNUMA, false,                                             \
@@ -895,7 +895,7 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
-          "Initial size of the boot class loader data metaspace")           \
+          "(Deprecated) Initial size of the boot class loader data metaspace") \
           range(30*K, max_uintx/BytesPerWord)                               \
           constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
