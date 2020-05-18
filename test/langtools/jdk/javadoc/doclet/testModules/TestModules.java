@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
- *      8184205 8219060 8223378 8234746 8239804
+ *      8184205 8219060 8223378 8234746 8239804 8239816
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -633,8 +633,12 @@ public class TestModules extends JavadocTester {
                     lang.String)"><code>testMethod(String)</code></a>.""",
                 """
                     Package Link: <a href="testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.""",
-                "<dt>Since:</dt>\n"
-                + "<dd>JDK 9</dd>",
+                """
+                    </div>
+                    <dl class="notes">""",
+                """
+                    <dt>Since:</dt>
+                    <dd>JDK 9</dd>""",
                 """
                     <dt>See Also:</dt>
                     <dd>"Test see tag",\s
@@ -646,10 +650,12 @@ public class TestModules extends JavadocTester {
                 """
                     <dt>Module Tag:</dt>
                     <dd>Just a simple module tag.</dd>""",
-                "<dt>Version:</dt>\n"
-                + "<dd>1.0</dd>",
-                "<dt>Author:</dt>\n"
-                + "<dd>Alice</dd>");
+                """
+                    <dt>Version:</dt>
+                    <dd>1.0</dd>""",
+                """
+                    <dt>Author:</dt>
+                    <dd>Alice</dd>""");
         checkOutput("moduletags/testpkgmdltags/TestClassInModuleTags.html", false,
                 """
                     <dt>Module Tag:</dt>
@@ -1222,8 +1228,9 @@ public class TestModules extends JavadocTester {
                     <div class="deprecation-comment">This module is deprecated using just the javadoc tag.</div>
                     """);
         checkOutput("moduletags/module-summary.html", found,
-                "<p>@Deprecated\n"
-                + "</p>",
+                """
+                    <p>@Deprecated
+                    </p>""",
                 """
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>""");
     }
