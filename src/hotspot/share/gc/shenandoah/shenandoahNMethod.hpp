@@ -51,7 +51,7 @@ public:
 
   inline nmethod* nm() const;
   inline ShenandoahReentrantLock* lock();
-  void oops_do(OopClosure* oops, bool fix_relocations = false);
+  inline void oops_do(OopClosure* oops, bool fix_relocations = false);
   // Update oops when the nmethod is re-registered
   void update();
 
@@ -67,6 +67,7 @@ public:
   static inline ShenandoahReentrantLock* lock_for_nmethod(nmethod* nm);
 
   static void heal_nmethod(nmethod* nm);
+  static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data);
   static inline void disarm_nmethod(nmethod* nm);
 
   static inline ShenandoahNMethod* gc_data(nmethod* nm);

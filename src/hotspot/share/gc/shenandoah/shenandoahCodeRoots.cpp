@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -272,7 +273,8 @@ public:
 
     // Heal oops and disarm
     if (_bs->is_armed(nm)) {
-      ShenandoahNMethod::heal_nmethod(nm);
+      ShenandoahEvacOOMScope oom_evac_scope;
+      ShenandoahNMethod::heal_nmethod_metadata(nm_data);
       _bs->disarm(nm);
     }
 

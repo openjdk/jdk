@@ -110,24 +110,6 @@ void ShenandoahNMethod::update() {
   assert_same_oops();
 }
 
-void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
-  for (int c = 0; c < _oops_count; c ++) {
-    oops->do_oop(_oops[c]);
-  }
-
-  oop* const begin = _nm->oops_begin();
-  oop* const end = _nm->oops_end();
-  for (oop* p = begin; p < end; p++) {
-    if (*p != Universe::non_oop_word()) {
-      oops->do_oop(p);
-    }
-  }
-
-  if (fix_relocations && _has_non_immed_oops) {
-    _nm->fix_oop_relocations();
-  }
-}
-
 void ShenandoahNMethod::detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops, bool& has_non_immed_oops) {
   has_non_immed_oops = false;
   // Find all oops relocations
@@ -215,8 +197,7 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     }
   } else if (heap->is_concurrent_weak_root_in_progress()) {
     ShenandoahEvacOOMScope evac_scope;
-    ShenandoahEvacuateUpdateRootsClosure<> cl;
-    data->oops_do(&cl, true /*fix relocation*/);
+    heal_nmethod_metadata(data);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be
