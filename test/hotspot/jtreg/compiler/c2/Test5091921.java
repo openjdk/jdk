@@ -27,7 +27,7 @@
  * @bug 5091921
  * @summary Sign flip issues in loop optimizer
  *
- * @run main/othervm -Xcomp -XX:MaxInlineSize=1
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:MaxInlineSize=1 -XX:C1MaxInlineSize=1
  *    -XX:CompileCommand=compileonly,compiler.c2.Test5091921::*
  *    compiler.c2.Test5091921
  */

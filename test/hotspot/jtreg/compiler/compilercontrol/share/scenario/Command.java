@@ -33,8 +33,8 @@ import java.util.Arrays;
 public enum Command {
     COMPILEONLY("compileonly", ".*", "-Xbatch"),
     EXCLUDE("exclude", "", "-Xbatch"),
-    INLINE("inline", ".*", "-Xbatch", "-XX:InlineSmallCode=4000"),
-    DONTINLINE("dontinline", "", "-Xbatch", "-XX:InlineSmallCode=4000"),
+    INLINE("inline", ".*", "-Xbatch", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:InlineSmallCode=4000"),
+    DONTINLINE("dontinline", "", "-Xbatch", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:InlineSmallCode=4000"),
     LOG("log", "", "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+LogCompilation", "-XX:LogFile=" + LogProcessor.LOG_FILE),
     PRINT("print", ""),

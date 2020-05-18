@@ -278,6 +278,13 @@ void CompilerConfig::set_tiered_flags() {
     }
 #endif // INCLUDE_AOT
   }
+
+  // Reduce stack usage due to inlining of methods which require much stack.
+  // (High tier compiler can inline better based on profiling information.)
+  if (FLAG_IS_DEFAULT(C1InlineStackLimit) &&
+      TieredStopAtLevel == CompLevel_full_optimization && !CompilationModeFlag::quick_only()) {
+    FLAG_SET_DEFAULT(C1InlineStackLimit, 5);
+  }
 }
 
 #endif // TIERED

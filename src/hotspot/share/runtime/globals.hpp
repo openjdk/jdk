@@ -1455,34 +1455,9 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  product(intx, MaxInlineLevel, 15,                                         \
-          "maximum number of nested calls that are inlined")                \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MaxRecursiveInlineLevel, 1,                                 \
-          "maximum number of nested recursive calls that are inlined")      \
-          range(0, max_jint)                                                \
-                                                                            \
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
           "(using CompileCommand or marked w/ @ForceInline)")               \
-          range(0, max_jint)                                                \
-                                                                            \
-  product_pd(intx, InlineSmallCode,                                         \
-          "Only inline already compiled methods if their code size is "     \
-          "less than this")                                                 \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MaxInlineSize, 35,                                          \
-          "The maximum bytecode size of a method to be inlined")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product_pd(intx, FreqInlineSize,                                          \
-          "The maximum bytecode size of a frequent method to be inlined")   \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MaxTrivialSize, 6,                                          \
-          "The maximum bytecode size of a trivial method to be inlined")    \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, MinInliningThreshold, 250,                                  \

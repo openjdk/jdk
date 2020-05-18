@@ -52,7 +52,6 @@ define_pd_global(intx, CompileThreshold,             0);
 
 define_pd_global(intx,   OnStackReplacePercentage,   0);
 define_pd_global(bool,   ResizeTLAB,                 false);
-define_pd_global(intx,   FreqInlineSize,             0);
 define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
 define_pd_global(bool,   InlineClassNatives,         true);
 define_pd_global(bool,   InlineUnsafeOps,            true);

@@ -26,7 +26,7 @@
  * @bug 6792161
  * @summary assert("No dead instructions after post-alloc")
  *
- * @run main/othervm/timeout=600 -Xcomp -XX:-TieredCompilation -XX:MaxInlineSize=120 compiler.c2.Test6792161
+ * @run main/othervm/timeout=600 -Xcomp -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:MaxInlineSize=120 compiler.c2.Test6792161
  */
 
 package compiler.c2;

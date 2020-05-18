@@ -685,6 +685,35 @@
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
+  product(intx, MaxInlineLevel, 15,                                         \
+          "maximum number of nested calls that are inlined by high tier "   \
+          "compiler")                                                       \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, MaxRecursiveInlineLevel, 1,                                 \
+          "maximum number of nested recursive calls that are inlined by "   \
+          "high tier compiler")                                             \
+          range(0, max_jint)                                                \
+                                                                            \
+  product_pd(intx, InlineSmallCode,                                         \
+          "Only inline already compiled methods if their code size is "     \
+          "less than this")                                                 \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, MaxInlineSize, 35,                                          \
+          "The maximum bytecode size of a method to be inlined by high "    \
+          "tier compiler")                                                  \
+          range(0, max_jint)                                                \
+                                                                            \
+  product_pd(intx, FreqInlineSize,                                          \
+          "The maximum bytecode size of a frequent method to be inlined")   \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, MaxTrivialSize, 6,                                          \
+          "The maximum bytecode size of a trivial method to be inlined by " \
+          "high tier compiler")                                             \
+          range(0, max_jint)                                                \
+                                                                            \
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \

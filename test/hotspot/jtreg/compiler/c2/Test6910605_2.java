@@ -27,14 +27,14 @@
  * @summary C2: NullPointerException/ClassCaseException is thrown when C2 with DeoptimizeALot is used
  *
  * @run main/othervm -Xmx128m -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
- *      -XX:+DoEscapeAnalysis -Xbatch -XX:InlineSmallCode=2000
+ *      -XX:+DoEscapeAnalysis -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:InlineSmallCode=2000
  *      compiler.c2.Test6910605_2
  */
 
 package compiler.c2;
 
 /*
- * Added InlineSmallCode=2000 to guaranty inlining of StringBuilder::append() to allow scalar replace StringBuilder object.
+ * Added InlineSmallCode=2000 to guarantee inlining of StringBuilder::append() to allow scalar replace StringBuilder object.
  *
  * original test: gc/gctests/StringGC
  */
