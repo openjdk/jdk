@@ -898,7 +898,8 @@ void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   PRINT_REG(rdi, regs[8]);
   PRINT_REG(rsi, regs[9]);
   PRINT_REG(rbp, regs[10]);
-  PRINT_REG(rsp, regs[11]);
+  // rsp is actually not stored by pusha(), compute the old rsp from regs (rsp after pusha): regs + 16 = old rsp
+  PRINT_REG(rsp, (intptr_t)(&regs[16]));
   PRINT_REG(r8 , regs[7]);
   PRINT_REG(r9 , regs[6]);
   PRINT_REG(r10, regs[5]);
@@ -908,8 +909,8 @@ void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   PRINT_REG(r14, regs[1]);
   PRINT_REG(r15, regs[0]);
 #undef PRINT_REG
-  // Print some words near top of staack.
-  int64_t* rsp = (int64_t*) regs[11];
+  // Print some words near the top of the stack.
+  int64_t* rsp = &regs[16];
   int64_t* dump_sp = rsp;
   for (int col1 = 0; col1 < 8; col1++) {
     tty->print("(rsp+0x%03x) 0x%016lx: ", (int)((intptr_t)dump_sp - (intptr_t)rsp), (intptr_t)dump_sp);

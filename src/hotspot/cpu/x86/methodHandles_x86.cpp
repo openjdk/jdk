@@ -507,7 +507,17 @@ void trace_method_handle_stub(const char* adaptername,
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
+#ifdef AMD64
+      assert(RegisterImpl::number_of_registers == 16, "sanity");
+      if (r == rsp) {
+        // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
+        tty->print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
+      } else {
+        tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+      }
+#else
       tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+#endif
       if ((i + 1) % 4 == 0) {
         tty->cr();
       } else {
