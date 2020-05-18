@@ -850,7 +850,7 @@ javax/swing/JTree/6263446/bug6263446.java 8213125 macosx-all
 javax/swing/JTree/8003400/Test8003400.java 8197560 macosx-all,linux-all
 javax/swing/ToolTipManager/Test6256140.java 8233560 macosx-all
 javax/swing/text/View/8014863/bug8014863.java 8233561 macosx-all
-javax/swing/text/StyledEditorKit/4506788/bug4506788.java 8233561 macosx-all
+javax/swing/text/StyledEditorKit/4506788/bug4506788.java 8233562 macosx-all
 javax/swing/text/JTextComponent/6361367/bug6361367.java 8233569 macosx-all
 javax/swing/text/html/HTMLEditorKit/5043626/bug5043626.java 233570 macosx-all
 javax/swing/ProgressMonitor/ProgressMonitorEscapeKeyPress.java 8233635 macosx-all
