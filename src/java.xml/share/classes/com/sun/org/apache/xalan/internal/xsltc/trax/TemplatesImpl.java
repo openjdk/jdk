@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -68,7 +68,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author G. Todd Millerj
  * @author Jochen Cordes <Jochen.Cordes@t-online.de>
  * @author Santiago Pericas-Geertsen
- * @LastModified: Nov 2017
+ * @LastModified: May 2020
  */
 public final class TemplatesImpl implements Templates, Serializable {
     static final long serialVersionUID = 673094361519270707L;
@@ -295,7 +295,7 @@ public final class TemplatesImpl implements Templates, Serializable {
      *  then we want it to get serialized
      */
     private void writeObject(ObjectOutputStream os)
-        throws IOException, ClassNotFoundException {
+        throws IOException {
         if (_auxClasses != null) {
             //throw with the same message as when Hashtable was used for compatibility.
             throw new NotSerializableException(

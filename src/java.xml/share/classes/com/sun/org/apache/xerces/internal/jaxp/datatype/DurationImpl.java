@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -98,7 +98,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  * @author Kohsuke Kawaguchi
  * @author Joseph Fialli
  * @see XMLGregorianCalendar#add(Duration)
- * @LastModified: June 2018
+ * @LastModified: May 2020
  */
 class DurationImpl
         extends Duration
@@ -1857,7 +1857,7 @@ class DurationImpl
      *      An object that encapsulates the string
      *      returned by <code>this.toString()</code>.
      */
-    private Object writeReplace() throws IOException {
+    private Object writeReplace() {
         return new DurationStream(this.toString());
     }
 
