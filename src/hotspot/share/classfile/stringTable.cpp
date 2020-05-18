@@ -95,7 +95,7 @@ static uint64_t _alt_hash_seed = 0;
 
 uintx hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
-    AltHashing::halfsiphash_64(_alt_hash_seed, s, len) :
+    AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
 }
 

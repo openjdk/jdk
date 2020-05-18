@@ -116,6 +116,12 @@ static void halfsiphash_init64(uint32_t v[4], uint64_t seed) {
   v[1] ^= 0xee;
 }
 
+uint32_t halfsiphash_finish32(uint32_t v[4], int rounds) {
+  v[2] ^= 0xff;
+  halfsiphash_rounds(v, rounds);
+  return (v[1] ^ v[3]);
+}
+
 static uint64_t halfsiphash_finish64(uint32_t v[4], int rounds) {
   uint64_t rv;
   v[2] ^= 0xee;
@@ -127,14 +133,14 @@ static uint64_t halfsiphash_finish64(uint32_t v[4], int rounds) {
   return rv;
 }
 
-// HalfSipHash-2-4 (64-bit output) for Symbols
-uint64_t AltHashing::halfsiphash_64(uint64_t seed, const int8_t* data, int len) {
+// HalfSipHash-2-4 (32-bit output) for Symbols
+uint32_t AltHashing::halfsiphash_32(uint64_t seed, const uint8_t* data, int len) {
   uint32_t v[4];
   uint32_t newdata;
   int off = 0;
   int count = len;
 
-  halfsiphash_init64(v, seed);
+  halfsiphash_init32(v, seed);
 
   // body
   while (count >= 4) {
@@ -171,17 +177,17 @@ uint64_t AltHashing::halfsiphash_64(uint64_t seed, const int8_t* data, int len) 
   halfsiphash_adddata(v, newdata, 2);
 
   // finalization
-  return halfsiphash_finish64(v, 4);
+  return halfsiphash_finish32(v, 4);
 }
 
-// HalfSipHash-2-4 (64-bit output) for Strings
-uint64_t AltHashing::halfsiphash_64(uint64_t seed, const uint16_t* data, int len) {
+// HalfSipHash-2-4 (32-bit output) for Strings
+uint32_t AltHashing::halfsiphash_32(uint64_t seed, const uint16_t* data, int len) {
   uint32_t v[4];
   uint32_t newdata;
   int off = 0;
   int count = len;
 
-  halfsiphash_init64(v, seed);
+  halfsiphash_init32(v, seed);
 
   // body
   while (count >= 2) {
@@ -202,7 +208,7 @@ uint64_t AltHashing::halfsiphash_64(uint64_t seed, const uint16_t* data, int len
   halfsiphash_adddata(v, newdata, 2);
 
   // finalization
-  return halfsiphash_finish64(v, 4);
+  return halfsiphash_finish32(v, 4);
 }
 
 // HalfSipHash-2-4 (64-bit output) for integers (used to create seed)

@@ -43,8 +43,8 @@ class AltHashing : AllStatic {
   static uint64_t compute_seed();
 
   // For Symbols
-  static uint64_t halfsiphash_64(uint64_t seed, const int8_t* data, int len);
+  static uint32_t halfsiphash_32(uint64_t seed, const uint8_t* data, int len);
   // For Strings
-  static uint64_t halfsiphash_64(uint64_t seed, const uint16_t* data, int len);
+  static uint32_t halfsiphash_32(uint64_t seed, const uint16_t* data, int len);
 };
 #endif // SHARE_CLASSFILE_ALTHASHING_HPP

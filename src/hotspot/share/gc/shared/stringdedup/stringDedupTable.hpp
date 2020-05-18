@@ -39,16 +39,15 @@ class StringDedupUnlinkOrOopsDoClosure;
 class StringDedupEntry : public CHeapObj<mtGC> {
 private:
   StringDedupEntry* _next;
-  uint64_t          _hash;
+  unsigned int      _hash;
+  bool              _latin1;
   typeArrayOop      _obj;
-
-  static const uint64_t java_hash_mask = ((uint64_t)1 << 32) - 1;
-  static const uint64_t java_latin1_mask = (uint64_t)1 << 63;
 
 public:
   StringDedupEntry() :
     _next(NULL),
     _hash(0),
+    _latin1(false),
     _obj(NULL) {
   }
 
@@ -64,27 +63,20 @@ public:
     _next = next;
   }
 
-  unsigned int java_hash() {
-    return (unsigned int)(_hash & java_hash_mask);
-  }
-
-  bool java_hash_latin1() {
-    return (_hash & java_latin1_mask) != 0;
-  }
-
-  void set_java_hash(unsigned int hash, bool latin1) {
-    _hash = hash;
-    if (latin1) {
-      _hash |= java_latin1_mask;
-    }
-  }
-
-  uint64_t alt_hash() {
+  unsigned int hash() {
     return _hash;
   }
 
-  void set_alt_hash(uint64_t hash) {
+  void set_hash(unsigned int hash) {
     _hash = hash;
+  }
+
+  bool latin1() {
+    return _latin1;
+  }
+
+  void set_latin1(bool latin1) {
+    _latin1 = latin1;
   }
 
   typeArrayOop obj() {
@@ -138,7 +130,7 @@ private:
   // The hash seed also dictates which hash function to use. A
   // zero hash seed means we will use the Java compatible hash
   // function (which doesn't use a seed), and a non-zero hash
-  // seed means we use the alternate and better hash function.
+  // seed means we use the murmur3 hash function.
   uint64_t                        _hash_seed;
 
   // Constants governing table resize/rehash/cache.
@@ -170,12 +162,12 @@ private:
   }
 
   // Returns the hash bucket index for the given hash code.
-  size_t hash_to_index(uint64_t hash) {
+  size_t hash_to_index(unsigned int hash) {
     return (size_t)hash & (_size - 1);
   }
 
   // Adds a new table entry to the given hash bucket.
-  void add(typeArrayOop value, bool latin1, uint64_t hash, StringDedupEntry** list);
+  void add(typeArrayOop value, bool latin1, unsigned int hash, StringDedupEntry** list);
 
   // Removes the given table entry from the table.
   void remove(StringDedupEntry** pentry, uint worker_id);
@@ -185,15 +177,15 @@ private:
 
   // Returns an existing character array in the given hash bucket, or NULL
   // if no matching character array exists.
-  typeArrayOop lookup(typeArrayOop value, bool latin1, uint64_t hash,
+  typeArrayOop lookup(typeArrayOop value, bool latin1, unsigned int hash,
                       StringDedupEntry** list, uintx &count);
 
   // Returns an existing character array in the table, or inserts a new
   // table entry if no matching character array exists.
-  typeArrayOop lookup_or_add_inner(typeArrayOop value, bool latin1, uint64_t hash);
+  typeArrayOop lookup_or_add_inner(typeArrayOop value, bool latin1, unsigned int hash);
 
   // Thread safe lookup or add of table entry
-  static typeArrayOop lookup_or_add(typeArrayOop value, bool latin1, uint64_t hash) {
+  static typeArrayOop lookup_or_add(typeArrayOop value, bool latin1, unsigned int hash) {
     // Protect the table from concurrent access. Also note that this lock
     // acts as a fence for _table, which could have been replaced by a new
     // instance if the table was resized or rehashed.
@@ -209,8 +201,7 @@ private:
 
   // Computes the hash code for the given character array, using the
   // currently active hash function and hash seed.
-  static unsigned int java_hash_code(typeArrayOop value, bool latin1);
-  static uint64_t alt_hash_code(typeArrayOop value);
+  static unsigned int hash_code(typeArrayOop value, bool latin1);
 
   static uintx unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl,
                                  size_t partition_begin,

@@ -30,44 +30,44 @@ class AltHashingTest : public ::testing::Test {
 
  public:
 
-  static void testHalfsiphash_64_ByteArray() {
-    // printf("testHalfsiphash_64_CharArray\n");
+  static void testHalfsiphash_32_ByteArray() {
     const int factor = 4;
 
-    int8_t vector[256];
-    int8_t hashes[factor * 256];
+    uint8_t vector[256];
+    uint8_t hashes[factor * 256];
 
     for (int i = 0; i < 256; i++) {
-      vector[i] = (int8_t) i;
+      vector[i] = (uint8_t) i;
     }
 
     // Hash subranges {}, {0}, {0,1}, {0,1,2}, ..., {0,...,255}
     for (int i = 0; i < 256; i++) {
-      uint64_t hash = AltHashing::halfsiphash_64(256 - i, vector, i);
-      hashes[i * factor] = (int8_t) hash;
-      hashes[i * factor + 1] = (int8_t)(hash >> 8);
-      hashes[i * factor + 2] = (int8_t)(hash >> 16);
-      hashes[i * factor + 3] = (int8_t)(hash >> 24);
+      uint32_t hash = AltHashing::halfsiphash_32(256 - i, vector, i);
+      hashes[i * factor] = (uint8_t) hash;
+      hashes[i * factor + 1] = (uint8_t)(hash >> 8);
+      hashes[i * factor + 2] = (uint8_t)(hash >> 16);
+      hashes[i * factor + 3] = (uint8_t)(hash >> 24);
     }
 
     // hash to get const result.
-    uint64_t final_hash = AltHashing::halfsiphash_64(0, hashes, factor*256);
+    uint32_t final_hash = AltHashing::halfsiphash_32(0, hashes, factor*256);
 
     // Value found using reference implementation for the hashes array.
-    // halfsiphash((const uint8_t*)hashes, factor*256, (const uint8_t *)&k,
-    //             (uint8_t*)&reference, 8);
+    //uint64_t k = 0;  // seed
+    //uint32_t reference;
+    //halfsiphash((const uint8_t*)hashes, factor*256, (const uint8_t *)&k, (uint8_t*)&reference, 4);
+    //printf("0x%x", reference);
 
-    static const uint64_t HALFSIPHASH_64_BYTE_CHECK_VALUE = 0x15a7911e30917ee8;
+    static const uint32_t HALFSIPHASH_32_BYTE_CHECK_VALUE = 0xd2be7fd8;
 
-    ASSERT_EQ(HALFSIPHASH_64_BYTE_CHECK_VALUE, final_hash) <<
+    ASSERT_EQ(HALFSIPHASH_32_BYTE_CHECK_VALUE, final_hash) <<
       err_msg(
-          "Calculated hash result not as expected. Expected " UINT64_FORMAT " got " UINT64_FORMAT,
-          HALFSIPHASH_64_BYTE_CHECK_VALUE,
+          "Calculated hash result not as expected. Expected " UINT32_FORMAT " got " UINT32_FORMAT,
+          HALFSIPHASH_32_BYTE_CHECK_VALUE,
           final_hash);
   }
 
-  static void testHalfsiphash_64_CharArray() {
-    // printf("testHalfsiphash_64_CharArray\n");
+  static void testHalfsiphash_32_CharArray() {
     const int factor = 2;
 
     uint16_t vector[256];
@@ -79,30 +79,32 @@ class AltHashingTest : public ::testing::Test {
 
     // Hash subranges {}, {0}, {0,1}, {0,1,2}, ..., {0,...,255}
     for (int i = 0; i < 256; i++) {
-      uint64_t hash = AltHashing::halfsiphash_64(256 - i, vector, i);
+      uint32_t hash = AltHashing::halfsiphash_32(256 - i, vector, i);
       hashes[i * factor] = (uint16_t) hash;
       hashes[i * factor + 1] = (uint16_t)(hash >> 16);
     }
 
     // hash to get const result.
-    uint64_t final_hash = AltHashing::halfsiphash_64(0, hashes, factor*256);
+    uint32_t final_hash = AltHashing::halfsiphash_32(0, hashes, factor*256);
 
     // Value found using reference implementation for the hashes array.
-    // halfsiphash((const uint8_t*)hashes, 2*factor*256, (const uint8_t *)&k,
-    //             (uint8_t*)&reference, 8);
-    static const uint64_t HALFSIPHASH_64_CHAR_CHECK_VALUE = 0xf392d8a6a9e24103;
+    //uint64_t k = 0;  // seed
+    //uint32_t reference;
+    //halfsiphash((const uint8_t*)hashes, 2*factor*256, (const uint8_t *)&k, (uint8_t*)&reference, 4);
+    //printf("0x%x", reference);
 
-    ASSERT_EQ(HALFSIPHASH_64_CHAR_CHECK_VALUE, final_hash) <<
+    static const uint32_t HALFSIPHASH_32_CHAR_CHECK_VALUE = 0x428bf8a5;
+
+    ASSERT_EQ(HALFSIPHASH_32_CHAR_CHECK_VALUE, final_hash) <<
       err_msg(
-          "Calculated hash result not as expected. Expected " UINT64_FORMAT " got " UINT64_FORMAT,
-          HALFSIPHASH_64_CHAR_CHECK_VALUE,
+          "Calculated hash result not as expected. Expected " UINT32_FORMAT " got " UINT32_FORMAT,
+          HALFSIPHASH_32_CHAR_CHECK_VALUE,
           final_hash);
   }
 
   // Test against sample hashes published with the reference implementation:
   // https://github.com/veorq/SipHash
   static void testHalfsiphash_64_FromReference() {
-    // printf("testHalfsiphash_64_FromReference\n");
 
     const uint64_t seed = 0x0706050403020100;
     const uint64_t results[16] = {
@@ -134,10 +136,10 @@ class AltHashingTest : public ::testing::Test {
 };
 
 TEST_F(AltHashingTest, halfsiphash_test_ByteArray) {
-  AltHashingTest::testHalfsiphash_64_ByteArray();
+  AltHashingTest::testHalfsiphash_32_ByteArray();
 }
 TEST_F(AltHashingTest, halfsiphash_test_CharArray) {
-  AltHashingTest::testHalfsiphash_64_CharArray();
+  AltHashingTest::testHalfsiphash_32_CharArray();
 }
 TEST_F(AltHashingTest, halfsiphash_test_FromReference) {
   AltHashingTest::testHalfsiphash_64_FromReference();
