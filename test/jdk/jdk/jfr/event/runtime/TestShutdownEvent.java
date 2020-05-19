@@ -103,7 +103,7 @@ public class TestShutdownEvent {
         int exitCode = output.getExitValue();
         System.out.println("Exit code: " + exitCode);
 
-        String recordingName = output.firstMatch("emergency jfr file: (.*.jfr)", 1);
+        String recordingName = output.firstMatch("JFR recording file will be written. Location: (.*.jfr)", 1);
         if (recordingName == null) {
             recordingName = "./dumped.jfr";
         }

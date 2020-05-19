@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,10 @@ void JfrRepository::on_vm_error() {
   JfrEmergencyDump::on_vm_error(_path);
 }
 
+void JfrRepository::on_vm_error_report(outputStream* st) {
+  JfrEmergencyDump::on_vm_error_report(st, instance()._path);
+}
+
 bool JfrRepository::set_path(const char* path) {
   assert(path != NULL, "trying to set the repository path with a NULL string!");
   if (_path != NULL) {
@@ -158,8 +162,7 @@ void JfrRepository::set_path(jstring location, JavaThread* jt) {
 
 bool JfrRepository::open_chunk(bool vm_error /* false */) {
   if (vm_error) {
-    ResourceMark rm;
-    _chunkwriter->set_path(JfrEmergencyDump::build_dump_path(_path));
+    _chunkwriter->set_path(JfrEmergencyDump::chunk_path(_path));
   }
   return _chunkwriter->open();
 }

@@ -29,7 +29,6 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logConfiguration.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -619,6 +618,9 @@ void VMError::report(outputStream* st, bool _verbose) {
     }
     st->cr();
     st->print_cr("#");
+
+  JFR_ONLY(STEP("printing jfr information"))
+  JFR_ONLY(Jfr::on_vm_error_report(st);)
 
   STEP("printing bug submit message")
 
@@ -1410,15 +1412,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
     reset_signal_handlers();
-
-    EventShutdown e;
-    if (e.should_commit()) {
-      e.set_reason("VM Error");
-      e.commit();
-    }
-
-    JFR_ONLY(Jfr::on_vm_shutdown(true);)
-
   } else {
     // If UseOsErrorReporting we call this for each level of the call stack
     // while searching for the exception handler.  Only the first level needs
@@ -1539,6 +1532,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     log.set_fd(-1);
   }
+
+  JFR_ONLY(Jfr::on_vm_shutdown(true);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);

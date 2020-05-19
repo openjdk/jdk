@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,17 @@
 #define SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/ostream.hpp"
 
 //
 // Responsible for creating an hs_err<pid>.jfr file in exceptional shutdown situations (crash, OOM)
 //
 class JfrEmergencyDump : AllStatic {
  public:
-  static void on_vm_shutdown(bool exception_handler);
+  static const char* chunk_path(const char* repository_path);
   static void on_vm_error(const char* repository_path);
-  static const char* build_dump_path(const char* repository_path);
+  static void on_vm_error_report(outputStream* st, const char* repository_path);
+  static void on_vm_shutdown(bool exception_handler);
 };
 
 #endif // SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
