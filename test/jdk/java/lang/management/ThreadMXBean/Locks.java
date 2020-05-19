@@ -91,7 +91,9 @@ public class Locks {
         long tid = t.getId();
         Thread.State actualState = TM.getThreadInfo(tid).getThreadState();
         if (!actualState.equals(expectedState)) {
-            if (expectedState.equals(Thread.State.BLOCKED)) {
+            if (expectedState.equals(Thread.State.BLOCKED) ||
+                expectedState.equals(Thread.State.WAITING))
+            {
                 int retryCount = 0;
                 printStackTrace(t);
                 do {
