@@ -48,6 +48,7 @@ import javax.security.auth.DestroyFailedException;
 
 import sun.security.x509.AlgorithmId;
 import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 import sun.security.util.SecurityProperties;
 
 /**
@@ -66,14 +67,6 @@ import sun.security.util.SecurityProperties;
  */
 
 final class KeyProtector {
-
-    // defined by SunSoft (SKI project)
-    private static final String PBE_WITH_MD5_AND_DES3_CBC_OID
-            = "1.3.6.1.4.1.42.2.19.1";
-
-    // JavaSoft proprietary key-protection algorithm (used to protect private
-    // keys in the keystore implementation that comes with JDK 1.2)
-    private static final String KEY_PROTECTOR_OID = "1.3.6.1.4.1.42.2.17.1.1";
 
     private static final int MAX_ITERATION_COUNT = 5000000;
     private static final int MIN_ITERATION_COUNT = 10000;
@@ -154,7 +147,8 @@ final class KeyProtector {
         pbeParams.init(pbeSpec);
 
         AlgorithmId encrAlg = new AlgorithmId
-            (new ObjectIdentifier(PBE_WITH_MD5_AND_DES3_CBC_OID), pbeParams);
+            (ObjectIdentifier.of(KnownOIDs.JAVASOFT_JCEKeyProtector),
+             pbeParams);
         return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
     }
 
@@ -169,13 +163,13 @@ final class KeyProtector {
         SecretKey sKey = null;
         try {
             String encrAlg = encrInfo.getAlgorithm().getOID().toString();
-            if (!encrAlg.equals(PBE_WITH_MD5_AND_DES3_CBC_OID)
-                && !encrAlg.equals(KEY_PROTECTOR_OID)) {
+            if (!encrAlg.equals(KnownOIDs.JAVASOFT_JCEKeyProtector.value())
+                && !encrAlg.equals(KnownOIDs.JAVASOFT_JDKKeyProtector.value())) {
                 throw new UnrecoverableKeyException("Unsupported encryption "
                                                     + "algorithm");
             }
 
-            if (encrAlg.equals(KEY_PROTECTOR_OID)) {
+            if (encrAlg.equals(KnownOIDs.JAVASOFT_JDKKeyProtector.value())) {
                 // JDK 1.2 style recovery
                 plain = recover(encrInfo.getEncryptedData());
             } else {

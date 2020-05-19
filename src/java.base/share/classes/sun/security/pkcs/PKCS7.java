@@ -819,7 +819,7 @@ public class PKCS7 {
             unauthAttrs =
                 new PKCS9Attributes(new PKCS9Attribute[]{
                     new PKCS9Attribute(
-                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_STR,
+                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID,
                         tsToken)});
         }
 

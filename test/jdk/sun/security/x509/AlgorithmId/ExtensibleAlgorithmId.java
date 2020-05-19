@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4162868 8130181
+ * @bug 4162868 8130181 8242151
  * @modules java.base/sun.security.x509
+ * @modules java.base/sun.security.util
  * @run main/othervm ExtensibleAlgorithmId
  * @summary Algorithm Name-to-OID mapping needs to be made extensible.
  */
@@ -39,31 +40,43 @@ public class ExtensibleAlgorithmId {
     public static void main(String[] args) throws Exception {
         TestProvider p = new TestProvider();
         Security.addProvider(p);
-        AlgorithmId algid = AlgorithmId.getAlgorithmId("XYZ");
-        String alias = "Alg.Alias.Signature.OID." + algid.toString();
+        AlgorithmId algid = AlgorithmId.getAlgorithmId(TestProvider.ALG_NAME);
+        String oid = algid.getOID().toString();
+        if (!oid.equals(TestProvider.ALG_OID)) {
+            throw new Exception("Provider alias oid not used, found " + oid);
+        }
+        String name = algid.getName();
+        if (!name.equalsIgnoreCase(TestProvider.ALG_NAME)) {
+            throw new Exception("provider alias name not used, found " + name);
+        }
+        String alias = "Alg.Alias.Signature.OID." + oid;
         String stdAlgName = p.getProperty(alias);
-        if (stdAlgName == null || !stdAlgName.equalsIgnoreCase("XYZ")) {
+        if (stdAlgName == null ||
+                !stdAlgName.equalsIgnoreCase(TestProvider.ALG_NAME)) {
             throw new Exception("Wrong OID");
         }
     }
-}
 
-class TestProvider extends Provider {
+    static class TestProvider extends Provider {
 
-    public TestProvider() {
+        static String ALG_OID = "1.2.3.4.5.6.7.8.9.0";
+        static String ALG_NAME = "XYZ";
+
+        public TestProvider() {
         super("Dummy", "1.0", "XYZ algorithm");
 
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
 
-                put("Signature.XYZ", "test.xyz");
-                // preferred OID
-                put("Alg.Alias.Signature.OID.1.2.3.4.5.6.7.8.9.0",
-                    "XYZ");
-                put("Alg.Alias.Signature.9.8.7.6.5.4.3.2.1.0",
-                    "XYZ");
-                return null;
-            }
-        });
+                    put("Signature." + ALG_NAME, "test.xyz");
+                    // preferred OID
+                    put("Alg.Alias.Signature.OID." + ALG_OID,
+                        ALG_NAME);
+                    put("Alg.Alias.Signature.9.8.7.6.5.4.3.2.1.0",
+                        ALG_NAME);
+                    return null;
+                }
+            });
+        }
     }
 }

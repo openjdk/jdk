@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049237
+ * @bug 8049237 8242151
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  *          jdk.crypto.ec
@@ -155,7 +155,7 @@ public class V3Certificate {
         GeneralName ip = new GeneralName(ipInf);
 
         GeneralNameInterface oidInf =
-                new OIDName(new ObjectIdentifier("1.2.3.4"));
+                new OIDName(ObjectIdentifier.of("1.2.3.4"));
         GeneralName oid = new GeneralName(oidInf);
 
         SubjectAlternativeNameExtension subjectName

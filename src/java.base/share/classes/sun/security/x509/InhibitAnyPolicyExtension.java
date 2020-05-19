@@ -29,10 +29,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Enumeration;
 
-import sun.security.util.Debug;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.*;
 
 /**
  * This class represents the Inhibit Any-Policy Extension.
@@ -76,7 +73,7 @@ implements CertAttrSet<String> {
      * Object identifier for "any-policy"
      */
     public static ObjectIdentifier AnyPolicy_Id =
-            ObjectIdentifier.of("2.5.29.32.0");
+            ObjectIdentifier.of(KnownOIDs.CE_CERT_POLICIES_ANY);
 
     /**
      * Attribute names.

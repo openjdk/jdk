@@ -76,7 +76,7 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
         // Validate name
         ObjectIdentifier type;
         try {
-            type = new ObjectIdentifier(name);
+            type = ObjectIdentifier.of(name);
         } catch (IOException e) {
             throw new IllegalArgumentException("Incorrect format: name", e);
         }

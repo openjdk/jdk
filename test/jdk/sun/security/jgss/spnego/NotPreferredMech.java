@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8048194
+ * @bug 8048194 8242151
  * @modules java.base/sun.security.util
  *          java.security.jgss/sun.security.jgss
  *          java.security.jgss/sun.security.jgss.spnego:+open
@@ -57,7 +57,7 @@ public class NotPreferredMech {
         mechTypeList.write(DerValue.tag_Sequence, mech);
 
         // Generates a NegTokenInit mechToken field for 1.2.3.4 mech
-        GSSHeader h1 = new GSSHeader(new ObjectIdentifier("1.2.3.4"), 1);
+        GSSHeader h1 = new GSSHeader(ObjectIdentifier.of("1.2.3.4"), 1);
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         h1.encode(bout);
         bout.write(new byte[1]);
@@ -78,7 +78,7 @@ public class NotPreferredMech {
 
         // and wraps it into a GSSToken
         GSSHeader h = new GSSHeader(
-                new ObjectIdentifier(GSSUtil.GSS_SPNEGO_MECH_OID.toString()),
+                ObjectIdentifier.of(GSSUtil.GSS_SPNEGO_MECH_OID.toString()),
                 spnegoToken.length);
         bout = new ByteArrayOutputStream();
         h.encode(bout);

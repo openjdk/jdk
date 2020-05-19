@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 import java.security.*;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
-
 
 /**
  * OracleUcrypto provider main class.
@@ -134,9 +133,8 @@ public final class UcryptoProvider extends Provider {
         }
     }
 
-    private static ServiceDesc sd(String type, String algo, String cn,
-        String... aliases) {
-        return new ServiceDesc(type, algo, cn, aliases);
+    private static ServiceDesc sd(String type, String algo, String cn) {
+        return new ServiceDesc(type, algo, cn, null);
     }
 
     private static final class ProviderService extends Provider.Service {

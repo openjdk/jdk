@@ -56,9 +56,9 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
     private MGF1ParameterSpec mgfSpec;
     private byte[] p;
     private static ObjectIdentifier OID_MGF1 =
-            ObjectIdentifier.of("1.2.840.113549.1.1.8");
+            ObjectIdentifier.of(KnownOIDs.MGF1);
     private static ObjectIdentifier OID_PSpecified =
-            ObjectIdentifier.of("1.2.840.113549.1.1.9");
+            ObjectIdentifier.of(KnownOIDs.PSpecified);
 
     public OAEPParameters() {
     }

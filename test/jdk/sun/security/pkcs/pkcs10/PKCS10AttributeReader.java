@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8048357
+ * @bug 8048357 8242151
  * @summary Read in a file containing a DER encoded PKCS10 certificate request,
  * flanked with "begin" and "end" lines.
  * @modules java.base/sun.security.pkcs
@@ -86,7 +86,7 @@ public class PKCS10AttributeReader {
                 put(PKCS9Attribute.CHALLENGE_PASSWORD_OID, "GuessWhoAmI");
                 put(PKCS9Attribute.SIGNING_TIME_OID, new Date(861720610000L));
                 put(PKCS9Attribute.CONTENT_TYPE_OID,
-                        new ObjectIdentifier("1.9.50.51.52"));
+                        ObjectIdentifier.of("1.9.50.51.52"));
             }
         };
 

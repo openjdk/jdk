@@ -252,7 +252,8 @@ public class X509CRLEntryImpl extends X509CRLEntry
      */
     public static CRLReason getRevocationReason(X509CRLEntry crlEntry) {
         try {
-            byte[] ext = crlEntry.getExtensionValue("2.5.29.21");
+            byte[] ext = crlEntry.getExtensionValue
+                    (KnownOIDs.ReasonCode.value());
             if (ext == null) {
                 return null;
             }
@@ -402,11 +403,11 @@ public class X509CRLEntryImpl extends X509CRLEntry
         if (extensions == null)
             return null;
         try {
-            String extAlias = OIDMap.getName(new ObjectIdentifier(oid));
+            String extAlias = OIDMap.getName(ObjectIdentifier.of(oid));
             Extension crlExt = null;
 
             if (extAlias == null) { // may be unknown
-                ObjectIdentifier findOID = new ObjectIdentifier(oid);
+                ObjectIdentifier findOID = ObjectIdentifier.of(oid);
                 Extension ex = null;
                 ObjectIdentifier inCertOID;
                 for (Enumeration<Extension> e = extensions.getElements();

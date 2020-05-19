@@ -135,7 +135,7 @@ public final class OCSPResponse {
     private static final Debug debug = Debug.getInstance("certpath");
     private static final boolean dump = debug != null && Debug.isOn("ocsp");
     private static final ObjectIdentifier OCSP_BASIC_RESPONSE_OID =
-        ObjectIdentifier.of("1.3.6.1.5.5.7.48.1.1");
+        ObjectIdentifier.of(KnownOIDs.OCSPBasicResponse);
     private static final int CERT_STATUS_GOOD = 0;
     private static final int CERT_STATUS_REVOKED = 1;
     private static final int CERT_STATUS_UNKNOWN = 2;
@@ -143,9 +143,6 @@ public final class OCSPResponse {
     // ResponderID CHOICE tags
     private static final int NAME_TAG = 1;
     private static final int KEY_TAG = 2;
-
-    // Object identifier for the OCSPSigning key purpose
-    private static final String KP_OCSP_SIGNING_OID = "1.3.6.1.5.5.7.3.9";
 
     // Default maximum clock skew in milliseconds (15 minutes)
     // allowed when checking validity of OCSP responses
@@ -493,7 +490,7 @@ public final class OCSPResponse {
                 try {
                     List<String> keyPurposes = signerCert.getExtendedKeyUsage();
                     if (keyPurposes == null ||
-                        !keyPurposes.contains(KP_OCSP_SIGNING_OID)) {
+                        !keyPurposes.contains(KnownOIDs.OCSPSigning.value())) {
                         throw new CertPathValidatorException(
                             "Responder's certificate not valid for signing " +
                             "OCSP responses");

@@ -27,6 +27,7 @@ package sun.security.ec.ed;
 import sun.security.ec.ParametersMap;
 import sun.security.provider.SHAKE256;
 import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
 import sun.security.x509.AlgorithmId;
@@ -250,58 +251,47 @@ public class EdDSAParameters {
 
     static {
         // set up Ed25519
-        try {
-            IntegerFieldModuloP ed25519Field = new IntegerPolynomial25519();
-            IntegerFieldModuloP ed25519OrderField = new Curve25519OrderField();
-            BigInteger biD = new BigInteger("3709570593466943934313808350875" +
+        IntegerFieldModuloP ed25519Field = new IntegerPolynomial25519();
+        IntegerFieldModuloP ed25519OrderField = new Curve25519OrderField();
+        BigInteger biD = new BigInteger("3709570593466943934313808350875" +
                 "4565189542113879843219016388785533085940283555");
-            ImmutableIntegerModuloP d = ed25519Field.getElement(biD);
-            BigInteger baseX = new BigInteger("15112221349535400772501151409" +
+        ImmutableIntegerModuloP d = ed25519Field.getElement(biD);
+        BigInteger baseX = new BigInteger("15112221349535400772501151409" +
                 "588531511454012693041857206046113283949847762202");
-            BigInteger baseY = new BigInteger("46316835694926478169428394003" +
+        BigInteger baseY = new BigInteger("46316835694926478169428394003" +
                 "475163141307993866256225615783033603165251855960");
-            EdECOperations edOps = new Ed25519Operations(d, baseX, baseY);
-            String name = NamedParameterSpec.ED25519.getName();
-            ObjectIdentifier oid = new ObjectIdentifier("1.3.101.112");
-            int bits = 255;
-            DigesterFactory digester = new SHA512DigesterFactory();
-            EdDSAParameters params = new EdDSAParameters(name, oid,
+        EdECOperations edOps = new Ed25519Operations(d, baseX, baseY);
+        String name = NamedParameterSpec.ED25519.getName();
+        ObjectIdentifier oid = ObjectIdentifier.of(KnownOIDs.Ed25519);
+        int bits = 255;
+        DigesterFactory digester = new SHA512DigesterFactory();
+        EdDSAParameters params = new EdDSAParameters(name, oid,
                 ed25519Field, ed25519OrderField, d, edOps,
                 digester, EdDSAParameters::dom2, 32, bits, 3);
 
-            namedParams.put(name, oid, bits, params);
-
-        } catch (IOException ex) {
-            // Unable to set Ed25519 parameters---it will be disabled
-        }
+        namedParams.put(name, oid, bits, params);
 
         // set up Ed448
-        try {
-            IntegerFieldModuloP ed448Field = new IntegerPolynomial448();
-            IntegerFieldModuloP ed448OrderField = new Curve448OrderField();
-            BigInteger biD = ed448Field.getSize().subtract(
-                new BigInteger("39081"));
-            ImmutableIntegerModuloP d = ed448Field.getElement(biD);
-            BigInteger baseX = new BigInteger("224580040295924300187604334" +
+        IntegerFieldModuloP ed448Field = new IntegerPolynomial448();
+        IntegerFieldModuloP ed448OrderField = new Curve448OrderField();
+        biD = ed448Field.getSize().subtract(new BigInteger("39081"));
+        d = ed448Field.getElement(biD);
+        baseX = new BigInteger("224580040295924300187604334" +
                 "099896036246789641632564134246125461686950415467406032909" +
                 "029192869357953282578032075146446173674602635247710");
-            BigInteger baseY = new BigInteger("298819210078481492676017930" +
+        baseY = new BigInteger("298819210078481492676017930" +
                 "443930673437544040154080242095928241372331506189835876003" +
                 "536878655418784733982303233503462500531545062832660");
-            EdECOperations edOps = new Ed448Operations(d, baseX, baseY);
-            String name = NamedParameterSpec.ED448.getName();
-            ObjectIdentifier oid = new ObjectIdentifier("1.3.101.113");
-            int bits = 448;
-            DigesterFactory digester = new SHAKE256DigesterFactory();
-            EdDSAParameters params = new EdDSAParameters(name, oid,
+        edOps = new Ed448Operations(d, baseX, baseY);
+        name = NamedParameterSpec.ED448.getName();
+        oid = ObjectIdentifier.of(KnownOIDs.Ed448);
+        bits = 448;
+        digester = new SHAKE256DigesterFactory();
+        params = new EdDSAParameters(name, oid,
                 ed448Field, ed448OrderField, d, edOps,
                 digester, EdDSAParameters::dom4, 57, bits, 2);
 
-            namedParams.put(name, oid, bits, params);
-
-        } catch (IOException ex) {
-            // Unable to set Ed448 parameters---it will be disabled
-        }
+        namedParams.put(name, oid, bits, params);
 
         namedParams.fix();
     }

@@ -144,7 +144,7 @@ public class XECParameters {
         Map<ObjectIdentifier, XECParameters> byOid,
         Map<String, XECParameters> byName) throws IOException {
 
-        ObjectIdentifier oid = new ObjectIdentifier(objectId);
+        ObjectIdentifier oid = ObjectIdentifier.of(objectId);
         XECParameters params =
             new XECParameters(bits, p, a24, basePoint, logCofactor, oid, name);
         namedParams.put(name.toLowerCase(), oid, bits, params);

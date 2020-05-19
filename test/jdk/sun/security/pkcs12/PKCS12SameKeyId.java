@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6958026
+ * @bug 6958026 8242151
  * @summary Problem with PKCS12 keystore
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.tools.keytool
@@ -75,7 +75,7 @@ public class PKCS12SameKeyId {
                 AlgorithmParameters.getInstance("PBEWithSHA1AndDESede");
         algParams.init(new PBEParameterSpec("12345678".getBytes(), 1024));
         AlgorithmId algid = new AlgorithmId(
-                new ObjectIdentifier("1.2.840.113549.1.12.1.3"), algParams);
+                ObjectIdentifier.of("1.2.840.113549.1.12.1.3"), algParams);
 
         PBEKeySpec keySpec = new PBEKeySpec(PASSWORD);
         SecretKeyFactory skFac = SecretKeyFactory.getInstance("PBE");

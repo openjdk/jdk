@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8048357
+ * @bug 8048357 8242151
  * @summary test DER encoding of PKCS10 attributes
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.pkcs10
@@ -62,7 +62,7 @@ public class PKCS10AttrEncoding {
         // initializations
         int len = ids.length;
         Object[] values = {
-            new ObjectIdentifier("1.2.3.4"),
+            ObjectIdentifier.of("1.2.3.4"),
             new GregorianCalendar(1970, 1, 25, 8, 56, 7).getTime(),
             "challenging"
         };
