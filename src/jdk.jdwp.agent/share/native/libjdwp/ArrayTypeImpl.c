@@ -27,6 +27,8 @@
 #include "util.h"
 #include "inStream.h"
 #include "outStream.h"
+#include "signature.h"
+
 
 /*
  * Determine the component class by looking thru all classes for
@@ -148,7 +150,7 @@ writeNewPrimitiveArray(JNIEnv *env, PacketOutputStream *out,
 
         jarray array = NULL;
 
-        switch (componentSignature[0]) {
+        switch (jdwpTag(componentSignature)) {
             case JDWP_TAG(BYTE):
                 array = JNI_FUNC_PTR(env,NewByteArray)(env, size);
                 break;
@@ -227,10 +229,10 @@ newInstance(PacketInputStream *in, PacketOutputStream *out)
         outStream_setError(out, map2jdwpError(error));
         return JNI_FALSE;
     }
-    componentSignature = &signature[1];
+    componentSignature = componentTypeSignature(signature);
 
-    if ((componentSignature[0] == JDWP_TAG(OBJECT)) ||
-        (componentSignature[0] == JDWP_TAG(ARRAY))) {
+    jbyte typeKey = jdwpTag(componentSignature);
+    if (isReferenceTag(typeKey)) {
         writeNewObjectArray(env, out, arrayClass, size, componentSignature);
     } else {
         writeNewPrimitiveArray(env, out, arrayClass, size, componentSignature);

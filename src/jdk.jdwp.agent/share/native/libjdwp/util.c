@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "outStream.h"
 #include "inStream.h"
 #include "invoker.h"
+#include "signature.h"
+
 
 /* Global data area */
 BackendGlobalData *gdata = NULL;
@@ -170,6 +172,8 @@ getStaticMethod(JNIEnv *env, jclass clazz, const char * name, const char *signat
     }
     return method;
 }
+
+
 
 void
 util_initialize(JNIEnv *env)
@@ -343,26 +347,25 @@ writeFieldValue(JNIEnv *env, PacketOutputStream *out, jobject object,
         outStream_setError(out, map2jdwpError(error));
         return;
     }
-    typeKey = signature[0];
+    typeKey = jdwpTag(signature);
     jvmtiDeallocate(signature);
 
-    /*
-     * For primitive types, the type key is bounced back as is. Objects
-     * are handled in the switch statement below.
-     */
-    if ((typeKey != JDWP_TAG(OBJECT)) && (typeKey != JDWP_TAG(ARRAY))) {
-        (void)outStream_writeByte(out, typeKey);
+    if (isReferenceTag(typeKey)) {
+
+        jobject value = JNI_FUNC_PTR(env,GetObjectField)(env, object, field);
+        (void)outStream_writeByte(out, specificTypeKey(env, value));
+        (void)outStream_writeObjectRef(env, out, value);
+        return;
+
     }
 
-    switch (typeKey) {
-        case JDWP_TAG(OBJECT):
-        case JDWP_TAG(ARRAY):   {
-            jobject value = JNI_FUNC_PTR(env,GetObjectField)(env, object, field);
-            (void)outStream_writeByte(out, specificTypeKey(env, value));
-            (void)outStream_writeObjectRef(env, out, value);
-            break;
-        }
+    /*
+     * For primitive types, the type key is bounced back as is.
+     */
 
+    (void)outStream_writeByte(out, typeKey);
+
+    switch (typeKey) {
         case JDWP_TAG(BYTE):
             (void)outStream_writeByte(out,
                       JNI_FUNC_PTR(env,GetByteField)(env, object, field));
@@ -418,26 +421,24 @@ writeStaticFieldValue(JNIEnv *env, PacketOutputStream *out, jclass clazz,
         outStream_setError(out, map2jdwpError(error));
         return;
     }
-    typeKey = signature[0];
+    typeKey = jdwpTag(signature);
     jvmtiDeallocate(signature);
 
-    /*
-     * For primitive types, the type key is bounced back as is. Objects
-     * are handled in the switch statement below.
-     */
-    if ((typeKey != JDWP_TAG(OBJECT)) && (typeKey != JDWP_TAG(ARRAY))) {
-        (void)outStream_writeByte(out, typeKey);
+
+    if (isReferenceTag(typeKey)) {
+
+        jobject value = JNI_FUNC_PTR(env,GetStaticObjectField)(env, clazz, field);
+        (void)outStream_writeByte(out, specificTypeKey(env, value));
+        (void)outStream_writeObjectRef(env, out, value);
+
+        return;
     }
 
+    /*
+     * For primitive types, the type key is bounced back as is.
+     */
+    (void)outStream_writeByte(out, typeKey);
     switch (typeKey) {
-        case JDWP_TAG(OBJECT):
-        case JDWP_TAG(ARRAY):   {
-            jobject value = JNI_FUNC_PTR(env,GetStaticObjectField)(env, clazz, field);
-            (void)outStream_writeByte(out, specificTypeKey(env, value));
-            (void)outStream_writeObjectRef(env, out, value);
-            break;
-        }
-
         case JDWP_TAG(BYTE):
             (void)outStream_writeByte(out,
                       JNI_FUNC_PTR(env,GetStaticByteField)(env, clazz, field));
@@ -570,7 +571,7 @@ sharedInvoke(PacketInputStream *in, PacketOutputStream *out)
             return JNI_TRUE;
         }
         for (i = 0; (i < argumentCount) && !inStream_error(in); i++) {
-            arguments[i] = inStream_readValue(in, NULL);
+            arguments[i] = inStream_readValue(in);
         }
         if (inStream_error(in)) {
             return JNI_TRUE;
@@ -977,32 +978,6 @@ getSourceDebugExtension(jclass clazz, char **extensionPtr)
                 (gdata->jvmti, clazz, extensionPtr);
 }
 
-/*
- * Convert the signature "Ljava/lang/Foo;" to a
- * classname "java.lang.Foo" compatible with the pattern.
- * Signature is overwritten in-place.
- */
-void
-convertSignatureToClassname(char *convert)
-{
-    char *p;
-
-    p = convert + 1;
-    while ((*p != ';') && (*p != '\0')) {
-        char c = *p;
-        if (c == '/') {
-            *(p-1) = '.';
-        } else if (c == '.') {
-            // class signature of a hidden class is "Ljava/lang/Foo.1234;"
-            // map to "java.lang.Foo/1234"
-            *(p-1) = '/';
-        } else {
-            *(p-1) = c;
-        }
-        p++;
-    }
-    *(p-1) = '\0';
-}
 
 static void
 handleInterrupt(void)

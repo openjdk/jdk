@@ -27,6 +27,7 @@
 #include "ClassTypeImpl.h"
 #include "inStream.h"
 #include "outStream.h"
+#include "signature.h"
 
 static jboolean
 superclass(PacketInputStream *in, PacketOutputStream *out)
@@ -58,15 +59,18 @@ readStaticFieldValue(JNIEnv *env, PacketInputStream *in, jclass clazz,
                      jfieldID field, char *signature)
 {
     jvalue value;
-    jdwpError serror = JDWP_ERROR(NONE);
+    jbyte typeKey = jdwpTag(signature);
 
-    switch (signature[0]) {
-        case JDWP_TAG(ARRAY):
-        case JDWP_TAG(OBJECT):
-            value.l = inStream_readObjectRef(env, in);
-            JNI_FUNC_PTR(env,SetStaticObjectField)(env, clazz, field, value.l);
-            break;
+    if (isReferenceTag(typeKey)) {
+        value.l = inStream_readObjectRef(env, in);
+        JNI_FUNC_PTR(env,SetStaticObjectField)(env, clazz, field, value.l);
+        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            return JDWP_ERROR(INTERNAL);
+        }
+        return JDWP_ERROR(NONE);
+    }
 
+    switch (typeKey) {
         case JDWP_TAG(BYTE):
             value.b = inStream_readByte(in);
             JNI_FUNC_PTR(env,SetStaticByteField)(env, clazz, field, value.b);
@@ -109,10 +113,9 @@ readStaticFieldValue(JNIEnv *env, PacketInputStream *in, jclass clazz,
     }
 
     if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
-        serror = JDWP_ERROR(INTERNAL);
+        return JDWP_ERROR(INTERNAL);
     }
-
-    return serror;
+    return JDWP_ERROR(NONE);
 }
 
 static jboolean

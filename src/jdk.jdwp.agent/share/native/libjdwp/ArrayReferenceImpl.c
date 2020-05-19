@@ -27,6 +27,7 @@
 #include "ArrayReferenceImpl.h"
 #include "inStream.h"
 #include "outStream.h"
+#include "signature.h"
 
 static jboolean
 length(PacketInputStream *in, PacketOutputStream *out)
@@ -204,7 +205,7 @@ writeDoubleComponents(JNIEnv *env, PacketOutputStream *out,
 
 static void
 writeObjectComponents(JNIEnv *env, PacketOutputStream *out,
-                    jarray array, jint index, jint length)
+                      jarray array, jint index, jint length)
 {
 
     WITH_LOCAL_REFS(env, length) {
@@ -224,6 +225,9 @@ writeObjectComponents(JNIEnv *env, PacketOutputStream *out,
 
     } END_WITH_LOCAL_REFS(env);
 }
+
+static void writeComponents(JNIEnv *env, PacketOutputStream *out, char *signature,
+                            jarray array, jint index, jint length);
 
 static jboolean
 getValues(PacketInputStream *in, PacketOutputStream *out)
@@ -265,68 +269,14 @@ getValues(PacketInputStream *in, PacketOutputStream *out)
 
     WITH_LOCAL_REFS(env, 1) {
 
-        jclass arrayClass;
         char *signature = NULL;
-        char *componentSignature;
-        jbyte typeKey;
-        jvmtiError error;
 
-        arrayClass = JNI_FUNC_PTR(env,GetObjectClass)(env, array);
-        error = classSignature(arrayClass, &signature, NULL);
-        if (error != JVMTI_ERROR_NONE) {
-            goto err;
+        jclass arrayClass = JNI_FUNC_PTR(env,GetObjectClass)(env, array);
+        jvmtiError error = classSignature(arrayClass, &signature, NULL);
+        if (error == JVMTI_ERROR_NONE) {
+            writeComponents(env, out, signature, array, index, length);
+            jvmtiDeallocate(signature);
         }
-        componentSignature = &signature[1];
-        typeKey = componentSignature[0];
-
-        (void)outStream_writeByte(out, typeKey);
-        (void)outStream_writeInt(out, length);
-
-        if (isObjectTag(typeKey)) {
-            writeObjectComponents(env, out, array, index, length);
-        } else {
-            switch (typeKey) {
-                case JDWP_TAG(BYTE):
-                    writeByteComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(CHAR):
-                    writeCharComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(FLOAT):
-                    writeFloatComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(DOUBLE):
-                    writeDoubleComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(INT):
-                    writeIntComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(LONG):
-                    writeLongComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(SHORT):
-                    writeShortComponents(env, out, array, index, length);
-                    break;
-
-                case JDWP_TAG(BOOLEAN):
-                    writeBooleanComponents(env, out, array, index, length);
-                    break;
-
-                default:
-                    outStream_setError(out, JDWP_ERROR(INVALID_TAG));
-                    break;
-            }
-        }
-
-        jvmtiDeallocate(signature);
-
-    err:;
 
     } END_WITH_LOCAL_REFS(env);
 
@@ -336,6 +286,58 @@ getValues(PacketInputStream *in, PacketOutputStream *out)
     }
 
     return JNI_TRUE;
+}
+
+static void writeComponents(JNIEnv *env, PacketOutputStream *out, char *signature,
+                            jarray array, jint index, jint length) {
+
+    char * componentSignature = componentTypeSignature(signature);
+    jbyte typeKey = jdwpTag(componentSignature);
+
+    (void)outStream_writeByte(out, typeKey);
+    (void)outStream_writeInt(out, length);
+
+    if (isReferenceTag(typeKey)) {
+        writeObjectComponents(env, out, array, index, length);
+        return;
+    }
+    switch (typeKey) {
+        case JDWP_TAG(BYTE):
+            writeByteComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(CHAR):
+            writeCharComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(FLOAT):
+            writeFloatComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(DOUBLE):
+            writeDoubleComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(INT):
+            writeIntComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(LONG):
+            writeLongComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(SHORT):
+            writeShortComponents(env, out, array, index, length);
+            break;
+
+        case JDWP_TAG(BOOLEAN):
+            writeBooleanComponents(env, out, array, index, length);
+            break;
+
+        default:
+            outStream_setError(out, JDWP_ERROR(INVALID_TAG));
+            break;
+    }
 }
 
 static jdwpError
@@ -477,6 +479,8 @@ readObjectComponents(JNIEnv *env, PacketInputStream *in,
     return JDWP_ERROR(NONE);
 }
 
+static jdwpError readComponents(JNIEnv *env, PacketInputStream *in, char *signature,
+                                jarray array, jint index, jint length);
 
 static jboolean
 setValues(PacketInputStream *in, PacketOutputStream *out)
@@ -515,69 +519,14 @@ setValues(PacketInputStream *in, PacketOutputStream *out)
 
     WITH_LOCAL_REFS(env, 1)  {
 
-        jclass arrayClass;
         char *signature = NULL;
-        char *componentSignature;
-        jvmtiError error;
 
-        arrayClass = JNI_FUNC_PTR(env,GetObjectClass)(env, array);
-        error = classSignature(arrayClass, &signature, NULL);
-        if (error != JVMTI_ERROR_NONE) {
-            goto err;
+        jclass arrayClass = JNI_FUNC_PTR(env,GetObjectClass)(env, array);
+        jvmtiError error = classSignature(arrayClass, &signature, NULL);
+        if (error == JVMTI_ERROR_NONE) {
+            serror = readComponents(env, in, signature, array, index, length);
+            jvmtiDeallocate(signature);
         }
-        componentSignature = &signature[1];
-
-        switch (componentSignature[0]) {
-            case JDWP_TAG(OBJECT):
-            case JDWP_TAG(ARRAY):
-                serror = readObjectComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(BYTE):
-                serror = readByteComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(CHAR):
-                serror = readCharComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(FLOAT):
-                serror = readFloatComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(DOUBLE):
-                serror = readDoubleComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(INT):
-                serror = readIntComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(LONG):
-                serror = readLongComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(SHORT):
-                serror = readShortComponents(env, in, array, index, length);
-                break;
-
-            case JDWP_TAG(BOOLEAN):
-                serror = readBooleanComponents(env, in, array, index, length);
-                break;
-
-            default:
-                {
-                    ERROR_MESSAGE(("Invalid array component signature: %s",
-                                        componentSignature));
-                    EXIT_ERROR(AGENT_ERROR_INVALID_OBJECT,NULL);
-                }
-                break;
-        }
-
-        jvmtiDeallocate(signature);
-
-    err:;
-
     } END_WITH_LOCAL_REFS(env);
 
     if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
@@ -590,6 +539,61 @@ setValues(PacketInputStream *in, PacketOutputStream *out)
 
     outStream_setError(out, serror);
     return JNI_TRUE;
+}
+
+static jdwpError readComponents(JNIEnv *env, PacketInputStream *in, char *signature,
+jarray array, jint index, jint length) {
+    jdwpError serror = JDWP_ERROR(NONE);
+
+    char *componentSignature = componentTypeSignature(signature);
+    jbyte typeKey = jdwpTag(componentSignature);
+    if (isReferenceTag(typeKey)) {
+        serror = readObjectComponents(env, in, array, index, length);
+        return serror;
+    }
+    switch (typeKey) {
+        case JDWP_TAG(BYTE):
+            serror = readByteComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(CHAR):
+            serror = readCharComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(FLOAT):
+            serror = readFloatComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(DOUBLE):
+            serror = readDoubleComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(INT):
+            serror = readIntComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(LONG):
+            serror = readLongComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(SHORT):
+            serror = readShortComponents(env, in, array, index, length);
+            break;
+
+        case JDWP_TAG(BOOLEAN):
+            serror = readBooleanComponents(env, in, array, index, length);
+            break;
+
+        default:
+            {
+                ERROR_MESSAGE(("Invalid array component signature: %s",
+                                    componentSignature));
+                EXIT_ERROR(AGENT_ERROR_INVALID_OBJECT,NULL);
+            }
+            break;
+    }
+
+    return serror;
 }
 
 Command ArrayReference_Commands[] = {

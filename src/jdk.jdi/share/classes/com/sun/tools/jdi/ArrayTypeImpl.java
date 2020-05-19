@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
     }
 
     public String componentSignature() {
-        return signature().substring(1); // Just skip the leading '['
+        JNITypeParser sig = new JNITypeParser(signature());
+        return sig.componentSignature();
     }
 
     public String componentTypeName() {
@@ -90,8 +91,9 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
      * this method is sometimes needed for proper type checking.
      */
     Type findComponentType(String signature) throws ClassNotLoadedException {
-        byte tag = (byte)signature.charAt(0);
-        if (PacketStream.isObjectTag(tag)) {
+
+        JNITypeParser sig = new JNITypeParser(signature);
+        if (sig.isReference()) {
             // It's a reference type
             JNITypeParser parser = new JNITypeParser(componentSignature());
             List<ReferenceType> list = vm.classesByName(parser.typeName());
@@ -109,7 +111,7 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
             throw new ClassNotLoadedException(componentTypeName());
         } else {
             // It's a primitive type
-            return vm.primitiveTypeMirror(tag);
+            return vm.primitiveTypeMirror(sig.jdwpTag());
         }
     }
 
