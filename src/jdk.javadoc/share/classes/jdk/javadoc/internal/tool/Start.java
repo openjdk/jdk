@@ -240,7 +240,10 @@ public class Start {
         String primaryName = option.primaryName;
         String parameters;
         if (option.hasArg || primaryName.endsWith(":")) {
-            String sep = primaryName.equals(ToolOptions.J) || primaryName.endsWith(":") ? "" : " ";
+            String sep = primaryName.endsWith(":")
+                    || primaryName.equals(ToolOptions.AT)
+                    || primaryName.equals(ToolOptions.J)
+                    ? "" : " ";
             parameters = sep + option.getParameters(messager);
         } else {
             parameters = "";
