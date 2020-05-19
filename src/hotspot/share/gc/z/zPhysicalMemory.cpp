@@ -284,11 +284,6 @@ void ZPhysicalMemoryManager::map_view(const ZPhysicalMemory& pmem, uintptr_t add
     // fault time.
     os::numa_make_global((char*)addr, size);
   }
-
-  // Setup transparent large pages
-  if (ZLargePages::is_transparent()) {
-    os::realign_memory((char*)addr, size, os::large_page_size());
-  }
 }
 
 void ZPhysicalMemoryManager::unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const {
