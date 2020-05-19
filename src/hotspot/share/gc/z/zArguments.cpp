@@ -52,11 +52,6 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(UseNUMA, true);
   }
 
-  // Disable biased locking by default
-  if (FLAG_IS_DEFAULT(UseBiasedLocking)) {
-    FLAG_SET_DEFAULT(UseBiasedLocking, false);
-  }
-
   // Select number of parallel threads
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
     FLAG_SET_DEFAULT(ParallelGCThreads, ZHeuristics::nparallel_workers());
