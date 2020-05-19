@@ -74,7 +74,7 @@ if [ "x$TOPLEVEL_DIR" = "x" ] ; then
 fi
 
 MAKE_DIR="$SCRIPT_DIR/../make"
-IDEA_MAKE="$MAKE_DIR/idea"
+IDEA_MAKE="$MAKE_DIR/ide/idea/jdk"
 IDEA_TEMPLATE="$IDEA_MAKE/template"
 
 cp -r "$IDEA_TEMPLATE"/* "$IDEA_OUTPUT"

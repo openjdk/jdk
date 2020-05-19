@@ -1,3 +1,0 @@
-List of translations from Java's os.name and os.arch properties
-into the platform names used by the JDK makefiles.
-Add your own translations as needed.

@@ -261,7 +261,7 @@ endef
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
 $(eval $(call SetupTarget, hotspot-ide-project, \
-    MAKEFILE := hotspot/ide/CreateVSProject, \
+    MAKEFILE := ide/visualstudio/hotspot/CreateVSProject, \
     DEPS := hotspot exploded-image, \
     ARGS := -I$(TOPDIR)/make/hotspot, \
 ))
@@ -302,25 +302,25 @@ ALL_TARGETS += $(COMPILE_COMMANDS_TARGETS_HOTSPOT) $(COMPILE_COMMANDS_TARGETS_JD
 # VS Code projects
 
 $(eval $(call SetupTarget, vscode-project, \
-    MAKEFILE := CreateVSCodeProject, \
+    MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject, \
     ARGS := VSCODE_INDEXER=cpptools, \
     DEPS := compile-commands, \
 ))
 
 $(eval $(call SetupTarget, vscode-project-clangd, \
-    MAKEFILE := CreateVSCodeProject, \
+    MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject, \
     ARGS := VSCODE_INDEXER=clangd, \
     DEPS := compile-commands, \
 ))
 
 $(eval $(call SetupTarget, vscode-project-rtags, \
-    MAKEFILE := CreateVSCodeProject, \
+    MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject, \
     ARGS := VSCODE_INDEXER=rtags, \
     DEPS := compile-commands, \
 ))
 
 $(eval $(call SetupTarget, vscode-project-ccls, \
-    MAKEFILE := CreateVSCodeProject, \
+    MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject, \
     ARGS := VSCODE_INDEXER=ccls, \
     DEPS := compile-commands, \
 ))
