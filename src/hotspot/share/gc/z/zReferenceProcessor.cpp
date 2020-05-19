@@ -70,7 +70,7 @@ static volatile oop* reference_referent_addr(oop reference) {
 }
 
 static oop reference_referent(oop reference) {
-  return *reference_referent_addr(reference);
+  return Atomic::load(reference_referent_addr(reference));
 }
 
 static void reference_set_referent(oop reference, oop referent) {
