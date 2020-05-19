@@ -276,4 +276,4 @@ VARHANDLES_MEMORY_ADDRESS_TYPES := Byte Short Char Int Long Float Double
 $(foreach t, $(VARHANDLES_MEMORY_ADDRESS_TYPES), \
   $(eval $(call GenerateVarHandleMemoryAddress,VAR_HANDLE_MEMORY_ADDRESS_$t,$t)))
 
-GENSRC_JAVA_BASE += $(GENSRC_VARHANDLES)
+TARGETS += $(GENSRC_VARHANDLES)

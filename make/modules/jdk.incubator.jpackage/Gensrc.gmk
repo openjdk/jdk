@@ -38,9 +38,3 @@ ifeq ($(call isTargetOs, macosx), true)
 
   TARGETS := $(ENTITLEMENTS_TARGET_FILE)
 endif
-
-################################################################################
-
-all: $(TARGETS)
-
-.PHONY: all

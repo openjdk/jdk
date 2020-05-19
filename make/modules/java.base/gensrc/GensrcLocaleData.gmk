@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLo
 GENSRC_BASELOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java
 GENSRC_LOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java
 
-GENSRC_JAVA_BASE += $(GENSRC_BASELOCALEDATA)
-GENSRC_JDK_LOCALEDATA += $(GENSRC_LOCALEDATA)
-
 ################################################################################
+
+# This file is included twice, by java.base and jdk.localedata. The includer must
+# add either GENSRC_BASELOCALEDATA or GENSRC_LOCALEDATA to TARGETS.
