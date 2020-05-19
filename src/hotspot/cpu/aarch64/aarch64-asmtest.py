@@ -979,7 +979,7 @@ generate (ExtractOp, ["extrw", "extr"])
 generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "VC",
                         "HI", "LS", "GE", "LT", "GT", "LE", "AL", "NV" ])
 
-generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dpcs1",  "dpcs2",  "dpcs3"
+generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
                ])
 
 generate (Op, ["nop", "eret", "drps", "isb"])

@@ -15286,7 +15286,7 @@ instruct ShouldNotReachHere() %{
 
   ins_encode %{
     if (is_reachable()) {
-      __ dpcs1(0xdead + 1);
+      __ dcps1(0xdead + 1);
     }
   %}
 
