@@ -2719,6 +2719,121 @@ int os::vm_allocation_granularity() {
 static HANDLE    _hProcess;
 static HANDLE    _hToken;
 
+#define VirtualFreeChecked(mem, size, type)                       \
+  do {                                                            \
+    bool ret = VirtualFree(mem, size, type);                      \
+    assert(ret, "Failed to free memory: " PTR_FORMAT, p2i(mem));  \
+  } while (false)
+
+// The number of bytes is setup to match 1 pixel and 32 bits per pixel.
+static const int gdi_tiny_bitmap_width_bytes = 4;
+
+static HBITMAP gdi_create_tiny_bitmap(void* mem) {
+  // The documentation for CreateBitmap states a word-alignment requirement.
+  STATIC_ASSERT(is_aligned_(gdi_tiny_bitmap_width_bytes, sizeof(WORD)));
+
+  // Some callers use this function to test if memory crossing separate memory
+  // reservations can be used. Create a height of 2 to make sure that one pixel
+  // ends up in the first reservation and the other in the second.
+  int nHeight = 2;
+
+  assert(is_aligned(mem, gdi_tiny_bitmap_width_bytes), "Incorrect alignment");
+
+  // Width is one pixel and correlates with gdi_tiny_bitmap_width_bytes.
+  int nWidth = 1;
+
+  // Calculate bit count - will be 32.
+  UINT nBitCount = gdi_tiny_bitmap_width_bytes / nWidth * BitsPerByte;
+
+  return CreateBitmap(
+      nWidth,
+      nHeight,
+      1,         // nPlanes
+      nBitCount,
+      mem);      // lpBits
+}
+
+// It has been found that some of the GDI functions fail under these two situations:
+//  1) When used with large pages
+//  2) When mem crosses the boundary between two separate memory reservations.
+//
+// This is a small test used to see if the current GDI implementation is
+// susceptible to any of these problems.
+static bool gdi_can_use_memory(void* mem) {
+  HBITMAP bitmap = gdi_create_tiny_bitmap(mem);
+  if (bitmap != NULL) {
+    DeleteObject(bitmap);
+    return true;
+  }
+
+  // Verify that the bitmap could be created with a normal page.
+  // If this fails, the testing method above isn't reliable.
+#ifdef ASSERT
+  void* verify_mem = ::malloc(4 * 1024);
+  HBITMAP verify_bitmap = gdi_create_tiny_bitmap(verify_mem);
+  if (verify_bitmap == NULL) {
+    fatal("Couldn't create test bitmap with malloced memory");
+  } else {
+    DeleteObject(verify_bitmap);
+  }
+  ::free(verify_mem);
+#endif
+
+  return false;
+}
+
+// Test if GDI functions work when memory spans
+// two adjacent memory reservations.
+static bool gdi_can_use_split_reservation_memory() {
+  size_t granule = os::vm_allocation_granularity();
+
+  // Find virtual memory range
+  void* reserved = VirtualAlloc(NULL,
+                                granule * 2,
+                                MEM_RESERVE,
+                                PAGE_NOACCESS);
+  if (reserved == NULL) {
+    // Can't proceed with test - pessimistically report false
+    return false;
+  }
+  VirtualFreeChecked(reserved, 0, MEM_RELEASE);
+
+  void* res0 = reserved;
+  void* res1 = (char*)reserved + granule;
+
+  // Reserve and commit the first part
+  void* mem0 = VirtualAlloc(res0,
+                            granule,
+                            MEM_RESERVE|MEM_COMMIT,
+                            PAGE_READWRITE);
+  if (mem0 != res0) {
+    // Can't proceed with test - pessimistically report false
+    return false;
+  }
+
+  // Reserve and commit the second part
+  void* mem1 = VirtualAlloc(res1,
+                            granule,
+                            MEM_RESERVE|MEM_COMMIT,
+                            PAGE_READWRITE);
+  if (mem1 != res1) {
+    VirtualFreeChecked(mem0, 0, MEM_RELEASE);
+    // Can't proceed with test - pessimistically report false
+    return false;
+  }
+
+  // Set the bitmap's bits to point one "width" bytes before, so that
+  // the bitmap extends across the reservation boundary.
+  void* bitmapBits = (char*)mem1 - gdi_tiny_bitmap_width_bytes;
+
+  bool success = gdi_can_use_memory(bitmapBits);
+
+  VirtualFreeChecked(mem1, 0, MEM_RELEASE);
+  VirtualFreeChecked(mem0, 0, MEM_RELEASE);
+
+  return success;
+}
+
 // Container for NUMA node list info
 class NUMANodeListHolder {
  private:
@@ -2804,33 +2919,39 @@ static void cleanup_after_large_page_init() {
 
 static bool numa_interleaving_init() {
   bool success = false;
-  bool use_numa_interleaving_specified = !FLAG_IS_DEFAULT(UseNUMAInterleaving);
 
   // print a warning if UseNUMAInterleaving flag is specified on command line
-  bool warn_on_failure = use_numa_interleaving_specified;
+  bool warn_on_failure = !FLAG_IS_DEFAULT(UseNUMAInterleaving);
+
 #define WARN(msg) if (warn_on_failure) { warning(msg); }
 
   // NUMAInterleaveGranularity cannot be less than vm_allocation_granularity (or _large_page_size if using large pages)
   size_t min_interleave_granularity = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
   NUMAInterleaveGranularity = align_up(NUMAInterleaveGranularity, min_interleave_granularity);
 
-  if (numa_node_list_holder.build()) {
-    if (log_is_enabled(Debug, os, cpu)) {
-      Log(os, cpu) log;
-      log.debug("NUMA UsedNodeCount=%d, namely ", numa_node_list_holder.get_count());
-      for (int i = 0; i < numa_node_list_holder.get_count(); i++) {
-        log.debug("  %d ", numa_node_list_holder.get_node_list_entry(i));
-      }
-    }
-    success = true;
-  } else {
+  if (!numa_node_list_holder.build()) {
     WARN("Process does not cover multiple NUMA nodes.");
+    WARN("...Ignoring UseNUMAInterleaving flag.");
+    return false;
   }
-  if (!success) {
-    if (use_numa_interleaving_specified) WARN("...Ignoring UseNUMAInterleaving flag.");
+
+  if (!gdi_can_use_split_reservation_memory()) {
+    WARN("Windows GDI cannot handle split reservations.");
+    WARN("...Ignoring UseNUMAInterleaving flag.");
+    return false;
   }
-  return success;
+
+  if (log_is_enabled(Debug, os, cpu)) {
+    Log(os, cpu) log;
+    log.debug("NUMA UsedNodeCount=%d, namely ", numa_node_list_holder.get_count());
+    for (int i = 0; i < numa_node_list_holder.get_count(); i++) {
+      log.debug("  %d ", numa_node_list_holder.get_node_list_entry(i));
+    }
+  }
+
 #undef WARN
+
+  return true;
 }
 
 // this routine is used whenever we need to reserve a contiguous VA range
