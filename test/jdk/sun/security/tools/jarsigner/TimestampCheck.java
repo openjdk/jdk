@@ -445,7 +445,7 @@ public class TimestampCheck {
                 verify("sha1tsaalg.jar", "-strict")
                         .shouldHaveExitValue(0)
                         .shouldContain("jar verified, with signer errors")
-                        .shouldContain("SHA-1 digest algorithm is considered a security risk")
+                        .shouldContain("SHA-1 timestamp digest algorithm is considered a security risk")
                         .shouldNotContain("is disabled");
 
                 // Disabled algorithms

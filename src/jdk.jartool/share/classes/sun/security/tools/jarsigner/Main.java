@@ -1195,7 +1195,7 @@ public class Main {
 
                 if ((legacyAlg & 4) != 0) {
                     warnings.add(String.format(
-                            rb.getString("The.digest.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update."),
+                            rb.getString("The.timestamp.digest.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update."),
                             legacyTsaDigestAlg));
                 }
 
