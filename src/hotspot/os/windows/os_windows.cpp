@@ -3071,17 +3071,19 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // On win32, one cannot release just a part of reserved memory, it's an
 // all or nothing deal.  When we split a reservation, we must break the
 // reservation into two reservations.
-void os::pd_split_reserved_memory(char *base, size_t size, size_t split,
-                                  bool realloc) {
-  if (size > 0) {
-    release_memory(base, size);
-    if (realloc) {
-      reserve_memory(split, base);
-    }
-    if (size != split) {
-      reserve_memory(size - split, base + split);
-    }
-  }
+void os::split_reserved_memory(char *base, size_t size, size_t split) {
+
+  char* const split_address = base + split;
+  assert(size > 0, "Sanity");
+  assert(size > split, "Sanity");
+  assert(split > 0, "Sanity");
+  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
+  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
+
+  release_memory(base, size);
+  reserve_memory(split, base);
+  reserve_memory(size - split, split_address);
+
 }
 
 // Multiple threads can race in this code but it's not possible to unmap small sections of

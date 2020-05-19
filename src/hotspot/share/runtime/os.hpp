@@ -119,8 +119,6 @@ class os: AllStatic {
                                   size_t alignment_hint = 0);
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc);
-  static void   pd_split_reserved_memory(char *base, size_t size,
-                                      size_t split, bool realloc);
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                                  bool executable);
@@ -320,8 +318,17 @@ class os: AllStatic {
                                size_t alignment_hint, MEMFLAGS flags);
   static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
   static char*  attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc = -1);
-  static void   split_reserved_memory(char *base, size_t size,
-                                      size_t split, bool realloc);
+
+
+  // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
+  //  [base+split, base+size).
+  //  This may remove the original mapping, so its content may be lost.
+  // Both base and split point must be aligned to allocation granularity; split point shall
+  //  be >0 and <size.
+  // Splitting guarantees that the resulting two memory regions can be released independently
+  //  from each other using os::release_memory().
+  static void   split_reserved_memory(char *base, size_t size, size_t split);
+
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable);
