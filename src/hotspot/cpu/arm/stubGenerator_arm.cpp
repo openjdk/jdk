@@ -3028,6 +3028,15 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_load_long_entry = generate_atomic_load_long();
     StubRoutines::_atomic_store_long_entry = generate_atomic_store_long();
+
+    // Safefetch stubs.
+    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
+                                                   &StubRoutines::_safefetch32_fault_pc,
+                                                   &StubRoutines::_safefetch32_continuation_pc);
+    assert (sizeof(int) == wordSize, "32-bit architecture");
+    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
+    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
+    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
   }
 
   void generate_all() {
@@ -3052,15 +3061,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
-                                                   &StubRoutines::_safefetch32_fault_pc,
-                                                   &StubRoutines::_safefetch32_continuation_pc);
-    assert (sizeof(int) == wordSize, "32-bit architecture");
-    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
-    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
-    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
 
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code
