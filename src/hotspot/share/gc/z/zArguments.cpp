@@ -99,9 +99,6 @@ void ZArguments::initialize() {
   // Verification of stacks not (yet) supported, for the same reason
   // we need fixup_partial_loads
   DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));
-
-  // Initialize platform specific arguments
-  initialize_platform();
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {
