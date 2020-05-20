@@ -860,7 +860,6 @@ javax/swing/JTree/4908142/bug4908142.java 8233550 macosx-all
 javax/swing/JTree/4330357/bug4330357.java 8233550 macosx-all
 javax/swing/JTable/7124218/SelectEditTableCell.java 8233551 macosx-all
 javax/swing/JTable/7068740/bug7068740.java 8233552 macosx-all
-javax/swing/JSpinner/4973721/bug4973721.java 8233553 macosx-all
 javax/swing/JRootPane/4670486/bug4670486.java 8042381 macosx-all
 javax/swing/JRadioButton/ButtonGroupFocus/ButtonGroupFocusTest.java 8233555 macosx-all
 javax/swing/JRadioButton/8075609/bug8075609.java 8233555 macosx-all

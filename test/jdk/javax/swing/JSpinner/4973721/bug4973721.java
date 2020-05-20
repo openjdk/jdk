@@ -20,11 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
    @test
    @key headful
    @bug 4973721
-   @summary Up and Down Arrow key buttons are not working for the JSpinner in Synth LAF
+   @summary Up and Down Arrow key buttons are not working for the JSpinner in
+   @        Synth LAF
    @library ../../regtesthelpers
    @build Util
    @author Oleg Mokhovikov
@@ -83,11 +85,15 @@ public class bug4973721 implements ChangeListener, FocusListener {
             synchronized(listener) {
                 if (!bFocusGained) {
                     System.out.println("waiting focusGained...");
-                    try { listener.wait(5000); } catch (InterruptedException e) {}
+                    try {
+                        listener.wait(5000);
+                    }
+                    catch (InterruptedException e) {}
                 }
             }
 
-            boolean hasFocus = Util.invokeOnEDT(new java.util.concurrent.Callable<Boolean>() {
+            boolean hasFocus = Util.invokeOnEDT(
+                    new java.util.concurrent.Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     return spinner.hasFocus();
@@ -95,7 +101,8 @@ public class bug4973721 implements ChangeListener, FocusListener {
             });
 
             if (!bFocusGained && !hasFocus) {
-                throw new RuntimeException("Couldn't request focus for spinner");
+                throw new RuntimeException("Couldn't request focus for" +
+                        " spinner");
             }
             Robot robot = new Robot();
             robot.setAutoDelay(50);
@@ -105,7 +112,8 @@ public class bug4973721 implements ChangeListener, FocusListener {
             Thread.sleep(1000);
 
             if (!bStateChanged) {
-                throw new RuntimeException("Up arrow key button doesn't work for a spinner in Synth L&F");
+                throw new RuntimeException("Up arrow key button doesn't work" +
+                        " for a spinner in Synth L&F");
             }
 
             bStateChanged = false;
@@ -115,10 +123,13 @@ public class bug4973721 implements ChangeListener, FocusListener {
             Thread.sleep(1000);
 
             if (!bStateChanged) {
-                throw new RuntimeException("Down arrow key button doesn't work for a spinner in Synth L&F");
+                throw new RuntimeException("Down arrow key button doesn't" +
+                        " work for a spinner in Synth L&F");
             }
         } finally {
-            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(() -> frame.dispose());
+            }
         }
     }
 }
