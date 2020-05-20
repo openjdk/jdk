@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,6 @@ typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {
   return result;
 }
 
-typeArrayOop oopFactory::new_tenured_charArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::charArrayKlassObj())->allocate(length, THREAD);
-}
-
 typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
   Klass* type_asKlassOop = Universe::typeArrayKlassObj(type);
   TypeArrayKlass* type_asArrayKlass = TypeArrayKlass::cast(type_asKlassOop);
@@ -131,9 +127,4 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
 objArrayHandle oopFactory::new_objArray_handle(Klass* klass, int length, TRAPS) {
   objArrayOop obj = new_objArray(klass, length, CHECK_(objArrayHandle()));
   return objArrayHandle(THREAD, obj);
-}
-
-typeArrayHandle oopFactory::new_byteArray_handle(int length, TRAPS) {
-  typeArrayOop obj = new_byteArray(length, CHECK_(typeArrayHandle()));
-  return typeArrayHandle(THREAD, obj);
 }
