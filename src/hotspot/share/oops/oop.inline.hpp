@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
 // We need a separate file to avoid circular references
 
 markWord oopDesc::mark() const {
-  uintptr_t v = HeapAccess<MO_VOLATILE>::load_at(as_oop(), mark_offset_in_bytes());
+  uintptr_t v = HeapAccess<MO_RELAXED>::load_at(as_oop(), mark_offset_in_bytes());
   return markWord(v);
 }
 
@@ -56,7 +56,7 @@ markWord* oopDesc::mark_addr_raw() const {
 }
 
 void oopDesc::set_mark(markWord m) {
-  HeapAccess<MO_VOLATILE>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
+  HeapAccess<MO_RELAXED>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
 }
 
 void oopDesc::set_mark_raw(markWord m) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,8 @@ class Access: public AllStatic {
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 
-  static const DecoratorSet load_mo_decorators = MO_UNORDERED | MO_VOLATILE | MO_RELAXED | MO_ACQUIRE | MO_SEQ_CST;
-  static const DecoratorSet store_mo_decorators = MO_UNORDERED | MO_VOLATILE | MO_RELAXED | MO_RELEASE | MO_SEQ_CST;
+  static const DecoratorSet load_mo_decorators = MO_UNORDERED | MO_RELAXED | MO_ACQUIRE | MO_SEQ_CST;
+  static const DecoratorSet store_mo_decorators = MO_UNORDERED | MO_RELAXED | MO_RELEASE | MO_SEQ_CST;
   static const DecoratorSet atomic_xchg_mo_decorators = MO_SEQ_CST;
   static const DecoratorSet atomic_cmpxchg_mo_decorators = MO_RELAXED | MO_SEQ_CST;
 
@@ -360,7 +360,6 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet memory_ordering_decorators = decorators & MO_DECORATOR_MASK;
   STATIC_ASSERT(memory_ordering_decorators == 0 || ( // make sure memory ordering decorators are disjoint if set
     (memory_ordering_decorators ^ MO_UNORDERED) == 0 ||
-    (memory_ordering_decorators ^ MO_VOLATILE) == 0 ||
     (memory_ordering_decorators ^ MO_RELAXED) == 0 ||
     (memory_ordering_decorators ^ MO_ACQUIRE) == 0 ||
     (memory_ordering_decorators ^ MO_RELEASE) == 0 ||
