@@ -1100,16 +1100,23 @@ endif
 # This target builds the documentation image
 docs-image: docs-jdk
 
-# If not already set, set the JVM specific targets to build the test image
-JVM_TEST_IMAGE_TARGETS ?= test-image-hotspot-jtreg-native test-image-hotspot-gtest
-
-ifeq ($(INCLUDE_GRAAL), true)
-  JVM_TEST_IMAGE_TARGETS += test-image-hotspot-jtreg-graal
-endif
-
 # This target builds the test image
-test-image: prepare-test-image test-image-jdk-jtreg-native \
-    test-image-demos-jdk $(JVM_TEST_IMAGE_TARGETS)
+test-image: prepare-test-image test-image-jdk-jtreg-native test-image-demos-jdk
+
+ifneq ($(JVM_TEST_IMAGE_TARGETS), )
+  # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
+  # standard hotspot set of tests.
+  test-image: $(JVM_TEST_IMAGE_TARGETS)
+else
+  test-image: test-image-hotspot-jtreg-native
+  ifeq ($(BUILD_GTEST), true)
+    test-image: test-image-hotspot-gtest
+  endif
+
+  ifeq ($(INCLUDE_GRAAL), true)
+    test-image: test-image-hotspot-jtreg-graal
+  endif
+endif
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   test-image: test-image-failure-handler
