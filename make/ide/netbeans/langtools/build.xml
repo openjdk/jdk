@@ -30,7 +30,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<project name="langtools-netbeans" default="build" basedir="../../..">
+<project name="langtools-netbeans" default="build" basedir="../../../..">
 
     <property name="langtools.properties"
         location="make/netbeans/langtools/nbproject/private/langtools.properties"/>
@@ -44,7 +44,7 @@
         and it would be harder to run results (e.g. in properties) from nested
         targets.
      -->
-    <import file="../../build.xml"/>
+    <import file="../../../langtools/build.xml"/>
 
     <!-- Build project. (action: build; F11) -->
 
