@@ -38,17 +38,22 @@
 #error "Only Zero CppInterpreter is supported"
 #endif
 
-void CppInterpreter::initialize() {
+void CppInterpreter::initialize_stub() {
   if (_code != NULL) return;
+
+  // generate interpreter
+  int code_size = InterpreterCodeSize;
+  NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
+  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
+                         "Interpreter");
+}
+
+void CppInterpreter::initialize_code() {
   AbstractInterpreter::initialize();
 
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    int code_size = InterpreterCodeSize;
-    NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-    _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
-                           "Interpreter");
     CppInterpreterGenerator g(_code);
     if (PrintInterpreter) print();
   }
@@ -60,7 +65,6 @@ void CppInterpreter::initialize() {
   else
     BytecodeInterpreter::run(&start_msg);
 }
-
 
 void CppInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
   ((ZeroEntry *) entry_point)->invoke(method, THREAD);

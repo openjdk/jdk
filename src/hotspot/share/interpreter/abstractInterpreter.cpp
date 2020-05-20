@@ -56,8 +56,6 @@
 // Implementation of platform independent aspects of Interpreter
 
 void AbstractInterpreter::initialize() {
-  assert(_code == NULL, "must only initialize once");
-
   // make sure 'imported' classes are initialized
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) BytecodeCounter::reset();
   if (PrintBytecodeHistogram)                                BytecodeHistogram::reset();

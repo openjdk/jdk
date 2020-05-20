@@ -649,8 +649,6 @@ jint universe_init() {
 
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
-  JavaClasses::compute_hard_coded_offsets();
-
   initialize_global_behaviours();
 
   GCConfig::arguments()->initialize_heap_sizes();

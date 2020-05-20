@@ -552,6 +552,7 @@
   template(string_signature,                          "Ljava/lang/String;")                                       \
   template(string_array_signature,                    "[Ljava/lang/String;")                                      \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
+  template(referencequeue_signature,                  "Ljava/lang/ref/ReferenceQueue;")                           \
   template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
   template(module_signature,                          "Ljava/lang/Module;")                                       \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
@@ -1535,7 +1536,7 @@ class vmSymbols: AllStatic {
     FIRST_SID = NO_SID + 1
   };
   enum {
-    log2_SID_LIMIT = 10         // checked by an assert at start-up
+    log2_SID_LIMIT = 11         // checked by an assert at start-up
   };
 
  private:

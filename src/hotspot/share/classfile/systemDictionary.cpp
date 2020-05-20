@@ -2095,6 +2095,13 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   // do a bunch more:
   resolve_wk_klasses_through(WK_KLASS_ENUM_NAME(Reference_klass), scan, CHECK);
 
+  // The offsets for jlr.Reference must be computed before
+  // InstanceRefKlass::update_nonstatic_oop_maps is called. That function uses
+  // the offsets to remove the referent and discovered fields from the oop maps,
+  // as they are treated in a special way by the GC. Removing these oops from the
+  // oop maps must be done before the usual subclasses of jlr.Reference are loaded.
+  java_lang_ref_Reference::compute_offsets();
+
   // Preload ref klasses and set reference types
   WK_KLASS(Reference_klass)->set_reference_type(REF_OTHER);
   InstanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(Reference_klass));

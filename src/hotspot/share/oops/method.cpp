@@ -1176,16 +1176,12 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (is_shared()) {
-#ifdef ASSERT
-    address entry = Interpreter::entry_for_cds_method(h_method);
-    assert(entry != NULL && entry == _i2i_entry,
-           "should be correctly set during dump time");
-#endif
+    // Can't assert that the adapters are sane, because methods get linked before
+    // the interpreter is generated, and hence before its adapters are generated.
+    // If you messed them up you will notice soon enough though, don't you worry.
     if (adapter() != NULL) {
       return;
     }
-    assert(entry == _from_interpreted_entry,
-           "should be correctly set during dump time");
   } else if (_i2i_entry != NULL) {
     return;
   }

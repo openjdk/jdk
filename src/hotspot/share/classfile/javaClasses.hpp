@@ -33,24 +33,11 @@
 class RecordComponent;
 
 // Interface for manipulating the basic Java classes.
-//
-// All dependencies on layout of actual Java classes should be kept here.
-// If the layout of any of the classes above changes the offsets must be adjusted.
-//
-// For most classes we hardwire the offsets for performance reasons. In certain
-// cases (e.g. java.security.AccessControlContext) we compute the offsets at
-// startup since the layout here differs between JDK1.2 and JDK1.3.
-//
-// Note that fields (static and non-static) are arranged with oops before non-oops
-// on a per class basis. The offsets below have to reflect this ordering.
-//
-// When editing the layouts please update the check_offset verification code
-// correspondingly. The names in the enums must be identical to the actual field
-// names in order for the verification code to work.
 
 #define BASIC_JAVA_CLASSES_DO_PART1(f) \
   f(java_lang_Class) \
   f(java_lang_String) \
+  f(java_lang_ref_Reference) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO_PART2(f) \
@@ -86,6 +73,7 @@ class RecordComponent;
   f(java_lang_LiveStackFrameInfo) \
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
   f(jdk_internal_misc_UnsafeConstants) \
+  f(java_lang_boxing_object) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \
@@ -529,13 +517,6 @@ class java_lang_Throwable: AllStatic {
   friend class BacktraceIterator;
 
  private:
-  // Offsets
-  enum {
-    hc_backtrace_offset     =  0,
-    hc_detailMessage_offset =  1,
-    hc_cause_offset         =  2,  // New since 1.4
-    hc_stackTrace_offset    =  3   // New since 1.4
-  };
   // Trace constants
   enum {
     trace_methods_offset = 0,
@@ -886,9 +867,6 @@ class reflect_UnsafeStaticFieldAccessorImpl {
 
 class java_lang_boxing_object: AllStatic {
  private:
-  enum {
-   hc_value_offset = 0
-  };
   static int value_offset;
   static int long_value_offset;
 
@@ -910,6 +888,9 @@ class java_lang_boxing_object: AllStatic {
                                                     value_offset;
   }
 
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Debugging
   friend class JavaClasses;
 };
@@ -919,14 +900,9 @@ class java_lang_boxing_object: AllStatic {
 // Interface to java.lang.ref.Reference objects
 
 class java_lang_ref_Reference: AllStatic {
- public:
-  enum {
-   hc_referent_offset   = 0,
-   hc_queue_offset      = 1,
-   hc_next_offset       = 2,
-   hc_discovered_offset = 3  // Is not last, see SoftRefs.
-  };
+  static bool _offsets_initialized;
 
+ public:
   static int referent_offset;
   static int queue_offset;
   static int next_offset;
@@ -950,6 +926,9 @@ class java_lang_ref_Reference: AllStatic {
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
+
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
 
@@ -1731,7 +1710,6 @@ class JavaClasses : AllStatic {
 
   static int compute_injected_offset(InjectedFieldID id);
 
-  static void compute_hard_coded_offsets();
   static void compute_offsets();
   static void check_offsets() PRODUCT_RETURN;
   static void serialize_offsets(SerializeClosure* soc) NOT_CDS_RETURN;
