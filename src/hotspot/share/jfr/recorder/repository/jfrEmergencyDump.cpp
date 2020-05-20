@@ -530,7 +530,7 @@ static void post_events(bool exception_handler) {
     e.commit();
   } else {
     // OOM
-    LeakProfiler::emit_events(max_jlong, false);
+    LeakProfiler::emit_events(max_jlong, false, false);
   }
   EventDumpReason event;
   event.set_reason(exception_handler ? "Crash" : "Out of Memory");

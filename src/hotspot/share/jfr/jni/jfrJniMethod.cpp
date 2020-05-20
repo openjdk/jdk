@@ -321,8 +321,8 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jobject jvm, j
   JfrEventClassTransformer::set_force_instrumentation(force_instrumentation == JNI_TRUE);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean emit_all))
-  LeakProfiler::emit_events(cutoff_ticks, emit_all == JNI_TRUE);
+JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
+  LeakProfiler::emit_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jobject jvm, jobject t))

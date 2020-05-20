@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 package jdk.jfr.event.oldobject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedClass;
@@ -52,117 +53,50 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestLargeRootSet
  */
 public class TestLargeRootSet {
-
-    private static final int THREAD_COUNT = 50;
-    private static final Random RANDOM = new Random(4711);
-    public static Vector<StackObject[]> temporaries = new Vector<>(OldObjects.MIN_SIZE);
-
-    private static class RootThread extends Thread {
-        private final CyclicBarrier barrier;
-        private int maxDepth = OldObjects.MIN_SIZE / THREAD_COUNT;
-
-        RootThread(CyclicBarrier cb) {
-            this.barrier = cb;
-        }
-
-        public void run() {
-            buildRootObjects();
-        }
-
-        private void buildRootObjects() {
-            if (maxDepth-- > 0) {
-                // Allocate array to trigger sampling code path for interpreter
-                // / c1
-                StackObject[] stackObject = new StackObject[RANDOM.nextInt(7)];
-                temporaries.add(stackObject); // make sure object escapes
-                buildRootObjects();
-            } else {
-                temporaries.clear();
-                try {
-                    barrier.await(); // wait for gc
-                    barrier.await(); // wait for recording to be stopped
-                } catch (InterruptedException e) {
-                    System.err.println("Thread was unexpected interrupted: " + e.getMessage());
-                } catch (BrokenBarrierException e) {
-                    System.err.println("Unexpected barrier exception: " + e.getMessage());
-                }
-                return;
-            }
-        }
+    static class Node {
+        Node left;
+        Node right;
+        Object value;
     }
 
-    private static class StackObject {
+    static class Leak {
+        // Leaking object has to be of some size,
+        // otherwise Node object wins most of the
+        // slots in the object queue.
+        // In a normal application, objects would
+        // be of various size and allocated over a
+        // longer period of time. This would create
+        // randomness not present in the test.
+        public long value1;
+        public Object value2;
+        float value3;
+        int value4;
+        double value5;
     }
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
-        int attempt = 1;
-        while (true) {
-            System.out.println();
-            System.out.println();
-            System.out.println("ATTEMPT: " + attempt);
-            System.out.println("====================================");
-            List<RootThread> threads = new ArrayList<>();
-            try (Recording r = new Recording()) {
-                r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
-                r.start();
-                CyclicBarrier cb = new CyclicBarrier(THREAD_COUNT + 1);
-                for (int i = 0; i < THREAD_COUNT; i++) {
-                    RootThread t = new RootThread(cb);
-                    t.start();
-                    if (i % 10 == 0) {
-                        // Give threads some breathing room before starting next
-                        // batch
-                        Thread.sleep(100);
-                    }
-                    threads.add(t);
-                }
-                cb.await();
-                System.gc();
-                r.stop();
-                cb.await();
-                List<RecordedEvent> events = Events.fromRecording(r);
-                Events.hasEvents(events);
-                int sample = 0;
-                for (RecordedEvent e : events) {
-                    RecordedObject ro = e.getValue("object");
-                    RecordedClass rc = ro.getValue("type");
-                    System.out.println("Sample: " + sample);
-                    System.out.println(" - allocationTime: " + e.getInstant("allocationTime"));
-                    System.out.println(" - type: " + rc.getName());
-                    RecordedObject root = e.getValue("root");
-                    if (root != null) {
-                        System.out.println(" - root:");
-                        System.out.println("   - description: " + root.getValue("description"));
-                        System.out.println("   - system: " + root.getValue("system"));
-                        System.out.println("   - type: " + root.getValue("type"));
-                    } else {
-                        System.out.println(" - root: N/A");
-                    }
-                    RecordedStackTrace stack = e.getStackTrace();
-                    if (stack != null) {
-                        System.out.println(" - stack:");
-                        int frameCount = 0;
-                        for (RecordedFrame frame : stack.getFrames()) {
-                            RecordedMethod m = frame.getMethod();
-                            System.out.println("      " + m.getType().getName() + "." + m.getName() + "(...)");
-                            frameCount++;
-                            if (frameCount == 10) {
-                                break;
-                            }
-                        }
-                    } else {
-                        System.out.println(" - stack: N/A");
-                    }
-                    System.out.println();
-                    if (rc.getName().equals(StackObject[].class.getName())) {
-                        return; // ok
-                    }
-                    sample++;
+        WhiteBox.setSkipBFS(true);
+        HashMap<Object, Node> leaks = new HashMap<>();
+        try (Recording r = new Recording()) {
+            r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
+            r.start();
+            for (int i = 0; i < 1_000_000; i++) {
+                Node node = new Node();
+                node.left = new Node();
+                node.right = new Node();
+                node.right.value = new Leak();
+                leaks.put(i, node);
+            }
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
+            for (RecordedEvent e : events) {
+                RecordedClass type = e.getValue("object.type");
+                if (type.getName().equals(Leak.class.getName())) {
+                    return;
                 }
             }
-            attempt++;
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,10 @@ class PathToGcRootsOperation : public OldObjectVMOperation {
   EdgeStore* const _edge_store;
   const int64_t _cutoff_ticks;
   const bool _emit_all;
+  const bool _skip_bfs;
 
  public:
-  PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all);
+  PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs);
   virtual void doit();
 };
 

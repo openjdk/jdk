@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,10 @@ public final class OldObjectSample {
         if (isEnabled(recording)) {
             long nanos = CutoffSetting.parseValueSafe(recording.getSettings().get(OLD_OBJECT_CUTOFF));
             long ticks = Utils.nanosToTicks(nanos);
-            JVM.getJVM().emitOldObjectSamples(ticks, WhiteBox.getWriteAllObjectSamples());
+            emit(ticks);
         }
     }
+
 
     // Emit if old object is enabled for at least one recording, and use the largest
     // cutoff for an enabled recording
@@ -74,8 +75,14 @@ public final class OldObjectSample {
         }
         if (enabled) {
             long ticks = Utils.nanosToTicks(cutoffNanos);
-            JVM.getJVM().emitOldObjectSamples(ticks, WhiteBox.getWriteAllObjectSamples());
+            emit(ticks);
         }
+    }
+
+    private static void emit(long ticks) {
+        boolean emitAll = WhiteBox.getWriteAllObjectSamples();
+        boolean skipBFS = WhiteBox.getSkipBFS();
+        JVM.getJVM().emitOldObjectSamples(ticks, emitAll, skipBFS);
     }
 
     public static void updateSettingPathToGcRoots(Map<String, String> s, Boolean pathToGcRoots) {

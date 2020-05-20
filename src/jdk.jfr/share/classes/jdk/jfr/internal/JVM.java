@@ -521,8 +521,9 @@ public final class JVM {
      *
      * @param cutoff the cutoff in ticks
      * @param emitAll emit all samples in old object queue
+     * @param skipBFS don't use BFS when searching for path to GC root
      */
-    public native void emitOldObjectSamples(long cutoff, boolean emitAll);
+    public native void emitOldObjectSamples(long cutoff, boolean emitAll, boolean skipBFS);
 
     /**
      * Test if a chunk rotation is warranted.
