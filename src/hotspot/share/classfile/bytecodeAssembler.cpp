@@ -32,12 +32,12 @@
 #include "utilities/bytes.hpp"
 
 u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe) {
-  u2 index;
-  u2* probe = _indices.get(bcpe);
-  if (probe == NULL) {
-    index = _entries.length();
+
+  u2 index = _entries.length();
+  bool created = false;
+  u2* probe = _indices.put_if_absent(bcpe, index, &created);
+  if (created) {
     _entries.append(bcpe);
-    _indices.put(bcpe, index);
   } else {
     index = *probe;
   }

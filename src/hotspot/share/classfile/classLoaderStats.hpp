@@ -115,7 +115,7 @@ protected:
     return hash;
   }
 
-  typedef ResourceHashtable<oop, ClassLoaderStats*,
+  typedef ResourceHashtable<oop, ClassLoaderStats,
       ClassLoaderStatsClosure::oop_hash, ClassLoaderStatsClosure::oop_equals> StatsTable;
 
   outputStream* _out;
@@ -136,7 +136,7 @@ public:
   }
 
   virtual void do_cld(ClassLoaderData* cld);
-  virtual bool do_entry(oop const& key, ClassLoaderStats* const& cls);
+  virtual bool do_entry(oop const& key, ClassLoaderStats const& cls);
   void print();
 
 private:
