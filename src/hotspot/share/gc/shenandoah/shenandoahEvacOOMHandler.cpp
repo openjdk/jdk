@@ -51,19 +51,23 @@ void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
 void ShenandoahEvacOOMHandler::enter_evacuation() {
   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
 
-  assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "sanity");
-  assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
-
+  Thread* const thr = Thread::current();
+  uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
   if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
     wait_for_no_evac_threads();
     return;
   }
 
+  // Nesting case, this thread already registered
+  if (level > 0) {
+     return;
+  }
+
+  assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
   while (true) {
     jint other = Atomic::cmpxchg(&_threads_in_evac, threads_in_evac, threads_in_evac + 1);
     if (other == threads_in_evac) {
       // Success: caller may safely enter evacuation
-      DEBUG_ONLY(ShenandoahThreadLocalData::set_evac_allowed(Thread::current(), true));
       return;
     } else {
       // Failure:
@@ -79,7 +83,14 @@ void ShenandoahEvacOOMHandler::enter_evacuation() {
 }
 
 void ShenandoahEvacOOMHandler::leave_evacuation() {
-  if (!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
+  Thread* const thr = Thread::current();
+  uint8_t level = ShenandoahThreadLocalData::pop_evac_oom_scope(thr);
+  // Not top level, just return
+  if (level > 1) {
+    return;
+  }
+
+  if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
     assert((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) > 0, "sanity");
     // NOTE: It's ok to simply decrement, even with mask set, because unmasked value is positive.
     Atomic::dec(&_threads_in_evac);
@@ -87,10 +98,9 @@ void ShenandoahEvacOOMHandler::leave_evacuation() {
     // If we get here, the current thread has already gone through the
     // OOM-during-evac protocol and has thus either never entered or successfully left
     // the evacuation region. Simply flip its TL oom-during-evac flag back off.
-    ShenandoahThreadLocalData::set_oom_during_evac(Thread::current(), false);
+    ShenandoahThreadLocalData::set_oom_during_evac(thr, false);
   }
-  DEBUG_ONLY(ShenandoahThreadLocalData::set_evac_allowed(Thread::current(), false));
-  assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must be turned off");
+  assert(!ShenandoahThreadLocalData::is_oom_during_evac(thr), "TL oom-during-evac must be turned off");
 }
 
 void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {

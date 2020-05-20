@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
 #include "gc/shared/plab.hpp"
+#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
@@ -39,7 +40,9 @@ public:
 
 private:
   char _gc_state;
-  char _oom_during_evac;
+  // Evacuation OOM state
+  uint8_t                 _oom_scope_nesting_level;
+  bool                    _oom_during_evac;
   ShenandoahSATBMarkQueue _satb_mark_queue;
   PLAB* _gclab;
   size_t _gclab_size;
@@ -49,7 +52,8 @@ private:
 
   ShenandoahThreadLocalData() :
     _gc_state(0),
-    _oom_during_evac(0),
+    _oom_scope_nesting_level(0),
+    _oom_during_evac(false),
     _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
     _gclab(NULL),
     _gclab_size(0),
@@ -88,18 +92,6 @@ public:
 
   static SATBMarkQueue& satb_mark_queue(Thread* thread) {
     return data(thread)->_satb_mark_queue;
-  }
-
-  static bool is_oom_during_evac(Thread* thread) {
-    return (data(thread)->_oom_during_evac & 1) == 1;
-  }
-
-  static void set_oom_during_evac(Thread* thread, bool oom) {
-    if (oom) {
-      data(thread)->_oom_during_evac |= 1;
-    } else {
-      data(thread)->_oom_during_evac &= ~1;
-    }
   }
 
   static void set_gc_state(Thread* thread, char gc_state) {
@@ -151,19 +143,38 @@ public:
     data(thread)->_disarmed_value = value;
   }
 
-#ifdef ASSERT
-  static void set_evac_allowed(Thread* thread, bool evac_allowed) {
-    if (evac_allowed) {
-      data(thread)->_oom_during_evac |= 2;
-    } else {
-      data(thread)->_oom_during_evac &= ~2;
-    }
+  // Evacuation OOM handling
+  static bool is_oom_during_evac(Thread* thread) {
+    return data(thread)->_oom_during_evac;
+  }
+
+  static void set_oom_during_evac(Thread* thread, bool oom) {
+    data(thread)->_oom_during_evac = oom;
+  }
+
+  static uint8_t evac_oom_scope_level(Thread* thread) {
+    return data(thread)->_oom_scope_nesting_level;
+  }
+
+  // Push the scope one level deeper, return previous level
+  static uint8_t push_evac_oom_scope(Thread* thread) {
+    uint8_t level = evac_oom_scope_level(thread);
+    assert(level < 254, "Overflow nesting level"); // UINT8_MAX = 255
+    data(thread)->_oom_scope_nesting_level = level + 1;
+    return level;
+  }
+
+  // Pop the scope by one level, return previous level
+  static uint8_t pop_evac_oom_scope(Thread* thread) {
+    uint8_t level = evac_oom_scope_level(thread);
+    assert(level > 0, "Underflow nesting level");
+    data(thread)->_oom_scope_nesting_level = level - 1;
+    return level;
   }
 
   static bool is_evac_allowed(Thread* thread) {
-    return (data(thread)->_oom_during_evac & 2) == 2;
+    return evac_oom_scope_level(thread) > 0;
   }
-#endif
 
   // Offsets
   static ByteSize satb_mark_queue_active_offset() {
@@ -186,5 +197,7 @@ public:
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _disarmed_value);
   }
 };
+
+STATIC_ASSERT(sizeof(ShenandoahThreadLocalData) <= sizeof(GCThreadLocalData));
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
