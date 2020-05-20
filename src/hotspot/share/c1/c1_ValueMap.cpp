@@ -488,6 +488,7 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   : _compilation(ir->compilation())
   , _current_map(NULL)
   , _value_maps(ir->linear_scan_order()->length(), ir->linear_scan_order()->length(), NULL)
+  , _has_substitutions(false)
 {
   TRACE_VALUE_NUMBERING(tty->print_cr("****** start of global value numbering"));
 
