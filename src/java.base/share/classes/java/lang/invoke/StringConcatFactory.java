@@ -27,11 +27,13 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
@@ -183,6 +185,11 @@ public final class StringConcatFactory {
         final String strategy =
                 VM.getSavedProperty("java.lang.invoke.stringConcat");
         STRATEGY = (strategy == null) ? null : Strategy.valueOf(strategy);
+
+        if (STRATEGY == null || STRATEGY == Strategy.MH_INLINE_SIZED_EXACT) {
+            // Force initialization of default strategy:
+            Unsafe.getUnsafe().ensureClassInitialized(MethodHandleInlineCopyStrategy.class);
+        }
 
         DEBUG = Boolean.parseBoolean(
                 VM.getSavedProperty("java.lang.invoke.stringConcat.debug"));
@@ -1499,12 +1506,12 @@ public final class StringConcatFactory {
                     recipe.getElements().get(0).getTag() == TAG_ARG &&
                     recipe.getElements().get(1).getTag() == TAG_ARG) {
 
-                    return SIMPLE;
+                    return simpleConcat();
 
                 } else if (mt.parameterCount() == 1 &&
                            !mt.parameterType(0).isPrimitive()) {
                     // One Object argument, one constant
-                    MethodHandle mh = SIMPLE;
+                    MethodHandle mh = simpleConcat();
 
                     if (recipe.getElements().get(0).getTag() == TAG_CONST &&
                         recipe.getElements().get(1).getTag() == TAG_ARG) {
@@ -1546,7 +1553,7 @@ public final class StringConcatFactory {
             // Drop all remaining parameter types, leave only helper arguments:
             MethodHandle mh;
 
-            mh = MethodHandles.dropArguments(NEW_STRING, 2, ptypes);
+            mh = MethodHandles.dropArguments(newString(), 2, ptypes);
 
             long initialLengthCoder = INITIAL_CODER;
 
@@ -1617,7 +1624,7 @@ public final class StringConcatFactory {
             }
 
             // Fold in byte[] instantiation at argument 0
-            mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, NEW_ARRAY,
+            mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArray(),
                     1 // index
             );
 
@@ -1716,22 +1723,41 @@ public final class StringConcatFactory {
             }
         };
 
-        private static final MethodHandle SIMPLE;
-        private static final MethodHandle NEW_STRING;
-        private static final MethodHandle NEW_ARRAY;
+        private @Stable static MethodHandle SIMPLE_CONCAT;
+        private static MethodHandle simpleConcat() {
+            if (SIMPLE_CONCAT == null) {
+                SIMPLE_CONCAT = JLA.stringConcatHelper("simpleConcat", methodType(String.class, Object.class, Object.class));
+            }
+            return SIMPLE_CONCAT;
+        }
+
+        private @Stable static MethodHandle NEW_STRING;
+        private static MethodHandle newString() {
+            MethodHandle mh = NEW_STRING;
+            if (mh == null) {
+                NEW_STRING = mh =
+                    JLA.stringConcatHelper("newString", methodType(String.class, byte[].class, long.class));
+            }
+            return mh;
+        }
+        private @Stable static MethodHandle NEW_ARRAY;
+        private static MethodHandle newArray() {
+            MethodHandle mh = NEW_ARRAY;
+            if (mh == null) {
+                NEW_ARRAY = mh =
+                    JLA.stringConcatHelper("newArray", methodType(byte[].class, long.class));
+            }
+            return mh;
+        }
+
         private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;
         private static final ConcurrentMap<Class<?>, MethodHandle> MIXERS;
         private static final long INITIAL_CODER;
 
         static {
             INITIAL_CODER = JLA.stringConcatInitialCoder();
-
             PREPENDERS = new ConcurrentHashMap<>();
             MIXERS = new ConcurrentHashMap<>();
-
-            SIMPLE     = JLA.stringConcatHelper("simpleConcat", methodType(String.class, Object.class, Object.class));
-            NEW_STRING = JLA.stringConcatHelper("newString", methodType(String.class, byte[].class, long.class));
-            NEW_ARRAY  = JLA.stringConcatHelper("newArray", methodType(byte[].class, long.class));
         }
     }
 

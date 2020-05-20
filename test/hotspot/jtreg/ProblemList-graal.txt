@@ -93,8 +93,6 @@ gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generi
 gc/g1/plab/TestPLABPromotion.java                               8191048   generic-all
 gc/g1/plab/TestPLABResize.java                                  8191048   generic-all
 
-gc/stress/TestStressG1Humongous.java                            8218176   generic-all
-
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
 compiler/jvmci/compilerToVM/ReprofileTest.java                  8201333   generic-all
