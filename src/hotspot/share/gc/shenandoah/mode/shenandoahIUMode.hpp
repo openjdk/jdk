@@ -34,7 +34,7 @@ public:
   virtual void initialize_flags() const;
   virtual ShenandoahHeuristics* initialize_heuristics() const;
 
-  virtual const char* name()     { return "Incremental-Update"; }
+  virtual const char* name()     { return "Incremental-Update (IU)"; }
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return true; }
 };
