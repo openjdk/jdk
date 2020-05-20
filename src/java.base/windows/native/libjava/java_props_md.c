@@ -73,6 +73,7 @@ getEncodingInternal(LCID lcid)
                       LOCALE_IDEFAULTANSICODEPAGE,
                       ret+2, 14) == 0) {
         codepage = 1252;
+        strcpy(ret+2, "1252");
     } else {
         codepage = atoi(ret+2);
     }

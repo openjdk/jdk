@@ -33,9 +33,11 @@ import build.tools.symbolgenerator.CreateSymbols
                                   .RequiresDescription;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -53,6 +55,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,11 +68,15 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
@@ -209,7 +216,8 @@ public class CreateSymbols {
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
     @SuppressWarnings("unchecked")
-    public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation) throws IOException {
+    public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation,
+                              long timestamp, String currentVersion, String systemModules) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)
                                                                     : null,
                                      Paths.get(ctDescriptionFile), null);
@@ -217,12 +225,13 @@ public class CreateSymbols {
         splitHeaders(data.classes);
 
         Map<String, Map<Character, String>> package2Version2Module = new HashMap<>();
+        Map<String, Set<FileData>> directory2FileData = new TreeMap<>();
 
         for (ModuleDescription md : data.modules.values()) {
             for (ModuleHeaderDescription mhd : md.header) {
                 List<String> versionsList =
                         Collections.singletonList(mhd.versions);
-                writeModulesForVersions(ctSymLocation,
+                writeModulesForVersions(directory2FileData,
                                         md,
                                         mhd,
                                         versionsList);
@@ -260,10 +269,36 @@ public class CreateSymbols {
                     Set<String> currentVersions = new HashSet<>(jointVersions);
                     limitJointVersion(currentVersions, e.getValue().toString());
                     currentVersions = currentVersions.stream().filter(vers -> !disjoint(vers, e.getValue().toString())).collect(Collectors.toSet());
-                    writeClassesForVersions(ctSymLocation, classDescription, header, e.getKey(), currentVersions);
+                    writeClassesForVersions(directory2FileData, classDescription, header, e.getKey(), currentVersions);
                 }
             }
         }
+
+        currentVersion = Integer.toString(Integer.parseInt(currentVersion), Character.MAX_RADIX);
+        currentVersion = currentVersion.toUpperCase(Locale.ROOT);
+
+        openDirectory(directory2FileData, currentVersion + "/")
+                .add(new FileData(currentVersion + "/system-modules",
+                                  Files.readAllBytes(Paths.get(systemModules))));
+
+        try (OutputStream fos = new FileOutputStream(ctSymLocation);
+             OutputStream bos = new BufferedOutputStream(fos);
+             ZipOutputStream jos = new ZipOutputStream(bos)) {
+            for (Entry<String, Set<FileData>> e : directory2FileData.entrySet()) {
+                jos.putNextEntry(createZipEntry(e.getKey(), timestamp));
+                for (FileData fd : e.getValue()) {
+                    jos.putNextEntry(createZipEntry(fd.fileName, timestamp));
+                    jos.write(fd.fileData);
+                }
+            }
+        }
+    }
+
+    private ZipEntry createZipEntry(String name, long timestamp) {
+        ZipEntry ze = new ZipEntry(name);
+
+        ze.setTime(timestamp);
+        return ze;
     }
 
     public static String EXTENSION = ".sig";
@@ -431,7 +466,9 @@ public class CreateSymbols {
             moduleList.put(desc.name, desc);
         }
 
-        return new LoadDescriptions(result, moduleList, new ArrayList<>(platforms.values()));
+        return new LoadDescriptions(result,
+                                    moduleList,
+                                    new ArrayList<>(platforms.values()));
     }
 
     static final class LoadDescriptions {
@@ -664,29 +701,29 @@ public class CreateSymbols {
         return true;
     }
 
-    void writeClassesForVersions(String ctSymLocation,
+    void writeClassesForVersions(Map<String, Set<FileData>> directory2FileData,
                                  ClassDescription classDescription,
                                  ClassHeaderDescription header,
                                  String module,
                                  Iterable<String> versions)
             throws IOException {
         for (String ver : versions) {
-            writeClass(ctSymLocation, classDescription, header, module, ver);
+            writeClass(directory2FileData, classDescription, header, module, ver);
         }
     }
 
-    void writeModulesForVersions(String ctSymLocation,
+    void writeModulesForVersions(Map<String, Set<FileData>> directory2FileData,
                                  ModuleDescription moduleDescription,
                                  ModuleHeaderDescription header,
                                  Iterable<String> versions)
             throws IOException {
         for (String ver : versions) {
-            writeModule(ctSymLocation, moduleDescription, header, ver);
+            writeModule(directory2FileData, moduleDescription, header, ver);
         }
     }
 
     //<editor-fold defaultstate="collapsed" desc="Class Writing">
-    void writeModule(String ctSymLocation,
+    void writeModule(Map<String, Set<FileData>> directory2FileData,
                     ModuleDescription moduleDescription,
                     ModuleHeaderDescription header,
                     String version) throws IOException {
@@ -713,21 +750,10 @@ public class CreateSymbols {
                 new Method[0],
                 attributes);
 
-        Path outputClassFile = Paths.get(ctSymLocation,
-                                         version,
-                                         moduleDescription.name,
-                                         "module-info" + EXTENSION);
-
-        Files.createDirectories(outputClassFile.getParent());
-
-        try (OutputStream out = Files.newOutputStream(outputClassFile)) {
-            ClassWriter w = new ClassWriter();
-
-            w.write(classFile, out);
-        }
+        doWrite(directory2FileData, version, moduleDescription.name, "module-info" + EXTENSION, classFile);
     }
 
-    void writeClass(String ctSymLocation,
+    void writeClass(Map<String, Set<FileData>> directory2FileData,
                     ClassDescription classDescription,
                     ClassHeaderDescription header,
                     String module,
@@ -783,21 +809,43 @@ public class CreateSymbols {
                 methods.toArray(new Method[0]),
                 attributes);
 
-        Path outputClassFile = Paths.get(ctSymLocation, version);
+        doWrite(directory2FileData, version, module, classDescription.name + EXTENSION, classFile);
+    }
 
-        if (module != null) {
-            outputClassFile = outputClassFile.resolve(module);
-        }
-
-        outputClassFile = outputClassFile.resolve(classDescription.name + EXTENSION);
-
-        Files.createDirectories(outputClassFile.getParent());
-
-        try (OutputStream out = Files.newOutputStream(outputClassFile)) {
+    private void doWrite(Map<String, Set<FileData>> directory2FileData,
+                         String version,
+                         String moduleName,
+                         String fileName,
+                         ClassFile classFile) throws IOException {
+        int lastSlash = fileName.lastIndexOf('/');
+        String pack = lastSlash != (-1) ? fileName.substring(0, lastSlash + 1) : "/";
+        String directory = version + "/" + moduleName + "/" + pack;
+        String fullFileName = version + "/" + moduleName + "/" + fileName;
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             ClassWriter w = new ClassWriter();
 
             w.write(classFile, out);
+
+            openDirectory(directory2FileData, directory)
+                .add(new FileData(fullFileName, out.toByteArray()));
         }
+    }
+
+    private Set<FileData> openDirectory(Map<String, Set<FileData>> directory2FileData,
+                               String directory) {
+        Comparator<FileData> fileCompare = (fd1, fd2) -> fd1.fileName.compareTo(fd2.fileName);
+        return directory2FileData.computeIfAbsent(directory, d -> new TreeSet<>(fileCompare));
+    }
+
+    private static class FileData {
+        public final String fileName;
+        public final byte[] fileData;
+
+        public FileData(String fileName, byte[] fileData) {
+            this.fileName = fileName;
+            this.fileData = fileData;
+        }
+
     }
 
     private void addAttributes(ModuleDescription md,
@@ -3727,23 +3775,40 @@ public class CreateSymbols {
                 String ctDescriptionFileExtra;
                 String ctDescriptionFile;
                 String ctSymLocation;
+                String timestampSpec;
+                String currentVersion;
+                String systemModules;
 
-                if (args.length == 3) {
+                if (args.length == 6) {
                     ctDescriptionFileExtra = null;
                     ctDescriptionFile = args[1];
                     ctSymLocation = args[2];
-                } else if (args.length == 4) {
+                    timestampSpec = args[3];
+                    currentVersion = args[4];
+                    systemModules = args[5];
+                } else if (args.length == 7) {
                     ctDescriptionFileExtra = args[1];
                     ctDescriptionFile = args[2];
                     ctSymLocation = args[3];
+                    timestampSpec = args[4];
+                    currentVersion = args[5];
+                    systemModules = args[6];
                 } else {
                     help();
                     return ;
                 }
 
+                long timestamp = Long.parseLong(timestampSpec);
+
+                //SOURCE_DATE_EPOCH is in seconds, convert to milliseconds:
+                timestamp *= 1000;
+
                 new CreateSymbols().createSymbols(ctDescriptionFileExtra,
                                                   ctDescriptionFile,
-                                                  ctSymLocation);
+                                                  ctSymLocation,
+                                                  timestamp,
+                                                  currentVersion,
+                                                  systemModules);
                 break;
         }
     }

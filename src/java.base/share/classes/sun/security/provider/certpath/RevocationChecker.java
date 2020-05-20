@@ -46,6 +46,7 @@ import static sun.security.provider.certpath.PKIX.*;
 import sun.security.x509.*;
 import static sun.security.x509.PKIXExtensions.*;
 import sun.security.util.Debug;
+import sun.security.util.KnownOIDs;
 
 class RevocationChecker extends PKIXRevocationChecker {
 
@@ -722,7 +723,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                 // verify the response
                 byte[] nonce = null;
                 for (Extension ext : ocspExtensions) {
-                    if (ext.getId().equals("1.3.6.1.5.5.7.48.1.2")) {
+                    if (ext.getId().equals(KnownOIDs.OCSPNonceExt.value())) {
                         nonce = ext.getValue();
                     }
                 }

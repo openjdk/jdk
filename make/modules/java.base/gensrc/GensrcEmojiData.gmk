@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ GENSRC_EMOJIDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/util/regex/EmojiD
 EMOJIDATATEMP = $(TOPDIR)/src/java.base/share/classes/java/util/regex/EmojiData.java.template
 UNICODEDATA = $(TOPDIR)/make/data/unicodedata
 
-$(GENSRC_EMOJIDATA): $(BUILD_TOOLS_JDK) $(EMOJIDATATEMP) $(UNICODEDATA)/emoji-data.txt
+$(GENSRC_EMOJIDATA): $(BUILD_TOOLS_JDK) $(EMOJIDATATEMP) $(UNICODEDATA)/emoji/emoji-data.txt
 	$(call LogInfo, Generating $@)
 	$(call MakeTargetDir)
 	$(TOOL_GENERATEEMOJIDATA) \
@@ -40,5 +40,4 @@ $(GENSRC_EMOJIDATA): $(BUILD_TOOLS_JDK) $(EMOJIDATATEMP) $(UNICODEDATA)/emoji-da
 		$(UNICODEDATA) \
 		$(GENSRC_EMOJIDATA)
 
-GENSRC_JAVA_BASE += $(GENSRC_EMOJIDATA)
-
+TARGETS += $(GENSRC_EMOJIDATA)

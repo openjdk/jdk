@@ -29,6 +29,7 @@
  *          SocketAddress
  * @run main AddressTest
  * @run main/othervm -Djava.net.preferIPv4Stack=true AddressTest
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl AddressTest
  */
 
 import java.net.*;

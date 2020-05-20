@@ -172,12 +172,32 @@ public enum CipherSuite {
             0x0032, KeyExAlgorithm.DHE_DSS, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_RSA_WITH_AES_128_CBC_SHA(
             0x002F, KeyExAlgorithm.RSA, Protocol.SSLV3, Protocol.TLSV1_2),
+    TLS_KRB5_EXPORT_WITH_RC4_40_MD5(
+            0x002B, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
+    TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5(
+            0x002A, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
+    TLS_KRB5_EXPORT_WITH_RC4_40_SHA(
+            0x0028, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
+    TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5(
+            0x0029, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_1),
+    TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA(
+            0x0027, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
+    TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA(
+            0x0026, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_1),
+    TLS_KRB5_WITH_IDEA_CBC_MD5(
+            0x0025, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_1),
+    TLS_KRB5_WITH_RC4_128_MD5(
+            0x0024, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_KRB5_WITH_3DES_EDE_CBC_MD5(
-            0x0023, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
+            0x0023, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_1),
     TLS_KRB5_WITH_DES_CBC_MD5(
-            0x0022,KeyExAlgorithm.KRB5,  Protocol.SSLV3, Protocol.TLSV1_1),
+            0x0022, KeyExAlgorithm.KRB5,  Protocol.SSLV3, Protocol.TLSV1_1),
+    TLS_KRB5_WITH_IDEA_CBC_SHA(
+            0x0021, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_1),
+    TLS_KRB5_WITH_RC4_128_SHA(
+            0x0020, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
     TLS_KRB5_WITH_3DES_EDE_CBC_SHA(
-            0x001F, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
+            0x001F, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_1),
     TLS_KRB5_WITH_DES_CBC_SHA(
             0x001E, KeyExAlgorithm.KRB5, Protocol.SSLV3, Protocol.TLSV1_2),
     SSL_DH_anon_WITH_3DES_EDE_CBC_SHA(

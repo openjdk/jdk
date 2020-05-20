@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
@@ -80,6 +81,7 @@ public class ConcAttachTest implements Runnable {
 
     private static void checkAttachListenerThread() throws InterruptedException, IOException {
         JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
+        jcmd.addVMArgs(Utils.getTestJavaOpts());
         jcmd.addToolArg(strPID);
         jcmd.addToolArg("Thread.print");
 

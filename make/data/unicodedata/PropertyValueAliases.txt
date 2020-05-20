@@ -1,5 +1,5 @@
-# PropertyValueAliases-12.1.0.txt
-# Date: 2019-03-10, 10:53:18 GMT
+# PropertyValueAliases-13.0.0.txt
+# Date: 2019-11-13, 21:52:10 GMT
 # Copyright (c) 2019 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
@@ -88,6 +88,7 @@ age; 10.0                             ; V10_0
 age; 11.0                             ; V11_0
 age; 12.0                             ; V12_0
 age; 12.1                             ; V12_1
+age; 13.0                             ; V13_0
 age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
@@ -190,6 +191,7 @@ blk; Cham                             ; Cham
 blk; Cherokee                         ; Cherokee
 blk; Cherokee_Sup                     ; Cherokee_Supplement
 blk; Chess_Symbols                    ; Chess_Symbols
+blk; Chorasmian                       ; Chorasmian
 blk; CJK                              ; CJK_Unified_Ideographs
 blk; CJK_Compat                       ; CJK_Compatibility
 blk; CJK_Compat_Forms                 ; CJK_Compatibility_Forms
@@ -201,6 +203,7 @@ blk; CJK_Ext_C                        ; CJK_Unified_Ideographs_Extension_C
 blk; CJK_Ext_D                        ; CJK_Unified_Ideographs_Extension_D
 blk; CJK_Ext_E                        ; CJK_Unified_Ideographs_Extension_E
 blk; CJK_Ext_F                        ; CJK_Unified_Ideographs_Extension_F
+blk; CJK_Ext_G                        ; CJK_Unified_Ideographs_Extension_G
 blk; CJK_Radicals_Sup                 ; CJK_Radicals_Supplement
 blk; CJK_Strokes                      ; CJK_Strokes
 blk; CJK_Symbols                      ; CJK_Symbols_And_Punctuation
@@ -226,6 +229,7 @@ blk; Diacriticals_Ext                 ; Combining_Diacritical_Marks_Extended
 blk; Diacriticals_For_Symbols         ; Combining_Diacritical_Marks_For_Symbols; Combining_Marks_For_Symbols
 blk; Diacriticals_Sup                 ; Combining_Diacritical_Marks_Supplement
 blk; Dingbats                         ; Dingbats
+blk; Dives_Akuru                      ; Dives_Akuru
 blk; Dogra                            ; Dogra
 blk; Domino                           ; Domino_Tiles
 blk; Duployan                         ; Duployan
@@ -289,6 +293,7 @@ blk; Katakana                         ; Katakana
 blk; Katakana_Ext                     ; Katakana_Phonetic_Extensions
 blk; Kayah_Li                         ; Kayah_Li
 blk; Kharoshthi                       ; Kharoshthi
+blk; Khitan_Small_Script              ; Khitan_Small_Script
 blk; Khmer                            ; Khmer
 blk; Khmer_Symbols                    ; Khmer_Symbols
 blk; Khojki                           ; Khojki
@@ -308,6 +313,7 @@ blk; Linear_A                         ; Linear_A
 blk; Linear_B_Ideograms               ; Linear_B_Ideograms
 blk; Linear_B_Syllabary               ; Linear_B_Syllabary
 blk; Lisu                             ; Lisu
+blk; Lisu_Sup                         ; Lisu_Supplement
 blk; Low_Surrogates                   ; Low_Surrogates
 blk; Lycian                           ; Lycian
 blk; Lydian                           ; Lydian
@@ -414,6 +420,7 @@ blk; Super_And_Sub                    ; Superscripts_And_Subscripts
 blk; Sutton_SignWriting               ; Sutton_SignWriting
 blk; Syloti_Nagri                     ; Syloti_Nagri
 blk; Symbols_And_Pictographs_Ext_A    ; Symbols_And_Pictographs_Extended_A
+blk; Symbols_For_Legacy_Computing     ; Symbols_For_Legacy_Computing
 blk; Syriac                           ; Syriac
 blk; Syriac_Sup                       ; Syriac_Supplement
 blk; Tagalog                          ; Tagalog
@@ -428,6 +435,7 @@ blk; Tamil                            ; Tamil
 blk; Tamil_Sup                        ; Tamil_Supplement
 blk; Tangut                           ; Tangut
 blk; Tangut_Components                ; Tangut_Components
+blk; Tangut_Sup                       ; Tangut_Supplement
 blk; Telugu                           ; Telugu
 blk; Thaana                           ; Thaana
 blk; Thai                             ; Thai
@@ -445,6 +453,7 @@ blk; VS                               ; Variation_Selectors
 blk; VS_Sup                           ; Variation_Selectors_Supplement
 blk; Wancho                           ; Wancho
 blk; Warang_Citi                      ; Warang_Citi
+blk; Yezidi                           ; Yezidi
 blk; Yi_Radicals                      ; Yi_Radicals
 blk; Yi_Syllables                     ; Yi_Syllables
 blk; Yijing                           ; Yijing_Hexagram_Symbols
@@ -454,6 +463,7 @@ blk; Zanabazar_Square                 ; Zanabazar_Square
 
 ccc;   0; NR                         ; Not_Reordered
 ccc;   1; OV                         ; Overlay
+ccc;   6; HANR                       ; Han_Reading
 ccc;   7; NK                         ; Nukta
 ccc;   8; KV                         ; Kana_Voicing
 ccc;   9; VR                         ; Virama
@@ -613,6 +623,31 @@ ea ; N                                ; Neutral
 ea ; Na                               ; Narrow
 ea ; W                                ; Wide
 
+# Emoji (Emoji)
+
+Emoji; N                              ; No                               ; F                                ; False
+Emoji; Y                              ; Yes                              ; T                                ; True
+
+# Emoji_Component (EComp)
+
+EComp; N                              ; No                               ; F                                ; False
+EComp; Y                              ; Yes                              ; T                                ; True
+
+# Emoji_Modifier (EMod)
+
+EMod; N                               ; No                               ; F                                ; False
+EMod; Y                               ; Yes                              ; T                                ; True
+
+# Emoji_Modifier_Base (EBase)
+
+EBase; N                              ; No                               ; F                                ; False
+EBase; Y                              ; Yes                              ; T                                ; True
+
+# Emoji_Presentation (EPres)
+
+EPres; N                              ; No                               ; F                                ; False
+EPres; Y                              ; Yes                              ; T                                ; True
+
 # Equivalent_Unified_Ideograph (EqUIdeo)
 
 # @missing: 0000..10FFFF; Equivalent_Unified_Ideograph; <none>
@@ -636,6 +671,11 @@ XO_NFKC; Y                            ; Yes                              ; T    
 
 XO_NFKD; N                            ; No                               ; F                                ; False
 XO_NFKD; Y                            ; Yes                              ; T                                ; True
+
+# Extended_Pictographic (ExtPict)
+
+ExtPict; N                            ; No                               ; F                                ; False
+ExtPict; Y                            ; Yes                              ; T                                ; True
 
 # Extender (Ext)
 
@@ -789,6 +829,7 @@ InPC; Overstruck                      ; Overstruck
 InPC; Right                           ; Right
 InPC; Top                             ; Top
 InPC; Top_And_Bottom                  ; Top_And_Bottom
+InPC; Top_And_Bottom_And_Left         ; Top_And_Bottom_And_Left
 InPC; Top_And_Bottom_And_Right        ; Top_And_Bottom_And_Right
 InPC; Top_And_Left                    ; Top_And_Left
 InPC; Top_And_Left_And_Right          ; Top_And_Left_And_Right
@@ -1219,10 +1260,12 @@ sc ; Cans                             ; Canadian_Aboriginal
 sc ; Cari                             ; Carian
 sc ; Cham                             ; Cham
 sc ; Cher                             ; Cherokee
+sc ; Chrs                             ; Chorasmian
 sc ; Copt                             ; Coptic                           ; Qaac
 sc ; Cprt                             ; Cypriot
 sc ; Cyrl                             ; Cyrillic
 sc ; Deva                             ; Devanagari
+sc ; Diak                             ; Dives_Akuru
 sc ; Dogr                             ; Dogra
 sc ; Dsrt                             ; Deseret
 sc ; Dupl                             ; Duployan
@@ -1257,6 +1300,7 @@ sc ; Kana                             ; Katakana
 sc ; Khar                             ; Kharoshthi
 sc ; Khmr                             ; Khmer
 sc ; Khoj                             ; Khojki
+sc ; Kits                             ; Khitan_Small_Script
 sc ; Knda                             ; Kannada
 sc ; Kthi                             ; Kaithi
 sc ; Lana                             ; Tai_Tham
@@ -1345,6 +1389,7 @@ sc ; Wara                             ; Warang_Citi
 sc ; Wcho                             ; Wancho
 sc ; Xpeo                             ; Old_Persian
 sc ; Xsux                             ; Cuneiform
+sc ; Yezi                             ; Yezidi
 sc ; Yiii                             ; Yi
 sc ; Zanb                             ; Zanabazar_Square
 sc ; Zinh                             ; Inherited                        ; Qaai
@@ -1515,9 +1560,17 @@ XIDS; Y                               ; Yes                              ; T    
 
 # @missing: 0000..10FFFF; cjkIRG_MSource; <none>
 
+# cjkIRG_SSource (cjkIRG_SSource)
+
+# @missing: 0000..10FFFF; cjkIRG_SSource; <none>
+
 # cjkIRG_TSource (cjkIRG_TSource)
 
 # @missing: 0000..10FFFF; cjkIRG_TSource; <none>
+
+# cjkIRG_UKSource (cjkIRG_UKSource)
+
+# @missing: 0000..10FFFF; cjkIRG_UKSource; <none>
 
 # cjkIRG_USource (cjkIRG_USource)
 

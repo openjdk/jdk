@@ -27,52 +27,90 @@
  * @summary Test to see if timeout hangs. Also checks that
  * negative timeout value fails as expected.
  * @run testng DatagramTimeout
+ * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl DatagramTimeout
  */
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.DatagramChannel;
 
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.expectThrows;
-
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 public class DatagramTimeout {
-    private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
-    private static final Class<SocketTimeoutException> STE = SocketTimeoutException.class;
+    private static final Class<IllegalArgumentException> IAE =
+            IllegalArgumentException.class;
+    private static final Class<SocketTimeoutException> STE =
+            SocketTimeoutException.class;
+    private static final Class<SocketException> SE = SocketException.class;
 
-    /**
-     * Test DatagramSocket setSoTimeout with a valid timeout value.
-     */
-    @Test
-    public void testSetTimeout() throws Exception {
-        try (DatagramSocket s = new DatagramSocket()) {
-            byte[] buffer = new byte[50];
-            DatagramPacket p = new DatagramPacket(buffer, buffer.length);
-            s.setSoTimeout(2);
-            expectThrows(STE, () -> s.receive(p));
-        }
+    private DatagramSocket datagramSocket, multicastSocket,
+            datagramSocketAdaptor;
+
+    @BeforeTest
+    public void setUp() throws Exception {
+        datagramSocket = new DatagramSocket();
+        multicastSocket = new MulticastSocket();
+        datagramSocketAdaptor = DatagramChannel.open().socket();
     }
 
-    /**
-     * Test DatagramSocket setSoTimeout with a negative timeout.
-     */
-    @Test
-    public void testSetNegativeTimeout() throws Exception {
-        try (DatagramSocket s = new DatagramSocket()) {
-            expectThrows(IAE, () -> s.setSoTimeout(-1));
-        }
+    @DataProvider(name = "data")
+    public Object[][] variants() {
+        return new Object[][]{
+                { datagramSocket        },
+                { datagramSocketAdaptor },
+                { multicastSocket       },
+        };
     }
 
-    /**
-     * Test DatagramSocketAdaptor setSoTimeout with a negative timeout.
-     */
+    @Test(dataProvider = "data")
+    public void testSetNegTimeout(DatagramSocket ds)  {
+        assertThrows(IAE, () -> ds.setSoTimeout(-1));
+    }
+
+    @Test(dataProvider = "data")
+    public void testSetTimeout(DatagramSocket ds) throws Exception {
+        byte[] buffer = new byte[50];
+        DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
+        ds.setSoTimeout(2);
+        assertThrows(STE, () -> ds.receive(pkt));
+    }
+
+    @Test(dataProvider = "data")
+    public void testGetTimeout(DatagramSocket ds) throws Exception {
+        ds.setSoTimeout(10);
+        assertEquals(10, ds.getSoTimeout());
+    }
+
+    @AfterTest
+    public void tearDown() {
+        datagramSocket.close();
+        multicastSocket.close();
+        datagramSocketAdaptor.close();
+    }
+
     @Test
-    public void testNegativeTimeout() throws Exception {
-        try (DatagramChannel dc = DatagramChannel.open()) {
-            var s = dc.socket();
-            expectThrows(IAE, () -> s.setSoTimeout(-1));
-        }
+    public void testSetGetAfterClose() throws Exception {
+        var ds = new DatagramSocket();
+        var ms = new MulticastSocket();
+        var dsa = DatagramChannel.open().socket();
+
+        ds.close();
+        ms.close();
+        dsa.close();
+        assertThrows(SE, () -> ds.setSoTimeout(10));
+        assertThrows(SE, () -> ds.getSoTimeout());
+        assertThrows(SE, () -> ms.setSoTimeout(10));
+        assertThrows(SE, () -> ms.getSoTimeout());
+        assertThrows(SE, () -> dsa.setSoTimeout(10));
+        assertThrows(SE, () -> dsa.getSoTimeout());
     }
 }

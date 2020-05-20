@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,15 @@ import jdk.test.lib.jfr.SimpleEvent;
 public final class TestRecordedFrame {
 
     public static void main(String[] args) throws IOException {
-        System.out.println(); // Makes BCI for method larger than 0
+        doSomething(); // Makes BCI for method larger than 0
         test(); // Records the line number and BCI for the main method/frame
+    }
+
+    static void doSomething() {
+        // Don't actually do anything: on platforms that do not support
+        // patching (AArch64) -Xcomp is very sensitive to class load
+        // order and calling other methods here might result in main()
+        // being deoptimized, failing the test below.
     }
 
     static void test() throws IOException {

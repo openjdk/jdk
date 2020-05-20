@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
          obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
 
-  _par_scan_state->push_on_queue(p);
+  _par_scan_state->push_on_queue(ScannerTask(p));
 }
 
 template <class T>
@@ -102,7 +102,7 @@ inline void G1CMOopClosure::do_oop_work(T* p) {
 
 template <class T>
 inline void G1RootRegionScanClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<MO_VOLATILE>::oop_load(p);
+  T heap_oop = RawAccess<MO_RELAXED>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {
     return;
   }
@@ -133,7 +133,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
-  T o = RawAccess<MO_VOLATILE>::oop_load(p);
+  T o = RawAccess<MO_RELAXED>::oop_load(p);
   if (CompressedOops::is_null(o)) {
     return;
   }
@@ -260,7 +260,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 }
 
 template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
-  oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
+  oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
   if (obj == NULL) {
     return;
   }

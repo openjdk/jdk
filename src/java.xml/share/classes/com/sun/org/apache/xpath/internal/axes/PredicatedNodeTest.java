@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,7 +34,7 @@ import com.sun.org.apache.xpath.internal.patterns.NodeTest;
 import java.util.List;
 
 /**
- * @LastModified: Oct 2017
+ * @LastModified: May 2020
  */
 public abstract class PredicatedNodeTest extends NodeTest implements SubContextList
 {
@@ -63,30 +63,23 @@ public abstract class PredicatedNodeTest extends NodeTest implements SubContextL
    *
    * @param stream Input stream to read from
    *
-   * @throws java.io.IOException
-   * @throws javax.xml.transform.TransformerException
+   * @throws java.io.IOException in case of any IO related exceptions
+   * @throws ClassNotFoundException if Class of the serialized object cannot be found
    */
   private void readObject(java.io.ObjectInputStream stream)
-          throws java.io.IOException, javax.xml.transform.TransformerException
+          throws java.io.IOException, ClassNotFoundException
   {
-    try
-    {
-      stream.defaultReadObject();
-      m_predicateIndex = -1;
+    stream.defaultReadObject();
+    m_predicateIndex = -1;
 
-      /**
-       * Initialize to the declared value.
-       * As noted at declaration, this variable is used only for clones for getLastPos,
-       * it should have been excluded from serialization. For compatibility, we'll
-       * keep it as is but initializing to the declared value.
-       */
-      m_predCount = -1;
-      resetProximityPositions();
-    }
-    catch (ClassNotFoundException cnfe)
-    {
-      throw new javax.xml.transform.TransformerException(cnfe);
-    }
+    /**
+     * Initialize to the declared value.
+     * As noted at declaration, this variable is used only for clones for getLastPos,
+     * it should have been excluded from serialization. For compatibility, we'll
+     * keep it as is but initializing to the declared value.
+     */
+    m_predCount = -1;
+    resetProximityPositions();
   }
 
   /**

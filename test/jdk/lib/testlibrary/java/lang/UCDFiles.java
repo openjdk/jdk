@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,5 +55,5 @@ public class UCDFiles {
     public static Path UNICODE_DATA =
         UCD_DIR.resolve("UnicodeData.txt");
     public static Path EMOJI_DATA =
-        UCD_DIR.resolve("emoji-data.txt");
+        UCD_DIR.resolve("emoji").resolve("emoji-data.txt");
 }

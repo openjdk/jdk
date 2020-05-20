@@ -117,8 +117,10 @@ JLINK_JRE_TARGETS := $(jlink_jre)
 ifeq ($(BUILD_CDS_ARCHIVE), true)
   ifeq ($(OPENJDK_TARGET_OS), windows)
     CDS_ARCHIVE := bin/server/classes.jsa
+    CDS_NOCOOPS_ARCHIVE := bin/server/classes_nocoops.jsa
   else
     CDS_ARCHIVE := lib/server/classes.jsa
+    CDS_NOCOOPS_ARCHIVE := lib/server/classes_nocoops.jsa
   endif
 
   $(eval $(call SetupExecute, gen_cds_archive_jdk, \
@@ -127,6 +129,7 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
       OUTPUT_FILE := $(JDK_IMAGE_DIR)/$(CDS_ARCHIVE), \
       SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk, \
       COMMAND := $(FIXPATH) $(JDK_IMAGE_DIR)/bin/java -Xshare:dump \
+          -XX:SharedArchiveFile=$(JDK_IMAGE_DIR)/$(CDS_ARCHIVE) \
           -Xmx128M -Xms128M $(LOG_INFO), \
   ))
 
@@ -138,10 +141,40 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
       OUTPUT_FILE := $(JRE_IMAGE_DIR)/$(CDS_ARCHIVE), \
       SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre, \
       COMMAND := $(FIXPATH) $(JRE_IMAGE_DIR)/bin/java -Xshare:dump \
+          -XX:SharedArchiveFile=$(JRE_IMAGE_DIR)/$(CDS_ARCHIVE) \
           -Xmx128M -Xms128M $(LOG_INFO), \
   ))
 
   JRE_TARGETS += $(gen_cds_archive_jre)
+
+  ifeq ($(call isTargetCpuBits, 64), true)
+    $(eval $(call SetupExecute, gen_cds_nocoops_archive_jdk, \
+        WARN := Creating CDS-NOCOOPS archive for jdk image, \
+        DEPS := $(jlink_jdk), \
+        OUTPUT_FILE := $(JDK_IMAGE_DIR)/$(CDS_NOCOOPS_ARCHIVE), \
+        SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk, \
+        COMMAND := $(FIXPATH) $(JDK_IMAGE_DIR)/bin/java -Xshare:dump \
+            -XX:SharedArchiveFile=$(JDK_IMAGE_DIR)/$(CDS_NOCOOPS_ARCHIVE) \
+            -XX:-UseCompressedOops \
+            -Xmx128M -Xms128M $(LOG_INFO), \
+    ))
+
+    JDK_TARGETS += $(gen_cds_nocoops_archive_jdk)
+
+    $(eval $(call SetupExecute, gen_cds_nocoops_archive_jre, \
+        WARN := Creating CDS-NOCOOPS archive for jre image, \
+        DEPS := $(jlink_jre), \
+        OUTPUT_FILE := $(JRE_IMAGE_DIR)/$(CDS_NOCOOPS_ARCHIVE), \
+        SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre, \
+        COMMAND := $(FIXPATH) $(JRE_IMAGE_DIR)/bin/java -Xshare:dump \
+            -XX:SharedArchiveFile=$(JRE_IMAGE_DIR)/$(CDS_NOCOOPS_ARCHIVE) \
+            -XX:-UseCompressedOops \
+            -Xmx128M -Xms128M $(LOG_INFO), \
+    ))
+
+    JRE_TARGETS += $(gen_cds_nocoops_archive_jre)
+  endif
+
 endif
 
 ################################################################################

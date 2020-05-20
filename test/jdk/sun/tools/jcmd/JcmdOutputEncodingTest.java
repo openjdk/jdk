@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolLauncher;
@@ -48,6 +49,7 @@ public class JcmdOutputEncodingTest {
         Thread.currentThread().setName(marker);
 
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addVMArg("-Dfile.encoding=" + cs);
         launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
         launcher.addToolArg("Thread.print");

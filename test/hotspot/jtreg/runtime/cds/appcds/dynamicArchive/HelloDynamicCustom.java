@@ -31,8 +31,8 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar hello.jar HelloUnload ClassUnloadCommon ClassUnloadCommon$1 ClassUnloadCommon$TestFailure
  * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver HelloDynamicCustom
+ * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar HelloDynamicCustom
  */
 
 import java.io.File;

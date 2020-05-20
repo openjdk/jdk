@@ -305,7 +305,7 @@ final class OverridableResource {
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(rawResource, StandardCharsets.UTF_8))) {
                 String data = substitute(reader.lines(), substitutionData).collect(
-                        Collectors.joining("\n"));
+                        Collectors.joining("\n", "", "\n"));
                 try (InputStream in = new ByteArrayInputStream(data.getBytes(
                         StandardCharsets.UTF_8))) {
                     dest.consume(in);

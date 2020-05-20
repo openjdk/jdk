@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,13 +249,6 @@ protected:
 
   template <DecoratorSet ds, typename T>
   static inline typename EnableIf<
-    HasDecorator<ds, MO_VOLATILE>::value, T>::type
-  load_internal(void* addr) {
-    return *reinterpret_cast<const volatile T*>(addr);
-  }
-
-  template <DecoratorSet ds, typename T>
-  static inline typename EnableIf<
     HasDecorator<ds, MO_UNORDERED>::value, T>::type
   load_internal(void* addr) {
     return *reinterpret_cast<T*>(addr);
@@ -275,13 +268,6 @@ protected:
   static typename EnableIf<
     HasDecorator<ds, MO_RELAXED>::value>::type
   store_internal(void* addr, T value);
-
-  template <DecoratorSet ds, typename T>
-  static inline typename EnableIf<
-    HasDecorator<ds, MO_VOLATILE>::value>::type
-  store_internal(void* addr, T value) {
-    (void)const_cast<T&>(*reinterpret_cast<volatile T*>(addr) = value);
-  }
 
   template <DecoratorSet ds, typename T>
   static inline typename EnableIf<
@@ -1119,7 +1105,7 @@ namespace AccessInternal {
   }
 
   // Step 1: Set default decorators. This step remembers if a type was volatile
-  // and then sets the MO_VOLATILE decorator by default. Otherwise, a default
+  // and then sets the MO_RELAXED decorator by default. Otherwise, a default
   // memory ordering is set for the access, and the implied decorator rules
   // are applied to select sensible defaults for decorators that have not been
   // explicitly set. For example, default object referent strength is set to strong.
@@ -1143,10 +1129,10 @@ namespace AccessInternal {
     typedef typename Decay<T>::type DecayedT;
     DecayedT decayed_value = value;
     // If a volatile address is passed in but no memory ordering decorator,
-    // set the memory ordering to MO_VOLATILE by default.
+    // set the memory ordering to MO_RELAXED by default.
     const DecoratorSet expanded_decorators = DecoratorFixup<
       (IsVolatile<P>::value && !HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
-      (MO_VOLATILE | decorators) : decorators>::value;
+      (MO_RELAXED | decorators) : decorators>::value;
     store_reduce_types<expanded_decorators>(const_cast<DecayedP*>(addr), decayed_value);
   }
 
@@ -1169,10 +1155,10 @@ namespace AccessInternal {
                                  typename OopOrNarrowOop<T>::type,
                                  typename Decay<T>::type>::type DecayedT;
     // If a volatile address is passed in but no memory ordering decorator,
-    // set the memory ordering to MO_VOLATILE by default.
+    // set the memory ordering to MO_RELAXED by default.
     const DecoratorSet expanded_decorators = DecoratorFixup<
       (IsVolatile<P>::value && !HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
-      (MO_VOLATILE | decorators) : decorators>::value;
+      (MO_RELAXED | decorators) : decorators>::value;
     return load_reduce_types<expanded_decorators, DecayedT>(const_cast<DecayedP*>(addr));
   }
 

@@ -30,6 +30,9 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import jdk.internal.access.JavaUtilJarAccess;
 
 class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
@@ -71,5 +74,9 @@ class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
 
     public boolean isInitializing() {
         return JarFile.isInitializing();
+    }
+
+    public JarEntry entryFor(JarFile jar, String name) {
+        return jar.entryFor(name);
     }
 }

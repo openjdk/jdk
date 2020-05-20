@@ -37,6 +37,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"

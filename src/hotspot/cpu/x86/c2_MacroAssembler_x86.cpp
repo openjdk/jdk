@@ -442,7 +442,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   if (use_rtm) {
     assert_different_registers(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg);
   } else {
-    assert(cx1Reg == noreg, "");
     assert(cx2Reg == noreg, "");
     assert_different_registers(objReg, boxReg, tmpReg, scrReg);
   }
@@ -478,7 +477,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // at [FETCH], below, will never observe a biased encoding (*101b).
   // If this invariant is not held we risk exclusion (safety) failure.
   if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, counters);
+    biased_locking_enter(boxReg, objReg, tmpReg, scrReg, cx1Reg, false, DONE_LABEL, NULL, counters);
   }
 
 #if INCLUDE_RTM_OPT

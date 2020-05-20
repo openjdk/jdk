@@ -28,8 +28,8 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/ostream.hpp"
 
@@ -107,7 +107,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case purge_class_unload:
     case purge_weak_par:
     case heap_iteration_roots:
-    case conc_weak_roots:
+    case conc_weak_roots_work:
     case conc_strong_roots:
       return true;
     default:

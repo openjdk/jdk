@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -76,17 +76,9 @@ $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat: $(CHARSET_DATA_DIR)/sjis0213.map \
 	$(call MakeDir, $(@D))
 	$(TOOL_CHARSETMAPPING) '$<' '$@' sjis0213
 
-GENSRC_JDK_CHARSETS += \
+TARGETS += \
     $(CHARSET_DONE_CS)-extcs \
     $(CHARSET_DONE_CS)-hkscs \
     $(CHARSET_DONE_CS)-euctw \
     $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat \
     #
-
-################################################################################
-
-jdk.charsets: $(GENSRC_JDK_CHARSETS)
-
-all: jdk.charsets
-
-.PHONY: all jdk.charsets

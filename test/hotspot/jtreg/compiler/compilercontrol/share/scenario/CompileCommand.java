@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,25 @@ public class CompileCommand {
     }
 
     /**
-     * Prints compile command to the system output
+     * Formats the command according to the following pattern:
+     * {@code <command_name> Type: <type> Compiler: <compiler> MethodDescriptor: <method_descriptor> IsValid: <true/false>}
+     * Sample output:
+     * COMPILEONLY Type: OPTION Compiler: C1 MethodDescriptor: *Klass.method* IsValid: true
      */
-    public void print() {
-        System.out.printf("%s (type: %s): %s (valid: %b)%n", command.name(),
-                type.name(), methodDescriptor.getString(), isValid());
+    protected String formatFields() {
+        return command.name() +
+               " Type: " + type +
+               " Compiler: " + compiler +
+               " MethodDescriptor: " + (methodDescriptor == null ? "null" : methodDescriptor.getString()) +
+               " IsValid: " + isValid();
+    }
+
+    /**
+     * Returns formatted string representation in the form
+     * {@code "(CompileCommand Field1: <field1> Field2: <field2> ...)}
+     * The fields are formatted by {@link #formatFields()}.
+     */
+    public String toString() {
+        return "(CompileCommand " + formatFields() + ")";
     }
 }

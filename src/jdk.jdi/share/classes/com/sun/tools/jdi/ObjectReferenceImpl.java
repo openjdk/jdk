@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,17 +584,16 @@ public class ObjectReferenceImpl extends ValueImpl
          * type which might cause a confusing ClassNotLoadedException if
          * the destination is primitive or an array.
          */
-        /*
-         * TO DO: Centralize JNI signature knowledge
-         */
-        if (destination.signature().length() == 1) {
+
+        JNITypeParser destSig = new JNITypeParser(destination.signature());
+        JNITypeParser sourceSig = new JNITypeParser(type().signature());
+        if (destSig.isPrimitive()) {
             throw new InvalidTypeException("Can't assign object value to primitive");
         }
-        if ((destination.signature().charAt(0) == '[') &&
-            (type().signature().charAt(0) != '[')) {
+        if (destSig.isArray() && !sourceSig.isArray()) {
             throw new InvalidTypeException("Can't assign non-array value to an array");
         }
-        if ("void".equals(destination.typeName())) {
+        if (destSig.isVoid()) {
             throw new InvalidTypeException("Can't assign object value to a void");
         }
 

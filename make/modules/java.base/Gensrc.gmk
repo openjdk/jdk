@@ -36,6 +36,10 @@ include gensrc/GensrcVarHandles.gmk
 include gensrc/GensrcModuleLoaderMap.gmk
 include gensrc/GensrcEmojiData.gmk
 
+# GensrcLocaleData.gmk does not set TARGETS, so we must choose which targets
+# to include.
+TARGETS += $(GENSRC_BASELOCALEDATA)
+
 ################################################################################
 
 CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
@@ -61,7 +65,7 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -tzdatadir $(TZ_DATA_DIR))
 	$(TOUCH) $@
 
-GENSRC_JAVA_BASE += $(CLDR_GEN_DONE)
+TARGETS += $(CLDR_GEN_DONE)
 
 ################################################################################
 
@@ -77,7 +81,7 @@ $(eval $(call SetupCompileProperties, SUN_UTIL, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
-GENSRC_JAVA_BASE += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
+TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
 
 # Some resources bundles are already present as java files but still need to be
 # copied to zh_HK locale.
@@ -86,7 +90,7 @@ $(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
         sun/security/util/AuthResources_zh_TW.java \
         sun/security/util/Resources_zh_TW.java)))
 
-GENSRC_JAVA_BASE += $(COPY_ZH_HK)
+TARGETS += $(COPY_ZH_HK)
 
 ################################################################################
 
@@ -96,7 +100,7 @@ $(GENSRC_LSREQUIVMAPS): $(TOPDIR)/make/data/lsrdata/language-subtag-registry.txt
 	$(call MakeDir, $(@D))
 	$(TOOL_GENERATELSREQUIVMAPS) $< $@
 
-GENSRC_JAVA_BASE += $(GENSRC_LSREQUIVMAPS)
+TARGETS += $(GENSRC_LSREQUIVMAPS)
 
 ################################################################################
 
@@ -111,12 +115,4 @@ $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	    $(GENSRC_DIR)) $(LOG_DEBUG)
 	$(TOUCH) $@
 
-GENSRC_JAVA_BASE += $(INTPOLY_GEN_DONE)
-
-################################################################################
-
-java.base: $(GENSRC_JAVA_BASE)
-
-all: java.base
-
-.PHONY: all java.base
+TARGETS += $(INTPOLY_GEN_DONE)

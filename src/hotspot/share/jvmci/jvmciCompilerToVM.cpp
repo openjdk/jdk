@@ -32,6 +32,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"

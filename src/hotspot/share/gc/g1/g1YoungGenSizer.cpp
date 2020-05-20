@@ -102,7 +102,7 @@ void G1YoungGenSizer::recalculate_min_max_young_length(uint number_of_heap_regio
       // Do nothing. Values set on the command line, don't update them at runtime.
       break;
     case SizerNewRatio:
-      *min_young_length = number_of_heap_regions / (NewRatio + 1);
+      *min_young_length = MAX2((uint)(number_of_heap_regions / (NewRatio + 1)), 1u);
       *max_young_length = *min_young_length;
       break;
     default:

@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Map;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.hprof.parser.HprofReader;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
@@ -61,6 +62,7 @@ public class JShellHeapDumpTest {
 
             System.out.println("Starting " + toolArgs.get(0) + " against " + jShellPID);
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+            launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
 
             for (String cmd : toolArgs) {
                 launcher.addToolArg(cmd);

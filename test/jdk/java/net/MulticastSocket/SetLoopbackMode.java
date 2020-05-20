@@ -30,6 +30,7 @@
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
  * @run main/othervm SetLoopbackMode
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl SetLoopbackMode
  */
 
 import java.lang.reflect.Method;
@@ -52,6 +53,8 @@ public class SetLoopbackMode {
         } else {
             System.out.println("Loopback mode is enabled.");
         }
+
+        System.out.println(mc.getLocalSocketAddress());
 
         byte b[] = "hello".getBytes();
         DatagramPacket p = new DatagramPacket(b, b.length, grp,

@@ -38,6 +38,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Arrays;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.hprof.parser.HprofReader;
 import jdk.test.lib.JDKToolLauncher;
@@ -65,6 +66,7 @@ public class HeapDumpTest {
             System.out.println(theApp.\u00CB);
             System.out.println("Starting " + toolArgs.get(0) + " against " + theApp.getPid());
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+            launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
 
             for (String cmd : toolArgs) {
                 launcher.addToolArg(cmd);

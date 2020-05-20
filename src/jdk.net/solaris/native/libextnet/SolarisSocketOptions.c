@@ -32,6 +32,11 @@ static jfieldID sf_bandwidth;
 static int initialized = 0;
 
 /*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
+
+/*
  * Class:     jdk_net_SolarisSocketOptions
  * Method:    init
  * Signature: ()V

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,7 +45,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * the case where the LocPathIterator is "owned" by a UnionPathIterator,
  * in which case the UnionPathIterator will cache the nodes.</p>
  * @xsl.usage advanced
- * @LastModified: Nov 2017
+ * @LastModified: May 2020
  */
 public abstract class LocPathIterator extends PredicatedNodeTest
         implements Cloneable, DTMIterator, java.io.Serializable, PathComponent
@@ -130,21 +130,14 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    *
    * @param stream Input stream to read from
    *
-   * @throws java.io.IOException
-   * @throws javax.xml.transform.TransformerException
+   * @throws java.io.IOException in case of any IO related exceptions
+   * @throws ClassNotFoundException if Class of the serialized object cannot be found
    */
   private void readObject(java.io.ObjectInputStream stream)
-          throws java.io.IOException, javax.xml.transform.TransformerException
+          throws java.io.IOException, ClassNotFoundException
   {
-    try
-    {
-      stream.defaultReadObject();
-      m_clones =  new IteratorPool(this);
-    }
-    catch (ClassNotFoundException cnfe)
-    {
-      throw new javax.xml.transform.TransformerException(cnfe);
-    }
+    stream.defaultReadObject();
+    m_clones =  new IteratorPool(this);
   }
 
   /**

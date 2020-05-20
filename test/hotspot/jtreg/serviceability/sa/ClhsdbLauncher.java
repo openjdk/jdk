@@ -25,10 +25,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 
-import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -56,6 +54,7 @@ public class ClhsdbLauncher {
     private void attach(long lingeredAppPid)
         throws IOException {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addToolArg("clhsdb");
         if (lingeredAppPid != -1) {
             launcher.addToolArg("--pid=" + Long.toString(lingeredAppPid));
@@ -75,6 +74,7 @@ public class ClhsdbLauncher {
         throws IOException {
 
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addToolArg("clhsdb");
         launcher.addToolArg("--core=" + coreFileName);
         launcher.addToolArg("--exe=" + JDKToolFinder.getTestJDKTool("java"));

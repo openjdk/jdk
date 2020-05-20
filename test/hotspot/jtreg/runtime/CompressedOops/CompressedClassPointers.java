@@ -25,7 +25,7 @@
  * @test
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
- * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true & os.family != "windows"
+ * @requires vm.bits == 64 & os.family != "windows" & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -141,6 +141,123 @@ public class CompressedClassPointers {
         }
     }
 
+    public static void smallHeapTestNoCoop() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedBaseAddress=8g",
+            "-Xmx128m",
+            "-Xlog:gc+metaspace=trace",
+            "-Xshare:off",
+            "-Xlog:cds=trace",
+            "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Narrow klass base: 0x0000000000000000");
+        output.shouldHaveExitValue(0);
+    }
+
+    public static void smallHeapTestWith1GNoCoop() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:CompressedClassSpaceSize=1g",
+            "-Xmx128m",
+            "-Xlog:gc+metaspace=trace",
+            "-Xshare:off",
+            "-Xlog:cds=trace",
+            "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Narrow klass base: 0x0000000000000000");
+        output.shouldContain("Narrow klass shift: 0");
+        output.shouldHaveExitValue(0);
+    }
+
+    public static void largeHeapTestNoCoop() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-Xmx30g",
+            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
+            "-Xlog:gc+metaspace=trace",
+            "-Xshare:off",
+            "-Xlog:cds=trace",
+            "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Narrow klass base: 0x0000000000000000");
+        output.shouldContain("Narrow klass shift: 0");
+        output.shouldHaveExitValue(0);
+    }
+
+    public static void largePagesTestNoCoop() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-Xmx128m",
+            "-XX:+UseLargePages",
+            "-Xlog:gc+metaspace=trace",
+            "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Narrow klass base:");
+        output.shouldHaveExitValue(0);
+    }
+
+    public static void heapBaseMinAddressTestNoCoop() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:HeapBaseMinAddress=1m",
+            "-Xlog:gc+heap+coops=debug",
+            "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("HeapBaseMinAddress must be at least");
+        output.shouldHaveExitValue(0);
+    }
+
+    public static void sharingTestNoCoop() throws Exception {
+        // Test small heaps
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
+            "-Xmx128m",
+            "-XX:SharedBaseAddress=8g",
+            "-XX:+PrintCompressedOopsMode",
+            "-XX:+VerifyBeforeGC",
+            "-Xshare:dump", "-Xlog:cds");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        if (output.firstMatch("Shared spaces are not supported in this VM") != null) {
+            return;
+        }
+        try {
+          output.shouldContain("Loading classes to share");
+          output.shouldHaveExitValue(0);
+
+          pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:-UseCompressedOops",
+            "-XX:+UseCompressedClassPointers",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
+            "-Xmx128m",
+            "-XX:SharedBaseAddress=8g",
+            "-XX:+PrintCompressedOopsMode",
+            "-Xshare:on",
+            "-version");
+          output = new OutputAnalyzer(pb.start());
+          output.shouldContain("sharing");
+          output.shouldHaveExitValue(0);
+
+        } catch (RuntimeException e) {
+          output.shouldContain("Unable to use shared archive");
+          output.shouldHaveExitValue(1);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (Platform.isSolaris()) {
              String name = System.getProperty("os.version");
@@ -154,5 +271,22 @@ public class CompressedClassPointers {
         largePagesTest();
         heapBaseMinAddressTest();
         sharingTest();
+
+        boolean ccpRequiresCoop = Platform.isAArch64() || Platform.isSparc();
+
+        if (!ccpRequiresCoop && !Platform.isOSX()) {
+            // Testing compressed class pointers without compressed oops.
+            // This is only possible if the platform supports it. Notably,
+            // on macOS, when compressed oops is disabled and the heap is
+            // given an arbitrary address, that address occasionally collides
+            // with where we would ideally have placed the compressed class
+            // space. Therefore, macOS is omitted for now.
+            smallHeapTestNoCoop();
+            smallHeapTestWith1GNoCoop();
+            largeHeapTestNoCoop();
+            largePagesTestNoCoop();
+            heapBaseMinAddressTestNoCoop();
+            sharingTestNoCoop();
+        }
     }
 }

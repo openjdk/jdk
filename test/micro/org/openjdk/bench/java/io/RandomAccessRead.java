@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,15 @@ public class RandomAccessRead {
     @Param("1000000")
     private int fileSize;
 
+    @Param("8192")
+    private int buffer;
+
     private RandomAccessFile raf;
     private long offset;
     private int deltaIndex;
     private int[] deltas;
     private File f;
+    private byte[] buf;
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
@@ -66,6 +70,7 @@ public class RandomAccessRead {
             }
         }
         deltas = new int[]{1, 2, 3, 5, 7, 11, 13, 17, 19, 23};
+        buf = new byte[buffer];
     }
 
     @TearDown(Level.Trial)
@@ -86,6 +91,20 @@ public class RandomAccessRead {
     }
 
     @Benchmark
+    public int testBuffer() throws IOException {
+        offset = offset + deltas[deltaIndex];
+        if (offset >= fileSize) {
+            offset = 0;
+        }
+        deltaIndex++;
+        if (deltaIndex >= deltas.length) {
+            deltaIndex = 0;
+        }
+        raf.seek(offset);
+        return raf.read(buf);
+    }
+
+    @Benchmark
     public int test() throws IOException {
         offset = offset + deltas[deltaIndex];
         if (offset >= fileSize) {
@@ -98,5 +117,4 @@ public class RandomAccessRead {
         raf.seek(offset);
         return raf.read();
     }
-
 }

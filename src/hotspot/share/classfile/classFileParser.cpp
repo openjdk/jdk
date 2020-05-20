@@ -4200,23 +4200,6 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
   bool compact_fields  = true;
   bool allocate_oops_first = false;
 
-  // The next classes have predefined hard-coded fields offsets
-  // (see in JavaClasses::compute_hard_coded_offsets()).
-  // Use default fields allocation order for them.
-  if (_loader_data->class_loader() == NULL &&
-      (_class_name == vmSymbols::java_lang_ref_Reference() ||
-       _class_name == vmSymbols::java_lang_Boolean() ||
-       _class_name == vmSymbols::java_lang_Character() ||
-       _class_name == vmSymbols::java_lang_Float() ||
-       _class_name == vmSymbols::java_lang_Double() ||
-       _class_name == vmSymbols::java_lang_Byte() ||
-       _class_name == vmSymbols::java_lang_Short() ||
-       _class_name == vmSymbols::java_lang_Integer() ||
-       _class_name == vmSymbols::java_lang_Long())) {
-    allocate_oops_first = true;     // Allocate oops first
-    compact_fields   = false; // Don't compact fields
-  }
-
   int next_nonstatic_oop_offset = 0;
   int next_nonstatic_double_offset = 0;
 

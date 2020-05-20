@@ -316,7 +316,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   static ClassLoaderData* class_loader_data(oop loader);
   static ClassLoaderData* class_loader_data_or_null(oop loader);
-  static ClassLoaderData* has_class_mirror_holder_cld(Handle loader);
 
   // Returns Klass* of associated class loader, or NULL if associated loader is 'bootstrap'.
   // Also works if unloading.

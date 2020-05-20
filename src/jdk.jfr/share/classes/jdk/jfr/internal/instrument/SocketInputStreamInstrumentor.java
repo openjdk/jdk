@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import jdk.jfr.events.SocketReadEvent;
+import jdk.jfr.events.Handlers;
+import jdk.jfr.internal.handlers.EventHandler;
 
 /**
  * See {@link JITracer} for an explanation of this code.
@@ -43,30 +44,28 @@ final class SocketInputStreamInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[], int off, int length) throws IOException {
-        SocketReadEvent event = SocketReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.SOCKET_READ;
+        if (!handler.isEnabled()) {
             return read(b, off, length);
         }
         int bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(b, off, length);
         } finally {
-            event.end();
-            if (event.shouldCommit()) {
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
                 InetAddress remote = parent.getInetAddress();
-                event.host = remote.getHostName();
-                event.address = remote.getHostAddress();
-                event.port = parent.getPort();
+                String host = remote.getHostName();
+                String address = remote.getHostAddress();
+                int port = parent.getPort();
+                int timeout = parent.getSoTimeout();
                 if (bytesRead < 0) {
-                    event.endOfStream = true;
+                    handler.write(start, duration, host, address, port, timeout, 0L, true);
                 } else {
-                    event.bytesRead = bytesRead;
+                    handler.write(start, duration, host, address, port, timeout, bytesRead, false);
                 }
-                event.timeout = parent.getSoTimeout();
-
-                event.commit();
-                event.reset();
             }
         }
         return bytesRead;

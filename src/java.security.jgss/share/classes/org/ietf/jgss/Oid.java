@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class Oid {
     public Oid(String strOid) throws GSSException {
 
         try {
-            oid = new ObjectIdentifier(strOid);
+            oid = ObjectIdentifier.of(strOid);
             derEncoding = null;
         } catch (Exception e) {
             throw new GSSException(GSSException.FAILURE,

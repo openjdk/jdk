@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class GenerateEmojiData {
             final Range[] last = new Range[1]; // last extended pictographic range
             last[0] = new Range(0, 0);
 
-            List<Range> extPictRanges = Files.lines(Paths.get(args[1], "emoji-data.txt"))
+            List<Range> extPictRanges = Files.lines(Paths.get(args[1], "emoji", "emoji-data.txt"))
                 .filter(Predicate.not(l -> l.startsWith("#") || l.isBlank()))
                 .filter(l -> l.contains("; Extended_Pictograph"))
                 .map(l -> new Range(l.replaceFirst(" .*", "")))

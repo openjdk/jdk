@@ -44,6 +44,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"

@@ -468,21 +468,21 @@ class JfrClassLoaderStatsClosure : public ClassLoaderStatsClosure {
 public:
   JfrClassLoaderStatsClosure() : ClassLoaderStatsClosure(NULL) {}
 
-  bool do_entry(oop const& key, ClassLoaderStats* const& cls) {
-    const ClassLoaderData* this_cld = cls->_class_loader != NULL ?
-      java_lang_ClassLoader::loader_data_acquire(cls->_class_loader) : NULL;
-    const ClassLoaderData* parent_cld = cls->_parent != NULL ?
-      java_lang_ClassLoader::loader_data_acquire(cls->_parent) : NULL;
+  bool do_entry(oop const& key, ClassLoaderStats const& cls) {
+    const ClassLoaderData* this_cld = cls._class_loader != NULL ?
+      java_lang_ClassLoader::loader_data_acquire(cls._class_loader) : NULL;
+    const ClassLoaderData* parent_cld = cls._parent != NULL ?
+      java_lang_ClassLoader::loader_data_acquire(cls._parent) : NULL;
     EventClassLoaderStatistics event;
     event.set_classLoader(this_cld);
     event.set_parentClassLoader(parent_cld);
-    event.set_classLoaderData((intptr_t)cls->_cld);
-    event.set_classCount(cls->_classes_count);
-    event.set_chunkSize(cls->_chunk_sz);
-    event.set_blockSize(cls->_block_sz);
-    event.set_hiddenClassCount(cls->_hidden_classes_count);
-    event.set_hiddenChunkSize(cls->_hidden_chunk_sz);
-    event.set_hiddenBlockSize(cls->_hidden_block_sz);
+    event.set_classLoaderData((intptr_t)cls._cld);
+    event.set_classCount(cls._classes_count);
+    event.set_chunkSize(cls._chunk_sz);
+    event.set_blockSize(cls._block_sz);
+    event.set_hiddenClassCount(cls._hidden_classes_count);
+    event.set_hiddenChunkSize(cls._hidden_chunk_sz);
+    event.set_hiddenBlockSize(cls._hidden_block_sz);
     event.commit();
     return true;
   }

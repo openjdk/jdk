@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,36 @@ public abstract class ProjectivePoint
     public AffinePoint asAffine() {
         IntegerModuloP zInv = z.multiplicativeInverse();
         return new AffinePoint(x.multiply(zInv), y.multiply(zInv));
+    }
+
+    private static
+    <T1 extends IntegerModuloP, T2 extends IntegerModuloP>
+    boolean affineEquals(ProjectivePoint<T1> p1,
+                         ProjectivePoint<T2> p2) {
+        MutableIntegerModuloP x1 = p1.getX().mutable().setProduct(p2.getZ());
+        MutableIntegerModuloP x2 = p2.getX().mutable().setProduct(p1.getZ());
+        if (!x1.asBigInteger().equals(x2.asBigInteger())) {
+            return false;
+        }
+
+        MutableIntegerModuloP y1 = p1.getY().mutable().setProduct(p2.getZ());
+        MutableIntegerModuloP y2 = p2.getY().mutable().setProduct(p1.getZ());
+        if (!y1.asBigInteger().equals(y2.asBigInteger())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean affineEquals(Point p) {
+        if (p instanceof ProjectivePoint) {
+            @SuppressWarnings("unchecked")
+            ProjectivePoint<IntegerModuloP> pp =
+                (ProjectivePoint<IntegerModuloP>) p;
+            return affineEquals(this, pp);
+        }
+
+        return asAffine().equals(p.asAffine());
     }
 
     public static class Immutable

@@ -66,8 +66,9 @@ void stubRoutines_init1();
 jint universe_init();          // depends on codeCache_init and stubRoutines_init
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
 void gc_barrier_stubs_init();
-void interpreter_init();       // before any methods loaded
-void invocationCounter_init(); // before any methods loaded
+void interpreter_init_stub();  // before any methods loaded
+void interpreter_init_code();  // after methods loaded, but before they are linked
+void invocationCounter_init(); // after methods loaded, but before they are linked
 void accessFlags_init();
 void InterfaceSupport_init();
 void universe2_init();  // dependent on codeCache_init and stubRoutines_init, loads primordial classes
@@ -118,15 +119,16 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
-  gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
-  interpreter_init();        // before any methods loaded
-  invocationCounter_init();  // before any methods loaded
+  gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
+  interpreter_init_stub();  // before methods get loaded
   accessFlags_init();
   InterfaceSupport_init();
-  VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
+  VMRegImpl::set_regName(); // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   javaClasses_init();// must happen after vtable initialization, before referenceProcessor_init
+  interpreter_init_code();  // after javaClasses_init and before any method gets linked
+  invocationCounter_init(); // after javaClasses_init and before any method gets linked
   referenceProcessor_init();
   jni_handles_init();
 #if INCLUDE_VM_STRUCTS

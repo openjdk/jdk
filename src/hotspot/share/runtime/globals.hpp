@@ -178,7 +178,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Fail large pages individual allocation")                         \
                                                                             \
   product(bool, UseLargePagesInMetaspace, false,                            \
-          "Use large page memory in metaspace. "                            \
+          "(Deprecated) Use large page memory in metaspace. "               \
           "Only used if UseLargePages is enabled.")                         \
                                                                             \
   product(bool, UseNUMA, false,                                             \
@@ -777,32 +777,34 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, RestrictContended, true,                                    \
           "Restrict @Contended to trusted classes")                         \
                                                                             \
-  product(bool, UseBiasedLocking, true,                                     \
-          "Enable biased locking in JVM")                                   \
+  product(bool, UseBiasedLocking, false,                                    \
+          "(Deprecated) Enable biased locking in JVM")                      \
                                                                             \
   product(intx, BiasedLockingStartupDelay, 0,                               \
-          "Number of milliseconds to wait before enabling biased locking")  \
+          "(Deprecated) Number of milliseconds to wait before enabling "    \
+          "biased locking")                                                 \
           range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
           constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \
                                                                             \
   diagnostic(bool, PrintBiasedLockingStatistics, false,                     \
-          "Print statistics of biased locking in JVM")                      \
+          "(Deprecated) Print statistics of biased locking in JVM")         \
                                                                             \
   product(intx, BiasedLockingBulkRebiasThreshold, 20,                       \
-          "Threshold of number of revocations per type to try to "          \
-          "rebias all objects in the heap of that type")                    \
+          "(Deprecated) Threshold of number of revocations per type to "    \
+          "try to rebias all objects in the heap of that type")             \
           range(0, max_intx)                                                \
           constraint(BiasedLockingBulkRebiasThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingBulkRevokeThreshold, 40,                       \
-          "Threshold of number of revocations per type to permanently "     \
-          "revoke biases of all objects in the heap of that type")          \
+          "(Deprecated) Threshold of number of revocations per type to "    \
+          "permanently revoke biases of all objects in the heap of that "   \
+          "type")                                                           \
           range(0, max_intx)                                                \
           constraint(BiasedLockingBulkRevokeThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingDecayTime, 25000,                              \
-          "Decay time (in milliseconds) to re-enable bulk rebiasing of a "  \
-          "type after previous bulk rebias")                                \
+          "(Deprecated) Decay time (in milliseconds) to re-enable bulk "    \
+          "rebiasing of a type after previous bulk rebias")                 \
           range(500, max_intx)                                              \
           constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
@@ -893,7 +895,7 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
-          "Initial size of the boot class loader data metaspace")           \
+          "(Deprecated) Initial size of the boot class loader data metaspace") \
           range(30*K, max_uintx/BytesPerWord)                               \
           constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
@@ -1453,34 +1455,9 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  product(intx, MaxInlineLevel, 15,                                         \
-          "maximum number of nested calls that are inlined")                \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MaxRecursiveInlineLevel, 1,                                 \
-          "maximum number of nested recursive calls that are inlined")      \
-          range(0, max_jint)                                                \
-                                                                            \
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
           "(using CompileCommand or marked w/ @ForceInline)")               \
-          range(0, max_jint)                                                \
-                                                                            \
-  product_pd(intx, InlineSmallCode,                                         \
-          "Only inline already compiled methods if their code size is "     \
-          "less than this")                                                 \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MaxInlineSize, 35,                                          \
-          "The maximum bytecode size of a method to be inlined")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product_pd(intx, FreqInlineSize,                                          \
-          "The maximum bytecode size of a frequent method to be inlined")   \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MaxTrivialSize, 6,                                          \
-          "The maximum bytecode size of a trivial method to be inlined")    \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, MinInliningThreshold, 250,                                  \

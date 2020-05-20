@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.spec.*;
-
+import java.util.Arrays;
 
 /**
  * Contains Elliptic Curve parameters.
@@ -39,8 +39,8 @@ import java.security.spec.*;
  */
 public final class NamedCurve extends ECParameterSpec {
 
-    // friendly name for toString() output
-    private final String name;
+    // friendly names with stdName followed by aliases
+    private final String[] nameAndAliases;
 
     // well known OID
     private final String oid;
@@ -48,25 +48,28 @@ public final class NamedCurve extends ECParameterSpec {
     // encoded form (as NamedCurve identified via OID)
     private final byte[] encoded;
 
-    NamedCurve(String name, String oid, EllipticCurve curve,
+    NamedCurve(KnownOIDs ko, EllipticCurve curve,
             ECPoint g, BigInteger n, int h) {
         super(curve, g, n, h);
-        this.name = name;
-        this.oid = oid;
+        String[] aliases = ko.aliases();
+        this.nameAndAliases = new String[aliases.length + 1];
+        nameAndAliases[0] = ko.stdName();
+        System.arraycopy(aliases, 0, nameAndAliases, 1, aliases.length);
+
+        this.oid = ko.value();
 
         DerOutputStream out = new DerOutputStream();
-
         try {
-            out.putOID(new ObjectIdentifier(oid));
+            out.putOID(ObjectIdentifier.of(ko));
         } catch (IOException e) {
             throw new RuntimeException("Internal error", e);
         }
-
         encoded = out.toByteArray();
     }
 
-    public String getName() {
-        return name;
+    // returns the curve's standard name followed by its aliases
+    public String[] getNameAndAliases() {
+        return nameAndAliases;
     }
 
     public byte[] getEncoded() {
@@ -78,6 +81,17 @@ public final class NamedCurve extends ECParameterSpec {
     }
 
     public String toString() {
-        return name + " (" + oid + ")";
+        StringBuilder sb = new StringBuilder(nameAndAliases[0]);
+        if (nameAndAliases.length > 1) {
+            sb.append(" [");
+            int j = 1;
+            while (j < nameAndAliases.length - 1) {
+                sb.append(nameAndAliases[j++]);
+                sb.append(',');
+            }
+            sb.append(nameAndAliases[j] + "]");
+        }
+        sb.append(" (" + oid + ")");
+        return sb.toString();
     }
 }

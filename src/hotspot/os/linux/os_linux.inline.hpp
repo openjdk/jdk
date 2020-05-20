@@ -44,13 +44,6 @@ inline bool os::must_commit_stack_guard_pages() {
   return true;
 }
 
-
-// On Linux, reservations are made on a page by page basis, nothing to do.
-inline void os::pd_split_reserved_memory(char *base, size_t size,
-                                      size_t split, bool realloc) {
-}
-
-
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
 }

@@ -382,6 +382,8 @@ define SetupJavaCompilationBody
     $1_REWRITE_INTO_CLASSES:=$$(foreach i,$$($1_SRC),-e 's|$$i/||g') -e 's|/|.|g' -e 's|.java$$$$||g'
 
     $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
+    $1_FILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.filelist
+
     $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
 
     # Put headers in a temp dir to filter out those that actually
@@ -421,17 +423,23 @@ define SetupJavaCompilationBody
       $1_EXTRA_DEPS := $$(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
     endif
 
-    # Pass along all sources to javac using an @file.
-    $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE) \
-        $$($1_EXTRA_DEPS)
+    # Create a file with all sources, to pass to javac in an @file.
+    # $$($1_VARDEPS_FILE) is used as dependency to track changes in set of
+    # list of files.
+    $$($1_FILELIST): $$($1_SRCS) $$($1_VARDEPS_FILE)
 		$$(call MakeDir, $$(@D))
-		$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 		$$(call LogWarn, Compiling $$(words $$($1_SRCS)) files for $1)
+		$$(eval $$(call ListPathsSafely, $1_SRCS, $$($1_FILELIST)))
+
+    # Do the actual compilation
+    $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_FILELIST) $$($1_DEPENDS) \
+        $$($1_VARDEPS_FILE) $$($1_EXTRA_DEPS)
+		$$(call MakeDir, $$(@D))
 		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 		    $$($1_JAVAC_CMD) $$($1_FLAGS) \
 		        $$($1_API_DIGEST_FLAGS) \
-		        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \
-		$(MV) $$@.tmp $$@
+		        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_FILELIST)) && \
+		$(TOUCH) $$@
 
     # Add all targets to main variable
     $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_COMPILE_TARGET) \

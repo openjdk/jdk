@@ -34,9 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import sun.security.util.DerValue;
-import sun.security.util.DerOutputStream;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.*;
 
 /**
  * This class defines the Extended Key Usage Extension, which
@@ -93,24 +91,6 @@ implements CertAttrSet<String> {
      */
     public static final String NAME = "ExtendedKeyUsage";
     public static final String USAGES = "usages";
-
-    // OID defined in RFC 5280 Sections 4.2.1.12
-    // more from http://www.alvestrand.no/objectid/1.3.6.1.5.5.7.3.html
-    private static final Map <ObjectIdentifier, String> map =
-            new HashMap<ObjectIdentifier, String>();
-
-    static {
-        map.put(ObjectIdentifier.of("2.5.29.37.0"), "anyExtendedKeyUsage");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.1"), "serverAuth");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.2"), "clientAuth");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.3"), "codeSigning");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.4"), "emailProtection");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.5"), "ipsecEndSystem");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.6"), "ipsecTunnel");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.7"), "ipsecUser");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.8"), "timeStamping");
-        map.put(ObjectIdentifier.of("1.3.6.1.5.5.7.3.9"), "OCSPSigning");
-    };
 
     /**
      * Vector of KeyUsages for this object.
@@ -198,11 +178,12 @@ implements CertAttrSet<String> {
                 usage += "\n  ";
             }
 
-            String result = map.get(oid);
-            if (result != null) {
-                usage += result;
+            String res = oid.toString();
+            KnownOIDs os = KnownOIDs.findMatch(res);
+            if (os != null) {
+                usage += os.stdName();
             } else {
-                usage += oid.toString();
+                usage += res;
             }
             first = false;
         }

@@ -36,6 +36,7 @@ import java.net.SocketException;
  * @summary Expected SocketException not thrown when calling bind() with
  *   setReuseAddress(false)
  * @run main/othervm ReuseAddressTest
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl ReuseAddressTest
  */
 
 public class ReuseAddressTest {

@@ -56,4 +56,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #define SUPPORT_RESERVED_STACK_AREA
 #endif
 
+#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS true
+
 #endif // CPU_SPARC_GLOBALDEFINITIONS_SPARC_HPP

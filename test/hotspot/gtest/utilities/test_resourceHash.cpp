@@ -26,12 +26,13 @@
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
 
 class CommonResourceHashtableTest : public ::testing::Test {
  protected:
   typedef void* K;
-  typedef int V;
+  typedef uintx V;
   const static MEMFLAGS MEM_TYPE = mtInternal;
 
   static unsigned identity_hash(const K& k) {
@@ -58,6 +59,7 @@ class CommonResourceHashtableTest : public ::testing::Test {
       }
     }
   };
+
 };
 
 class SmallResourceHashtableTest : public CommonResourceHashtableTest {
@@ -96,7 +98,44 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
       }
 
       ASSERT_TRUE(rh.remove(as_K(step)));
+      ASSERT_FALSE(rh.contains(as_K(step)));
       rh.iterate(&et);
+
+
+      // Test put_if_absent(key) (creating a default-created value)
+      bool created = false;
+      V* v = rh.put_if_absent(as_K(step), &created);
+      ASSERT_TRUE(rh.contains(as_K(step)));
+      ASSERT_TRUE(created);
+      *v = (V)step;
+
+      // Calling this function a second time should yield the same value pointer
+      V* v2 = rh.put_if_absent(as_K(step), &created);
+      ASSERT_EQ(v, v2);
+      ASSERT_EQ(*v2, *v);
+      ASSERT_FALSE(created);
+
+      ASSERT_TRUE(rh.remove(as_K(step)));
+      ASSERT_FALSE(rh.contains(as_K(step)));
+      rh.iterate(&et);
+
+      // Test put_if_absent(key, value)
+      v = rh.put_if_absent(as_K(step), step, &created);
+      ASSERT_EQ(*v, step);
+      ASSERT_TRUE(rh.contains(as_K(step)));
+      ASSERT_TRUE(created);
+
+      v2 = rh.put_if_absent(as_K(step), step, &created);
+      // Calling this function a second time should yield the same value pointer
+      ASSERT_EQ(v, v2);
+      ASSERT_EQ(*v2, (V)step);
+      ASSERT_FALSE(created);
+
+      ASSERT_TRUE(rh.remove(as_K(step)));
+      ASSERT_FALSE(rh.contains(as_K(step)));
+      rh.iterate(&et);
+
+
     }
   };
 };

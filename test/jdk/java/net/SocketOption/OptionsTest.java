@@ -28,6 +28,7 @@
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Djdk.net.usePlainSocketImpl OptionsTest
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
  * @run main/othervm --limit-modules=java.base OptionsTest
  */

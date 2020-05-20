@@ -1017,6 +1017,7 @@ class JavaThread: public Thread {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class WhiteBox;
+  friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
   oop            _threadObj;                     // The Java level thread object
@@ -1359,7 +1360,7 @@ class JavaThread: public Thread {
     _handshake.process_by_self();
   }
 
-  bool handshake_try_process(HandshakeOperation* op) {
+  HandshakeState::ProcessResult handshake_try_process(HandshakeOperation* op) {
     return _handshake.try_process(op);
   }
 

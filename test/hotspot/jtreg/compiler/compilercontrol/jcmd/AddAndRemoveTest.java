@@ -63,7 +63,6 @@ public class AddAndRemoveTest extends AbstractTestBase {
             MethodDescriptor md = getValidMethodDescriptor(exec);
             CompileCommand compileCommand = new JcmdCommand(Command.COMPILEONLY,
                     md, null, Scenario.Type.JCMD, Scenario.JcmdType.ADD);
-            compileCommand.print();
             builder.add(compileCommand);
         }
         // Remove half of them

@@ -33,6 +33,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A selectable channel for datagram-oriented sockets.
@@ -184,7 +185,7 @@ public abstract class DatagramChannel
      * @since   1.7
      */
     public static DatagramChannel open(ProtocolFamily family) throws IOException {
-        return SelectorProvider.provider().openDatagramChannel(family);
+        return SelectorProvider.provider().openDatagramChannel(requireNonNull(family));
     }
 
     /**

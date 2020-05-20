@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,14 @@ import java.util.List;
 import static jdk.test.lib.security.DerUtils.*;
 import static sun.security.pkcs.ContentInfo.DATA_OID;
 import static sun.security.pkcs.ContentInfo.ENCRYPTED_DATA_OID;
-import static sun.security.x509.AlgorithmId.*;
+import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 
 /*
  * @test
- * @bug 8076190
+ * @bug 8076190 8242151
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
- *          java.base/sun.security.x509
  *          java.base/sun.security.util
  * @summary Checks the preferences order of pkcs12 params
  */
@@ -50,16 +50,16 @@ public class ParamsPreferences {
 
         // with storepass
         test(c++, "-", "-",
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                pbeWithSHA1AndDESede_oid, 50000,
-                SHA_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
+                oid(KnownOIDs.SHA_1), 100000);
 
         // password-less with system property
         test(c++, "keystore.pkcs12.certProtectionAlgorithm", "NONE",
                 "keystore.pkcs12.macAlgorithm", "NONE",
                 "-", "-",
                 null, 0,
-                pbeWithSHA1AndDESede_oid, 50000,
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
                 null, 0);
 
         // password-less with security property
@@ -68,7 +68,7 @@ public class ParamsPreferences {
                 "keystore.pkcs12.macAlgorithm", "NONE",
                 "-",
                 null, 0,
-                pbeWithSHA1AndDESede_oid, 50000,
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
                 null, 0);
 
         // back to with storepass by overriding security property with system property
@@ -78,9 +78,9 @@ public class ParamsPreferences {
                 "keystore.pkcs12.certProtectionAlgorithm", "NONE",
                 "keystore.pkcs12.macAlgorithm", "NONE",
                 "-",
-                pbeWithSHA1AndDESede_oid, 50000,
-                pbeWithSHA1AndDESede_oid, 50000,
-                SHA256_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
+                oid(KnownOIDs.SHA_256), 100000);
 
         // back to with storepass by using "" to force hardcoded default
         test(c++, "keystore.pkcs12.certProtectionAlgorithm", "",
@@ -91,9 +91,9 @@ public class ParamsPreferences {
                 "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
                 "keystore.pkcs12.macAlgorithm", "NONE",
                 "-",
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                pbeWithSHA1AndDESede_oid, 50000,
-                SHA_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
+                oid(KnownOIDs.SHA_1), 100000);
 
         // change everything with system property
         test(c++, "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
@@ -103,9 +103,9 @@ public class ParamsPreferences {
                 "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
                 "keystore.pkcs12.macIterationCount", 2000,
                 "-", "-",
-                pbeWithSHA1AndDESede_oid, 3000,
-                pbeWithSHA1AndRC2_40_oid, 4000,
-                SHA256_oid, 2000);
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 3000,
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 4000,
+                oid(KnownOIDs.SHA_256), 2000);
 
         // change everything with security property
         test(c++, "-",
@@ -116,9 +116,9 @@ public class ParamsPreferences {
                 "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
                 "keystore.pkcs12.macIterationCount", 2000,
                 "-",
-                pbeWithSHA1AndDESede_oid, 3000,
-                pbeWithSHA1AndRC2_40_oid, 4000,
-                SHA256_oid, 2000);
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 3000,
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 4000,
+                oid(KnownOIDs.SHA_256), 2000);
 
         // override security property with system property
         test(c++, "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
@@ -135,9 +135,9 @@ public class ParamsPreferences {
                 "keystore.pkcs12.macAlgorithm", "HmacPBESHA1",
                 "keystore.pkcs12.macIterationCount", 2000,
                 "-",
-                pbeWithSHA1AndDESede_oid, 13000,
-                pbeWithSHA1AndRC2_40_oid, 14000,
-                SHA256_oid, 12000);
+                oid(KnownOIDs.PBEWithSHA1AndDESede), 13000,
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 14000,
+                oid(KnownOIDs.SHA_256), 12000);
 
         // check keyProtectionAlgorithm old behavior. Preferences of
         // 4 different settings.
@@ -145,25 +145,25 @@ public class ParamsPreferences {
         test(c++, "-",
                 "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                 "-",
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                pbeWithSHA1AndRC2_128_oid, 50000,
-                SHA_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndRC2_128), 50000,
+                oid(KnownOIDs.SHA_1), 100000);
         test(c++, "-",
                 "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                 "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
                 "-",
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                SHA_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.SHA_1), 100000);
         test(c++,
                 "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
                 "-",
                 "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                 "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
                 "-",
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                pbeWithSHA1AndRC4_128_oid, 50000,
-                SHA_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndRC4_128), 50000,
+                oid(KnownOIDs.SHA_1), 100000);
         test(c++,
                 "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
                 "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_40",
@@ -171,9 +171,13 @@ public class ParamsPreferences {
                 "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                 "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
                 "-",
-                pbeWithSHA1AndRC2_40_oid, 50000,
-                pbeWithSHA1AndRC4_40_oid, 50000,
-                SHA_oid, 100000);
+                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
+                oid(KnownOIDs.PBEWithSHA1AndRC4_40), 50000,
+                oid(KnownOIDs.SHA_1), 100000);
+    }
+
+    private static ObjectIdentifier oid(KnownOIDs o) {
+        return ObjectIdentifier.of(o);
     }
 
     /**

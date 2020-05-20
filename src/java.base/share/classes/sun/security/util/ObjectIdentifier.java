@@ -28,6 +28,7 @@ package sun.security.util;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represent an ISO Object Identifier.
@@ -148,7 +149,7 @@ public final class ObjectIdentifier implements Serializable {
      * Constructs, from a string.  This string should be of the form 1.23.56.
      * Validity check included.
      */
-    public ObjectIdentifier(String oid) throws IOException {
+    private ObjectIdentifier(String oid) throws IOException {
         int ch = '.';
         int start = 0;
         int end = 0;
@@ -290,18 +291,42 @@ public final class ObjectIdentifier implements Serializable {
         System.arraycopy(tmp, 0, encoding, 0, pos);
     }
 
+    // oid cache index'ed by the oid string
+    private static ConcurrentHashMap<String,ObjectIdentifier> oidTable =
+            new ConcurrentHashMap<>();
+
     /**
-     * Returns an ObjectIdentifier instance for the specific string OID.
+     * Returns an ObjectIdentifier instance for the specific String.
      *
-     * Note: Please use legal string OID only.  Otherwise, a RuntimeException
-     * is thrown.
+     * If the String is not a valid OID string, an IOException is thrown.
      */
-    public static ObjectIdentifier of(String oid) {
-        try {
-            return new ObjectIdentifier(oid);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
+    public static ObjectIdentifier of(String oidStr) throws IOException {
+        // check cache first
+        ObjectIdentifier oid = oidTable.get(oidStr);
+        if (oid == null) {
+            oid = new ObjectIdentifier(oidStr);
+            oidTable.put(oidStr, oid);
         }
+        return oid;
+    }
+
+    /**
+     * Returns an ObjectIdentifier instance for the specific KnownOIDs.
+     */
+    public static ObjectIdentifier of(KnownOIDs o) {
+        // check cache first
+        String oidStr = o.value();
+        ObjectIdentifier oid = oidTable.get(oidStr);
+        if (oid == null) {
+            try {
+                oid = new ObjectIdentifier(oidStr);
+            } catch (IOException ioe) {
+                // should not happen as oid string for KnownOIDs is internal
+                throw new RuntimeException(ioe);
+            }
+            oidTable.put(oidStr, oid);
+        }
+        return oid;
     }
 
     /*

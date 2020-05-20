@@ -49,24 +49,10 @@ import sun.security.x509.*;
 public final class TimestampedSigner extends ContentSigner {
 
     /*
-     * Object identifier for the subject information access X.509 certificate
-     * extension.
-     */
-    private static final String SUBJECT_INFO_ACCESS_OID = "1.3.6.1.5.5.7.1.11";
-
-    /*
      * Object identifier for the timestamping access descriptors.
      */
-    private static final ObjectIdentifier AD_TIMESTAMPING_Id;
-    static {
-        ObjectIdentifier tmp = null;
-        try {
-            tmp = new ObjectIdentifier("1.3.6.1.5.5.7.48.3");
-        } catch (IOException e) {
-            // ignore
-        }
-        AD_TIMESTAMPING_Id = tmp;
-    }
+    private static final ObjectIdentifier AD_TIMESTAMPING_Id =
+            ObjectIdentifier.of(KnownOIDs.AD_TimeStamping);
 
     /**
      * Instantiates a content signer that supports timestamped signatures.
@@ -155,8 +141,8 @@ public final class TimestampedSigner extends ContentSigner {
         }
         // Parse the extensions
         try {
-            byte[] extensionValue =
-                tsaCertificate.getExtensionValue(SUBJECT_INFO_ACCESS_OID);
+            byte[] extensionValue = tsaCertificate.getExtensionValue
+                    (KnownOIDs.SubjectInfoAccess.value());
             if (extensionValue == null) {
                 return null;
             }

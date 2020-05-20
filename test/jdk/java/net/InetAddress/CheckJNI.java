@@ -83,6 +83,10 @@ public class CheckJNI {
     static void testDatagram(InetAddress ia) throws Exception {
         DatagramSocket s1 = new DatagramSocket(0, ia);
         DatagramSocket s2 = new DatagramSocket(0, ia);
+        System.out.println("s1: local address=" + s1.getLocalAddress()
+                            + ", local port=" + s1.getLocalPort());
+        System.out.println("s2: local address=" + s2.getLocalAddress()
+                            + ", local port=" + s2.getLocalPort());
 
         DatagramPacket p1 = new DatagramPacket (
                 "hello world".getBytes(),

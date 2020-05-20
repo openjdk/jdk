@@ -643,69 +643,6 @@ void FieldLayoutBuilder::compute_regular_layout() {
   epilogue();
 }
 
-// Compute layout of the java/lang/ref/Reference class according
-// to the hard coded offsets of its fields
-void FieldLayoutBuilder::compute_java_lang_ref_Reference_layout() {
-  prologue();
-  regular_field_sorting();
-
-  assert(_contended_groups.is_empty(), "java.lang.Reference has no @Contended annotations");
-  assert(_root_group->primitive_fields() == NULL, "java.lang.Reference has no nonstatic primitive fields");
-  int field_count = 0;
-  int offset = -1;
-  for (int i = 0; i < _root_group->oop_fields()->length(); i++) {
-    LayoutRawBlock* b = _root_group->oop_fields()->at(i);
-    FieldInfo* fi = FieldInfo::from_field_array(_fields, b->field_index());
-    if (fi->name(_constant_pool)->equals("referent")) {
-      offset = java_lang_ref_Reference::referent_offset;
-    } else if (fi->name(_constant_pool)->equals("queue")) {
-      offset = java_lang_ref_Reference::queue_offset;
-    } else if (fi->name(_constant_pool)->equals("next")) {
-      offset = java_lang_ref_Reference::next_offset;
-    } else if (fi->name(_constant_pool)->equals("discovered")) {
-      offset = java_lang_ref_Reference::discovered_offset;
-    }
-    assert(offset != -1, "Unknown field");
-    _layout->add_field_at_offset(b, offset);
-    field_count++;
-  }
-  assert(field_count == 4, "Wrong number of fields in java.lang.ref.Reference");
-
-  _static_layout->add_contiguously(this->_static_fields->oop_fields());
-  _static_layout->add(this->_static_fields->primitive_fields());
-
-  epilogue();
-}
-
-// Compute layout of the boxing class according
-// to the hard coded offsets of their fields
-void FieldLayoutBuilder::compute_boxing_class_layout() {
-  prologue();
-  regular_field_sorting();
-
-  assert(_contended_groups.is_empty(), "Boxing classes have no @Contended annotations");
-  assert(_root_group->oop_fields() == NULL, "Boxing classes have no nonstatic oops fields");
-  int field_count = 0;
-  int offset = -1;
-
-  for (int i = 0; i < _root_group->primitive_fields()->length(); i++) {
-    LayoutRawBlock* b = _root_group->primitive_fields()->at(i);
-    FieldInfo* fi = FieldInfo::from_field_array(_fields, b->field_index());
-    assert(fi->name(_constant_pool)->equals("value"), "Boxing classes have a single nonstatic field named 'value'");
-    BasicType type = Signature::basic_type(fi->signature(_constant_pool));
-    offset = java_lang_boxing_object::value_offset_in_bytes(type);
-    assert(offset != -1, "Unknown field");
-    _layout->add_field_at_offset(b, offset);
-    field_count++;
-  }
-  assert(field_count == 1, "Wrong number of fields for a boxing class");
-
-  _static_layout->add_contiguously(this->_static_fields->oop_fields());
-  _static_layout->add(this->_static_fields->primitive_fields());
-
-  epilogue();
-}
-
 void FieldLayoutBuilder::epilogue() {
   // Computing oopmaps
   int super_oop_map_count = (_super_klass == NULL) ? 0 :_super_klass->nonstatic_oop_map_count();
@@ -764,19 +701,5 @@ void FieldLayoutBuilder::epilogue() {
 }
 
 void FieldLayoutBuilder::build_layout() {
-  if (_classname == vmSymbols::java_lang_ref_Reference()) {
-    compute_java_lang_ref_Reference_layout();
-  } else if (_classname == vmSymbols::java_lang_Boolean() ||
-             _classname == vmSymbols::java_lang_Character() ||
-             _classname == vmSymbols::java_lang_Float() ||
-             _classname == vmSymbols::java_lang_Double() ||
-             _classname == vmSymbols::java_lang_Byte() ||
-             _classname == vmSymbols::java_lang_Short() ||
-             _classname == vmSymbols::java_lang_Integer() ||
-             _classname == vmSymbols::java_lang_Long()) {
-    compute_boxing_class_layout();
-  } else {
-    compute_regular_layout();
-  }
+  compute_regular_layout();
 }
-

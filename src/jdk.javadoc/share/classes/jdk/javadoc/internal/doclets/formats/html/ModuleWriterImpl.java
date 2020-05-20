@@ -840,15 +840,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             addDeprecationInfo(tree);
             tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
             addInlineComment(mdle, tree);
+            addTagsInfo(mdle, tree);
             moduleContentTree.add(tree);
         }
-    }
-
-    @Override
-    public void addModuleTags(Content moduleContentTree) {
-        Content tree = HtmlTree.SECTION(HtmlStyle.moduleTags);
-        addTagsInfo(mdle, tree);
-        moduleContentTree.add(tree);
     }
 
     @Override

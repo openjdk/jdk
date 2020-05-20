@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,8 @@ abstract class ValueImpl extends MirrorImpl implements Value {
                                           ValueContainer destination)
                   throws InvalidTypeException, ClassNotLoadedException {
         if (value == null) {
-            /*
-             * TO DO: Centralize JNI signature knowledge
-             */
-            if (destination.signature().length() == 1) {
+            JNITypeParser sig = new JNITypeParser(destination.signature());
+            if (sig.isPrimitive()) {
                 throw new InvalidTypeException("Can't set a primitive type to null");
             }
             return null;    // no further checking or conversion necessary

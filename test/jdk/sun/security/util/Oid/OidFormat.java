@@ -24,9 +24,7 @@
 /*
  * @test
  * @author Weijun Wang
- * @bug 6418422
- * @bug 6418425
- * @bug 6418433
+ * @bug 6418422 6418425 6418433 8242151
  * @summary ObjectIdentifier should reject 1.2.3.-4 and throw IOException on all format errors
  * @modules java.base/sun.security.util
  *          java.security.jgss
@@ -90,7 +88,7 @@ public class OidFormat {
 
     static void testGood(String s) throws Exception {
         System.err.println("Trying " + s);
-        ObjectIdentifier oid = new ObjectIdentifier(s);
+        ObjectIdentifier oid = ObjectIdentifier.of(s);
         if (!oid.toString().equals(s)) {
             throw new Exception("equal test fail");
         }
@@ -106,7 +104,7 @@ public class OidFormat {
     static void testBad(String s) throws Exception {
         System.err.println("Trying " + s);
         try {
-            new ObjectIdentifier(s);
+            ObjectIdentifier.of(s);
             throw new Exception("should be invalid ObjectIdentifier");
         } catch (IOException ioe) {
             System.err.println(ioe);

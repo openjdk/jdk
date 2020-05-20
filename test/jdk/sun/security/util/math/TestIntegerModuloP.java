@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.P256OrderField 32 8
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.P384OrderField 48 9
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.P521OrderField 66 10
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.Curve25519OrderField 32 11
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.Curve448OrderField 56 12
  */
 
 import sun.security.util.math.*;
@@ -104,8 +106,10 @@ public class TestIntegerModuloP {
         SET_FUNCTIONS.add((a, b, c) ->
             a.setValue(c, 0, c.length, (byte) 0));
         SET_FUNCTIONS.add((a, b, c) ->
-            a.setValue(ByteBuffer.wrap(c, 0, c.length).order(ByteOrder.LITTLE_ENDIAN),
-            c.length, highByte));
+            a.setValue(c, 0, c.length / 2, (byte) 0));
+        SET_FUNCTIONS.add((a, b, c) ->
+            a.setValue(ByteBuffer.wrap(c, 0, c.length / 2).order(ByteOrder.LITTLE_ENDIAN),
+            c.length / 2, highByte));
 
         // array functions return the (possibly modified) value as byte array
         ARRAY_FUNCTIONS.add((a, b ) -> a.asByteArray(length));
@@ -328,7 +332,7 @@ public class TestIntegerModuloP {
 
             ElemSetFunction setFunc =
                 SET_FUNCTIONS.get(random.nextInt(SET_FUNCTIONS.size()));
-            byte[] valueArr = new byte[length];
+            byte[] valueArr = new byte[2 * length];
             random.nextBytes(valueArr);
             setAndCheck(setFunc, result1, result2, valueArr);
 

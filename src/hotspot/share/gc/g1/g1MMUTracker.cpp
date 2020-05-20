@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,12 @@ void G1MMUTrackerQueue::add_pause(double start, double end) {
   double slice_time = calculate_gc_time(end);
   G1MMUTracer::report_mmu(_time_slice, slice_time, _max_gc_time);
 
-  if (slice_time >= _max_gc_time) {
-    log_info(gc, mmu)("MMU target violated: %.1lfms (%.1lfms/%.1lfms)", slice_time * 1000.0, _max_gc_time * 1000.0, _time_slice * 1000);
+  if (slice_time < _max_gc_time) {
+    log_debug(gc, mmu)("MMU: %.1lfms (%.1lfms/%.1lfms)",
+                       slice_time * 1000.0, _max_gc_time * 1000.0, _time_slice * 1000);
+  } else {
+    log_info(gc, mmu)("MMU target violated: %.1lfms (%.1lfms/%.1lfms)",
+                      slice_time * 1000.0, _max_gc_time * 1000.0, _time_slice * 1000);
   }
 }
 

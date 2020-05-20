@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,6 @@
 
 #include "jni.h"
 #include "jni_util.h"
-
-static void getParent(const TCHAR *path, TCHAR *dest) {
-    char* lastSlash = max(strrchr(path, '\\'), strrchr(path, '/'));
-    if (lastSlash == NULL) {
-        *dest = 0;
-        return;
-    }
-    if (path != dest)
-        strcpy(dest, path);
-    *lastSlash = 0;
-}
 
 void* getProcessHandle() {
     return (void*)GetModuleHandle(NULL);

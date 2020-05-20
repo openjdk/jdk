@@ -128,14 +128,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     protected AlgorithmId       algId = null;
     protected byte[]            signature = null;
 
-    // recognized extension OIDS
-    private static final String KEY_USAGE_OID = "2.5.29.15";
-    private static final String EXTENDED_KEY_USAGE_OID = "2.5.29.37";
-    private static final String BASIC_CONSTRAINT_OID = "2.5.29.19";
-    private static final String SUBJECT_ALT_NAME_OID = "2.5.29.17";
-    private static final String ISSUER_ALT_NAME_OID = "2.5.29.18";
-    private static final String AUTH_INFO_ACCESS_OID = "1.3.6.1.5.5.7.1.1";
-
     // number of standard key usage bits.
     private static final int NUM_STANDARD_KEY_USAGE = 9;
 
@@ -1423,7 +1415,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     public byte[] getExtensionValue(String oid) {
         try {
-            ObjectIdentifier findOID = new ObjectIdentifier(oid);
+            ObjectIdentifier findOID = ObjectIdentifier.of(oid);
             String extAlias = OIDMap.getName(findOID);
             Extension certExt = null;
             CertificateExtensions exts = (CertificateExtensions)info.get(
@@ -1526,7 +1518,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public static List<String> getExtendedKeyUsage(X509Certificate cert)
         throws CertificateParsingException {
         try {
-            byte[] ext = cert.getExtensionValue(EXTENDED_KEY_USAGE_OID);
+            byte[] ext = cert.getExtensionValue
+                    (KnownOIDs.extendedKeyUsage.value());
             if (ext == null)
                 return null;
             DerValue val = new DerValue(ext);
@@ -1696,7 +1689,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public static Collection<List<?>> getSubjectAlternativeNames(X509Certificate cert)
         throws CertificateParsingException {
         try {
-            byte[] ext = cert.getExtensionValue(SUBJECT_ALT_NAME_OID);
+            byte[] ext = cert.getExtensionValue
+                    (KnownOIDs.SubjectAlternativeName.value());
             if (ext == null) {
                 return null;
             }
@@ -1759,7 +1753,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     public static Collection<List<?>> getIssuerAlternativeNames(X509Certificate cert)
         throws CertificateParsingException {
         try {
-            byte[] ext = cert.getExtensionValue(ISSUER_ALT_NAME_OID);
+            byte[] ext = cert.getExtensionValue
+                    (KnownOIDs.IssuerAlternativeName.value());
             if (ext == null) {
                 return null;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.test.lib;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * A utility for constructing command lines for starting JDK tool processes.
@@ -99,6 +100,24 @@ public class JDKToolLauncher {
      */
     public JDKToolLauncher addVMArg(String arg) {
         vmArgs.add(arg);
+        return this;
+    }
+
+    /**
+     * Adds arguments to the JVM running the tool.
+     *
+     * The JVM arguments are passed to the underlying JVM running the tool.
+     * Arguments will automatically be prepended with "-J".
+     *
+     * Any platform specific arguments required for running the tool are
+     * automatically added.
+     *
+     * @param args
+     *            The arguments to VM running the tool
+     * @return The JDKToolLauncher instance
+     */
+    public JDKToolLauncher addVMArgs(String[] args) {
+        Stream.of(args).forEach(vmArgs::add);
         return this;
     }
 

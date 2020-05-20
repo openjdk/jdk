@@ -76,7 +76,7 @@ public class Diagnostics implements javax.tools.DiagnosticListener<JavaFileObjec
     /** Do the diagnostics contain the specified warning key? */
     public boolean containsWarningKey(String key) {
         return diags.stream()
-                    .filter(d -> d.getKind() == Diagnostic.Kind.WARNING)
+                    .filter(d -> d.getKind() == Diagnostic.Kind.WARNING || d.getKind() == Diagnostic.Kind.MANDATORY_WARNING)
                     .anyMatch(d -> d.getCode().equals(key));
     }
 

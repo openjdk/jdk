@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class OutputAnalyzer {
+
+    private static final String JVM_WARNING_MSG = ".* VM warning:.*";
+    private static final String JAVA_VERSION_MSG = "^java version .*|^Java\\(TM\\).*|^Java HotSpot\\(TM\\).*|" +
+            "^openjdk version .*|^OpenJDK .*";
+    private static final String JAVA_WARNINGS_AND_VERSION = JVM_WARNING_MSG + "|" + JAVA_VERSION_MSG;
+    private static final Pattern JAVA_WARNINGS_AND_VERSION_PATTERN =
+            Pattern.compile(JAVA_WARNINGS_AND_VERSION.replaceAll("\\|", "\\\\R|") + "\\R",
+                    Pattern.MULTILINE);
+
 
     private final OutputBuffer buffer;
     /**
@@ -132,13 +141,13 @@ public final class OutputAnalyzer {
 
     /**
      * Verify that the stderr contents of output buffer is empty,
-     * after filtering out the Hotspot warning messages
+     * after filtering out the HotSpot warning and Java version messages.
      *
      * @throws RuntimeException
      *             If stderr was not empty
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreVMWarnings() {
-        if (!getStderr().replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
+        if (!JAVA_WARNINGS_AND_VERSION_PATTERN.matcher(getStderr()).replaceAll("").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
@@ -561,12 +570,15 @@ public final class OutputAnalyzer {
         return Arrays.asList(buffer.split("\\R"));
     }
 
-
-    private static final String jvmwarningmsg = ".* VM warning:.*";
+    private List<String> asLinesWithoutVMWarnings(String buffer) {
+        return Arrays.stream(buffer.split("\\R"))
+                .filter(Pattern.compile(JAVA_WARNINGS_AND_VERSION).asPredicate().negate())
+                .collect(Collectors.toList());
+    }
 
     /**
      * Verifies that the stdout and stderr contents of output buffer are empty, after
-     * filtering out the HotSpot warning messages.
+     * filtering out the HotSpot warning and Java version messages.
      *
      * @throws RuntimeException If the stdout and stderr are not empty
      */
@@ -577,22 +589,19 @@ public final class OutputAnalyzer {
             reportDiagnosticSummary();
             throw new RuntimeException("stdout was not empty");
         }
-        if (!stderr.replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
-            reportDiagnosticSummary();
-            throw new RuntimeException("stderr was not empty");
-        }
+        stderrShouldBeEmptyIgnoreVMWarnings();
         return this;
     }
 
     /**
      * Verify that the stderr contents of output buffer matches the pattern,
-     * after filtering out the Hotespot warning messages
+     * after filtering out the HotSpot warning and Java version messages.
      *
      * @param pattern
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stderrShouldMatchIgnoreVMWarnings(String pattern) {
-        String stderr = getStderr().replaceAll(jvmwarningmsg + "\\R", "");
+        String stderr = JAVA_WARNINGS_AND_VERSION_PATTERN.matcher(getStderr()).replaceAll("");
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();
@@ -604,14 +613,26 @@ public final class OutputAnalyzer {
 
     /**
      * Returns the contents of the output buffer (stdout and stderr), without those
-     * JVM warning msgs, as list of strings. Output is split by newlines.
+     * JVM warning and Java version messages, as list of strings. Output is split
+     * by newlines.
      *
      * @return Contents of the output buffer as list of strings
      */
     public List<String> asLinesWithoutVMWarnings() {
         return Arrays.stream(getOutput().split("\\R"))
-                     .filter(Pattern.compile(jvmwarningmsg).asPredicate().negate())
+                     .filter(Pattern.compile(JAVA_WARNINGS_AND_VERSION).asPredicate().negate())
                      .collect(Collectors.toList());
+    }
+
+    /**
+     * Verify that the stdout and stderr contents of output buffer match the
+     * {@code pattern} line by line ignoring HotSpot warning and version messages.
+     *
+     * @param pattern
+     *            Matching pattern
+     */
+    public OutputAnalyzer shouldMatchByLineIgnoreVMWarnings(String pattern) {
+        return shouldMatchByLine(getOutput(), null, null, pattern, true);
     }
 
     /**
@@ -657,7 +678,25 @@ public final class OutputAnalyzer {
      *            Matching pattern
      */
     public OutputAnalyzer shouldMatchByLine(String from, String to, String pattern) {
-        return shouldMatchByLine(getOutput(), from, to, pattern);
+        return shouldMatchByLine(getOutput(), from, to, pattern, false);
+    }
+
+    /**
+     * Verify that the stdout and stderr contents of output buffer match the
+     * {@code pattern} line by line ignoring HotSpot warnings and version messages.
+     * The whole output could be matched or just a subset of it.
+     *
+     * @param from
+     *            The line (excluded) from where output will be matched.
+     *            Set {@code from} to null for matching from the first line.
+     * @param to
+     *            The line (excluded) until where output will be matched.
+     *            Set {@code to} to null for matching until the last line.
+     * @param pattern
+     *            Matching pattern
+     */
+    public OutputAnalyzer shouldMatchByLineIgnoreVMWarnings(String from, String to, String pattern) {
+        return shouldMatchByLine(getOutput(), from, to, pattern, true);
     }
 
     /**
@@ -675,11 +714,12 @@ public final class OutputAnalyzer {
      *            Matching pattern
      */
     public OutputAnalyzer stdoutShouldMatchByLine(String from, String to, String pattern) {
-        return shouldMatchByLine(getStdout(), from, to, pattern);
+        return shouldMatchByLine(getStdout(), from, to, pattern, false);
     }
 
-    private OutputAnalyzer shouldMatchByLine(String buffer, String from, String to, String pattern) {
-        List<String> lines = asLines(buffer);
+    private OutputAnalyzer shouldMatchByLine(String buffer, String from, String to, String pattern,
+                                             boolean ignoreVMWarnings) {
+        List<String> lines = ignoreVMWarnings ? asLinesWithoutVMWarnings() : asLines(buffer);
 
         int fromIndex = 0;
         if (from != null) {

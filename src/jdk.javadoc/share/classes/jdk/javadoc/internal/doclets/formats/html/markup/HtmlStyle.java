@@ -232,14 +232,6 @@ public enum HtmlStyle {
     moduleDescription,
 
     /**
-     * The class of the {@code dl} element used to present the block tags in the documentation
-     * comment for a module element.
-     * Additional (derived) information, such as implementation or inheritance details, may
-     * also appear in this element.
-     */
-    moduleTags,
-
-    /**
      * The class of the element used to present the documentation comment for package element.
      * The content of the block tags will be in a nested element with class {@link #notes}.
      */

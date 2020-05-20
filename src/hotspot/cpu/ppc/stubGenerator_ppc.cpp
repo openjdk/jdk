@@ -3577,6 +3577,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_crc32c_table_addr = StubRoutines::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
+
+    // Safefetch stubs.
+    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
+                                                       &StubRoutines::_safefetch32_fault_pc,
+                                                       &StubRoutines::_safefetch32_continuation_pc);
+    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
+                                                       &StubRoutines::_safefetchN_fault_pc,
+                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
   void generate_all() {
@@ -3594,14 +3602,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
 
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {

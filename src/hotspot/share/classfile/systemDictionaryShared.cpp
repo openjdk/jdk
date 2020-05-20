@@ -198,14 +198,14 @@ class DumpTimeSharedClassTable: public ResourceHashtable<
   int _unregistered_count;
 public:
   DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k) {
-    DumpTimeSharedClassInfo* p = get(k);
-    if (p == NULL) {
+    bool created = false;
+    DumpTimeSharedClassInfo* p = put_if_absent(k, &created);
+    if (created) {
       assert(!SystemDictionaryShared::no_class_loading_should_happen(),
              "no new classes can be loaded while dumping archive");
-      put(k, DumpTimeSharedClassInfo());
-      p = get(k);
-      assert(p != NULL, "sanity");
       p->_klass = k;
+    } else {
+      assert(p->_klass == k, "Sanity");
     }
     return p;
   }
@@ -1041,19 +1041,16 @@ static ResourceHashtable<
   ResourceObj::C_HEAP> _loaded_unregistered_classes;
 
 bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
+  // We don't allow duplicated unregistered classes of the same name.
   assert(DumpSharedSpaces, "only when dumping");
-
   Symbol* name = k->name();
-  if (_loaded_unregistered_classes.get(name) != NULL) {
-    // We don't allow duplicated unregistered classes of the same name.
-    return false;
-  } else {
-    bool isnew = _loaded_unregistered_classes.put(name, true);
-    assert(isnew, "sanity");
+  bool created = false;
+  _loaded_unregistered_classes.put_if_absent(name, true, &created);
+  if (created) {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k, CHECK_false);
-    return true;
   }
+  return created;
 }
 
 // This function is called to resolve the super/interfaces of shared classes for

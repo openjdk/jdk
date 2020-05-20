@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public class SimpleFormatter extends Formatter {
      *     <p>This prints 2 lines where the first line includes
      *     the timestamp ({@code 1$}) and the source ({@code 2$});
      *     the second line includes the log level ({@code 4$}) and
-     *     the log message ({@code 5$}) followed with the throwable
+     *     the log message ({@code 5$}) followed by the throwable
      *     and its backtrace ({@code 6$}), if any:
      *     <pre>
      *     Tue Mar 22 13:11:31 PDT 2011 MyClass fatal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,6 @@
  * programs running on the JVM. The mechanism for instrumentation is modification
  * of the byte-codes of methods.
  *
- * <p> Note: developers/admininstrators are responsible for verifying
- * the trustworthiness of content and structure of the Java Agents they deploy,
- * since those are able to arbitrarily transform the bytecode from other JAR files.
- * Since that happens after the Jars containing the bytecode have been verified
- * as trusted, the trustworthiness of a Java Agent can determine the trust towards
- * the entire program.
- *
  * <p> An agent is deployed as a JAR file. An attribute in the JAR file manifest
  * specifies the agent class which will be loaded to start the agent. Agents can
  * be started in several ways:
@@ -56,8 +49,14 @@
  *   file.</p></li>
  * </ol>
  *
- * <p> Each of these ways to start an agent is described below.
+ * <p> Agents can transform classes in arbitrary ways at load time, transform
+ * modules, or transform the bytecode of methods of already loaded classes.
+ * Developers or administrators that deploy agents, deploy applications that
+ * package an agent with the application, or use tools that load agents into a
+ * running application, are responsible for verifying the trustworthiness of each
+ * agent including the content and structure of the agent JAR file.
  *
+ * <p> The three ways to start an agent are described below.
  *
  * <h2>Starting an Agent from the Command-Line Interface</h2>
  *

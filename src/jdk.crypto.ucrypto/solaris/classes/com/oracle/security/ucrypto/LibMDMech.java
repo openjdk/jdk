@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.oracle.security.ucrypto;
 
+import java.util.List;
+import static sun.security.util.SecurityProviderConstants.getAliases;
+
 /**
  * Enum for representing the ucrypto mechanisms.
  *
@@ -36,25 +39,30 @@ public enum LibMDMech {
         { sd("MessageDigest", "MD5", "com.oracle.security.ucrypto.NativeDigestMD$MD5")
         }),
     SHA_1(new ServiceDesc[]
-        { sd("MessageDigest", "SHA", "com.oracle.security.ucrypto.NativeDigestMD$SHA1",
-             "SHA-1", "SHA1")
+        { sd("MessageDigest", "SHA-1", "com.oracle.security.ucrypto.NativeDigestMD$SHA1",
+             getAliases("SHA-1"))
         }),
     SHA_256(new ServiceDesc[]
         { sd("MessageDigest", "SHA-256", "com.oracle.security.ucrypto.NativeDigestMD$SHA256",
-             "2.16.840.1.101.3.4.2.1", "OID.2.16.840.1.101.3.4.2.1")
+             getAliases("SHA-256"))
         }),
     SHA_384(new ServiceDesc[]
         { sd("MessageDigest", "SHA-384", "com.oracle.security.ucrypto.NativeDigestMD$SHA384",
-             "2.16.840.1.101.3.4.2.2", "OID.2.16.840.1.101.3.4.2.2")
+             getAliases("SHA-384"))
         }),
     SHA_512(new ServiceDesc[]
         { sd("MessageDigest", "SHA-512", "com.oracle.security.ucrypto.NativeDigestMD$SHA512",
-             "2.16.840.1.101.3.4.2.3", "OID.2.16.840.1.101.3.4.2.3")
+             getAliases("SHA-512"))
         });
 
     ServiceDesc[] serviceDescs;
 
-    private static ServiceDesc sd(String type, String algo, String cn, String... aliases) {
+    private static ServiceDesc sd(String type, String algo, String cn) {
+        return new ServiceDesc(type, algo, cn, null);
+    }
+
+    private static ServiceDesc sd(String type, String algo, String cn,
+            List<String> aliases) {
         return new ServiceDesc(type, algo, cn, aliases);
     }
 

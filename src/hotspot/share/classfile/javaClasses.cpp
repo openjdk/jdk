@@ -3578,6 +3578,44 @@ bool java_lang_ref_Reference::is_referent_field(oop obj, ptrdiff_t offset) {
   return is_reference;
 }
 
+#define REFERENCE_FIELDS_DO(macro) \
+  macro(referent_offset,   k, "referent", object_signature, false); \
+  macro(queue_offset,      k, "queue", referencequeue_signature, false); \
+  macro(next_offset,       k, "next", reference_signature, false); \
+  macro(discovered_offset, k, "discovered", reference_signature, false);
+
+void java_lang_ref_Reference::compute_offsets() {
+  if (_offsets_initialized) {
+    return;
+  }
+  _offsets_initialized = true;
+  InstanceKlass* k = SystemDictionary::Reference_klass();
+  REFERENCE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_ref_Reference::serialize_offsets(SerializeClosure* f) {
+  f->do_bool(&_offsets_initialized);
+  REFERENCE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+#define BOXING_FIELDS_DO(macro) \
+  macro(value_offset,      integerKlass, "value", int_signature, false); \
+  macro(long_value_offset, longKlass, "value", long_signature, false);
+
+void java_lang_boxing_object::compute_offsets() {
+  InstanceKlass* integerKlass = SystemDictionary::Integer_klass();
+  InstanceKlass* longKlass = SystemDictionary::Long_klass();
+  BOXING_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_boxing_object::serialize_offsets(SerializeClosure* f) {
+  BOXING_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 // Support for java_lang_ref_SoftReference
 //
 
@@ -4342,6 +4380,7 @@ int java_lang_reflect_Parameter::index_offset;
 int java_lang_reflect_Parameter::executable_offset;
 int java_lang_boxing_object::value_offset;
 int java_lang_boxing_object::long_value_offset;
+bool java_lang_ref_Reference::_offsets_initialized;
 int java_lang_ref_Reference::referent_offset;
 int java_lang_ref_Reference::queue_offset;
 int java_lang_ref_Reference::next_offset;
@@ -4738,10 +4777,6 @@ jboolean java_lang_Boolean::value(oop obj) {
    return v.z;
 }
 
-static int member_offset(int hardcoded_offset) {
-  return (hardcoded_offset * heapOopSize) + instanceOopDesc::base_offset_in_bytes();
-}
-
 #define RECORDCOMPONENT_FIELDS_DO(macro) \
   macro(clazz_offset,       k, "clazz",       class_signature,  false); \
   macro(name_offset,        k, "name",        string_signature, false); \
@@ -4791,22 +4826,6 @@ void java_lang_reflect_RecordComponent::set_typeAnnotations(oop element, oop val
   element->obj_field_put(typeAnnotations_offset, value);
 }
 
-// Compute hard-coded offsets
-// Invoked before SystemDictionary::initialize, so pre-loaded classes
-// are not available to determine the offset_of_static_fields.
-void JavaClasses::compute_hard_coded_offsets() {
-
-  // java_lang_boxing_object
-  java_lang_boxing_object::value_offset      = member_offset(java_lang_boxing_object::hc_value_offset);
-  java_lang_boxing_object::long_value_offset = align_up(member_offset(java_lang_boxing_object::hc_value_offset), BytesPerLong);
-
-  // java_lang_ref_Reference
-  java_lang_ref_Reference::referent_offset    = member_offset(java_lang_ref_Reference::hc_referent_offset);
-  java_lang_ref_Reference::queue_offset       = member_offset(java_lang_ref_Reference::hc_queue_offset);
-  java_lang_ref_Reference::next_offset        = member_offset(java_lang_ref_Reference::hc_next_offset);
-  java_lang_ref_Reference::discovered_offset  = member_offset(java_lang_ref_Reference::hc_discovered_offset);
-}
-
 #define DO_COMPUTE_OFFSETS(k) k::compute_offsets();
 
 // Compute non-hard-coded field offsets of all the classes in this file
@@ -4823,8 +4842,8 @@ void JavaClasses::compute_offsets() {
   }
 
   // We have already called the compute_offsets() of the
-  // BASIC_JAVA_CLASSES_DO_PART1 classes (java_lang_String and java_lang_Class)
-  // earlier inside SystemDictionary::resolve_well_known_classes()
+  // BASIC_JAVA_CLASSES_DO_PART1 classes (java_lang_String, java_lang_Class and
+  // java_lang_ref_Reference) earlier inside SystemDictionary::resolve_well_known_classes()
   BASIC_JAVA_CLASSES_DO_PART2(DO_COMPUTE_OFFSETS);
 }
 
@@ -4910,14 +4929,6 @@ void JavaClasses::check_offsets() {
   CHECK_OFFSET("java/lang/Short",     java_lang_boxing_object, value, "S");
   CHECK_OFFSET("java/lang/Integer",   java_lang_boxing_object, value, "I");
   CHECK_LONG_OFFSET("java/lang/Long", java_lang_boxing_object, value, "J");
-
-  // java.lang.ref.Reference
-
-  CHECK_OFFSET("java/lang/ref/Reference", java_lang_ref_Reference, referent, "Ljava/lang/Object;");
-  CHECK_OFFSET("java/lang/ref/Reference", java_lang_ref_Reference, queue, "Ljava/lang/ref/ReferenceQueue;");
-  CHECK_OFFSET("java/lang/ref/Reference", java_lang_ref_Reference, next, "Ljava/lang/ref/Reference;");
-  // Fake field
-  //CHECK_OFFSET("java/lang/ref/Reference", java_lang_ref_Reference, discovered, "Ljava/lang/ref/Reference;");
 
   if (!valid) vm_exit_during_initialization("Hard-coded field offset verification failed");
 }

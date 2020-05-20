@@ -54,7 +54,7 @@ public final class VersionInfo
      * @deprecated This API is ICU internal only.
      */
     @Deprecated
-    public static final String ICU_DATA_VERSION_PATH = "64b";
+    public static final String ICU_DATA_VERSION_PATH = "67b";
 
     // public methods ------------------------------------------------------
 

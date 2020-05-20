@@ -49,7 +49,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   SpaceCounters*           _space_counters;
 
   // Sizing information, in bytes, set in constructor
-  const size_t _init_gen_size;
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
@@ -110,9 +109,9 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void post_resize();
 
-  void initialize(ReservedSpace rs, size_t alignment,
+  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
                   const char* perf_data_name, int level);
-  void initialize_virtual_space(ReservedSpace rs, size_t alignment);
+  void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
   void initialize_work(const char* perf_data_name, int level);
   void initialize_performance_counters(const char* perf_data_name, int level);
 
@@ -121,14 +120,9 @@ class PSOldGen : public CHeapObj<mtGC> {
   PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
            size_t max_size, const char* perf_data_name, int level);
 
-  MemRegion reserved() const    { return _reserved; }
-  virtual size_t max_gen_size() { return _max_gen_size; }
-  size_t min_gen_size()         { return _min_gen_size; }
-
-  // Returns limit on the maximum size of the generation.  This
-  // is the same as _max_gen_size for PSOldGen but need not be
-  // for a derived class.
-  virtual size_t gen_size_limit();
+  MemRegion reserved() const { return _reserved; }
+  size_t max_gen_size() const { return _max_gen_size; }
+  size_t min_gen_size() const { return _min_gen_size; }
 
   bool is_in(const void* p) const           {
     return _virtual_space->contains((void *)p);

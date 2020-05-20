@@ -26,6 +26,7 @@
  * @library /test/lib
  * @summary Test for interference when two sockets are bound to the same
  *          port but joined to different multicast groups
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl Promiscuous
  * @run main Promiscuous
  * @run main/othervm -Djava.net.preferIPv4Stack=true Promiscuous
  */

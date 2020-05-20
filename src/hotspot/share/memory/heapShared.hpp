@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,8 @@ class HeapShared: AllStatic {
   }
 
   static unsigned klass_hash(Klass* const& klass) {
-    return primitive_hash<address>((address)klass);
+    // Generate deterministic hashcode even if SharedBaseAddress is changed due to ASLR.
+    return primitive_hash<address>(address(klass) - SharedBaseAddress);
   }
 
   class DumpTimeKlassSubGraphInfoTable

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,14 @@ handleOpen(const char *path, int oflag, int mode) {
     return fd;
 }
 
+FD getFD(JNIEnv *env, jobject obj, jfieldID fid) {
+  jobject fdo = (*env)->GetObjectField(env, obj, fid);
+  if (fdo == NULL) {
+    return -1;
+  }
+  return (*env)->GetIntField(env, fdo, IO_fd_fdID);
+}
+
 void
 fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 {
@@ -108,10 +116,10 @@ fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
         if (fd != -1) {
             jobject fdobj;
             jboolean append;
-            SET_FD(this, fd, fid);
-
             fdobj = (*env)->GetObjectField(env, this, fid);
             if (fdobj != NULL) {
+                // Set FD
+                (*env)->SetIntField(env, fdobj, IO_fd_fdID, fd);
                 append = (flags & O_APPEND) == 0 ? JNI_FALSE : JNI_TRUE;
                 (*env)->SetBooleanField(env, fdobj, IO_append_fdID, append);
             }

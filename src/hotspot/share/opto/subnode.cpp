@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,6 +252,18 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     return new SubINode( add1, in2->in(1) );
   }
 
+  // Convert "0-(A>>31)" into "(A>>>31)"
+  if ( op2 == Op_RShiftI ) {
+    Node *in21 = in2->in(1);
+    Node *in22 = in2->in(2);
+    const TypeInt *zero = phase->type(in1)->isa_int();
+    const TypeInt *t21 = phase->type(in21)->isa_int();
+    const TypeInt *t22 = phase->type(in22)->isa_int();
+    if ( t21 && t22 && zero == TypeInt::ZERO && t22->is_con(31) ) {
+      return new URShiftINode(in21, in22);
+    }
+  }
+
   return NULL;
 }
 
@@ -359,6 +371,18 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( op2 == Op_SubL && in2->outcnt() == 1) {
     Node *add1 = phase->transform( new AddLNode( in1, in2->in(2) ) );
     return new SubLNode( add1, in2->in(1) );
+  }
+
+  // Convert "0L-(A>>63)" into "(A>>>63)"
+  if ( op2 == Op_RShiftL ) {
+    Node *in21 = in2->in(1);
+    Node *in22 = in2->in(2);
+    const TypeLong *zero = phase->type(in1)->isa_long();
+    const TypeLong *t21 = phase->type(in21)->isa_long();
+    const TypeInt *t22 = phase->type(in22)->isa_int();
+    if ( t21 && t22 && zero == TypeLong::ZERO && t22->is_con(63) ) {
+      return new URShiftLNode(in21, in22);
+    }
   }
 
   return NULL;

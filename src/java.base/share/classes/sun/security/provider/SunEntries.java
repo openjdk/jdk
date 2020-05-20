@@ -32,6 +32,8 @@ import java.security.*;
 
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
+import sun.security.util.SecurityProviderConstants;
+import static sun.security.util.SecurityProviderConstants.getAliases;
 
 /**
  * Defines the entries of the SUN provider.
@@ -80,18 +82,6 @@ public final class SunEntries {
     // the default algo used by SecureRandom class for new SecureRandom() calls
     public static final String DEF_SECURE_RANDOM_ALGO;
 
-    // create an aliases List from the specified aliases
-    public static List<String> createAliases(String ... aliases) {
-        return Arrays.asList(aliases);
-    }
-
-    // create an aliases List from the specified oid followed by other aliases
-    public static List<String> createAliasesWithOid(String ... oids) {
-        String[] result = Arrays.copyOf(oids, oids.length + 1);
-        result[result.length - 1] = "OID." + oids[0];
-        return Arrays.asList(result);
-    }
-
     SunEntries(Provider p) {
         services = new LinkedHashSet<>(50, 0.9f);
 
@@ -106,22 +96,20 @@ public final class SunEntries {
         attrs.put("ThreadSafe", "true");
         if (NativePRNG.isAvailable()) {
             add(p, "SecureRandom", "NativePRNG",
-                    "sun.security.provider.NativePRNG",
-                    null, attrs);
+                    "sun.security.provider.NativePRNG", attrs);
         }
         if (NativePRNG.Blocking.isAvailable()) {
             add(p, "SecureRandom", "NativePRNGBlocking",
-                    "sun.security.provider.NativePRNG$Blocking", null, attrs);
+                    "sun.security.provider.NativePRNG$Blocking", attrs);
         }
         if (NativePRNG.NonBlocking.isAvailable()) {
             add(p, "SecureRandom", "NativePRNGNonBlocking",
-                    "sun.security.provider.NativePRNG$NonBlocking", null, attrs);
+                    "sun.security.provider.NativePRNG$NonBlocking", attrs);
         }
         attrs.put("ImplementedIn", "Software");
-        add(p, "SecureRandom", "DRBG", "sun.security.provider.DRBG",
-               null, attrs);
+        add(p, "SecureRandom", "DRBG", "sun.security.provider.DRBG", attrs);
         add(p, "SecureRandom", "SHA1PRNG",
-                "sun.security.provider.SecureRandom", null, attrs);
+                "sun.security.provider.SecureRandom", attrs);
 
         /*
          * Signature engines
@@ -134,37 +122,28 @@ public final class SunEntries {
 
         attrs.put("KeySize", "1024"); // for NONE and SHA1 DSA signatures
 
-        add(p, "Signature", "SHA1withDSA",
-                "sun.security.provider.DSA$SHA1withDSA",
-                createAliasesWithOid("1.2.840.10040.4.3", "DSA", "DSS",
-                    "SHA/DSA", "SHA-1/DSA", "SHA1/DSA", "SHAwithDSA",
-                    "DSAWithSHA1", "1.3.14.3.2.13", "1.3.14.3.2.27"), attrs);
-        add(p, "Signature", "NONEwithDSA", "sun.security.provider.DSA$RawDSA",
-                createAliases("RawDSA"), attrs);
+        addWithAlias(p, "Signature", "SHA1withDSA",
+                "sun.security.provider.DSA$SHA1withDSA", attrs);
+        addWithAlias(p, "Signature", "NONEwithDSA",
+                "sun.security.provider.DSA$RawDSA", attrs);
 
         attrs.put("KeySize", "2048"); // for SHA224 and SHA256 DSA signatures
 
-        add(p, "Signature", "SHA224withDSA",
-                "sun.security.provider.DSA$SHA224withDSA",
-                createAliasesWithOid("2.16.840.1.101.3.4.3.1"), attrs);
-        add(p, "Signature", "SHA256withDSA",
-                "sun.security.provider.DSA$SHA256withDSA",
-                createAliasesWithOid("2.16.840.1.101.3.4.3.2"), attrs);
+        addWithAlias(p, "Signature", "SHA224withDSA",
+                "sun.security.provider.DSA$SHA224withDSA", attrs);
+        addWithAlias(p, "Signature", "SHA256withDSA",
+                "sun.security.provider.DSA$SHA256withDSA", attrs);
 
         attrs.remove("KeySize");
 
         add(p, "Signature", "SHA1withDSAinP1363Format",
-                "sun.security.provider.DSA$SHA1withDSAinP1363Format",
-                null, null);
+                "sun.security.provider.DSA$SHA1withDSAinP1363Format");
         add(p, "Signature", "NONEwithDSAinP1363Format",
-                "sun.security.provider.DSA$RawDSAinP1363Format",
-                null, null);
+                "sun.security.provider.DSA$RawDSAinP1363Format");
         add(p, "Signature", "SHA224withDSAinP1363Format",
-                "sun.security.provider.DSA$SHA224withDSAinP1363Format",
-                null, null);
+                "sun.security.provider.DSA$SHA224withDSAinP1363Format");
         add(p, "Signature", "SHA256withDSAinP1363Format",
-                "sun.security.provider.DSA$SHA256withDSAinP1363Format",
-                null, null);
+                "sun.security.provider.DSA$SHA256withDSAinP1363Format");
 
         /*
          *  Key Pair Generator engines
@@ -173,85 +152,75 @@ public final class SunEntries {
         attrs.put("ImplementedIn", "Software");
         attrs.put("KeySize", "2048"); // for DSA KPG and APG only
 
-        String dsaOid = "1.2.840.10040.4.1";
-        List<String> dsaAliases = createAliasesWithOid(dsaOid, "1.3.14.3.2.12");
         String dsaKPGImplClass = "sun.security.provider.DSAKeyPairGenerator$";
         dsaKPGImplClass += (useLegacyDSA? "Legacy" : "Current");
-        add(p, "KeyPairGenerator", "DSA", dsaKPGImplClass, dsaAliases, attrs);
+        addWithAlias(p, "KeyPairGenerator", "DSA", dsaKPGImplClass, attrs);
 
         /*
          * Algorithm Parameter Generator engines
          */
-        add(p, "AlgorithmParameterGenerator", "DSA",
-                "sun.security.provider.DSAParameterGenerator", dsaAliases,
-                attrs);
+        addWithAlias(p, "AlgorithmParameterGenerator", "DSA",
+                "sun.security.provider.DSAParameterGenerator", attrs);
         attrs.remove("KeySize");
 
         /*
          * Algorithm Parameter engines
          */
-        add(p, "AlgorithmParameters", "DSA",
-                "sun.security.provider.DSAParameters", dsaAliases, attrs);
+        addWithAlias(p, "AlgorithmParameters", "DSA",
+                "sun.security.provider.DSAParameters", attrs);
 
         /*
          * Key factories
          */
-        add(p, "KeyFactory", "DSA", "sun.security.provider.DSAKeyFactory",
-                dsaAliases, attrs);
+        addWithAlias(p, "KeyFactory", "DSA",
+                "sun.security.provider.DSAKeyFactory", attrs);
 
         /*
          * Digest engines
          */
-        add(p, "MessageDigest", "MD2", "sun.security.provider.MD2", null, attrs);
-        add(p, "MessageDigest", "MD5", "sun.security.provider.MD5", null, attrs);
-        add(p, "MessageDigest", "SHA", "sun.security.provider.SHA",
-                createAliasesWithOid("1.3.14.3.2.26", "SHA-1", "SHA1"), attrs);
+        add(p, "MessageDigest", "MD2", "sun.security.provider.MD2", attrs);
+        add(p, "MessageDigest", "MD5", "sun.security.provider.MD5", attrs);
+        addWithAlias(p, "MessageDigest", "SHA-1", "sun.security.provider.SHA",
+                attrs);
 
-        String sha2BaseOid = "2.16.840.1.101.3.4.2";
-        add(p, "MessageDigest", "SHA-224", "sun.security.provider.SHA2$SHA224",
-                createAliasesWithOid(sha2BaseOid + ".4"), attrs);
-        add(p, "MessageDigest", "SHA-256", "sun.security.provider.SHA2$SHA256",
-                createAliasesWithOid(sha2BaseOid + ".1"), attrs);
-        add(p, "MessageDigest", "SHA-384", "sun.security.provider.SHA5$SHA384",
-                createAliasesWithOid(sha2BaseOid + ".2"), attrs);
-        add(p, "MessageDigest", "SHA-512", "sun.security.provider.SHA5$SHA512",
-                createAliasesWithOid(sha2BaseOid + ".3"), attrs);
-        add(p, "MessageDigest", "SHA-512/224",
-                "sun.security.provider.SHA5$SHA512_224",
-                createAliasesWithOid(sha2BaseOid + ".5"), attrs);
-        add(p, "MessageDigest", "SHA-512/256",
-                "sun.security.provider.SHA5$SHA512_256",
-                createAliasesWithOid(sha2BaseOid + ".6"), attrs);
-        add(p, "MessageDigest", "SHA3-224", "sun.security.provider.SHA3$SHA224",
-                createAliasesWithOid(sha2BaseOid + ".7"), attrs);
-        add(p, "MessageDigest", "SHA3-256", "sun.security.provider.SHA3$SHA256",
-                createAliasesWithOid(sha2BaseOid + ".8"), attrs);
-        add(p, "MessageDigest", "SHA3-384", "sun.security.provider.SHA3$SHA384",
-                createAliasesWithOid(sha2BaseOid + ".9"), attrs);
-        add(p, "MessageDigest", "SHA3-512", "sun.security.provider.SHA3$SHA512",
-                createAliasesWithOid(sha2BaseOid + ".10"), attrs);
+        addWithAlias(p, "MessageDigest", "SHA-224",
+                "sun.security.provider.SHA2$SHA224", attrs);
+        addWithAlias(p, "MessageDigest", "SHA-256",
+                "sun.security.provider.SHA2$SHA256", attrs);
+        addWithAlias(p, "MessageDigest", "SHA-384",
+                "sun.security.provider.SHA5$SHA384", attrs);
+        addWithAlias(p, "MessageDigest", "SHA-512",
+                "sun.security.provider.SHA5$SHA512", attrs);
+        addWithAlias(p, "MessageDigest", "SHA-512/224",
+                "sun.security.provider.SHA5$SHA512_224", attrs);
+        addWithAlias(p, "MessageDigest", "SHA-512/256",
+                "sun.security.provider.SHA5$SHA512_256", attrs);
+        addWithAlias(p, "MessageDigest", "SHA3-224",
+                "sun.security.provider.SHA3$SHA224", attrs);
+        addWithAlias(p, "MessageDigest", "SHA3-256",
+                "sun.security.provider.SHA3$SHA256", attrs);
+        addWithAlias(p, "MessageDigest", "SHA3-384",
+                "sun.security.provider.SHA3$SHA384", attrs);
+        addWithAlias(p, "MessageDigest", "SHA3-512",
+                "sun.security.provider.SHA3$SHA512", attrs);
 
         /*
          * Certificates
          */
-        add(p, "CertificateFactory", "X.509",
-                "sun.security.provider.X509Factory",
-                createAliases("X509"), attrs);
+        addWithAlias(p, "CertificateFactory", "X.509",
+                "sun.security.provider.X509Factory", attrs);
 
         /*
          * KeyStore
          */
         add(p, "KeyStore", "PKCS12",
-                "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12",
-                null, null);
+                "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12");
         add(p, "KeyStore", "JKS",
-                "sun.security.provider.JavaKeyStore$DualFormatJKS",
-                null, attrs);
+                "sun.security.provider.JavaKeyStore$DualFormatJKS", attrs);
         add(p, "KeyStore", "CaseExactJKS",
-                "sun.security.provider.JavaKeyStore$CaseExactJKS",
-                null, attrs);
+                "sun.security.provider.JavaKeyStore$CaseExactJKS", attrs);
         add(p, "KeyStore", "DKS", "sun.security.provider.DomainKeyStore$DKS",
-                null, attrs);
+                attrs);
 
 
         /*
@@ -259,22 +228,21 @@ public final class SunEntries {
          */
         add(p, "CertStore", "Collection",
                 "sun.security.provider.certpath.CollectionCertStore",
-                null, attrs);
+                attrs);
         add(p, "CertStore", "com.sun.security.IndexedCollection",
                 "sun.security.provider.certpath.IndexedCollectionCertStore",
-                null, attrs);
+                attrs);
 
         /*
          * Policy
          */
-        add(p, "Policy", "JavaPolicy", "sun.security.provider.PolicySpiFile",
-                null, null);
+        add(p, "Policy", "JavaPolicy", "sun.security.provider.PolicySpiFile");
 
         /*
          * Configuration
          */
         add(p, "Configuration", "JavaLoginConfig",
-                "sun.security.provider.ConfigFile$Spi", null, null);
+                "sun.security.provider.ConfigFile$Spi");
 
         /*
          * CertPathBuilder and CertPathValidator
@@ -285,19 +253,29 @@ public final class SunEntries {
 
         add(p, "CertPathBuilder", "PKIX",
                 "sun.security.provider.certpath.SunCertPathBuilder",
-                null, attrs);
+                attrs);
         add(p, "CertPathValidator", "PKIX",
                 "sun.security.provider.certpath.PKIXCertPathValidator",
-                null, attrs);
+                attrs);
     }
 
     Iterator<Provider.Service> iterator() {
         return services.iterator();
     }
 
+    private void add(Provider p, String type, String algo, String cn) {
+        services.add(new Provider.Service(p, type, algo, cn, null, null));
+    }
+
     private void add(Provider p, String type, String algo, String cn,
-            List<String> aliases, HashMap<String, String> attrs) {
-        services.add(new Provider.Service(p, type, algo, cn, aliases, attrs));
+            HashMap<String, String> attrs) {
+        services.add(new Provider.Service(p, type, algo, cn, null, attrs));
+    }
+
+    private void addWithAlias(Provider p, String type, String algo, String cn,
+            HashMap<String, String> attrs) {
+        services.add(new Provider.Service(p, type, algo, cn,
+            getAliases(algo), attrs));
     }
 
     private LinkedHashSet<Provider.Service> services;

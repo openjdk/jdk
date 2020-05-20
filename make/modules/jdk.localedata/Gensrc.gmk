@@ -27,6 +27,10 @@ include GensrcCommonJdk.gmk
 
 include modules/java.base/gensrc/GensrcLocaleData.gmk
 
+# GensrcLocaleData.gmk does not set TARGETS, so we must choose which targets
+# to include.
+TARGETS += $(GENSRC_LOCALEDATA)
+
 ################################################################################
 
 CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
@@ -45,7 +49,7 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -o $(GENSRC_DIR))
 	$(TOUCH) $@
 
-GENSRC_JDK_LOCALEDATA += $(CLDR_GEN_DONE)
+TARGETS += $(CLDR_GEN_DONE)
 
 ################################################################################
 
@@ -58,12 +62,4 @@ $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
 ))
 
 # Skip generating zh_HK from zh_TW for this module.
-GENSRC_JDK_LOCALEDATA += $(filter-out %_zh_HK.java, $(COMPILE_PROPERTIES))
-
-################################################################################
-
-jdk.localedata: $(GENSRC_JDK_LOCALEDATA)
-
-all: jdk.localedata
-
-.PHONY: all jdk.localedata
+TARGETS += $(filter-out %_zh_HK.java, $(COMPILE_PROPERTIES))

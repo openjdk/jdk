@@ -36,7 +36,8 @@
  *      jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor
  * @compile --enable-preview -source ${jdk.version} RecordCompilationTests.java
- * @run testng/othervm --enable-preview RecordCompilationTests
+ * @run testng/othervm -DuseAP=false --enable-preview RecordCompilationTests
+ * @run testng/othervm -DuseAP=true --enable-preview RecordCompilationTests
  */
 
 import java.io.File;
@@ -55,6 +56,7 @@ import java.util.stream.Stream;
 
 import com.sun.tools.javac.util.Assert;
 
+import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 
@@ -70,13 +72,17 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeMirror;
 
+import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.Annotation;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.Attributes;
 import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Fieldref_info;
 import com.sun.tools.classfile.ConstantPool.CPInfo;
 import com.sun.tools.classfile.Field;
+import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.classfile.Record_attribute;
 import com.sun.tools.classfile.Record_attribute.ComponentInfo;
@@ -99,20 +105,51 @@ import tools.javac.combo.CompilationTestCase;
 import static java.lang.annotation.ElementType.*;
 import static org.testng.Assert.assertEquals;
 
+/** Records are the first feature which sports automatic injection of (declarative and type) annotations : from a
+ *  given record component to one or more record members, if applicable.
+ *  This implies that the record's implementation can be stressed with the presence of annotation processors. Which is
+ *  something the implementator could easily skip. For this reason this test is executed twice, once without the
+ *  presence of any annotation processor and one with a simple annotation processor (which does not annotation processing
+ *  at all) just to force at least a round of annotation processing.
+ *
+ *  Tests needing special compilation options need to store current options, set its customs options by invoking method
+ *  `setCompileOptions` and then reset the previous compilation options for other tests. To see an example of this check
+ *  method: testAnnos()
+ */
+
 @Test
 public class RecordCompilationTests extends CompilationTestCase {
-
     // @@@ When records become a permanent feature, we don't need these any more
-    private static String[] PREVIEW_OPTIONS = {"--enable-preview", "-source",
-                                               Integer.toString(Runtime.version().feature())};
+    private static String[] PREVIEW_OPTIONS = {
+            "--enable-preview",
+            "-source", Integer.toString(Runtime.version().feature())
+    };
+
+    private static String[] PREVIEW_OPTIONS_WITH_AP = {
+            "--enable-preview",
+            "-source", Integer.toString(Runtime.version().feature()),
+            "-processor", SimplestAP.class.getName()
+    };
 
     private static final List<String> BAD_COMPONENT_NAMES = List.of(
             "clone", "finalize", "getClass", "hashCode",
             "notify", "notifyAll", "toString", "wait");
 
-    {
+    /* simplest annotation processor just to force a round of annotation processing for all tests
+     */
+    @SupportedAnnotationTypes("*")
+    public static class SimplestAP extends AbstractProcessor {
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            return true;
+        }
+    }
+
+    public RecordCompilationTests() {
+        boolean useAP = System.getProperty("useAP") == null ? false : System.getProperty("useAP").equals("true");
         setDefaultFilename("R.java");
-        setCompileOptions(PREVIEW_OPTIONS);
+        setCompileOptions(useAP ? PREVIEW_OPTIONS_WITH_AP : PREVIEW_OPTIONS);
+        System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
     }
 
     public void testMalformedDeclarations() {
@@ -130,7 +167,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.already.defined", "record R(int x, int x) {}");
         for (String s : List.of("var", "record"))
             assertFail("compiler.err.restricted.type.not.allowed.here", "record R(# x) { }", s);
-        for (String s : List.of("public", "private", "volatile", "final"))
+        for (String s : List.of("public", "protected", "private", "static", "final", "transient", "volatile",
+                "abstract", "synchronized", "native", "strictfp")) // missing: sealed and non-sealed
             assertFail("compiler.err.record.cant.declare.field.modifiers", "record R(# String foo) { }", s);
         assertFail("compiler.err.varargs.must.be.last", "record R(int... x, int... y) {}");
         assertFail("compiler.err.instance.initializer.not.allowed.in.records", "record R(int i) { {} }");
@@ -210,7 +248,14 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     public void testNoExtendRecord() {
         assertFail("compiler.err.invalid.supertype.record",
-                   "class R extends Record { public String toString() { return null; } public int hashCode() { return 0; } public boolean equals(Object o) { return false; } } }");
+                   """
+                   class R extends Record {
+                       public String toString() { return null; }
+                       public int hashCode() { return 0; }
+                       public boolean equals(Object o) { return false; }
+                   }
+                   """
+        );
     }
 
     public void testFieldDeclarations() {
@@ -244,6 +289,14 @@ public class RecordCompilationTests extends CompilationTestCase {
     public void testAccessorRedeclaration() {
         assertOK("public record R(int x) {\n" +
                 "    public int x() { return x; };" +
+                "}");
+
+        assertOK("public record R(int... x) {\n" +
+                "    public int[] x() { return x; };" +
+                "}");
+
+        assertOK("public record R(int x) {\n" +
+                "    public final int x() { return 0; };" +
                 "}");
 
         assertOK("public record R(int x) {\n" +
@@ -293,8 +346,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         for (String goodCtor : List.of(
                 "public R(int x) { this(x, 0); }",
                 "public R(int x, int y) { this.x = x; this.y = y; }",
-                "public R { }",
-                "public R { this.x = 0; }"))
+                "public R { }"))
             assertOK("record R(int x, int y) { # }", goodCtor);
 
         assertOK("import java.util.*; record R(String x, String y) {  public R { Objects.requireNonNull(x); Objects.requireNonNull(y); } }");
@@ -307,12 +359,6 @@ public class RecordCompilationTests extends CompilationTestCase {
         for (String s : List.of("public R(int y, int x) { this.x = x; this.y = y; }",
                                 "public R(int _x, int _y) { this.x = _x; this.y = _y; }"))
             assertFail("compiler.err.invalid.canonical.constructor.in.record", "record R(int x, int y) { # }", s);
-
-        // canonical ctor must be public
-        for (String s : List.of("", "protected", "private"))
-            assertFail("compiler.err.invalid.canonical.constructor.in.record", "record R(int x, int y) { # }",
-                       "# R(int x, int y) { this.x = x; this.y = y; }",
-                       s);
 
         // ctor args must match types
         assertFail("compiler.err.invalid.canonical.constructor.in.record",
@@ -434,13 +480,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.already.defined", template);
     }
 
-    public void testLocalRecords() {
-        assertOK("class R { \n" +
-                "    void m() { \n" +
-                "        record RR(int x) { };\n" +
-                "    }\n" +
-                "}");
-
+    public void testStaticLocalTypes() {
         // local records can also be final
         assertOK("class R { \n" +
                 "    void m() { \n" +
@@ -488,49 +528,26 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "        record RR(int x) { public int x() { return z; }};\n" +
                 "    }\n" +
                 "}");
-        // can be contained inside a lambda
-        assertOK("""
-                class Outer {
-                    Runnable run = () -> {
-                        record TestRecord(int i) {}
-                    };
-                }
-                """);
-
         // Can't self-shadow
         assertFail("compiler.err.already.defined",
-                   "class R { \n" +
-                   "    void m() { \n" +
-                   "        record R(int x) { };\n" +
-                   "    }\n" +
-                   "}");
-    }
-
-    public void testCompactDADU() {
-        // trivial cases
-        assertOK("record R() { public R {} }");
-        assertOK("record R(int x) { public R {} }");
-
-        // throwing an unchecked exception
-        assertOK("record R(int x) { public R { if (x < 0) { this.x = x; throw new RuntimeException(); }} }");
-
-        assertOK("record R(int x) { public R { if (x < 0) { this.x = x; throw new RuntimeException(); }} }");
-
-        // x is not DA nor DU in the body of the constructor hence error
-        assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x) { # }",
-                "public R { if (x < 0) { this.x = -x; } }");
-
-        // if static fields are not DA then error
-        assertFail("compiler.err.var.might.not.have.been.initialized",
-                "record R() { # }", "static final String x;");
-
-        // ditto
-        assertFail("compiler.err.var.might.not.have.been.initialized",
-                "record R() { # }", "static final String x; public R {}");
-
-        // ditto
-        assertFail("compiler.err.var.might.not.have.been.initialized",
-                "record R(int i) { # }", "static final String x; public R {}");
+                """
+                class R {
+                    void m() {
+                        record R(int x) { };
+                    }
+                }
+                """
+        );
+        // can't be explicitly static
+        assertFail("compiler.err.illegal.start.of.expr",
+                """
+                class R {
+                    void m() {
+                        static record RR(int x) { };
+                    }
+                }
+                """
+        );
     }
 
     public void testReturnInCanonical_Compact() {
@@ -561,13 +578,16 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testRecordsInsideInner() {
-        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
-                "class Outer {\n" +
-                "    class Inner {\n" +
-                "        record R(int a) {}\n" +
-                "    }\n" +
-                "}");
-        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
+        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+                """
+                class Outer {
+                    class Inner {
+                        record R(int a) {}
+                    }
+                }
+                """
+        );
+        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
                 """
                 class Outer {
                     public void test() {
@@ -577,7 +597,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     }
                 }
                 """);
-        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
+        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
                 """
                 class Outer {
                     Runnable run = new Runnable() {
@@ -586,7 +606,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     };
                 }
                 """);
-        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
+        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
                 """
                 class Outer {
                     void m() {
@@ -644,6 +664,47 @@ public class RecordCompilationTests extends CompilationTestCase {
             }
         }
         Assert.check(numberOfFieldRefs == 1);
+    }
+
+    /*  check that fields are initialized in a canonical constructor in the same declaration order as the corresponding
+     *  record component
+     */
+    public void testCheckInitializationOrderInCompactConstructor() throws Exception {
+        int putField1 = -1;
+        int putField2 = -1;
+        File dir = assertOK(true, "record R(int i, String s) { R {} }");
+        for (final File fileEntry : dir.listFiles()) {
+            if (fileEntry.getName().equals("R.class")) {
+                ClassFile classFile = ClassFile.read(fileEntry);
+                for (Method method : classFile.methods) {
+                    if (method.getName(classFile.constant_pool).equals("<init>")) {
+                        Code_attribute code_attribute = (Code_attribute) method.attributes.get("Code");
+                        for (Instruction instruction : code_attribute.getInstructions()) {
+                            if (instruction.getMnemonic().equals("putfield")) {
+                                if (putField1 != -1 && putField2 != -1) {
+                                    throw new AssertionError("was expecting only two putfield instructions in this method");
+                                }
+                                if (putField1 == -1) {
+                                    putField1 = instruction.getShort(1);
+                                } else if (putField2 == -1) {
+                                    putField2 = instruction.getShort(1);
+                                }
+                            }
+                        }
+                        // now we need to check that we are assigning to `i` first and to `s` afterwards
+                        CONSTANT_Fieldref_info fieldref_info1 = (CONSTANT_Fieldref_info)classFile.constant_pool.get(putField1);
+                        if (!fieldref_info1.getNameAndTypeInfo().getName().equals("i")) {
+                            throw new AssertionError("was expecting variable name 'i'");
+                        }
+
+                        CONSTANT_Fieldref_info fieldref_info2 = (CONSTANT_Fieldref_info)classFile.constant_pool.get(putField2);
+                        if (!fieldref_info2.getNameAndTypeInfo().getName().equals("s")) {
+                            throw new AssertionError("was expecting variable name 's'");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void testAcceptRecordId() {
@@ -982,6 +1043,250 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
             }
         }
+    }
 
+    public void testMethodsInheritedFromRecordArePublicAndFinal() throws Exception {
+        int numberOfFieldRefs = 0;
+        File dir = assertOK(true, "record R() {}");
+        for (final File fileEntry : dir.listFiles()) {
+            if (fileEntry.getName().equals("R.class")) {
+                ClassFile classFile = ClassFile.read(fileEntry);
+                for (Method method : classFile.methods)
+                    switch (method.getName(classFile.constant_pool)) {
+                        case "toString", "equals", "hashCode" ->
+                            Assert.check(method.access_flags.is(AccessFlags.ACC_PUBLIC) && method.access_flags.is(AccessFlags.ACC_FINAL));
+                        default -> { /* do nothing */ }
+                    }
+            }
+        }
+    }
+
+    private static final List<String> ACCESSIBILITY = List.of(
+            "public", "protected", "", "private");
+
+    public void testCanonicalAccessibility() throws Exception {
+        // accessibility of canonical can't be stronger than that of the record type
+        for (String a1 : ACCESSIBILITY) {
+            for (String a2 : ACCESSIBILITY) {
+                if (protection(a2) > protection(a1)) {
+                    assertFail("compiler.err.invalid.canonical.constructor.in.record", "class R {# record RR() { # RR {} } }", a1, a2);
+                } else {
+                    assertOK("class R {# record RR() { # RR {} } }", a1, a2);
+                }
+            }
+        }
+
+        // now lets check that when compiler the compiler generates the canonical, it has the same accessibility
+        // as the record type
+        for (String a : ACCESSIBILITY) {
+            File dir = assertOK(true, "class R {# record RR() {} }", a);
+            for (final File fileEntry : dir.listFiles()) {
+                if (fileEntry.getName().equals("R$RR.class")) {
+                    ClassFile classFile = ClassFile.read(fileEntry);
+                    for (Method method : classFile.methods)
+                        if (method.getName(classFile.constant_pool).equals("<init>")) {
+                            Assert.check(method.access_flags.flags == accessFlag(a),
+                                    "was expecting access flag " + accessFlag(a) + " but found " + method.access_flags.flags);
+                        }
+                }
+            }
+        }
+    }
+
+    private int protection(String access) {
+        switch (access) {
+            case "private": return 3;
+            case "protected": return 1;
+            case "public": return 0;
+            case "": return 2;
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    private int accessFlag(String access) {
+        switch (access) {
+            case "private": return AccessFlags.ACC_PRIVATE;
+            case "protected": return AccessFlags.ACC_PROTECTED;
+            case "public": return AccessFlags.ACC_PUBLIC;
+            case "": return 0;
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    public void testSameArity() {
+        for (String source : List.of(
+                """
+                record R(int... args) {
+                    public R(int... args) {
+                        this.args = args;
+                    }
+                }
+                """,
+                """
+                record R(int[] args) {
+                    public R(int[] args) {
+                        this.args = args;
+                    }
+                }
+                """
+        )) {
+            assertOK(source);
+        }
+
+        for (String source : List.of(
+                """
+                record R(int... args) {
+                    public R(int[] args) {
+                        this.args = args;
+                    }
+                }
+                """,
+                """
+                record R(int... args) {
+                    public R(int[] args) {
+                        this.args = args;
+                    }
+                }
+                """,
+                """
+                record R(String... args) {
+                    public R(String[] args) {
+                        this.args = args;
+                    }
+                }
+                """,
+                """
+                record R(String... args) {
+                    public R(String[] args) {
+                        this.args = args;
+                    }
+                }
+                """
+        )) {
+            assertFail("compiler.err.invalid.canonical.constructor.in.record", source);
+        }
+    }
+
+    public void testSafeVararsAnno() {
+        assertFail("compiler.err.annotation.type.not.applicable",
+                """
+                @SafeVarargs
+                record R<T>(T... t) {}
+                """,
+                """
+                @SafeVarargs
+                record R<T>(T... t) {
+                    R(T... t) {
+                        this.t = t;
+                    }
+                }
+                """
+        );
+
+        assertOK(
+                """
+                record R<T>(T... t) {
+                    @SafeVarargs
+                    R(T... t) {
+                        this.t = t;
+                    }
+                }
+                """
+        );
+
+        appendCompileOptions("-Xlint:unchecked");
+        assertOKWithWarning("compiler.warn.unchecked.varargs.non.reifiable.type",
+                """
+                record R<T>(T... t) {
+                    R(T... t) {
+                        this.t = t;
+                    }
+                }
+                """
+        );
+        removeLastCompileOptions(1);
+
+        assertOK(
+                """
+                @SuppressWarnings("unchecked")
+                record R<T>(T... t) {
+                    R(T... t) {
+                        this.t = t;
+                    }
+                }
+                """
+        );
+
+        assertOK(
+                """
+                record R<T>(T... t) {
+                    @SuppressWarnings("unchecked")
+                    R(T... t) {
+                        this.t = t;
+                    }
+                }
+                """
+        );
+    }
+
+    public void testOverrideAtAccessor() {
+        assertOK(
+                """
+                record R(int i) {
+                    @Override
+                    public int i() { return i; }
+                }
+                """,
+                """
+                record R(int i, int j) {
+                    @Override
+                    public int i() { return i; }
+                    public int j() { return j; }
+                }
+                """,
+                """
+                interface I { int i(); }
+                record R(int i) implements I {
+                    @Override
+                    public int i() { return i; }
+                }
+                """,
+                """
+                interface I { int i(); }
+                record R(int i) implements I {
+                    public int i() { return i; }
+                }
+                """,
+                """
+                interface I { default int i() { return 0; } }
+                record R(int i) implements I {
+                    @Override
+                    public int i() { return i; }
+                }
+                """
+        );
+    }
+
+    public void testNoAssigmentInsideCompactRecord() {
+        assertFail("compiler.err.cant.assign.val.to.final.var",
+                """
+                record R(int i) {
+                    R {
+                        this.i = i;
+                    }
+                }
+                """
+        );
+        assertFail("compiler.err.cant.assign.val.to.final.var",
+                """
+                record R(int i) {
+                    R {
+                        (this).i = i;
+                    }
+                }
+                """
+        );
     }
 }

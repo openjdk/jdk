@@ -99,23 +99,23 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
         // create an archive with both -cp and --module-path in the command line.
         // Only the class in the modular jar in the --module-path will be archived;
         // the class in the modular jar in the -cp won't be archived.
-        dump2(null, topArchiveName,
-              "-Xlog:cds+dynamic=debug,cds=debug",
-              "-cp", destJar.toString(),
-              "--module-path", moduleDir.toString(),
-              "-m", TEST_MODULE1)
-              .assertNormalExit(output -> {
-                      output.shouldContain("Buffer-space to target-space delta")
-                            .shouldContain("Written dynamic archive 0x");
-                  });
-
-        // run with the archive using the same command line as in dump time.
-        // The main class should be loaded from the archive.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+        dump(topArchiveName,
+             "-Xlog:cds+dynamic=debug,cds=debug",
              "-cp", destJar.toString(),
              "--module-path", moduleDir.toString(),
              "-m", TEST_MODULE1)
+            .assertNormalExit(output -> {
+                    output.shouldContain("Buffer-space to target-space delta")
+                          .shouldContain("Written dynamic archive 0x");
+                 });
+
+        // run with the archive using the same command line as in dump time.
+        // The main class should be loaded from the archive.
+        run(topArchiveName,
+            "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+            "-cp", destJar.toString(),
+            "--module-path", moduleDir.toString(),
+            "-m", TEST_MODULE1)
             .assertNormalExit(output -> {
                     output.shouldContain("[class,load] com.simple.Main source: shared objects file")
                           .shouldHaveExitValue(0);
@@ -124,22 +124,22 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
         // run with the archive with the main class name inserted before the -m.
         // The main class name will be picked up before the module name. So the
         // main class should be loaded from the jar in the -cp.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-             "-cp", destJar.toString(),
-             "--module-path", moduleDir.toString(),
-             MAIN_CLASS, "-m", TEST_MODULE1)
+        run(topArchiveName,
+            "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+            "-cp", destJar.toString(),
+            "--module-path", moduleDir.toString(),
+            MAIN_CLASS, "-m", TEST_MODULE1)
             .assertNormalExit(out ->
                 out.shouldMatch(".class.load. com.simple.Main source:.*com.simple.jar"));
 
         // run with the archive with exploded module. Since during dump time, we
         // only archive classes from the modular jar in the --module-path, the
         // main class should be loaded from the exploded module directory.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-             "-cp", destJar.toString(),
-             "--module-path", MODS_DIR.toString(),
-             "-m", TEST_MODULE1 + "/" + MAIN_CLASS)
+        run(topArchiveName,
+            "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+            "-cp", destJar.toString(),
+            "--module-path", MODS_DIR.toString(),
+            "-m", TEST_MODULE1 + "/" + MAIN_CLASS)
             .assertNormalExit(out -> {
                 out.shouldMatch(".class.load. com.simple.Main source:.*com.simple")
                    .shouldContain(MODS_DIR.toString());
@@ -148,12 +148,12 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
         // run with the archive with the --upgrade-module-path option.
         // CDS will be disabled with this options and the main class will be
         // loaded from the modular jar.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-             "-cp", destJar.toString(),
-             "--upgrade-module-path", moduleDir.toString(),
-             "--module-path", moduleDir.toString(),
-             "-m", TEST_MODULE1)
+        run(topArchiveName,
+            "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+            "-cp", destJar.toString(),
+            "--upgrade-module-path", moduleDir.toString(),
+            "--module-path", moduleDir.toString(),
+            "-m", TEST_MODULE1)
             .assertSilentlyDisabledCDS(out -> {
                 out.shouldHaveExitValue(0)
                    .shouldMatch("CDS is disabled when the.*option is specified")
@@ -165,12 +165,12 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
             // run with the archive with the --limit-modules option.
             // CDS will be disabled with this options and the main class will be
             // loaded from the modular jar.
-            run2(null, topArchiveName,
-                 "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-                 "-cp", destJar.toString(),
-                 "--limit-modules", "java.base," + TEST_MODULE1,
-                 "--module-path", moduleDir.toString(),
-                 "-m", TEST_MODULE1)
+            run(topArchiveName,
+                "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+                "-cp", destJar.toString(),
+                "--limit-modules", "java.base," + TEST_MODULE1,
+                "--module-path", moduleDir.toString(),
+                "-m", TEST_MODULE1)
                 .assertSilentlyDisabledCDS(out -> {
                     out.shouldHaveExitValue(0)
                        .shouldMatch("CDS is disabled when the.*option is specified")
@@ -182,12 +182,12 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
         // run with the archive with the --patch-module option.
         // CDS will be disabled with this options and the main class will be
         // loaded from the modular jar.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-             "-cp", destJar.toString(),
-             "--patch-module", TEST_MODULE1 + "=" + MODS_DIR.toString(),
-             "--module-path", moduleDir.toString(),
-             "-m", TEST_MODULE1)
+        run(topArchiveName,
+            "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+            "-cp", destJar.toString(),
+            "--patch-module", TEST_MODULE1 + "=" + MODS_DIR.toString(),
+            "--module-path", moduleDir.toString(),
+            "-m", TEST_MODULE1)
             .assertSilentlyDisabledCDS(out -> {
                 out.shouldHaveExitValue(0)
                    .shouldMatch("CDS is disabled when the.*option is specified")
@@ -198,21 +198,21 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
         // run with the archive and the jar with modified timestamp.
         // It should fail due to timestamp of the jar doesn't match the one
         // used during dump time.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-             "-cp", destJar.toString(),
-             "--module-path", moduleDir.toString(),
-             "-m", TEST_MODULE1)
+        run(topArchiveName,
+            "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+            "-cp", destJar.toString(),
+            "--module-path", moduleDir.toString(),
+            "-m", TEST_MODULE1)
             .assertAbnormalExit(
                 "A jar file is not the one used while building the shared archive file:");
         // create an archive with a non-empty directory in the --module-path.
         // The dumping process will exit with an error due to non-empty directory
         // in the --module-path.
-        dump2(null, topArchiveName,
-              "-Xlog:cds+dynamic=debug,cds=debug",
-              "-cp", destJar.toString(),
-              "--module-path", MODS_DIR.toString(),
-              "-m", TEST_MODULE1 + "/" + MAIN_CLASS)
+        dump(topArchiveName,
+             "-Xlog:cds+dynamic=debug,cds=debug",
+             "-cp", destJar.toString(),
+             "--module-path", MODS_DIR.toString(),
+             "-m", TEST_MODULE1 + "/" + MAIN_CLASS)
             .assertAbnormalExit(output -> {
                 output.shouldMatch("Error: non-empty directory.*com.simple");
                 });
@@ -254,12 +254,12 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
             System.out.println("Caught IOException from Files.copy(). Cannot continue.");
             return;
         }
-        dump2(null, topArchiveName,
-              "-Xlog:cds+dynamic=debug,cds=debug",
-              "-cp", destJar.toString(),
-              "-Xlog:exceptions=trace",
-              "--module-path", longDirJar.toString(),
-              "-m", TEST_MODULE1)
+        dump(topArchiveName,
+             "-Xlog:cds+dynamic=debug,cds=debug",
+             "-cp", destJar.toString(),
+             "-Xlog:exceptions=trace",
+             "--module-path", longDirJar.toString(),
+             "-m", TEST_MODULE1)
             .ifAbnormalExit(output -> {
                 output.shouldMatch("os::stat error.*CDS dump aborted");
                 });

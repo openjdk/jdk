@@ -182,9 +182,14 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   _java_platform_loader = (oop)result.get_jobject();
 }
 
-ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
-  if (class_loader.is_null()) return ClassLoaderData::the_null_class_loader_data();
-  return ClassLoaderDataGraph::find_or_create(class_loader);
+ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
+  if (create_mirror_cld) {
+    // Add a new class loader data to the graph.
+    return ClassLoaderDataGraph::add(class_loader, true);
+  } else {
+    return (class_loader() == NULL) ? ClassLoaderData::the_null_class_loader_data() :
+                                      ClassLoaderDataGraph::find_or_create(class_loader);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1031,27 +1036,19 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                               TRAPS) {
 
   EventClassLoad class_load_start_event;
-
   ClassLoaderData* loader_data;
-
   bool is_unsafe_anon_class = cl_info.unsafe_anonymous_host() != NULL;
 
-  if (is_unsafe_anon_class) {
-    // - for unsafe anonymous class: create a new CLD whith a class holder that uses
-    //                               the same class loader as the unsafe_anonymous_host.
-    guarantee(cl_info.unsafe_anonymous_host()->class_loader() == class_loader(),
-              "should be the same");
-    loader_data = ClassLoaderData::has_class_mirror_holder_cld(class_loader);
-  } else if (cl_info.is_hidden()) {
-    // - for hidden classes that are not strong: create a new CLD that has a class holder and
-    //                                           whose loader is the Lookup class' loader.
-    // - for hidden class: add the class to the Lookup class' loader's CLD.
-    if (!cl_info.is_strong_hidden()) {
-      loader_data = ClassLoaderData::has_class_mirror_holder_cld(class_loader);
-    } else {
-      // This hidden class goes into the regular CLD pool for this loader.
-      loader_data = register_loader(class_loader);
-    }
+  // - for unsafe anonymous class: create a new CLD whith a class holder that uses
+  //                               the same class loader as the unsafe_anonymous_host.
+  // - for hidden classes that are not strong: create a new CLD that has a class holder and
+  //                                           whose loader is the Lookup class's loader.
+  // - for hidden class: add the class to the Lookup class's loader's CLD.
+  if (is_unsafe_anon_class || cl_info.is_hidden()) {
+    guarantee(!is_unsafe_anon_class || cl_info.unsafe_anonymous_host()->class_loader() == class_loader(),
+              "should be NULL or the same");
+    bool create_mirror_cld = is_unsafe_anon_class || !cl_info.is_strong_hidden();
+    loader_data = register_loader(class_loader, create_mirror_cld);
   } else {
     loader_data = ClassLoaderData::class_loader_data(class_loader());
   }
@@ -2097,6 +2094,13 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
 
   // do a bunch more:
   resolve_wk_klasses_through(WK_KLASS_ENUM_NAME(Reference_klass), scan, CHECK);
+
+  // The offsets for jlr.Reference must be computed before
+  // InstanceRefKlass::update_nonstatic_oop_maps is called. That function uses
+  // the offsets to remove the referent and discovered fields from the oop maps,
+  // as they are treated in a special way by the GC. Removing these oops from the
+  // oop maps must be done before the usual subclasses of jlr.Reference are loaded.
+  java_lang_ref_Reference::compute_offsets();
 
   // Preload ref klasses and set reference types
   WK_KLASS(Reference_klass)->set_reference_type(REF_OTHER);

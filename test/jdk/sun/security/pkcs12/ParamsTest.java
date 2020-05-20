@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8076190
+ * @bug 8076190 8242151
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
- *          java.base/sun.security.x509
  *          java.base/sun.security.util
  * @summary Customizing the generation of a PKCS12 keystore
  */
@@ -49,7 +48,8 @@ import java.util.Base64;
 import java.util.Objects;
 
 import static jdk.test.lib.security.DerUtils.*;
-import static sun.security.x509.AlgorithmId.*;
+import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 import static sun.security.pkcs.ContentInfo.*;
 
 public class ParamsTest  {
@@ -102,11 +102,11 @@ public class ParamsTest  {
                 + "-destkeystore ksnormal -deststorepass changeit");
         data = Files.readAllBytes(Path.of("ksnormal"));
         checkInt(data, "22", 100000); // Mac ic
-        checkAlg(data, "2000", SHA_oid); // Mac alg
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndDESede_oid); // key alg
+        checkAlg(data, "2000", oid(KnownOIDs.SHA_1)); // Mac alg
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // key alg
         checkInt(data, "110c010c010011", 50000); // key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
-        checkAlg(data, "110c110110", pbeWithSHA1AndRC2_40_oid); // cert alg
+        checkAlg(data, "110c110110", oid(KnownOIDs.PBEWithSHA1AndRC2_40)); // cert alg
         checkInt(data, "110c1101111", 50000); // cert ic
 
         check("ksnormal", "a", "changeit", "changeit", true, true, true);
@@ -120,13 +120,13 @@ public class ParamsTest  {
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
         data = Files.readAllBytes(Path.of("ksnormal"));
         checkInt(data, "22", 100000); // Mac ic
-        checkAlg(data, "2000", SHA_oid); // Mac alg
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndDESede_oid); // key alg
+        checkAlg(data, "2000", oid(KnownOIDs.SHA_1)); // Mac alg
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // key alg
         checkInt(data, "110c010c010011", 50000); // key ic
-        checkAlg(data, "110c010c11000", pbeWithSHA1AndDESede_oid); // new key alg
+        checkAlg(data, "110c010c11000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // new key alg
         checkInt(data, "110c010c110011", 50000); // new key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
-        checkAlg(data, "110c110110", pbeWithSHA1AndRC2_40_oid); // cert alg
+        checkAlg(data, "110c110110", oid(KnownOIDs.PBEWithSHA1AndRC2_40)); // cert alg
         checkInt(data, "110c1101111", 50000); // cert ic
         check("ksnormal", "b", null, "changeit", true, false, true);
         check("ksnormal", "b", "changeit", "changeit", true, true, true);
@@ -139,7 +139,7 @@ public class ParamsTest  {
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndRC4_128_oid);
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndRC4_128));
         checkInt(data, "110c010c010011", 50000);
         checkAlg(data, "110c10", DATA_OID);
         check("ksnopass", "a", null, "changeit", true, true, true);
@@ -151,9 +151,9 @@ public class ParamsTest  {
                 + "-storepass changeit -alias b -dname CN=B");
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndRC4_128_oid);
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndRC4_128));
         checkInt(data, "110c010c010011", 50000);
-        checkAlg(data, "110c010c11000", pbeWithSHA1AndDESede_oid);
+        checkAlg(data, "110c010c11000", oid(KnownOIDs.PBEWithSHA1AndDESede));
         checkInt(data, "110c010c110011", 50000);
         checkAlg(data, "110c10", DATA_OID);
         check("ksnopass", "a", null, "changeit", true, true, true);
@@ -166,10 +166,10 @@ public class ParamsTest  {
                 + "-J-Dkeystore.pkcs12.keyPbeIterationCount=7777");
         data = Files.readAllBytes(Path.of("ksnewic"));
         checkInt(data, "22", 5555); // Mac ic
-        checkAlg(data, "2000", SHA_oid); // Mac alg
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndDESede_oid); // key alg
+        checkAlg(data, "2000", oid(KnownOIDs.SHA_1)); // Mac alg
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // key alg
         checkInt(data, "110c010c010011", 7777); // key ic
-        checkAlg(data, "110c110110", pbeWithSHA1AndRC2_40_oid); // cert alg
+        checkAlg(data, "110c110110", oid(KnownOIDs.PBEWithSHA1AndRC2_40)); // cert alg
         checkInt(data, "110c1101111", 6666); // cert ic
 
         // keypbe alg cannot be NONE
@@ -185,12 +185,12 @@ public class ParamsTest  {
                 + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndRC4_128");
         data = Files.readAllBytes(Path.of("ksnewic"));
         checkInt(data, "22", 5555); // Mac ic
-        checkAlg(data, "2000", SHA_oid); // Mac alg
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndDESede_oid); // key alg
+        checkAlg(data, "2000", oid(KnownOIDs.SHA_1)); // Mac alg
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // key alg
         checkInt(data, "110c010c010011", 7777); // key ic
-        checkAlg(data, "110c010c11000", pbeWithSHA1AndRC4_128_oid); // new key alg
+        checkAlg(data, "110c010c11000", oid(KnownOIDs.PBEWithSHA1AndRC4_128)); // new key alg
         checkInt(data, "110c010c110011", 50000); // new key ic
-        checkAlg(data, "110c110110", pbeWithSHA1AndRC2_40_oid); // cert alg
+        checkAlg(data, "110c110110", oid(KnownOIDs.PBEWithSHA1AndRC2_40)); // cert alg
         checkInt(data, "110c1101111", 6666); // cert ic
 
         // Check KeyStore loading multiple keystores
@@ -202,13 +202,13 @@ public class ParamsTest  {
         }
         data = Files.readAllBytes(Path.of("ksnormaldup"));
         checkInt(data, "22", 100000); // Mac ic
-        checkAlg(data, "2000", SHA_oid); // Mac alg
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndDESede_oid); // key alg
+        checkAlg(data, "2000", oid(KnownOIDs.SHA_1)); // Mac alg
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // key alg
         checkInt(data, "110c010c010011", 50000); // key ic
-        checkAlg(data, "110c010c11000", pbeWithSHA1AndDESede_oid); // new key alg
+        checkAlg(data, "110c010c11000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // new key alg
         checkInt(data, "110c010c110011", 50000); // new key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
-        checkAlg(data, "110c110110", pbeWithSHA1AndRC2_40_oid); // cert alg
+        checkAlg(data, "110c110110", oid(KnownOIDs.PBEWithSHA1AndRC2_40)); // cert alg
         checkInt(data, "110c1101111", 50000); // cert ic
 
         try (FileInputStream fis = new FileInputStream("ksnopass");
@@ -218,9 +218,9 @@ public class ParamsTest  {
         }
         data = Files.readAllBytes(Path.of("ksnopassdup"));
         shouldNotExist(data, "2"); // no Mac
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndRC4_128_oid);
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndRC4_128));
         checkInt(data, "110c010c010011", 50000);
-        checkAlg(data, "110c010c11000", pbeWithSHA1AndDESede_oid);
+        checkAlg(data, "110c010c11000", oid(KnownOIDs.PBEWithSHA1AndDESede));
         checkInt(data, "110c010c110011", 50000);
         checkAlg(data, "110c10", DATA_OID);
 
@@ -231,12 +231,12 @@ public class ParamsTest  {
         }
         data = Files.readAllBytes(Path.of("ksnewicdup"));
         checkInt(data, "22", 5555); // Mac ic
-        checkAlg(data, "2000", SHA_oid); // Mac alg
-        checkAlg(data, "110c010c01000", pbeWithSHA1AndDESede_oid); // key alg
+        checkAlg(data, "2000", oid(KnownOIDs.SHA_1)); // Mac alg
+        checkAlg(data, "110c010c01000", oid(KnownOIDs.PBEWithSHA1AndDESede)); // key alg
         checkInt(data, "110c010c010011", 7777); // key ic
-        checkAlg(data, "110c010c11000", pbeWithSHA1AndRC4_128_oid); // new key alg
+        checkAlg(data, "110c010c11000", oid(KnownOIDs.PBEWithSHA1AndRC4_128)); // new key alg
         checkInt(data, "110c010c110011", 50000); // new key ic
-        checkAlg(data, "110c110110", pbeWithSHA1AndRC2_40_oid); // cert alg
+        checkAlg(data, "110c110110", oid(KnownOIDs.PBEWithSHA1AndRC2_40)); // cert alg
         checkInt(data, "110c1101111", 6666); // cert ic
 
         // Check keytool behavior
@@ -432,6 +432,10 @@ public class ParamsTest  {
             actualKey = e.getClass();
         }
         Asserts.assertEQ(expectedKey, actualKey, label + "-key");
+    }
+
+    private static ObjectIdentifier oid(KnownOIDs o) {
+        return ObjectIdentifier.of(o);
     }
 
     static OutputAnalyzer keytool(String s) throws Throwable {

@@ -79,13 +79,13 @@ public class TestSizeTransitions {
   private static final String SIZE_TRANSITION_REGEX = "\\d+K\\(\\d+K\\)->\\d+K\\(\\d+K\\)";
 
   // matches -coops metaspace size transitions
-  private static final String NO_COOPS_REGEX =
+  private static final String NO_COMPRESSED_KLASS_POINTERS_REGEX =
     String.format("^%s.* Metaspace: %s$",
                   LOG_TAGS_REGEX,
                   SIZE_TRANSITION_REGEX);
 
   // matches +coops metaspace size transitions
-  private static final String COOPS_REGEX =
+  private static final String COMPRESSED_KLASS_POINTERS_REGEX =
     String.format("^%s.* Metaspace: %s NonClass: %s Class: %s$",
                   LOG_TAGS_REGEX,
                   SIZE_TRANSITION_REGEX,
@@ -98,19 +98,19 @@ public class TestSizeTransitions {
       throw new RuntimeException("wrong number of args: " + args.length);
     }
 
-    final boolean hasCoops = Platform.is64bit();
-    final boolean useCoops = Boolean.parseBoolean(args[0]);
+    final boolean hasCompressedKlassPointers = Platform.is64bit();
+    final boolean useCompressedKlassPointers = Boolean.parseBoolean(args[0]);
     final String gcArg = args[1];
 
-    if (!hasCoops && useCoops) {
+    if (!hasCompressedKlassPointers && useCompressedKlassPointers) {
        // No need to run this configuration.
        System.out.println("Skipping test.");
        return;
     }
 
     List<String> jvmArgs = new ArrayList<>();
-    if (hasCoops) {
-      jvmArgs.add(useCoops ? "-XX:+UseCompressedOops" : "-XX:-UseCompressedOops");
+    if (hasCompressedKlassPointers) {
+      jvmArgs.add(useCompressedKlassPointers ? "-XX:+UseCompressedClassPointers" : "-XX:-UseCompressedClassPointers");
     }
     jvmArgs.add(gcArg);
     jvmArgs.add("-Xmx256m");
@@ -127,12 +127,12 @@ public class TestSizeTransitions {
     System.out.println(output.getStdout());
     output.shouldHaveExitValue(0);
 
-    if (useCoops) {
-      output.stdoutShouldMatch(COOPS_REGEX);
-      output.stdoutShouldNotMatch(NO_COOPS_REGEX);
+    if (useCompressedKlassPointers) {
+      output.stdoutShouldMatch(COMPRESSED_KLASS_POINTERS_REGEX);
+      output.stdoutShouldNotMatch(NO_COMPRESSED_KLASS_POINTERS_REGEX);
     } else {
-      output.stdoutShouldMatch(NO_COOPS_REGEX);
-      output.stdoutShouldNotMatch(COOPS_REGEX);
+      output.stdoutShouldMatch(NO_COMPRESSED_KLASS_POINTERS_REGEX);
+      output.stdoutShouldNotMatch(COMPRESSED_KLASS_POINTERS_REGEX);
     }
   }
 }

@@ -9886,9 +9886,12 @@ instruct RethrowException() %{
 instruct ShouldNotReachHere() %{
   match(Halt);
   ins_cost(CALL_COST);
-  size(2);
   format %{ "ILLTRAP; ShouldNotReachHere" %}
-  ins_encode %{ __ z_illtrap(); %}
+  ins_encode %{
+    if (is_reachable()) {
+      __ z_illtrap();
+    }
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 

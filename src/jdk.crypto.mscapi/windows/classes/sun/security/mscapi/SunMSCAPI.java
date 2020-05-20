@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
 import java.util.HashMap;
-import java.util.Arrays;
+import java.util.List;
 
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
+import static sun.security.util.SecurityProviderConstants.getAliases;
 
 /**
  * A Cryptographic Service Provider for the Microsoft Crypto API.
@@ -56,16 +57,21 @@ public final class SunMSCAPI extends Provider {
             }
         });
     }
+    private static class ProviderServiceA extends ProviderService {
+        ProviderServiceA(Provider p, String type, String algo, String cn,
+                HashMap<String, String> attrs) {
+            super(p, type, algo, cn, getAliases(algo), attrs);
+        }
+    }
 
-    private static final class ProviderService extends Provider.Service {
+    private static class ProviderService extends Provider.Service {
         ProviderService(Provider p, String type, String algo, String cn) {
             super(p, type, algo, cn, null, null);
         }
 
         ProviderService(Provider p, String type, String algo, String cn,
-            String[] aliases, HashMap<String, String> attrs) {
-            super(p, type, algo, cn,
-                  (aliases == null? null : Arrays.asList(aliases)), attrs);
+            List<String> aliases, HashMap<String, String> attrs) {
+            super(p, type, algo, cn, aliases, attrs);
         }
 
         @Override
@@ -176,48 +182,47 @@ public final class SunMSCAPI extends Provider {
                 putService(new ProviderService(p, "Signature",
                            "SHA1withRSA", "sun.security.mscapi.CSignature$SHA1withRSA",
                            null, attrs));
-                putService(new ProviderService(p, "Signature",
-                           "SHA256withRSA", "sun.security.mscapi.CSignature$SHA256withRSA",
-                           new String[] { "1.2.840.113549.1.1.11", "OID.1.2.840.113549.1.1.11" },
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA256withRSA",
+                           "sun.security.mscapi.CSignature$SHA256withRSA",
                            attrs));
-                putService(new ProviderService(p, "Signature",
-                           "SHA384withRSA", "sun.security.mscapi.CSignature$SHA384withRSA",
-                           new String[] { "1.2.840.113549.1.1.12", "OID.1.2.840.113549.1.1.12" },
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA384withRSA",
+                           "sun.security.mscapi.CSignature$SHA384withRSA",
                            attrs));
-                putService(new ProviderService(p, "Signature",
-                           "SHA512withRSA", "sun.security.mscapi.CSignature$SHA512withRSA",
-                           new String[] { "1.2.840.113549.1.1.13", "OID.1.2.840.113549.1.1.13" },
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA512withRSA",
+                           "sun.security.mscapi.CSignature$SHA512withRSA",
                            attrs));
-                putService(new ProviderService(p, "Signature",
-                        "RSASSA-PSS", "sun.security.mscapi.CSignature$PSS",
-                        new String[] { "1.2.840.113549.1.1.10", "OID.1.2.840.113549.1.1.10" },
-                        attrs));
+                putService(new ProviderServiceA(p, "Signature",
+                           "RSASSA-PSS", "sun.security.mscapi.CSignature$PSS",
+                           attrs));
                 putService(new ProviderService(p, "Signature",
                            "MD5withRSA", "sun.security.mscapi.CSignature$MD5withRSA",
                            null, attrs));
                 putService(new ProviderService(p, "Signature",
                            "MD2withRSA", "sun.security.mscapi.CSignature$MD2withRSA",
                            null, attrs));
-                putService(new ProviderService(p, "Signature",
-                        "SHA1withECDSA", "sun.security.mscapi.CSignature$SHA1withECDSA",
-                        new String[] { "1.2.840.10045.4.1", "OID.1.2.840.10045.4.1" },
-                        attrs));
-                putService(new ProviderService(p, "Signature",
-                        "SHA224withECDSA", "sun.security.mscapi.CSignature$SHA224withECDSA",
-                        new String[] { "1.2.840.10045.4.3.1", "OID.1.2.840.10045.4.3.1"},
-                        attrs));
-                putService(new ProviderService(p, "Signature",
-                        "SHA256withECDSA", "sun.security.mscapi.CSignature$SHA256withECDSA",
-                        new String[] { "1.2.840.10045.4.3.2", "OID.1.2.840.10045.4.3.2"},
-                        attrs));
-                putService(new ProviderService(p, "Signature",
-                        "SHA384withECDSA", "sun.security.mscapi.CSignature$SHA384withECDSA",
-                        new String[] { "1.2.840.10045.4.3.3", "OID.1.2.840.10045.4.3.3"},
-                        attrs));
-                putService(new ProviderService(p, "Signature",
-                        "SHA512withECDSA", "sun.security.mscapi.CSignature$SHA512withECDSA",
-                        new String[] { "1.2.840.10045.4.3.4", "OID.1.2.840.10045.4.3.4"},
-                        attrs));
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA1withECDSA",
+                           "sun.security.mscapi.CSignature$SHA1withECDSA",
+                           attrs));
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA224withECDSA",
+                           "sun.security.mscapi.CSignature$SHA224withECDSA",
+                           attrs));
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA256withECDSA",
+                           "sun.security.mscapi.CSignature$SHA256withECDSA",
+                           attrs));
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA384withECDSA",
+                           "sun.security.mscapi.CSignature$SHA384withECDSA",
+                           attrs));
+                putService(new ProviderServiceA(p, "Signature",
+                           "SHA512withECDSA",
+                           "sun.security.mscapi.CSignature$SHA512withECDSA",
+                           attrs));
                 /*
                  * Key Pair Generator engines
                  */

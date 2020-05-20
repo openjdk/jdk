@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8011867
+ * @bug 8011867 8242151
  * @summary Accept unknown PKCS #9 attributes
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
@@ -43,7 +43,7 @@ public class UnknownAttribute {
     public static void main(String[] args) throws Exception {
         // Unknown attr
         PKCS9Attribute p1 = new PKCS9Attribute(
-                PKCS9Attribute.CHALLENGE_PASSWORD_STR, "t0p5ecr3t");
+                PKCS9Attribute.CHALLENGE_PASSWORD_OID, "t0p5ecr3t");
         if (!p1.isKnown()) {
             throw new Exception();
         }
@@ -65,13 +65,13 @@ public class UnknownAttribute {
         }
         // Unknown attr from value
         try {
-            new PKCS9Attribute(new ObjectIdentifier("1.2.3"), "hello");
+            new PKCS9Attribute(ObjectIdentifier.of("1.2.3"), "hello");
             throw new Exception();
         } catch (IllegalArgumentException iae) {
             // Good. Unknown attr must have byte[] value type
         }
         PKCS9Attribute p3 = new PKCS9Attribute(
-                new ObjectIdentifier("1.2.3"), new byte[]{0x31,0x02,0x05,0x00});
+                ObjectIdentifier.of("1.2.3"), new byte[]{0x31,0x02,0x05,0x00});
         if (p3.isKnown()) {
             throw new Exception();
         }

@@ -26,7 +26,6 @@
 
 #include "jni.h"
 #include "compiler/compilerDefinitions.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
@@ -39,6 +38,11 @@ class ciMethod;
 template <typename>
 class GrowableArray;
 class Method;
+class EventCompilation;
+class EventCompilationFailure;
+class EventCompilerInlining;
+class EventCompilerPhase;
+struct JfrStructCalleeMethod;
 
 class CompilerEvent : AllStatic {
  public:

@@ -525,6 +525,16 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PrintVMQWaitTime",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseNewFieldLayout",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "PrintBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "BiasedLockingBulkRebiasThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "BiasedLockingBulkRevokeThreshold",    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -560,6 +570,16 @@ static SpecialFlag const special_jvm_flags[] = {
   { "not deprecated or obsolete",   JDK_Version::undefined(), JDK_Version::undefined(), JDK_Version::jdk(9) },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
+#endif
+
+#ifndef COMPILER2
+  // These flags were generally available, but are C2 only, now.
+  { "MaxInlineLevel",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "MaxRecursiveInlineLevel",      JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "InlineSmallCode",              JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "MaxInlineSize",                JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "FreqInlineSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "MaxTrivialSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
 #endif
 
   { NULL, JDK_Version(0), JDK_Version(0) }
@@ -1666,7 +1686,9 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+      if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
+        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+      }
     }
   }
 #endif // _LP64
@@ -1679,8 +1701,14 @@ void Arguments::set_use_compressed_oops() {
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifndef ZERO
 #ifdef _LP64
-  // UseCompressedOops must be on for UseCompressedClassPointers to be on.
-  if (!UseCompressedOops) {
+  // On some architectures, the use of UseCompressedClassPointers implies the use of
+  // UseCompressedOops. The reason is that the rheap_base register of said platforms
+  // is reused to perform some optimized spilling, in order to use rheap_base as a
+  // temp register. But by treating it as any other temp register, spilling can typically
+  // be completely avoided instead. So it is better not to perform this trick. And by
+  // not having that reliance, large heaps, or heaps not supporting compressed oops,
+  // can still use compressed class pointers.
+  if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS && !UseCompressedOops) {
     if (UseCompressedClassPointers) {
       warning("UseCompressedClassPointers requires UseCompressedOops");
     }
@@ -1809,10 +1837,7 @@ void Arguments::set_heap_size() {
     }
 
 #ifdef _LP64
-    if (UseCompressedOops) {
-      // Limit the heap size to the maximum possible when using compressed oops
-      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
-
+    if (UseCompressedOops || UseCompressedClassPointers) {
       // HeapBaseMinAddress can be greater than default but not less than.
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
@@ -1825,6 +1850,10 @@ void Arguments::set_heap_size() {
           FLAG_SET_ERGO(HeapBaseMinAddress, DefaultHeapBaseMinAddress);
         }
       }
+    }
+    if (UseCompressedOops) {
+      // Limit the heap size to the maximum possible when using compressed oops
+      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
 
       if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
         // Heap should be above HeapBaseMinAddress to get zero based compressed oops
@@ -1843,7 +1872,9 @@ void Arguments::set_heap_size() {
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
-          FLAG_SET_ERGO(UseCompressedClassPointers, false);
+          if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
+            FLAG_SET_ERGO(UseCompressedClassPointers, false);
+          }
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
         }
@@ -3500,13 +3531,21 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
   return status;
 }
 
-void Arguments::set_shared_spaces_flags() {
+jint Arguments::set_shared_spaces_flags_and_archive_paths() {
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
     UseSharedSpaces = false;
   }
+#if INCLUDE_CDS
+  // Initialize shared archive paths which could include both base and dynamic archive paths
+  // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
+  if (!init_shared_archive_paths()) {
+    return JNI_ENOMEM;
+  }
+#endif  // INCLUDE_CDS
+  return JNI_OK;
 }
 
 #if INCLUDE_CDS
@@ -3522,7 +3561,8 @@ char* Arguments::get_default_shared_archive_path() {
   size_t file_sep_len = strlen(os::file_separator());
   const size_t len = jvm_path_len + file_sep_len + 20;
   default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  jio_snprintf(default_archive_path, len, "%s%sclasses.jsa",
+  jio_snprintf(default_archive_path, len,
+               UseCompressedOops ? "%s%sclasses.jsa": "%s%sclasses_nocoops.jsa",
                jvm_path, os::file_separator());
   return default_archive_path;
 }
@@ -3967,13 +4007,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return result;
   }
 
-#if INCLUDE_CDS
-  // Initialize shared archive paths which could include both base and dynamic archive paths
-  if (!init_shared_archive_paths()) {
-    return JNI_ENOMEM;
-  }
-#endif
-
   // Delay warning until here so that we've had a chance to process
   // the -XX:-PrintWarnings flag
   if (needs_hotspotrc_warning) {
@@ -4061,7 +4094,8 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  set_shared_spaces_flags();
+  result = set_shared_spaces_flags_and_archive_paths();
+  if (result != JNI_OK) return result;
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

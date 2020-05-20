@@ -34,13 +34,20 @@ import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.management.Notification;
-import javax.management.NotificationBroadcaster;
+import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 
 public class TestGarbageCollectorMXBean {
+    private static final long startTime = System.nanoTime();
+
+    private static void log(String msg) {
+        final String elapsedSeconds = String.format("%.3fs", (System.nanoTime() - startTime) / 1_000_000_000.0);
+        System.out.println("[" + elapsedSeconds + "] (" + Thread.currentThread().getName() + ") " + msg);
+    }
+
     public static void main(String[] args) throws Exception {
         final long M = 1024 * 1024;
         final long initialCapacity = Long.parseLong(args[0]) * M;
@@ -67,61 +74,61 @@ public class TestGarbageCollectorMXBean {
             final var memoryUsageBeforeGC = info.getGcInfo().getMemoryUsageBeforeGc().get("ZHeap");
             final var memoryUsageAfterGC = info.getGcInfo().getMemoryUsageAfterGc().get("ZHeap");
 
-            System.out.println(name + " (" + type + ")");
-            System.out.println("                  Id: " + id);
-            System.out.println("              Action: " + action);
-            System.out.println("               Cause: " + cause);
-            System.out.println("           StartTime: " + startTime);
-            System.out.println("             EndTime: " + endTime);
-            System.out.println("            Duration: " + duration);
-            System.out.println(" MemoryUsageBeforeGC: " + memoryUsageBeforeGC);
-            System.out.println("  MemoryUsageAfterGC: " + memoryUsageAfterGC);
-            System.out.println();
+            log(name + " (" + type + ")");
+            log("                  Id: " + id);
+            log("              Action: " + action);
+            log("               Cause: " + cause);
+            log("           StartTime: " + startTime);
+            log("             EndTime: " + endTime);
+            log("            Duration: " + duration);
+            log(" MemoryUsageBeforeGC: " + memoryUsageBeforeGC);
+            log("  MemoryUsageAfterGC: " + memoryUsageAfterGC);
+            log("");
 
             if (name.equals("ZGC")) {
                 cycles.incrementAndGet();
             } else {
-                System.out.println("ERROR: Name");
+                log("ERROR: Name");
                 errors.incrementAndGet();
             }
 
             if (!action.equals("end of major GC")) {
-                System.out.println("ERROR: Action");
+                log("ERROR: Action");
                 errors.incrementAndGet();
             }
 
             if (memoryUsageBeforeGC.getInit() != initialCapacity) {
-                System.out.println("ERROR: MemoryUsageBeforeGC.init");
+                log("ERROR: MemoryUsageBeforeGC.init");
                 errors.incrementAndGet();
             }
 
             if (memoryUsageBeforeGC.getUsed() > initialCapacity) {
-                System.out.println("ERROR: MemoryUsageBeforeGC.used");
+                log("ERROR: MemoryUsageBeforeGC.used");
                 errors.incrementAndGet();
             }
 
             if (memoryUsageBeforeGC.getCommitted() != initialCapacity) {
-                System.out.println("ERROR: MemoryUsageBeforeGC.committed");
+                log("ERROR: MemoryUsageBeforeGC.committed");
                 errors.incrementAndGet();
             }
 
             if (memoryUsageBeforeGC.getMax() != maxCapacity) {
-                System.out.println("ERROR: MemoryUsageBeforeGC.max");
+                log("ERROR: MemoryUsageBeforeGC.max");
                 errors.incrementAndGet();
             }
 
             if (!cause.equals("System.gc()")) {
-                System.out.println("ERROR: Cause");
+                log("ERROR: Cause");
                 errors.incrementAndGet();
             }
 
             if (startTime > endTime) {
-                System.out.println("ERROR: StartTime");
+                log("ERROR: StartTime");
                 errors.incrementAndGet();
             }
 
             if (endTime - startTime != duration) {
-                System.out.println("ERROR: Duration");
+                log("ERROR: Duration");
                 errors.incrementAndGet();
             }
         };
@@ -131,22 +138,25 @@ public class TestGarbageCollectorMXBean {
 
         // Register GC event listener
         for (final var collector : ManagementFactory.getGarbageCollectorMXBeans()) {
-            final NotificationBroadcaster broadcaster = (NotificationBroadcaster)collector;
-            broadcaster.addNotificationListener(listener, null, null);
+            final NotificationEmitter emitter = (NotificationEmitter)collector;
+            emitter.addNotificationListener(listener, null, null);
         }
 
         final int minCycles = 5;
 
         // Run GCs
         for (int i = 0; i < minCycles; i++) {
+            log("Starting GC " + i);
             System.gc();
         }
 
-        // Wait at most 60 seconds
-        for (int i = 0; i < 60; i++) {
+        // Wait at most 90 seconds
+        for (int i = 0; i < 90; i++) {
+            log("Waiting...");
             Thread.sleep(1000);
+
             if (cycles.get() >= minCycles) {
-                // All events received
+                log("All events received!");
                 break;
             }
         }
@@ -154,12 +164,12 @@ public class TestGarbageCollectorMXBean {
         final int actualCycles = cycles.get();
         final int actualErrors = errors.get();
 
-        System.out.println("   minCycles: " + minCycles);
-        System.out.println("actualCycles: " + actualCycles);
-        System.out.println("actualErrors: " + actualErrors);
+        log("   minCycles: " + minCycles);
+        log("actualCycles: " + actualCycles);
+        log("actualErrors: " + actualErrors);
 
         // Verify number of cycle events
-        if (cycles.get() < minCycles) {
+        if (actualCycles < minCycles) {
             throw new Exception("Unexpected cycles");
         }
 

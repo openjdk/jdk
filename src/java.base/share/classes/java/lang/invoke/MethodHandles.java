@@ -256,12 +256,12 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-        }
 
-        if (!callerModule.isNamed() && targetModule.isNamed()) {
-            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-            if (logger != null) {
-                logger.logIfOpenedForIllegalAccess(caller, targetClass);
+            if (!callerModule.isNamed() && targetModule.isNamed()) {
+                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
+                if (logger != null) {
+                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
+                }
             }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
@@ -2227,8 +2227,8 @@ public class MethodHandles {
         }
 
         /**
-         * Displays the name of the class from which lookups are to be made.
-         * followed with "/" and the name of the {@linkplain #previousLookupClass()
+         * Displays the name of the class from which lookups are to be made,
+         * followed by "/" and the name of the {@linkplain #previousLookupClass()
          * previous lookup class} if present.
          * (The name is the one reported by {@link java.lang.Class#getName() Class.getName}.)
          * If there are restrictions on the access permitted to this lookup,

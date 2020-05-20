@@ -62,7 +62,7 @@ public enum SourceVersion {
      *  13: no changes (switch expressions and text blocks in preview)
      *  14: switch expressions (pattern matching and records in
      *      preview, text blocks in preview again)
-     *  15: TBD
+     *  15: text blocks (records and pattern matching in preview again)
      */
 
     /**
@@ -211,6 +211,8 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 15.
      *
+     * Additions in this release include text blocks.
+     *
      * @since 15
      */
      RELEASE_15;
@@ -325,7 +327,7 @@ public enum SourceVersion {
      * literal in any segment.
      *
      * This method returns {@code true} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>
+     * keywords</i> and <i>restricted identifiers</i>.
      *
      * @param name the string to check
      * @return {@code true} if this string is a
@@ -351,7 +353,7 @@ public enum SourceVersion {
      * literal in any segment.
      *
      * This method returns {@code true} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>
+     * keywords</i> and <i>restricted identifiers</i>.
      *
      * @param name the string to check
      * @param version the version to use

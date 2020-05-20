@@ -73,6 +73,7 @@
     <property name="src.dir" location="src"/>
     <property name="test.dir" location="test"/>
     <property name="make.dir" location="make/langtools"/>
+    <property name="make.idea.dir" location="make/ide/idea/langtools"/>
     <property name="make.conf.dir" location="${make.dir}/conf"/>
     <property name="make.tools.dir" location="${make.dir}/tools"/>
     <property name="build.dir" location="build/langtools"/>
@@ -252,7 +253,7 @@
     <target name="idea" depends="-check-langtools.jdk.home">
         <mkdir dir=".idea"/>
         <copy todir=".idea" >
-            <fileset dir="${make.dir}/intellij/template">
+            <fileset dir="${make.idea.dir}/template">
                <exclude name="**/src/**"/>
                <exclude name="**/utils/**"/>
             </fileset>
@@ -272,7 +273,7 @@
         <mkdir dir=".idea/classes"/>
         <javac source="${javac.build.source}"
                target="${javac.build.target}"
-               srcdir="${make.dir}/intellij/template/src"
+               srcdir="${make.idea.dir}/template/src"
                destdir=".idea/classes"/>
     </target>
 

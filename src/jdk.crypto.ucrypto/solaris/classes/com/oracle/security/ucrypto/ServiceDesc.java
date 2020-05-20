@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,11 @@ final class ServiceDesc {
         this(type, algo, cn, null);
     }
 
-    ServiceDesc(String type, String algo, String cn, String[] aliases) {
+    ServiceDesc(String type, String algo, String cn, List<String> aliases) {
         this.type = type;
         this.algo = algo;
         this.cn = cn;
-        if (aliases != null) {
-            this.aliases = Arrays.asList(aliases);
-        } else {
-            this.aliases = null;
-        }
+        this.aliases = aliases;
     }
     String getType() {
         return type;

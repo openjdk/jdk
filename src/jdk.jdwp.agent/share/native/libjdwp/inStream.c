@@ -424,7 +424,7 @@ inStream_clearError(PacketInputStream *stream)
 }
 
 jvalue
-inStream_readValue(PacketInputStream *stream, jbyte *typeKeyPtr)
+inStream_readValue(PacketInputStream *stream)
 {
     jvalue value;
     jbyte typeKey = inStream_readByte(stream);
@@ -472,9 +472,6 @@ inStream_readValue(PacketInputStream *stream, jbyte *typeKeyPtr)
                 stream->error = JDWP_ERROR(INVALID_TAG);
                 break;
         }
-    }
-    if (typeKeyPtr) {
-        *typeKeyPtr = typeKey;
     }
     return value;
 }

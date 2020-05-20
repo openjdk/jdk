@@ -267,6 +267,19 @@ else
 endif
 
 ################################################################################
+# GetEntitlementsFile
+# Find entitlements file for executable when signing on macosx. If no
+# specialized file is found, returns the default file.
+# $1 Executable to find entitlements file for.
+ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default.plist
+
+GetEntitlementsFile = \
+    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1)).plist, \
+      $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
+    )
+
+################################################################################
 # Create the recipe needed to compile a single native source file.
 #
 # Parameter 1 is the name of the rule, based on the name of the library/
@@ -1036,7 +1049,7 @@ define SetupNativeCompilationBody
   endif
 
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
-    $1_VARDEPS := $$($1_AR) $$($1_ARFLAGS) $$($1_LIBS) \
+    $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $$($1_LIBS) \
         $$($1_EXTRA_LIBS)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -1054,7 +1067,7 @@ define SetupNativeCompilationBody
 	$$(call LogInfo, Building static library $$($1_BASENAME))
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
-	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
+	    $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
 	        $$($1_RES))
         ifeq ($(STATIC_BUILD), true)
           ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
@@ -1183,7 +1196,7 @@ define SetupNativeCompilationBody
                 # silently fail otherwise.
                 ifneq ($(CODESIGN), )
 		  $(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
-		  --entitlements $(TOPDIR)/make/data/macosxsigning/entitlements.plist $$@
+		      --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
   endif
 

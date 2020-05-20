@@ -31,11 +31,7 @@ import java.security.PublicKey;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
-import sun.security.util.HexDumpEncoder;
-import sun.security.util.Debug;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerValue;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.*;
 import sun.security.x509.*;
 
 /**
@@ -88,7 +84,7 @@ public class X509CertSelector implements CertSelector {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private static final ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
-        ObjectIdentifier.of("2.5.29.37.0");
+        ObjectIdentifier.of(KnownOIDs.anyExtendedKeyUsage);
 
     static {
         CertPathHelperImpl.initialize();
@@ -506,7 +502,7 @@ public class X509CertSelector implements CertSelector {
         if (oid == null) {
             subjectPublicKeyAlgID = null;
         } else {
-            subjectPublicKeyAlgID = new ObjectIdentifier(oid);
+            subjectPublicKeyAlgID = ObjectIdentifier.of(oid);
         }
     }
 
@@ -622,7 +618,7 @@ public class X509CertSelector implements CertSelector {
                 Collections.unmodifiableSet(new HashSet<>(keyPurposeSet));
             keyPurposeOIDSet = new HashSet<>();
             for (String s : this.keyPurposeSet) {
-                keyPurposeOIDSet.add(new ObjectIdentifier(s));
+                keyPurposeOIDSet.add(ObjectIdentifier.of(s));
             }
         }
     }
@@ -1105,8 +1101,8 @@ public class X509CertSelector implements CertSelector {
                 if (!(o instanceof String)) {
                     throw new IOException("non String in certPolicySet");
                 }
-                polIdVector.add(new CertificatePolicyId(new ObjectIdentifier(
-                  (String)o)));
+                polIdVector.add(new CertificatePolicyId
+                        (ObjectIdentifier.of((String)o)));
             }
             // If everything went OK, make the changes
             policySet = tempSet;

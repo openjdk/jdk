@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class ConstraintsParameters {
     public static String[] getNamedCurveFromKey(Key key) {
         if (key instanceof ECKey) {
             NamedCurve nc = CurveDB.lookup(((ECKey)key).getParams());
-            return (nc == null ? EMPTYLIST : CurveDB.getNamesByOID(nc.getObjectId()));
+            return (nc == null ? EMPTYLIST : nc.getNameAndAliases());
         } else if (key instanceof XECKey) {
             String[] s = {
                     ((NamedParameterSpec)((XECKey)key).getParams()).getName()

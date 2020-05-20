@@ -23,11 +23,6 @@
 # questions.
 #
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)
 SRC_DIR := $(TOPDIR)/src/$(MODULE)/share/classes
 
@@ -157,9 +152,3 @@ $(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
 	$(ECHO) "    ;" >> $@;
 
 TARGETS += $(GENSRC_DIR)/module-info.java.extra
-
-################################################################################
-
-all: $(TARGETS)
-
-.PHONY: default all

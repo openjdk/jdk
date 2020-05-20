@@ -1585,7 +1585,7 @@ public class ObjectStreamClass implements Serializable {
                                           .map(RecordComponent::getType)
                                           .toArray(Class<?>[]::new);
             try {
-                Constructor<?> ctr = cls.getConstructor(paramTypes);
+                Constructor<?> ctr = cls.getDeclaredConstructor(paramTypes);
                 ctr.setAccessible(true);
                 return MethodHandles.lookup().unreflectConstructor(ctr);
             } catch (IllegalAccessException | NoSuchMethodException e) {

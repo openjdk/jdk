@@ -136,7 +136,7 @@ public class OIDMap {
         addInternal(POLICY_CONSTRAINTS, PKIXExtensions.PolicyConstraints_Id,
                     "sun.security.x509.PolicyConstraintsExtension");
         addInternal(NETSCAPE_CERT,
-                    ObjectIdentifier.of("2.16.840.1.113730.1.1"),
+                    ObjectIdentifier.of(KnownOIDs.NETSCAPE_CertType),
                     "sun.security.x509.NetscapeCertTypeExtension");
         addInternal(CERT_POLICIES, PKIXExtensions.CertificatePolicies_Id,
                     "sun.security.x509.CertificatePoliciesExtension");
@@ -227,7 +227,7 @@ public class OIDMap {
             throws CertificateException {
         ObjectIdentifier objId;
         try {
-            objId = new ObjectIdentifier(oid);
+            objId = ObjectIdentifier.of(oid);
         } catch (IOException ioe) {
             throw new CertificateException
                                 ("Invalid Object identifier: " + oid);

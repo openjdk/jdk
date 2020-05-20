@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  */
 
 import sun.security.ec.*;
+
+import java.security.spec.NamedParameterSpec;
 import java.util.*;
 import jdk.test.lib.Convert;
 
@@ -86,7 +88,9 @@ public class TestXECOps {
     private void runDiffieHellmanTest(String opName, String a_str,
         String b_str, String result_str) {
 
-        XECParameters settings = XECParameters.getByName(opName).get();
+        NamedParameterSpec paramSpec = new NamedParameterSpec(opName);
+        XECParameters settings =
+            XECParameters.get(RuntimeException::new, paramSpec);
         XECOperations ops = new XECOperations(settings);
 
         byte[] basePoint = Convert.byteToByteArray(settings.getBasePoint(),
@@ -118,7 +122,9 @@ public class TestXECOps {
         byte[] u_in = Convert.hexStringToByteArray(u_in_str);
         byte[] u_out_expected = Convert.hexStringToByteArray(u_out_str);
 
-        XECParameters settings = XECParameters.getByName(opName).get();
+        NamedParameterSpec paramSpec = new NamedParameterSpec(opName);
+        XECParameters settings =
+            XECParameters.get(RuntimeException::new, paramSpec);
         XECOperations ops = new XECOperations(settings);
         byte[] u_out = ops.encodedPointMultiply(k_in, u_in);
 

@@ -73,7 +73,6 @@ public class PrintDirectivesTest extends AbstractTestBase {
             CompileCommand compileCommand = new CompileCommand(command,
                     methodDescriptor, cmdGen.generateCompiler(),
                     Scenario.Type.DIRECTIVE);
-            compileCommand.print();
             builder.add(compileCommand);
         }
         // print all directives

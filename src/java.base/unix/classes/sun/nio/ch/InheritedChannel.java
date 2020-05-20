@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@ import java.lang.reflect.Constructor;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
 import java.nio.channels.Channel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.DatagramChannel;
 import java.nio.channels.spi.SelectorProvider;
+import static java.net.StandardProtocolFamily.INET6;
+import static java.net.StandardProtocolFamily.INET;
 
 class InheritedChannel {
 
@@ -81,12 +82,16 @@ class InheritedChannel {
      */
     public static class InheritedSocketChannelImpl extends SocketChannelImpl {
 
+        static ProtocolFamily family(InetSocketAddress isa) {
+            return (isa.getAddress() instanceof Inet6Address) ? INET6 : INET;
+        }
+
         InheritedSocketChannelImpl(SelectorProvider sp,
                                    FileDescriptor fd,
                                    InetSocketAddress remote)
             throws IOException
         {
-            super(sp, fd, remote);
+            super(sp, family(remote), fd, remote);
         }
 
         protected void implCloseSelectableChannel() throws IOException {

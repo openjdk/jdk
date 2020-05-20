@@ -63,7 +63,7 @@ public class BasicLauncherTest {
         else {
             launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         }
-
+        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
         return launcher;
     }
 

@@ -1697,11 +1697,6 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
   return result;
 }
 
-void os::split_reserved_memory(char *base, size_t size,
-                                 size_t split, bool realloc) {
-  pd_split_reserved_memory(base, size, split, realloc);
-}
-
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {

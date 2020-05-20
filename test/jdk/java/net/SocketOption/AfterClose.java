@@ -27,6 +27,7 @@
  * @summary Ensures that IOException is thrown after the socket is closed
  * @run testng AfterClose
  * @run testng/othervm -Djdk.net.usePlainSocketImpl AfterClose
+ * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl AfterClose
  */
 
 import java.io.IOException;
@@ -48,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.Boolean.*;

@@ -35,9 +35,6 @@ public:
   void prepare();
   void unload();
   void finish();
-private:
-  void unlink();
-  void purge();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLASSUNLOAD_HPP

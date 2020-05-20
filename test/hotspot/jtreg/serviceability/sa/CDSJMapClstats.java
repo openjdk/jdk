@@ -30,9 +30,9 @@
  * @run main/othervm/timeout=2400 CDSJMapClstats
  */
 
-import java.util.List;
-import java.util.Arrays;
 import java.util.stream.Collectors;
+
+import jdk.test.lib.Utils;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.apps.LingeredApp;
@@ -46,6 +46,7 @@ public class CDSJMapClstats {
     private static void runClstats(long lingeredAppPid) throws Exception {
 
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addToolArg("jmap");
         launcher.addToolArg("--clstats");
         launcher.addToolArg("--pid");

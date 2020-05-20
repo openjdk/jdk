@@ -205,6 +205,7 @@ void Universe::oops_do(OopClosure* f) {
   f->do_oop((oop*)&_vm_exception);
   f->do_oop((oop*)&_reference_pending_list);
   debug_only(f->do_oop((oop*)&_fullgc_alot_dummy_array);)
+  ThreadsSMRSupport::exiting_threads_oops_do(f);
 }
 
 void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
@@ -647,8 +648,6 @@ jint universe_init() {
             "oop size is not not a multiple of HeapWord size");
 
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
-
-  JavaClasses::compute_hard_coded_offsets();
 
   initialize_global_behaviours();
 

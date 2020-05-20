@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,10 +34,10 @@ class ICache : public AbstractICache {
  public:
   static void initialize();
   static void invalidate_word(address addr) {
-    __clear_cache((char *)addr, (char *)(addr + 3));
+    __builtin___clear_cache((char *)addr, (char *)(addr + 3));
   }
   static void invalidate_range(address start, int nbytes) {
-    __clear_cache((char *)start, (char *)(start + nbytes));
+    __builtin___clear_cache((char *)start, (char *)(start + nbytes));
   }
 };
 

@@ -1,2 +1,2 @@
-NestedEnum.java:12:9: compiler.err.enums.must.be.static
+NestedEnum.java:12:9: compiler.err.static.declaration.not.allowed.in.inner.classes
 1 error

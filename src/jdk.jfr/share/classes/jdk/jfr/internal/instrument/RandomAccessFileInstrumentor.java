@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package jdk.jfr.internal.instrument;
 
 import java.io.IOException;
 
-import jdk.jfr.events.FileReadEvent;
-import jdk.jfr.events.FileWriteEvent;
+import jdk.jfr.events.Handlers;
+import jdk.jfr.internal.handlers.EventHandler;
 
 /**
  * See {@link JITracer} for an explanation of this code.
@@ -44,23 +44,27 @@ final class RandomAccessFileInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read() throws IOException {
-        FileReadEvent event = FileReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_READ;
+        if (!handler.isEnabled()) {
             return read();
         }
         int result = 0;
+        long bytesRead = 0;
+        boolean endOfFile = false;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             result = read();
             if (result < 0) {
-                event.endOfFile = true;
+                endOfFile = true;
             } else {
-                event.bytesRead = 1;
+                bytesRead = 1;
             }
         } finally {
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                handler.write(start, duration, path, bytesRead, endOfFile);
+            }
         }
         return result;
     }
@@ -68,23 +72,24 @@ final class RandomAccessFileInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[]) throws IOException {
-        FileReadEvent event = FileReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_READ;
+        if (!handler.isEnabled()) {
             return read(b);
         }
         int bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(b);
         } finally {
-            if (bytesRead < 0) {
-                event.endOfFile = true;
-            } else {
-                event.bytesRead = bytesRead;
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    handler.write(start, duration, path, 0L, true);
+                } else {
+                    handler.write(start, duration, path, bytesRead, false);
+                }
             }
-            event.path = path;
-            event.commit();
-            event.reset();
         }
         return bytesRead;
     }
@@ -92,23 +97,24 @@ final class RandomAccessFileInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[], int off, int len) throws IOException {
-        FileReadEvent event = FileReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_READ;
+        if (!handler.isEnabled()) {
             return read(b, off, len);
         }
         int bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(b, off, len);
         } finally {
-            if (bytesRead < 0) {
-                event.endOfFile = true;
-            } else {
-                event.bytesRead = bytesRead;
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    handler.write(start, duration, path, 0L, true);
+                } else {
+                    handler.write(start, duration, path, bytesRead, false);
+                }
             }
-            event.path = path;
-            event.commit();
-            event.reset();
         }
         return bytesRead;
     }
@@ -116,58 +122,66 @@ final class RandomAccessFileInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(int b) throws IOException {
-        FileWriteEvent event = FileWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_WRITE;
+        if (!handler.isEnabled()) {
             write(b);
             return;
         }
+        long bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             write(b);
-            event.bytesWritten = 1;
+            bytesWritten = 1;
         } finally {
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                handler.write(start, duration, path, bytesWritten);
+            }
         }
     }
 
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[]) throws IOException {
-        FileWriteEvent event = FileWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_WRITE;
+        if (!handler.isEnabled()) {
             write(b);
             return;
         }
+        long bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             write(b);
-            event.bytesWritten = b.length;
+            bytesWritten = b.length;
         } finally {
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp();
+            if (handler.shouldCommit(duration)) {
+                handler.write(start, duration, path, bytesWritten);
+            }
         }
     }
 
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[], int off, int len) throws IOException {
-        FileWriteEvent event = FileWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.FILE_WRITE;
+        if (!handler.isEnabled()) {
             write(b, off, len);
             return;
         }
+        long bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             write(b, off, len);
-            event.bytesWritten = len;
+            bytesWritten = len;
         } finally {
-            event.path = path;
-            event.commit();
-            event.reset();
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
+                handler.write(start, duration, path, bytesWritten);
+            }
         }
     }
-
 }

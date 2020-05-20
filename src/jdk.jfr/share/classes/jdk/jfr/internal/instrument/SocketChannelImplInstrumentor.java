@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
-import jdk.jfr.events.SocketReadEvent;
-import jdk.jfr.events.SocketWriteEvent;
+import jdk.jfr.events.Handlers;
+import jdk.jfr.internal.handlers.EventHandler;
 
 /**
  * See {@link JITracer} for an explanation of this code.
@@ -46,32 +46,29 @@ final class SocketChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(ByteBuffer dst) throws IOException {
-        SocketReadEvent event = SocketReadEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.SOCKET_READ;
+        if (!handler.isEnabled()) {
             return read(dst);
         }
         int bytesRead = 0;
+        long start  = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();;
             bytesRead = read(dst);
         } finally {
-            event.end();
-            if (event.shouldCommit())  {
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration))  {
                 String hostString  = remoteAddress.getAddress().toString();
                 int delimiterIndex = hostString.lastIndexOf('/');
 
-                event.host      = hostString.substring(0, delimiterIndex);
-                event.address   = hostString.substring(delimiterIndex + 1);
-                event.port      = remoteAddress.getPort();
+                String host = hostString.substring(0, delimiterIndex);
+                String address = hostString.substring(delimiterIndex + 1);
+                int port = remoteAddress.getPort();
                 if (bytesRead < 0) {
-                    event.endOfStream = true;
+                    handler.write(start, duration, host, address, port, 0, 0L, true);
                 } else {
-                    event.bytesRead = bytesRead;
+                    handler.write(start, duration, host, address, port, 0, bytesRead, false);
                 }
-                event.timeout   = 0;
-
-                event.commit();
-                event.reset();
             }
         }
         return bytesRead;
@@ -80,33 +77,30 @@ final class SocketChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        SocketReadEvent event = SocketReadEvent.EVENT.get();
-        if(!event.isEnabled()) {
+        EventHandler handler = Handlers.SOCKET_READ;
+        if (!handler.isEnabled()) {
             return read(dsts, offset, length);
         }
 
         long bytesRead = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesRead = read(dsts, offset, length);
         } finally {
-            event.end();
-            if (event.shouldCommit()) {
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
                 String hostString  = remoteAddress.getAddress().toString();
                 int delimiterIndex = hostString.lastIndexOf('/');
 
-                event.host      = hostString.substring(0, delimiterIndex);
-                event.address   = hostString.substring(delimiterIndex + 1);
-                event.port      = remoteAddress.getPort();
+                String host = hostString.substring(0, delimiterIndex);
+                String address = hostString.substring(delimiterIndex + 1);
+                int port = remoteAddress.getPort();
                 if (bytesRead < 0) {
-                    event.endOfStream = true;
+                    handler.write(start, duration, host, address, port, 0, 0L, true);
                 } else {
-                    event.bytesRead = bytesRead;
+                    handler.write(start, duration, host, address, port, 0, bytesRead, false);
                 }
-                event.timeout   = 0;
-
-                event.commit();
-                event.reset();
             }
         }
         return bytesRead;
@@ -115,28 +109,26 @@ final class SocketChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int write(ByteBuffer buf) throws IOException {
-        SocketWriteEvent event = SocketWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.SOCKET_WRITE;
+        if (!handler.isEnabled()) {
             return write(buf);
         }
-
         int bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesWritten = write(buf);
         } finally {
-            event.end();
-            if (event.shouldCommit()) {
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
                 String hostString  = remoteAddress.getAddress().toString();
                 int delimiterIndex = hostString.lastIndexOf('/');
 
-                event.host         = hostString.substring(0, delimiterIndex);
-                event.address      = hostString.substring(delimiterIndex + 1);
-                event.port         = remoteAddress.getPort();
-                event.bytesWritten = bytesWritten < 0 ? 0 : bytesWritten;
-
-                event.commit();
-                event.reset();
+                String host = hostString.substring(0, delimiterIndex);
+                String address = hostString.substring(delimiterIndex + 1);
+                int port = remoteAddress.getPort();
+                long bytes = bytesWritten < 0 ? 0 : bytesWritten;
+                handler.write(start, duration, host, address, port, bytes);
             }
         }
         return bytesWritten;
@@ -145,30 +137,28 @@ final class SocketChannelImplInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        SocketWriteEvent event = SocketWriteEvent.EVENT.get();
-        if (!event.isEnabled()) {
+        EventHandler handler = Handlers.SOCKET_WRITE;
+        if (!handler.isEnabled()) {
             return write(srcs, offset, length);
         }
         long bytesWritten = 0;
+        long start = 0;
         try {
-            event.begin();
+            start = EventHandler.timestamp();
             bytesWritten = write(srcs, offset, length);
         } finally {
-            event.end();
-            if (event.shouldCommit()) {
+            long duration = EventHandler.timestamp() - start;
+            if (handler.shouldCommit(duration)) {
                 String hostString  = remoteAddress.getAddress().toString();
                 int delimiterIndex = hostString.lastIndexOf('/');
 
-                event.host         = hostString.substring(0, delimiterIndex);
-                event.address      = hostString.substring(delimiterIndex + 1);
-                event.port         = remoteAddress.getPort();
-                event.bytesWritten = bytesWritten < 0 ? 0 : bytesWritten;
-
-                event.commit();
-                event.reset();
+                String host = hostString.substring(0, delimiterIndex);
+                String address = hostString.substring(delimiterIndex + 1);
+                int port = remoteAddress.getPort();
+                long bytes = bytesWritten < 0 ? 0 : bytesWritten;
+                handler.write(start, duration, host, address, port, bytes);
             }
         }
         return bytesWritten;
     }
-
 }

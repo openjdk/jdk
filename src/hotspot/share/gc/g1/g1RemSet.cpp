@@ -31,6 +31,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
+#include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"

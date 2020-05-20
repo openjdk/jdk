@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ typedef PDH_STATUS (WINAPI *PdhEnumObjectItems_Fn)(LPCTSTR, LPCTSTR, LPCTSTR, LP
 typedef PDH_STATUS (WINAPI *PdhRemoveCounter_Fn)(HCOUNTER);
 typedef PDH_STATUS (WINAPI *PdhLookupPerfNameByIndex_Fn)(LPCSTR, DWORD, LPSTR, LPDWORD);
 typedef PDH_STATUS (WINAPI *PdhMakeCounterPath_Fn)(PDH_COUNTER_PATH_ELEMENTS*, LPTSTR, LPDWORD, DWORD);
+typedef PDH_STATUS (WINAPI *PdhExpandWildCardPath_Fn)(LPCSTR, LPCSTR, PZZSTR, LPDWORD, DWORD);
 
 PdhAddCounter_Fn PdhDll::_PdhAddCounter = NULL;
 PdhOpenQuery_Fn  PdhDll::_PdhOpenQuery = NULL;
@@ -47,6 +48,7 @@ PdhEnumObjectItems_Fn PdhDll::_PdhEnumObjectItems = NULL;
 PdhRemoveCounter_Fn PdhDll::_PdhRemoveCounter = NULL;
 PdhLookupPerfNameByIndex_Fn PdhDll::_PdhLookupPerfNameByIndex = NULL;
 PdhMakeCounterPath_Fn PdhDll::_PdhMakeCounterPath = NULL;
+PdhExpandWildCardPath_Fn PdhDll::_PdhExpandWildCardPath = NULL;
 
 LONG PdhDll::_critical_section = 0;
 LONG PdhDll::_initialized = 0;
@@ -68,6 +70,7 @@ void PdhDll::initialize(void) {
   _PdhRemoveCounter            = (PdhRemoveCounter_Fn)::GetProcAddress(_hModule, "PdhRemoveCounter");
   _PdhLookupPerfNameByIndex    = (PdhLookupPerfNameByIndex_Fn)::GetProcAddress(_hModule, "PdhLookupPerfNameByIndexA");
   _PdhMakeCounterPath          = (PdhMakeCounterPath_Fn)::GetProcAddress(_hModule, "PdhMakeCounterPathA");
+  _PdhExpandWildCardPath       = (PdhExpandWildCardPath_Fn)::GetProcAddress(_hModule, "PdhExpandWildCardPathA");
   InterlockedExchange(&_initialized, 1);
 }
 
@@ -88,6 +91,7 @@ bool PdhDll::PdhDetach(void) {
         _PdhRemoveCounter = NULL;
         _PdhLookupPerfNameByIndex = NULL;
         _PdhMakeCounterPath = NULL;
+        _PdhExpandWildCardPath = NULL;
         InterlockedExchange(&_initialized, 0);
       }
     }
@@ -109,7 +113,7 @@ bool PdhDll::PdhAttach(void) {
          && _PdhCloseQuery != NULL && PdhCollectQueryData != NULL
          && _PdhGetFormattedCounterValue != NULL && _PdhEnumObjectItems != NULL
          && _PdhRemoveCounter != NULL && PdhLookupPerfNameByIndex != NULL
-         && _PdhMakeCounterPath != NULL);
+         && _PdhMakeCounterPath != NULL && _PdhExpandWildCardPath != NULL);
 }
 
 PDH_STATUS PdhDll::PdhAddCounter(HQUERY hQuery, LPCSTR szFullCounterPath, DWORD dwUserData, HCOUNTER* phCounter) {
@@ -158,6 +162,11 @@ PDH_STATUS PdhDll::PdhLookupPerfNameByIndex(LPCSTR szMachineName, DWORD dwNameIn
 PDH_STATUS PdhDll::PdhMakeCounterPath(PDH_COUNTER_PATH_ELEMENTS* pCounterPathElements, LPTSTR szFullPathBuffer, LPDWORD pcchBufferSize, DWORD dwFlags) {
   assert(_initialized && _PdhMakeCounterPath != NULL, "PdhAvailable() not yet called");
   return _PdhMakeCounterPath(pCounterPathElements, szFullPathBuffer, pcchBufferSize, dwFlags);
+}
+
+PDH_STATUS PdhDll::PdhExpandWildCardPath(LPCSTR szDataSource, LPCSTR szWildCardPath, PZZSTR mszExpandedPathList, LPDWORD pcchPathListLength, DWORD dwFlags) {
+  assert(_initialized && PdhExpandWildCardPath != NULL, "PdhAvailable() not yet called");
+  return _PdhExpandWildCardPath(szDataSource, szWildCardPath, mszExpandedPathList, pcchPathListLength, dwFlags);
 }
 
 bool PdhDll::PdhStatusFail(PDH_STATUS pdhStat) {

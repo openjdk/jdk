@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,17 @@ public class IntegerPolynomial448 extends IntegerPolynomial {
         super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 
-    private void modReduceIn(long[] limbs, int index, long x) {
-        limbs[index - NUM_LIMBS] += x;
-        limbs[index - NUM_LIMBS / 2] += x;
+    @Override
+    protected void reduceIn(long[] limbs, long v, int i) {
+        limbs[i - 8] += v;
+        limbs[i - 16] += v;
     }
 
     @Override
     protected void finalCarryReduceLast(long[] limbs) {
         long carry = limbs[numLimbs - 1] >> bitsPerLimb;
         limbs[numLimbs - 1] -= carry << bitsPerLimb;
-        modReduceIn(limbs, numLimbs, carry);
+        reduceIn(limbs, carry, numLimbs);
     }
 
     @Override

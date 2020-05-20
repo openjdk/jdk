@@ -170,6 +170,28 @@
   develop(bool, UseTableRanges, true,                                       \
           "Faster versions of lookup table using ranges")                   \
                                                                             \
+  product(intx, C1MaxInlineSize, 35,                                        \
+          "The maximum bytecode size of a method to be inlined by C1")      \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, C1MaxTrivialSize, 6,                                        \
+          "The maximum bytecode size of a trivial method to be inlined by " \
+          "C1")                                                             \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, C1MaxInlineLevel, 9,                                        \
+          "The maximum number of nested calls that are inlined by C1")      \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, C1MaxRecursiveInlineLevel, 1,                               \
+          "maximum number of nested recursive calls that are inlined by C1")\
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, C1InlineStackLimit, 10,                                     \
+          "inlining only allowed for methods which don't exceed this "      \
+          "number of expression stack and local slots")                     \
+          range(0, max_jint)                                                \
+                                                                            \
   develop(intx, NestedInliningSizeRatio, 90,                                \
           "Percentage of prev. allowed inline size in recursive inlining")  \
           range(0, 100)                                                     \

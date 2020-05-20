@@ -100,6 +100,19 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             },
             (s, p) -> s);
 
+    protected static String getInstallDir(
+            Map<String, ? super Object>  params) {
+        String returnValue = INSTALL_DIR.fetchFrom(params);
+        if (returnValue == null) {
+            if (StandardBundlerParam.isRuntimeInstaller(params)) {
+                returnValue = "/Library/Java/JavaVirtualMachines";
+            } else {
+               returnValue = "/Applications";
+            }
+        }
+        return returnValue;
+    }
+
     protected void validateAppImageAndBundeler(
             Map<String, ? super Object> params) throws ConfigException {
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {

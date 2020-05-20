@@ -52,11 +52,6 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(UseNUMA, true);
   }
 
-  // Disable biased locking by default
-  if (FLAG_IS_DEFAULT(UseBiasedLocking)) {
-    FLAG_SET_DEFAULT(UseBiasedLocking, false);
-  }
-
   // Select number of parallel threads
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
     FLAG_SET_DEFAULT(ParallelGCThreads, ZHeuristics::nparallel_workers());
@@ -85,9 +80,8 @@ void ZArguments::initialize() {
   }
 #endif
 
-  // CompressedOops/UseCompressedClassPointers not supported
+  // CompressedOops not supported
   FLAG_SET_DEFAULT(UseCompressedOops, false);
-  FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
 
   // Verification before startup and after exit not (yet) supported
   FLAG_SET_DEFAULT(VerifyDuringStartup, false);
@@ -105,9 +99,6 @@ void ZArguments::initialize() {
   // Verification of stacks not (yet) supported, for the same reason
   // we need fixup_partial_loads
   DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));
-
-  // Initialize platform specific arguments
-  initialize_platform();
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {

@@ -2169,6 +2169,14 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     JvmtiExport::cleanup_thread(this);
   }
 
+  // We need to cache the thread name for logging purposes below as once
+  // we have called on_thread_detach this thread must not access any oops.
+  char* thread_name = NULL;
+  if (log_is_enabled(Debug, os, thread, timer)) {
+    ResourceMark rm(this);
+    thread_name = os::strdup(get_thread_name());
+  }
+
   // We must flush any deferred card marks and other various GC barrier
   // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
   // before removing a thread from the list of active threads.
@@ -2187,17 +2195,17 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase4.stop();
-    ResourceMark rm(this);
     log_debug(os, thread, timer)("name='%s'"
                                  ", exit-phase1=" JLONG_FORMAT
                                  ", exit-phase2=" JLONG_FORMAT
                                  ", exit-phase3=" JLONG_FORMAT
                                  ", exit-phase4=" JLONG_FORMAT,
-                                 get_thread_name(),
+                                 thread_name,
                                  _timer_exit_phase1.milliseconds(),
                                  _timer_exit_phase2.milliseconds(),
                                  _timer_exit_phase3.milliseconds(),
                                  _timer_exit_phase4.milliseconds());
+    os::free(thread_name);
   }
 }
 

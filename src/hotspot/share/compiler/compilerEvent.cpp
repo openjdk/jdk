@@ -25,6 +25,7 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "jfr/jfr.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "utilities/growableArray.hpp"

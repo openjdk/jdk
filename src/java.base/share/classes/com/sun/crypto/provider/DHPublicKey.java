@@ -71,7 +71,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
 
     // Note: this OID is used by DHPrivateKey as well.
     static ObjectIdentifier DH_OID =
-            ObjectIdentifier.of("1.2.840.113549.1.3.1");
+            ObjectIdentifier.of(KnownOIDs.DiffieHellman);
 
     /**
      * Make a DH public key out of a public value <code>y</code>, a prime

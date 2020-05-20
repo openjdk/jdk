@@ -66,6 +66,7 @@ public class ToolOptions {
     static final String DOCLET = "-doclet";
     static final String DOCLET_PATH = "-docletpath";
     static final String DUMP_ON_ERROR = "--dump-on-error";
+    static final String AT = "@";
     static final String J = "-J";
     static final String LOCALE = "-locale";
 
@@ -587,6 +588,17 @@ public class ToolOptions {
                 }
             },
 
+            // This option exists so that it is documented in the command-line help.
+            // It is actually implemented by expanding argv early on during execution,
+            // and can only be used when using the command-line and related interfaces
+            // (i.e. not the javax.tools API).
+            new ToolOption(AT, STANDARD, true) {
+                @Override
+                public void process() {
+                    throw new AssertionError("the @ option is handled separately");
+                }
+            },
+
             new ToolOption("--version", STANDARD) {
                 @Override
                 public void process() throws OptionException {
@@ -648,6 +660,7 @@ public class ToolOptions {
             return "main.opt."
                     + optionName
                         .replaceAll("^-*", "")              // remove leading '-'
+                        .replaceAll("^@", "at")             // handle '@'
                         .replaceAll("[^A-Za-z0-9]+$", "")   // remove trailing non-alphanumeric
                         .replaceAll("[^A-Za-z0-9]", ".")    // replace internal non-alphanumeric
                     + suffix;

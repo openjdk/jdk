@@ -8959,11 +8959,12 @@ instruct ShouldNotReachHere( )
   match(Halt);
   ins_cost(CALL_COST);
 
-  size(4);
   // Use the following format syntax
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
-    __ udf(0xdead);
+    if (is_reachable()) {
+      __ udf(0xdead);
+    }
   %}
   ins_pipe(tail_call);
 %}

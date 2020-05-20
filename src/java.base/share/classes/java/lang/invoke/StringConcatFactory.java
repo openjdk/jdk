@@ -27,11 +27,13 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
@@ -129,13 +131,10 @@ public final class StringConcatFactory {
     /**
      * Concatenation strategy to use. See {@link Strategy} for possible options.
      * This option is controllable with -Djava.lang.invoke.stringConcat JDK option.
+     *
+     * Defaults to MH_INLINE_SIZED_EXACT if not set.
      */
-    private static Strategy STRATEGY;
-
-    /**
-     * Default strategy to use for concatenation.
-     */
-    private static final Strategy DEFAULT_STRATEGY = Strategy.MH_INLINE_SIZED_EXACT;
+    private static final Strategy STRATEGY;
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -182,42 +181,18 @@ public final class StringConcatFactory {
      */
     private static final boolean DEBUG;
 
-    /**
-     * Enables caching of strategy stubs. This may improve the linkage time by reusing the generated
-     * code, at the expense of contaminating the profiles.
-     */
-    private static final boolean CACHE_ENABLE;
-
-    private static final ConcurrentMap<Key, MethodHandle> CACHE;
-
-    /**
-     * Dump generated classes to disk, for debugging purposes.
-     */
-    private static final ProxyClassesDumper DUMPER;
-
     static {
-        // In case we need to double-back onto the StringConcatFactory during this
-        // static initialization, make sure we have the reasonable defaults to complete
-        // the static initialization properly. After that, actual users would use
-        // the proper values we have read from the properties.
-        STRATEGY = DEFAULT_STRATEGY;
-        // CACHE_ENABLE = false; // implied
-        // CACHE = null;         // implied
-        // DEBUG = false;        // implied
-        // DUMPER = null;        // implied
-
         final String strategy =
                 VM.getSavedProperty("java.lang.invoke.stringConcat");
-        CACHE_ENABLE = Boolean.parseBoolean(
-                VM.getSavedProperty("java.lang.invoke.stringConcat.cache"));
+        STRATEGY = (strategy == null) ? null : Strategy.valueOf(strategy);
+
+        if (STRATEGY == null || STRATEGY == Strategy.MH_INLINE_SIZED_EXACT) {
+            // Force initialization of default strategy:
+            Unsafe.getUnsafe().ensureClassInitialized(MethodHandleInlineCopyStrategy.class);
+        }
+
         DEBUG = Boolean.parseBoolean(
                 VM.getSavedProperty("java.lang.invoke.stringConcat.debug"));
-        final String dumpPath =
-                VM.getSavedProperty("java.lang.invoke.stringConcat.dumpClasses");
-
-        STRATEGY = (strategy == null) ? DEFAULT_STRATEGY : Strategy.valueOf(strategy);
-        CACHE = CACHE_ENABLE ? new ConcurrentHashMap<>() : null;
-        DUMPER = (dumpPath == null) ? null : ProxyClassesDumper.getInstance(dumpPath);
     }
 
     /**
@@ -260,7 +235,7 @@ public final class StringConcatFactory {
     }
 
     /**
-     * Parses the recipe string, and produces the traversable collection of
+     * Parses the recipe string, and produces a traversable collection of
      * {@link java.lang.invoke.StringConcatFactory.RecipeElement}-s for generator
      * strategies. Notably, this class parses out the constants from the recipe
      * and from other static arguments.
@@ -668,21 +643,9 @@ public final class StringConcatFactory {
                     MAX_INDY_CONCAT_ARG_SLOTS);
         }
 
-        String className = getClassName(lookup.lookupClass());
         MethodType mt = adaptType(concatType);
         Recipe rec = new Recipe(recipe, constants);
-
-        MethodHandle mh;
-        if (CACHE_ENABLE) {
-            Key key = new Key(className, mt, rec);
-            mh = CACHE.get(key);
-            if (mh == null) {
-                mh = generate(lookup, className, mt, rec);
-                CACHE.put(key, mh);
-            }
-        } else {
-            mh = generate(lookup, className, mt, rec);
-        }
+        MethodHandle mh = generate(lookup, mt, rec);
         return new ConstantCallSite(mh.asType(concatType));
     }
 
@@ -714,46 +677,18 @@ public final class StringConcatFactory {
                 : args;
     }
 
-    private static String getClassName(Class<?> hostClass) throws StringConcatException {
-        /*
-          The generated class is in the same package as the host class as
-          it's the implementation of the string concatenation for the host class.
-
-          When cache is enabled, we want to cache as much as we can.
-         */
-
-        switch (STRATEGY) {
-            case BC_SB:
-            case BC_SB_SIZED:
-            case BC_SB_SIZED_EXACT: {
-                if (CACHE_ENABLE) {
-                    String pkgName = hostClass.getPackageName();
-                    return (!pkgName.isEmpty() ? pkgName.replace('.', '/') + "/" : "") + "Stubs$$StringConcat";
-                } else {
-                    String name = hostClass.isHidden() ? hostClass.getName().replace('/', '_')
-                                                       : hostClass.getName();
-                    return name.replace('.', '/') + "$$StringConcat";
-                }
-            }
-            case MH_SB_SIZED:
-            case MH_SB_SIZED_EXACT:
-            case MH_INLINE_SIZED_EXACT:
-                // MethodHandle strategies do not need a class name.
-                return "";
-            default:
-                throw new StringConcatException("Concatenation strategy " + STRATEGY + " is not implemented");
-        }
-    }
-
-    private static MethodHandle generate(Lookup lookup, String className, MethodType mt, Recipe recipe) throws StringConcatException {
+    private static MethodHandle generate(Lookup lookup, MethodType mt, Recipe recipe) throws StringConcatException {
         try {
+            if (STRATEGY == null) {
+                return MethodHandleInlineCopyStrategy.generate(mt, recipe);
+            }
             switch (STRATEGY) {
                 case BC_SB:
-                    return BytecodeStringBuilderStrategy.generate(lookup, className, mt, recipe, Mode.DEFAULT);
+                    return BytecodeStringBuilderStrategy.generate(lookup, mt, recipe, Mode.DEFAULT);
                 case BC_SB_SIZED:
-                    return BytecodeStringBuilderStrategy.generate(lookup, className, mt, recipe, Mode.SIZED);
+                    return BytecodeStringBuilderStrategy.generate(lookup, mt, recipe, Mode.SIZED);
                 case BC_SB_SIZED_EXACT:
-                    return BytecodeStringBuilderStrategy.generate(lookup, className, mt, recipe, Mode.SIZED_EXACT);
+                    return BytecodeStringBuilderStrategy.generate(lookup, mt, recipe, Mode.SIZED_EXACT);
                 case MH_SB_SIZED:
                     return MethodHandleStringBuilderStrategy.generate(mt, recipe, Mode.SIZED);
                 case MH_SB_SIZED_EXACT:
@@ -836,11 +771,45 @@ public final class StringConcatFactory {
         static final int CLASSFILE_VERSION = 52;
         static final String METHOD_NAME = "concat";
 
+        private static final ConcurrentMap<Key, MethodHandle> CACHE;
+
+        /**
+         * Enables caching of strategy stubs. This may improve the linkage time by reusing the generated
+         * code, at the expense of contaminating the profiles.
+         */
+        private static final boolean CACHE_ENABLE;
+
+        /**
+         * Dump generated classes to disk, for debugging purposes.
+         */
+        private static final ProxyClassesDumper DUMPER;
+
+        static {
+            CACHE_ENABLE = Boolean.parseBoolean(
+                    VM.getSavedProperty("java.lang.invoke.stringConcat.cache"));
+            CACHE = CACHE_ENABLE ? new ConcurrentHashMap<>() : null;
+
+            final String dumpPath =
+                    VM.getSavedProperty("java.lang.invoke.stringConcat.dumpClasses");
+
+            DUMPER = (dumpPath == null) ? null : ProxyClassesDumper.getInstance(dumpPath);
+        }
+
         private BytecodeStringBuilderStrategy() {
             // no instantiation
         }
 
-        private static MethodHandle generate(Lookup lookup, String className, MethodType args, Recipe recipe, Mode mode) throws Exception {
+        private static MethodHandle generate(Lookup lookup, MethodType args, Recipe recipe, Mode mode) throws Exception {
+            String className = getClassName(lookup.lookupClass());
+            Key key = null;
+            if (CACHE_ENABLE) {
+                key = new Key(className, args, recipe);
+                MethodHandle mh = CACHE.get(key);
+                if (mh != null) {
+                    return mh;
+                }
+            }
+
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
 
             cw.visit(CLASSFILE_VERSION,
@@ -1130,10 +1099,32 @@ public final class StringConcatFactory {
             try {
                 Class<?> innerClass = lookup.defineHiddenClass(classBytes, true, STRONG).lookupClass();
                 dumpIfEnabled(className, classBytes);
-                return lookup.findStatic(innerClass, METHOD_NAME, args);
+                MethodHandle mh = lookup.findStatic(innerClass, METHOD_NAME, args);
+                if (CACHE_ENABLE) {
+                    CACHE.put(key, mh);
+                }
+                return mh;
             } catch (Exception e) {
                 dumpIfEnabled(className + "$$FAILED", classBytes);
                 throw new StringConcatException("Exception while spinning the class", e);
+            }
+        }
+
+        /**
+         * The generated class is in the same package as the host class as
+         * it's the implementation of the string concatenation for the host
+         * class.
+         *
+         * When cache is enabled, we want to cache as much as we can.
+         */
+        private static String getClassName(Class<?> hostClass) {
+            if (CACHE_ENABLE) {
+                String pkgName = hostClass.getPackageName();
+                return (!pkgName.isEmpty() ? pkgName.replace('.', '/') + "/" : "") + "Stubs$$StringConcat";
+            } else {
+                String name = hostClass.isHidden() ? hostClass.getName().replace('/', '_')
+                        : hostClass.getName();
+                return name.replace('.', '/') + "$$StringConcat";
             }
         }
 
@@ -1515,12 +1506,12 @@ public final class StringConcatFactory {
                     recipe.getElements().get(0).getTag() == TAG_ARG &&
                     recipe.getElements().get(1).getTag() == TAG_ARG) {
 
-                    return SIMPLE;
+                    return simpleConcat();
 
                 } else if (mt.parameterCount() == 1 &&
                            !mt.parameterType(0).isPrimitive()) {
                     // One Object argument, one constant
-                    MethodHandle mh = SIMPLE;
+                    MethodHandle mh = simpleConcat();
 
                     if (recipe.getElements().get(0).getTag() == TAG_CONST &&
                         recipe.getElements().get(1).getTag() == TAG_ARG) {
@@ -1562,7 +1553,7 @@ public final class StringConcatFactory {
             // Drop all remaining parameter types, leave only helper arguments:
             MethodHandle mh;
 
-            mh = MethodHandles.dropArguments(NEW_STRING, 2, ptypes);
+            mh = MethodHandles.dropArguments(newString(), 2, ptypes);
 
             long initialLengthCoder = INITIAL_CODER;
 
@@ -1633,7 +1624,7 @@ public final class StringConcatFactory {
             }
 
             // Fold in byte[] instantiation at argument 0
-            mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, NEW_ARRAY,
+            mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArray(),
                     1 // index
             );
 
@@ -1707,7 +1698,7 @@ public final class StringConcatFactory {
         private static MethodHandle prepender(String prefix, Class<?> cl, String suffix) {
             return MethodHandles.insertArguments(
                     MethodHandles.insertArguments(
-                        PREPENDERS.computeIfAbsent(cl, PREPEND),2, prefix), 3, suffix);
+                        PREPENDERS.computeIfAbsent(cl, PREPEND), 2, prefix), 3, suffix);
         }
 
         private static MethodHandle mixer(Class<?> cl) {
@@ -1732,27 +1723,41 @@ public final class StringConcatFactory {
             }
         };
 
-        private static final MethodHandle SIMPLE;
-        private static final MethodHandle NEW_STRING;
-        private static final MethodHandle NEW_ARRAY;
+        private @Stable static MethodHandle SIMPLE_CONCAT;
+        private static MethodHandle simpleConcat() {
+            if (SIMPLE_CONCAT == null) {
+                SIMPLE_CONCAT = JLA.stringConcatHelper("simpleConcat", methodType(String.class, Object.class, Object.class));
+            }
+            return SIMPLE_CONCAT;
+        }
+
+        private @Stable static MethodHandle NEW_STRING;
+        private static MethodHandle newString() {
+            MethodHandle mh = NEW_STRING;
+            if (mh == null) {
+                NEW_STRING = mh =
+                    JLA.stringConcatHelper("newString", methodType(String.class, byte[].class, long.class));
+            }
+            return mh;
+        }
+        private @Stable static MethodHandle NEW_ARRAY;
+        private static MethodHandle newArray() {
+            MethodHandle mh = NEW_ARRAY;
+            if (mh == null) {
+                NEW_ARRAY = mh =
+                    JLA.stringConcatHelper("newArray", methodType(byte[].class, long.class));
+            }
+            return mh;
+        }
+
         private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;
         private static final ConcurrentMap<Class<?>, MethodHandle> MIXERS;
         private static final long INITIAL_CODER;
 
         static {
-            try {
-                MethodHandle initCoder = JLA.stringConcatHelper("initialCoder", methodType(long.class));
-                INITIAL_CODER = (long) initCoder.invoke();
-            } catch (Throwable e) {
-                throw new AssertionError(e);
-            }
-
+            INITIAL_CODER = JLA.stringConcatInitialCoder();
             PREPENDERS = new ConcurrentHashMap<>();
             MIXERS = new ConcurrentHashMap<>();
-
-            SIMPLE     = JLA.stringConcatHelper("simpleConcat", methodType(String.class, Object.class, Object.class));
-            NEW_STRING = JLA.stringConcatHelper("newString", methodType(String.class, byte[].class, long.class));
-            NEW_ARRAY  = JLA.stringConcatHelper( "newArray", methodType(byte[].class, long.class));
         }
     }
 

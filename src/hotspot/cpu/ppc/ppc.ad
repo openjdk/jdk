@@ -13830,6 +13830,7 @@ instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
 // Load Integer reversed byte order
 instruct loadI_reversed(iRegIdst dst, indirect mem) %{
   match(Set dst (ReverseBytesI (LoadI mem)));
+  predicate(n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1)));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -13839,10 +13840,23 @@ instruct loadI_reversed(iRegIdst dst, indirect mem) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct loadI_reversed_acquire(iRegIdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesI (LoadI mem)));
+  ins_cost(2 * MEMORY_REF_COST);
+
+  size(12);
+  ins_encode %{
+    __ lwbrx($dst$$Register, $mem$$Register);
+    __ twi_0($dst$$Register);
+    __ isync();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Load Long - aligned and reversed
 instruct loadL_reversed(iRegLdst dst, indirect mem) %{
   match(Set dst (ReverseBytesL (LoadL mem)));
-  predicate(VM_Version::has_ldbrx());
+  predicate(VM_Version::has_ldbrx() && (n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1))));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -13852,9 +13866,24 @@ instruct loadL_reversed(iRegLdst dst, indirect mem) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct loadL_reversed_acquire(iRegLdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesL (LoadL mem)));
+  predicate(VM_Version::has_ldbrx());
+  ins_cost(2 * MEMORY_REF_COST);
+
+  size(12);
+  ins_encode %{
+    __ ldbrx($dst$$Register, $mem$$Register);
+    __ twi_0($dst$$Register);
+    __ isync();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Load unsigned short / char reversed byte order
 instruct loadUS_reversed(iRegIdst dst, indirect mem) %{
   match(Set dst (ReverseBytesUS (LoadUS mem)));
+  predicate(n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1)));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -13864,15 +13893,43 @@ instruct loadUS_reversed(iRegIdst dst, indirect mem) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct loadUS_reversed_acquire(iRegIdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesUS (LoadUS mem)));
+  ins_cost(2 * MEMORY_REF_COST);
+
+  size(12);
+  ins_encode %{
+    __ lhbrx($dst$$Register, $mem$$Register);
+    __ twi_0($dst$$Register);
+    __ isync();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Load short reversed byte order
 instruct loadS_reversed(iRegIdst dst, indirect mem) %{
   match(Set dst (ReverseBytesS (LoadS mem)));
+  predicate(n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1)));
   ins_cost(MEMORY_REF_COST + DEFAULT_COST);
 
   size(8);
   ins_encode %{
     __ lhbrx($dst$$Register, $mem$$Register);
     __ extsh($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct loadS_reversed_acquire(iRegIdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesS (LoadS mem)));
+  ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
+
+  size(16);
+  ins_encode %{
+    __ lhbrx($dst$$Register, $mem$$Register);
+    __ twi_0($dst$$Register);
+    __ extsh($dst$$Register, $dst$$Register);
+    __ isync();
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -15136,10 +15193,11 @@ instruct ShouldNotReachHere() %{
   ins_cost(CALL_COST);
 
   format %{ "ShouldNotReachHere" %}
-  size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_tdi);
-    __ trap_should_not_reach_here();
+    if (is_reachable()) {
+      // TODO: PPC port $archOpcode(ppc64Opcode_tdi);
+      __ trap_should_not_reach_here();
+    }
   %}
   ins_pipe(pipe_class_default);
 %}

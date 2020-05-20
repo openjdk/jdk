@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ class NativeGSSContext implements GSSContextSpi {
                 SunNativeProvider.debug("Precomputed mechToken length: " +
                                          mechTokenLen);
                 GSSHeader gssHeader = new GSSHeader
-                    (new ObjectIdentifier(cStub.getMech().toString()),
+                    (ObjectIdentifier.of(cStub.getMech().toString()),
                      mechTokenLen);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(600);
 

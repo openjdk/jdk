@@ -27,6 +27,7 @@
  * @summary Check that setReceiveBufferSize and getReceiveBufferSize work as expected
  * @run testng SetGetReceiveBufferSize
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SetGetReceiveBufferSize
+ * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SetGetReceiveBufferSize
  */
 
 import org.testng.annotations.DataProvider;

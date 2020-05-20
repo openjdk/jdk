@@ -30,7 +30,7 @@ different JDK releases can load and run associated classes.
 jtreg [-options] \
     [-Dtest.debug=<true|false>] \
     [-Dtest.jdk.list.file=</path/to/jdkListFile>] \
-    $JDK_WORKSPACE/test/jdk/javax/net/ssl/compatibility/Compatibility.java
+    $JDK_WORKSPACE/test/jdk/javax/net/ssl/compatibility/<XXX.java>
 
 Besides the common jtreg options, like -jdk, this test introduces some more
 properties:
@@ -54,7 +54,7 @@ $ cat /path/to/jdkList
 $ jtreg -jdk:/path/to/latest/jdk \
     -Ddebug=true \
     -Dtest.jdk.list.file=/path/to/jdkList \
-    $JDK_WS/jdk/test/javax/net/ssl/compatibility/Compatibility.java
+    $JDK_WS/jdk/test/javax/net/ssl/compatibility/<XXX.java>
 The above example uses a file "/path/to/jdkList" to contain the paths of local
 different JDK builds through 8 to 10. The execution uses each of JDK builds as
 server and client respectively. And it enables SSL debug flag, and tests the

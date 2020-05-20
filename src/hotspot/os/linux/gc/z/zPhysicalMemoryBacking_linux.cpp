@@ -33,6 +33,7 @@
 #include "logging/log.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -390,7 +391,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_ftruncate(size_t size) const {
   return 0;
 }
 
-ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap(size_t offset, size_t length, bool touch) const {
+ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_hugetlbfs(size_t offset, size_t length, bool touch) const {
   // On hugetlbfs, mapping a file segment will fail immediately, without
   // the need to touch the mapped pages first, if there aren't enough huge
   // pages available to back the mapping.
@@ -410,7 +411,8 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap(size_t offset, size_t lengt
   }
 
   // Unmap again. From now on, the huge pages that were mapped are allocated
-  // to this file. There's no risk in getting SIGBUS when touching them.
+  // to this file. There's no risk of getting a SIGBUS when mapping and
+  // touching these pages again.
   if (munmap(addr, length) == -1) {
     // Failed
     return errno;
@@ -418,6 +420,53 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap(size_t offset, size_t lengt
 
   // Success
   return 0;
+}
+
+static bool safe_touch_mapping(void* addr, size_t length, size_t page_size) {
+  char* const start = (char*)addr;
+  char* const end = start + length;
+
+  // Touching a mapping that can't be backed by memory will generate a
+  // SIGBUS. By using SafeFetch32 any SIGBUS will be safely caught and
+  // handled. On tmpfs, doing a fetch (rather than a store) is enough
+  // to cause backing pages to be allocated (there's no zero-page to
+  // worry about).
+  for (char *p = start; p < end; p += page_size) {
+    if (SafeFetch32((int*)p, -1) == -1) {
+      // Failed
+      return false;
+    }
+  }
+
+  // Success
+  return true;
+}
+
+ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_tmpfs(size_t offset, size_t length) const {
+  // On tmpfs, we need to touch the mapped pages to figure out
+  // if there are enough pages available to back the mapping.
+  void* const addr = mmap(0, length, PROT_READ|PROT_WRITE, MAP_SHARED, _fd, offset);
+  if (addr == MAP_FAILED) {
+    // Failed
+    return errno;
+  }
+
+  // Advise mapping to use transparent huge pages
+  os::realign_memory((char*)addr, length, os::large_page_size());
+
+  // Touch the mapping (safely) to make sure it's backed by memory
+  const bool backed = safe_touch_mapping(addr, length, _block_size);
+
+  // Unmap again. If successfully touched, the backing memory will
+  // be allocated to this file. There's no risk of getting a SIGBUS
+  // when mapping and touching these pages again.
+  if (munmap(addr, length) == -1) {
+    // Failed
+    return errno;
+  }
+
+  // Success
+  return backed ? 0 : ENOMEM;
 }
 
 ZErrno ZPhysicalMemoryBacking::fallocate_compat_pwrite(size_t offset, size_t length) const {
@@ -438,7 +487,8 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_pwrite(size_t offset, size_t len
 ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole_compat(size_t offset, size_t length) {
   // fallocate(2) is only supported by tmpfs since Linux 3.5, and by hugetlbfs
   // since Linux 4.3. When fallocate(2) is not supported we emulate it using
-  // ftruncate/pwrite (for tmpfs) or ftruncate/mmap/munmap (for hugetlbfs).
+  // mmap/munmap (for hugetlbfs and tmpfs with transparent huge pages) or pwrite
+  // (for tmpfs without transparent huge pages and other filesystem types).
 
   const size_t end = offset + length;
   if (end > _size) {
@@ -451,8 +501,12 @@ ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole_compat(size_t offset, size_t 
   }
 
   // Allocate backing memory
-  const ZErrno err = is_hugetlbfs() ? fallocate_compat_mmap(offset, length, false /* touch */)
-                                    : fallocate_compat_pwrite(offset, length);
+  const ZErrno err = ZLargePages::is_explicit()
+                     ? fallocate_compat_mmap_hugetlbfs(offset, length, false /* touch */)
+                     : (ZLargePages::is_transparent()
+                        ? fallocate_compat_mmap_tmpfs(offset, length)
+                        : fallocate_compat_pwrite(offset, length));
+
   if (err) {
     if (end > _size) {
       // Restore file size
@@ -495,7 +549,9 @@ ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole(size_t offset, size_t length)
   // Note that allocating huge pages this way will only reserve them, and not
   // associate them with segments of the file. We must guarantee that we at
   // some point touch these segments, otherwise we can not punch hole in them.
-  if (z_fallocate_supported && !is_hugetlbfs()) {
+  // Also note that we need to use compat mode when using transparent huge pages,
+  // since we need to use madvise(2) on the mapping before the page is allocated.
+  if (z_fallocate_supported && !ZLargePages::is_enabled()) {
      const ZErrno err = fallocate_fill_hole_syscall(offset, length);
      if (!err) {
        // Success
@@ -516,12 +572,12 @@ ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole(size_t offset, size_t length)
 }
 
 ZErrno ZPhysicalMemoryBacking::fallocate_punch_hole(size_t offset, size_t length) {
-  if (is_hugetlbfs()) {
+  if (ZLargePages::is_explicit()) {
     // We can only punch hole in pages that have been touched. Non-touched
     // pages are only reserved, and not associated with any specific file
     // segment. We don't know which pages have been previously touched, so
     // we always touch them here to guarantee that we can punch hole.
-    const ZErrno err = fallocate_compat_mmap(offset, length, true /* touch */);
+    const ZErrno err = fallocate_compat_mmap_hugetlbfs(offset, length, true /* touch */);
     if (err) {
       // Failed
       return err;
@@ -582,7 +638,7 @@ bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
 retry:
   const ZErrno err = fallocate(false /* punch_hole */, offset, length);
   if (err) {
-    if (err == ENOSPC && !is_init_completed() && is_hugetlbfs() && z_fallocate_hugetlbfs_attempts-- > 0) {
+    if (err == ENOSPC && !is_init_completed() && ZLargePages::is_explicit() && z_fallocate_hugetlbfs_attempts-- > 0) {
       // If we fail to allocate during initialization, due to lack of space on
       // the hugetlbfs filesystem, then we wait and retry a few times before
       // giving up. Otherwise there is a risk that running JVMs back-to-back

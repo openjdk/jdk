@@ -2113,7 +2113,8 @@ void GraphKit::uncommon_trap(int trap_request,
   // The debug info is the only real input to this call.
 
   // Halt-and-catch fire here.  The above call should never return!
-  HaltNode* halt = new HaltNode(control(), frameptr(), "uncommon trap returned which should never happen");
+  HaltNode* halt = new HaltNode(control(), frameptr(), "uncommon trap returned which should never happen"
+                                                       PRODUCT_ONLY(COMMA /*reachable*/false));
   _gvn.set_type_bottom(halt);
   root()->add_req(halt);
 

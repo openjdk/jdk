@@ -83,14 +83,6 @@ public class CompressedClassSpaceSize {
               .shouldHaveExitValue(0);
 
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:-UseCompressedOops",
-                                                   "-XX:CompressedClassSpaceSize=1m",
-                                                   "-version");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used")
-              .shouldHaveExitValue(0);
-
-
         pb = ProcessTools.createJavaProcessBuilder("-XX:-UseCompressedClassPointers",
                                                    "-XX:CompressedClassSpaceSize=1m",
                                                    "-version");

@@ -37,6 +37,7 @@ import java.io.IOException;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.SA.SATestUtils;
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -45,6 +46,7 @@ public class DebugdConnectTest {
 
     private static OutputAnalyzer runJHSDB(String command, String id) throws IOException, InterruptedException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        jhsdbLauncher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
         jhsdbLauncher.addToolArg(command);
         jhsdbLauncher.addToolArg("--connect");
         if (id != null) {
@@ -68,7 +70,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jstack", id);
 
         out.shouldContain("LingeredApp");
-        out.stderrShouldBeEmpty();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -76,7 +78,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jmap", id);
 
         out.shouldContain("JVM version is");
-        out.stderrShouldBeEmpty();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -84,7 +86,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jinfo", id);
 
         out.shouldContain("Java System Properties:");
-        out.stderrShouldBeEmpty();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -92,7 +94,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jsnap", id);
 
         out.shouldContain("java.vm.name=");
-        out.stderrShouldBeEmpty();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -128,5 +130,4 @@ public class DebugdConnectTest {
         }
 
     }
-
 }

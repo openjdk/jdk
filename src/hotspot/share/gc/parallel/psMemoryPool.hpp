@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,9 @@ public:
   size_t used_in_bytes()                    { return space()->used_in_bytes(); }
   size_t max_size() const {
     // Eden's max_size = max_size of Young Gen - the current committed size of survivor spaces
-    return _young_gen->max_size() - _young_gen->from_space()->capacity_in_bytes() - _young_gen->to_space()->capacity_in_bytes();
+    return _young_gen->max_gen_size() -
+           _young_gen->from_space()->capacity_in_bytes() -
+           _young_gen->to_space()->capacity_in_bytes();
   }
 };
 

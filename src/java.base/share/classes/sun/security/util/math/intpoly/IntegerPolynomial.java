@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,10 +157,32 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
     public SmallValue getSmallValue(int value) {
         int maxMag = 1 << (bitsPerLimb - 1);
         if (Math.abs(value) >= maxMag) {
-            throw new IllegalArgumentException(
-                "max magnitude is " + maxMag);
+            throw new IllegalArgumentException("max magnitude is " + maxMag);
         }
         return new Limb(value);
+    }
+
+    protected abstract void reduceIn(long[] c, long v, int i);
+
+    private void reduceHigh(long[] limbs) {
+
+        // conservatively calculate how many reduce operations can be done
+        // before a carry is needed
+        int extraBits = 63 - 2 * bitsPerLimb;
+        int allowedAdds = 1 << extraBits;
+        int carryPeriod = allowedAdds / numLimbs;
+        int reduceCount = 0;
+        for (int i = limbs.length - 1; i >= numLimbs; i--) {
+            reduceIn(limbs, limbs[i], i);
+            limbs[i] = 0;
+
+            reduceCount++;
+            if (reduceCount % carryPeriod == 0) {
+                carry(limbs, 0, i);
+                reduceIn(limbs, limbs[i], i);
+                limbs[i] = 0;
+            }
+        }
     }
 
     /**
@@ -179,10 +201,12 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         if (requiredLimbs > numLimbs) {
             long[] temp = new long[requiredLimbs];
             encodeSmall(buf, length, highByte, temp);
-            // encode does a full carry/reduce
+            reduceHigh(temp);
             System.arraycopy(temp, 0, result, 0, result.length);
+            reduce(result);
         } else {
             encodeSmall(buf, length, highByte, result);
+            postEncodeCarry(result);
         }
     }
 
@@ -226,8 +250,6 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
             result[limbIndex++] = curLimbValue;
         }
         Arrays.fill(result, limbIndex, result.length, 0);
-
-        postEncodeCarry(result);
     }
 
     protected void encode(byte[] v, int offset, int length, byte highByte,

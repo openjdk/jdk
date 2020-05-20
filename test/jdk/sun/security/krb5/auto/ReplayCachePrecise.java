@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8001326
+ * @bug 8001326 8218482
  * @run main/othervm ReplayCachePrecise
  * @summary when there are 2 two AuthTime with the same time but different hash,
  * it's not a replay.
@@ -34,7 +34,6 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Random;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.internal.KerberosTime;
 import sun.security.krb5.internal.ReplayCache;
@@ -43,15 +42,16 @@ import sun.security.krb5.internal.rcache.AuthTimeWithHash;
 public class ReplayCachePrecise {
     static final String client = "dummy@REALM";
     static final String server = "server/localhost@REALM";
-    static final Random rand = new Random();
 
     public static void main(String[] args) throws Exception {
 
-        AuthTimeWithHash a1 = new AuthTimeWithHash(client, server, time(0), 0,
+        int time = (int)(System.currentTimeMillis()/1000);
+
+        AuthTimeWithHash a1 = new AuthTimeWithHash(client, server, time, 0,
                 "HASH", "1111111111111111");
-        AuthTimeWithHash a2 = new AuthTimeWithHash(client, server, time(0), 0,
+        AuthTimeWithHash a2 = new AuthTimeWithHash(client, server, time, 0,
                 "HASH", "2222222222222222");
-        KerberosTime now = new KerberosTime(time(0)*1000L);
+        KerberosTime now = new KerberosTime(time*1000L);
 
         // When all new styles, must exact match
         ReplayCache cache = ReplayCache.getInstance("dfl:./c1");
@@ -76,9 +76,5 @@ public class ReplayCachePrecise {
             // Correct
             System.out.println(ke);
         }
-    }
-
-    private static int time(int x) {
-        return (int)(System.currentTimeMillis()/1000) + x;
     }
 }

@@ -32,10 +32,17 @@
  * @run testng/othervm -Djdk.internal.httpclient.debug=true WSHandshakeExceptionTest
  */
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.HttpExchange;
 
+
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -67,6 +74,8 @@ public class WSHandshakeExceptionTest {
     HttpsServer httpsTestServer;       // HTTPS/1.1
     String httpURI;
     String httpsURI;
+    String httpNonUtf8URI;
+    String httpsNonUtf8URI;
 
     static final int ITERATION_COUNT = 10;
     // a shared executor helps reduce the amount of threads created by the test
@@ -75,10 +84,15 @@ public class WSHandshakeExceptionTest {
     @DataProvider(name = "variants")
     public Object[][] variants() {
         return new Object[][]{
-                { httpURI,    false },
-                { httpsURI,   false },
-                { httpURI,    true },
-                { httpsURI,   true },
+                { httpURI,           false },
+                { httpsURI,          false },
+                { httpURI,           true  },
+                { httpsURI,          true  },
+
+                { httpNonUtf8URI,    true  },
+                { httpsNonUtf8URI,   true  },
+                { httpNonUtf8URI,    false },
+                { httpsNonUtf8URI,   false }
         };
     }
 
@@ -110,9 +124,20 @@ public class WSHandshakeExceptionTest {
                 }
                 WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
                 assertNotNull(wse.getResponse());
+                assertNotNull(wse.getResponse().body());
+                assertEquals(wse.getResponse().body().getClass(), String.class);
+                String body = (String)wse.getResponse().body();
                 out.println("Status code is " + wse.getResponse().statusCode());
-                out.println("Response is " + wse.getResponse().body());
-                assertTrue(((String)wse.getResponse().body()).contains("404"));
+                out.println("Response is " + body);
+                if(uri.contains("/nonutf8body")) {
+                    // the invalid sequence 0xFF should have been replaced
+                    // by the replacement character (U+FFFD)
+                    assertTrue(body.equals("\ufffd"));
+                }
+                else {
+                    // default HttpServer 404 body expected
+                    assertTrue(body.contains("404"));
+                }
                 assertEquals(wse.getResponse().statusCode(), 404);
             }
         }
@@ -128,10 +153,14 @@ public class WSHandshakeExceptionTest {
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpURI = "ws://localhost:" + httpTestServer.getAddress().getPort() + "/";
+        httpNonUtf8URI = "ws://localhost:" + httpTestServer.getAddress().getPort() + "/nonutf8body";
+        httpTestServer.createContext("/nonutf8body", new BodyHandler());
 
         httpsTestServer = HttpsServer.create(sa, 0);
         httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         httpsURI = "wss://localhost:" + httpsTestServer.getAddress().getPort() + "/";
+        httpsNonUtf8URI = "wss://localhost:" + httpsTestServer.getAddress().getPort() + "/nonutf8body";
+        httpsTestServer.createContext("/nonutf8body", new BodyHandler());
 
         httpTestServer.start();
         httpsTestServer.start();
@@ -152,5 +181,18 @@ public class WSHandshakeExceptionTest {
             throw new InternalError("Unexpected null cause", x);
         }
         return cause;
+    }
+
+    static class BodyHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange e) throws IOException {
+            try(InputStream is = e.getRequestBody();
+                OutputStream os = e.getResponseBody()) {
+                byte[] invalidUtf8 = {(byte)0xFF}; //Invalid utf-8 byte
+                e.sendResponseHeaders(404, invalidUtf8.length);
+                os.write(invalidUtf8);
+            }
+        }
     }
 }

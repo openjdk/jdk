@@ -80,8 +80,7 @@ public class Utilities {
     public static final String PARAM_DELIMITER = ";";
     public static final String VALUE_DELIMITER = ",";
 
-    public static final CipherSuite[] ALL_CIPHER_SUITES
-            = Utilities.getAllCipherSuites();
+    public static final CipherSuite[] ALL_CIPHER_SUITES = getAllCipherSuites();
 
     /*
      * Gets all supported cipher suites.
@@ -101,8 +100,7 @@ public class Utilities {
                 .map(cipherSuite -> {
                     return CipherSuite.cipherSuite(cipherSuite);})
                 .filter(cipherSuite -> {
-                    return cipherSuite
-                            != CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV;})
+                    return cipherSuite != CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV; })
                 .toArray(CipherSuite[]::new);
 
         return cipherSuites;

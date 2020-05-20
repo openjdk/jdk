@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ JNIEXPORT jlong JNICALL
 Java_java_io_FileInputStream_skip0(JNIEnv *env, jobject this, jlong toSkip) {
     jlong cur = jlong_zero;
     jlong end = jlong_zero;
-    FD fd = GET_FD(this, fis_fd);
+    FD fd = getFD(env, this, fis_fd);
     if (fd == -1) {
         JNU_ThrowIOException (env, "Stream Closed");
         return 0;
@@ -92,7 +92,7 @@ Java_java_io_FileInputStream_skip0(JNIEnv *env, jobject this, jlong toSkip) {
 JNIEXPORT jint JNICALL
 Java_java_io_FileInputStream_available0(JNIEnv *env, jobject this) {
     jlong ret;
-    FD fd = GET_FD(this, fis_fd);
+    FD fd = getFD(env, this, fis_fd);
     if (fd == -1) {
         JNU_ThrowIOException (env, "Stream Closed");
         return 0;

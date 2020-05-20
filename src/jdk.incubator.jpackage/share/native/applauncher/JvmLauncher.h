@@ -46,6 +46,10 @@ public:
         return *this;
     }
 
+    tstring getPath() const {
+        return jvmPath;
+    }
+
     void launch();
 
 private:

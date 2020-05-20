@@ -27,7 +27,9 @@ package tools.javac.combo;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import javax.tools.Diagnostic;
 
@@ -61,6 +63,26 @@ public class CompilationTestCase extends JavacTemplateTestBase {
 
     protected void setCompileOptions(String... options) {
         compileOptions = options.clone();
+    }
+
+    protected void appendCompileOptions(String... additionalOptions) {
+        String[] moreOptions = additionalOptions.clone();
+        String[] newCompileOptions = Arrays.copyOf(compileOptions, compileOptions.length + additionalOptions.length);
+        IntStream.range(0, additionalOptions.length).forEach(i -> {
+            newCompileOptions[newCompileOptions.length - additionalOptions.length + i] = additionalOptions[i];
+        });
+        compileOptions = newCompileOptions;
+    }
+
+    protected void removeLastCompileOptions(int i) {
+        if (i < 0) {
+            throw new AssertionError("unexpected negative value " + i);
+        }
+        if (i >= compileOptions.length) {
+            compileOptions = new String[] {};
+        } else {
+            compileOptions = Arrays.copyOf(compileOptions, compileOptions.length - i);
+        }
     }
 
     protected void setDefaultFilename(String name) {

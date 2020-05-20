@@ -32,6 +32,8 @@
  *        SetLoopbackMode
  *        SetLoopbackModeIPv4
  * @run main/othervm -Djava.net.preferIPv4Stack=true SetLoopbackModeIPv4
+ * @run main/othervm -Djava.net.preferIPv4Stack=true
+ *                   -Djdk.net.usePlainDatagramSocketImpl SetLoopbackModeIPv4
  */
 
 import jdk.test.lib.net.IPSupport;

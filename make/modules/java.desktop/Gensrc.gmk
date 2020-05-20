@@ -76,12 +76,4 @@ $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
     CLASS := ListResourceBundle, \
 ))
 
-GENSRC_JAVA_DESKTOP += $(COMPILE_PROPERTIES)
-
-################################################################################
-
-java.desktop: $(GENSRC_JAVA_DESKTOP)
-
-all: java.desktop
-
-.PHONY: all java.desktop
+TARGETS += $(COMPILE_PROPERTIES)

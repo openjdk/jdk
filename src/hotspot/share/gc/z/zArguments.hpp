@@ -30,8 +30,6 @@ class CollectedHeap;
 
 class ZArguments : public GCArguments {
 private:
-  void initialize_platform();
-
   virtual void initialize_alignments();
 
   virtual void initialize();

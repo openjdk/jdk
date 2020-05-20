@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
         @@VENDOR_URL_VM_BUG@@ => $(VENDOR_URL_VM_BUG), \
 ))
 
-GENSRC_JAVA_BASE += $(BUILD_VERSION_JAVA)
+TARGETS += $(BUILD_VERSION_JAVA)
 
 ################################################################################
 
@@ -88,7 +88,7 @@ $(GENSRC_SOR_FILE): \
     $(TOPDIR)/src/java.base/share/classes/sun/nio/ch/SocketOptionRegistry.java.template
 	$(generate-preproc-src)
 
-GENSRC_JAVA_BASE += $(GENSRC_SOR_FILE)
+TARGETS += $(GENSRC_SOR_FILE)
 
 ################################################################################
 
@@ -100,7 +100,7 @@ ifeq ($(call isTargetOs, windows), false)
       $(TOPDIR)/src/java.base/unix/classes/sun/nio/fs/UnixConstants.java.template
 	$(generate-preproc-src)
 
-  GENSRC_JAVA_BASE += $(GENSRC_UC_FILE)
+  TARGETS += $(GENSRC_UC_FILE)
 
 endif
 
@@ -114,7 +114,7 @@ ifeq ($(call isTargetOs, solaris), true)
       $(TOPDIR)/src/java.base/solaris/classes/sun/nio/fs/SolarisConstants.java.template
 	$(generate-preproc-src)
 
-  GENSRC_JAVA_BASE += $(GENSRC_SC_FILE)
+  TARGETS += $(GENSRC_SC_FILE)
 
 endif
 
@@ -135,5 +135,5 @@ ifneq ($(wildcard $(TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity
         @@JCE_DEFAULT_POLICY@@ => $(JCE_DEFAULT_POLICY), \
   ))
 
-  GENSRC_JAVA_BASE += $(BUILD_JCESECURITY_JAVA)
+  TARGETS += $(BUILD_JCESECURITY_JAVA)
 endif

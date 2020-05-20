@@ -175,6 +175,7 @@ public class SignatureFileVerifier {
      *          Signature File or PKCS7 block file name
      */
     public static boolean isBlockOrSF(String s) {
+        // Note: keep this in sync with j.u.z.ZipFile.Source#isSignatureRelated
         // we currently only support DSA and RSA PKCS7 blocks
         return s.endsWith(".SF")
             || s.endsWith(".DSA")

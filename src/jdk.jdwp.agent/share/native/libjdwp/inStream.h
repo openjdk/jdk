@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ jstring inStream_readStringRef(JNIEnv *env, PacketInputStream *stream);
 jarray inStream_readArrayRef(JNIEnv *env, PacketInputStream *stream);
 
 char *inStream_readString(PacketInputStream *stream);
-jvalue inStream_readValue(struct PacketInputStream *in, jbyte *typeKeyPtr);
+jvalue inStream_readValue(struct PacketInputStream *in);
 
 jdwpError inStream_skipBytes(PacketInputStream *stream, jint count);
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ $(eval $(call SetupCharacterData,CharacterDataLatin1, , -latin1 8))
 $(eval $(call SetupCharacterData,CharacterData00, -string -plane 0, 11 4 1))
 $(eval $(call SetupCharacterData,CharacterData01, -string -plane 1, 11 4 1))
 $(eval $(call SetupCharacterData,CharacterData02, -string -plane 2, 11 4 1))
+$(eval $(call SetupCharacterData,CharacterData03, -string -plane 3, 11 4 1))
 $(eval $(call SetupCharacterData,CharacterData0E, -string -plane 14, 11 4 1))
 
 # Copy two Java files that need no preprocessing.
@@ -63,6 +64,7 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/%.java: $(CHARACTERDATA)/%.java.
 
 GENSRC_CHARACTERDATA += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/CharacterDataUndefined.java \
     $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/CharacterDataPrivateUse.java
-GENSRC_JAVA_BASE += $(GENSRC_CHARACTERDATA)
 
 $(GENSRC_CHARACTERDATA): $(BUILD_TOOLS_JDK)
+
+TARGETS += $(GENSRC_CHARACTERDATA)

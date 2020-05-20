@@ -63,6 +63,7 @@ import sun.security.x509.X500Name;
 /*
  * @test
  * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404
+ *          8242151
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
@@ -134,7 +135,7 @@ public class TimestampCheck {
                     messageImprint.data.getDerValue());
             System.out.println("# AlgorithmId: " + aid);
 
-            ObjectIdentifier policyId = new ObjectIdentifier(defaultPolicyId);
+            ObjectIdentifier policyId = ObjectIdentifier.of(defaultPolicyId);
             BigInteger nonce = null;
             while (value.data.available() > 0) {
                 DerValue v = value.data.getDerValue();
@@ -158,7 +159,7 @@ public class TimestampCheck {
             String alias = path.startsWith("ts") ? path : "ts";
 
             if (path.equals("diffpolicy")) {
-                policyId = new ObjectIdentifier(defaultPolicyId);
+                policyId = ObjectIdentifier.of(defaultPolicyId);
             }
 
             DerOutputStream statusInfo = new DerOutputStream();
@@ -230,7 +231,7 @@ public class TimestampCheck {
                     alias, "changeit".toCharArray())));
             sig.update(tstInfo.toByteArray());
 
-            ContentInfo contentInfo = new ContentInfo(new ObjectIdentifier(
+            ContentInfo contentInfo = new ContentInfo(ObjectIdentifier.of(
                     "1.2.840.113549.1.9.16.1.4"),
                     new DerValue(tstInfo2.toByteArray()));
 
@@ -445,7 +446,7 @@ public class TimestampCheck {
                 verify("sha1tsaalg.jar", "-strict")
                         .shouldHaveExitValue(0)
                         .shouldContain("jar verified, with signer errors")
-                        .shouldContain("SHA-1 digest algorithm is considered a security risk")
+                        .shouldContain("SHA-1 timestamp digest algorithm is considered a security risk")
                         .shouldNotContain("is disabled");
 
                 // Disabled algorithms

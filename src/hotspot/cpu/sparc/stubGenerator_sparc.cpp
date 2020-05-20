@@ -5744,6 +5744,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::Sparc::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
+
+    // Safefetch stubs.
+    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
+                                                       &StubRoutines::_safefetch32_fault_pc,
+                                                       &StubRoutines::_safefetch32_continuation_pc);
+    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
+                                                       &StubRoutines::_safefetchN_fault_pc,
+                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
 
@@ -5766,14 +5774,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // Don't initialize the platform math functions since sparc
     // doesn't have intrinsics for these operations.
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
 
     // generate AES intrinsics code
     if (UseAESIntrinsics) {

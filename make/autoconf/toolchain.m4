@@ -634,7 +634,12 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     #   Microsoft (R) Incremental Linker Version 12.00.31101.0
+    # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
+    # which, in combination with WSLENV, will make the WSL layer complain
+    old_path="$PATH"
+    PATH=
     LINKER_VERSION_STRING=`$LD 2>&1 | $HEAD -n 1 | $TR -d '\r'`
+    PATH="$old_path"
     # Extract version number
     [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
         $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
@@ -732,13 +737,23 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     UTIL_FIXUP_EXECUTABLE(LD)
     # Verify that we indeed succeeded with this trick.
     AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
+
+    # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
+    # which, in combination with WSLENV, will make the WSL layer complain
+    old_path="$PATH"
+    PATH=
+
     "$LD" --version > /dev/null
+
     if test $? -eq 0 ; then
       AC_MSG_RESULT([no])
       AC_MSG_ERROR([This is the Cygwin link tool. Please check your PATH and rerun configure.])
     else
       AC_MSG_RESULT([yes])
     fi
+
+    PATH="$old_path"
+
     LDCXX="$LD"
     # jaotc being a windows program expects the linker to be supplied with exe suffix.
     LD_JAOTC="$LD$EXE_SUFFIX"

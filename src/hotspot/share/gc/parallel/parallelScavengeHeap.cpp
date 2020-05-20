@@ -100,8 +100,8 @@ jint ParallelScavengeHeap::initialize() {
       MaxOldSize,
       "old", 1);
 
-  assert(young_gen()->gen_size_limit() == young_rs.size(),"Consistency check");
-  assert(old_gen()->gen_size_limit() == old_rs.size(), "Consistency check");
+  assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
+  assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
 
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
@@ -207,7 +207,7 @@ bool ParallelScavengeHeap::is_maximal_no_gc() const {
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
   if (UseAdaptiveSizePolicy) {
-    estimated -= _size_policy->max_survivor_size(young_gen()->max_size());
+    estimated -= _size_policy->max_survivor_size(young_gen()->max_gen_size());
   } else {
     estimated -= young_gen()->to_space()->capacity_in_bytes();
   }

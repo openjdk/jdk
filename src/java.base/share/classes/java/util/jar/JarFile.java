@@ -503,11 +503,11 @@ public class JarFile extends ZipFile {
         if (isMultiRelease()) {
             JarEntry je = getVersionedEntry(name, null);
             if (je == null) {
-                je = getEntry0(name);
+                je = (JarEntry)super.getEntry(name);
             }
             return je;
         } else {
-            return getEntry0(name);
+            return super.getEntry(name);
         }
     }
 
@@ -519,7 +519,7 @@ public class JarFile extends ZipFile {
      *         may be thrown if the jar file has been closed
      */
     public Enumeration<JarEntry> entries() {
-        return JUZFA.entries(this, JarFileEntry::new);
+        return JUZFA.entries(this);
     }
 
     /**
@@ -532,7 +532,7 @@ public class JarFile extends ZipFile {
      * @since 1.8
      */
     public Stream<JarEntry> stream() {
-        return JUZFA.stream(this, JarFileEntry::new);
+        return JUZFA.stream(this);
     }
 
     /**
@@ -563,19 +563,11 @@ public class JarFile extends ZipFile {
         return stream();
     }
 
-    /*
-     * Invokes {@ZipFile}'s getEntry to Return a {@code JarFileEntry} for the
-     * given entry name or {@code null} if not found.
+    /**
+     * Creates a ZipEntry suitable for the given ZipFile.
      */
-    private JarFileEntry getEntry0(String name) {
-        // Not using a lambda/method reference here to optimize startup time
-        Function<String, JarEntry> newJarFileEntryFn = new Function<>() {
-            @Override
-            public JarEntry apply(String name) {
-                return new JarFileEntry(name);
-            }
-        };
-        return (JarFileEntry)JUZFA.getEntry(this, name, newJarFileEntryFn);
+    JarEntry entryFor(String name) {
+        return new JarFileEntry(name);
     }
 
     private String getBasename(String name) {
@@ -613,7 +605,8 @@ public class JarFile extends ZipFile {
                     if (version < BASE_VERSION_FEATURE) {
                         break;
                     }
-                    JarFileEntry vje = getEntry0(META_INF_VERSIONS + version + "/" + name);
+                    JarFileEntry vje = (JarFileEntry)super.getEntry(
+                            META_INF_VERSIONS + version + "/" + name);
                     if (vje != null) {
                         return vje.withBasename(name);
                     }
@@ -715,21 +708,14 @@ public class JarFile extends ZipFile {
         }
 
         if (verify) {
-            String[] names = JUZFA.getMetaInfEntryNames(this);
-            if (names != null) {
-                for (String nameLower : names) {
-                    String name = nameLower.toUpperCase(Locale.ENGLISH);
-                    if (name.endsWith(".DSA") ||
-                        name.endsWith(".RSA") ||
-                        name.endsWith(".EC") ||
-                        name.endsWith(".SF")) {
-                        // Assume since we found a signature-related file
-                        // that the jar is signed and that we therefore
-                        // need a JarVerifier and Manifest
-                        getManifest();
-                        return;
-                    }
-                }
+            // Gets the manifest name, but only if there are
+            // signature-related files. If so we can assume
+            // that the jar is signed and that we therefore
+            // need a JarVerifier and Manifest
+            String name = JUZFA.getManifestName(this, true);
+            if (name != null) {
+                getManifest();
+                return;
             }
             // No signature-related files; don't instantiate a
             // verifier
@@ -746,30 +732,24 @@ public class JarFile extends ZipFile {
 
         // Verify "META-INF/" entries...
         try {
-            String[] names = JUZFA.getMetaInfEntryNames(this);
-            if (names != null) {
-                for (String name : names) {
-                    String uname = name.toUpperCase(Locale.ENGLISH);
-                    if (MANIFEST_NAME.equals(uname)
-                            || SignatureFileVerifier.isBlockOrSF(uname)) {
-                        JarEntry e = getJarEntry(name);
-                        if (e == null) {
-                            throw new JarException("corrupted jar file");
-                        }
-                        if (mev == null) {
-                            mev = new ManifestEntryVerifier
-                                (getManifestFromReference());
-                        }
-                        byte[] b = getBytes(e);
-                        if (b != null && b.length > 0) {
-                            jv.beginEntry(e, mev);
-                            jv.update(b.length, b, 0, b.length, mev);
-                            jv.update(-1, null, 0, 0, mev);
-                        }
-                    }
+            List<String> names = JUZFA.getManifestAndSignatureRelatedFiles(this);
+            for (String name : names) {
+                JarEntry e = getJarEntry(name);
+                if (e == null) {
+                    throw new JarException("corrupted jar file");
+                }
+                if (mev == null) {
+                    mev = new ManifestEntryVerifier
+                        (getManifestFromReference());
+                }
+                byte[] b = getBytes(e);
+                if (b != null && b.length > 0) {
+                    jv.beginEntry(e, mev);
+                    jv.update(b.length, b, 0, b.length, mev);
+                    jv.update(-1, null, 0, 0, mev);
                 }
             }
-        } catch (IOException ex) {
+        } catch (IOException | IllegalArgumentException ex) {
             // if we had an error parsing any blocks, just
             // treat the jar file as being unsigned
             jv = null;
@@ -935,22 +915,12 @@ public class JarFile extends ZipFile {
 
     private JarEntry getManEntry() {
         if (manEntry == null) {
-            // First look up manifest entry using standard name
-            JarEntry manEntry = getEntry0(MANIFEST_NAME);
-            if (manEntry == null) {
-                // If not found, then iterate through all the "META-INF/"
-                // entries to find a match.
-                String[] names = JUZFA.getMetaInfEntryNames(this);
-                if (names != null) {
-                    for (String name : names) {
-                        if (MANIFEST_NAME.equals(name.toUpperCase(Locale.ENGLISH))) {
-                            manEntry = getEntry0(name);
-                            break;
-                        }
-                    }
-                }
+            // The manifest entry position is resolved during
+            // initialization
+            String name = JUZFA.getManifestName(this, false);
+            if (name != null) {
+                this.manEntry = (JarEntry)super.getEntry(name);
             }
-            this.manEntry = manEntry;
         }
         return manEntry;
     }
@@ -1116,12 +1086,11 @@ public class JarFile extends ZipFile {
     Enumeration<JarEntry> entries2() {
         ensureInitialization();
         if (jv != null) {
-            return jv.entries2(this, JUZFA.entries(JarFile.this,
-                                                   JarFileEntry::new));
+            return jv.entries2(this, JUZFA.entries(JarFile.this));
         }
 
         // screen out entries which are never signed
-        final var unfilteredEntries = JUZFA.entries(JarFile.this, JarFileEntry::new);
+        final var unfilteredEntries = JUZFA.entries(JarFile.this);
 
         return new Enumeration<>() {
 
@@ -1213,7 +1182,7 @@ public class JarFile extends ZipFile {
         ensureInitialization();
         if (jv != null) {
             if (jv.eagerValidation) {
-                CodeSource cs = null;
+                CodeSource cs;
                 JarEntry je = getJarEntry(name);
                 if (je != null) {
                     cs = jv.getCodeSource(url, this, je);

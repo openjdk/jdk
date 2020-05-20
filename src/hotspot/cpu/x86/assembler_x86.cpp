@@ -8789,7 +8789,8 @@ void Assembler::popa_uncached() { // 64bit
   movq(rdi, Address(rsp, 8 * wordSize));
   movq(rsi, Address(rsp, 9 * wordSize));
   movq(rbp, Address(rsp, 10 * wordSize));
-  // skip rsp
+  // Skip rsp as it is restored automatically to the value
+  // before the corresponding pusha when popa is done.
   movq(rbx, Address(rsp, 12 * wordSize));
   movq(rdx, Address(rsp, 13 * wordSize));
   movq(rcx, Address(rsp, 14 * wordSize));
@@ -8798,22 +8799,24 @@ void Assembler::popa_uncached() { // 64bit
   addq(rsp, 16 * wordSize);
 }
 
+// Does not actually store the value of rsp on the stack.
+// The slot for rsp just contains an arbitrary value.
 void Assembler::pusha() { // 64bit
   emit_copy(code_section(), pusha_code, pusha_len);
 }
 
+// Does not actually store the value of rsp on the stack.
+// The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
-  // we have to store original rsp.  ABI says that 128 bytes
-  // below rsp are local scratch.
-  movq(Address(rsp, -5 * wordSize), rsp);
-
   subq(rsp, 16 * wordSize);
 
   movq(Address(rsp, 15 * wordSize), rax);
   movq(Address(rsp, 14 * wordSize), rcx);
   movq(Address(rsp, 13 * wordSize), rdx);
   movq(Address(rsp, 12 * wordSize), rbx);
-  // skip rsp
+  // Skip rsp as the value is normally not used. There are a few places where
+  // the original value of rsp needs to be known but that can be computed
+  // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
   movq(Address(rsp, 10 * wordSize), rbp);
   movq(Address(rsp, 9 * wordSize), rsi);
   movq(Address(rsp, 8 * wordSize), rdi);

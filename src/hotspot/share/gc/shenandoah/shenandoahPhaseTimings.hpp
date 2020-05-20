@@ -91,9 +91,20 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
-  SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_,         "  CWR: ", f)                      \
+  f(conc_weak_roots_work,                           "  Roots")                         \
+  SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_work_,    "    CWR: ", f)                    \
+  f(conc_weak_roots_rendezvous,                     "  Rendezvous")                    \
   f(conc_cleanup_early,                             "Concurrent Cleanup")              \
-  f(conc_class_unloading,                           "Concurrent Class Unloading")      \
+  f(conc_class_unload,                              "Concurrent Class Unloading")      \
+  f(conc_class_unload_unlink,                       "  Unlink Stale")                  \
+  f(conc_class_unload_unlink_sd,                    "    System Dictionary")           \
+  f(conc_class_unload_unlink_weak_klass,            "    Weak Class Links")            \
+  f(conc_class_unload_unlink_code_roots,            "    Code Roots")                  \
+  f(conc_class_unload_rendezvous,                   "  Rendezvous")                    \
+  f(conc_class_unload_purge,                        "  Purge Unlinked")                \
+  f(conc_class_unload_purge_coderoots,              "    Code Roots")                  \
+  f(conc_class_unload_purge_cldg,                   "    CLDG")                        \
+  f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
@@ -198,7 +209,7 @@ private:
   static double uninitialized() { return -1; }
 
 public:
-  ShenandoahPhaseTimings(uint _max_workers);
+  ShenandoahPhaseTimings(uint max_workers);
 
   void record_phase_time(Phase phase, double time);
 

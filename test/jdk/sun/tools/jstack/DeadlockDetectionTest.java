@@ -50,6 +50,7 @@ public class DeadlockDetectionTest {
 
     private static OutputAnalyzer jstack(String... toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
+        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:+UsePerfData"));
         launcher.addVMArg("-XX:+UsePerfData");
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ namespace SysInfo {
     // Returns handle of the current module (exe or dll).
     // The function assumes this code is statically linked to the module.
     HMODULE getCurrentModuleHandle();
+
+    void setEnvVariable(const tstring& name, const tstring& value);
 }
 
 

@@ -207,16 +207,16 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _alignment = alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
-  _narrow_oop_mode = CompressedOops::mode();
-  _narrow_oop_base = CompressedOops::base();
-  _narrow_oop_shift = CompressedOops::shift();
+  if (HeapShared::is_heap_object_archiving_allowed()) {
+    _narrow_oop_mode = CompressedOops::mode();
+    _narrow_oop_base = CompressedOops::base();
+    _narrow_oop_shift = CompressedOops::shift();
+    _heap_end = CompressedOops::end();
+  }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
   _narrow_klass_shift = CompressedKlassPointers::shift();
-  if (HeapShared::is_heap_object_archiving_allowed()) {
-    _heap_end = CompressedOops::end();
-  }
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -1069,6 +1069,7 @@ bool FileMapInfo::open_for_read() {
   } else {
     _full_path = Arguments::GetSharedDynamicArchivePath();
   }
+  log_info(cds)("trying to map %s", _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {

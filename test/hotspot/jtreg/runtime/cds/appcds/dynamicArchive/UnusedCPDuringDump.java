@@ -29,8 +29,10 @@
  *          defined to the PlatformClassLoader and AppClassLoader.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @build sun.hotspot.WhiteBox
  * @compile ../test-classes/Hello.java
- * @run main/othervm -Dtest.cds.copy.child.stdout=false UnusedCPDuringDump
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Dtest.cds.copy.child.stdout=false -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. UnusedCPDuringDump
  */
 
 import java.io.File;

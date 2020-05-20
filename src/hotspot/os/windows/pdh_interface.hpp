@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class PdhDll: public AllStatic {
   static PDH_STATUS (WINAPI *_PdhRemoveCounter)(HCOUNTER);
   static PDH_STATUS (WINAPI *_PdhLookupPerfNameByIndex)(LPCSTR, DWORD, LPSTR, LPDWORD);
   static PDH_STATUS (WINAPI *_PdhMakeCounterPath)(PPDH_COUNTER_PATH_ELEMENTS, LPTSTR, LPDWORD, DWORD);
+  static PDH_STATUS (WINAPI *_PdhExpandWildCardPath)(LPCSTR, LPCSTR, PZZSTR, LPDWORD, DWORD);
 
  public:
   static PDH_STATUS PdhAddCounter(HQUERY, LPCSTR, DWORD, HCOUNTER*);
@@ -56,6 +57,7 @@ class PdhDll: public AllStatic {
   static PDH_STATUS PdhRemoveCounter(HCOUNTER);
   static PDH_STATUS PdhLookupPerfNameByIndex(LPCSTR, DWORD, LPSTR, LPDWORD);
   static PDH_STATUS PdhMakeCounterPath(PPDH_COUNTER_PATH_ELEMENTS, LPTSTR, LPDWORD, DWORD);
+  static PDH_STATUS PdhExpandWildCardPath(LPCSTR, LPCSTR, PZZSTR, LPDWORD, DWORD);
   static bool       PdhStatusFail(PDH_STATUS pdhStat);
   static bool       PdhAttach();
   static bool       PdhDetach();

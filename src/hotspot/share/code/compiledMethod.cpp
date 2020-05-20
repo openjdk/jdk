@@ -492,17 +492,39 @@ static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address add
     if (clean_all || !nm->is_in_use() || nm->is_unloading() || (nm->method()->code() != nm)) {
       // Inline cache cleaning should only be initiated on CompiledMethods that have been
       // observed to be is_alive(). However, with concurrent code cache unloading, it is
-      // possible that by now, the state has been racingly flipped to unloaded if the nmethod
-      // being cleaned is_unloading(). This is fine, because if that happens, then the inline
+      // possible that by now, the state has become !is_alive. This can happen in two ways:
+      // 1) It can be racingly flipped to unloaded if the nmethod // being cleaned (from the
+      // sweeper) is_unloading(). This is fine, because if that happens, then the inline
       // caches have already been cleaned under the same CompiledICLocker that we now hold during
       // inline cache cleaning, and we will simply walk the inline caches again, and likely not
       // find much of interest to clean. However, this race prevents us from asserting that the
       // nmethod is_alive(). The is_unloading() function is completely monotonic; once set due
       // to an oop dying, it remains set forever until freed. Because of that, all unloaded
       // nmethods are is_unloading(), but notably, an unloaded nmethod may also subsequently
-      // become zombie (when the sweeper converts it to zombie). Therefore, the most precise
-      // sanity check we can check for in this context is to not allow zombies.
-      assert(!from->is_zombie(), "should not clean inline caches on zombies");
+      // become zombie (when the sweeper converts it to zombie).
+      // 2) It can be racingly flipped to zombie if the nmethod being cleaned (by the concurrent
+      // GC) cleans a zombie nmethod that is concurrently made zombie by the sweeper. In this
+      // scenario, the sweeper will first transition the nmethod to zombie, and then when
+      // unregistering from the GC, it will wait until the GC is done. The GC will then clean
+      // the inline caches *with IC stubs*, even though no IC stubs are needed. This is fine,
+      // as long as the IC stubs are guaranteed to be released until the next safepoint, where
+      // IC finalization requires live IC stubs to not be associated with zombie nmethods.
+      // This is guaranteed, because the sweeper does not have a single safepoint check until
+      // after it completes the whole transition function; it will wake up after the GC is
+      // done with concurrent code cache cleaning (which blocks out safepoints using the
+      // suspendible threads set), and then call clear_ic_callsites, which will release the
+      // associated IC stubs, before a subsequent safepoint poll can be reached. This
+      // guarantees that the spuriously created IC stubs are released appropriately before
+      // IC finalization in a safepoint gets to run. Therefore, this race is fine. This is also
+      // valid in a scenario where an inline cache of a zombie nmethod gets a spurious IC stub,
+      // and then when cleaning another inline cache, fails to request an IC stub because we
+      // exhausted the IC stub buffer. In this scenario, the GC will request a safepoint after
+      // yielding the suspendible therad set, effectively unblocking safepoints. Before such
+      // a safepoint can be reached, the sweeper similarly has to wake up, clear the IC stubs,
+      // and reach the next safepoint poll, after the whole transition function has completed.
+      // Due to the various races that can cause an nmethod to first be is_alive() and then
+      // racingly become !is_alive(), it is unfortunately not possible to assert the nmethod
+      // is_alive(), !is_unloaded() or !is_zombie() here.
       if (!ic->set_to_clean(!from->is_unloading())) {
         return false;
       }

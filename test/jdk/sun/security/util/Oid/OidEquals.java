@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8022444
+ * @bug 8022444 8242151
  * @summary Test ObjectIdentifier.equals(Object obj)
  * @modules java.base/sun.security.util
  */
@@ -32,8 +32,8 @@ import sun.security.util.ObjectIdentifier;
 
 public class OidEquals {
     public static void main(String[] args) throws Exception {
-        ObjectIdentifier oid1 = new ObjectIdentifier("1.3.6.1.4.1.42.2.17");
-        ObjectIdentifier oid2 = new ObjectIdentifier("1.2.3.4");
+        ObjectIdentifier oid1 = ObjectIdentifier.of("1.3.6.1.4.1.42.2.17");
+        ObjectIdentifier oid2 = ObjectIdentifier.of("1.2.3.4");
 
         assertEquals(oid1, oid1);
         assertNotEquals(oid1, oid2);

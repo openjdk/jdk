@@ -30,6 +30,27 @@
 ifndef _MAINSUPPORT_GMK
 _MAINSUPPORT_GMK := 1
 
+# Setup make rules for creating a top-level target.
+# Parameter 1 is the name of the rule. This name is used as variable prefix.
+#
+# Remaining parameters are named arguments. These include:
+#   MAKEFILE the makefile to delegate to
+#   TARGET the makefile target
+#   ARGS arguments to the makefile
+#   DEPS the target(s) this new rule depends on
+#
+SetupTarget = $(NamedParamsMacroTemplate)
+define SetupTargetBody
+  $1:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f $$($1_MAKEFILE).gmk $$($1_TARGET) $$($1_ARGS))
+
+  ALL_TARGETS += $1
+
+  ifneq ($(DEPS), none)
+    $1: $$($1_DEPS)
+  endif
+endef
+
 define CleanDocs
 	@$(PRINTF) "Cleaning docs ..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
@@ -127,23 +148,12 @@ PHASE_MAKEDIRS := $(TOPDIR)/make
 # Param 2: Module name
 define DeclareRecipeForModuleMakefile
   $2-$$($1_TARGET_SUFFIX):
-        ifeq ($$($1_USE_WRAPPER), true)
-	  +($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
-	      -f ModuleWrapper.gmk -I $$(TOPDIR)/make/common/modules  \
-	      $$(addprefix -I, $$(PHASE_MAKEDIRS) \
-	          $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
-	      ) \
-	      MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX) $$($1_EXTRA_ARGS))
-        else
-	  +($(CD) $$(TOPDIR)/make \
-	  && $(MAKE) $(MAKE_ARGS) \
-	      -f modules/$2/$$($1_FILE_PREFIX).gmk -I $$(TOPDIR)/make/common/modules \
-	      $$(addprefix -I, $$(PHASE_MAKEDIRS) \
-	          $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
-	      ) \
-	      MODULE=$2 $$($1_EXTRA_ARGS) \
-	  )
-        endif
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    -f ModuleWrapper.gmk -I $$(TOPDIR)/make/common/modules  \
+	    $$(addprefix -I, $$(PHASE_MAKEDIRS) \
+	        $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
+	    ) \
+	    MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX) $$($1_EXTRA_ARGS))
 
 endef
 
@@ -177,7 +187,6 @@ endef
 # TARGET_SUFFIX : Suffix of target to create for recipe
 # MAKE_SUBDIR : Subdir for this build phase
 # FILE_PREFIX : File prefix for this build phase
-# USE_WRAPPER : Set to true to use ModuleWrapper.gmk
 # CHECK_MODULES : List of modules to try
 # MULTIPLE_MAKEFILES : Set to true to handle makefiles for the same module and
 #                      phase in multiple repos

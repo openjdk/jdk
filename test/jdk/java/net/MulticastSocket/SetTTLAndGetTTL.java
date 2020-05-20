@@ -24,6 +24,8 @@
 /* @test
  * @bug 4189640
  * @summary Make setTTL/getTTL works
+ * @run main SetTTLAndGetTTL
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl SetTTLAndGetTTL
  */
 
 import java.net.*;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2017 2019 2013 2015 2012 2010"
+VALID_VS_VERSIONS="2019 2017 2013 2015 2012 2010"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -101,8 +101,8 @@ VS_EDITIONS_2019="BuildTools Community Professional Enterprise"
 VS_SDK_INSTALLDIR_2019=
 VS_VS_PLATFORM_NAME_2019="v142"
 VS_SDK_PLATFORM_NAME_2019=
-VS_SUPPORTED_2019=false
-VS_TOOLSET_SUPPORTED_2019=false
+VS_SUPPORTED_2019=true
+VS_TOOLSET_SUPPORTED_2019=true
 
 ################################################################################
 
@@ -485,10 +485,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       fi
 
       # Now execute the newly created bat file.
-      # The | cat is to stop SetEnv.Cmd to mess with system colors on msys.
       # Change directory so we don't need to mess with Windows paths in redirects.
       cd $VS_ENV_TMP_DIR
-      $CMD /c extract-vs-env.bat | $CAT
+      $CMD /c extract-vs-env.bat > extract-vs-env.log 2>&1
       cd $CONFIGURE_START_DIR
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then

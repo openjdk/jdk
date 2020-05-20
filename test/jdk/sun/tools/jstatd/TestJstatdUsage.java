@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -42,6 +43,7 @@ public class TestJstatdUsage {
 
     private static void testUsage(String option) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addToolArg(option);
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);

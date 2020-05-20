@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,46 +44,39 @@ import static org.testng.Assert.*;
 
 @Test
 public class RecordMemberTests {
-    record R1(int i, int j) {}
+    public record R1(int i, int j) {}
 
-    record R2(int i, int j) {
+    public record R2(int i, int j) {
         public R2 {}
     }
 
-    record R3(int i, int j) {
-        public R3 {
-            this.i = i;
-        }
-    }
-
-    record R4(int i, int j) {
-        public R4 {
+    public record R3(int i, int j) {
+        public R3(int i, int j) {
             this.i = i;
             this.j = j;
         }
     }
 
-    record R5(int i, int j) {
-        public R5 { this.i = this.j = 0; }
+    public record R4(int i, int j) {
+        public R4(int i, int j) { this.i = this.j = 0; }
     }
 
     R1 r1 = new R1(1, 2);
     R2 r2 = new R2(1, 2);
     R3 r3 = new R3(1, 2);
     R4 r4 = new R4(1, 2);
-    R5 r5 = new R5(1, 2);
 
     public void testConstruction() {
-        for (int i : new int[] { r1.i, r2.i, r3.i, r4.i,
-                                 r1.i(), r2.i(), r3.i(), r4.i() })
+        for (int i : new int[] { r1.i, r2.i, r3.i,
+                                 r1.i(), r2.i(), r3.i() })
             assertEquals(i, 1);
 
-        for (int j : new int[] { r1.j, r2.j, r3.j, r4.j,
-                                 r1.j(), r2.j(), r3.j(), r4.j() })
+        for (int j : new int[] { r1.j, r2.j, r3.j,
+                                 r1.j(), r2.j(), r3.j() })
             assertEquals(j, 2);
 
-        assertEquals(r5.i, 0);
-        assertEquals(r5.j, 0);
+        assertEquals(r4.i, 0);
+        assertEquals(r4.j, 0);
     }
 
     public void testConstructorParameterNames() throws ReflectiveOperationException {

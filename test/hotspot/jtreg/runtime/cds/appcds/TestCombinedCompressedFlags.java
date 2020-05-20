@@ -65,7 +65,7 @@ public class TestCombinedCompressedFlags {
             initExecArgs();
         }
         private void initExecArgs() {
-           /* The combinations have four cases. Note COOP off, CCPTR must be off
+           /* The combinations have four cases.
             *          UseCompressedOops   UseCompressedClassPointers  Result
             *    1.
             *    dump: on                  on
@@ -82,13 +82,11 @@ public class TestCombinedCompressedFlags {
             *    3.
             *    dump: off                 on
             *    test: off                 on                          Pass
-            *          off                 off                         Pass
             *          on                  on                          Fail
             *          on                  off                         Fail
             *    4.
             *    dump: off                 off
             *    test: off                 off                         Pass
-            *          off                 on                          Pass
             *          on                  on                          Fail
             *          on                  off                         Fail
             **/
@@ -115,8 +113,6 @@ public class TestCombinedCompressedFlags {
 
             } else if (!dumpArg.useCompressedOops && dumpArg.useCompressedClassPointers) {
                 execArgs
-                    .add(new ConfArg(false, false, HELLO_STRING, PASS));
-                execArgs
                     .add(new ConfArg(false, true, HELLO_STRING, PASS));
                 execArgs
                     .add(new ConfArg(true, true, EXEC_ABNORMAL_MSG, FAIL));
@@ -125,8 +121,6 @@ public class TestCombinedCompressedFlags {
             } else if (!dumpArg.useCompressedOops && !dumpArg.useCompressedClassPointers) {
                 execArgs
                     .add(new ConfArg(false, false, HELLO_STRING, PASS));
-                execArgs
-                    .add(new ConfArg(false, true, HELLO_STRING, PASS));
                 execArgs
                     .add(new ConfArg(true, true, EXEC_ABNORMAL_MSG, FAIL));
                 execArgs

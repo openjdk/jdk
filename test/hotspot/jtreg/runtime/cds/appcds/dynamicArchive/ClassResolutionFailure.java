@@ -31,8 +31,10 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build StrConcatApp
  * @build MissingDependent
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar missingDependent.jar MissingDependent
- * @run driver ClassResolutionFailure
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ClassResolutionFailure
  */
 
 public class ClassResolutionFailure extends DynamicArchiveTestBase {

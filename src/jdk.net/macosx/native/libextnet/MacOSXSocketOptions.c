@@ -32,6 +32,11 @@
 #include <netinet/in.h>
 #include "jni_util.h"
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
+
 static jint socketOptionSupported(jint sockopt) {
     jint one = 1;
     jint rv, s;

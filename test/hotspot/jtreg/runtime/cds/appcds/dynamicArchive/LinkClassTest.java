@@ -30,8 +30,10 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LinkClassApp
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar link_class_app.jar LinkClassApp Parent Child Parent2 Child2 MyShutdown
- * @run driver LinkClassTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LinkClassTest
  */
 
 public class LinkClassTest extends DynamicArchiveTestBase {

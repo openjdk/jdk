@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,10 @@ EdenMutableSpacePool::EdenMutableSpacePool(PSYoungGen* young_gen,
                                            const char* name,
                                            bool support_usage_threshold) :
   CollectedMemoryPool(name, space->capacity_in_bytes(),
-                      (young_gen->max_size() - young_gen->from_space()->capacity_in_bytes() - young_gen->to_space()->capacity_in_bytes()),
-                       support_usage_threshold),
+                      (young_gen->max_gen_size() -
+                       young_gen->from_space()->capacity_in_bytes() -
+                       young_gen->to_space()->capacity_in_bytes()),
+                      support_usage_threshold),
   _young_gen(young_gen),
   _space(space) {
 }

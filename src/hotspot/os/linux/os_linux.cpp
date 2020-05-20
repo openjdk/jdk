@@ -154,6 +154,7 @@ int os::Linux::_page_size = -1;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_glibc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
+size_t os::Linux::_default_large_page_size = 0;
 
 static jlong initial_time_count=0;
 
@@ -2976,6 +2977,15 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_HUGETLB 0x40000
 #endif
 
+// If mmap flags are set with MAP_HUGETLB and the system supports multiple
+// huge page sizes, flag bits [26:31] can be used to encode the log2 of the
+// desired huge page size. Otherwise, the system's default huge page size will be used.
+// See mmap(2) man page for more info (since Linux 3.8).
+// https://lwn.net/Articles/533499/
+#ifndef MAP_HUGE_SHIFT
+  #define MAP_HUGE_SHIFT 26
+#endif
+
 // Define MADV_HUGEPAGE here so we can build HotSpot on old systems.
 #ifndef MADV_HUGEPAGE
   #define MADV_HUGEPAGE 14
@@ -3758,7 +3768,10 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-size_t os::Linux::find_large_page_size() {
+size_t os::Linux::find_default_large_page_size() {
+  if (_default_large_page_size != 0) {
+    return _default_large_page_size;
+  }
   size_t large_page_size = 0;
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
@@ -3806,18 +3819,53 @@ size_t os::Linux::find_large_page_size() {
     }
     fclose(fp);
   }
-
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != large_page_size) {
-    warning("Setting LargePageSizeInBytes has no effect on this OS. Large page size is "
-            SIZE_FORMAT "%s.", byte_size_in_proper_unit(large_page_size),
-            proper_unit_for_byte_size(large_page_size));
-  }
-
   return large_page_size;
 }
 
+size_t os::Linux::find_large_page_size(size_t large_page_size) {
+  if (_default_large_page_size == 0) {
+    _default_large_page_size = Linux::find_default_large_page_size();
+  }
+  // We need to scan /sys/kernel/mm/hugepages
+  // to discover the available page sizes
+  const char* sys_hugepages = "/sys/kernel/mm/hugepages";
+
+  DIR *dir = opendir(sys_hugepages);
+  if (dir == NULL) {
+    return _default_large_page_size;
+  }
+
+  struct dirent *entry;
+  size_t page_size;
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry->d_type == DT_DIR &&
+        sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
+      // The kernel is using kB, hotspot uses bytes
+      if (large_page_size == page_size * K) {
+        closedir(dir);
+        return large_page_size;
+      }
+    }
+  }
+  closedir(dir);
+  return _default_large_page_size;
+}
+
 size_t os::Linux::setup_large_page_size() {
-  _large_page_size = Linux::find_large_page_size();
+  _default_large_page_size = Linux::find_default_large_page_size();
+
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != _default_large_page_size ) {
+    _large_page_size = find_large_page_size(LargePageSizeInBytes);
+    if (_large_page_size == _default_large_page_size) {
+      warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
+              SIZE_FORMAT "%s.",
+              LargePageSizeInBytes,
+              byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
+    }
+  } else {
+    _large_page_size = _default_large_page_size;
+  }
+
   const size_t default_page_size = (size_t)Linux::page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes[0] = _large_page_size;
@@ -3826,6 +3874,10 @@ size_t os::Linux::setup_large_page_size() {
   }
 
   return _large_page_size;
+}
+
+size_t os::Linux::default_large_page_size() {
+  return _default_large_page_size;
 }
 
 bool os::Linux::setup_large_page_type(size_t page_size) {
@@ -4056,9 +4108,12 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
   assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
 
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-  char* addr = (char*)::mmap(req_addr, bytes, prot,
-                             MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB,
-                             -1, 0);
+  int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB;
+
+  if (os::large_page_size() != default_large_page_size()) {
+    flags |= (exact_log2(os::large_page_size()) << MAP_HUGE_SHIFT);
+  }
+  char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
     warn_on_large_pages_failure(req_addr, bytes, errno);
@@ -4114,14 +4169,12 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   }
 
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-
+  int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED;
   void* result;
 
   // Commit small-paged leading area.
   if (start != lp_start) {
-    result = ::mmap(start, lp_start - start, prot,
-                    MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,
-                    -1, 0);
+    result = ::mmap(start, lp_start - start, prot, flags, -1, 0);
     if (result == MAP_FAILED) {
       ::munmap(lp_start, end - lp_start);
       return NULL;
@@ -4129,9 +4182,13 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   }
 
   // Commit large-paged area.
-  result = ::mmap(lp_start, lp_bytes, prot,
-                  MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED|MAP_HUGETLB,
-                  -1, 0);
+  flags |= MAP_HUGETLB;
+
+  if (os::large_page_size() != default_large_page_size()) {
+    flags |= (exact_log2(os::large_page_size()) << MAP_HUGE_SHIFT);
+  }
+
+  result = ::mmap(lp_start, lp_bytes, prot, flags, -1, 0);
   if (result == MAP_FAILED) {
     warn_on_large_pages_failure(lp_start, lp_bytes, errno);
     // If the mmap above fails, the large pages region will be unmapped and we

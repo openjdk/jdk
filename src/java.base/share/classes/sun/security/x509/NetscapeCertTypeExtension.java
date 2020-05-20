@@ -73,7 +73,7 @@ implements CertAttrSet<String> {
      * Object identifier for the Netscape-Cert-Type extension.
      */
     public static ObjectIdentifier NetscapeCertType_Id =
-            ObjectIdentifier.of("2.16.840.1.113730.1.1");
+            ObjectIdentifier.of(KnownOIDs.NETSCAPE_CertType);
 
     private boolean[] bitString;
 

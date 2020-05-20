@@ -54,6 +54,29 @@ bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }
 
+void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
+  for (int c = 0; c < _oops_count; c ++) {
+    oops->do_oop(_oops[c]);
+  }
+
+  oop* const begin = _nm->oops_begin();
+  oop* const end = _nm->oops_end();
+  for (oop* p = begin; p < end; p++) {
+    if (*p != Universe::non_oop_word()) {
+      oops->do_oop(p);
+    }
+  }
+
+  if (fix_relocations && _has_non_immed_oops) {
+    _nm->fix_oop_relocations();
+  }
+}
+
+void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
+  ShenandoahEvacuateUpdateRootsClosure<> cl;
+  nmethod_data->oops_do(&cl, true /*fix relocation*/);
+}
+
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
   if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
     return;

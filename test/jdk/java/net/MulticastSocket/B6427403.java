@@ -25,6 +25,8 @@
  * @test
  * @bug 6427403
  * @summary java.net.MulticastSocket.joinGroup() reports 'socket closed'
+ * @run main B6427403
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl B6427403
  */
 import java.net.*;
 import java.io.*;

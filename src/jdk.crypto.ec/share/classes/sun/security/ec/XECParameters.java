@@ -29,17 +29,16 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
-import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 
 public class XECParameters {
+
+    static ParametersMap<XECParameters> namedParams = new ParametersMap<>();
 
     // Naming/identification parameters
     private final ObjectIdentifier oid;
@@ -106,10 +105,6 @@ public class XECParameters {
         return name;
     }
 
-    private static final Map<Integer, XECParameters> SIZE_MAP;
-    private static final Map<ObjectIdentifier, XECParameters> OID_MAP;
-    private static final Map<String, XECParameters> NAME_MAP;
-
     static {
         final BigInteger TWO = BigInteger.valueOf(2);
 
@@ -140,9 +135,7 @@ public class XECParameters {
             // Unable to set X448 parameters---it will be disabled
         }
 
-        SIZE_MAP = Collections.unmodifiableMap(bySize);
-        OID_MAP = Collections.unmodifiableMap(byOid);
-        NAME_MAP = Collections.unmodifiableMap(byName);
+        namedParams.fix();
     }
 
     private static void addParameters(int bits, BigInteger p, int a24,
@@ -151,113 +144,39 @@ public class XECParameters {
         Map<ObjectIdentifier, XECParameters> byOid,
         Map<String, XECParameters> byName) throws IOException {
 
-        ObjectIdentifier oid = new ObjectIdentifier(objectId);
+        ObjectIdentifier oid = ObjectIdentifier.of(objectId);
         XECParameters params =
             new XECParameters(bits, p, a24, basePoint, logCofactor, oid, name);
-        bySize.put(bits, params);
-        byOid.put(oid, params);
-        byName.put(name.toLowerCase(), params);
-    }
-
-    public static Optional<XECParameters> getByOid(ObjectIdentifier id) {
-        return Optional.ofNullable(OID_MAP.get(id));
-    }
-    public static Optional<XECParameters> getBySize(int size) {
-        return Optional.ofNullable(SIZE_MAP.get(size));
-    }
-    public static Optional<XECParameters> getByName(String name) {
-        return Optional.ofNullable(NAME_MAP.get(name.toLowerCase()));
+        namedParams.put(name.toLowerCase(), oid, bits, params);
     }
 
     boolean oidEquals(XECParameters other) {
         return oid.equals(other.getOid());
     }
 
-    // Utility method that is used by the methods below to handle exception
-    // suppliers
-    private static
-    <A, B> Supplier<B> apply(final Function<A, B> func, final A a) {
-        return new Supplier<B>() {
-            @Override
-            public B get() {
-                return func.apply(a);
-            }
-        };
-    }
 
-    /**
-     * Get parameters by key size, or throw an exception if no parameters are
-     * defined for the specified key size. This method is used in several
-     * contexts that should throw different exceptions when the parameters
-     * are not found. The first argument is a function that produces the
-     * desired exception.
-     *
-     * @param exception a function that produces an exception from a string
-     * @param size the desired key size
-     * @param <T> the type of exception that is thrown
-     * @return the parameters for the specified key size
-     * @throws T when suitable parameters do not exist
-     */
     public static
     <T extends Throwable>
     XECParameters getBySize(Function<String, T> exception,
                             int size) throws T {
 
-        Optional<XECParameters> xecParams = getBySize(size);
-        return xecParams.orElseThrow(
-            apply(exception, "Unsupported size: " + size));
+        return namedParams.getBySize(exception, size);
     }
 
-    /**
-     * Get parameters by algorithm ID, or throw an exception if no
-     * parameters are defined for the specified ID. This method is used in
-     * several contexts that should throw different exceptions when the
-     * parameters are not found. The first argument is a function that produces
-     * the desired exception.
-     *
-     * @param exception a function that produces an exception from a string
-     * @param algId the algorithm ID
-     * @param <T> the type of exception that is thrown
-     * @return the parameters for the specified algorithm ID
-     * @throws T when suitable parameters do not exist
-     */
     public static
     <T extends Throwable>
     XECParameters get(Function<String, T> exception,
                       AlgorithmId algId) throws T {
 
-        Optional<XECParameters> xecParams = getByOid(algId.getOID());
-        return xecParams.orElseThrow(
-            apply(exception, "Unsupported OID: " + algId.getOID()));
+        return namedParams.get(exception, algId);
     }
 
-    /**
-     * Get parameters by algorithm parameter spec, or throw an exception if no
-     * parameters are defined for the spec. This method is used in
-     * several contexts that should throw different exceptions when the
-     * parameters are not found. The first argument is a function that produces
-     * the desired exception.
-     *
-     * @param exception a function that produces an exception from a string
-     * @param params the algorithm parameters spec
-     * @param <T> the type of exception that is thrown
-     * @return the parameters for the spec
-     * @throws T when suitable parameters do not exist
-     */
     public static
     <T extends Throwable>
     XECParameters get(Function<String, T> exception,
                       AlgorithmParameterSpec params) throws T {
 
-        if (params instanceof NamedParameterSpec) {
-            NamedParameterSpec namedParams = (NamedParameterSpec) params;
-            Optional<XECParameters> xecParams =
-                getByName(namedParams.getName());
-            return xecParams.orElseThrow(
-                apply(exception, "Unsupported name: " + namedParams.getName()));
-        } else {
-            throw exception.apply("Only NamedParameterSpec is supported.");
-        }
+        return namedParams.get(exception, params);
     }
 }
 

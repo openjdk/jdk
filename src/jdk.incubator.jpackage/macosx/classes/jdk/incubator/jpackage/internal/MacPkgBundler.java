@@ -101,17 +101,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 },
             (s, p) -> s);
 
-    public static final BundlerParamInfo<String> MAC_INSTALL_DIR =
-            new StandardBundlerParam<>(
-            "mac-install-dir",
-            String.class,
-             params -> {
-                 String dir = INSTALL_DIR.fetchFrom(params);
-                 return (dir != null) ? dir : "/Applications";
-             },
-            (s, p) -> s
-    );
-
     public static final BundlerParamInfo<String> INSTALLER_SUFFIX =
             new StandardBundlerParam<> (
             "mac.pkg.installerName.suffix",
@@ -187,10 +176,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         Map<String, String> data = new HashMap<>();
 
-        Path appLocation = Path.of(MAC_INSTALL_DIR.fetchFrom(params),
+        Path appLocation = Path.of(getInstallDir(params),
                          APP_NAME.fetchFrom(params) + ".app", "Contents", "app");
 
-        data.put("INSTALL_LOCATION", MAC_INSTALL_DIR.fetchFrom(params));
+        data.put("INSTALL_LOCATION", getInstallDir(params));
         data.put("APP_LOCATION", appLocation.toString());
 
         createResource(TEMPLATE_PREINSTALL_SCRIPT, params)
@@ -417,7 +406,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--root",
                     root,
                     "--install-location",
-                    MAC_INSTALL_DIR.fetchFrom(params),
+                    getInstallDir(params),
                     "--analyze",
                     cpl.getAbsolutePath());
 
@@ -432,7 +421,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--root",
                     root,
                     "--install-location",
-                    MAC_INSTALL_DIR.fetchFrom(params),
+                    getInstallDir(params),
                     "--component-plist",
                     cpl.getAbsolutePath(),
                     "--scripts",

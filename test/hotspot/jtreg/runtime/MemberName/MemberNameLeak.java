@@ -103,7 +103,7 @@ public class MemberNameLeak {
             System.gc();  // make mh unused
           }
 
-          if (after != wb.resolvedMethodItemsCount()) {
+          if (after > wb.resolvedMethodItemsCount() + 50) {
             // Entries have been removed.
             break;
           }

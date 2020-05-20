@@ -51,112 +51,112 @@ public class PKIXExtensions {
      * Identifies the particular public key used to sign the certificate.
      */
     public static final ObjectIdentifier AuthorityKey_Id =
-            ObjectIdentifier.of("2.5.29.35");
+            ObjectIdentifier.of(KnownOIDs.AuthorityKeyID);
 
     /**
      * Identifies the particular public key used in an application.
      */
     public static final ObjectIdentifier SubjectKey_Id =
-            ObjectIdentifier.of("2.5.29.14");
+            ObjectIdentifier.of(KnownOIDs.SubjectKeyID);
 
     /**
      * Defines the purpose of the key contained in the certificate.
      */
     public static final ObjectIdentifier KeyUsage_Id =
-            ObjectIdentifier.of("2.5.29.15");
+            ObjectIdentifier.of(KnownOIDs.KeyUsage);
 
     /**
      * Allows the certificate issuer to specify a different validity period
      * for the private key than the certificate.
      */
     public static final ObjectIdentifier PrivateKeyUsage_Id =
-            ObjectIdentifier.of("2.5.29.16");
+            ObjectIdentifier.of(KnownOIDs.PrivateKeyUsage);
 
     /**
      * Contains the sequence of policy information terms.
      */
     public static final ObjectIdentifier CertificatePolicies_Id =
-            ObjectIdentifier.of("2.5.29.32");
+            ObjectIdentifier.of(KnownOIDs.CertificatePolicies);
 
     /**
      * Lists pairs of object identifiers of policies considered equivalent by
      * the issuing CA to the subject CA.
      */
     public static final ObjectIdentifier PolicyMappings_Id =
-            ObjectIdentifier.of("2.5.29.33");
+            ObjectIdentifier.of(KnownOIDs.PolicyMappings);
 
     /**
      * Allows additional identities to be bound to the subject of the
      * certificate.
      */
     public static final ObjectIdentifier SubjectAlternativeName_Id =
-            ObjectIdentifier.of("2.5.29.17");
+            ObjectIdentifier.of(KnownOIDs.SubjectAlternativeName);
 
     /**
      * Allows additional identities to be associated with the certificate
      * issuer.
      */
     public static final ObjectIdentifier IssuerAlternativeName_Id =
-            ObjectIdentifier.of("2.5.29.18");
+            ObjectIdentifier.of(KnownOIDs.IssuerAlternativeName);
 
     /**
      * Identifies additional directory attributes.
      * This extension is always non-critical.
      */
     public static final ObjectIdentifier SubjectDirectoryAttributes_Id =
-            ObjectIdentifier.of("2.5.29.9");
+            ObjectIdentifier.of(KnownOIDs.SubjectDirectoryAttributes);
 
     /**
      * Identifies whether the subject of the certificate is a CA and how deep
      * a certification path may exist through that CA.
      */
     public static final ObjectIdentifier BasicConstraints_Id =
-            ObjectIdentifier.of("2.5.29.19");
+            ObjectIdentifier.of(KnownOIDs.BasicConstraints);
 
     /**
      * Provides for permitted and excluded subtrees that place restrictions
      * on names that may be included within a certificate issued by a given CA.
      */
     public static final ObjectIdentifier NameConstraints_Id =
-            ObjectIdentifier.of("2.5.29.30");
+            ObjectIdentifier.of(KnownOIDs.NameConstraints);
 
     /**
      * Used to either prohibit policy mapping or limit the set of policies
      * that can be in subsequent certificates.
      */
     public static final ObjectIdentifier PolicyConstraints_Id =
-            ObjectIdentifier.of("2.5.29.36");
+            ObjectIdentifier.of(KnownOIDs.PolicyConstraints);
 
     /**
      * Identifies how CRL information is obtained.
      */
     public static final ObjectIdentifier CRLDistributionPoints_Id =
-            ObjectIdentifier.of("2.5.29.31");
+            ObjectIdentifier.of(KnownOIDs.CRLDistributionPoints);
 
     /**
      * Conveys a monotonically increasing sequence number for each CRL
      * issued by a given CA.
      */
     public static final ObjectIdentifier CRLNumber_Id =
-            ObjectIdentifier.of("2.5.29.20");
+            ObjectIdentifier.of(KnownOIDs.CRLNumber);
 
     /**
      * Identifies the CRL distribution point for a particular CRL.
      */
     public static final ObjectIdentifier IssuingDistributionPoint_Id =
-            ObjectIdentifier.of("2.5.29.28");
+            ObjectIdentifier.of(KnownOIDs.IssuingDistributionPoint);
 
     /**
      * Identifies the delta CRL.
      */
     public static final ObjectIdentifier DeltaCRLIndicator_Id =
-            ObjectIdentifier.of("2.5.29.27");
+            ObjectIdentifier.of(KnownOIDs.DeltaCRLIndicator);
 
     /**
      * Identifies the reason for the certificate revocation.
      */
     public static final ObjectIdentifier ReasonCode_Id =
-            ObjectIdentifier.of("2.5.29.21");
+            ObjectIdentifier.of(KnownOIDs.ReasonCode);
 
     /**
      * This extension provides a registered instruction identifier indicating
@@ -164,34 +164,34 @@ public class PKIXExtensions {
      * placed on hold.
      */
     public static final ObjectIdentifier HoldInstructionCode_Id =
-            ObjectIdentifier.of("2.5.29.23");
+            ObjectIdentifier.of(KnownOIDs.HoldInstructionCode);
 
     /**
      * Identifies the date on which it is known or suspected that the private
      * key was compromised or that the certificate otherwise became invalid.
      */
     public static final ObjectIdentifier InvalidityDate_Id =
-            ObjectIdentifier.of("2.5.29.24");
+            ObjectIdentifier.of(KnownOIDs.InvalidityDate);
     /**
      * Identifies one or more purposes for which the certified public key
      * may be used, in addition to or in place of the basic purposes
      * indicated in the key usage extension field.
      */
     public static final ObjectIdentifier ExtendedKeyUsage_Id =
-            ObjectIdentifier.of("2.5.29.37");
+            ObjectIdentifier.of(KnownOIDs.extendedKeyUsage);
 
     /**
      * Specifies whether any-policy policy OID is permitted
      */
     public static final ObjectIdentifier InhibitAnyPolicy_Id =
-            ObjectIdentifier.of("2.5.29.54");
+            ObjectIdentifier.of(KnownOIDs.InhibitAnyPolicy);
 
     /**
      * Identifies the certificate issuer associated with an entry in an
      * indirect CRL.
      */
     public static final ObjectIdentifier CertificateIssuer_Id =
-            ObjectIdentifier.of("2.5.29.29");
+            ObjectIdentifier.of(KnownOIDs.CertificateIssuer);
 
     /**
      * This extension indicates how to access CA information and services for
@@ -200,32 +200,32 @@ public class PKIXExtensions {
      * services.
      */
     public static final ObjectIdentifier AuthInfoAccess_Id =
-            ObjectIdentifier.of("1.3.6.1.5.5.7.1.1");
+            ObjectIdentifier.of(KnownOIDs.AuthInfoAccess);
 
     /**
      * This extension indicates how to access CA information and services for
      * the subject of the certificate in which the extension appears.
      */
     public static final ObjectIdentifier SubjectInfoAccess_Id =
-            ObjectIdentifier.of("1.3.6.1.5.5.7.1.11");
+            ObjectIdentifier.of(KnownOIDs.SubjectInfoAccess);
 
     /**
      * Identifies how delta CRL information is obtained.
      */
     public static final ObjectIdentifier FreshestCRL_Id =
-            ObjectIdentifier.of("2.5.29.46");
+            ObjectIdentifier.of(KnownOIDs.FreshestCRL);
 
     /**
      * Identifies the OCSP client can trust the responder for the
      * lifetime of the responder's certificate.
      */
     public static final ObjectIdentifier OCSPNoCheck_Id =
-            ObjectIdentifier.of("1.3.6.1.5.5.7.48.1.5");
+            ObjectIdentifier.of(KnownOIDs.OCSPNoCheck);
 
     /**
      * This extension is used to provide nonce data for OCSP requests
      * or responses.
      */
     public static final ObjectIdentifier OCSPNonce_Id =
-            ObjectIdentifier.of("1.3.6.1.5.5.7.48.1.2");
+            ObjectIdentifier.of(KnownOIDs.OCSPNonceExt);
 }

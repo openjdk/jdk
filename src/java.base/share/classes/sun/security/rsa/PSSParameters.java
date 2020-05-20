@@ -99,7 +99,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
             } else if (d.isContextSpecific((byte) 0x01)) {
                 // mgf algid
                 AlgorithmId val = AlgorithmId.parse(d.data.getDerValue());
-                if (!val.getOID().equals(AlgorithmId.mgf1_oid)) {
+                if (!val.getOID().equals(AlgorithmId.MGF1_oid)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
                 AlgorithmId params = AlgorithmId.parse(
@@ -242,7 +242,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
 
         if (!mgfDigestId.getOID().equals(AlgorithmId.SHA_oid)) {
             tmp2 = new DerOutputStream();
-            tmp2.putOID(AlgorithmId.mgf1_oid);
+            tmp2.putOID(AlgorithmId.MGF1_oid);
             mgfDigestId.encode(tmp2);
             tmp3 = new DerOutputStream();
             tmp3.write(DerValue.tag_Sequence, tmp2);

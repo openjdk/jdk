@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import sun.security.x509.NetscapeCertTypeExtension;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
 import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.provider.certpath.UntrustedChecker;
@@ -60,24 +61,28 @@ public final class SimpleValidator extends Validator {
 
     // Constants for the OIDs we need
 
-    static final String OID_BASIC_CONSTRAINTS = "2.5.29.19";
+    static final String OID_BASIC_CONSTRAINTS =
+            KnownOIDs.BasicConstraints.value();
 
-    static final String OID_NETSCAPE_CERT_TYPE = "2.16.840.1.113730.1.1";
+    static final String OID_NETSCAPE_CERT_TYPE =
+            KnownOIDs.NETSCAPE_CertType.value();
 
-    static final String OID_KEY_USAGE = "2.5.29.15";
+    static final String OID_KEY_USAGE = KnownOIDs.KeyUsage.value();
 
-    static final String OID_EXTENDED_KEY_USAGE = "2.5.29.37";
+    static final String OID_EXTENDED_KEY_USAGE =
+            KnownOIDs.extendedKeyUsage.value();
 
-    static final String OID_EKU_ANY_USAGE = "2.5.29.37.0";
+    static final String OID_EKU_ANY_USAGE =
+            KnownOIDs.anyExtendedKeyUsage.value();
 
     static final ObjectIdentifier OBJID_NETSCAPE_CERT_TYPE =
-        NetscapeCertTypeExtension.NetscapeCertType_Id;
+            NetscapeCertTypeExtension.NetscapeCertType_Id;
 
     private static final String NSCT_SSL_CA =
-                                NetscapeCertTypeExtension.SSL_CA;
+            NetscapeCertTypeExtension.SSL_CA;
 
     private static final String NSCT_CODE_SIGNING_CA =
-                                NetscapeCertTypeExtension.OBJECT_SIGNING_CA;
+            NetscapeCertTypeExtension.OBJECT_SIGNING_CA;
 
     /**
      * The trusted certificates as:

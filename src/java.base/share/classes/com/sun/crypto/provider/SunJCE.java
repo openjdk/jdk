@@ -32,8 +32,7 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.List;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
-import static sun.security.provider.SunEntries.createAliases;
-import static sun.security.provider.SunEntries.createAliasesWithOid;
+import static sun.security.util.SecurityProviderConstants.*;
 
 /**
  * The "SunJCE" Cryptographic Service Provider.
@@ -100,9 +99,22 @@ public final class SunJCE extends Provider {
     }
     static SecureRandom getRandom() { return SecureRandomHolder.RANDOM; }
 
-    private void ps(String type, String algo, String cn,
-            List<String> aliases, HashMap<String, String> attrs) {
-        putService(new Provider.Service(this, type, algo, cn, aliases, attrs));
+    // ps: putService
+    private void ps(String type, String algo, String cn) {
+        putService(new Provider.Service(this, type, algo, cn, null, null));
+    }
+
+    private void ps(String type, String algo, String cn, List<String> als,
+            HashMap<String, String> attrs) {
+        putService(new Provider.Service(this, type, algo, cn, als,
+                   attrs));
+    }
+
+    // psA: putService with default aliases
+    private void psA(String type, String algo, String cn,
+            HashMap<String, String> attrs) {
+        putService(new Provider.Service(this, type, algo, cn, getAliases(algo),
+                   attrs));
     }
 
     public SunJCE() {
@@ -128,69 +140,6 @@ public final class SunJCE extends Provider {
     }
 
     void putEntries() {
-        // common aliases and oids
-        List<String> aesAliases = createAliases("Rijndael");
-        List<String> desEdeAliases = createAliases("TripleDES");
-        List<String> arcFourAliases = createAliases("RC4");
-        List<String> sunTlsMSAliases = createAliases(
-            "SunTls12MasterSecret", "SunTlsExtendedMasterSecret"
-        );
-        List<String> sunTlsKMAliases = createAliases("SunTls12KeyMaterial");
-        List<String> sunTlsRsaPMSAliases = createAliases("SunTls12RsaPremasterSecret");
-
-        String aes128Oid = "2.16.840.1.101.3.4.1.";
-        String aes192Oid = "2.16.840.1.101.3.4.1.2";
-        String aes256Oid = "2.16.840.1.101.3.4.1.4";
-
-        List<String> pkcs12RC4_128Aliases =
-            createAliasesWithOid("1.2.840.113549.1.12.1.1");
-
-        List<String> pkcs12RC4_40Aliases =
-            createAliasesWithOid("1.2.840.113549.1.12.1.2");
-
-        List<String> pkcs12DESedeAliases =
-            createAliasesWithOid("1.2.840.113549.1.12.1.3");
-
-        List<String> pkcs12RC2_128Aliases =
-            createAliasesWithOid("1.2.840.113549.1.12.1.5");
-
-        List<String> pkcs12RC2_40Aliases =
-            createAliasesWithOid("1.2.840.113549.1.12.1.6");
-
-        List<String> pkcs5MD5_DESAliases =
-            createAliasesWithOid("1.2.840.113549.1.5.3", "PBE");
-
-        List<String> pkcs5PBKDF2Aliases =
-            createAliasesWithOid("1.2.840.113549.1.5.12");
-
-        List<String> pkcs5PBES2Aliases =
-            createAliasesWithOid("1.2.840.113549.1.5.13");
-
-        List<String> diffieHellmanAliases =
-            createAliasesWithOid("1.2.840.113549.1.3.1", "DH");
-
-        List<String> chachaPolyAliases =
-            createAliasesWithOid("1.2.840.113549.1.9.16.3.18");
-
-        String macOidBase = "1.2.840.113549.2.";
-        List<String> macSHA1Aliases = createAliasesWithOid(macOidBase + "7");
-        List<String> macSHA224Aliases = createAliasesWithOid(macOidBase + "8");
-        List<String> macSHA256Aliases = createAliasesWithOid(macOidBase + "9");
-        List<String> macSHA384Aliases = createAliasesWithOid(macOidBase + "10");
-        List<String> macSHA512Aliases = createAliasesWithOid(macOidBase + "11");
-        List<String> macSHA512_224Aliases = createAliasesWithOid(macOidBase + "12");
-        List<String> macSHA512_256Aliases = createAliasesWithOid(macOidBase + "13");
-
-        String nistHashAlgsOidBase = "2.16.840.1.101.3.4.2.";
-        List<String> macSHA3_224Aliases =
-            createAliasesWithOid(nistHashAlgsOidBase + "13");
-        List<String> macSHA3_256Aliases =
-            createAliasesWithOid(nistHashAlgsOidBase + "14");
-        List<String> macSHA3_384Aliases =
-            createAliasesWithOid(nistHashAlgsOidBase + "15");
-        List<String> macSHA3_512Aliases =
-            createAliasesWithOid(nistHashAlgsOidBase + "16");
-
         // reuse attribute map and reset before each reuse
         HashMap<String, String> attrs = new HashMap<>(3);
         attrs.put("SupportedModes", "ECB");
@@ -225,8 +174,8 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedKeyFormats", "RAW");
         ps("Cipher", "DES",
                 "com.sun.crypto.provider.DESCipher", null, attrs);
-        ps("Cipher", "DESede", "com.sun.crypto.provider.DESedeCipher",
-                desEdeAliases, attrs);
+        psA("Cipher", "DESede", "com.sun.crypto.provider.DESedeCipher",
+                attrs);
         ps("Cipher", "Blowfish",
                 "com.sun.crypto.provider.BlowfishCipher", null, attrs);
 
@@ -237,58 +186,58 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedModes", BLOCK_MODES128);
         attrs.put("SupportedPaddings", BLOCK_PADS);
         attrs.put("SupportedKeyFormats", "RAW");
-        ps("Cipher", "AES", "com.sun.crypto.provider.AESCipher$General",
-                aesAliases, attrs);
+        psA("Cipher", "AES",
+                "com.sun.crypto.provider.AESCipher$General", attrs);
 
         attrs.clear();
         attrs.put("SupportedKeyFormats", "RAW");
-        ps("Cipher", "AES_128/ECB/NoPadding",
+        psA("Cipher", "AES_128/ECB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_ECB_NoPadding",
-                createAliasesWithOid(aes128Oid+"1"), attrs);
-        ps("Cipher", "AES_128/CBC/NoPadding",
+                attrs);
+        psA("Cipher", "AES_128/CBC/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_CBC_NoPadding",
-                createAliasesWithOid(aes128Oid+"2"), attrs);
-        ps("Cipher", "AES_128/OFB/NoPadding",
+                attrs);
+        psA("Cipher", "AES_128/OFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_OFB_NoPadding",
-                createAliasesWithOid(aes128Oid+"3"), attrs);
-        ps("Cipher", "AES_128/CFB/NoPadding",
+                attrs);
+        psA("Cipher", "AES_128/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_CFB_NoPadding",
-                createAliasesWithOid(aes128Oid+"4"), attrs);
-        ps("Cipher", "AES_128/GCM/NoPadding",
+                attrs);
+        psA("Cipher", "AES_128/GCM/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_GCM_NoPadding",
-                createAliasesWithOid(aes128Oid+"6"), attrs);
+                attrs);
 
-        ps("Cipher", "AES_192/ECB/NoPadding",
+        psA("Cipher", "AES_192/ECB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_ECB_NoPadding",
-                createAliasesWithOid(aes192Oid+"1"), attrs);
-        ps("Cipher", "AES_192/CBC/NoPadding",
+                attrs);
+        psA("Cipher", "AES_192/CBC/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_CBC_NoPadding",
-                createAliasesWithOid(aes192Oid+"2"), attrs);
-        ps("Cipher", "AES_192/OFB/NoPadding",
+                attrs);
+        psA("Cipher", "AES_192/OFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_OFB_NoPadding",
-                createAliasesWithOid(aes192Oid+"3"), attrs);
-        ps("Cipher", "AES_192/CFB/NoPadding",
+                attrs);
+        psA("Cipher", "AES_192/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_CFB_NoPadding",
-                createAliasesWithOid(aes192Oid+"4"), attrs);
-        ps("Cipher", "AES_192/GCM/NoPadding",
+                attrs);
+        psA("Cipher", "AES_192/GCM/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_GCM_NoPadding",
-                createAliasesWithOid(aes192Oid+"6"), attrs);
+                attrs);
 
-        ps("Cipher", "AES_256/ECB/NoPadding",
+        psA("Cipher", "AES_256/ECB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_ECB_NoPadding",
-                createAliasesWithOid(aes256Oid+"1"), attrs);
-        ps("Cipher", "AES_256/CBC/NoPadding",
+                attrs);
+        psA("Cipher", "AES_256/CBC/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_CBC_NoPadding",
-                createAliasesWithOid(aes256Oid+"2"), attrs);
-        ps("Cipher", "AES_256/OFB/NoPadding",
+                attrs);
+        psA("Cipher", "AES_256/OFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_OFB_NoPadding",
-                createAliasesWithOid(aes256Oid+"3"), attrs);
-        ps("Cipher", "AES_256/CFB/NoPadding",
+                attrs);
+        psA("Cipher", "AES_256/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_CFB_NoPadding",
-                createAliasesWithOid(aes256Oid+"4"), attrs);
-        ps("Cipher", "AES_256/GCM/NoPadding",
+                attrs);
+        psA("Cipher", "AES_256/GCM/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_GCM_NoPadding",
-                createAliasesWithOid(aes256Oid+"6"), attrs);
+                attrs);
 
         attrs.clear();
         attrs.put("SupportedModes", "CBC");
@@ -301,167 +250,150 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING");
         attrs.put("SupportedKeyFormats", "RAW");
-        ps("Cipher", "ARCFOUR", "com.sun.crypto.provider.ARCFOURCipher",
-                arcFourAliases, attrs);
+        psA("Cipher", "ARCFOUR",
+                "com.sun.crypto.provider.ARCFOURCipher", attrs);
         ps("Cipher", "AESWrap", "com.sun.crypto.provider.AESWrapCipher$General",
                 null, attrs);
-        ps("Cipher", "AESWrap_128",
+        psA("Cipher", "AESWrap_128",
                 "com.sun.crypto.provider.AESWrapCipher$AES128",
-                createAliasesWithOid(aes128Oid+"5"), attrs);
-        ps("Cipher", "AESWrap_192",
+                attrs);
+        psA("Cipher", "AESWrap_192",
                 "com.sun.crypto.provider.AESWrapCipher$AES192",
-                createAliasesWithOid(aes192Oid+"5"), attrs);
-        ps("Cipher", "AESWrap_256",
+                attrs);
+        psA("Cipher", "AESWrap_256",
                 "com.sun.crypto.provider.AESWrapCipher$AES256",
-                createAliasesWithOid(aes256Oid+"5"), attrs);
+                attrs);
 
         attrs.clear();
         attrs.put("SupportedKeyFormats", "RAW");
         ps("Cipher",  "ChaCha20",
                 "com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Only",
                 null, attrs);
-        ps("Cipher",  "ChaCha20-Poly1305",
+        psA("Cipher",  "ChaCha20-Poly1305",
                 "com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Poly1305",
-                chachaPolyAliases, attrs);
+                attrs);
 
         // PBES1
-        ps("Cipher", "PBEWithMD5AndDES",
+        psA("Cipher", "PBEWithMD5AndDES",
                 "com.sun.crypto.provider.PBEWithMD5AndDESCipher",
-                pkcs5MD5_DESAliases, null);
+                null);
         ps("Cipher", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEWithMD5AndTripleDESCipher",
-                null, null);
-        ps("Cipher", "PBEWithSHA1AndDESede",
+                "com.sun.crypto.provider.PBEWithMD5AndTripleDESCipher");
+        psA("Cipher", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndDESede",
-                pkcs12DESedeAliases, null);
-        ps("Cipher", "PBEWithSHA1AndRC2_40",
+                null);
+        psA("Cipher", "PBEWithSHA1AndRC2_40",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC2_40",
-                pkcs12RC2_40Aliases, null);
-        ps("Cipher", "PBEWithSHA1AndRC2_128",
+                null);
+        psA("Cipher", "PBEWithSHA1AndRC2_128",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC2_128",
-                pkcs12RC2_128Aliases, null);
-        ps("Cipher", "PBEWithSHA1AndRC4_40",
+                null);
+        psA("Cipher", "PBEWithSHA1AndRC4_40",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC4_40",
-                pkcs12RC4_40Aliases, null);
+                null);
 
-        ps("Cipher", "PBEWithSHA1AndRC4_128",
+        psA("Cipher", "PBEWithSHA1AndRC4_128",
                 "com.sun.crypto.provider.PKCS12PBECipherCore$PBEWithSHA1AndRC4_128",
-                pkcs12RC4_128Aliases, null);
+                null);
 
         // PBES2
         ps("Cipher", "PBEWithHmacSHA1AndAES_128",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA1AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA1AndAES_128");
 
         ps("Cipher", "PBEWithHmacSHA224AndAES_128",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA224AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA224AndAES_128");
 
         ps("Cipher", "PBEWithHmacSHA256AndAES_128",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA256AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA256AndAES_128");
 
         ps("Cipher", "PBEWithHmacSHA384AndAES_128",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA384AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA384AndAES_128");
 
         ps("Cipher", "PBEWithHmacSHA512AndAES_128",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA512AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA512AndAES_128");
 
         ps("Cipher", "PBEWithHmacSHA1AndAES_256",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA1AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA1AndAES_256");
 
         ps("Cipher", "PBEWithHmacSHA224AndAES_256",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA224AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA224AndAES_256");
 
         ps("Cipher", "PBEWithHmacSHA256AndAES_256",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA256AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA256AndAES_256");
 
         ps("Cipher", "PBEWithHmacSHA384AndAES_256",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA384AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA384AndAES_256");
 
         ps("Cipher", "PBEWithHmacSHA512AndAES_256",
-                "com.sun.crypto.provider.PBES2Core$HmacSHA512AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Core$HmacSHA512AndAES_256");
 
         /*
          * Key(pair) Generator engines
          */
         ps("KeyGenerator", "DES",
-                "com.sun.crypto.provider.DESKeyGenerator",
-                null, null);
-        ps("KeyGenerator", "DESede",
+                "com.sun.crypto.provider.DESKeyGenerator");
+        psA("KeyGenerator", "DESede",
                 "com.sun.crypto.provider.DESedeKeyGenerator",
-                desEdeAliases, null);
+                null);
         ps("KeyGenerator", "Blowfish",
-                "com.sun.crypto.provider.BlowfishKeyGenerator",
-                null, null);
-        ps("KeyGenerator", "AES",
+                "com.sun.crypto.provider.BlowfishKeyGenerator");
+        psA("KeyGenerator", "AES",
                 "com.sun.crypto.provider.AESKeyGenerator",
-                aesAliases, null);
+                null);
         ps("KeyGenerator", "RC2",
-                "com.sun.crypto.provider.KeyGeneratorCore$RC2KeyGenerator",
-                null, null);
-        ps("KeyGenerator", "ARCFOUR",
+                "com.sun.crypto.provider.KeyGeneratorCore$RC2KeyGenerator");
+        psA("KeyGenerator", "ARCFOUR",
                 "com.sun.crypto.provider.KeyGeneratorCore$ARCFOURKeyGenerator",
-                arcFourAliases, null);
+                null);
         ps("KeyGenerator", "ChaCha20",
-                "com.sun.crypto.provider.KeyGeneratorCore$ChaCha20KeyGenerator",
-                null, null);
+                "com.sun.crypto.provider.KeyGeneratorCore$ChaCha20KeyGenerator");
         ps("KeyGenerator", "HmacMD5",
-                "com.sun.crypto.provider.HmacMD5KeyGenerator",
-                null, null);
+                "com.sun.crypto.provider.HmacMD5KeyGenerator");
 
-        ps("KeyGenerator", "HmacSHA1",
-                "com.sun.crypto.provider.HmacSHA1KeyGenerator",
-                macSHA1Aliases, null);
-        ps("KeyGenerator", "HmacSHA224",
+        psA("KeyGenerator", "HmacSHA1",
+                "com.sun.crypto.provider.HmacSHA1KeyGenerator", null);
+        psA("KeyGenerator", "HmacSHA224",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA224",
-                macSHA224Aliases, null);
-        ps("KeyGenerator", "HmacSHA256",
+                null);
+        psA("KeyGenerator", "HmacSHA256",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA256",
-                macSHA256Aliases, null);
-        ps("KeyGenerator", "HmacSHA384",
+                null);
+        psA("KeyGenerator", "HmacSHA384",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA384",
-                macSHA384Aliases, null);
-        ps("KeyGenerator", "HmacSHA512",
+                null);
+        psA("KeyGenerator", "HmacSHA512",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA512",
-                macSHA512Aliases, null);
-        ps("KeyGenerator", "HmacSHA512/224",
+                null);
+        psA("KeyGenerator", "HmacSHA512/224",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA512_224",
-                macSHA512_224Aliases, null);
-        ps("KeyGenerator", "HmacSHA512/256",
+                null);
+        psA("KeyGenerator", "HmacSHA512/256",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA512_256",
-                macSHA512_256Aliases, null);
+                null);
 
-        ps("KeyGenerator", "HmacSHA3-224",
+        psA("KeyGenerator", "HmacSHA3-224",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_224",
-                macSHA3_224Aliases, null);
-        ps("KeyGenerator", "HmacSHA3-256",
+                null);
+        psA("KeyGenerator", "HmacSHA3-256",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_256",
-                macSHA3_256Aliases, null);
-        ps("KeyGenerator", "HmacSHA3-384",
+                null);
+        psA("KeyGenerator", "HmacSHA3-384",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_384",
-                macSHA3_384Aliases, null);
-        ps("KeyGenerator", "HmacSHA3-512",
+                null);
+        psA("KeyGenerator", "HmacSHA3-512",
                 "com.sun.crypto.provider.KeyGeneratorCore$HmacKG$SHA3_512",
-                macSHA3_512Aliases, null);
+                null);
 
-        ps("KeyPairGenerator", "DiffieHellman",
+        psA("KeyPairGenerator", "DiffieHellman",
                 "com.sun.crypto.provider.DHKeyPairGenerator",
-                diffieHellmanAliases, null);
+                null);
 
         /*
          * Algorithm parameter generation engines
          */
-        ps("AlgorithmParameterGenerator",
+        psA("AlgorithmParameterGenerator",
                 "DiffieHellman", "com.sun.crypto.provider.DHParameterGenerator",
-                diffieHellmanAliases, null);
+                null);
 
         /*
          * Key Agreement engines
@@ -469,142 +401,120 @@ public final class SunJCE extends Provider {
         attrs.clear();
         attrs.put("SupportedKeyClasses", "javax.crypto.interfaces.DHPublicKey" +
                         "|javax.crypto.interfaces.DHPrivateKey");
-        ps("KeyAgreement", "DiffieHellman",
+        psA("KeyAgreement", "DiffieHellman",
                 "com.sun.crypto.provider.DHKeyAgreement",
-                diffieHellmanAliases, attrs);
+                attrs);
 
         /*
          * Algorithm Parameter engines
          */
-        ps("AlgorithmParameters", "DiffieHellman",
-                "com.sun.crypto.provider.DHParameters",
-                diffieHellmanAliases, null);
+        psA("AlgorithmParameters", "DiffieHellman",
+                "com.sun.crypto.provider.DHParameters", null);
 
         ps("AlgorithmParameters", "DES",
-                "com.sun.crypto.provider.DESParameters",
-                null, null);
+                "com.sun.crypto.provider.DESParameters");
 
-        ps("AlgorithmParameters", "DESede",
-                "com.sun.crypto.provider.DESedeParameters",
-                desEdeAliases, null);
+        psA("AlgorithmParameters", "DESede",
+                "com.sun.crypto.provider.DESedeParameters", null);
 
-        ps("AlgorithmParameters", "PBEWithMD5AndDES",
+        psA("AlgorithmParameters", "PBEWithMD5AndDES",
                 "com.sun.crypto.provider.PBEParameters",
-                pkcs5MD5_DESAliases, null);
+                null);
 
         ps("AlgorithmParameters", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEParameters",
-                null, null);
+                "com.sun.crypto.provider.PBEParameters");
 
-        ps("AlgorithmParameters", "PBEWithSHA1AndDESede",
+        psA("AlgorithmParameters", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEParameters",
-                pkcs12DESedeAliases, null);
+                null);
 
-        ps("AlgorithmParameters", "PBEWithSHA1AndRC2_40",
+        psA("AlgorithmParameters", "PBEWithSHA1AndRC2_40",
                 "com.sun.crypto.provider.PBEParameters",
-                pkcs12RC2_40Aliases, null);
+                null);
 
-        ps("AlgorithmParameters", "PBEWithSHA1AndRC2_128",
+        psA("AlgorithmParameters", "PBEWithSHA1AndRC2_128",
                 "com.sun.crypto.provider.PBEParameters",
-                pkcs12RC2_128Aliases, null);
+                null);
 
-        ps("AlgorithmParameters", "PBEWithSHA1AndRC4_40",
+        psA("AlgorithmParameters", "PBEWithSHA1AndRC4_40",
                 "com.sun.crypto.provider.PBEParameters",
-                pkcs12RC4_40Aliases, null);
+                null);
 
-        ps("AlgorithmParameters", "PBEWithSHA1AndRC4_128",
+        psA("AlgorithmParameters", "PBEWithSHA1AndRC4_128",
                 "com.sun.crypto.provider.PBEParameters",
-                pkcs12RC4_128Aliases, null);
+                null);
 
-        ps("AlgorithmParameters", "PBES2",
+        psA("AlgorithmParameters", "PBES2",
                 "com.sun.crypto.provider.PBES2Parameters$General",
-                pkcs5PBES2Aliases, null);
+                null);
 
         ps("AlgorithmParameters", "PBEWithHmacSHA1AndAES_128",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA1AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA1AndAES_128");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA224AndAES_128",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA224AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA224AndAES_128");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA256AndAES_128",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA256AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA256AndAES_128");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA384AndAES_128",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA384AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA384AndAES_128");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA512AndAES_128",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_128");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA1AndAES_256",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA1AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA1AndAES_256");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA224AndAES_256",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA224AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA224AndAES_256");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA256AndAES_256",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA256AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA256AndAES_256");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA384AndAES_256",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA384AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA384AndAES_256");
 
         ps("AlgorithmParameters", "PBEWithHmacSHA512AndAES_256",
-                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_256");
 
         ps("AlgorithmParameters", "Blowfish",
-                "com.sun.crypto.provider.BlowfishParameters",
-                null, null);
+                "com.sun.crypto.provider.BlowfishParameters");
 
-        ps("AlgorithmParameters", "AES",
-                "com.sun.crypto.provider.AESParameters",
-                aesAliases, null);
+        psA("AlgorithmParameters", "AES",
+                "com.sun.crypto.provider.AESParameters", null);
 
         ps("AlgorithmParameters", "GCM",
-                "com.sun.crypto.provider.GCMParameters",
-                null, null);
+                "com.sun.crypto.provider.GCMParameters");
 
         ps("AlgorithmParameters", "RC2",
-                "com.sun.crypto.provider.RC2Parameters",
-                null, null);
+                "com.sun.crypto.provider.RC2Parameters");
 
         ps("AlgorithmParameters", "OAEP",
-                "com.sun.crypto.provider.OAEPParameters",
-                null, null);
+                "com.sun.crypto.provider.OAEPParameters");
 
-        ps("AlgorithmParameters", "ChaCha20-Poly1305",
-                "com.sun.crypto.provider.ChaCha20Poly1305Parameters",
-                chachaPolyAliases, null);
+        psA("AlgorithmParameters", "ChaCha20-Poly1305",
+                "com.sun.crypto.provider.ChaCha20Poly1305Parameters", null);
 
         /*
          * Key factories
          */
-        ps("KeyFactory", "DiffieHellman",
+        psA("KeyFactory", "DiffieHellman",
                 "com.sun.crypto.provider.DHKeyFactory",
-                diffieHellmanAliases, null);
+                null);
 
         /*
          * Secret-key factories
          */
         ps("SecretKeyFactory", "DES",
-                "com.sun.crypto.provider.DESKeyFactory",
-                null, null);
+                "com.sun.crypto.provider.DESKeyFactory");
 
-        ps("SecretKeyFactory", "DESede",
-                "com.sun.crypto.provider.DESedeKeyFactory",
-                desEdeAliases, null);
+        psA("SecretKeyFactory", "DESede",
+                "com.sun.crypto.provider.DESedeKeyFactory", null);
 
-        ps("SecretKeyFactory", "PBEWithMD5AndDES",
+        psA("SecretKeyFactory", "PBEWithMD5AndDES",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndDES",
-                pkcs5MD5_DESAliases, null);
+                null);
 
         /*
          * Internal in-house crypto algorithm used for
@@ -613,85 +523,70 @@ public final class SunJCE extends Provider {
          * algorithm.
          */
         ps("SecretKeyFactory", "PBEWithMD5AndTripleDES",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndTripleDES",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndTripleDES");
 
-        ps("SecretKeyFactory", "PBEWithSHA1AndDESede",
+        psA("SecretKeyFactory", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndDESede",
-                pkcs12DESedeAliases, null);
+                null);
 
-        ps("SecretKeyFactory", "PBEWithSHA1AndRC2_40",
+        psA("SecretKeyFactory", "PBEWithSHA1AndRC2_40",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC2_40",
-                pkcs12RC2_40Aliases, null);
+                null);
 
-        ps("SecretKeyFactory", "PBEWithSHA1AndRC2_128",
+        psA("SecretKeyFactory", "PBEWithSHA1AndRC2_128",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC2_128",
-                pkcs12RC2_128Aliases, null);
+                null);
 
-        ps("SecretKeyFactory", "PBEWithSHA1AndRC4_40",
+        psA("SecretKeyFactory", "PBEWithSHA1AndRC4_40",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC4_40",
-                pkcs12RC4_40Aliases,null);
+                null);
 
-        ps("SecretKeyFactory", "PBEWithSHA1AndRC4_128",
+        psA("SecretKeyFactory", "PBEWithSHA1AndRC4_128",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndRC4_128",
-                pkcs12RC4_128Aliases, null);
+                null);
 
         ps("SecretKeyFactory", "PBEWithHmacSHA1AndAES_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_128");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA224AndAES_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA224AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA224AndAES_128");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA256AndAES_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA256AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA256AndAES_128");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA384AndAES_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA384AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA384AndAES_128");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA512AndAES_128",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512AndAES_128",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512AndAES_128");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA1AndAES_256",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_256");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA224AndAES_256",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA224AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA224AndAES_256");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA256AndAES_256",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA256AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA256AndAES_256");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA384AndAES_256",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA384AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA384AndAES_256");
 
         ps("SecretKeyFactory", "PBEWithHmacSHA512AndAES_256",
-                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512AndAES_256",
-                null, null);
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512AndAES_256");
 
         // PBKDF2
-        ps("SecretKeyFactory", "PBKDF2WithHmacSHA1",
+        psA("SecretKeyFactory", "PBKDF2WithHmacSHA1",
                 "com.sun.crypto.provider.PBKDF2Core$HmacSHA1",
-                pkcs5PBKDF2Aliases, null);
+                null);
         ps("SecretKeyFactory", "PBKDF2WithHmacSHA224",
-                "com.sun.crypto.provider.PBKDF2Core$HmacSHA224",
-                null, null);
+                "com.sun.crypto.provider.PBKDF2Core$HmacSHA224");
         ps("SecretKeyFactory", "PBKDF2WithHmacSHA256",
-                "com.sun.crypto.provider.PBKDF2Core$HmacSHA256",
-                null, null);
+                "com.sun.crypto.provider.PBKDF2Core$HmacSHA256");
         ps("SecretKeyFactory", "PBKDF2WithHmacSHA384",
-                "com.sun.crypto.provider.PBKDF2Core$HmacSHA384",
-                null, null);
+                "com.sun.crypto.provider.PBKDF2Core$HmacSHA384");
         ps("SecretKeyFactory", "PBKDF2WithHmacSHA512",
-                "com.sun.crypto.provider.PBKDF2Core$HmacSHA512",
-                null, null);
+                "com.sun.crypto.provider.PBKDF2Core$HmacSHA512");
 
         /*
          * MAC
@@ -699,35 +594,28 @@ public final class SunJCE extends Provider {
         attrs.clear();
         attrs.put("SupportedKeyFormats", "RAW");
         ps("Mac", "HmacMD5", "com.sun.crypto.provider.HmacMD5", null, attrs);
-        ps("Mac", "HmacSHA1", "com.sun.crypto.provider.HmacSHA1",
-                macSHA1Aliases, attrs);
-        ps("Mac", "HmacSHA224", "com.sun.crypto.provider.HmacCore$HmacSHA224",
-                macSHA224Aliases, attrs);
-        ps("Mac", "HmacSHA256", "com.sun.crypto.provider.HmacCore$HmacSHA256",
-                macSHA256Aliases, attrs);
-        ps("Mac", "HmacSHA384", "com.sun.crypto.provider.HmacCore$HmacSHA384",
-                macSHA384Aliases, attrs);
-        ps("Mac", "HmacSHA512", "com.sun.crypto.provider.HmacCore$HmacSHA512",
-                macSHA512Aliases, attrs);
-        ps("Mac", "HmacSHA512/224",
-                "com.sun.crypto.provider.HmacCore$HmacSHA512_224",
-                macSHA512_224Aliases, attrs);
-        ps("Mac", "HmacSHA512/256",
-                "com.sun.crypto.provider.HmacCore$HmacSHA512_256",
-                macSHA512_256Aliases, attrs);
-
-        ps("Mac", "HmacSHA3-224",
-                "com.sun.crypto.provider.HmacCore$HmacSHA3_224",
-                macSHA3_224Aliases, attrs);
-        ps("Mac", "HmacSHA3-256",
-                "com.sun.crypto.provider.HmacCore$HmacSHA3_256",
-                macSHA3_256Aliases, attrs);
-        ps("Mac", "HmacSHA3-384",
-                "com.sun.crypto.provider.HmacCore$HmacSHA3_384",
-                macSHA3_384Aliases, attrs);
-        ps("Mac", "HmacSHA3-512",
-                "com.sun.crypto.provider.HmacCore$HmacSHA3_512",
-                macSHA3_512Aliases, attrs);
+        psA("Mac", "HmacSHA1", "com.sun.crypto.provider.HmacSHA1",
+                attrs);
+        psA("Mac", "HmacSHA224",
+                "com.sun.crypto.provider.HmacCore$HmacSHA224", attrs);
+        psA("Mac", "HmacSHA256",
+                "com.sun.crypto.provider.HmacCore$HmacSHA256", attrs);
+        psA("Mac", "HmacSHA384",
+                "com.sun.crypto.provider.HmacCore$HmacSHA384", attrs);
+        psA("Mac", "HmacSHA512",
+                "com.sun.crypto.provider.HmacCore$HmacSHA512", attrs);
+        psA("Mac", "HmacSHA512/224",
+                "com.sun.crypto.provider.HmacCore$HmacSHA512_224", attrs);
+        psA("Mac", "HmacSHA512/256",
+                "com.sun.crypto.provider.HmacCore$HmacSHA512_256", attrs);
+        psA("Mac", "HmacSHA3-224",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_224", attrs);
+        psA("Mac", "HmacSHA3-256",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_256", attrs);
+        psA("Mac", "HmacSHA3-384",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_384", attrs);
+        psA("Mac", "HmacSHA3-512",
+                "com.sun.crypto.provider.HmacCore$HmacSHA3_512", attrs);
 
         ps("Mac", "HmacPBESHA1",
                 "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA1",
@@ -772,8 +660,7 @@ public final class SunJCE extends Provider {
          * KeyStore
          */
         ps("KeyStore", "JCEKS",
-                "com.sun.crypto.provider.JceKeyStore",
-                null, null);
+                "com.sun.crypto.provider.JceKeyStore");
 
         /*
          * SSL/TLS mechanisms
@@ -784,24 +671,22 @@ public final class SunJCE extends Provider {
          * mechanisms, and it will cause calls to come here.
          */
         ps("KeyGenerator", "SunTlsPrf",
-                "com.sun.crypto.provider.TlsPrfGenerator$V10",
-                null, null);
+                "com.sun.crypto.provider.TlsPrfGenerator$V10");
         ps("KeyGenerator", "SunTls12Prf",
-                "com.sun.crypto.provider.TlsPrfGenerator$V12",
-                null, null);
+                "com.sun.crypto.provider.TlsPrfGenerator$V12");
 
         ps("KeyGenerator", "SunTlsMasterSecret",
                 "com.sun.crypto.provider.TlsMasterSecretGenerator",
-                createAliases("SunTls12MasterSecret",
-                    "SunTlsExtendedMasterSecret"), null);
+                List.of("SunTls12MasterSecret", "SunTlsExtendedMasterSecret"),
+                null);
 
         ps("KeyGenerator", "SunTlsKeyMaterial",
                 "com.sun.crypto.provider.TlsKeyMaterialGenerator",
-                createAliases("SunTls12KeyMaterial"), null);
+                List.of("SunTls12KeyMaterial"), null);
 
         ps("KeyGenerator", "SunTlsRsaPremasterSecret",
                 "com.sun.crypto.provider.TlsRsaPremasterSecretGenerator",
-                createAliases("SunTls12RsaPremasterSecret"), null);
+                List.of("SunTls12RsaPremasterSecret"), null);
     }
 
     // Return the instance of this class or create one if needed.

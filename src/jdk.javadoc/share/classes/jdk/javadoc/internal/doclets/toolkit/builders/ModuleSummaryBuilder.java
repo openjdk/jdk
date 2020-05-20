@@ -122,7 +122,6 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
         Content moduleContentTree = moduleWriter.getContentHeader();
 
         buildModuleDescription(moduleContentTree);
-        buildModuleTags(moduleContentTree);
         buildSummary(moduleContentTree);
 
         moduleWriter.addModuleContent(moduleContentTree);
@@ -181,17 +180,6 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     protected void buildModuleDescription(Content moduleContentTree) {
         if (!options.noComment()) {
             moduleWriter.addModuleDescription(moduleContentTree);
-        }
-    }
-
-    /**
-     * Build the tags of the summary.
-     *
-     * @param moduleContentTree the tree to which the module tags will be added
-     */
-    protected void buildModuleTags(Content moduleContentTree) {
-        if (!options.noComment()) {
-            moduleWriter.addModuleTags(moduleContentTree);
         }
     }
 }

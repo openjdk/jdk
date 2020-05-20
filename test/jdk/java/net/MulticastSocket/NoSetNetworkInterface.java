@@ -28,6 +28,7 @@
  * @run main/othervm NoSetNetworkInterface
  * @run main/othervm -Djava.net.preferIPv4Stack=true NoSetNetworkInterface
  * @run main/othervm -Djava.net.preferIPv6Addresses=true NoSetNetworkInterface
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl NoSetNetworkInterface
  * @summary Check that methods that are used to set and get the NetworkInterface
  *  for a MulticastSocket work as expected. This test also checks that getOption
  *  returns null correctly when a NetworkInterface has not been set

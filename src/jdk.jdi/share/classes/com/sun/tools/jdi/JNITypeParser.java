@@ -113,8 +113,67 @@ public class JNITypeParser {
         return count;
     }
 
+    byte jdwpTag() {
+        return (byte) signature().charAt(0);
+    }
+
     String componentSignature(int level) {
+        assert level <= dimensionCount();
         return signature().substring(level);
+    }
+
+    String componentSignature() {
+        assert isArray();
+        return componentSignature(1);
+    }
+
+    boolean isArray() {
+        return jdwpTag() == JDWP.Tag.ARRAY;
+    }
+
+    boolean isVoid() {
+        return jdwpTag() == JDWP.Tag.VOID;
+    }
+
+    boolean isBoolean() {
+        return jdwpTag() == JDWP.Tag.BOOLEAN;
+    }
+
+    boolean isReference() {
+        byte tag = jdwpTag();
+        return tag == JDWP.Tag.ARRAY ||
+                tag == JDWP.Tag.OBJECT;
+    }
+
+    boolean isPrimitive() {
+        switch (jdwpTag()) {
+            case (JDWP.Tag.BOOLEAN):
+            case (JDWP.Tag.BYTE):
+            case (JDWP.Tag.CHAR):
+            case (JDWP.Tag.SHORT):
+            case (JDWP.Tag.INT):
+            case (JDWP.Tag.LONG):
+            case (JDWP.Tag.FLOAT):
+            case (JDWP.Tag.DOUBLE):
+                return true;
+        }
+        return false;
+    }
+
+    static String convertSignatureToClassname(String classSignature) {
+        assert classSignature.startsWith("L") && classSignature.endsWith(";");
+
+        // trim leading "L" and trailing ";"
+        String name = classSignature.substring(1, classSignature.length() - 1);
+        int index = name.indexOf(".");  // check if it is a hidden class
+        if (index < 0) {
+            return name.replace('/', '.');
+        } else {
+            // map the type descriptor from: "L" + N + "." + <suffix> + ";"
+            // to class name: N.replace('/', '.') + "/" + <suffix>
+            return name.substring(0, index).replace('/', '.')
+                    + "/" + name.substring(index + 1);
+        }
     }
 
     private synchronized List<String> signatureList() {

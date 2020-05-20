@@ -32,6 +32,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build MethodSortingApp
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar method_sorting.jar
  *             MethodSortingApp
  *             MethodSortingApp$HelloA
@@ -44,7 +45,8 @@
  *             MethodSortingApp$ImplementorA1
  *             MethodSortingApp$ImplementorB
  *             MethodSortingApp$ImplementorB1
- * @run driver MethodSorting
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodSorting
  */
 
 public class MethodSorting extends DynamicArchiveTestBase {

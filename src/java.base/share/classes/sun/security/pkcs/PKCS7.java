@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,7 +819,7 @@ public class PKCS7 {
             unauthAttrs =
                 new PKCS9Attributes(new PKCS9Attribute[]{
                     new PKCS9Attribute(
-                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_STR,
+                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID,
                         tsToken)});
         }
 
@@ -829,6 +829,10 @@ public class PKCS7 {
         BigInteger serialNumber = signerChain[0].getSerialNumber();
         String encAlg = AlgorithmId.getEncAlgFromSigAlg(signatureAlgorithm);
         String digAlg = AlgorithmId.getDigAlgFromSigAlg(signatureAlgorithm);
+        if (digAlg == null) {
+            throw new UnsupportedOperationException("Unable to determine " +
+                    "the digest algorithm from the signature algorithm.");
+        }
         SignerInfo signerInfo = new SignerInfo(issuerName, serialNumber,
                                                AlgorithmId.get(digAlg), null,
                                                AlgorithmId.get(encAlg),

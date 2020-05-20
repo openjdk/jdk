@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4811968 6908628 8006564 8130696
+ * @bug 4811968 6908628 8006564 8130696 8242151
  * @modules java.base/sun.security.util
  * @run main S11N check
  * @summary Serialization compatibility with old versions (and fixes)
@@ -118,7 +118,7 @@ public class S11N {
     // Gets the serialized form for this java
     private static byte[] out(String oid) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        new ObjectOutputStream(bout).writeObject(new ObjectIdentifier(oid));
+        new ObjectOutputStream(bout).writeObject(ObjectIdentifier.of(oid));
         return bout.toByteArray();
     }
 

@@ -3870,6 +3870,14 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_dtan = generate_libmTan();
       }
     }
+
+    // Safefetch stubs.
+    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
+                                                   &StubRoutines::_safefetch32_fault_pc,
+                                                   &StubRoutines::_safefetch32_continuation_pc);
+    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
+    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
+    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
   }
 
   void generate_all() {
@@ -3932,14 +3940,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::x86::_ghash_byte_swap_mask_addr = generate_ghash_byte_swap_mask();
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
-                                                   &StubRoutines::_safefetch32_fault_pc,
-                                                   &StubRoutines::_safefetch32_continuation_pc);
-    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
-    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
-    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != NULL) {

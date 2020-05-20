@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,14 +113,12 @@ class CharacterData02 extends CharacterData {
     }
 
     boolean isUnicodeIdentifierStart(int ch) {
-        return (getPropertiesEx(ch) & $$maskIDStart) != 0 ||
-               ch == 0x2E2F;
+        return (getPropertiesEx(ch) & $$maskIDStart) != 0;
     }
 
     boolean isUnicodeIdentifierPart(int ch) {
         return (getPropertiesEx(ch) & $$maskIDContinue) != 0 ||
-               isIdentifierIgnorable(ch) ||
-               ch == 0x2E2F;
+               isIdentifierIgnorable(ch);
     }
 
     boolean isIdentifierIgnorable(int ch) {

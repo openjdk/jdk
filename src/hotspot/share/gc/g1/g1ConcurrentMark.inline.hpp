@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
 template <class T>
 inline bool G1CMTask::deal_with_reference(T* p) {
   increment_refs_reached();
-  oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
+  oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
   if (obj == NULL) {
     return false;
   }

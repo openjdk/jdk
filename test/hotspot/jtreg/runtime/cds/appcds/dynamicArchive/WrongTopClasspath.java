@@ -33,7 +33,7 @@ import java.io.File;
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar GenericTestApp.jar GenericTestApp
  * @run driver ClassFileInstaller -jar WrongJar.jar GenericTestApp
- * @run driver WrongTopClasspath
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar WrongTopClasspath
  */
 
 public class WrongTopClasspath extends DynamicArchiveTestBase {
@@ -45,7 +45,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
     static void test(String args[]) throws Exception {
         String topArchiveName = getNewArchiveName("top");
         String baseArchiveName = getNewArchiveName("base");
-        dumpBaseArchive(baseArchiveName);
+        TestCommon.dumpBaseArchive(baseArchiveName);
 
         String appJar    = ClassFileInstaller.getJarPath("GenericTestApp.jar");
         String wrongJar  = ClassFileInstaller.getJarPath("WrongJar.jar");

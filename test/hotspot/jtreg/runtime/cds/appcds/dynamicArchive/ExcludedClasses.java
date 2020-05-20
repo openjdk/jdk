@@ -29,12 +29,14 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build ExcludedClassesApp
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar ExcludedClasses.jar
  *             ExcludedClassesApp
  *             ExcludedClassesApp$NotLinkedSuper
  *             ExcludedClassesApp$NotLinkedChild
  *             ExcludedClassesApp$NotLinkedInterface
- * @run driver ExcludedClasses
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ExcludedClasses
  */
 
 public class ExcludedClasses extends DynamicArchiveTestBase {

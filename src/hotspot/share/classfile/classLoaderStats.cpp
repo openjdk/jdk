@@ -44,27 +44,23 @@ public:
   }
 };
 
-
 void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   oop cl = cld->class_loader();
-  ClassLoaderStats* cls;
 
   // The hashtable key is the ClassLoader oop since we want to account
   // for "real" classes and anonymous classes together
-  ClassLoaderStats** cls_ptr = _stats->get(cl);
-  if (cls_ptr == NULL) {
-    cls = new ClassLoaderStats();
-    _stats->put(cl, cls);
+  bool added = false;
+  ClassLoaderStats* cls = _stats->put_if_absent(cl, &added);
+  if (added) {
+    cls->_class_loader = cl;
     _total_loaders++;
-  } else {
-    cls = *cls_ptr;
   }
+  assert(cls->_class_loader == cl, "Sanity");
 
   if (!cld->has_class_mirror_holder()) {
     cls->_cld = cld;
   }
 
-  cls->_class_loader = cl;
   if (cl != NULL) {
     cls->_parent = java_lang_ClassLoader::parent(cl);
     addEmptyParents(cls->_parent);
@@ -105,25 +101,25 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
 #endif
 
 
-bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats* const& cls) {
-  Klass* class_loader_klass = (cls->_class_loader == NULL ? NULL : cls->_class_loader->klass());
-  Klass* parent_klass = (cls->_parent == NULL ? NULL : cls->_parent->klass());
+bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats const& cls) {
+  Klass* class_loader_klass = (cls._class_loader == NULL ? NULL : cls._class_loader->klass());
+  Klass* parent_klass = (cls._parent == NULL ? NULL : cls._parent->klass());
 
   _out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  " INTPTR_FORMAT "  " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "  ",
-      p2i(class_loader_klass), p2i(parent_klass), p2i(cls->_cld),
-      cls->_classes_count,
-      cls->_chunk_sz, cls->_block_sz);
+      p2i(class_loader_klass), p2i(parent_klass), p2i(cls._cld),
+      cls._classes_count,
+      cls._chunk_sz, cls._block_sz);
   if (class_loader_klass != NULL) {
     _out->print("%s", class_loader_klass->external_name());
   } else {
     _out->print("<boot class loader>");
   }
   _out->cr();
-  if (cls->_hidden_classes_count > 0) {
+  if (cls._hidden_classes_count > 0) {
     _out->print_cr(SPACE SPACE SPACE "                                    " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "   + hidden classes",
         "", "", "",
-        cls->_hidden_classes_count,
-        cls->_hidden_chunk_sz, cls->_hidden_block_sz);
+        cls._hidden_classes_count,
+        cls._hidden_chunk_sz, cls._hidden_block_sz);
   }
   return true;
 }
@@ -146,15 +142,14 @@ void ClassLoaderStatsClosure::print() {
 void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
   while (cl != NULL && java_lang_ClassLoader::loader_data_acquire(cl) == NULL) {
     // This classloader has not loaded any classes
-    ClassLoaderStats** cls_ptr = _stats->get(cl);
-    if (cls_ptr == NULL) {
-      // It does not exist in our table - add it
-      ClassLoaderStats* cls = new ClassLoaderStats();
+    bool added = false;
+    ClassLoaderStats* cls = _stats->put_if_absent(cl, &added);
+    if (added) {
       cls->_class_loader = cl;
       cls->_parent = java_lang_ClassLoader::parent(cl);
-      _stats->put(cl, cls);
       _total_loaders++;
     }
+    assert(cls->_class_loader == cl, "Sanity");
 
     cl = java_lang_ClassLoader::parent(cl);
   }

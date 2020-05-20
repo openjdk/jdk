@@ -613,4 +613,7 @@ public class WhiteBox {
   public native int aotLibrariesCount();
 
   public native int getKlassMetadataSize(Class<?> c);
+
+  // ThreadSMR GC safety check for threadObj
+  public native void checkThreadObjOfTerminatingThread(Thread target);
 }

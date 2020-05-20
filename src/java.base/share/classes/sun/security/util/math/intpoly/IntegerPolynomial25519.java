@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,13 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
     }
 
     @Override
+    protected void reduceIn(long[] limbs, long v, int i) {
+        long t0 = 19 * v;
+        limbs[i - 10] += (t0 << 5) & LIMB_MASK;
+        limbs[i - 9] += t0 >> 21;
+    }
+
+    @Override
     protected void finalCarryReduceLast(long[] limbs) {
 
         long reducedValue = limbs[numLimbs - 1] >> RIGHT_BIT_OFFSET;
@@ -81,17 +88,6 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
 
     @Override
     protected void mult(long[] a, long[] b, long[] r) {
-
-        // Use grade-school multiplication into primitives to avoid the
-        // temporary array allocation. This is equivalent to the following
-        // code:
-        //  long[] c = new long[2 * NUM_LIMBS - 1];
-        //  for(int i = 0; i < NUM_LIMBS; i++) {
-        //      for(int j - 0; j < NUM_LIMBS; j++) {
-        //          c[i + j] += a[i] * b[j]
-        //      }
-        //  }
-
         long c0 = (a[0] * b[0]);
         long c1 = (a[0] * b[1]) + (a[1] * b[0]);
         long c2 = (a[0] * b[2]) + (a[1] * b[1]) + (a[2] * b[0]);
@@ -172,7 +168,6 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
         // carry(0,9)
         carry(r, 0, 9);
     }
-
     @Override
     protected void square(long[] a, long[] r) {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 
 /*
  * This file is used to generated optimized finite field implementations.
@@ -170,6 +169,19 @@ public class FieldGen {
             o521crSequence(19), orderFieldSmallCrSequence(19)
     );
 
+    static FieldParams O25519 = new FieldParams(
+            "Curve25519OrderField", 26, 10, 1, 252,
+            "1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed",
+            orderFieldCrSequence(10), orderFieldSmallCrSequence(10)
+    );
+
+    static FieldParams O448 = new FieldParams(
+            "Curve448OrderField", 28, 16, 1, 446,
+            "3fffffffffffffffffffffffffffffffffffffffffffffffffffffff7cca23e9c44edb49aed63690216cc2728dc58f552378c292ab5844f3",
+            //"ffffffffffffffffffffffffffffffffffffffffffffffffffffffff7cca23e9c44edb49aed63690216cc2728dc58f552378c292ab5844f3",
+            orderFieldCrSequence(16), orderFieldSmallCrSequence(16)
+    );
+
     private static List<CarryReduce> o521crSequence(int numLimbs) {
 
         // split the full reduce in half, with a carry in between
@@ -212,7 +224,8 @@ public class FieldGen {
     }
 
     static final FieldParams[] ALL_FIELDS = {
-            P256, P384, P521, O256, O384, O521,
+            Curve25519, Curve448,
+            P256, P384, P521, O256, O384, O521, O25519, O448
     };
 
     public static class Term {
@@ -322,6 +335,11 @@ public class FieldGen {
         private Iterable<Term> buildTerms(BigInteger sub) {
             // split a large subtrahend into smaller terms
             // that are aligned with limbs
+            boolean negate = false;
+            if (sub.compareTo(BigInteger.ZERO) < 0) {
+                negate = true;
+                sub = sub.negate();
+            }
             List<Term> result = new ArrayList<Term>();
             BigInteger mod = BigInteger.valueOf(1 << bitsPerLimb);
             int termIndex = 0;
@@ -331,6 +349,9 @@ public class FieldGen {
                 if (coef > (1 << (bitsPerLimb - 1))) {
                     coef = coef - (1 << bitsPerLimb);
                     plusOne = true;
+                }
+                if (negate) {
+                    coef = 0 - coef;
                 }
                 if (coef != 0) {
                     int pow = termIndex * bitsPerLimb;
@@ -619,6 +640,14 @@ public class FieldGen {
         result.appendLine();
         result.appendLine("}");
 
+        StringBuilder coqTerms = new StringBuilder("//");
+        for (Term t : params.getTerms()) {
+            coqTerms.append("(" + t.getPower() + "%nat,");
+            coqTerms.append(t.getCoefficient() + ")::");
+        }
+        coqTerms.append("nil.");
+        result.appendLine(coqTerms.toString());
+
         result.appendLine("private static BigInteger evaluateModulus() {");
         result.incrIndent();
         result.appendLine("BigInteger result = BigInteger.valueOf(2).pow("
@@ -647,6 +676,41 @@ public class FieldGen {
             }
         }
         result.appendLine("return result;");
+        result.decrIndent();
+        result.appendLine("}");
+
+        result.appendLine("@Override");
+        result.appendLine("protected void reduceIn(long[] limbs, long v, int i) {");
+        result.incrIndent();
+        String c = "v";
+        for (Term t : params.getTerms()) {
+            int reduceBits = params.getPower() - t.getPower();
+            int coefficient = -1 * t.getCoefficient();
+
+            String x = coefficient + " * " + c;
+            String accOp = "+=";
+            String temp = null;
+            if (coefficient == 1) {
+                x = c;
+            } else if (coefficient == -1) {
+                x = c;
+                accOp = "-=";
+            } else {
+                temp = result.getTemporary("long", x);
+                x = temp;
+            }
+
+            if (reduceBits % params.getBitsPerLimb() == 0) {
+                int pos = reduceBits / params.getBitsPerLimb();
+                result.appendLine("limbs[i - " + pos + "] " + accOp + " " + x + ";");
+            } else {
+                int secondPos = reduceBits / params.getBitsPerLimb();
+                int bitOffset = (secondPos + 1) * params.getBitsPerLimb() - reduceBits;
+                int rightBitOffset = params.getBitsPerLimb() - bitOffset;
+                result.appendLine("limbs[i - " + (secondPos + 1) + "] " + accOp + " (" + x + " << " + bitOffset + ") & LIMB_MASK;");
+                result.appendLine("limbs[i - " + secondPos + "] " + accOp + " " + x + " >> " + rightBitOffset + ";");
+            }
+        }
         result.decrIndent();
         result.appendLine("}");
 

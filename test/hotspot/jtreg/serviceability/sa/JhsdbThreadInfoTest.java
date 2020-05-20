@@ -21,14 +21,8 @@
  * questions.
  */
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
@@ -50,6 +44,7 @@ public class JhsdbThreadInfoTest {
             System.out.println("Started LingeredApp with pid " + app.getPid());
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+            jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
 
             jhsdbLauncher.addToolArg("jstack");
             jhsdbLauncher.addToolArg("--pid");
@@ -73,17 +68,7 @@ public class JhsdbThreadInfoTest {
             out.shouldNotContain(" prio=0 ");
             out.shouldNotContain("   java.lang.Thread.State: UNKNOWN");
 
-            // stderr should be empty except for VM warnings.
-            if (!out.getStderr().isEmpty()) {
-                List<String> lines = Arrays.asList(out.getStderr().split("(\\r\\n|\\n|\\r)"));
-                Pattern p = Pattern.compile(".*VM warning.*");
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.matches()) {
-                        throw new RuntimeException("Stderr has output other than VM warnings");
-                    }
-                }
-            }
+            out.stderrShouldBeEmptyIgnoreVMWarnings();
 
             System.out.println("Test Completed");
         } catch (Exception ex) {

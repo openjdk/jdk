@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@ package sun.security.util;
 
 import java.security.AlgorithmParameters;
 import java.security.Key;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.interfaces.ECKey;
+import java.security.interfaces.EdECKey;
+import java.security.interfaces.EdECPublicKey;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.DSAKey;
 import java.security.interfaces.DSAParams;
@@ -44,6 +44,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import java.math.BigInteger;
+import java.security.spec.NamedParameterSpec;
 
 import sun.security.jca.JCAUtil;
 
@@ -96,6 +97,16 @@ public final class KeyUtil {
         } else if (key instanceof DHKey) {
             DHKey pubk = (DHKey)key;
             size = pubk.getParams().getP().bitLength();
+        } else if (key instanceof EdECKey) {
+            String nc = ((EdECKey) key).getParams().getName();
+            if (nc.equalsIgnoreCase(NamedParameterSpec.ED25519.getName())) {
+                size = 255;
+            } else if (nc.equalsIgnoreCase(
+                    NamedParameterSpec.ED448.getName())) {
+                size = 448;
+            } else {
+                size = -1;
+            }
         }   // Otherwise, it may be a unextractable key of PKCS#11, or
             // a key we are not able to handle.
 

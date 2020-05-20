@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,10 +66,10 @@ class AixAttachListener: AllStatic {
   static char _path[UNIX_PATH_MAX];
   static bool _has_path;
   // Shutdown marker to prevent accept blocking during clean-up.
-  static bool _shutdown;
+  static volatile bool _shutdown;
 
   // the file descriptor for the listening socket
-  static int _listener;
+  static volatile int _listener;
 
   static bool _atexit_registered;
 
@@ -132,10 +132,10 @@ class AixAttachOperation: public AttachOperation {
 // statics
 char AixAttachListener::_path[UNIX_PATH_MAX];
 bool AixAttachListener::_has_path;
-int AixAttachListener::_listener = -1;
+volatile int AixAttachListener::_listener = -1;
 bool AixAttachListener::_atexit_registered = false;
 // Shutdown marker to prevent accept blocking during clean-up
-bool AixAttachListener::_shutdown = false;
+volatile bool AixAttachListener::_shutdown = false;
 
 // Supporting class to help split a buffer into individual components
 class ArgumentIterator : public StackObj {
@@ -184,7 +184,6 @@ extern "C" {
     AixAttachListener::set_shutdown(true);
     int s = AixAttachListener::listener();
     if (s != -1) {
-      AixAttachListener::set_listener(-1);
       ::shutdown(s, 2);
     }
     if (AixAttachListener::has_path()) {
@@ -376,10 +375,14 @@ AixAttachOperation* AixAttachListener::dequeue() {
     // We must prevent accept blocking on the socket if it has been shut down.
     // Therefore we allow interrupts and check whether we have been shut down already.
     if (AixAttachListener::is_shutdown()) {
+      ::close(listener());
+      set_listener(-1);
       return NULL;
     }
-    s=::accept(listener(), &addr, &len);
+    s = ::accept(listener(), &addr, &len);
     if (s == -1) {
+      ::close(listener());
+      set_listener(-1);
       return NULL;      // log a warning?
     }
 
@@ -531,9 +534,13 @@ bool AttachListener::check_socket_file() {
     listener_cleanup();
 
     // wait to terminate current attach listener instance...
-    while (AttachListener::transit_state(AL_INITIALIZING,
-                                         AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
-      os::naked_yield();
+    {
+      // avoid deadlock if AttachListener thread is blocked at safepoint
+      ThreadBlockInVM tbivm(JavaThread::current());
+      while (AttachListener::transit_state(AL_INITIALIZING,
+                                           AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
+        os::naked_yield();
+      }
     }
     return is_init_trigger();
   }

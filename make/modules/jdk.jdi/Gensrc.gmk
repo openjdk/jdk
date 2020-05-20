@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ include GensrcCommonJdk.gmk
 JDWP_SPEC_FILE := $(TOPDIR)/make/data/jdwp/jdwp.spec
 HEADER_FILE := $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 JAVA_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java
+HTML_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
 
 # Both the header and java file are created using the same recipe. By declaring
 # this rule and adding header file to dependencies for java file, both are
@@ -47,17 +48,14 @@ $(JAVA_FILE): $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK) $(HEADER_FILE)
 	    $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 	$(TOUCH) $@
 
-$(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html: $(JDWP_SPEC_FILE) \
+$(HTML_FILE): $(JDWP_SPEC_FILE) \
     $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Creating $(@F) from jdwp.spec)
 	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(TOOL_JDWPGEN) $< -doc $@
 
-GENSRC_JDWP := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java \
-    $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
-GENSRC_JDK_JDI += $(GENSRC_JDWP)
+TARGETS += $(JAVA_FILE) $(HEADER_FILE) $(HTML_FILE)
 
 ################################################################################
 
@@ -68,12 +66,4 @@ $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
     CLASS := ListResourceBundle, \
 ))
 
-GENSRC_JDK_JDI += $(COMPILE_PROPERTIES)
-
-################################################################################
-
-jdk.jdi: $(GENSRC_JDK_JDI)
-
-all: jdk.jdi
-
-.PHONY: all jdk.jdi
+TARGETS += $(COMPILE_PROPERTIES)
