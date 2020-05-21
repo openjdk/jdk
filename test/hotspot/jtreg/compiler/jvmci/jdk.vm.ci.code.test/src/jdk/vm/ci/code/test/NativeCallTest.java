@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @requires vm.jvmci & (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9")
+ * @requires vm.jvmci
+ * @requires vm.simpleArch == "x64"
  * @library /test/lib /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -32,8 +33,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          jdk.internal.vm.ci/jdk.vm.ci.amd64
- *          jdk.internal.vm.ci/jdk.vm.ci.sparc
- * @compile CodeInstallationTest.java TestHotSpotVMConfig.java NativeCallTest.java TestAssembler.java sparc/SPARCTestAssembler.java amd64/AMD64TestAssembler.java
+ * @compile CodeInstallationTest.java TestHotSpotVMConfig.java NativeCallTest.java TestAssembler.java amd64/AMD64TestAssembler.java
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI  -Xbootclasspath/a:. jdk.vm.ci.code.test.NativeCallTest
  */
 package jdk.vm.ci.code.test;

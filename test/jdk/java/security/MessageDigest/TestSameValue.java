@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,27 +60,19 @@ public class TestSameValue {
                 "SHA3-384", "SHA3-512" };
 
         for (String algorithm : algorithmArr) {
-            try {
-                md = MessageDigest.getInstance(algorithm);
+            md = MessageDigest.getInstance(algorithm);
 
-                for (UpdateDigestMethod updateMethod : UpdateDigestMethod
-                        .values()) {
-                    byte[] output = updateMethod.updateDigest(data, md);
-                    // Get the output and the "correct" one
-                    byte[] standard = md.digest(data);
-                    // Compare input and output
-                    if (!MessageDigest.isEqual(output, standard)) {
-                        throw new RuntimeException(
-                                "Test failed at algorithm/provider/numUpdate:"
-                                        + algorithm + "/" + md.getProvider()
-                                        + "/" + updateMethod);
-                    }
-                }
-            } catch (NoSuchAlgorithmException nae) {
-                if (algorithm.startsWith("SHA3") && !isSHA3supported()) {
-                    continue;
-                } else {
-                    throw nae;
+            for (UpdateDigestMethod updateMethod : UpdateDigestMethod
+                     .values()) {
+                byte[] output = updateMethod.updateDigest(data, md);
+                // Get the output and the "correct" one
+                byte[] standard = md.digest(data);
+                // Compare input and output
+                if (!MessageDigest.isEqual(output, standard)) {
+                    throw new RuntimeException(
+                            "Test failed at algorithm/provider/numUpdate:"
+                                    + algorithm + "/" + md.getProvider()
+                                    + "/" + updateMethod);
                 }
             }
         }
@@ -88,21 +80,6 @@ public class TestSameValue {
         out.println("All "
                 + algorithmArr.length * UpdateDigestMethod.values().length
                 + " tests Passed");
-    }
-
-    // SHA-3 hash algorithms are only supported by "SUN" provider
-    // and "OracleUcrypto" provider on Solaris 12.0 or later
-    // This method checks if system supports SHA-3
-    private boolean isSHA3supported() {
-        if (Security.getProvider("SUN") != null) {
-            return true;
-        }
-        if (Security.getProvider("OracleUcrypto") != null
-                && "SunOS".equals(System.getProperty("os.name"))
-                && System.getProperty("os.version").compareTo("5.12") >= 0) {
-            return true;
-        }
-        return false;
     }
 
     private static enum UpdateDigestMethod {

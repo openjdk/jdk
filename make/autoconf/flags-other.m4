@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,10 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
 [
   ## Setup strip.
   # FIXME: should this really be per platform, or should it be per toolchain type?
-  # strip is not provided by clang or solstudio; so guessing platform makes most sense.
+  # strip is not provided by clang; so guessing platform makes most sense.
   # FIXME: we should really only export STRIPFLAGS from here, not POST_STRIP_CMD.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
     STRIPFLAGS="-g"
-  elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    STRIPFLAGS="-x"
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
     STRIPFLAGS="-S"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then

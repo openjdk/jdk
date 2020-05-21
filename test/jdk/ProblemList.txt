@@ -42,11 +42,10 @@
 # List items are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
-#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
-#                   ppc64le, s390x etc.
-#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
-#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
-#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
+#     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
 #
 # More than one label is allowed but must be on the same line comma seperated,
 # without spaces.
@@ -249,7 +248,7 @@ java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218,822232
 java/awt/Window/ShapedAndTranslucentWindows/Translucent.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 linux-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
-java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all,solaris-all
+java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all
 java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
@@ -519,13 +518,13 @@ java/awt/image/VolatileImage/BitmaskVolatileImage.java 8133102 linux-all
 java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.java 8203004 linux-all
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
-java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 8157147 linux-all,solaris-all,windows-all,macosx-all
+java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 8157147 linux-all,windows-all,macosx-all
 java/awt/Mouse/TitleBarDoubleClick/TitleBarDoubleClick.java 8148041 linux-all
 java/awt/Toolkit/DesktopProperties/rfe4758438.java 8193547 linux-all
 java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
-java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris-all
+java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all
 # below test fails only on Win 7
 java/awt/font/FontNames/LocaleFamilyNames.java 8213129 windows-all
 
@@ -534,7 +533,7 @@ java/awt/FullScreen/NoResizeEventOnDMChangeTest/NoResizeEventOnDMChangeTest.java
 java/awt/TextArea/AutoScrollOnSelectAndAppend/AutoScrollOnSelectAndAppend.java 8213120 macosx-all
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8213126 macosx-all
 
-java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223 linux-all,solaris-all,windows-all
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223 linux-all,windows-all
 java/awt/Window/WindowResizing/DoubleClickTitleBarTest.java 8233557 macosx-all
 java/awt/Window/WindowOwnedByEmbeddedFrameTest/WindowOwnedByEmbeddedFrameTest.java 8233558 macosx-all
 java/awt/Mouse/MouseComboBoxTest/MouseComboBoxTest.java 8233564 macosx-all
@@ -634,18 +633,11 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 
 # jdk_nio
 
-java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
-
 java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
-
-java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
-java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
-java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
-
 
 ############################################################################
 
@@ -683,11 +675,8 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
-sun/security/tools/keytool/KeyToolTest.java                     8224644 solaris-all
-sun/security/tools/keytool/WeakAlg.java                         8224644 solaris-all
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
-sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest.java  8228431 solaris-all
 
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
@@ -733,8 +722,8 @@ javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
-javax/sound/midi/Sequencer/Recording.java 8167580 linux-all,solaris-all
-javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all,solaris-all
+javax/sound/midi/Sequencer/Recording.java 8167580 linux-all
+javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
 
 ############################################################################
 

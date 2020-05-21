@@ -440,24 +440,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     registerFontDirs(extraFontPath);
                 }
 
-                /* On Solaris, we need to register the Japanese TrueType
-                 * directory so that we can find the corresponding
-                 * bitmap fonts. This could be done by listing the
-                 * directory in the font configuration file, but we
-                 * don't want to confuse users with this quirk. There
-                 * are no bitmap fonts for other writing systems that
-                 * correspond to TrueType fonts and have matching XLFDs.
-                 * We need to register the bitmap fonts only in
-                 * environments where they're on the X font path, i.e.,
-                 * in the Japanese locale. Note that if the X Toolkit
-                 * is in use the font path isn't set up by JDK, but
-                 * users of a JA locale should have it
-                 * set up already by their login environment.
-                 */
-                if (FontUtilities.isSolaris && Locale.JAPAN.equals(Locale.getDefault())) {
-                    registerFontDir("/usr/openwin/lib/locale/ja/X11/fonts/TT");
-                }
-
                 initCompositeFonts(fontConfig, null);
 
                 return null;
@@ -2084,33 +2066,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 fontNameCache.put(mapName, font);
                 return font;
             }
-        }
-
-        /* Some apps use deprecated 1.0 names such as helvetica and courier. On
-         * Solaris these are Type1 fonts in /usr/openwin/lib/X11/fonts/Type1.
-         * If running on Solaris will register all the fonts in this
-         * directory.
-         * May as well register the whole directory without actually testing
-         * the font name is one of the deprecated names as the next step would
-         * load all fonts which are in this directory anyway.
-         * In the event that this lookup is successful it potentially "hides"
-         * TrueType versions of such fonts that are elsewhere but since they
-         * do not exist on Solaris this is not a problem.
-         * Set a flag to indicate we've done this registration to avoid
-         * repetition and more seriously, to avoid recursion.
-         */
-        if (FontUtilities.isSolaris &&!loaded1dot0Fonts) {
-            /* "timesroman" is a special case since that's not the
-             * name of any known font on Solaris or elsewhere.
-             */
-            if (lowerCaseName.equals("timesroman")) {
-                font = findFont2D("serif", style, fallback);
-                fontNameCache.put(mapName, font);
-            }
-            register1dot0Fonts();
-            loaded1dot0Fonts = true;
-            Font2D ff = findFont2D(name, style, fallback);
-            return ff;
         }
 
         /* We check for application registered fonts before

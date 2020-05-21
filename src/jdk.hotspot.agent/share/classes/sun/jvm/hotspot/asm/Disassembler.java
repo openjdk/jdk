@@ -74,17 +74,6 @@ public class Disassembler {
             }
             path.append(sep + "bin" + sep);
             libname += ".dll";
-         } else if (os.lastIndexOf("SunOS", 0) != -1) {
-            if (arch.equals("x86") || arch.equals("i386")) {
-               path.append(sep + "lib" + sep + "i386" + sep);
-               libname +=  "-i386" + ".so";
-            } else if (arch.equals("amd64")) {
-               path.append(sep + "lib" + sep + "amd64" + sep);
-               libname +=  "-amd64" + ".so";
-            } else {
-               path.append(sep + "lib" + sep + arch + sep);
-               libname +=  "-" + arch + ".so";
-            }
          } else if (os.lastIndexOf("Linux", 0) != -1) {
             if (arch.equals("x86") || arch.equals("i386")) {
                path.append(sep + "lib" + sep + "i386" + sep);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
             regardless of jdk.gtk.version flag values.
   @bug 8156121
   @key headful
-  @requires (os.family == "linux" | os.family == "solaris")
+  @requires os.family == "linux"
   @run main/othervm -Djdk.gtk.version=2 DemandGTK
   @run main/othervm -Djdk.gtk.version=3 DemandGTK
 */

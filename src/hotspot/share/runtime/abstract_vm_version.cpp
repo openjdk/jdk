@@ -175,7 +175,6 @@ const char* Abstract_VM_Version::jre_release_version() {
 
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
-                 SOLARIS_ONLY("solaris")         \
                  AIX_ONLY("aix")                 \
                  BSD_ONLY("bsd")
 
@@ -193,8 +192,7 @@ const char* Abstract_VM_Version::jre_release_version() {
                  AMD64_ONLY("amd64")             \
                  IA32_ONLY("x86")                \
                  IA64_ONLY("ia64")               \
-                 S390_ONLY("s390")               \
-                 SPARC_ONLY("sparc")
+                 S390_ONLY("s390")
 #endif // !ZERO
 #endif // !CPU
 
@@ -239,20 +237,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.3 (VS2019)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
-      #endif
-    #elif defined(__SUNPRO_CC)
-      #if __SUNPRO_CC == 0x580
-        #define HOTSPOT_BUILD_COMPILER "Workshop 5.8"
-      #elif __SUNPRO_CC == 0x590
-        #define HOTSPOT_BUILD_COMPILER "Workshop 5.9"
-      #elif __SUNPRO_CC == 0x5100
-        #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u1"
-      #elif __SUNPRO_CC == 0x5120
-        #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u3"
-      #elif __SUNPRO_CC == 0x5130
-        #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u4"
-      #else
-        #define HOTSPOT_BUILD_COMPILER "unknown Workshop:" XSTR(__SUNPRO_CC)
       #endif
     #elif defined(__clang_version__)
         #define HOTSPOT_BUILD_COMPILER "clang " __VERSION__

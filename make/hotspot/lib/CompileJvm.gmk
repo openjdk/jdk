@@ -29,9 +29,6 @@ include lib/JvmFeatures.gmk
 include lib/JvmOverrideFiles.gmk
 include lib/JvmFlags.gmk
 
-# Include support files that will setup DTRACE_EXTRA_OBJECT_FILES.
-include lib/JvmDtraceObjects.gmk
-
 ################################################################################
 # Setup compilation of the main Hotspot native library (libjvm).
 
@@ -60,8 +57,6 @@ JVM_EXCLUDES += adlc
 # Needed by abstract_vm_version.cpp
 ifeq ($(call isTargetCpu, x86_64), true)
   OPENJDK_TARGET_CPU_VM_VERSION := amd64
-else ifeq ($(call isTargetCpu, sparcv9), true)
-  OPENJDK_TARGET_CPU_VM_VERSION := sparc
 else
   OPENJDK_TARGET_CPU_VM_VERSION := $(OPENJDK_TARGET_CPU)
 endif
@@ -97,10 +92,6 @@ DISABLED_WARNINGS_clang := tautological-compare \
     delete-non-virtual-dtor missing-braces char-subscripts \
     ignored-qualifiers missing-field-initializers mismatched-tags
 
-DISABLED_WARNINGS_solstudio := labelnotused hidef w_novirtualdescr inlafteruse \
-    unknownpragma doubunder w_enumnotused w_toomanyenumnotused \
-    wvarhidenmem wunreachable wnoretvalue notemsource
-
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft :=
@@ -134,29 +125,6 @@ else ifeq ($(call isTargetCpu, x86_64), true)
   JVM_EXCLUDE_PATTERNS += x86_32
 endif
 
-# Inline assembly for solaris
-ifeq ($(call isTargetOs, solaris), true)
-  ifeq ($(call isTargetCpu, x86_64), true)
-    JVM_CFLAGS += $(TOPDIR)/src/hotspot/os_cpu/solaris_x86/solaris_x86_64.il
-  else ifeq ($(call isTargetCpu, sparcv9), true)
-    JVM_CFLAGS += $(TOPDIR)/src/hotspot/os_cpu/solaris_sparc/solaris_sparc.il
-  endif
-  # Exclude warnings in devstudio 12.6
-  ifeq ($(CC_VERSION_NUMBER), 5.15)
-    DISABLED_WARNINGS_solstudio += SEC_ARR_OUTSIDE_BOUND_READ \
-      SEC_ARR_OUTSIDE_BOUND_WRITE
-  endif
-endif
-
-ifeq ($(call And, $(call isTargetOs, solaris) $(call isTargetCpu, sparcv9)), true)
-  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), false)
-    # NOTE: In the old build, we weirdly enough set -g/-g0 always, regardless
-    # of if debug symbols were needed. Without it, compilation fails on
-    # sparc! :-(
-    JVM_CFLAGS += -g0
-  endif
-endif
-
 ifeq ($(call isTargetOs, windows), true)
   ifeq ($(call isTargetCpuBits, 64), true)
     RC_DESC := 64-Bit$(SPACE)
@@ -185,13 +153,11 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
-    EXTRA_OBJECT_FILES := $(DTRACE_EXTRA_OBJECT_FILES), \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
-    DISABLED_WARNINGS_solstudio := $(DISABLED_WARNINGS_solstudio), \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
@@ -275,30 +241,20 @@ TARGETS += $(BUILD_LIBJVM)
 # one) then the global definition will be used, triggering this check.
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
-  ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang solstudio), )
+  ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
 
     DEMANGLED_REGEXP := [^:]operator (new|delete)
 
     # Running c++filt to find offending symbols in all files is too expensive,
-    # especially on Solaris, so use mangled names when looking for symbols.
+    # so use mangled names when looking for symbols.
     # Save the demangling for when something is actually found.
-    ifeq ($(TOOLCHAIN_TYPE), solstudio)
-      MANGLED_SYMS := \
-          __1c2n6FL_pv_ \
-          __1c2N6FL_pv_ \
-          __1c2k6Fpv_v_ \
-          __1c2K6Fpv_v_ \
-          #
-      UNDEF_PATTERN := UNDEF
-    else
-      MANGLED_SYMS := \
-          _ZdaPv \
-          _ZdlPv \
-          _Znam \
-          _Znwm \
-          #
-      UNDEF_PATTERN := ' U '
-    endif
+    MANGLED_SYMS := \
+        _ZdaPv \
+        _ZdlPv \
+        _Znam \
+        _Znwm \
+        #
+    UNDEF_PATTERN := ' U '
 
     define SetupOperatorNewDeleteCheck
         $1.op_check: $1

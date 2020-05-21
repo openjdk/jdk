@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class DflCache extends ReplayCache {
 
     private static long uid;
     static {
-        // Available on Solaris, Linux and Mac. Otherwise, -1 and no _euid suffix
+        // Available on Linux and Mac. Otherwise, -1 and no _euid suffix
         uid = jdk.internal.misc.VM.geteuid();
     }
 

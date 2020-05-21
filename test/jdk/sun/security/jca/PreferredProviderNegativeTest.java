@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,12 +107,7 @@ public class PreferredProviderNegativeTest {
 
         String expected;
         String value = args[1];
-        // If OS is solaris, expect OracleUcrypto, otherwise SunJCE
-        if (System.getProperty("os.name").toLowerCase().contains("sun")) {
-            expected = "OracleUcrypto";
-        } else {
-            expected = "SunJCE";
-        }
+        expected = "SunJCE";
 
         if (args.length >= 2) {
             switch (args[0]) {

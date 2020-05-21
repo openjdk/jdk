@@ -69,7 +69,7 @@ public class CheckForProperDetailStackTrace {
         ".*Modules.*define_module.*\n" +
         ".*JVM_DefineModule.*\n";
 
-    /* The stack trace we look for on AIX, Solaris and Windows slowdebug builds.
+    /* The stack trace we look for on AIX and Windows slowdebug builds.
        ALWAYSINLINE is only a hint and is ignored for AllocateHeap on the
        aforementioned platforms. When that happens allocate_new_entry is
        inlined instead.
@@ -98,10 +98,10 @@ public class CheckForProperDetailStackTrace {
         output.shouldNotContain("os::get_native_stack");
 
         // AllocateHeap shouldn't be in the output because it is supposed to always be inlined.
-        // We check for that here, but allow it for Aix, Solaris and Windows slowdebug builds
+        // We check for that here, but allow it for Aix and Windows slowdebug builds
         // because the compiler ends up not inlining AllocateHeap.
         Boolean okToHaveAllocateHeap = Platform.isSlowDebugBuild() &&
-                                       (Platform.isAix() || Platform.isSolaris() || Platform.isWindows());
+                                       (Platform.isAix() || Platform.isWindows());
         if (!okToHaveAllocateHeap) {
             output.shouldNotContain("AllocateHeap");
         }

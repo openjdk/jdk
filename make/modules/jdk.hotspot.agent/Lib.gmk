@@ -30,9 +30,6 @@ include LibCommon.gmk
 ifeq ($(call isTargetOs, linux), true)
   SA_CFLAGS := -D_FILE_OFFSET_BITS=64
 
-else ifeq ($(call isTargetOs, solaris), true)
-  SA_LDFLAGS := -mt
-
 else ifeq ($(call isTargetOs, macosx), true)
   SA_CFLAGS := -Damd64 -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
       -mstack-alignment=16 -fPIC
@@ -65,13 +62,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     DISABLED_WARNINGS_microsoft := 4267, \
     DISABLED_WARNINGS_gcc := sign-compare pointer-arith, \
     DISABLED_WARNINGS_clang := sign-compare pointer-arith format-nonliteral, \
-    DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma doubunder, \
     CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_LDFLAGS), \
+    LDFLAGS := $(LDFLAGS_JDKLIB), \
     LIBS_linux := $(LIBDL), \
-    LIBS_solaris := -ldl -ldemangle -lthread -lproc, \
     LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \
     LIBS_windows := dbgeng.lib, \

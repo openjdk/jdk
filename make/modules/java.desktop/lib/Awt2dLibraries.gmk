@@ -67,10 +67,6 @@ LIBAWT_EXTRA_SRC := \
     $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
     #
 
-ifeq ($(call And, $(call isTargetOs, solaris) $(call isTargetCpuArch, sparc)), true)
-  LIBAWT_EXTRA_SRC += $(TOPDIR)/src/$(MODULE)/share/native/common/awt/medialib
-endif
-
 ifeq ($(call isTargetOs, windows), true)
   LIBAWT_EXTRA_SRC += \
       $(TOPDIR)/src/$(MODULE)/share/native/common/awt/utility \
@@ -80,7 +76,7 @@ ifeq ($(call isTargetOs, windows), true)
       #
 endif
 
-ifeq ($(call isTargetOs, solaris linux macosx aix), true)
+ifeq ($(call isTargetOs, linux macosx aix), true)
   LIBAWT_EXFILES += awt_Font.c CUPSfuncs.c fontpath.c X11Color.c
 endif
 
@@ -112,13 +108,7 @@ LIBAWT_EXTRA_HEADER_DIRS := \
 
 LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES $(X_CFLAGS)
 
-ifeq ($(call And, $(call isTargetOs, solaris) $(call isTargetCpu, sparcv9)), true)
-  LIBAWT_ASFLAGS = -P -xarch=v9a
-endif
-
-ifeq ($(call isTargetOs, solaris), false)
-  LIBAWT_CFLAGS += -DMLIB_NO_LIBSUNMATH
-endif
+LIBAWT_CFLAGS += -DMLIB_NO_LIBSUNMATH
 
 ifeq ($(call isTargetOs, windows), true)
   LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE
@@ -157,7 +147,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_clang := logical-op-parentheses extern-initializer \
         sign-compare format-nonliteral, \
     DISABLED_WARNINGS_microsoft := 4244 4267 4996, \
-    ASFLAGS := $(LIBAWT_ASFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
@@ -167,7 +156,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
         -delayload:comctl32.dll -delayload:shlwapi.dll, \
     LIBS_unix := -ljvm -ljava $(LIBM), \
     LIBS_linux :=  $(LIBDL), \
-    LIBS_solaris := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_macosx := -lmlib_image \
         -framework Cocoa \
@@ -223,10 +211,6 @@ ifeq ($(call isTargetOs, windows macosx), false)
         $(FONTCONFIG_CFLAGS) \
         $(CUPS_CFLAGS)
 
-    ifeq ($(call isTargetOs, solaris), true)
-      LIBAWT_XAWT_CFLAGS += -DFUNCPROTO=15
-    endif
-
     ifeq ($(call isTargetOs, linux), true)
       ifeq ($(DISABLE_XRENDER), true)
         LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
@@ -265,8 +249,6 @@ ifeq ($(call isTargetOs, windows macosx), false)
             implicit-fallthrough undef unused-function, \
         DISABLED_WARNINGS_clang := parentheses format undef \
             logical-op-parentheses format-nonliteral int-conversion, \
-        DISABLED_WARNINGS_solstudio := E_ASSIGNMENT_TYPE_MISMATCH \
-             E_NON_CONST_INIT, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
@@ -312,7 +294,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
         misleading-indentation undef unused-function stringop-truncation, \
     DISABLED_WARNINGS_clang := tautological-compare format-nonliteral undef, \
-    DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     DISABLED_WARNINGS_microsoft := 4819, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -397,13 +378,11 @@ ifeq ($(call isTargetOs, windows macosx), false)
           $(LIBAWT_HEADLESS_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc := unused-function, \
-      DISABLED_WARNINGS_solstudio := E_EMPTY_TRANSLATION_UNIT, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
-      LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX), \
   ))
 
   $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
@@ -438,9 +417,6 @@ else
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
-      DISABLED_WARNINGS_solstudio := \
-         E_STATEMENT_NOT_REACHED \
-         E_END_OF_LOOP_CODE_NOT_REACHED, \
       DISABLED_WARNINGS_microsoft := 4018 4267 4244 4312 4819, \
       DISABLED_WARNINGS_gcc := implicit-fallthrough cast-function-type bad-function-cast, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -463,9 +439,6 @@ ifeq ($(call isTargetOs, windows), false)
 endif
 ifeq ($(call isTargetOs, linux macosx), true)
   HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
-endif
-ifeq ($(call isTargetOs, solaris), true)
-  HARFBUZZ_CFLAGS += -DHAVE_SOLARIS_ATOMIC_OPS
 endif
 ifeq ($(call isTargetOs, macosx), true)
   HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
@@ -540,14 +513,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         sign-compare undef missing-field-initializers, \
-    DISABLED_WARNINGS_C_solstudio = \
-        E_INTEGER_OVERFLOW_DETECTED \
-        E_ARG_INCOMPATIBLE_WITH_ARG_L \
-        E_ENUM_VAL_OVERFLOWS_INT_MAX, \
-    DISABLED_WARNINGS_CXX_solstudio := \
-        truncwarn wvarhidenmem wvarhidemem wbadlkginit identexpected \
-        hidevf w_novirtualdescr arrowrtn2 refmemnoconstr_aggr unknownpragma \
-        doubunder wunreachable, \
     DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334 4819 4101 4068 4805 4138, \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,, \
         $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
@@ -626,10 +591,7 @@ else # not windows
   ifeq ($(call isTargetOs, macosx), true)
     JAWT_LIBS := -lawt_lwawt
   else
-    JAWT_LIBS :=
-    ifeq ($(call isTargetOs, solaris), false)
-      JAWT_LIBS += -lawt
-    endif
+    JAWT_LIBS := -lawt
     ifeq ($(ENABLE_HEADLESS_ONLY), false)
       JAWT_LIBS += -lawt_xawt
     else
@@ -656,7 +618,6 @@ else # not windows
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
       LIBS_unix := $(JAWT_LIBS) $(JDKLIB_LIBS), \
-      LIBS_solaris := $(X_LIBS) -lXrender, \
       LIBS_macosx := -framework Cocoa, \
   ))
 
@@ -775,7 +736,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare, \
-      DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

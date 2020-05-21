@@ -46,14 +46,9 @@ ifeq ($(call isTargetOs, aix), false)
       -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \
       -DUSE_PORTS=TRUE \
       -DUSE_DAUDIO=TRUE \
+      -DUSE_PLATFORM_MIDI_OUT=TRUE \
+      -DUSE_PLATFORM_MIDI_IN=TRUE \
       #
-
-  ifeq ($(call isTargetOs, solaris), false)
-    LIBJSOUND_CFLAGS += \
-        -DUSE_PLATFORM_MIDI_OUT=TRUE \
-        -DUSE_PLATFORM_MIDI_IN=TRUE \
-        #
-  endif
 
   ifeq ($(call isTargetOs, macosx), true)
     LIBJSOUND_TOOLCHAIN := TOOLCHAIN_LINK_CXX

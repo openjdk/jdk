@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,6 @@
 
 DIR=`dirname $0`
 OUT=`. $DIR/autoconf-config.guess`
-
-# Test and fix solaris on x86_64
-echo $OUT | grep i386-pc-solaris > /dev/null 2> /dev/null
-if test $? = 0; then
-  # isainfo -n returns either i386 or amd64
-  REAL_CPU=`isainfo -n`
-  OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
-fi
-
-# Test and fix solaris on sparcv9
-echo $OUT | grep sparc-sun-solaris > /dev/null 2> /dev/null
-if test $? = 0; then
-  # isainfo -n returns either sparc or sparcv9
-  REAL_CPU=`isainfo -n`
-  OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
-fi
 
 # Test and fix cygwin on x86_64
 echo $OUT | grep 86-pc-cygwin > /dev/null 2> /dev/null

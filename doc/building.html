@@ -30,13 +30,11 @@
 </ul></li>
 <li><a href="#build-hardware-requirements">Build Hardware Requirements</a><ul>
 <li><a href="#building-on-x86">Building on x86</a></li>
-<li><a href="#building-on-sparc">Building on sparc</a></li>
 <li><a href="#building-on-aarch64">Building on aarch64</a></li>
 <li><a href="#building-on-32-bit-arm">Building on 32-bit arm</a></li>
 </ul></li>
 <li><a href="#operating-system-requirements">Operating System Requirements</a><ul>
 <li><a href="#windows">Windows</a></li>
-<li><a href="#solaris">Solaris</a></li>
 <li><a href="#macos">macOS</a></li>
 <li><a href="#linux">Linux</a></li>
 <li><a href="#aix">AIX</a></li>
@@ -45,7 +43,6 @@
 <li><a href="#gcc">gcc</a></li>
 <li><a href="#clang">clang</a></li>
 <li><a href="#apple-xcode">Apple Xcode</a></li>
-<li><a href="#oracle-solaris-studio">Oracle Solaris Studio</a></li>
 <li><a href="#microsoft-visual-studio">Microsoft Visual Studio</a></li>
 <li><a href="#ibm-xl-cc">IBM XL C/C++</a></li>
 </ul></li>
@@ -157,18 +154,15 @@
 <p>The JDK is a massive project, and require machines ranging from decent to powerful to be able to build in a reasonable amount of time, or to be able to complete a build at all.</p>
 <p>We <em>strongly</em> recommend usage of an SSD disk for the build, since disk speed is one of the limiting factors for build performance.</p>
 <h3 id="building-on-x86">Building on x86</h3>
-<p>At a minimum, a machine with 2-4 cores is advisable, as well as 2-4 GB of RAM. (The more cores to use, the more memory you need.) At least 6 GB of free disk space is required (8 GB minimum for building on Solaris).</p>
+<p>At a minimum, a machine with 2-4 cores is advisable, as well as 2-4 GB of RAM. (The more cores to use, the more memory you need.) At least 6 GB of free disk space is required.</p>
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build machine, and instead create a 32-bit target using <code>--with-target-bits=32</code>.</p>
-<h3 id="building-on-sparc">Building on sparc</h3>
-<p>At a minimum, a machine with 4 cores is advisable, as well as 4 GB of RAM. (The more cores to use, the more memory you need.) At least 8 GB of free disk space is required.</p>
-<p>Note: The sparc port is deprecated.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM. (The more cores to use, the more memory you need.) At least 6 GB of free disk space is required.</p>
 <p>If you do not have access to sufficiently powerful hardware, it is also possible to use <a href="#cross-compiling">cross-compiling</a>.</p>
 <h3 id="building-on-32-bit-arm">Building on 32-bit arm</h3>
 <p>This is not recommended. Instead, see the section on <a href="#cross-compiling">Cross-compiling</a>.</p>
 <h2 id="operating-system-requirements">Operating System Requirements</h2>
-<p>The mainline JDK project supports Linux, Solaris, macOS, AIX and Windows. Support for other operating system, e.g. BSD, exists in separate &quot;port&quot; projects.</p>
+<p>The mainline JDK project supports Linux, macOS, AIX and Windows. Support for other operating system, e.g. BSD, exists in separate &quot;port&quot; projects.</p>
 <p>In general, the JDK can be built on a wide range of versions of these operating systems, but the further you deviate from what is tested on a daily basis, the more likely you are to run into problems.</p>
 <p>This table lists the OS versions used by Oracle when building the JDK. Such information is always subject to change, but this table is up to date at the time of writing.</p>
 <table>
@@ -184,20 +178,16 @@
 <td style="text-align: left;">Oracle Enterprise Linux 6.4 / 7.6</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Solaris</td>
-<td style="text-align: left;">Solaris 11.3 SRU 20</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">macOS</td>
 <td style="text-align: left;">Mac OS X 10.13 (High Sierra)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">Windows</td>
 <td style="text-align: left;">Windows Server 2012 R2</td>
 </tr>
 </tbody>
 </table>
-<p>The double version numbers for Linux and Solaris are due to the hybrid model used at Oracle, where header files and external libraries from an older version are used when building on a more modern version of the OS.</p>
+<p>The double version numbers for Linux are due to the hybrid model used at Oracle, where header files and external libraries from an older version are used when building on a more modern version of the OS.</p>
 <p>The Build Group has a wiki page with <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a>. From time to time, this is updated by contributors to list successes or failures of building on different platforms.</p>
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build the JDK.</p>
@@ -223,10 +213,6 @@
 <p>It's possible to build both Windows and Linux binaries from WSL. To build Windows binaries, you must use a Windows boot JDK (located in a Windows-accessible directory). To build Linux binaries, you must use a Linux boot JDK. The default behavior is to build for Windows. To build for Linux, pass <code>--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu</code> to <code>configure</code>.</p>
 <p>If building Windows binaries, the source code must be located in a Windows- accessible directory. This is because Windows executables (such as Visual Studio and the boot JDK) must be able to access the source code. Also, the drive where the source is stored must be mounted as case-insensitive by changing either /etc/fstab or /etc/wsl.conf in WSL. Individual directories may be corrected using the fsutil tool in case the source was cloned before changing the mount options.</p>
 <p>Note that while it's possible to build on WSL, testing is still not fully supported.</p>
-<h3 id="solaris">Solaris</h3>
-<p>See <code>make/devkit/solaris11.1-package-list.txt</code> for a list of recommended packages to install when building on Solaris. The versions specified in this list is the versions used by the daily builds at Oracle, and is likely to work properly.</p>
-<p>Older versions of Solaris shipped a broken version of <code>objcopy</code>. At least version 2.21.1 is needed, which is provided by Solaris 11 Update 1. Objcopy is needed if you want to have external debug symbols. Please make sure you are using at least version 2.21.1 of objcopy, or that you disable external debug symbols.</p>
-<p>Note: The Solaris port is deprecated.</p>
 <h3 id="macos">macOS</h3>
 <p>Apple is using a quite aggressive scheme of pushing OS updates, and coupling these updates with required updates of Xcode. Unfortunately, this makes it difficult for a project such as the JDK to keep pace with a continuously updated machine running macOS. See the section on <a href="#apple-xcode">Apple Xcode</a> on some strategies to deal with this.</p>
 <p>It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).</p>
@@ -259,14 +245,10 @@
 <td style="text-align: left;">Apple Xcode (using clang)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Solaris</td>
-<td style="text-align: left;">Oracle Solaris Studio</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">AIX</td>
 <td style="text-align: left;">IBM XL C/C++</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">Windows</td>
 <td style="text-align: left;">Microsoft Visual Studio</td>
 </tr>
@@ -290,10 +272,6 @@
 <td style="text-align: left;">Apple Xcode 10.1 (using clang 10.0.0)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Solaris</td>
-<td style="text-align: left;">Oracle Solaris Studio 12.6 (with compiler version 5.15)</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">Windows</td>
 <td style="text-align: left;">Microsoft Visual Studio 2019 update 16.5.3</td>
 </tr>
@@ -313,64 +291,6 @@
 <pre><code>xcode-select --install</code></pre>
 <p>It is advisable to keep an older version of Xcode for building the JDK when updating Xcode. This <a href="http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html">blog page</a> has good suggestions on managing multiple Xcode versions. To use a specific version of Xcode, use <code>xcode-select -s</code> before running <code>configure</code>, or use <code>--with-toolchain-path</code> to point to the version of Xcode to use, e.g. <code>configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin</code></p>
 <p>If you have recently (inadvertently) updated your OS and/or Xcode version, and the JDK can no longer be built, please see the section on <a href="#problems-with-the-build-environment">Problems with the Build Environment</a>, and <a href="#getting-help">Getting Help</a> to find out if there are any recent, non-merged patches available for this update.</p>
-<h3 id="oracle-solaris-studio">Oracle Solaris Studio</h3>
-<p>The minimum accepted version of the Solaris Studio compilers is 5.13 (corresponding to Solaris Studio 12.4). Older versions will not be accepted by configure.</p>
-<p>The Solaris Studio installation should contain at least these packages:</p>
-<table>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Package</th>
-<th style="text-align: left;">Version</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">developer/solarisstudio-124/backend</td>
-<td style="text-align: left;">12.4-1.0.6.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">developer/solarisstudio-124/c++</td>
-<td style="text-align: left;">12.4-1.0.10.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">developer/solarisstudio-124/cc</td>
-<td style="text-align: left;">12.4-1.0.4.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">developer/solarisstudio-124/library/c++-libs</td>
-<td style="text-align: left;">12.4-1.0.10.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">developer/solarisstudio-124/library/math-libs</td>
-<td style="text-align: left;">12.4-1.0.0.1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">developer/solarisstudio-124/library/studio-gccrt</td>
-<td style="text-align: left;">12.4-1.0.0.1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">developer/solarisstudio-124/studio-common</td>
-<td style="text-align: left;">12.4-1.0.0.1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">developer/solarisstudio-124/studio-ja</td>
-<td style="text-align: left;">12.4-1.0.0.1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">developer/solarisstudio-124/studio-legal</td>
-<td style="text-align: left;">12.4-1.0.0.1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">developer/solarisstudio-124/studio-zhCN</td>
-<td style="text-align: left;">12.4-1.0.0.1</td>
-</tr>
-</tbody>
-</table>
-<p>Compiling with Solaris Studio can sometimes be finicky. This is the exact version used by Oracle, which worked correctly at the time of writing:</p>
-<pre><code>$ cc -V
-cc: Sun C 5.13 SunOS_i386 2014/10/20
-$ CC -V
-CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <h3 id="microsoft-visual-studio">Microsoft Visual Studio</h3>
 <p>The minimum accepted version of Visual Studio is 2010. Older versions will not be accepted by <code>configure</code>. The maximum accepted version of Visual Studio is 2019. Versions older than 2017 are unlikely to continue working for long.</p>
 <p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2015</code>.</p>
@@ -394,7 +314,6 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libfreetype6-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install freetype-devel</code>.</li>
-<li>To install on Solaris, try running <code>pkg install system/library/freetype-2</code>.</li>
 </ul>
 <p>Use <code>--with-freetype-include=&lt;path&gt;</code> and <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code> does not automatically locate the platform FreeType files.</p>
 <h3 id="cups">CUPS</h3>
@@ -402,15 +321,13 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libcups2-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install cups-devel</code>.</li>
-<li>To install on Solaris, try running <code>pkg install print/cups</code>.</li>
 </ul>
 <p>Use <code>--with-cups=&lt;path&gt;</code> if <code>configure</code> does not properly locate your CUPS files.</p>
 <h3 id="x11">X11</h3>
-<p>Certain <a href="http://www.x.org/">X11</a> libraries and include files are required on Linux and Solaris.</p>
+<p>Certain <a href="http://www.x.org/">X11</a> libraries and include files are required on Linux.</p>
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel</code>.</li>
-<li>To install on Solaris, try running <code>pkg install x11/header/x11-protocols x11/library/libice x11/library/libpthread-stubs x11/library/libsm x11/library/libx11 x11/library/libxau x11/library/libxcb x11/library/libxdmcp x11/library/libxevie x11/library/libxext x11/library/libxrender x11/library/libxrandr x11/library/libxscrnsaver x11/library/libxtst x11/library/toolkit/libxt</code>.</li>
 </ul>
 <p>Use <code>--with-x=&lt;path&gt;</code> if <code>configure</code> does not properly locate your X11 files.</p>
 <h3 id="alsa">ALSA</h3>
@@ -443,7 +360,6 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <p>At least version 3.81 of GNU Make must be used. For distributions supporting GNU Make 4.0 or above, we strongly recommend it. GNU Make 4.0 contains useful functionality to handle parallel building (supported by <code>--with-output-sync</code>) and speed and stability improvements.</p>
 <p>Note that <code>configure</code> locates and verifies a properly functioning version of <code>make</code> and stores the path to this <code>make</code> binary in the configuration. If you start a build using <code>make</code> on the command line, you will be using the version of make found first in your <code>PATH</code>, and not necessarily the one stored in the configuration. This initial make will be used as &quot;bootstrap make&quot;, and in a second stage, the make located by <code>configure</code> will be called. Normally, this will present no issues, but if you have a very old <code>make</code>, or a non-GNU Make <code>make</code> in your path, this might cause issues.</p>
 <p>If you want to override the default make found by <code>configure</code>, use the <code>MAKE</code> configure variable, e.g. <code>configure MAKE=/opt/gnu/make</code>.</p>
-<p>On Solaris, it is common to call the GNU version of make by using <code>gmake</code>.</p>
 <h3 id="gnu-bash">GNU Bash</h3>
 <p>The JDK requires <a href="http://www.gnu.org/software/bash">GNU Bash</a>. No other shells are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
@@ -865,9 +781,6 @@ Clock skew detected. Your build may be incomplete.</code></pre>
 <p>then the clock on your build machine is out of sync with the timestamps on the source files. Other errors, apparently unrelated but in fact caused by the clock skew, can occur along with the clock skew warnings. These secondary errors may tend to obscure the fact that the true root cause of the problem is an out-of-sync clock.</p>
 <p>If you see these warnings, reset the clock on the build machine, run <code>make clean</code> and restart the build.</p>
 <h4 id="out-of-memory-errors">Out of Memory Errors</h4>
-<p>On Solaris, you might get an error message like this:</p>
-<pre><code>Trouble writing out table to disk</code></pre>
-<p>To solve this, increase the amount of swap space on your build machine.</p>
 <p>On Windows, you might get error messages like this:</p>
 <pre><code>fatal error - couldn&#39;t allocate heap
 cannot create ... Permission denied
@@ -919,7 +832,7 @@ sudo mv /tmp/configure /usr/local/bin</code></pre>
 <p>If you are prepared to take some risk of an incorrect build, and know enough of the system to understand how things build and interact, you can speed up the build process considerably by instructing make to only build a portion of the product.</p>
 <h4 id="building-individual-modules">Building Individual Modules</h4>
 <p>The safe way to use fine-grained make targets is to use the module specific make targets. All source code in the JDK is organized so it belongs to a module, e.g. <code>java.base</code> or <code>jdk.jdwp.agent</code>. You can build only a specific module, by giving it as make target: <code>make jdk.jdwp.agent</code>. If the specified module depends on other modules (e.g. <code>java.base</code>), those modules will be built first.</p>
-<p>You can also specify a set of modules, just as you can always specify a set of make targets: <code>make jdk.crypto.cryptoki jdk.crypto.ec jdk.crypto.mscapi jdk.crypto.ucrypto</code></p>
+<p>You can also specify a set of modules, just as you can always specify a set of make targets: <code>make jdk.crypto.cryptoki jdk.crypto.ec jdk.crypto.mscapi</code></p>
 <h4 id="building-individual-module-phases">Building Individual Module Phases</h4>
 <p>The build process for each module is divided into separate phases. Not all modules need all phases. Which are needed depends on what kind of source code and other artifact the module consists of. The phases are:</p>
 <ul>

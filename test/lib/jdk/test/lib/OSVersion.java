@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,6 @@ public final class OSVersion implements Comparable<OSVersion> {
     private final int[] versionTokens;
 
     public static OSVersion current() {
-        if (Platform.isSolaris()) {
-            return new OSVersion(getSolarisVersion());
-        }
         return new OSVersion(Platform.getOsVersion());
     }
 
@@ -62,26 +59,6 @@ public final class OSVersion implements Comparable<OSVersion> {
                                    .filter(onlyDigits.asPredicate())
                                    .mapToInt(Integer::parseInt)
                                    .toArray();
-    }
-
-    private static String getSolarisVersion() {
-        try {
-            return Utils.distro();
-        } catch (Throwable e) {
-            System.out.println("First attempt failed with: " + e.getMessage());
-        }
-
-        // Try to get Solaris version from /etc/release
-        try (BufferedReader in = new BufferedReader(AccessController.doPrivileged(
-                (PrivilegedExceptionAction<FileReader>) () -> new FileReader("/etc/release")))) {
-            return in.readLine().trim().split(" ")[2];
-        } catch (PrivilegedActionException e) {
-            System.out.println("Second attempt failed with: " + e.getException().getMessage());
-        } catch (Exception e) {
-            System.out.println("Second attempt failed with: " + e.getMessage());
-        }
-
-        throw new RuntimeException("Unable to get Solaris version");
     }
 
     @Override

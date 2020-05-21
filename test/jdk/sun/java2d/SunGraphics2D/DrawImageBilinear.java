@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class DrawImageBilinear extends Canvas {
 
         String arch = System.getProperty("os.arch");
         boolean isOglEnabled = Boolean.getBoolean("sun.java2d.opengl");
-        skipOglTextureTest = isOglEnabled && ("sparc".equals(arch));
+        skipOglTextureTest = false;
         System.out.println("Skip OpenGL texture test: " + skipOglTextureTest);
 
         DrawImageBilinear test = new DrawImageBilinear();

@@ -15,7 +15,7 @@ grant codebase "file:${test.classes}/" {
 // -- via the shell script.  this way we can ensure different
 // -- codebases for the test and the action
 grant codebase "file:${test.src}/",
-      principal com.sun.security.auth.SolarisPrincipal "TestPrincipal",
-      principal com.sun.security.auth.SolarisPrincipal "${bad.property}" {
+      principal com.sun.security.auth.UnixPrincipal "TestPrincipal",
+      principal com.sun.security.auth.UnixPrincipal "${bad.property}" {
     permission java.io.FilePermission "/testFile", "read";
 };

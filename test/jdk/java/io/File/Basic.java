@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,30 +136,7 @@ public class Basic {
             fail(dir, "not renamed");
         }
 
-        if (System.getProperty("os.name").equals("SunOS")
-            && System.getProperty("os.version").compareTo("5.6") >= 0) {
-            if (bigFile.exists()) {
-                bigFile.delete();
-                if (bigFile.exists())
-                    fail(bigFile, "could not delete");
-            }
-            RandomAccessFile raf = new RandomAccessFile(bigFile, "rw");
-            long big = ((long)Integer.MAX_VALUE) * 2;
-            try {
-                raf.seek(big);
-                raf.write('x');
-                show(bigFile);
-                testFile(bigFile, true, big + 1);
-            } finally {
-                raf.close();
-            }
-            bigFile.delete();
-            if (bigFile.exists())
-                fail(bigFile, "could not delete");
-        } else {
-            System.err.println("NOTE: Large files not supported on this system");
-        }
-
+        System.err.println("NOTE: Large files not supported on this system");
     }
 
 }

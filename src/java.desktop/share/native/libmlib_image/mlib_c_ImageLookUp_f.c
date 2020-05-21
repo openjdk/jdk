@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,9 +250,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da++, sa += 2) {
           READ_U8_U8_ALIGN(tab, tab, tab, tab);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -280,9 +277,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s2 = sa[2];
         sa += 3;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 8; i += 4, da++, sa += 2) {
           READ_U8_U8_NOTALIGN(tab, tab, tab, tab);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -350,9 +344,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da++, sa += 2) {
           READ_U8_U8_ALIGN(tab0, tab1, tab0, tab1);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -386,9 +377,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s2 = sa[2];
         sa += 3;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 8; i += 4, da++, sa += 2) {
           READ_U8_U8_NOTALIGN(tab0, tab1, tab0, tab1);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -475,9 +463,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da++, sa += 2) {
           READ_U8_U8_ALIGN(tab0, tab1, tab2, tab0);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -523,9 +508,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s2 = sa[2];
         sa += 3;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 8; i += 4, da++, sa += 2) {
           READ_U8_U8_NOTALIGN(tab0, tab1, tab2, tab0);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -633,9 +615,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da++, sa += 2) {
           READ_U8_U8_ALIGN(tab0, tab1, tab2, tab3);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -677,9 +656,6 @@ void mlib_c_ImageLookUp_U8_U8(const mlib_u8 *src,
         s2 = sa[2];
         sa += 3;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 8; i += 4, da++, sa += 2) {
           READ_U8_U8_NOTALIGN(tab0, tab1, tab2, tab3);
           t = (t0 << 24) + (t1 << 16) + (t2 << 8) + t3;
@@ -825,9 +801,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da += 2, sa++) {
           READ_U8_S16_ALIGN(tab, tab, tab, tab);
           res1 = (t0 << 16) + t1;
@@ -860,9 +833,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 10; i += 4, da += 2, sa++) {
           READ_U8_S16_NOTALIGN(tab, tab, tab, tab);
           s0 = s1;
@@ -933,9 +903,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da += 2, sa++) {
           READ_U8_S16_ALIGN(tab0, tab1, tab0, tab1);
           res1 = (t0 << 16) + t1;
@@ -974,9 +941,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 10; i += 4, da += 2, sa++) {
           READ_U8_S16_NOTALIGN(tab1, tab0, tab1, tab0);
           s0 = s1;
@@ -1066,9 +1030,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da += 2, sa++) {
           READ_U8_S16_ALIGN(tab0, tab1, tab2, tab0);
           res1 = (t0 << 16) + t1;
@@ -1119,9 +1080,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 10; i += 4, da += 2, sa++) {
           READ_U8_S16_NOTALIGN(tab1, tab2, tab0, tab1);
           s0 = s1;
@@ -1232,9 +1190,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 7; i += 4, da += 2, sa++) {
           READ_U8_S16_ALIGN(tab0, tab1, tab2, tab3);
           res1 = (t0 << 16) + t1;
@@ -1281,9 +1236,6 @@ void mlib_c_ImageLookUp_U8_S16(const mlib_u8  *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 10; i += 4, da += 2, sa++) {
           READ_U8_S16_NOTALIGN(tab1, tab2, tab3, tab0);
           s0 = s1;
@@ -1486,9 +1438,6 @@ void mlib_c_ImageLookUp_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_S32(tab, tab, tab, tab);
         s0 = sa[0];
@@ -1547,9 +1496,6 @@ void mlib_c_ImageLookUp_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_S32(tab0, tab1, tab0, tab1);
         s0 = sa[0];
@@ -1627,9 +1573,6 @@ void mlib_c_ImageLookUp_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_S32(tab0, tab1, tab2, tab0);
         tab = tab0;
@@ -1728,9 +1671,6 @@ void mlib_c_ImageLookUp_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_S32(tab0, tab1, tab2, tab3);
         s0 = sa[0];
@@ -1891,9 +1831,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 3; i += 2, da++, sa += 2) {
           t0 = tab[s0];
           t1 = tab[s1];
@@ -1953,9 +1890,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 4; i += 2, da++, sa += 2) {
           t1 = tab[s0];
           t2 = tab[s1];
@@ -2040,9 +1974,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
 
       off = (mlib_s32) ((mlib_addr) dp & 3);
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < off; i++) {
         ptr = (mlib_u8 *) (tab + sa[0]);
         dp[0] = ptr[1];
@@ -2058,9 +1989,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
       s1 = sa[1];
       sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, da += 3, sa += 4) {
         t0 = tab[s0];
         t1 = tab[s1];
@@ -2115,9 +2043,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
       dp = (mlib_u8 *) da;
       i += 4;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; i < size; i++) {
         ptr = (mlib_u8 *) (tab + sa[0]);
         dp[0] = ptr[1];
@@ -2178,9 +2103,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 3; i += 2, da += 2, sa += 2) {
           t0 = tab[s0];
           t1 = tab[s1];
@@ -2219,9 +2141,6 @@ void mlib_c_ImageLookUpSI_U8_U8(const mlib_u8 *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 4; i += 2, da += 2, sa += 2) {
           t1 = tab[s0];
           t2 = tab[s1];
@@ -2321,9 +2240,6 @@ void mlib_c_ImageLookUpSI_S16_U8(const mlib_s16 *src,
 
       off = (mlib_s32) ((mlib_addr) dp & 3);
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < off; i++) {
         s0 = *sa++;
         dp[0] = tab0[s0];
@@ -2338,9 +2254,6 @@ void mlib_c_ImageLookUpSI_S16_U8(const mlib_s16 *src,
       s1 = sa[1];
       sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, da += 3, sa += 4) {
         t0 = tab0[s0];
         t1 = tab1[s0];
@@ -2411,9 +2324,6 @@ void mlib_c_ImageLookUpSI_S16_U8(const mlib_s16 *src,
       dp = (mlib_u8 *) da;
       i += 4;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; i < size; i++) {
         s0 = *sa++;
         dp[0] = tab0[s0];
@@ -2447,9 +2357,6 @@ void mlib_c_ImageLookUpSI_S16_U8(const mlib_s16 *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 1; i++, da++, sa++) {
           t0 = tab0[s0];
           t1 = tab1[s0];
@@ -2505,9 +2412,6 @@ void mlib_c_ImageLookUpSI_S16_U8(const mlib_s16 *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 2; i++, da++, sa++) {
           t0 = tab0[s0];
           t1 = tab1[s0];
@@ -2590,9 +2494,6 @@ void mlib_c_ImageLookUpSI_U16_U8(const mlib_u16 *src,
 
       off = (mlib_s32) ((mlib_addr) dp & 3);
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < off; i++) {
         s0 = *sa++;
         dp[0] = tab0[s0];
@@ -2607,9 +2508,6 @@ void mlib_c_ImageLookUpSI_U16_U8(const mlib_u16 *src,
       s1 = sa[1];
       sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, da += 3, sa += 4) {
         t0 = tab0[s0];
         t1 = tab1[s0];
@@ -2680,9 +2578,6 @@ void mlib_c_ImageLookUpSI_U16_U8(const mlib_u16 *src,
       dp = (mlib_u8 *) da;
       i += 4;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; i < size; i++) {
         s0 = *sa++;
         dp[0] = tab0[s0];
@@ -2716,9 +2611,6 @@ void mlib_c_ImageLookUpSI_U16_U8(const mlib_u16 *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 1; i++, da++, sa++) {
           t0 = tab0[s0];
           t1 = tab1[s0];
@@ -2774,9 +2666,6 @@ void mlib_c_ImageLookUpSI_U16_U8(const mlib_u16 *src,
         s0 = sa[0];
         sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 2; i++, da++, sa++) {
           t0 = tab0[s0];
           t1 = tab1[s0];
@@ -2895,9 +2784,6 @@ void mlib_c_ImageLookUpSI_U8_S16(const mlib_u8  *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 3; i += 2, da += 2, sa += 2) {
           t0 = tab[s0];
           t1 = tab[s1];
@@ -2929,9 +2815,6 @@ void mlib_c_ImageLookUpSI_U8_S16(const mlib_u8  *src,
         s1 = sa[1];
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 4; i += 2, da += 2, sa += 2) {
           t1 = tab[s0];
           t2 = tab[s1];
@@ -3042,9 +2925,6 @@ void mlib_c_ImageLookUpSI_U8_S16(const mlib_u8  *src,
       s1 = sa[1] << 3;
       sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 3; i += 2, da += 3, sa += 2) {
         t0 = *(mlib_u32 *) ((mlib_u8 *) tab + s0);
         t1 = *(mlib_u32 *) ((mlib_u8 *) tab + s0 + 4);
@@ -3146,9 +3026,6 @@ void mlib_c_ImageLookUpSI_U8_S16(const mlib_u8  *src,
         s1 = sa[1] << 3;
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 3; i += 2, da += 4, sa += 2) {
           t0 = *(mlib_u32 *) ((mlib_u8 *) tab + s0);
           t1 = *(mlib_u32 *) ((mlib_u8 *) tab + s0 + 4);
@@ -3197,9 +3074,6 @@ void mlib_c_ImageLookUpSI_U8_S16(const mlib_u8  *src,
         s1 = sa[1] << 3;
         sa += 2;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (i = 0; i < size - 4; i += 2, da += 4, sa += 2) {
           t0 = *(mlib_u32 *) ((mlib_u8 *) tab + s0);
           t1 = *(mlib_u32 *) ((mlib_u8 *) tab + s0 + 4);
@@ -3435,9 +3309,6 @@ void mlib_c_ImageLookUpSI_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 8, sa++) {
 #ifdef _LITTLE_ENDIAN
         t0 = *(mlib_u32 *) ((mlib_u8 *) tab0 + ((s0 << 2) & 0x3FC));
@@ -3541,9 +3412,6 @@ void mlib_c_ImageLookUpSI_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 12, sa++) {
 #ifdef _LITTLE_ENDIAN
         t0 = *(mlib_u32 *) ((mlib_u8 *) tab0 + ((s0 << 2) & 0x3FC));
@@ -3674,9 +3542,6 @@ void mlib_c_ImageLookUpSI_U8_S32(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 16, sa++) {
 #ifdef _LITTLE_ENDIAN
         t0 = *(mlib_u32 *) ((mlib_u8 *) tab0 + ((s0 << 2) & 0x3FC));

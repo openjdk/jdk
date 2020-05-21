@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -674,36 +674,6 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
             if (imIndex != -1) {
                 imInfo = xmodifiers.substring(imIndex + 4);
             }
-        } else if (System.getProperty("os.name").startsWith("SunOS")) {
-            File dtprofile = new File(System.getProperty("user.home") +
-                                      "/.dtprofile");
-            String languageEngineInfo = null;
-            try {
-                BufferedReader br = new BufferedReader(new FileReader(dtprofile));
-                String line = null;
-
-                while ( languageEngineInfo == null && (line = br.readLine()) != null) {
-                    if (line.contains("atok") || line.contains("wnn")) {
-                        StringTokenizer tokens =  new StringTokenizer(line);
-                        while (tokens.hasMoreTokens()) {
-                            String token = tokens.nextToken();
-                            if (Pattern.matches("atok.*setup", token) ||
-                                Pattern.matches("wnn.*setup", token)){
-                                languageEngineInfo = token.substring(0, token.indexOf("setup"));
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                br.close();
-            } catch(IOException ioex) {
-                // Since this method is provided for internal testing only,
-                // we dump the stack trace for the ease of debugging.
-                ioex.printStackTrace();
-            }
-
-            imInfo = "htt " + languageEngineInfo;
         }
 
         return imInfo;

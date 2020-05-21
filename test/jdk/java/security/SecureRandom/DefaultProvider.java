@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.SecureRandom;
 public class DefaultProvider {
 
     private static final String OS_NAME = System.getProperty("os.name");
-    private static final String SUNOS = "SunOS";
     private static final String WINDOWS = "Windows";
 
     public static void main(String[] args) throws NoSuchAlgorithmException {

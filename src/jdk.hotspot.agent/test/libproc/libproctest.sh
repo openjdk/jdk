@@ -1,7 +1,7 @@
 #!/bin/ksh
 
 #
-# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,8 @@ gcore $pid
 kill -9 $pid
 
 
-OPTIONS="-Djava.library.path=$STARTDIR/../src/os/solaris/proc/`uname -p`:$STARTDIR/../solaris/`uname -p`"
-
 # run libproc client
-$SA_JAVA -showversion ${OPTIONS} -cp $STARTDIR/../../build/classes::$STARTDIR/../sa.jar:$STARTDIR LibprocClient x core.$pid
+$SA_JAVA -showversion -cp $STARTDIR/../../build/classes::$STARTDIR/../sa.jar:$STARTDIR LibprocClient x core.$pid
 
 # delete core
 rm -f core.$pid

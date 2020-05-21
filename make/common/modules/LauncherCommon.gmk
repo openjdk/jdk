@@ -40,8 +40,6 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
 else ifeq ($(TOOLCHAIN_TYPE), clang)
   LAUNCHER_CFLAGS += -fvisibility=hidden
-else ifeq ($(TOOLCHAIN_TYPE), solstudio)
-  LAUNCHER_CFLAGS += -xldscope=hidden
 endif
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
@@ -143,7 +141,6 @@ define SetupBuildLauncherBody
           -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
-      CFLAGS_solaris := -KPIC, \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       DISABLED_WARNINGS_gcc := unused-function, \
       LDFLAGS := $$(LDFLAGS_JDKEXE) \
@@ -153,14 +150,11 @@ define SetupBuildLauncherBody
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_solaris := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
       LIBS_linux := -ljli -lpthread $(LIBDL), \
       LIBS_macosx := -ljli -framework Cocoa -framework Security \
           -framework ApplicationServices, \
-      LIBS_solaris := -ljli -lthread $(LIBDL), \
       LIBS_aix := -ljli_static, \
       LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
           $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \

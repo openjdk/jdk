@@ -12,11 +12,7 @@ grant {
 
     permission java.io.FilePermission "<<ALL FILES>>", "read";
     permission java.security.SecurityPermission "setProperty.auth.login.defaultCallbackHandler";
-    permission java.security.SecurityPermission "authProvider.SunPKCS11-ibutton";
-    permission java.security.SecurityPermission "authProvider.SunPKCS11-activcard";
     permission java.security.SecurityPermission "authProvider.SunPKCS11-nss";
-    permission java.security.SecurityPermission "authProvider.SunPKCS11-Solaris";
-    permission java.security.SecurityPermission "authProvider.SunPKCS11-sca1000";
 
     // for 'module' test
     permission java.lang.RuntimePermission "accessClassInPackage.sun.*";

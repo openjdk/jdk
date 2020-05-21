@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 /*
  * @bug 6357887 8165146
  * @summary  Verifies if selected printertray is used
- * @requires (os.family == "linux" | os.family == "solaris")
+ * @requires os.family == "linux"
  * @run main/manual TestMediaTraySelection
  */
 

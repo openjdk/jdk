@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,8 @@
  * @build java.base/sun.security.rsa.RSAKeyPairGenerator
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
- * @requires os.family != "solaris"
  * @run main PSS
  */
-
-// This test is excluded from Solaris because the 8192-bit RSA key pair
-// generator is extremely slow there. Please note the fake
-// KeyPairGenerator will not be used because of provider preferences.
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;

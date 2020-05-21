@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
   @key headful
   @bug 6387275
   @summary List: the focus is at the top of the first item, XAWT
-  @requires (os.family == "linux" | os.family == "solaris")
+  @requires os.family == "linux"
   @modules java.desktop/sun.awt
            java.desktop/java.awt.peer
            java.desktop/sun.awt.X11:open

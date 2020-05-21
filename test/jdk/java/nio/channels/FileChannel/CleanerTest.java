@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8147615
  * @summary Test whether an unreferenced FileChannel is actually cleaned
- * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "solaris") | (os.family == "aix")
+ * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "aix")
  * @library /test/lib
  * @build jdk.test.lib.util.FileUtils CleanerTest
  * @modules java.management java.base/sun.nio.ch:+open

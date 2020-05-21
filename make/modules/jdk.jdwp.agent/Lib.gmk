@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_linux := -lpthread, \
-    LIBS_solaris := -lnsl -lsocket, \
     LIBS_windows := $(JDKLIB_LIBS) ws2_32.lib iphlpapi.lib, \
 ))
 
@@ -63,7 +62,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_linux := $(LIBDL), \
-    LIBS_solaris := $(LIBDL), \
     LIBS_macosx := -liconv, \
     LIBS_aix := -liconv, \
     LIBS_windows := $(WIN_JAVA_LIB), \

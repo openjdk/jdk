@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,9 +225,6 @@ void mlib_ImageLookUp_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_D64(tab, tab, tab, tab);
         s0 = sa[0];
@@ -286,9 +283,6 @@ void mlib_ImageLookUp_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_D64(tab0, tab1, tab0, tab1);
         s0 = sa[0];
@@ -366,9 +360,6 @@ void mlib_ImageLookUp_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_D64(tab0, tab1, tab2, tab0);
         tab = tab0;
@@ -467,9 +458,6 @@ void mlib_ImageLookUp_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 4, sa++) {
         READ_U8_D64(tab0, tab1, tab2, tab3);
         s0 = sa[0];
@@ -609,9 +597,6 @@ void mlib_ImageLookUpSI_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 8, sa++) {
 #ifdef _LITTLE_ENDIAN
         t0 = *(mlib_d64 *) ((mlib_u8 *) tab0 + ((s0 << 3) & 0x7F8));
@@ -715,9 +700,6 @@ void mlib_ImageLookUpSI_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 12, sa++) {
 #ifdef _LITTLE_ENDIAN
         t0 = *(mlib_d64 *) ((mlib_u8 *) tab0 + ((s0 << 3) & 0x7F8));
@@ -848,9 +830,6 @@ void mlib_ImageLookUpSI_U8_D64(const mlib_u8  *src,
       s0 = sa[0];
       sa++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < size - 7; i += 4, dp += 16, sa++) {
 #ifdef _LITTLE_ENDIAN
         t0 = *(mlib_d64 *) ((mlib_u8 *) tab0 + ((s0 << 3) & 0x7F8));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,16 +58,6 @@ public class InconsistentError {
         } catch (SecurityException se) {
             if (se.getMessage().indexOf("No such file or directory") > 0) {
                 System.out.println("test 2 succeeded");
-            } else {
-                // if the OS is Solaris then this is an error; on windows
-                // this is not an error since the  error message on windows
-                // is "The system cannot find the file specified "
-                // See bug 4450257
-
-                if (System.getProperty("os.name").equals("SunOS")) {
-                        System.out.println("test 2 failed");
-                        throw se;
-                }
             }
         }
 

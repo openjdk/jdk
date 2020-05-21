@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,29 +89,6 @@ public class Test7029048 extends TestHelper {
     }
 
     static void analyze(TestResult tr, int nLLPComponents, String caseID) {
-        if (isSolaris) {
-            String envValue = getValue("LD_LIBRARY_PATH_64", tr.testOutput);
-           /*
-            * the envValue can never be null, since the test code should always
-            * print a "null" string.
-            */
-            if (envValue == null) {
-                throw new RuntimeException("NPE, likely a program crash ??");
-            }
-            boolean noLLP64 = envValue.equals("null");
-            if (nLLPComponents == 0 && noLLP64) {
-                System.out.println("FAIL: test7029048, " + caseID);
-                System.out.println(" Missing LD_LIBRARY_PATH_64");
-                errors++;
-                return;
-            } else if (nLLPComponents > 3 && !noLLP64) {
-                System.out.println("FAIL: test7029048, " + caseID);
-                System.out.println(" Unexpected LD_LIBRARY_PATH_64: " + envValue);
-                errors++;
-                return;
-            }
-        }
-
         String envValue = getValue(LD_LIBRARY_PATH, tr.testOutput);
        /*
         * the envValue can never be null, since the test code should always
@@ -216,19 +193,6 @@ public class Test7029048 extends TestHelper {
             run(env,
                 v.value + 1,            // Add one to account for our setting
                 "Case 2: " + desc);
-
-            if (isSolaris) {
-                /*
-                 * Case 3: set the appropriate LLP_XX flag,
-                 * java64 LLP_64 is relevant, LLP_32 is ignored
-                 */
-                env.clear();
-                env.put(LD_LIBRARY_PATH_64, dstServerDir.getAbsolutePath());
-                run(env,
-                    // LD_LIBRARY_PATH_64 is copied into LD_LIBRARY_PATH for LIBJVM case
-                    v.value == 0 ? 0 : v.value + 1,
-                    "Case 3: " + desc);
-            }
         }
         return;
     }
@@ -250,9 +214,6 @@ public class Test7029048 extends TestHelper {
         if (errors > 0) {
             throw new Exception("Test7029048: FAIL: with "
                     + errors + " errors and passes " + passes);
-        } else if (isSolaris && passes < 9) {
-            throw new Exception("Test7029048: FAIL: " +
-                    "all tests did not run, expected " + 9 + " got " + passes);
         } else if (isLinux && passes < 6) {
              throw new Exception("Test7029048: FAIL: " +
                     "all tests did not run, expected " + 6 + " got " + passes);

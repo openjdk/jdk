@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ inline T JfrBigEndian::read_unaligned(const address location) {
 inline bool JfrBigEndian::platform_supports_unaligned_reads(void) {
 #if defined(IA32) || defined(AMD64) || defined(PPC) || defined(S390)
   return true;
-#elif defined(SPARC) || defined(ARM) || defined(AARCH64)
+#elif defined(ARM) || defined(AARCH64)
   return false;
 #else
   #warning "Unconfigured platform"

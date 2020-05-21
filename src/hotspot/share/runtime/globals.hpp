@@ -409,7 +409,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Trace external suspend wait failures")                           \
                                                                             \
   product(bool, MaxFDLimit, true,                                           \
-          "Bump the number of file descriptors to maximum in Solaris")      \
+          "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
   diagnostic(bool, LogEvents, true,                                         \
           "Enable the various ring buffer event logs")                      \
@@ -679,10 +679,6 @@ const size_t minimumSymbolTableSize = 1024;
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
-  develop(bool, UseDetachedThreads, true,                                   \
-          "Use detached threads that are recycled upon termination "        \
-          "(for Solaris only)")                                             \
-                                                                            \
   experimental(bool, DisablePrimordialThreadGuardPages, false,              \
                "Disable the use of stack guard pages if the JVM is loaded " \
                "on the primordial process thread")                          \
@@ -704,10 +700,6 @@ const size_t minimumSymbolTableSize = 1024;
           "When true prevents OS-level spurious, or premature, wakeups "    \
           "from Object.wait (Ignored for Windows)")                         \
                                                                             \
-  develop(bool, UsePthreads, false,                                         \
-          "Use pthread-based instead of libthread-based synchronization "   \
-          "(SPARC only)")                                                   \
-                                                                            \
   product(bool, ReduceSignalUsage, false,                                   \
           "Reduce the use of OS signals in Java and/or the VM")             \
                                                                             \
@@ -723,11 +715,11 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(bool, AllowUserSignalHandlers, false,                             \
           "Do not complain if the application installs signal handlers "    \
-          "(Solaris & Linux only)")                                         \
+          "(Unix only)")                                                    \
                                                                             \
   product(bool, UseSignalChaining, true,                                    \
           "Use signal-chaining to invoke signal handlers installed "        \
-          "by the application (Solaris & Linux only)")                      \
+          "by the application (Unix only)")                                 \
                                                                             \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
@@ -1807,10 +1799,8 @@ const size_t minimumSymbolTableSize = 1024;
   product(intx, ThreadPriorityPolicy, 0,                                    \
           "0 : Normal.                                                     "\
           "    VM chooses priorities that are appropriate for normal       "\
-          "    applications. On Solaris NORM_PRIORITY and above are mapped "\
-          "    to normal native priority. Java priorities below "           \
-          "    NORM_PRIORITY map to lower native priority values. On       "\
-          "    Windows applications are allowed to use higher native       "\
+          "    applications.                                               "\
+          "    On Windows applications are allowed to use higher native    "\
           "    priorities. However, with ThreadPriorityPolicy=0, VM will   "\
           "    not use the highest possible native priority,               "\
           "    THREAD_PRIORITY_TIME_CRITICAL, as it may interfere with     "\
@@ -1835,7 +1825,6 @@ const size_t minimumSymbolTableSize = 1024;
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
           range(min_jint, max_jint)                                         \
-          constraint(CompilerThreadPriorityConstraintFunc, AfterErgo)       \
                                                                             \
   product(intx, VMThreadPriority, -1,                                       \
           "The native priority at which the VM thread should run "          \
@@ -2373,8 +2362,7 @@ const size_t minimumSymbolTableSize = 1024;
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
-  experimental(size_t, ArrayAllocatorMallocLimit,                           \
-          SOLARIS_ONLY(64*K) NOT_SOLARIS((size_t)-1),                       \
+  experimental(size_t, ArrayAllocatorMallocLimit, (size_t)-1,               \
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
                                                                             \

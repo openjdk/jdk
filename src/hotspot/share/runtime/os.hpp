@@ -451,7 +451,7 @@ class os: AllStatic {
 
   static void free_thread(OSThread* osthread);
 
-  // thread id on Linux/64bit is 64bit, on Windows and Solaris, it's 32bit
+  // thread id on Linux/64bit is 64bit, on Windows it's 32bit
   static intx current_thread_id();
   static int current_process_id();
 
@@ -778,10 +778,8 @@ class os: AllStatic {
   // JVMTI & JVM monitoring and management support
   // The thread_cpu_time() and current_thread_cpu_time() are only
   // supported if is_thread_cpu_time_supported() returns true.
-  // They are not supported on Solaris T1.
 
   // Thread CPU Time - return the fast estimate on a platform
-  // On Solaris - call gethrvtime (fast) - user time only
   // On Linux   - fast clock_gettime where available - user+sys
   //            - otherwise: very slow /proc fs - user+sys
   // On Windows - GetThreadTimes - user+sys

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.crypto.SecretKey;
  * @test
  * @bug 8048621
  * @summary Test the basic operations of KeyStore entry, provided by SunJCE
- *  (jceks), and SunPKCS11-Solaris(PKCS11KeyStore)
+ *  (jceks)
  * @author Yu-Ching Valerie PENG
  */
 
@@ -50,13 +50,6 @@ public class TestKeyStoreEntry {
             "DES", "DESede", "Blowfish"
     };
     private static final int NUM_ALGOS = KS_ALGOS.length;
-
-    private static final String[] KS_TYPE = {
-            "jks", "jceks", "pkcs12", "PKCS11KeyStore"
-    };
-    private static final String[] PRO_TYPE = {
-            "SUN", "SunJCE", "SunJSSE", "SunPKCS11-Solaris"
-    };
 
     private final SecretKey[] sks = new SecretKey[NUM_ALGOS];
 
@@ -77,35 +70,10 @@ public class TestKeyStoreEntry {
     }
 
     public void run() throws Exception {
-
-        Provider[] providers = Security.getProviders();
-        for (Provider p: providers) {
-            String prvName = p.getName();
-            if (prvName.startsWith("SunJCE")
-                    || prvName.startsWith("SunPKCS11-Solaris")) {
-                try {
-                    runTest(p);
-                    out.println("Test with provider " + p.getName() + ""
-                            + " passed");
-
-                } catch (java.security.KeyStoreException e) {
-                    if (prvName.startsWith("SunPKCS11-Solaris")) {
-                        out.println("KeyStoreException is expected because "
-                                + "PKCS11KeyStore is invalid keystore type.");
-                        e.printStackTrace();
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-        }
-    }
-
-    public void runTest(Provider p) throws Exception {
         try (FileOutputStream fos = new FileOutputStream("jceks");
                 FileInputStream fis = new FileInputStream("jceks");) {
 
-            KeyStore ks = KeyStore.getInstance("jceks", p);
+            KeyStore ks = KeyStore.getInstance("jceks");
             // create an empty key store
             ks.load(null, null);
 

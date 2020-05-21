@@ -261,33 +261,7 @@ MakeTargetDir = \
 ################################################################################
 # All install-file and related macros automatically call DecodeSpace when needed.
 
-ifeq ($(call isTargetOs, solaris), true)
-  # On Solaris, if the target is a symlink and exists, cp won't overwrite.
-  # Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
-  # name of the target file differs from the source file, rename after copy.
-  # If the source and target parent directories are the same, recursive copy doesn't work
-  # so we fall back on regular copy, which isn't preserving symlinks.
-  define install-file
-	$(call MakeTargetDir)
-	$(RM) '$(call DecodeSpace, $@)'
-	if [ '$(call DecodeSpace, $(dir $(call EncodeSpace, $@)))' != \
-	    '$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))' ]; then \
-	  $(CP) -f -r -P '$(call DecodeSpace, $<)' \
-	      '$(call DecodeSpace, $(dir $(call EncodeSpace, $@)))'; \
-	  if [ '$(call DecodeSpace, $(notdir $(call EncodeSpace, $@)))' != \
-	      '$(call DecodeSpace, $(notdir $(call EncodeSpace, $(<))))' ]; then \
-	    $(MV) '$(call DecodeSpace, $(dir $(call EncodeSpace, $@))/$(notdir $(call EncodeSpace, $<)))' \
-	        '$(call DecodeSpace, $@)'; \
-	  fi; \
-	else \
-	  if [ -L '$(call DecodeSpace, $<)' ]; then \
-	    $(ECHO) "Source file is a symlink and target is in the same directory: $< $@" ; \
-	    exit 1; \
-	  fi; \
-	  $(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
-	fi
-  endef
-else ifeq ($(call isTargetOs, macosx), true)
+ifeq ($(call isTargetOs, macosx), true)
   # On mac, extended attributes sometimes creep into the source files, which may later
   # cause the creation of ._* files which confuses testing. Clear these with xattr if
   # set. Some files get their write permissions removed after being copied to the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,9 +132,7 @@ JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) 
 
 JVMFlag::Error AllocatePrefetchInstrConstraintFunc(intx value, bool verbose) {
   intx max_value = max_intx;
-#if defined(SPARC)
-  max_value = 1;
-#elif defined(X86)
+#if defined(X86)
   max_value = 3;
 #endif
   if (value < 0 || value > max_value) {
@@ -235,32 +233,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error CompilerThreadPriorityConstraintFunc(intx value, bool verbose) {
-#ifdef SOLARIS
-  if ((value < MinimumPriority || value > MaximumPriority) &&
-      (value != -1) && (value != -FXCriticalPriority)) {
-    JVMFlag::printError(verbose,
-                        "CompileThreadPriority (" INTX_FORMAT ") must be "
-                        "between %d and %d inclusively or -1 (means no change) "
-                        "or %d (special value for critical thread class/priority)\n",
-                        value, MinimumPriority, MaximumPriority, -FXCriticalPriority);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-#endif
-
-  return JVMFlag::SUCCESS;
-}
-
 JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
-#ifdef SPARC
-  if (CodeEntryAlignment % relocInfo::addr_unit() != 0) {
-    JVMFlag::printError(verbose,
-                        "CodeEntryAlignment (" INTX_FORMAT ") must be "
-                        "multiple of NOP size\n", CodeEntryAlignment);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-#endif
-
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
                         "CodeEntryAlignment (" INTX_FORMAT ") must be "
@@ -288,7 +261,7 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  // Relevant on ppc, s390, sparc. Will be optimized where
+  // Relevant on ppc, s390. Will be optimized where
   // addr_unit() == 1.
   if (OptoLoopAlignment % relocInfo::addr_unit() != 0) {
     JVMFlag::printError(verbose,
@@ -355,15 +328,6 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-#ifdef SPARC
-  if (InteriorEntryAlignment % relocInfo::addr_unit() != 0) {
-    JVMFlag::printError(verbose,
-                        "InteriorEntryAlignment (" INTX_FORMAT ") must be "
-                        "multiple of NOP size\n");
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-#endif
-
   if (!is_power_of_2(value)) {
      JVMFlag::printError(verbose,
                          "InteriorEntryAlignment (" INTX_FORMAT ") must be "
@@ -372,7 +336,7 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
    }
 
   int minimum_alignment = 16;
-#if defined(SPARC) || (defined(X86) && !defined(AMD64))
+#if defined(X86) && !defined(AMD64)
   minimum_alignment = 4;
 #elif defined(S390)
   minimum_alignment = 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ public class ExtendedModifiersTest implements KeyListener {
             runScenario(new int[]{KeyEvent.VK_SHIFT, KeyEvent.VK_ALT},
                     InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK);
 
-            if (OS.contains("os x") || OS.contains("sunos")) {
+            if (OS.contains("os x")) {
                 // 6. meta
                 runScenario(new int[]{KeyEvent.VK_META},
                         InputEvent.META_DOWN_MASK);

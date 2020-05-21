@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,11 +174,6 @@ protected:
   void* Amalloc_D(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     debug_only(if (UseMallocOnly) return malloc(x);)
-#if defined(SPARC) && !defined(_LP64)
-#define DALIGN_M1 7
-    size_t delta = (((size_t)_hwm + DALIGN_M1) & ~DALIGN_M1) - (size_t)_hwm;
-    x += delta;
-#endif
     if (!check_for_overflow(x, "Arena::Amalloc_D", alloc_failmode))
       return NULL;
     if (_hwm + x > _max) {
@@ -186,9 +181,6 @@ protected:
     } else {
       char *old = _hwm;
       _hwm += x;
-#if defined(SPARC) && !defined(_LP64)
-      old += delta; // align to 8-bytes
-#endif
       return old;
     }
   }

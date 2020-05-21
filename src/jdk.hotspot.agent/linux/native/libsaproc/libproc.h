@@ -33,7 +33,7 @@
 #include <sys/ptrace.h>
 
 
-#if defined(sparc) || defined(sparcv9) || defined(ppc64) || defined(ppc64le)
+#if defined(ppc64) || defined(ppc64le)
 #include <asm/ptrace.h>
 #define user_regs_struct  pt_regs
 #endif

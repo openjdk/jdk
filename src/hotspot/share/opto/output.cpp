@@ -804,14 +804,6 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
 #else //_LP64
-#ifdef SPARC
-    if (t->base() == Type::Long && OptoReg::is_reg(regnum)) {
-      // For SPARC we have to swap high and low words for
-      // long values stored in a single-register (g0-g7).
-      array->append(new_loc_value( C->regalloc(),              regnum   , Location::normal ));
-      array->append(new_loc_value( C->regalloc(), OptoReg::add(regnum,1), Location::normal ));
-    } else
-#endif //SPARC
     if( t->base() == Type::DoubleBot || t->base() == Type::DoubleCon || t->base() == Type::Long ) {
       // Repack the double/long as two jints.
       // The convention the interpreter uses is that the second local

@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *          jdk.attach
  *          jdk.management.agent/jdk.internal.agent
  *
- * @requires (os.family == "linux" | os.family == "solaris")
+ * @requires os.family == "linux"
  * @build TestManager TestApplication CustomLauncherTest
  * @run main/othervm/native CustomLauncherTest
  */

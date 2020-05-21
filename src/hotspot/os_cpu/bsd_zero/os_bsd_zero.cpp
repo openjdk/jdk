@@ -90,14 +90,8 @@ char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,
   // if the CPU splits constants across multiple instructions).
-#ifdef SPARC
-  // On SPARC, 0 != %hi(any real address), because there is no
-  // allocation in the first 1Kb of the virtual address space.
-  return (char *) 0;
-#else
   // This is the value for x86; works pretty well for PPC too.
   return (char *) -1;
-#endif // SPARC
 }
 
 address os::Bsd::ucontext_get_pc(const ucontext_t* uc) {

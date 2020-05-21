@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,6 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
   if (sv->is_location()) {
     // Stack or register value
     Location loc = ((LocationValue *)sv)->location();
-
-#ifdef SPARC
-    // %%%%% Callee-save floats will NOT be working on a Sparc until we
-    // handle the case of a 2 floats in a single double register.
-    assert( !(loc.is_register() && loc.type() == Location::float_in_dbl), "Sparc does not handle callee-save floats yet" );
-#endif // SPARC
 
     // First find address of value
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,22 +62,6 @@ echo ""
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    FS="/"
-    PS=":"
-    OS_VERSION=`uname -r`
-    case "${OS_VERSION}" in
-      5.1* )
-        SOFTTOKEN_DIR=${TESTCLASSES}
-        export SOFTTOKEN_DIR
-        TOKENS="nss solaris"
-        ;;
-      * )
-        # SunPKCS11-Solaris Test only runs on Solaris 5.10 and later
-        TOKENS="nss"
-        ;;
-    esac
-    ;;
   Windows_* )
     FS="\\"
     PS=";"

@@ -283,10 +283,6 @@ address os::current_stack_pointer() {
   void *esp;
   __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
   return (address) esp;
-#elif defined(SPARC_WORKS)
-  void *esp;
-  __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
-  return (address) ((char*)esp + sizeof(long)*2);
 #else
   register void *esp __asm__ (SPELL_REG_SP);
   return (address) esp;
@@ -411,7 +407,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
 }
 
 intptr_t* _get_previous_fp() {
-#if defined(SPARC_WORKS) || defined(__clang__) || defined(__llvm__)
+#if defined(__clang__) || defined(__llvm__)
   intptr_t **ebp;
   __asm__("mov %%" SPELL_REG_FP ", %0":"=r"(ebp));
 #else

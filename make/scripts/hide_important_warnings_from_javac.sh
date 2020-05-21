@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,8 @@
 # questions.
 #
 
-if [ -x /usr/bin/ggrep ] ; then
-    # Gnu grep on Solaris
-    # (reference configure and build/solaris-i586-clientANDserver-release/spec.gmk
-    GREP=/usr/bin/ggrep
-else
-    GREP=grep
-fi
+GREP=grep
+
 #
 EXP="Note: Some input files use or override a deprecated API."
 EXP="${EXP}|Note: Recompile with -Xlint:deprecation for details."

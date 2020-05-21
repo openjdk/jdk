@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8181493 8231174
  * @summary Verify that nanosecond precision is maintained for file timestamps
- * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "solaris") | (os.family == "windows")
+ * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "windows")
  * @modules java.base/sun.nio.fs:+open
  */
 

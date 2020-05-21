@@ -65,7 +65,6 @@ ifeq ($(call isTargetOs, linux), true)
       CFLAGS := $(CFLAGS_JDKEXE) \
           -I$(TOPDIR)/src/$(MODULE)/share/native/libjli, \
       CFLAGS_linux := -fPIC, \
-      CFLAGS_solaris := -KPIC, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
@@ -75,7 +74,7 @@ endif
 
 ################################################################################
 
-ifeq ($(call isTargetOs, macosx solaris aix linux), true)
+ifeq ($(call isTargetOs, macosx aix linux), true)
   $(eval $(call SetupJdkExecutable, BUILD_JSPAWNHELPER, \
       NAME := jspawnhelper, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \

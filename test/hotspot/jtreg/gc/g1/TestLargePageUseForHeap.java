@@ -31,7 +31,6 @@ package gc.g1;
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.gc.G1
- * @requires os.family != "solaris"
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

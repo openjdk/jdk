@@ -205,27 +205,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_USER_SUPPLIED_FLAGS],
 AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
 [
   if test "x[$]$1SYSROOT" != "x"; then
-    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-        # Solaris Studio does not have a concept of sysroot. Instead we must
-        # make sure the default include and lib dirs are appended to each
-        # compile and link command line. Must also add -I-xbuiltin to enable
-        # inlining of system functions and intrinsics.
-        $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
-        $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR"
-        # If the devkit contains the ld linker, make sure we use it.
-        AC_PATH_PROG(SOLARIS_LD, ld, , $DEVKIT_TOOLCHAIN_PATH:$DEVKIT_EXTRA_PATH)
-        # Make sure this ld is runnable.
-        if test -f "$SOLARIS_LD"; then
-          if "$SOLARIS_LD" -V > /dev/null 2> /dev/null; then
-            $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -Yl,$(dirname $SOLARIS_LD)"
-          else
-            AC_MSG_WARN([Could not run $SOLARIS_LD found in devkit, reverting to system ld])
-          fi
-        fi
-      fi
-    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
       $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
@@ -255,17 +235,14 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   # The sysroot flags are needed for configure to be able to run the compilers
   FLAGS_SETUP_SYSROOT_FLAGS
 
-  # For solstudio and xlc, the word size flag is required for correct behavior.
+  # For xlc, the word size flag is required for correct behavior.
   # For clang/gcc, the flag is only strictly required for reduced builds, but
-  # set it always where possible (x86, sparc and ppc).
+  # set it always where possible (x86 and ppc).
   if test "x$TOOLCHAIN_TYPE" = xxlc; then
     MACHINE_FLAG="-q${OPENJDK_TARGET_CPU_BITS}"
-  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    MACHINE_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
   elif test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86 &&
         test "x$OPENJDK_TARGET_CPU" != xx32 ||
-        test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc ||
         test "x$OPENJDK_TARGET_CPU_ARCH" = xppc; then
       MACHINE_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
     fi
@@ -317,11 +294,6 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     COMPILER_TARGET_BITS_FLAG="-m"
     COMPILER_COMMAND_FILE_FLAG="@"
     COMPILER_BINDCMD_FILE_FLAG=""
-
-    # The solstudio linker does not support @-files.
-    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      COMPILER_COMMAND_FILE_FLAG=
-    fi
 
     # Check if @file is supported by gcc
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -376,8 +348,6 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     C_FLAG_DEPS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     C_FLAG_DEPS="-MMD -MF"
-  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    C_FLAG_DEPS="-xMMD -xMF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     C_FLAG_DEPS="-qmakedep=gcc -MF"
   fi

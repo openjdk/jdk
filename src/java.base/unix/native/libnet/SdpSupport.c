@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 
-#if defined(__solaris__)
-  #if !defined(PROTO_SDP)
-    #define PROTO_SDP       257
-  #endif
-#elif defined(__linux__)
+#if defined(__linux__)
   #if !defined(AF_INET_SDP)
     #define AF_INET_SDP     27
   #endif
@@ -55,10 +51,7 @@ static int create(JNIEnv* env)
 {
     int s;
 
-#if defined(__solaris__)
-    int domain = ipv6_available() ? AF_INET6 : AF_INET;
-    s = socket(domain, SOCK_STREAM, PROTO_SDP);
-#elif defined(__linux__)
+#if defined(__linux__)
     /**
      * IPv6 not supported by SDP on Linux
      */

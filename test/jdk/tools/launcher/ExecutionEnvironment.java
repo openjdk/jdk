@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,10 +174,6 @@ public class ExecutionEnvironment extends TestHelper {
      * and the expected java.library.path behaviour.
      * For Generic platforms (All *nixes):
      *    * All LD_LIBRARY_PATH variable should be on java.library.path
-     * For Solaris 32-bit
-     *    * The LD_LIBRARY_PATH_32 should override LD_LIBRARY_PATH if specified
-     * For Solaris 64-bit
-     *    * The LD_LIBRARY_PATH_64 should override LD_LIBRARY_PATH if specified
      */
     @Test
     void testJavaLibraryPath() {
@@ -185,31 +181,13 @@ public class ExecutionEnvironment extends TestHelper {
 
         Map<String, String> env = new HashMap<>();
 
-        if (TestHelper.isSolaris) {
-            // no override
-            env.clear();
-            env.put(LD_LIBRARY_PATH, LD_LIBRARY_PATH_VALUE);
-            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
-            verifyJavaLibraryPathGeneric(tr);
-
-            env.clear();
-            for (String x : LD_PATH_STRINGS) {
-                String pairs[] = x.split("=");
-                env.put(pairs[0], pairs[1]);
-            }
-
-            // verify the override occurs for 64-bit system
-            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
-            verifyJavaLibraryPathOverride(tr, false);
-        } else {
-            for (String x : LD_PATH_STRINGS) {
-                String pairs[] = x.split("=");
-                env.put(pairs[0], pairs[1]);
-            }
-
-            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
-            verifyJavaLibraryPathGeneric(tr);
+        for (String x : LD_PATH_STRINGS) {
+            String pairs[] = x.split("=");
+            env.put(pairs[0], pairs[1]);
         }
+
+        tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
+        verifyJavaLibraryPathGeneric(tr);
     }
 
     private void verifyJavaLibraryPathGeneric(TestResult tr) {

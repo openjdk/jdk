@@ -47,13 +47,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand \
         format-nonliteral undef, \
     DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
-    DISABLED_WARNINGS_solstudio := E_ARG_INCOMPATIBLE_WITH_ARG_L, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll, \
     LIBS_unix := -ljvm -ljava, \
     LIBS_linux := $(LIBDL) -lpthread, \
-    LIBS_solaris := -lnsl -lsocket $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_windows := ws2_32.lib jvm.lib secur32.lib iphlpapi.lib winhttp.lib \
         delayimp.lib $(WIN_JAVA_LIB) advapi32.lib, \
@@ -82,8 +80,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -lnet, \
     LIBS_linux := -lpthread $(LIBDL), \
-    LIBS_solaris := -ljvm -lsocket -lposix4 $(LIBDL) \
-        -lsendfile, \
     LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation -framework CoreServices, \
@@ -140,7 +136,6 @@ ifeq ($(call isTargetOsType, unix), true)
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_linux := $(LIBDL), \
-        LIBS_solaris := $(LIBDL), \
         LIBS_aix := $(LIBDL), \
     ))
 

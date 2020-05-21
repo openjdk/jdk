@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class VMSupportsCS8 {
     public static void main(String[] args) throws Exception {
         String isalist = System.getProperty("sun.cpu.isalist");
         if (isalist != null && isalist.matches
-            (".*\\b(sparcv9|pentium_pro|ia64|amd64).*")
+            (".*\\b(pentium_pro|ia64|amd64).*")
             ||
             System.getProperty("os.arch").matches
             (".*\\b(ia64|amd64).*")) {

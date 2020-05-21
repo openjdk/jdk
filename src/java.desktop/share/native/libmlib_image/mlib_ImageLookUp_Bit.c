@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,16 +164,10 @@ mlib_status mlib_ImageLookUp_Bit_U8_1(const mlib_u8 *src,
 
     v = (val0 &~ mask) | (val1 & mask);
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (j = 0; j < 16; j++) {
       p_dd[2*(16*i + j)] = v;
     }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (j = 0; j < 16; j++) {
       p_dd[2*(i + 16*j) + 1] = v;
     }
@@ -223,9 +217,6 @@ mlib_status mlib_ImageLookUp_Bit_U8_1(const mlib_u8 *src,
       i += 8;
     }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; i <= (size - 16); i += 16) {
       s0 = *(mlib_u16*)sa;
 #ifdef _LITTLE_ENDIAN
@@ -361,9 +352,6 @@ mlib_status mlib_ImageLookUp_Bit_U8_2(const mlib_u8 *src,
     sa = (mlib_u8*)sp;
     da = (DTYPE*)dp;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i <= (size - 16); i += 16) {
       s0 = *sa++;
       *da++ = dd_array[s0 >> 4];
@@ -479,9 +467,6 @@ mlib_status mlib_ImageLookUp_Bit_U8_3(const mlib_u8 *src,
 #endif /* _LITTLE_ENDIAN */
 
   /* calculate lookup table */
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (i = 0; i < 16; i++) {
     mlib_u32 mask0 = mlib_bit_mask_3[i >> 2];
     mlib_u32 mask1 = mlib_bit_mask_3[4 + ((i >> 1) & 3)];
@@ -513,9 +498,6 @@ mlib_status mlib_ImageLookUp_Bit_U8_3(const mlib_u8 *src,
     sa = (mlib_u8*)sp;
     da = (mlib_u32*)dp;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i <= (size - 24); i += 24) {
       d64_2_f32 dd;
       s0 = *sa++;
@@ -658,9 +640,6 @@ mlib_status mlib_ImageLookUp_Bit_U8_4(const mlib_u8 *src,
     sa = (mlib_u8*)sp;
     da = (DTYPE*)dp;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i <= (size - 32); i += 32) {
       s0 = *sa++;
       *da++ = dd_array0[s0 >> 4];

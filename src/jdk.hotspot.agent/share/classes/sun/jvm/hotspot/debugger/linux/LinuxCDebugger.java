@@ -33,11 +33,9 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
-import sun.jvm.hotspot.debugger.sparc.*;
 import sun.jvm.hotspot.debugger.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
-import sun.jvm.hotspot.debugger.linux.sparc.*;
 import sun.jvm.hotspot.debugger.linux.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.aarch64.*;
 import sun.jvm.hotspot.utilities.*;
@@ -93,13 +91,6 @@ class LinuxCDebugger implements CDebugger {
        Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
        if (pc == null) return null;
        return LinuxAMD64CFrame.getTopFrame(dbg, pc, context);
-    } else if (cpu.equals("sparc")) {
-       SPARCThreadContext context = (SPARCThreadContext) thread.getContext();
-       Address sp = context.getRegisterAsAddress(SPARCThreadContext.R_SP);
-       if (sp == null) return null;
-       Address pc  = context.getRegisterAsAddress(SPARCThreadContext.R_O7);
-       if (pc == null) return null;
-       return new LinuxSPARCCFrame(dbg, sp, pc, LinuxDebuggerLocal.getAddressSize());
     }  else if (cpu.equals("ppc64")) {
         PPC64ThreadContext context = (PPC64ThreadContext) thread.getContext();
         Address sp = context.getRegisterAsAddress(PPC64ThreadContext.SP);

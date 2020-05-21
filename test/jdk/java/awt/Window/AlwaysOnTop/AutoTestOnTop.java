@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class AutoTestOnTop {
     }
 
     public static void performTesting() {
-        isUnix = osName.equals("Linux") || osName.equals("SunOS");
+        isUnix = osName.equals("Linux");
 
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
                 public void eventDispatched(AWTEvent e) {

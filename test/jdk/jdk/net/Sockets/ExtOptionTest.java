@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,6 @@ public class ExtOptionTest {
                 if (!ss.getOption(TCP_QUICKACK)) {
                     throw new RuntimeException("Test failed, TCP_QUICKACK should"
                             + " have been set");
-                }
-            } else if (operSys.equals("SunOS")) {
-                if (ss.supportedOptions().contains(SO_FLOW_SLA)) {
-                    throw new RuntimeException("Test failed, SO_FLOW_SLA is not "
-                            + "applicable for ServerSocket");
                 }
             } else {
                 if (ss.supportedOptions().contains(TCP_QUICKACK)) {

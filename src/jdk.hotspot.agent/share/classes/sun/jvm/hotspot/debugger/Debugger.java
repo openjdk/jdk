@@ -73,12 +73,12 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
   /** Support for remote debugging. Get the name of the operating
       system on which this debugger is running (to be able to properly
       configure the local system). Typical return values are
-      "solaris", "linux", "win32"; see utilities/PlatformInfo.java. */
+      "linux", "win32"; see utilities/PlatformInfo.java. */
   public String getOS() throws DebuggerException;
 
   /** Support for remote debugging. Get the name of the CPU type on
       which this debugger is running (to be able to properly configure
-      the local system). Typical return values are "sparc", "x86"; see
+      the local system). Typical return value is "x86"; see
       utilities/PlatformInfo.java. */
   public String getCPU() throws DebuggerException;
 

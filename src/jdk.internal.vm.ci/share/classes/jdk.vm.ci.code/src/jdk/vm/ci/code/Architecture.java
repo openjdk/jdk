@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public abstract class Architecture {
     private final PlatformKind wordKind;
 
     /**
-     * The name of this architecture (e.g. "AMD64", "SPARCv9").
+     * The name of this architecture (e.g. "AMD64").
      */
     private final String name;
 

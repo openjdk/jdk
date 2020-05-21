@@ -58,7 +58,6 @@ src/jdk.compiler : jdk/src/jdk.compiler  langtools/src/jdk.compiler
 src/jdk.crypto.cryptoki : jdk/src/jdk.crypto.cryptoki
 src/jdk.crypto.ec : jdk/src/jdk.crypto.ec
 src/jdk.crypto.mscapi : jdk/src/jdk.crypto.mscapi
-src/jdk.crypto.ucrypto : jdk/src/jdk.crypto.ucrypto
 src/jdk.dynalink : nashorn/src/jdk.dynalink
 src/jdk.editpad : jdk/src/jdk.editpad
 src/jdk.hotspot.agent : hotspot/src/jdk.hotspot.agent
@@ -101,13 +100,11 @@ src/jdk.zipfs : jdk/src/jdk.zipfs
 src/langtools/sample : langtools/src/sample
 src/linux : jdk/src/linux
 src/sample : jdk/src/sample
-src/solaris : jdk/src/solaris
 src/hotspot/share : hotspot/src/share/vm
 src/hotspot/cpu/aarch64 : hotspot/src/cpu/aarch64/vm
 src/hotspot/cpu/arm : hotspot/src/cpu/arm/vm
 src/hotspot/cpu/ppc : hotspot/src/cpu/ppc/vm
 src/hotspot/cpu/s390 : hotspot/src/cpu/s390/vm
-src/hotspot/cpu/sparc : hotspot/src/cpu/sparc/vm
 src/hotspot/cpu/x86 : hotspot/src/cpu/x86/vm
 src/hotspot/cpu/zero : hotspot/src/cpu/zero/vm
 src/hotspot/os/aix : hotspot/src/os/aix/vm
@@ -115,7 +112,6 @@ src/hotspot/os/bsd : hotspot/src/os/bsd/vm
 src/hotspot/os/linux : hotspot/src/os/linux/vm
 src/hotspot/os/posix/dtrace : hotspot/src/os/posix/dtrace
 src/hotspot/os/posix : hotspot/src/os/posix/vm
-src/hotspot/os/solaris : hotspot/src/os/solaris/vm
 src/hotspot/os/windows : hotspot/src/os/windows/vm
 src/hotspot/os_cpu/aix_ppc : hotspot/src/os_cpu/aix_ppc/vm
 src/hotspot/os_cpu/bsd_x86 : hotspot/src/os_cpu/bsd_x86/vm
@@ -124,11 +120,8 @@ src/hotspot/os_cpu/linux_aarch64 : hotspot/src/os_cpu/linux_aarch64/vm
 src/hotspot/os_cpu/linux_arm : hotspot/src/os_cpu/linux_arm/vm
 src/hotspot/os_cpu/linux_ppc : hotspot/src/os_cpu/linux_ppc/vm
 src/hotspot/os_cpu/linux_s390 : hotspot/src/os_cpu/linux_s390/vm
-src/hotspot/os_cpu/linux_sparc : hotspot/src/os_cpu/linux_sparc/vm
 src/hotspot/os_cpu/linux_x86 : hotspot/src/os_cpu/linux_x86/vm
 src/hotspot/os_cpu/linux_zero : hotspot/src/os_cpu/linux_zero/vm
-src/hotspot/os_cpu/solaris_sparc : hotspot/src/os_cpu/solaris_sparc/vm
-src/hotspot/os_cpu/solaris_x86 : hotspot/src/os_cpu/solaris_x86/vm
 src/hotspot/os_cpu/windows_x86 : hotspot/src/os_cpu/windows_x86/vm
 src/hotspot : hotspot/src
 src/utils/IdealGraphVisualizer : hotspot/src/share/tools/IdealGraphVisualizer

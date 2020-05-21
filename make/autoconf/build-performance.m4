@@ -38,10 +38,6 @@ AC_DEFUN([BPERF_CHECK_CORES],
     if test "$NUM_CORES" -ne "0"; then
       FOUND_CORES=yes
     fi
-  elif test -x /usr/sbin/psrinfo; then
-    # Looks like a Solaris system
-    NUM_CORES=`/usr/sbin/psrinfo -v | grep -c on-line`
-    FOUND_CORES=yes
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
     NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
@@ -79,7 +75,7 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
     MEMORY_SIZE=`expr $MEMORY_SIZE / 1024`
     FOUND_MEM=yes
   elif test -x /usr/sbin/prtconf; then
-    # Looks like a Solaris or AIX system
+    # Looks like an AIX system
     MEMORY_SIZE=`/usr/sbin/prtconf 2> /dev/null | grep "^Memory [[Ss]]ize" | awk '{ print [$]3 }'`
     FOUND_MEM=yes
   elif test -x /usr/sbin/sysctl; then
@@ -369,9 +365,6 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
   AC_MSG_CHECKING([if precompiled headers are available])
   if test "x$ICECC" != "x"; then
     AC_MSG_RESULT([no, does not work effectively with icecc])
-    PRECOMPILED_HEADERS_AVAILABLE=false
-  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    AC_MSG_RESULT([no, does not work with Solaris Studio])
     PRECOMPILED_HEADERS_AVAILABLE=false
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     AC_MSG_RESULT([no, does not work with xlc])

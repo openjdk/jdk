@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,11 +325,7 @@ public class TestKATForGCM extends PKCS11Test {
             if (isNSS(p)) {
                 double ver = getNSSInfo("nss");
                 String osName = System.getProperty("os.name");
-                if (ver < 3.251d && osName.equals("SunOS")) {
-                    // buggy behaviour from solaris on 11.2 OS (nss < 3.251)
-                    System.out.println("Skipping: SunPKCS11-NSS: Old NSS: " + ver);
-                    return; // OK
-                } else if (ver > 3.139 && ver < 3.15 && osName.equals("Linux")) {
+                if (ver > 3.139 && ver < 3.15 && osName.equals("Linux")) {
                     // warn about buggy behaviour on Linux with nss 3.14
                     System.out.println("Warning: old NSS " + ver + " might be problematic, consider upgrading it");
                 }

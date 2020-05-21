@@ -179,15 +179,6 @@ static void freeX11InputMethodData(JNIEnv *, X11InputMethodData *);
 static Window getParentWindow(Window);
 #endif
 
-#ifdef __solaris__
-/* Prototype for this function is missing in Solaris X11R6 Xlib.h */
-extern char *XSetIMValues(
-#if NeedVarargsPrototypes
-    XIM /* im */, ...
-#endif
-);
-#endif
-
 /*
  * This function is stolen from /src/solaris/hpi/src/system_md.c
  * It is used in setting the time in Java-level InputEvents

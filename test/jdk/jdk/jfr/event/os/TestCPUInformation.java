@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class TestCPUInformation {
             Events.assertField(event, "hwThreads").atLeast(1);
             Events.assertField(event, "cores").atLeast(1);
             Events.assertField(event, "sockets").atLeast(1);
-            Events.assertField(event, "cpu").containsAny("Intel", "AMD", "Unknown x86", "sparc", "ARM", "PPC", "PowerPC", "AArch64", "s390");
-            Events.assertField(event, "description").containsAny("Intel", "AMD", "Unknown x86", "SPARC", "ARM", "PPC", "PowerPC", "AArch64", "s390");
+            Events.assertField(event, "cpu").containsAny("Intel", "AMD", "Unknown x86", "ARM", "PPC", "PowerPC", "AArch64", "s390");
+            Events.assertField(event, "description").containsAny("Intel", "AMD", "Unknown x86", "ARM", "PPC", "PowerPC", "AArch64", "s390");
         }
     }
 }

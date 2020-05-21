@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,28 +279,6 @@ GLXGC_InitFBConfig(JNIEnv *env, jint screennum, VisualID visualid)
                 "[V]     id=0x%x db=%d alpha=%d depth=%d stencil=%d valid=",
                          fbvisualid, db, alpha, depth, stencil);
 
-#ifdef __sparc
-            /*
-             * Sun's OpenGL implementation will always
-             * return at least two GLXFBConfigs (visuals) from
-             * glXChooseFBConfig().  The first will be a linear (gamma
-             * corrected) visual; the second will have the same capabilities
-             * as the first, except it will be a non-linear (non-gamma
-             * corrected) visual, which is the one we want, otherwise
-             * everything will look "washed out".  So we will reject any
-             * visuals that have gamma values other than 1.0 (the value
-             * returned by glXGetFBConfigAttrib() will be scaled
-             * by 100, so 100 corresponds to a gamma value of 1.0, 220
-             * corresponds to 2.2, and so on).
-             */
-            j2d_glXGetFBConfigAttrib(awt_display, fbc,
-                                     GLX_GAMMA_VALUE_SUN, &gamma);
-            if (gamma != 100) {
-                J2dRlsTrace(J2D_TRACE_VERBOSE, "false (linear visual)\n");
-                continue;
-            }
-#endif /* __sparc */
-
             if ((dtype & GLX_WINDOW_BIT) &&
                 (dtype & GLX_PBUFFER_BIT) &&
                 (rtype & GLX_RGBA_BIT) &&
@@ -525,40 +503,6 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     // the context must be made current before we can query the
     // version and extension strings
     j2d_glXMakeContextCurrent(awt_display, scratch, scratch, context);
-
-#ifdef __sparc
-    /*
-     * 6438225: The software rasterizer used by Sun's OpenGL libraries
-     * for certain boards has quality issues, and besides, performance
-     * of these boards is not high enough to justify the use of the
-     * OpenGL-based Java 2D pipeline.  If we detect one of the following
-     * boards via the GL_RENDERER string, just give up:
-     *   - FFB[2[+]] ("Creator[3D]")
-     *   - PGX-series ("m64")
-     *   - AFB ("Elite3D")
-     */
-    {
-        const char *renderer = (const char *)j2d_glGetString(GL_RENDERER);
-
-        J2dRlsTraceLn1(J2D_TRACE_VERBOSE,
-            "GLXGraphicsConfig_getGLXConfigInfo: detected renderer (%s)",
-            (renderer == NULL) ? "null" : renderer);
-
-        if (renderer == NULL ||
-            strncmp(renderer, "Creator", 7) == 0 ||
-            strncmp(renderer, "SUNWm64", 7) == 0 ||
-            strncmp(renderer, "Elite", 5) == 0)
-        {
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                "GLXGraphicsConfig_getGLXConfigInfo: unsupported board (%s)",
-                (renderer == NULL) ? "null" : renderer);
-            j2d_glXMakeContextCurrent(awt_display, None, None, NULL);
-            j2d_glXDestroyPbuffer(awt_display, scratch);
-            j2d_glXDestroyContext(awt_display, context);
-            return 0L;
-        }
-    }
-#endif /* __sparc */
 
     versionstr = j2d_glGetString(GL_VERSION);
     OGLContext_GetExtensionInfo(env, &caps);

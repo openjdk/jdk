@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,16 +33,6 @@
 
 #include "jni.h"
 
-#ifdef SOLARIS
-/* Our redeclarations of the system functions must not have a less
- * restrictive linker scoping, so we have to declare them as JNIEXPORT
- * before including signal.h */
-#include "sys/signal.h"
-JNIEXPORT void (*signal(int sig, void (*disp)(int)))(int);
-JNIEXPORT void (*sigset(int sig, void (*disp)(int)))(int);
-JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
-#endif
-
 #include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
@@ -59,16 +49,9 @@ JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *
   #define false 0
 #endif
 
-#ifdef SOLARIS
-#define MAX_SIGNALS (SIGRTMAX+1)
-
-/* On solaris, MAX_SIGNALS is a macro, not a constant, so we must allocate sact dynamically. */
-static struct sigaction *sact = (struct sigaction *)NULL; /* saved signal handlers */
-#else
 #define MAX_SIGNALS NSIG
 
 static struct sigaction sact[MAX_SIGNALS]; /* saved signal handlers */
-#endif
 
 static sigset_t jvmsigs; /* Signals used by jvm. */
 
@@ -92,20 +75,6 @@ static sigaction_t os_sigaction = 0; /* os's version of sigaction() */
 static bool jvm_signal_installing = false;
 static bool jvm_signal_installed = false;
 
-
-/* assume called within signal_lock */
-static void allocate_sact() {
-#ifdef SOLARIS
-  if (sact == NULL) {
-    sact = (struct sigaction *)malloc((MAX_SIGNALS) * (size_t)sizeof(struct sigaction));
-    if (sact == NULL) {
-      printf("%s\n", "libjsig.so unable to allocate memory");
-      exit(0);
-    }
-    memset(sact, 0, (MAX_SIGNALS) * (size_t)sizeof(struct sigaction));
-  }
-#endif
-}
 
 static void signal_lock() {
   pthread_mutex_lock(&mutex);
@@ -162,18 +131,7 @@ static void save_signal_handler(int sig, sa_handler_t disp, bool is_sigset) {
   sact[sig].sa_handler = disp;
   sigemptyset(&set);
   sact[sig].sa_mask = set;
-  if (!is_sigset) {
-#ifdef SOLARIS
-    sact[sig].sa_flags = SA_NODEFER;
-    if (sig != SIGILL && sig != SIGTRAP && sig != SIGPWR) {
-      sact[sig].sa_flags |= SA_RESETHAND;
-    }
-#else
-    sact[sig].sa_flags = 0;
-#endif
-  } else {
-    sact[sig].sa_flags = 0;
-  }
+  sact[sig].sa_flags = 0;
 }
 
 static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
@@ -182,7 +140,6 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
   bool sigblocked;
 
   signal_lock();
-  allocate_sact();
 
   sigused = sigismember(&jvmsigs, sig);
   if (jvm_signal_installed && sigused) {
@@ -193,13 +150,6 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
     }
     oldhandler = sact[sig].sa_handler;
     save_signal_handler(sig, disp, is_sigset);
-
-#ifdef SOLARIS
-    if (is_sigset && sigblocked) {
-      /* We won't honor the SIG_HOLD request to change the signal mask */
-      oldhandler = SIG_HOLD;
-    }
-#endif
 
     signal_unlock();
     return oldhandler;
@@ -278,7 +228,6 @@ JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *
 
   signal_lock();
 
-  allocate_sact();
   sigused = sigismember(&jvmsigs, sig);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
@@ -334,7 +283,6 @@ JNIEXPORT void JVM_end_signal_setting() {
 }
 
 JNIEXPORT struct sigaction *JVM_get_signal_action(int sig) {
-  allocate_sact();
   /* Does race condition make sense here? */
   if (sigismember(&jvmsigs, sig)) {
     return &sact[sig];

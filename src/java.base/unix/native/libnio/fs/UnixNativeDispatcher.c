@@ -41,16 +41,9 @@
 #endif
 #include <sys/time.h>
 
-/* For POSIX-compliant getpwuid_r, getgrgid_r on Solaris */
-#if defined(__solaris__)
-#define _POSIX_PTHREAD_SEMANTICS
-#endif
+/* For POSIX-compliant getpwuid_r */
 #include <pwd.h>
 #include <grp.h>
-
-#ifdef __solaris__
-#include <strings.h>
-#endif
 
 #ifdef __linux__
 #include <sys/syscall.h>
@@ -263,8 +256,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* system calls that might not be available at run time */
 
-#if (defined(__solaris__) && defined(_LP64)) || defined(_ALLBSD_SOURCE)
-    /* Solaris 64-bit does not have openat64/fstatat64 */
+#if defined(_ALLBSD_SOURCE)
     my_openat64_func = (openat64_func*)dlsym(RTLD_DEFAULT, "openat");
     my_fstatat64_func = (fstatat64_func*)dlsym(RTLD_DEFAULT, "fstatat");
 #else

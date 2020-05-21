@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class ManyFiles {
         // Windows capability it is much simpler to only run it
         // on that platform.
         String osName = System.getProperty("os.name");
-        if (osName.startsWith("Linux")||osName.startsWith("SunOS"))
+        if (osName.startsWith("Linux"))
             return;
 
         for (int n = 0; n < NUM_FILES; n++) {

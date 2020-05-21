@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,18 +43,12 @@
 #define SO_REUSEPORT 0
 #elif defined(__linux__)
 #define SO_REUSEPORT 15
-#elif defined(__solaris__)
-#define SO_REUSEPORT 0x100e
 #elif defined(AIX) || defined(MACOSX)
 #define SO_REUSEPORT 0x0200
 #else
 #define SO_REUSEPORT 0
 #endif
 #endif
-
-/* On Solaris, "sun" is defined as a macro. Undefine to make package
-   declaration valid */
-#undef sun
 
 /* To be able to name the Java constants the same as the C constants without
    having the preprocessor rewrite those identifiers, add PREFIX_ to all

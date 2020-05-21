@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ class AbstractInterpreter: AllStatic {
   }
 
   static int expr_offset_in_bytes(int i) {
-#if !defined(ZERO) && (defined(PPC) || defined(S390) || defined(SPARC))
+#if !defined(ZERO) && (defined(PPC) || defined(S390))
     return stackElementSize * i + wordSize;  // both point to one word past TOS
 #else
     return stackElementSize * i;

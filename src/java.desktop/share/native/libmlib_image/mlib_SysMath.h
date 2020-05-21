@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,25 +57,11 @@ float  mlib_sqrtf_cafe (float  x);
 
 #define mlib_sqrt       sqrt
 
-#ifdef MLIB_NO_LIBSUNMATH
-
 #define mlib_sinf       (float) sin
 #define mlib_cosf       (float) cos
 void mlib_sincosf (float x, float *s, float *c);
 #define mlib_sqrtf      (float) sqrt
 #define mlib_fabsf      (float) fabs
-
-#else
-
-#include <sunmath.h>
-
-#define mlib_sinf       sinf
-#define mlib_cosf       cosf
-#define mlib_sincosf    sincosf
-#define mlib_sqrtf       sqrtf
-#define mlib_fabsf       fabsf
-
-#endif  /* MLIB_NO_LIBSUNMATH */
 
 #endif  /* MLIB_LIBCAFEMATH */
 

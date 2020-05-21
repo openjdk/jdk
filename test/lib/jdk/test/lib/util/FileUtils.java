@@ -370,6 +370,5 @@ public final class FileUtils {
             {"/bin/lsof", "-p"},
             {"/sbin/lsof", "-p"},
             {"/usr/local/bin/lsof", "-p"},
-            {"/usr/bin/pfiles", "-F"},   // Solaris
     };
 }

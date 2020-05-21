@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,9 +120,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
       sl = sl_c + c;
       dl = dl_c + c;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (j = 0; j < hsize; j++) pbuff[j] = 0.0;
 
       for (i = 0; i < wid; i++) {
@@ -136,9 +133,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           p2 = sp[0]; p3 = sp[sll]; p4 = sp[2*sll];
           sp += 3*sll;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (j = 0; j < hsize; j += 2) {
             p0 = p2; p1 = p3; p2 = p4;
             p3 = sp[0];
@@ -165,9 +159,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
         if (kh == 4) {
           sp += 3*sll;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (j = 0; j <= (hsize - 2); j += 2) {
             p0 = p2; p1 = p3; p2 = p4;
             p3 = sp[0];
@@ -195,9 +186,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
         } else if (kh == 3) {
           sp += 2*sll;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (j = 0; j <= (hsize - 2); j += 2) {
             p0 = p2; p1 = p3;
             p2 = sp[0];
@@ -225,9 +213,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
         } else if (kh == 2) {
           sp += sll;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (j = 0; j <= (hsize - 2); j += 2) {
             p0 = p2;
             p1 = sp[0];
@@ -253,9 +238,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else /* if (kh == 1) */ {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (j = 0; j < hsize; j++) {
             p0 = sp[0];
 
@@ -353,9 +335,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             sp = sp0 += chan3;
 
             if (pk == k) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -369,9 +348,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -389,9 +365,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             sp = sp0 += chan2;
 
             if (pk == k) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -405,9 +378,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -425,9 +395,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             sp = sp0 += chan1;
 
             if (pk == k) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5;
 
@@ -441,9 +408,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5;
 
@@ -462,9 +426,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             sp = sp0;
 
             if (pk == k) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
 
@@ -478,9 +439,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
 
@@ -498,9 +456,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             sp = sp0 -= chan1;
 
             if (pk == k) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3;
 
@@ -514,9 +469,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3;
 
@@ -534,9 +486,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             sp = sp0 -= chan2;
 
             if (pk == k) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
 
@@ -550,9 +499,6 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
 

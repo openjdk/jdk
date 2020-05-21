@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,7 @@ public class TestNativeLibrariesEvent {
 
     private static List<String> getExpectedLibs() throws Throwable {
         String libTemplate = null;
-        if (Platform.isSolaris()) {
-            libTemplate = "lib%s.so";
-        } else if (Platform.isWindows()) {
+        if (Platform.isWindows()) {
             libTemplate = "%s.dll";
         } else if (Platform.isOSX()) {
             libTemplate = "lib%s.dylib";

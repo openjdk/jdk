@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,8 +172,6 @@ private:
   sigjmp_buf _jmpbuf;
 };
 
-#ifndef SOLARIS
-
 /*
  * This is the platform-specific implementation underpinning
  * the ParkEvent class, which itself underpins Java-level monitor
@@ -335,7 +333,5 @@ class PlatformMonitor : public PlatformMutex {
   void notify();
   void notify_all();
 };
-
-#endif // !SOLARIS
 
 #endif // OS_POSIX_OS_POSIX_HPP

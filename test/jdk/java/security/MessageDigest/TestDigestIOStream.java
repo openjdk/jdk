@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,44 +68,36 @@ public class TestDigestIOStream {
 
     public void run() throws Exception {
         for (String algorithm : ALGORITHM_ARRAY) {
-            try {
-                md = MessageDigest.getInstance(algorithm);
-                for (int length : DATA_LEN_ARRAY) {
+            md = MessageDigest.getInstance(algorithm);
+            for (int length : DATA_LEN_ARRAY) {
 
-                    Random rdm = RandomFactory.getRandom();
-                    data = new byte[length];
-                    rdm.nextBytes(data);
+                Random rdm = RandomFactory.getRandom();
+                data = new byte[length];
+                rdm.nextBytes(data);
 
-                    if (!testMDChange(algorithm, length)) {
-                        throw new RuntimeException("testMDChange failed at:"
-                                + algorithm + "/" + length);
-                    }
-                    if (!testMDShare(algorithm, length)) {
-                        throw new RuntimeException("testMDShare failed at:"
-                                + algorithm + "/" + length);
-                    }
-                    for (ReadModel readModel : ReadModel.values()) {
-                        // test Digest function when digest switch on
-                        if (!testDigestOnOff(algorithm, readModel, true,
-                                length)) {
-                            throw new RuntimeException(
-                                    "testDigestOn failed at:" + algorithm + "/"
-                                            + length + "/" + readModel);
-                        }
-                        // test Digest function when digest switch off
-                        if (!testDigestOnOff(algorithm, readModel, false,
-                                length)) {
-                            throw new RuntimeException(
-                                    "testDigestOff failed at:" + algorithm + "/"
-                                            + length + "/" + readModel);
-                        }
-                    }
+                if (!testMDChange(algorithm, length)) {
+                    throw new RuntimeException("testMDChange failed at:"
+                            + algorithm + "/" + length);
                 }
-            } catch (NoSuchAlgorithmException nae) {
-                if (algorithm.startsWith("SHA3") && !isSHA3supported()) {
-                    continue;
-                } else {
-                    throw nae;
+                if (!testMDShare(algorithm, length)) {
+                    throw new RuntimeException("testMDShare failed at:"
+                            + algorithm + "/" + length);
+                }
+                for (ReadModel readModel : ReadModel.values()) {
+                    // test Digest function when digest switch on
+                    if (!testDigestOnOff(algorithm, readModel, true,
+                            length)) {
+                        throw new RuntimeException(
+                                "testDigestOn failed at:" + algorithm + "/"
+                                        + length + "/" + readModel);
+                    }
+                    // test Digest function when digest switch off
+                    if (!testDigestOnOff(algorithm, readModel, false,
+                            length)) {
+                        throw new RuntimeException(
+                                "testDigestOff failed at:" + algorithm + "/"
+                                        + length + "/" + readModel);
+                    }
                 }
             }
         }
@@ -113,21 +105,6 @@ public class TestDigestIOStream {
                 * DATA_LEN_ARRAY.length * 2
                 + ALGORITHM_ARRAY.length * DATA_LEN_ARRAY.length * 2;
         out.println("All " + testNumber + " Tests Passed");
-    }
-
-    // SHA-3 hash algorithms are only supported by "SUN" provider
-    // and "OracleUcrypto" provider on Solaris 12.0 or later
-    // This method checks if system supports SHA-3
-    private boolean isSHA3supported() {
-        if (Security.getProvider("SUN") != null) {
-            return true;
-        }
-        if (Security.getProvider("OracleUcrypto") != null
-                && "SunOS".equals(System.getProperty("os.name"))
-                && System.getProperty("os.version").compareTo("5.12") >= 0) {
-            return true;
-        }
-        return false;
     }
 
     /**

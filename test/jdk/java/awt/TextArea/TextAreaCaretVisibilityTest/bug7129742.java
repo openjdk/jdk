@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @key headful
  * @bug 7129742
  * @summary Focus in non-editable TextArea is not shown on Linux.
- * @requires (os.family == "linux" | os.family == "solaris")
+ * @requires os.family == "linux"
  * @modules java.desktop/sun.awt
  *          java.desktop/java.awt.peer
  *          java.desktop/sun.awt.X11:open

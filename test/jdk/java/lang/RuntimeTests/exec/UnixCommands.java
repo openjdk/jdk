@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ public class UnixCommands {
 
     public static final boolean isUnix = ! System.getProperty("os.name").startsWith("Windows");
     public static final boolean isLinux = System.getProperty("os.name").startsWith("Linux");
-    public static final boolean isSunOS = System.getProperty("os.name").equals("SunOS");
 
     private static final String[] paths = {"/bin", "/usr/bin"};
 

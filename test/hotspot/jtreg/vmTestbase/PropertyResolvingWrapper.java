@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ public class PropertyResolvingWrapper {
             family = "mac";
         else if (name.startsWith("OS400") || name.startsWith("OS/400") )
             family = "os400";
-        else if (name.startsWith("SunOS") || name.startsWith("Solaris"))
-            family = "solaris";
         else if (name.startsWith("Windows"))
             family = "windows";
         else

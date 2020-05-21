@@ -126,18 +126,6 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
     GTEST_AVAILABLE=false
   fi
 
-  # On solaris, we also must have the libstlport.so.1 library, setup in
-  # LIB_SETUP_LIBRARIES.
-  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
-    AC_MSG_CHECKING([if the libstlport.so.1 library is present])
-    if test "x$STLPORT_LIB" != "x"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no, cannot build gtest])
-      GTEST_AVAILABLE=false
-    fi
-  fi
-
   UTIL_ARG_ENABLE(NAME: hotspot-gtest, DEFAULT: auto,
       RESULT: BUILD_GTEST, AVAILABLE: $GTEST_AVAILABLE,
       DEFAULT_DESC: [enabled if possible to build],

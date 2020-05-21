@@ -481,7 +481,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
     JTextArea ta = new JTextArea(
                                  "Enter the process ID of a currently-running HotSpot process. On " +
-                                 "Solaris and most Unix operating systems, this can be determined by " +
+                                 "most Unix operating systems, this can be determined by " +
                                  "typing \"ps -u <your username> | grep java\"; the process ID is the " +
                                  "first number which appears on the resulting line. On Windows, the " +
                                  "process ID is present in the Task Manager, which can be brought up " +

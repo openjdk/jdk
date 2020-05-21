@@ -240,15 +240,9 @@ $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%: $(DEMO_SHARE_SRC)/nbproject/%
 	$(call install-file)
 	$(CHMOD) -f ug+w $@
 
-ifeq ($(call isTargetOs, solaris), true)
-  TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
-    $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
-    $(call FindFiles, $(DEMO_SHARE_SRC)/nbproject))
-else
-  TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
-    $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
-    $(call FindFiles, $(DEMO_SHARE_SRC)/nbproject))
-endif
+TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
+  $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
+  $(call FindFiles, $(DEMO_SHARE_SRC)/nbproject))
 
 ################################################################################
 

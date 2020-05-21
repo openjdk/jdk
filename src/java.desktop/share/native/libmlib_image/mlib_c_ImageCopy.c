@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,9 +232,6 @@ void mlib_ImageCopy_bit_al(const mlib_u8 *sa,
   if ((((mlib_addr) sa ^ (mlib_addr) da) & 7) == 0) {
     sp = (TYPE_64BIT *) sa;
     dp = (TYPE_64BIT *) da;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; j <= (b_size - 8); j += 8, i++) {
       dp[i] = sp[i];
     }
@@ -249,9 +246,6 @@ void mlib_ImageCopy_bit_al(const mlib_u8 *sa,
 
       pws = (mlib_u32 *) sa;
       pwd = (mlib_u32 *) da;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; j <= (b_size - 4); j += 4, i++) {
         pwd[i] = pws[i];
       }
@@ -269,9 +263,6 @@ void mlib_ImageCopy_bit_al(const mlib_u8 *sa,
       rshift = 32 - lshift;
 
       src1 = pws[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; j <= (b_size - 4); j += 4, i++) {
         src0 = src1;
         src1 = pws[i + 1];
@@ -296,9 +287,6 @@ void mlib_ImageCopy_bit_al(const mlib_u8 *sa,
     rshift = 64 - lshift;
 
     src1 = pws[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; j <= (b_size - 8); j += 8, i++) {
       src0 = src1;
       src1 = pws[i + 1];
@@ -340,9 +328,6 @@ void mlib_c_ImageCopy_u8(const mlib_image *src,
         pdst_row[j] = psrc_row[j];
       }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; j <= (src_width - 8); j += 8) {
         TYPE_64BIT dsrc0 = *((TYPE_64BIT *) (psrc_row + j));
 
@@ -358,9 +343,6 @@ void mlib_c_ImageCopy_u8(const mlib_image *src,
       }
 
       if (!(((mlib_addr) psrc_row ^ (mlib_addr) pdst_row) & 3)) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 4); j += 4) {
           *((mlib_s32 *) (pdst_row + j)) = *((mlib_s32 *) (psrc_row + j));
         }
@@ -375,9 +357,6 @@ void mlib_c_ImageCopy_u8(const mlib_image *src,
         shr = 32 - shl;
 
         src1 = ps[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 4); j += 4) {
           src0 = src1;
           src1 = ps[1];
@@ -408,9 +387,6 @@ void mlib_c_ImageCopy_u8(const mlib_image *src,
         shr = 64 - shl;
 
         src1 = ps[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 8); j += 8) {
           src0 = src1;
           src1 = ps[1];
@@ -448,9 +424,6 @@ void mlib_c_ImageCopy_s16(const mlib_image       *src,
         pdst_row[j] = psrc_row[j];
       }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; j <= (src_width - 4); j += 4) {
         TYPE_64BIT dsrc0 = *((TYPE_64BIT *) (psrc_row + j));
 
@@ -466,9 +439,6 @@ void mlib_c_ImageCopy_s16(const mlib_image       *src,
       }
 
       if (!(((mlib_addr) psrc_row ^ (mlib_addr) pdst_row) & 3)) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 2); j += 2) {
           *((mlib_s32 *) (pdst_row + j)) = *((mlib_s32 *) (psrc_row + j));
         }
@@ -478,9 +448,6 @@ void mlib_c_ImageCopy_s16(const mlib_image       *src,
 
         ps = (mlib_u32 *) (psrc_row + j - 1);
         src1 = ps[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 2); j += 2) {
           src0 = src1;
           src1 = ps[1];
@@ -510,9 +477,6 @@ void mlib_c_ImageCopy_s16(const mlib_image       *src,
         shr = 64 - shl;
 
         src1 = ps[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 4); j += 4) {
           src0 = src1;
           src1 = ps[1];
@@ -551,9 +515,6 @@ void mlib_c_ImageCopy_s32(const mlib_image       *src,
         pdst_row[0] = psrc_row[0];
       }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; j <= (src_width - 2); j += 2) {
         TYPE_64BIT dsrc0 = *((TYPE_64BIT *) (psrc_row + j));
 
@@ -564,9 +525,6 @@ void mlib_c_ImageCopy_s32(const mlib_image       *src,
 
 #ifdef _NO_LONGLONG
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (j = 0; j <= (src_width - 1); j++) {
         *((mlib_s32 *) (pdst_row + j)) = *((mlib_s32 *) (psrc_row + j));
       }
@@ -582,9 +540,6 @@ void mlib_c_ImageCopy_s32(const mlib_image       *src,
         }
         ps = (mlib_u64 *) (psrc_row + j - 1);
         src1 = ps[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; j <= (src_width - 2); j += 2) {
           src0 = src1;
           src1 = ps[1];
@@ -612,9 +567,6 @@ void mlib_c_ImageCopy_d64(const mlib_image       *src,
   for (i = 0; i < src_height; i++) {
     mlib_d64 *psrc_row = psrc + i * src_stride, *pdst_row = pdst + i * dst_stride;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (j = 0; j < src_width; j++)
       *((mlib_d64 *) (pdst_row + j)) = *((mlib_d64 *) (psrc_row + j));
   }
@@ -632,9 +584,6 @@ void mlib_c_ImageCopy_a1(const TYPE_64BIT *sp,
 {
   mlib_s32 i;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (i = 0; i < size; i++) {
     *dp++ = *sp++;
   }
@@ -661,9 +610,6 @@ void mlib_ImageCopy_na(const mlib_u8 *sp,
 
   if (((mlib_addr) sp ^ (mlib_addr) dp) & 7) {
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; (n > 0) && (mlib_addr) dp & (SIZE - 1); n--)
       *dp++ = *sp++;
 
@@ -685,9 +631,6 @@ void mlib_ImageCopy_na(const mlib_u8 *sp,
       shr = BSIZE - shl;
       s0 = *tmp++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (; n > SIZE; n -= SIZE) {
         s1 = *tmp++;
 #ifdef _LITTLE_ENDIAN
@@ -702,15 +645,9 @@ void mlib_ImageCopy_na(const mlib_u8 *sp,
     }
   }
   else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; (n > 0) && (mlib_addr) dp & 7; n--)
       *dp++ = *sp++;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; n > 8; n -= 8) {
       *(TYPE_64BIT *) dp = *(TYPE_64BIT *) sp;
       dp += 8;
@@ -718,9 +655,6 @@ void mlib_ImageCopy_na(const mlib_u8 *sp,
     }
   }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; n > 0; n--)
     *dp++ = *sp++;
 }

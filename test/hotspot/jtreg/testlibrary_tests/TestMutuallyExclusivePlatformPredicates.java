@@ -45,9 +45,9 @@ import java.util.Set;
  */
 public class TestMutuallyExclusivePlatformPredicates {
     private static enum MethodGroup {
-        ARCH("isAArch64", "isARM", "isPPC", "isS390x", "isSparc", "isX64", "isX86"),
+        ARCH("isAArch64", "isARM", "isPPC", "isS390x", "isX64", "isX86"),
         BITNESS("is32bit", "is64bit"),
-        OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
+        OS("isAix", "isLinux", "isOSX", "isWindows"),
         VM_TYPE("isClient", "isServer", "isMinimal", "isZero", "isEmbedded"),
         MODE("isInt", "isMixed", "isComp"),
         IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild",

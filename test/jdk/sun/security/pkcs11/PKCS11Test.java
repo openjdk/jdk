@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,19 +137,6 @@ public abstract class PKCS11Test {
             }
         }
         pkcs11 = p;
-    }
-
-    /*
-     * Use Solaris SPARC 11.2 or later to avoid an intermittent failure
-     * when running SunPKCS11-Solaris (8044554)
-     */
-    static boolean isBadSolarisSparc(Provider p) {
-        if ("SunPKCS11-Solaris".equals(p.getName()) && badSolarisSparc) {
-            System.out.println("SunPKCS11-Solaris provider requires " +
-                "Solaris SPARC 11.2 or later, skipping");
-            return true;
-        }
-        return false;
     }
 
     // Return a SunPKCS11 provider configured with the specified config file
@@ -684,10 +671,6 @@ public abstract class PKCS11Test {
         }
 
         osMap = new HashMap<>();
-        osMap.put("SunOS-sparc-32", new String[] { "/usr/lib/mps/" });
-        osMap.put("SunOS-sparcv9-64", new String[] { "/usr/lib/mps/64/" });
-        osMap.put("SunOS-x86-32", new String[] { "/usr/lib/mps/" });
-        osMap.put("SunOS-amd64-64", new String[] { "/usr/lib/mps/64/" });
         osMap.put("Linux-i386-32", new String[] {
                 "/usr/lib/i386-linux-gnu/",
                 "/usr/lib32/",
@@ -746,14 +729,6 @@ public abstract class PKCS11Test {
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();
-
-    private static final String distro = distro();
-
-    static final boolean badSolarisSparc =
-            System.getProperty("os.name").equals("SunOS") &&
-            System.getProperty("os.arch").equals("sparcv9") &&
-            System.getProperty("os.version").compareTo("5.11") <= 0 &&
-            getDistro().compareTo("11.2") < 0;
 
     public static String toString(byte[] b) {
         if (b == null) {
@@ -836,29 +811,6 @@ public abstract class PKCS11Test {
             }
         }
         return algorithms;
-    }
-
-    /**
-     * Get the identifier for the operating system distribution
-     */
-    static String getDistro() {
-        return distro;
-    }
-
-    private static String distro() {
-        if (props.getProperty("os.name").equals("SunOS")) {
-            try (BufferedReader in =
-                         new BufferedReader(new InputStreamReader(
-                                 Runtime.getRuntime().exec("uname -v").getInputStream()))) {
-
-                return in.readLine();
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to determine distro.", e);
-            }
-        } else {
-            // Not used outside Solaris
-            return null;
-        }
     }
 
     static byte[] generateData(int length) {

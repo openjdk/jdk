@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,7 @@ public class ModifierRobotKeyTest extends KeyAdapter {
 
         String os = System.getProperty("os.name").toLowerCase();
 
-        if (os.contains("solaris") || os.contains("sunos"))
-            textKeys[1] = KeyEvent.VK_S;
-        else if (os.contains("os x"))
+        if (os.contains("os x"))
             textKeys[1] = KeyEvent.VK_K;
         else
             textKeys[1] = KeyEvent.VK_I;

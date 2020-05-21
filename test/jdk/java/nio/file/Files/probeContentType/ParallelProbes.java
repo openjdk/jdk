@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Test probing content type simultaneously from multiple threads.
- * @requires (os.family == "linux") | (os.family == "solaris")
+ * @requires os.family == "linux"
  * @build ParallelProbes SimpleFileTypeDetector
  * @run main/othervm ParallelProbes 10
  */

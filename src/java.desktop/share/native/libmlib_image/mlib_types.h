@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ typedef unsigned int       mlib_u32;
 typedef float              mlib_f32;
 typedef double             mlib_d64;
 
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC) || defined(__GNUC__) || defined(_AIX)
+#if defined(__GNUC__) || defined(_AIX)
 
 #include <stdint.h>
 #include <stddef.h>

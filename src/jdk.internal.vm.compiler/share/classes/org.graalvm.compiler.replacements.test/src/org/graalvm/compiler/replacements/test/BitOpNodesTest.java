@@ -42,7 +42,6 @@ import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.sparc.SPARC;
 
 public class BitOpNodesTest extends GraalCompilerTest {
 
@@ -71,7 +70,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         } else {
             // Even though there are AArch64 intrinsics for bitCount, they do
             // not use BitCountNode.
-            return arch instanceof SPARC;
+            return false;
         }
     }
 
@@ -84,7 +83,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
             AMD64 amd64 = (AMD64) arch;
             return amd64.getFeatures().contains(AMD64.CPUFeature.LZCNT) && amd64.getFlags().contains(AMD64.Flag.UseCountLeadingZerosInstruction);
         } else {
-            return arch instanceof SPARC || arch instanceof AArch64;
+            return arch instanceof AArch64;
         }
     }
 
@@ -97,7 +96,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
             AMD64 amd64 = (AMD64) arch;
             return amd64.getFeatures().contains(AMD64.CPUFeature.BMI1) && amd64.getFlags().contains(AMD64.Flag.UseCountTrailingZerosInstruction);
         } else {
-            return arch instanceof SPARC || arch instanceof AArch64;
+            return arch instanceof AArch64;
         }
     }
 

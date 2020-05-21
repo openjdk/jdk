@@ -36,10 +36,6 @@
  *       # make sure the NSS db files are in current directory and writable
  *       echo | java -Dnss -Dnss.lib=/path/to/libsoftokn3.so KeyToolTest
  *
- * Testing Solaris Cryptography Framework PKCS11 keystores:
- *       # make sure you've already run pktool and set test12 as pin
- *       echo | java -Dsolaris KeyToolTest
- *
  * ATTENTION:
  * Exception in thread "main" java.security.ProviderException:
  *   sun.security.pkcs11.wrapper.PKCS11Exception: CKR_KEY_SIZE_RANGE
@@ -106,9 +102,6 @@ public class KeyToolTest {
             "-srcproviderName SunPKCS11-nzz " +
             "-addprovider SunPKCS11 " +
             "-providerArg p11-nzz.txt ";
-    static final String SUN_P11_ARG = "-keystore NONE -storetype PKCS11 ";
-    static final String SUN_SRC_P11_ARG =
-            "-srckeystore NONE -srcstoretype PKCS11 ";
 
     String p11Arg, srcP11Arg;
 
@@ -1858,15 +1851,6 @@ public class KeyToolTest {
                 //FAIL: currently PKCS11-NSS does not support
                 // 2 NSS KeyStores to be loaded at the same time
                 //t.sszzTest();
-            }
-
-            if (System.getProperty("solaris") != null) {
-                // For Solaris Cryptography Framework
-                t.srcP11Arg = SUN_SRC_P11_ARG;
-                t.p11Arg = SUN_P11_ARG;
-                t.testPKCS11();
-                t.testPKCS11ImportKeyStore();
-                t.i18nPKCS11Test();
             }
 
             System.out.println("Test pass!!!");

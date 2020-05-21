@@ -35,11 +35,10 @@
 m4_include([toolchain_windows.m4])
 
 # All valid toolchains, regardless of platform (used by help.m4)
-VALID_TOOLCHAINS_all="gcc clang solstudio xlc microsoft"
+VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_solaris="solstudio"
 VALID_TOOLCHAINS_macosx="gcc clang"
 VALID_TOOLCHAINS_aix="xlc"
 VALID_TOOLCHAINS_windows="microsoft"
@@ -48,14 +47,12 @@ VALID_TOOLCHAINS_windows="microsoft"
 TOOLCHAIN_DESCRIPTION_clang="clang/LLVM"
 TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
-TOOLCHAIN_DESCRIPTION_solstudio="Oracle Solaris Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
 TOOLCHAIN_MINIMUM_VERSION_gcc="5.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
-TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Minimum supported linker versions, empty means unspecified
@@ -296,13 +293,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   TOOLCHAIN_CC_BINARY_clang="clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl$EXE_SUFFIX"
-  TOOLCHAIN_CC_BINARY_solstudio="cc"
   TOOLCHAIN_CC_BINARY_xlc="xlclang"
 
   TOOLCHAIN_CXX_BINARY_clang="clang++"
   TOOLCHAIN_CXX_BINARY_gcc="g++"
   TOOLCHAIN_CXX_BINARY_microsoft="cl$EXE_SUFFIX"
-  TOOLCHAIN_CXX_BINARY_solstudio="CC"
   TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
 
   # Use indirect variable referencing
@@ -409,28 +404,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
   COMPILER=[$]$1
   COMPILER_NAME=$2
 
-  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    # cc -V output typically looks like
-    #     cc: Sun C 5.12 Linux_i386 2011/11/16
-    # or
-    #     cc: Studio 12.5 Sun C 5.14 SunOS_sparc 2016/05/31
-    COMPILER_VERSION_OUTPUT=`$COMPILER -V 2>&1`
-    # Check that this is likely to be the Solaris Studio cc.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
-    if test $? -ne 0; then
-      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
-      AC_MSG_NOTICE([The result from running with -V was: "$COMPILER_VERSION_OUTPUT"])
-      AC_MSG_NOTICE([The result from running with --version was: "$ALT_VERSION_OUTPUT"])
-      AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
-    fi
-    # Remove usage instructions (if present), and
-    # collapse compiler output into a single line
-    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/ *@<:@Uu@:>@sage:.*//'`
-    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e "s/^.*@<:@ ,\t@:>@$COMPILER_NAME@<:@ ,\t@:>@\(@<:@1-9@:>@\.@<:@0-9@:>@@<:@0-9@:>@*\).*/\1/"`
-  elif test  "x$TOOLCHAIN_TYPE" = xxlc; then
+  if test  "x$TOOLCHAIN_TYPE" = xxlc; then
     # xlc -qversion output typically looks like
     #     IBM XL C/C++ for AIX, V11.1 (5724-X13)
     #     Version: 11.01.0000.0015
@@ -615,19 +589,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
   LINKER=[$]$1
   LINKER_NAME="$2"
 
-  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    # cc -Wl,-V output typically looks like
-    #   ld: Software Generation Utilities - Solaris Link Editors: 5.11-1.2329
-
-    # solstudio cc requires us to have an existing file to pass as argument,
-    # but it need not be a syntactically correct C file, so just use
-    # ourself. :) The intermediate 'cat' is needed to stop ld from leaving
-    # a lingering a.out (!).
-    LINKER_VERSION_STRING=`$LD -Wl,-V $TOPDIR/configure 2>&1 | $CAT | $HEAD -n 1 | $SED -e 's/ld: //'`
-    # Extract version number
-    [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
-        $SED -e 's/.* \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\.[0-9][0-9]*\)/\1.\2/'` ]
-  elif test  "x$TOOLCHAIN_TYPE" = xxlc; then
+  if test  "x$TOOLCHAIN_TYPE" = xxlc; then
     LINKER_VERSION_STRING="Unknown"
     LINKER_VERSION_NUMBER="0.0"
   elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -784,16 +746,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   # Setup the assembler (AS)
   #
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    UTIL_PATH_PROGS(AS, as)
-    UTIL_FIXUP_EXECUTABLE(AS)
-    if test "x$AS" = x; then
-      AC_MSG_ERROR([Solaris assembler (as) is required. Please install via "pkg install pkg:/developer/assembler".])
-    fi
-  else
-    # FIXME: is this correct for microsoft?
-    AS="$CC -c"
-  fi
+  # FIXME: is this correct for microsoft?
+  AS="$CC -c"
   AC_SUBST(AS)
 
   #
@@ -842,15 +796,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     AC_CHECK_PROG([MSBUILD], [msbuild$EXE_SUFFIX], [msbuild$EXE_SUFFIX],,,)
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    UTIL_PATH_PROGS(STRIP, strip)
-    UTIL_FIXUP_EXECUTABLE(STRIP)
-    UTIL_PATH_PROGS(NM, nm)
-    UTIL_FIXUP_EXECUTABLE(NM)
-    UTIL_PATH_PROGS(GNM, gnm)
-    UTIL_FIXUP_EXECUTABLE(GNM)
-  elif test "x$OPENJDK_TARGET_OS" != xwindows; then
-    # FIXME: we should unify this with the solaris case above.
+  if test "x$OPENJDK_TARGET_OS" != xwindows; then
     UTIL_CHECK_TOOLS(STRIP, strip)
     UTIL_FIXUP_EXECUTABLE(STRIP)
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -865,48 +811,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
-  if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
     UTIL_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
       UTIL_FIXUP_EXECUTABLE(OBJCOPY)
-      if test "x$OPENJDK_BUILD_OS" = xsolaris; then
-        # objcopy prior to 2.21.1 on solaris is broken and is not usable.
-        # Rewrite objcopy version output to VALID_VERSION or BAD_VERSION.
-        # - version number is last blank separate word on first line
-        # - version number formats that have been seen:
-        #   - <major>.<minor>
-        #   - <major>.<minor>.<micro>
-        OBJCOPY_VERSION=`$OBJCOPY --version | $HEAD -n 1`
-        # The outer [ ] is to prevent m4 from eating the [] in the sed expression.
-        [ OBJCOPY_VERSION_CHECK=`$ECHO $OBJCOPY_VERSION | $SED -n \
-              -e 's/.* //' \
-              -e '/^[01]\./b bad' \
-              -e '/^2\./{' \
-              -e '  s/^2\.//' \
-              -e '  /^[0-9]$/b bad' \
-              -e '  /^[0-9]\./b bad' \
-              -e '  /^1[0-9]$/b bad' \
-              -e '  /^1[0-9]\./b bad' \
-              -e '  /^20\./b bad' \
-              -e '  /^21\.0$/b bad' \
-              -e '  /^21\.0\./b bad' \
-              -e '}' \
-              -e ':good' \
-              -e 's/.*/VALID_VERSION/p' \
-              -e 'q' \
-              -e ':bad' \
-              -e 's/.*/BAD_VERSION/p' \
-              -e 'q'` ]
-        if test "x$OBJCOPY_VERSION_CHECK" = xBAD_VERSION; then
-          OBJCOPY=
-          AC_MSG_WARN([Ignoring found objcopy since it is broken (prior to 2.21.1). No debug symbols will be generated.])
-          AC_MSG_NOTICE([objcopy reports version $OBJCOPY_VERSION])
-          AC_MSG_NOTICE([Note: patch 149063-01 or newer contains the correct Solaris 10 SPARC version])
-          AC_MSG_NOTICE([Note: patch 149064-01 or newer contains the correct Solaris 10 X86 version])
-          AC_MSG_NOTICE([Note: Solaris 11 Update 1 contains the correct version])
-        fi
-      fi
     fi
   fi
 
@@ -918,7 +827,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   case $TOOLCHAIN_TYPE in
-    gcc|clang|solstudio)
+    gcc|clang)
       UTIL_CHECK_TOOLS(CXXFILT, [c++filt])
       UTIL_CHECK_NONEMPTY(CXXFILT)
       UTIL_FIXUP_EXECUTABLE(CXXFILT)

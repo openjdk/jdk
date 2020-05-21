@@ -88,14 +88,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
-  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    BASIC_LDFLAGS="-Wl,-z,defs"
-    BASIC_LDFLAGS_ONLYCXX="-norunpath"
-    BASIC_LDFLAGS_ONLYCXX_JDK_ONLY="-xnolib"
-
-    BASIC_LDFLAGS_JDK_ONLY="-ztext"
-    BASIC_LDFLAGS_JVM_ONLY="-library=%none -mt -z noversion"
-
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     BASIC_LDFLAGS="-b64 -brtl -bnorwexec -bnolibpath -bexpall -bernotok -btextpsize:64K \
         -bdatapsize:64K -bstackpsize:64K"
@@ -141,14 +133,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
-  # Setup warning flags
-  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    LDFLAGS_WARNINGS_ARE_ERRORS="-Wl,-z,fatal-warnings"
-  else
-    LDFLAGS_WARNINGS_ARE_ERRORS=""
-  fi
-  AC_SUBST(LDFLAGS_WARNINGS_ARE_ERRORS)
-
   # Setup LDFLAGS for linking executables
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     EXECUTABLE_LDFLAGS="$EXECUTABLE_LDFLAGS -Wl,--allow-shlib-undefined"
@@ -186,11 +170,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
     elif test "x$OPENJDK_$1_CPU" = xarm; then
       $1_CPU_LDFLAGS_JVM_ONLY="${$1_CPU_LDFLAGS_JVM_ONLY} -fsigned-char"
       $1_CPU_LDFLAGS="$ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
-    fi
-
-  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    if test "x${OPENJDK_$1_CPU}" = "xsparcv9"; then
-      $1_CPU_LDFLAGS_JVM_ONLY="-xarch=sparc"
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then

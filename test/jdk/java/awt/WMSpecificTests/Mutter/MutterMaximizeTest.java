@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Red Hat, Inc.  All Rights Reserved.
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
   @bug      7043963
   @summary  Tests  that the screen location of windows is
             updated properly after a maximize.
-  @requires (os.family == "linux" | os.family == "solaris")
+  @requires os.family == "linux"
   @modules java.desktop/sun.awt.X11
   @author   Denis Lila
   @library  ../../regtesthelpers

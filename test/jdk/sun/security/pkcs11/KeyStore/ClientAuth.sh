@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,35 +52,6 @@ echo ""
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    ARCH=`isainfo`
-    case "$ARCH" in
-      sparc* )
-    FS="/"
-    PS=":"
-    CP="${FS}bin${FS}cp"
-    CHMOD="${FS}bin${FS}chmod"
-    ;;
-      i[3-6]86 )
-    FS="/"
-    PS=":"
-    CP="${FS}bin${FS}cp"
-    CHMOD="${FS}bin${FS}chmod"
-    ;;
-      amd64* )
-    FS="/"
-    PS=":"
-    CP="${FS}bin${FS}cp"
-    CHMOD="${FS}bin${FS}chmod"
-    ;;
-      * )
-#     ?itanium? )
-#     amd64* )
-    echo "Unsupported System: Solaris ${ARCH}"
-    exit 0;
-    ;;
-    esac
-    ;;
   Linux )
     ARCH=`uname -m`
     case "$ARCH" in

@@ -237,16 +237,6 @@ TEST_JOBS_FACTOR_MACHINE ?= 1
 
 ifeq ($(TEST_JOBS), 0)
   CORES_DIVIDER := 2
-  ifeq ($(call isTargetCpuArch, sparc), true)
-    # For smaller SPARC machines we see reasonable scaling of throughput up to
-    # cpus/4 without affecting test reliability. On the bigger machines, cpus/4
-    # causes intermittent timeouts.
-    ifeq ($(shell $(EXPR) $(NUM_CORES) \> 16), 1)
-      CORES_DIVIDER := 5
-    else
-      CORES_DIVIDER := 4
-    endif
-  endif
   # For some big multi-core machines with low ulimit -u setting we hit the max
   # threads/process limit. In such a setup the memory/cores-only-guided
   # TEST_JOBS config is insufficient. From experience a concurrency setting of
@@ -843,12 +833,8 @@ define SetupRunJtregTestBody
   # we may end up with a lot of JVM's
   $1_JTREG_MAX_RAM_PERCENTAGE := $$(shell $$(EXPR) 25 / $$($1_JTREG_JOBS))
 
-  # SPARC is in general slower per core so need to scale up timeouts a bit.
-  ifeq ($(call isTargetCpuArch, sparc), true)
-    JTREG_TIMEOUT_FACTOR ?= 8
-  else
-    JTREG_TIMEOUT_FACTOR ?= 4
-  endif
+  JTREG_TIMEOUT_FACTOR ?= 4
+
   JTREG_VERBOSE ?= fail,error,summary
   JTREG_RETAIN ?= fail,error
   JTREG_RUN_PROBLEM_LISTS ?= false

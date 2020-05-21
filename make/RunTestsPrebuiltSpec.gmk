@@ -178,16 +178,6 @@ FILE := file
 HG := hg
 ULIMIT := ulimit
 
-# On Solaris gnu versions of some tools are required.
-ifeq ($(OPENJDK_BUILD_OS), solaris)
-  AWK := gawk
-  GREP := ggrep
-  EGREP := ggrep -E
-  FGREP := grep -F
-  SED := gsed
-  TAR := gtar
-endif
-
 ifeq ($(OPENJDK_BUILD_OS), windows)
   CYGPATH := cygpath
 endif

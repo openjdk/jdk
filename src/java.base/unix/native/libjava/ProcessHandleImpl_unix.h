@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * Declaration of ProcessHandleImpl functions common on all Unix platforms.
  * 'unix_' functions have a single implementation in ProcessHandleImpl_unix.c
  * 'os_' prefixed functions have different, os-specific implementations in the
- * various ProcessHandleImpl_{linux,macosx,solaris,aix}.c files.
+ * various ProcessHandleImpl_{linux,macosx,aix}.c files.
  * See ProcessHandleImpl_unix.c for more details.
  */
 

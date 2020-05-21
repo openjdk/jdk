@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,10 +109,6 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void generate_counter_overflow(Label& continue_entry);
 
   void generate_fixed_frame(bool native_call);
-#ifdef SPARC
-  void save_native_result(void);
-  void restore_native_result(void);
-#endif // SPARC
 
 #ifdef AARCH64
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);

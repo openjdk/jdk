@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,6 @@ public class SctpNet {
     /* -- Miscellaneous SCTP utilities -- */
 
     private static boolean IPv4MappedAddresses() {
-        if ("SunOS".equals(osName)) {
-            /* Solaris supports IPv4Mapped Addresses with bindx */
-            return true;
-        } /* else {  //other OS/implementations  */
-
         /* lksctp/linux requires Ipv4 addresses */
         return false;
     }

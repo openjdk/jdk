@@ -387,7 +387,7 @@ def _jvmci_gate_runner(args, tasks):
         if t: _runmultimake(['--jdk-jvm-variants', 'server', '--jdk-debug-levels', 'fastdebug'])
 
     with Task('CleanAndBuildIdealGraphVisualizer', tasks, disableJacoco=True) as t:
-        if t and platform.processor() != 'sparc':
+        if t:
             buildxml = mx._cygpathU2W(join(_suite.dir, 'src', 'share', 'tools', 'IdealGraphVisualizer', 'build.xml'))
             mx.run(['ant', '-f', buildxml, '-q', 'clean', 'build'], env=_igvBuildEnv())
 
@@ -486,8 +486,6 @@ def hsdis(args, copyToDir=None):
     flavor = 'intel'
     if 'att' in args:
         flavor = 'att'
-    if mx.get_arch() == "sparcv9":
-        flavor = "sparcv9"
     lib = mx.add_lib_suffix('hsdis-' + mx.get_arch())
     path = join(_suite.dir, 'lib', lib)
 
@@ -497,7 +495,6 @@ def hsdis(args, copyToDir=None):
         'intel/hsdis-amd64.dll' : '6a388372cdd5fe905c1a26ced614334e405d1f30',
         'intel/hsdis-amd64.so' : '844ed9ffed64fe9599638f29a8450c50140e3192',
         'intel/hsdis-amd64.dylib' : 'fdb13ef0d7d23d93dacaae9c98837bea0d4fc5a2',
-        'sparcv9/hsdis-sparcv9.so': '970640a9af0bd63641f9063c11275b371a59ee60',
     }
 
     flavoredLib = flavor + "/" + lib
@@ -579,8 +576,6 @@ def _get_openjdk_os():
         os = 'macosx'
     elif 'linux' in os:
         os = 'linux'
-    elif 'solaris' in os:
-        os = 'solaris'
     elif 'cygwin' in os or 'mingw' in os:
         os = 'windows'
     return os
@@ -589,8 +584,6 @@ def _get_openjdk_cpu():
     cpu = mx.get_arch()
     if cpu == 'amd64':
         cpu = 'x86_64'
-    elif cpu == 'sparcv9':
-        cpu = 'sparcv9'
     return cpu
 
 def _get_openjdk_os_cpu():

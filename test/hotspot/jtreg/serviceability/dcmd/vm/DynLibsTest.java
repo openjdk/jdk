@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ public class DynLibsTest {
             osDependentBaseString = "lib%s.so";
         } else if (Platform.isOSX()) {
             osDependentBaseString = "lib%s.dylib";
-        } else if (Platform.isSolaris()) {
-            osDependentBaseString = "lib%s.so";
         } else if (Platform.isWindows()) {
             osDependentBaseString = "%s.dll";
         }

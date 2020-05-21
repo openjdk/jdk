@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,18 +663,10 @@ final class Config {
         lib = expand(lib);
         int i = lib.indexOf("/$ISA/");
         if (i != -1) {
-            // replace "/$ISA/" with "/sparcv9/" on 64-bit Solaris SPARC
-            // and with "/amd64/" on Solaris AMD64.
-            // On all other platforms, just turn it into a "/"
+            // replace "/$ISA/" with "/"
             String prefix = lib.substring(0, i);
             String suffix = lib.substring(i + 5);
-            if (osName.equals("SunOS") && osArch.equals("sparcv9")) {
-                lib = prefix + "/sparcv9" + suffix;
-            } else if (osName.equals("SunOS") && osArch.equals("amd64")) {
-                lib = prefix + "/amd64" + suffix;
-            } else {
-                lib = prefix + suffix;
-            }
+            lib = prefix + suffix;
         }
         debug(keyword + ": " + lib);
 

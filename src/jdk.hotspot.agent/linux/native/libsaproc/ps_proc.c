@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,11 +128,7 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
 // Linux on x86 and sparc are different.  On x86 ptrace(PTRACE_GETREGS, ...)
 // uses pointer from 4th argument and ignores 3rd argument.  On sparc it uses
 // pointer from 3rd argument and ignores 4th argument
-#if defined(sparc) || defined(sparcv9)
-#define ptrace_getregs(request, pid, addr, data) ptrace(request, pid, addr, data)
-#else
 #define ptrace_getregs(request, pid, addr, data) ptrace(request, pid, data, addr)
-#endif
 
 #if defined(_LP64) && defined(PTRACE_GETREGS64)
 #define PTRACE_GETREGS_REQ PTRACE_GETREGS64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@
 
 #define JVM_ERROR1      "Error: Could not create the Java Virtual Machine.\n" GEN_ERROR
 #define JVM_ERROR2      "Error: Could not detach main thread.\n" JNI_ERROR
-#define JVM_ERROR3      "Error: SPARC V8 processor detected;  Required V9 processors or better.\nUse JDK5 client compiler for V8 processors.\n" JVM_ERROR1
 
 #define JAR_ERROR1      "Error: Failed to load Main-Class manifest attribute from\n%s\n%s"
 #define JAR_ERROR2      "Error: Unable to access jarfile %s"
@@ -94,7 +93,7 @@
 #define JRE_ERROR3      "Error: Improper value at line %d."
 #define JRE_ERROR4      "Error: trying to exec %s.\nCheck if file exists and permissions are set correctly."
 #define JRE_ERROR5      "Error: Failed to start a %d-bit JVM process from a %d-bit JVM."
-#define JRE_ERROR6      "Error: Verify all necessary Java SE components have been installed.\n(Solaris SPARC 64-bit components must be installed after 32-bit components.)"
+#define JRE_ERROR6      "Error: Verify all necessary Java SE components have been installed."
 #define JRE_ERROR7      "Error: Either 64-bit processes are not supported by this platform\nor the 64-bit components have not been installed."
 #define JRE_ERROR8      "Error: could not find "
 #define JRE_ERROR9      "Error: Unable to resolve %s"

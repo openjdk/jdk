@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,52 +82,6 @@ ifeq ($(call isTargetOs, linux), true)
     # This will get implicitly picked up by SetupNativeCompilation below.
     $(foreach s, $(NONPIC_SRC), $(eval BUILD_LIBJVM_$(notdir $s)_CXXFLAGS := -fno-PIC))
   endif
-
-else ifeq ($(call isTargetOs, solaris), true)
-  ifneq ($(DEBUG_LEVEL), slowdebug)
-    # dev studio 12.6 workaround
-    BUILD_LIBJVM_arguments.cpp_OPTIMIZATION := LOW
-    # Workaround for a bug in dtrace.  If ciEnv::post_compiled_method_load_event()
-    # is inlined, the resulting dtrace object file needs a reference to this
-    # function, whose symbol name is too long for dtrace.  So disable inlining
-    # for this method for now. (fix this when dtrace bug 6258412 is fixed)
-    BUILD_LIBJVM_ciEnv.cpp_CXXFLAGS := \
-        -xinline=no%__1cFciEnvbFpost_compiled_method_load_event6MpnHnmethod__v_
-    # dtrace cannot handle tail call optimization (6672627, 6693876)
-    BUILD_LIBJVM_jni.cpp_CXXFLAGS := -Qoption ube -O~yz
-    BUILD_LIBJVM_stubGenerator_$(HOTSPOT_TARGET_CPU).cpp_CXXFLAGS := -xspace
-
-    ifeq ($(call isTargetCpu, x86_64), true)
-      # Temporary until SS10 C++ compiler is fixed
-      BUILD_LIBJVM_generateOptoStub.cpp_CXXFLAGS := -xO2
-      # Temporary util SS12u1 C++ compiler is fixed
-      BUILD_LIBJVM_c1_LinearScan.cpp_CXXFLAGS := -xO2
-    endif
-  endif
-
-  # Need extra inlining to get oop_ps_push_contents functions to perform well enough.
-  ifeq ($(DEBUG_LEVEL),release)
-    BUILD_LIBJVM_psPromotionManager.cpp_CXXFLAGS := -W2,-Ainline:inc=1000
-  endif
-
-  ifeq ($(DEBUG_LEVEL), fastdebug)
-    # this hangs in iropt now (7113504)
-    BUILD_LIBJVM_compileBroker.cpp_CXXFLAGS := -xO2
-
-    # Frame size > 100k  if we allow inlining via -g0!
-    BUILD_LIBJVM_bytecodeInterpreter.cpp_CXXFLAGS := +d
-    BUILD_LIBJVM_bytecodeInterpreterWithChecks.cpp_CXXFLAGS := +d
-
-    ifeq ($(call isTargetCpuArch, x86), true)
-      # ube explodes on x86
-      BUILD_LIBJVM_bytecodeInterpreter.cpp_CXXFLAGS += -xO1
-      BUILD_LIBJVM_bytecodeInterpreterWithChecks.cpp_CXXFLAGS += -xO1
-    endif
-
-  endif
-
-  # Workaround for jvmciCompilerToVM.cpp long compilation time
-  BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
 
 else ifeq ($(call isTargetOs, macosx), true)
   # The copied fdlibm routines in these files must not be optimized

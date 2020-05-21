@@ -101,7 +101,7 @@ define SetupBundleFileBody
           # If no subdir is specified and only one BASE_DIR, tar.gz can be done
           # directly from BASE_DIR.
 	  $(CD) $$($1_BASE_DIRS) \
-	      && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	      && ( $(TAR) cf - \
 	          -$(TAR_INCLUDE_PARAM) $$($1_$$($1_BASE_DIRS)_LIST_FILE) \
 	          $(TAR_IGNORE_EXIT_VALUE) ) \
 	      | $(GZIP) > $$@
@@ -110,7 +110,7 @@ define SetupBundleFileBody
           # If only one BASE_DIR, but with a SUBDIR set, tar.gz can use the
           # transform option to create bundle directly from the BASE_DIR.
 	  $(CD) $$($1_BASE_DIRS) \
-	      && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	      && ( $(TAR) cf - \
 	          -$(TAR_INCLUDE_PARAM) $$($1_$$($1_BASE_DIRS)_LIST_FILE) \
 	          $$(if $$($1_SUBDIR), --transform 's|^|$$($1_SUBDIR)/|S') \
 	          $(TAR_IGNORE_EXIT_VALUE) ) \
@@ -140,7 +140,7 @@ define SetupBundleFileBody
           endif
           ifeq ($$($1_TYPE), tar.gz)
 	    $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && \
-	    ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	    ( $(TAR) cf - \
 	        $$(if $$($1_SUBDIR), $$($1_SUBDIR), .) $(TAR_IGNORE_EXIT_VALUE) ) \
 	    | $(GZIP) > $$@
           else ifeq ($$($1_TYPE), zip)

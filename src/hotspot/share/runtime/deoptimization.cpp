@@ -1083,23 +1083,9 @@ static void byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_c
     case 4:
       *((jint *) check_alignment_get_addr(obj, index, 4)) = (jint) *((jint *) &val);
       break;
-    case 8: {
-#ifdef _LP64
-        jlong res = (jlong) *((jlong *) &val);
-#else
-#ifdef SPARC
-      // For SPARC we have to swap high and low words.
-      jlong v = (jlong) *((jlong *) &val);
-      jlong res = 0;
-      res |= ((v & (jlong) 0xffffffff) << 32);
-      res |= ((v >> 32) & (jlong) 0xffffffff);
-#else
-      jlong res = (jlong) *((jlong *) &val);
-#endif // SPARC
-#endif
-      *((jlong *) check_alignment_get_addr(obj, index, 8)) = res;
+    case 8:
+      *((jlong *) check_alignment_get_addr(obj, index, 8)) = (jlong) *((jlong *) &val);
       break;
-  }
     default:
       ShouldNotReachHere();
   }
@@ -1122,12 +1108,7 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 #ifdef _LP64
       jlong res = (jlong)low->get_int();
 #else
-#ifdef SPARC
-      // For SPARC we have to swap high and low words.
-      jlong res = jlong_from((jint)low->get_int(), (jint)value->get_int());
-#else
       jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
-#endif //SPARC
 #endif
       obj->long_at_put(index, res);
       break;
@@ -1156,12 +1137,7 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
   #ifdef _LP64
         jlong res = (jlong)low->get_int();
   #else
-  #ifdef SPARC
-        // For SPARC we have to swap high and low words.
-        jlong res = jlong_from((jint)low->get_int(), (jint)value->get_int());
-  #else
         jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
-  #endif //SPARC
   #endif
         obj->int_at_put(index, (jint)*((jint*)&res));
         obj->int_at_put(++index, (jint)*(((jint*)&res) + 1));
@@ -1306,12 +1282,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 #ifdef _LP64
         jlong res = (jlong)low->get_int();
 #else
-#ifdef SPARC
-        // For SPARC we have to swap high and low words.
-        jlong res = jlong_from((jint)low->get_int(), (jint)value->get_int());
-#else
         jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
-#endif //SPARC
 #endif
         obj->long_field_put(offset, res);
         break;

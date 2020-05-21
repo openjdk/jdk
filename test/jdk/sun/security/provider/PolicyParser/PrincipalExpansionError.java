@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * This test is a bit complicated.
  * 1) PrincipalExpansionError.java
  *         the test itself.  this test creates a Subject with a
- *         SolarisPrincipal("TestPrincipal") and calls doAs
+ *         UnixPrincipal("TestPrincipal") and calls doAs
  *         with a PrincipalExpansionErrorAction.
  * 2) PrincipalExpansionErrorAction
  *         this action tries to read the file, /testfile
@@ -53,14 +53,14 @@
  *         e) the test is executed.  permissions to read the file,
  *                 /testfile, were granted to the PrincipalExpansionError.
  *                 the policy entry for PrincipalExpansionErrorAction
- *                 running as SolarisPrincipal("TestPrincipal")
+ *                 running as UnixPrincipal("TestPrincipal")
  *                 was also granted the file permission,
- *                 but it has a bogus second SolarisPrincipal with
+ *                 but it has a bogus second UnixPrincipal with
  *                 a name that can't be property-expanded.
  *
  *                 the old behavior of the code would ignore the
  *                 bogus entry and incorrectly grants the file permission
- *                 to SolarisPrincipal("TestPrincipal").
+ *                 to UnixPrincipal("TestPrincipal").
  *                 the new behavior correctly ignores the entire
  *                 policy entry.
  *                 Please note that the jtreg needs to be granted
@@ -88,7 +88,7 @@ public class PrincipalExpansionError {
 
         try {
             Set principals = s.getPrincipals();
-            principals.add(new SolarisPrincipal("TestPrincipal"));
+            principals.add(new UnixPrincipal("TestPrincipal"));
         } catch (SecurityException se) {
             // test incorrectly set up
             throw new SecurityException

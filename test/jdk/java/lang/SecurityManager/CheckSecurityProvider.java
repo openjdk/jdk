@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,6 @@ public class CheckSecurityProvider {
         List<String> expected = new ArrayList<>();
 
         // NOTE: the ordering must match what's defined inside java.security
-        if (os.equals("SunOS")) {
-            layer.findModule("jdk.crypto.ucrypto")
-                .ifPresent(m -> expected.add("com.oracle.security.ucrypto.UcryptoProvider"));
-            layer.findModule("jdk.crypto.cryptoki")
-                .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
-        }
         expected.add("sun.security.provider.Sun");
         expected.add("sun.security.rsa.SunRsaSign");
         layer.findModule("jdk.crypto.ec")
@@ -89,10 +83,8 @@ public class CheckSecurityProvider {
         if (os.contains("OS X")) {
             expected.add("apple.security.AppleProvider");
         }
-        if (!os.equals("SunOS")) {
-            layer.findModule("jdk.crypto.cryptoki")
-                .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
-        }
+        layer.findModule("jdk.crypto.cryptoki")
+            .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
 
         List<String> actual = Stream.of(Security.getProviders())
             .map(p -> p.getClass().getName())

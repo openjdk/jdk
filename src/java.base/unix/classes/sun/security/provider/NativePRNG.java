@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Arrays;
 import sun.security.util.Debug;
 
 /**
- * Native PRNG implementation for Solaris/Linux/MacOS.
+ * Native PRNG implementation for Linux/MacOS.
  * <p>
  * It obtains seed and random numbers by reading system files such as
  * the special device files /dev/random and /dev/urandom.  This

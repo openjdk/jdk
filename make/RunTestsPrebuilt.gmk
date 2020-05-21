@@ -163,8 +163,6 @@ else
     OPENJDK_TARGET_OS := linux
   else ifeq ($(UNAME_OS), Darwin)
     OPENJDK_TARGET_OS := macosx
-  else ifeq ($(UNAME_OS), SunOS)
-    OPENJDK_TARGET_OS := solaris
   else
     OPENJDK_TARGET_OS := $(UNAME_OS)
   endif
@@ -174,38 +172,20 @@ endif
 # Assume little endian unless otherwise specified
 OPENJDK_TARGET_CPU_ENDIAN := little
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  # On solaris, use uname -p
-  UNAME_CPU := $(shell $(UNAME) -p)
-  # Assume 64-bit platform
-  OPENJDK_TARGET_CPU_BITS := 64
-  ifeq ($(UNAME_CPU), i386)
-    OPENJDK_TARGET_CPU := x86_64
-  else ifeq ($(UNAME_CPU), sparc)
-    OPENJDK_TARGET_CPU := sparcv9
-    OPENJDK_TARGET_CPU_ENDIAN := big
-  else
-    OPENJDK_TARGET_CPU := $(UNAME_CPU)
-  endif
+UNAME_CPU := $(shell $(UNAME) -m)
+ifeq ($(UNAME_CPU), i686)
+  OPENJDK_TARGET_CPU := x86
+  OPENJDK_TARGET_CPU_BITS := 32
 else
-  # ... all others use uname -m
-  UNAME_CPU := $(shell $(UNAME) -m)
-  ifeq ($(UNAME_CPU), i686)
-    OPENJDK_TARGET_CPU := x86
-    OPENJDK_TARGET_CPU_BITS := 32
-  else
-    # Assume all others are 64-bit. We use the same CPU name as uname for
-    # at least x86_64 and aarch64.
-    OPENJDK_TARGET_CPU := $(UNAME_CPU)
-    OPENJDK_TARGET_CPU_BITS := 64
-  endif
+  # Assume all others are 64-bit. We use the same CPU name as uname for
+  # at least x86_64 and aarch64.
+  OPENJDK_TARGET_CPU := $(UNAME_CPU)
+  OPENJDK_TARGET_CPU_BITS := 64
 endif
 
 OPENJDK_TARGET_CPU_ARCH := $(OPENJDK_TARGET_CPU)
 ifeq ($(OPENJDK_TARGET_CPU), x86_64)
   OPENJDK_TARGET_CPU_ARCH := x86
-else ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
-  OPENJDK_TARGET_CPU_ARCH := sparc
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -229,11 +209,6 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
   NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
   MEMORY_SIZE := $(shell $(EXPR) `/usr/sbin/sysctl -n hw.memsize` / 1024 / 1024)
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
-  NUM_CORES := $(shell /usr/sbin/psrinfo -v | $(GREP) -c on-line)
-  MEMORY_SIZE := $(shell \
-      /usr/sbin/prtconf 2> /dev/null | $(GREP) "^Memory [Ss]ize" | $(AWK) '{print $$3}' \
-  )
 else ifeq ($(OPENJDK_TARGET_OS), windows)
   NUM_CORES := $(NUMBER_OF_PROCESSORS)
   MEMORY_SIZE := $(shell \
@@ -265,11 +240,6 @@ ifneq ($(DEVKIT_HOME), )
     LD_JAOTC := $(DEVKIT_HOME)/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
     LIBRARY_PREFIX := lib
     SHARED_LIBRARY_SUFFIX := .dylib
-  else ifeq ($(OPENJDK_TARGET_OS), solaris)
-    # Prefer system linker for AOT on Solaris.
-    LD_JAOTC := ld
-    LIBRARY_PREFIX := lib
-    SHARED_LIBRARY_SUFFIX := .so
   endif
 else
   LD := ld

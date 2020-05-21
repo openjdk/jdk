@@ -45,13 +45,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
         $(call SET_SHARED_LIBRARY_ORIGIN) \
         $(LIBINSTRUMENT_LDFLAGS), \
     LDFLAGS_linux := -L$(call FindLibDirForModule, java.base), \
-    LDFLAGS_solaris := -L$(call FindLibDirForModule, java.base), \
     LDFLAGS_macosx := -L$(call FindLibDirForModule, java.base), \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_unix := -ljava -ljvm $(LIBZ_LIBS), \
     LIBS_linux := -ljli $(LIBDL), \
-    LIBS_solaris := -ljli $(LIBDL), \
     LIBS_aix := -liconv -ljli_static $(LIBDL), \
     LIBS_macosx := -ljli -liconv -framework Cocoa -framework Security \
         -framework ApplicationServices, \

@@ -51,12 +51,6 @@
 #define SETENV_REQUIRED
 #endif
 
-#ifdef __solaris__
-#  include <sys/systeminfo.h>
-#  include <sys/elf.h>
-#  include <stdio.h>
-#endif
-
 /*
  * Flowchart of launcher execs and options processing on unix
  *
@@ -242,9 +236,6 @@ RequiresSetenv(const char *jvmpath) {
 #endif
 
     llp = getenv("LD_LIBRARY_PATH");
-#ifdef __solaris__
-    dmllp = getenv("LD_LIBRARY_PATH_64");
-#endif /* __solaris__ */
     /* no environment variable is a good environment variable */
     if (llp == NULL && dmllp == NULL) {
         return JNI_FALSE;
@@ -304,9 +295,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
 #ifdef SETENV_REQUIRED
     jboolean mustsetenv = JNI_FALSE;
-#ifdef __solaris__
-    char *llp64 = NULL; /* existing LD_LIBRARY_PATH_64 setting */
-#endif // __solaris__
     char *runpath = NULL; /* existing effective LD_LIBRARY_PATH setting */
     char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
     char* newpath = NULL; /* path on new LD_LIBRARY_PATH */
@@ -371,12 +359,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * any.
          */
 
-#ifdef __solaris__
-        llp64 = getenv("LD_LIBRARY_PATH_64");
-        runpath = (llp64 == NULL) ? getenv(LD_LIBRARY_PATH) : llp64;
-#else
         runpath = getenv(LD_LIBRARY_PATH);
-#endif /* __solaris__ */
 
         /* runpath contains current effective LD_LIBRARY_PATH setting */
         { /* New scope to declare local variable */
@@ -449,14 +432,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * once at startup, so we have to re-exec the current executable
          * to get the changed environment variable to have an effect.
          */
-#ifdef __solaris__
-        /*
-         * new LD_LIBRARY_PATH took over for LD_LIBRARY_PATH_64
-         */
-        if (llp64 != NULL) {
-            UnsetEnv("LD_LIBRARY_PATH_64");
-        }
-#endif // __solaris__
 
         newenvp = environ;
     }
@@ -556,51 +531,6 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
     if (libjvm == NULL) {
-#if defined(__solaris__) && defined(__sparc) && !defined(_LP64) /* i.e. 32-bit sparc */
-      FILE * fp;
-      Elf32_Ehdr elf_head;
-      int count;
-      int location;
-
-      fp = fopen(jvmpath, "r");
-      if (fp == NULL) {
-        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
-        return JNI_FALSE;
-      }
-
-      /* read in elf header */
-      count = fread((void*)(&elf_head), sizeof(Elf32_Ehdr), 1, fp);
-      fclose(fp);
-      if (count < 1) {
-        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
-        return JNI_FALSE;
-      }
-
-      /*
-       * Check for running a server vm (compiled with -xarch=v8plus)
-       * on a stock v8 processor.  In this case, the machine type in
-       * the elf header would not be included the architecture list
-       * provided by the isalist command, which is turn is gotten from
-       * sysinfo.  This case cannot occur on 64-bit hardware and thus
-       * does not have to be checked for in binaries with an LP64 data
-       * model.
-       */
-      if (elf_head.e_machine == EM_SPARC32PLUS) {
-        char buf[257];  /* recommended buffer size from sysinfo man
-                           page */
-        long length;
-        char* location;
-
-        length = sysinfo(SI_ISALIST, buf, 257);
-        if (length > 0) {
-            location = JLI_StrStr(buf, "sparcv8plus ");
-          if (location == NULL) {
-            JLI_ReportErrorMessage(JVM_ERROR3);
-            return JNI_FALSE;
-          }
-        }
-      }
-#endif
         JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
         return JNI_FALSE;
@@ -647,28 +577,7 @@ const char*
 SetExecname(char **argv)
 {
     char* exec_path = NULL;
-#if defined(__solaris__)
-    {
-        Dl_info dlinfo;
-        int (*fptr)();
-
-        fptr = (int (*)())dlsym(RTLD_DEFAULT, "main");
-        if (fptr == NULL) {
-            JLI_ReportErrorMessage(DLL_ERROR3, dlerror());
-            return JNI_FALSE;
-        }
-
-        if (dladdr((void*)fptr, &dlinfo)) {
-            char *resolved = (char*)JLI_MemAlloc(PATH_MAX+1);
-            if (resolved != NULL) {
-                exec_path = realpath(dlinfo.dli_fname, resolved);
-                if (exec_path == NULL) {
-                    JLI_MemFree(resolved);
-                }
-            }
-        }
-    }
-#elif defined(__linux__)
+#if defined(__linux__)
     {
         const char* self = "/proc/self/exe";
         char buf[PATH_MAX+1];
@@ -678,7 +587,7 @@ SetExecname(char **argv)
             exec_path = JLI_StringDup(buf);
         }
     }
-#else /* !__solaris__ && !__linux__ */
+#else /* !__linux__ */
     {
         /* Not implemented */
     }
@@ -740,7 +649,6 @@ static void* ThreadJavaMain(void* args) {
 int
 CallJavaMainInNewThread(jlong stack_size, void* args) {
     int rslt;
-#ifndef __solaris__
     pthread_t tid;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -766,18 +674,6 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     }
 
     pthread_attr_destroy(&attr);
-#else /* __solaris__ */
-    thread_t tid;
-    long flags = 0;
-    if (thr_create(NULL, stack_size, ThreadJavaMain, args, flags, &tid) == 0) {
-        void* tmp;
-        thr_join(tid, NULL, &tmp);
-        rslt = (int)(intptr_t)tmp;
-    } else {
-        /* See above. Continue in current thread if thr_create() failed */
-        rslt = JavaMain(args);
-    }
-#endif /* !__solaris__ */
     return rslt;
 }
 
@@ -814,8 +710,6 @@ ProcessPlatformOption(const char *arg)
     return JNI_FALSE;
 }
 
-#ifndef __solaris__
-
 /*
  * Provide a CounterGet() implementation based on gettimeofday() which
  * is universally available, even though it may not be 'high resolution'
@@ -832,5 +726,3 @@ uint64_t CounterGet() {
     }
     return result;
 }
-
-#endif // !__solaris__

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,10 @@ package sun.jvm.hotspot.utilities;
     system. */
 
 public class PlatformInfo {
-  /* Returns "solaris" if on Solaris; "win32" if Windows; "linux" if
-     Linux. Used to determine location of dbx and import module, or
-     possible debugger agent on win32. */
+  /* Returns "win32" if Windows; "linux" if Linux. */
   public static String getOS() throws UnsupportedPlatformException {
     String os = System.getProperty("os.name");
-    if (os.equals("SunOS")) {
-      return "solaris";
-    } else if (os.equals("Linux")) {
+    if (os.equals("Linux")) {
       return "linux";
     } else if (os.equals("FreeBSD")) {
       return "bsd";
@@ -54,7 +50,7 @@ public class PlatformInfo {
 
   public static boolean knownCPU(String cpu) {
     final String[] KNOWN =
-        new String[] {"i386", "x86", "x86_64", "amd64", "sparc", "sparcv9", "ppc64", "ppc64le", "aarch64"};
+        new String[] {"i386", "x86", "x86_64", "amd64", "ppc64", "ppc64le", "aarch64"};
 
     for(String s : KNOWN) {
       if(s.equals(cpu))
@@ -64,10 +60,10 @@ public class PlatformInfo {
     return false;
   }
 
-  /* Returns "sparc" for SPARC based platforms "x86" for x86 based
-     platforms and x86_64 for 64bit x86 based platform. Otherwise
-     returns the value of os.arch. If the value is not recognized as supported,
-     an exception is thrown instead. */
+  /* Returns "x86" for x86 based platforms and x86_64 for 64bit x86
+     based platform. Otherwise returns the value of os.arch. If the
+     value is not recognized as supported, an exception is thrown
+     instead. */
 
   public static String getCPU() throws UnsupportedPlatformException {
     String cpu = System.getProperty("os.arch");
@@ -80,9 +76,6 @@ public class PlatformInfo {
     // Tweeks
     if (cpu.equals("i386"))
       return "x86";
-
-    if (cpu.equals("sparcv9"))
-      return "sparc";
 
     if (cpu.equals("x86_64"))
       return "amd64";

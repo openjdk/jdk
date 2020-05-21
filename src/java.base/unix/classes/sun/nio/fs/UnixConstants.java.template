@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-
-/* On Solaris, "sun" is defined as a macro. Undefine to make package
-   declaration valid */
-#undef sun
 
 /* To be able to name the Java constants the same as the C constants without
    having the preprocessor rewrite those identifiers, add PREFIX_ to all

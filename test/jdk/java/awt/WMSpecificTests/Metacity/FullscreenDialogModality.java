@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8012586
  * @summary verify that modal dialog will appeared above fullscreen window under Metacity WM.
- * @requires (os.family == "linux" | os.family == "solaris")
+ * @requires os.family == "linux"
  * @modules java.desktop/sun.awt.X11
  * @library ../../regtesthelpers
  * @build Util

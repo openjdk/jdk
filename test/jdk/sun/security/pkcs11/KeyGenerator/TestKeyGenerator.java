@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,6 @@ public class TestKeyGenerator extends PKCS11Test {
         // Different PKCS11 impls have different ranges
         // of supported key sizes for variable-key-length
         // algorithms.
-        // Solaris> Blowfish: 32-128 or even 448 bits, RC4: 8-128 bits or as much as 2048 bits
         // NSS>     Blowfish: n/a,         RC4: 8-2048 bits
         // However, we explicitly disallowed key sizes less
         // than 40-bits.
@@ -128,9 +127,7 @@ public class TestKeyGenerator extends PKCS11Test {
         test("ARCFOUR", 40, p, TestResult.PASS);
         test("ARCFOUR", 128, p, TestResult.PASS);
 
-        if (p.getName().equals("SunPKCS11-Solaris")) {
-            test("ARCFOUR", 1024, p, TestResult.TBD);
-        } else if (p.getName().equals("SunPKCS11-NSS")) {
+        if (p.getName().equals("SunPKCS11-NSS")) {
             test("ARCFOUR", 1024, p, TestResult.PASS);
             test("ARCFOUR", 2048, p, TestResult.PASS);
             test("ARCFOUR", 2056, p, TestResult.FAIL);

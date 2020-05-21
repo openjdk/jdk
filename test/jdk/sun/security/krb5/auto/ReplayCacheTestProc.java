@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,15 +89,7 @@ public class ReplayCacheTestProc {
         // recognized on Solaris (might be supported on Solaris 12),
         // and directory name is different when launched by root.
         // See manpage krb5envvar(5) on KRB5RCNAME.
-        if (System.getProperty("os.name").startsWith("SunOS")) {
-            if (uid == 0) {
-                cwd = "/var/krb5/rcache/root/";
-            } else {
-                cwd = "/var/krb5/rcache/";
-            }
-        } else {
-            cwd = System.getProperty("user.dir");
-        }
+        cwd = System.getProperty("user.dir");
     }
 
     private static MessageDigest md5, sha256;

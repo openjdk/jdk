@@ -30,7 +30,6 @@ import java.lang.reflect.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.debugger.remote.sparc.*;
 import sun.jvm.hotspot.debugger.remote.x86.*;
 import sun.jvm.hotspot.debugger.remote.amd64.*;
 import sun.jvm.hotspot.debugger.remote.ppc64.*;
@@ -57,11 +56,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       int cachePageSize;
       String cpu = remoteDebugger.getCPU();
       // page size. (FIXME: should pick this up from the remoteDebugger.)
-      if (cpu.equals("sparc")) {
-        threadFactory = new RemoteSPARCThreadFactory(this);
-        cachePageSize = 8192;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
-      } else if (cpu.equals("x86")) {
+      if (cpu.equals("x86")) {
         threadFactory = new RemoteX86ThreadFactory(this);
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);

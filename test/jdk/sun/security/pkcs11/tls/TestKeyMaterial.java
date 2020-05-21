@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,15 +156,6 @@ public class TestKeyMaterial extends PKCS11Test {
                         match(lineNumber, serverIv, result.getServerIv(), "");
                         match(lineNumber, clientMacBytes, result.getClientMacKey(), "");
                         match(lineNumber, serverMacBytes, result.getServerMacKey(), "");
-                    } catch (InvalidAlgorithmParameterException iape) {
-                        // SSLv3 support is removed in S12
-                        if (provider.getName().indexOf("Solaris") != -1) {
-                            if (major == 3 && minor == 0) {
-                                System.out.println("Skip testing SSLv3 on Solaris");
-                                continue;
-                            }
-                        }
-                        throw iape;
                     } catch (ProviderException pe) {
                         if (provider.getName().indexOf("NSS") != -1) {
                             Throwable t = pe.getCause();

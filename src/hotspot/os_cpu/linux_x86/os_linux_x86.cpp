@@ -95,13 +95,7 @@
 #endif // AMD64
 
 address os::current_stack_pointer() {
-#ifdef SPARC_WORKS
-  void *esp;
-  __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
-  return (address) ((char*)esp + sizeof(long)*2);
-#else
   return (address)__builtin_frame_address(0);
-#endif
 }
 
 char* os::non_memory_address_word() {
@@ -224,10 +218,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
 }
 
 intptr_t* _get_previous_fp() {
-#ifdef SPARC_WORKS
-  intptr_t **ebp;
-  __asm__("mov %%" SPELL_REG_FP ", %0":"=r"(ebp));
-#elif defined(__clang__)
+#if defined(__clang__)
   intptr_t **ebp;
   __asm__ __volatile__ ("mov %%" SPELL_REG_FP ", %0":"=r"(ebp):);
 #else
