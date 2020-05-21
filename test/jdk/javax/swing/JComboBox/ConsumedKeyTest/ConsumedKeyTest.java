@@ -28,7 +28,7 @@ import java.awt.event.KeyEvent;
 /*
   @test
   @key headful
-  @bug 8031485 8058193
+  @bug 8031485 8058193 8067986
   @summary Combo box consuming escape and enter key events
   @author Petr Pchelko
   @library /lib/client/
@@ -36,8 +36,9 @@ import java.awt.event.KeyEvent;
   @run main ConsumedKeyTest
 */
 public class ConsumedKeyTest {
-    private static volatile JFrame frame;
+    private static JFrame frame;
     private static volatile boolean passed;
+    static ExtendedRobot robot;
 
     public static void main(String... args) throws Exception {
         test(KeyEvent.VK_ESCAPE);
@@ -46,6 +47,7 @@ public class ConsumedKeyTest {
 
     private static void test(final int key) throws Exception {
         passed = false;
+        robot = new ExtendedRobot();
         try {
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
@@ -57,10 +59,11 @@ public class ConsumedKeyTest {
                 addAction(panel, key);
                 frame.add(panel);
                 frame.setVisible(true);
+                frame.setAlwaysOnTop(true);
             });
 
-            ExtendedRobot robot = new ExtendedRobot();
             robot.waitForIdle();
+            robot.delay(500);
             robot.type(key);
             robot.waitForIdle();
             if (!passed) {
@@ -71,7 +74,7 @@ public class ConsumedKeyTest {
                 frame.dispose();
             }
         }
-
+        robot.delay(1000);
     }
 
     private static void addAction(JComponent comp, final int key) {
