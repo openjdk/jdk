@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,6 @@ mlib_status mlib_ImageAffine_s32_1ch_nn(mlib_affine_param *param)
     CLIP(1);
     dstLineEnd = (DTYPE *) dstData + xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp++) {
       sp = S_PTR(Y) + (X >> MLIB_SHIFT);
       dp[0] = sp[0];
@@ -93,9 +90,6 @@ mlib_status mlib_ImageAffine_s32_1ch_nn(mlib_affine_param *param)
       size--;
     }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i <= (size - 2); i += 2) {
       mlib_f32 *sp0, *sp1;
 
@@ -134,9 +128,6 @@ mlib_status mlib_ImageAffine_s32_2ch_nn(mlib_affine_param *param)
     CLIP(2);
     dstLineEnd = (DTYPE *) dstData + 2 * xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp += 2) {
       sp = S_PTR(Y) + 2 * (X >> MLIB_SHIFT);
       dp[0] = sp[0];
@@ -161,9 +152,6 @@ mlib_status mlib_ImageAffine_s32_3ch_nn(mlib_affine_param *param)
     CLIP(3);
     dstLineEnd = (DTYPE *) dstData + 3 * xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp += 3) {
       sp = S_PTR(Y) + 3 * (X >> MLIB_SHIFT);
       dp[0] = sp[0];
@@ -189,9 +177,6 @@ mlib_status mlib_ImageAffine_s32_4ch_nn(mlib_affine_param *param)
     CLIP(4);
     dstLineEnd = (DTYPE *) dstData + 4 * xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp += 4) {
       sp = S_PTR(Y) + 4 * (X >> MLIB_SHIFT);
       dp[0] = sp[0];
@@ -221,9 +206,6 @@ mlib_status mlib_ImageAffine_d64_1ch_nn(mlib_affine_param *param)
     CLIP(1);
     dstLineEnd = (DTYPE *) dstData + xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp++) {
       sp = S_PTR(Y);
       dp[0] = sp[X >> MLIB_SHIFT];
@@ -247,9 +229,6 @@ mlib_status mlib_ImageAffine_d64_2ch_nn(mlib_affine_param *param)
     CLIP(2);
     dstLineEnd = (DTYPE *) dstData + 2 * xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp += 2) {
       sp = S_PTR(Y) + 2 * (X >> MLIB_SHIFT);
       dp[0] = sp[0];
@@ -274,9 +253,6 @@ mlib_status mlib_ImageAffine_d64_3ch_nn(mlib_affine_param *param)
     CLIP(3);
     dstLineEnd = (DTYPE *) dstData + 3 * xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp += 3) {
       sp = S_PTR(Y) + 3 * (X >> MLIB_SHIFT);
       dp[0] = sp[0];
@@ -302,9 +278,6 @@ mlib_status mlib_ImageAffine_d64_4ch_nn(mlib_affine_param *param)
     CLIP(4);
     dstLineEnd = (DTYPE *) dstData + 4 * xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dp <= dstLineEnd; dp += 4) {
       sp = S_PTR(Y) + 4 * (X >> MLIB_SHIFT);
       dp[0] = sp[0];

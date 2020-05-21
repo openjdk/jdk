@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,6 @@ final class ProcessImpl extends Process {
     private /* final */ InputStream  stdout;
     private /* final */ InputStream  stderr;
 
-    // only used on Solaris
-    private /* final */ DeferredCloseInputStream stdout_inner_stream;
-
     private static enum LaunchMechanism {
         // order IS important!
         FORK,
@@ -92,8 +89,6 @@ final class ProcessImpl extends Process {
         LINUX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.VFORK, LaunchMechanism.FORK),
 
         BSD(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
-
-        SOLARIS(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
 
         AIX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK);
 
@@ -139,7 +134,6 @@ final class ProcessImpl extends Process {
 
             if (osName.equals("Linux")) { return LINUX; }
             if (osName.contains("OS X")) { return BSD; }
-            if (osName.equals("SunOS")) { return SOLARIS; }
             if (osName.equals("AIX")) { return AIX; }
 
             throw new Error(osName + " is not a supported OS platform.");
@@ -385,41 +379,6 @@ final class ProcessImpl extends Process {
                 });
                 break;
 
-            case SOLARIS:
-                stdin = (fds[0] == -1) ?
-                        ProcessBuilder.NullOutputStream.INSTANCE :
-                        new BufferedOutputStream(
-                            new FileOutputStream(newFileDescriptor(fds[0])));
-
-                stdout = (fds[1] == -1 || forceNullOutputStream) ?
-                         ProcessBuilder.NullInputStream.INSTANCE :
-                         new BufferedInputStream(
-                             stdout_inner_stream =
-                                 new DeferredCloseInputStream(
-                                     newFileDescriptor(fds[1])));
-
-                stderr = (fds[2] == -1) ?
-                         ProcessBuilder.NullInputStream.INSTANCE :
-                         new DeferredCloseInputStream(newFileDescriptor(fds[2]));
-
-                /*
-                 * For each subprocess forked a corresponding reaper task
-                 * is submitted.  That task is the only thread which waits
-                 * for the subprocess to terminate and it doesn't hold any
-                 * locks while doing so.  This design allows waitFor() and
-                 * exitStatus() to be safely executed in parallel (and they
-                 * need no native code).
-                 */
-                ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
-                    synchronized (this) {
-                        this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
-                        this.hasExited = true;
-                        this.notifyAll();
-                    }
-                    return null;
-                });
-                break;
-
             case AIX:
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
@@ -520,29 +479,6 @@ final class ProcessImpl extends Process {
                 try { stdin.close();  } catch (IOException ignored) {}
                 try { stdout.close(); } catch (IOException ignored) {}
                 try { stderr.close(); } catch (IOException ignored) {}
-                break;
-
-            case SOLARIS:
-                // There is a risk that pid will be recycled, causing us to
-                // kill the wrong process!  So we only terminate processes
-                // that appear to still be running.  Even with this check,
-                // there is an unavoidable race condition here, but the window
-                // is very small, and OSes try hard to not recycle pids too
-                // soon, so this is quite safe.
-                synchronized (this) {
-                    if (!hasExited)
-                        processHandle.destroyProcess(force);
-                    try {
-                        stdin.close();
-                        if (stdout_inner_stream != null)
-                            stdout_inner_stream.closeDeferred(stdout);
-                        if (stderr instanceof DeferredCloseInputStream)
-                            ((DeferredCloseInputStream) stderr)
-                                .closeDeferred(stderr);
-                    } catch (IOException e) {
-                        // ignore
-                    }
-                }
                 break;
 
             default: throw new AssertionError("Unsupported platform: " + platform);

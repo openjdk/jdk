@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  *  This file implements a binding between Java and the hsdis
- *  disassembler.  It should compile on Linux/Solaris and Windows.
+ *  disassembler.  It should compile on Linux and Windows.
  *  The only platform dependent pieces of the code for doing
  *  dlopen/dlsym to find the entry point in hsdis.  All the rest is
  *  standard JNI code.

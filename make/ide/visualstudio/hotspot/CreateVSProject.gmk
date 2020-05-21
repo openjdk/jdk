@@ -84,8 +84,6 @@ ifeq ($(call isTargetOs, windows), true)
     -ignorePath linux \
     -ignorePath posix \
     -ignorePath ppc \
-    -ignorePath solaris \
-    -ignorePath sparc \
     -ignorePath x86_32 \
     -ignorePath zero \
       #

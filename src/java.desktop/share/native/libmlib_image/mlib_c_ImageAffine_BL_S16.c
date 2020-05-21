@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,215 +77,7 @@
 #define FUN_NAME(CHAN) mlib_ImageAffine_s16_##CHAN##_bl
 
 /***************************************************************/
-#ifdef __sparc /* for SPARC, using floating-point multiplies is faster */
-
-/***************************************************************/
-#define GET_POINTERS(ind)                                       \
-  fdx = (FTYPE)(X & MLIB_MASK) * scale;                         \
-  fdy = (FTYPE)(Y & MLIB_MASK) * scale;                         \
-  ySrc = MLIB_POINTER_SHIFT(Y);  Y += dY;                       \
-  xSrc = X >> MLIB_SHIFT;  X += dX;                             \
-  srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc) + ind * xSrc;  \
-  srcPixelPtr2 = (DTYPE *)((mlib_u8 *)srcPixelPtr + srcYStride)
-
-/***************************************************************/
-#define COUNT(ind)                                              \
-  pix0_##ind = a00_##ind + fdy * (a10_##ind - a00_##ind);       \
-  pix1_##ind = a01_##ind + fdy * (a11_##ind - a01_##ind);       \
-  res##ind = ROUND(pix0_##ind + fdx * (pix1_##ind - pix0_##ind))
-
-/***************************************************************/
-#define LOAD(ind, ind1, ind2)                                   \
-  a00_##ind = I2F(srcPixelPtr[ind1]);                           \
-  a01_##ind = I2F(srcPixelPtr[ind2]);                           \
-  a10_##ind = I2F(srcPixelPtr2[ind1]);                          \
-  a11_##ind = I2F(srcPixelPtr2[ind2])
-
-mlib_status FUN_NAME(1ch)(mlib_affine_param *param)
-{
-  DECLAREVAR_BL();
-  DTYPE *dstLineEnd;
-  DTYPE *srcPixelPtr2;
-  FTYPE scale = (FTYPE) 1.0 / MLIB_PREC;
-
-  for (j = yStart; j <= yFinish; j++) {
-    FTYPE fdx, fdy;
-    TTYPE a00_0, a01_0, a10_0, a11_0;
-    FTYPE pix0_0, pix1_0, res0;
-
-    CLIP(1);
-    dstLineEnd = (DTYPE *) dstData + xRight;
-
-    GET_POINTERS(1);
-    LOAD(0, 0, 1);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
-    for (; dstPixelPtr < dstLineEnd; dstPixelPtr++) {
-      COUNT(0);
-      GET_POINTERS(1);
-      LOAD(0, 0, 1);
-      dstPixelPtr[0] = (DTYPE) res0;
-    }
-
-    COUNT(0);
-    dstPixelPtr[0] = (DTYPE) res0;
-  }
-
-  return MLIB_SUCCESS;
-}
-
-mlib_status FUN_NAME(2ch)(mlib_affine_param *param)
-{
-  DECLAREVAR_BL();
-  DTYPE *dstLineEnd;
-  DTYPE *srcPixelPtr2;
-  FTYPE scale = (FTYPE) 1.0 / MLIB_PREC;
-
-  for (j = yStart; j <= yFinish; j++) {
-    FTYPE fdx, fdy;
-    TTYPE a00_0, a01_0, a10_0, a11_0;
-    TTYPE a00_1, a01_1, a10_1, a11_1;
-    FTYPE pix0_0, pix1_0, res0;
-    FTYPE pix0_1, pix1_1, res1;
-
-    CLIP(2);
-    dstLineEnd = (DTYPE *) dstData + 2 * xRight;
-
-    GET_POINTERS(2);
-    LOAD(0, 0, 2);
-    LOAD(1, 1, 3);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
-    for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 2) {
-      COUNT(0);
-      COUNT(1);
-      GET_POINTERS(2);
-      LOAD(0, 0, 2);
-      LOAD(1, 1, 3);
-      dstPixelPtr[0] = (DTYPE) res0;
-      dstPixelPtr[1] = (DTYPE) res1;
-    }
-
-    COUNT(0);
-    COUNT(1);
-    dstPixelPtr[0] = (DTYPE) res0;
-    dstPixelPtr[1] = (DTYPE) res1;
-  }
-
-  return MLIB_SUCCESS;
-}
-
-mlib_status FUN_NAME(3ch)(mlib_affine_param *param)
-{
-  DECLAREVAR_BL();
-  DTYPE *dstLineEnd;
-  DTYPE *srcPixelPtr2;
-  FTYPE scale = (FTYPE) 1.0 / MLIB_PREC;
-
-  for (j = yStart; j <= yFinish; j++) {
-    FTYPE fdx, fdy;
-    FTYPE a00_0, a01_0, a10_0, a11_0;
-    FTYPE a00_1, a01_1, a10_1, a11_1;
-    FTYPE a00_2, a01_2, a10_2, a11_2;
-    FTYPE pix0_0, pix1_0, res0;
-    FTYPE pix0_1, pix1_1, res1;
-    FTYPE pix0_2, pix1_2, res2;
-
-    CLIP(3);
-    dstLineEnd = (DTYPE *) dstData + 3 * xRight;
-
-    GET_POINTERS(3);
-    LOAD(0, 0, 3);
-    LOAD(1, 1, 4);
-    LOAD(2, 2, 5);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
-    for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 3) {
-      COUNT(0);
-      COUNT(1);
-      COUNT(2);
-      GET_POINTERS(3);
-      LOAD(0, 0, 3);
-      LOAD(1, 1, 4);
-      LOAD(2, 2, 5);
-      dstPixelPtr[0] = (DTYPE) res0;
-      dstPixelPtr[1] = (DTYPE) res1;
-      dstPixelPtr[2] = (DTYPE) res2;
-    }
-
-    COUNT(0);
-    COUNT(1);
-    COUNT(2);
-    dstPixelPtr[0] = (DTYPE) res0;
-    dstPixelPtr[1] = (DTYPE) res1;
-    dstPixelPtr[2] = (DTYPE) res2;
-  }
-
-  return MLIB_SUCCESS;
-}
-
-mlib_status FUN_NAME(4ch)(mlib_affine_param *param)
-{
-  DECLAREVAR_BL();
-  DTYPE *dstLineEnd;
-  DTYPE *srcPixelPtr2;
-  FTYPE scale = (FTYPE) 1.0 / MLIB_PREC;
-
-  for (j = yStart; j <= yFinish; j++) {
-    FTYPE fdx, fdy;
-    TTYPE a00_0, a01_0, a10_0, a11_0;
-    TTYPE a00_1, a01_1, a10_1, a11_1;
-    TTYPE a00_2, a01_2, a10_2, a11_2;
-    TTYPE a00_3, a01_3, a10_3, a11_3;
-    FTYPE pix0_0, pix1_0, res0;
-    FTYPE pix0_1, pix1_1, res1;
-    FTYPE pix0_2, pix1_2, res2;
-    FTYPE pix0_3, pix1_3, res3;
-
-    CLIP(4);
-    dstLineEnd = (DTYPE *) dstData + 4 * xRight;
-
-    GET_POINTERS(4);
-    LOAD(0, 0, 4);
-    LOAD(1, 1, 5);
-    LOAD(2, 2, 6);
-    LOAD(3, 3, 7);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
-    for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 4) {
-      COUNT(0);
-      COUNT(1);
-      COUNT(2);
-      COUNT(3);
-      GET_POINTERS(4);
-      LOAD(0, 0, 4);
-      LOAD(1, 1, 5);
-      LOAD(2, 2, 6);
-      LOAD(3, 3, 7);
-      dstPixelPtr[0] = (DTYPE) res0;
-      dstPixelPtr[1] = (DTYPE) res1;
-      dstPixelPtr[2] = (DTYPE) res2;
-      dstPixelPtr[3] = (DTYPE) res3;
-    }
-
-    COUNT(0);
-    COUNT(1);
-    COUNT(2);
-    COUNT(3);
-    dstPixelPtr[0] = (DTYPE) res0;
-    dstPixelPtr[1] = (DTYPE) res1;
-    dstPixelPtr[2] = (DTYPE) res2;
-    dstPixelPtr[3] = (DTYPE) res3;
-  }
-
-  return MLIB_SUCCESS;
-}
-
-#else       /* for x86, using integer multiplies is faster */
+/* for x86, using integer multiplies is faster */
 
 /***************************************************************/
 /* for SHORT/USHORT decrease MLIB_SHIFT due to
@@ -352,9 +144,6 @@ mlib_status FUN_NAME(1ch)(mlib_affine_param *param)
 
     GET_POINTERS(1);
     LOAD(0, 0, 1);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr++) {
       COUNT(0);
       GET_POINTERS(1);
@@ -404,9 +193,6 @@ mlib_status FUN_NAME(2ch)(mlib_affine_param *param)
     GET_POINTERS(2);
     LOAD(0, 0, 2);
     LOAD(1, 1, 3);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 2) {
       COUNT(0);
       COUNT(1);
@@ -464,9 +250,6 @@ mlib_status FUN_NAME(3ch)(mlib_affine_param *param)
     LOAD(0, 0, 3);
     LOAD(1, 1, 4);
     LOAD(2, 2, 5);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 3) {
       COUNT(0);
       COUNT(1);
@@ -532,9 +315,6 @@ mlib_status FUN_NAME(4ch)(mlib_affine_param *param)
     LOAD(1, 1, 5);
     LOAD(2, 2, 6);
     LOAD(3, 3, 7);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 4) {
       COUNT(0);
       COUNT(1);
@@ -563,7 +343,5 @@ mlib_status FUN_NAME(4ch)(mlib_affine_param *param)
 
   return MLIB_SUCCESS;
 }
-
-#endif /* __sparc ( for SPARC, using floating-point multiplies is faster ) */
 
 /***************************************************************/

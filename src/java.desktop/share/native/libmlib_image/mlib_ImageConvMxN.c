@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,26 +182,16 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
           ret = mlib_convMxNnw_u8(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
           break;
         case MLIB_SHORT:
-#ifdef __sparc
-          ret = mlib_convMxNnw_s16(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
-#else
-
           if (mlib_ImageConvVersion(m, n, scale, type) == 0)
             ret = mlib_convMxNnw_s16(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
           else
             ret = mlib_i_convMxNnw_s16(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
-#endif /* __sparc */
           break;
         case MLIB_USHORT:
-#ifdef __sparc
-          ret = mlib_convMxNnw_u16(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
-#else
-
           if (mlib_ImageConvVersion(m, n, scale, type) == 0)
             ret = mlib_convMxNnw_u16(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
           else
             ret = mlib_i_convMxNnw_u16(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
-#endif /* __sparc */
           break;
         case MLIB_INT:
           ret = mlib_convMxNnw_s32(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
@@ -248,12 +238,6 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
                              cmask);
         break;
       case MLIB_SHORT:
-#ifdef __sparc
-        ret =
-          mlib_convMxNext_s16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
-                              cmask);
-#else
-
         if (mlib_ImageConvVersion(m, n, scale, type) == 0)
           ret =
             mlib_convMxNext_s16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
@@ -262,15 +246,8 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
           ret =
             mlib_i_convMxNext_s16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b,
                                   scale, cmask);
-#endif /* __sparc */
         break;
       case MLIB_USHORT:
-#ifdef __sparc
-        ret =
-          mlib_convMxNext_u16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
-                              cmask);
-#else
-
         if (mlib_ImageConvVersion(m, n, scale, type) == 0)
           ret =
             mlib_convMxNext_u16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
@@ -279,7 +256,6 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
           ret =
             mlib_i_convMxNext_u16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b,
                                   scale, cmask);
-#endif /* __sparc */
         break;
       case MLIB_INT:
         ret =

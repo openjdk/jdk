@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -723,13 +723,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   if (!_pipeline)
     /* Do Nothing */;
 
-  else if (_pipeline->_maxcycleused <=
-#ifdef SPARC
-    64
-#else
-    32
-#endif
-      ) {
+  else if (_pipeline->_maxcycleused <= 32) {
     fprintf(fp_cpp, "Pipeline_Use_Cycle_Mask operator&(const Pipeline_Use_Cycle_Mask &in1, const Pipeline_Use_Cycle_Mask &in2) {\n");
     fprintf(fp_cpp, "  return Pipeline_Use_Cycle_Mask(in1._mask & in2._mask);\n");
     fprintf(fp_cpp, "}\n\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
 
 // Platform specific for C++ based Interpreter
 
-#if defined(PPC) || defined(SPARC) || defined(IA64)
+#if defined(PPC) || defined(IA64)
 #define LOTS_OF_REGS   // Use plenty of registers
 #else
 #undef LOTS_OF_REGS    // Loser platforms

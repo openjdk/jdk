@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,6 @@ mlib_status mlib_ImageAffine_u8_1ch_nn(mlib_affine_param *param)
     CLIP(1);
     dstLineEnd = (DTYPE *) dstData + xRight;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr <= dstLineEnd; dstPixelPtr++) {
       ySrc = MLIB_POINTER_SHIFT(Y);
       Y += dY;
@@ -123,9 +120,6 @@ mlib_status mlib_ImageAffine_u8_2ch_nn(mlib_affine_param *param)
     Y += dY;
     xSrc = X >> MLIB_SHIFT;
     X += dX;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 2) {
       srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc) + 2 * xSrc;
       ySrc = MLIB_POINTER_SHIFT(Y);
@@ -169,9 +163,6 @@ mlib_status mlib_ImageAffine_u8_3ch_nn(mlib_affine_param *param)
     Y += dY;
     xSrc = X >> MLIB_SHIFT;
     X += dX;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 3) {
       srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc) + 3 * xSrc;
       ySrc = MLIB_POINTER_SHIFT(Y);
@@ -305,9 +296,7 @@ mlib_status mlib_ImageAffine_s16_2ch_nn(mlib_affine_param *param)
     Y += dY;
     xSrc = X >> MLIB_SHIFT;
     X += dX;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
+
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 2) {
       srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc) + 2 * xSrc;
       ySrc = MLIB_POINTER_SHIFT(Y);
@@ -351,9 +340,6 @@ mlib_status mlib_ImageAffine_s16_3ch_nn(mlib_affine_param *param)
     Y += dY;
     xSrc = X >> MLIB_SHIFT;
     X += dX;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; dstPixelPtr < dstLineEnd; dstPixelPtr += 3) {
       srcPixelPtr = MLIB_POINTER_GET(lineAddr, ySrc) + 3 * xSrc;
       ySrc = MLIB_POINTER_SHIFT(Y);

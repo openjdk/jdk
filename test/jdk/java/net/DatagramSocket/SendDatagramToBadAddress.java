@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,17 +47,7 @@ public class SendDatagramToBadAddress {
             return (true);
         if (p.getProperty ("os.name").startsWith ("Mac OS"))
             return (true);
-        // Check for specific Solaris version from here
-        v = p.getProperty ("os.arch");
-        if (!v.equalsIgnoreCase ("sparc"))
-            return (false);
-        v = p.getProperty ("os.name");
-        if (!v.equalsIgnoreCase ("Solaris") && !v.equalsIgnoreCase ("SunOS"))
-            return (false);
-        v = p.getProperty ("os.version");
-        if (v.equals ("5.8") || v.equals ("8"))
-            return (false);
-        return (true);
+        return false;
     }
 
     static void print (String s) {

@@ -426,8 +426,8 @@
     An agent is deployed in a platform specific manner but is typically the
     platform equivalent of a dynamic library. On the <tm>Windows</tm> operating
     system, for example, an agent library is a "Dynamic Linked Library" (DLL).
-    On the <tm>Solaris</tm> Operating Environment, an agent library is a shared
-    object (<code>.so</code> file).
+    On <tm>Linux</tm> Operating Environment, an agent library is a shared object
+    (<code>.so</code> file).
     <p/>
 
     An agent may be started at VM startup by specifying the agent library
@@ -497,8 +497,7 @@
         <code>-agentlib:foo=opt1,opt2</code> is specified, the VM will attempt to
         load the shared library <code>foo.dll</code> from the system <code>PATH</code>
         under <tm>Windows</tm> or <code>libfoo.so</code> from the
-        <code>LD_LIBRARY_PATH</code> under the <tm>Solaris</tm> operating
-        environment.
+        <code>LD_LIBRARY_PATH</code> under <tm>Linux</tm>.
         If the agent library is statically linked into the executable
         then no actual loading takes place.
     <p/>
@@ -13327,7 +13326,7 @@ myInit() {
       Sent by the VM to request the agent to dump its data.  This
       is just a hint and the agent need not react to this event.
       This is useful for processing command-line signals from users.  For
-      example, in the Java 2 SDK a CTRL-Break on Win32 and a CTRL-\ on Solaris
+      example, in the Java 2 SDK a CTRL-Break on Win32 and a CTRL-\ on Linux
       causes the VM to send this event to the agent.
     </description>
     <origin>jvmpi</origin>

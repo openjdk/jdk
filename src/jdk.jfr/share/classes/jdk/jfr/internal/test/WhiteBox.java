@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jfr.internal.test;
 public final class WhiteBox {
 
     private static boolean writeAllObjectSamples;
+    private static boolean skipBFS;
 
     /**
      * If OldObjectSample event is enabled, calling this method
@@ -45,4 +46,19 @@ public final class WhiteBox {
         return writeAllObjectSamples;
     }
 
+    /**
+     * If OldObjectSample event is enabled, calling this method
+     * ensures that BFS is not used when searching for path to GC root.
+     * Purpose of this method is to trigger code paths that are
+     * hard to provoke reliably in testing.
+     *
+     * @param skipBFS if only DFS should be used
+     */
+    public static void setSkipBFS(boolean skip) {
+        skipBFS = skip;
+    }
+
+    public static boolean getSkipBFS() {
+        return skipBFS;
+    }
 }

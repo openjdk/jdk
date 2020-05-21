@@ -226,7 +226,6 @@ public final class KeyUtil {
         return providerName != null &&
                 (providerName.equals("SunJCE") ||
                     providerName.equals("SunMSCAPI") ||
-                    providerName.equals("OracleUcrypto") ||
                     providerName.startsWith("SunPKCS11"));
     }
 

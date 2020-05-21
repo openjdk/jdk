@@ -136,7 +136,7 @@ inline void G1ParScanThreadState::dispatch_task(ScannerTask task) {
   }
 }
 
-void G1ParScanThreadState::steal_and_trim_queue(ScannerTasksQueueSet *task_queues) {
+void G1ParScanThreadState::steal_and_trim_queue(G1ScannerTasksQueueSet *task_queues) {
   ScannerTask stolen_task;
   while (task_queues->steal(_worker_id, stolen_task)) {
     dispatch_task(stolen_task);

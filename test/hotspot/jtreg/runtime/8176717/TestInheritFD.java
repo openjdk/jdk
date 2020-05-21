@@ -69,7 +69,7 @@ import java.util.stream.Stream;
  * The third VM communicates the success to rename the file by printing "CLOSED
  * FD". The first VM checks that the string was printed by the third VM.
  *
- * On unix like systems "lsof" or "pfiles" is used.
+ * On unix like systems "lsof" is used.
  */
 
 public class TestInheritFD {
@@ -176,8 +176,7 @@ public class TestInheritFD {
             {"/usr/sbin/lsof", "-p"},
             {"/bin/lsof", "-p"},
             {"/sbin/lsof", "-p"},
-            {"/usr/local/bin/lsof", "-p"},
-            {"/usr/bin/pfiles", "-F"}}) // Solaris
+            {"/usr/local/bin/lsof", "-p"}})
         .filter(args -> new File(args[0]).exists())
         .findFirst();
 

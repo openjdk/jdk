@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,10 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-/* For POSIX-compliant getpwuid_r on Solaris */
-#if defined(__solaris__)
-#define _POSIX_PTHREAD_SEMANTICS
-#endif
 #include <pwd.h>
 
-#ifdef _AIX
-#include <sys/procfs.h>
-#endif
-#ifdef __solaris__
-#include <procfs.h>
-#endif
-
 #if defined(_AIX)
+  #include <sys/procfs.h>
   #define DIR DIR64
   #define dirent dirent64
   #define opendir opendir64
@@ -138,18 +128,13 @@
 #define WTERMSIG(status) ((status)&0x7F)
 #endif
 
-#ifdef __solaris__
 /* The child exited because of a signal.
  * The best value to return is 0x80 + signal number,
  * because that is what all Unix shells do, and because
  * it allows callers to distinguish between process exit and
  * process death by signal.
- * Unfortunately, the historical behavior on Solaris is to return
- * the signal number, and we preserve this for compatibility. */
-#define WTERMSIG_RETURN(status) WTERMSIG(status)
-#else
+ */
 #define WTERMSIG_RETURN(status) (WTERMSIG(status) + 0x80)
-#endif
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -503,7 +488,7 @@ void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
  * The following functions are common on Solaris, Linux and AIX.
  */
 
-#if defined(__solaris__) || defined (__linux__) || defined(_AIX)
+#if defined (__linux__) || defined(_AIX)
 
 /*
  * Returns the children of the requested pid and optionally each parent and
@@ -622,13 +607,13 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
     return count;
 }
 
-#endif // defined(__solaris__) || defined (__linux__) || defined(_AIX)
+#endif // defined (__linux__) || defined(_AIX)
 
 /*
- * The following functions are common on Solaris and AIX.
+ * The following functions are for AIX.
  */
 
-#if defined(__solaris__) || defined(_AIX)
+#if defined(_AIX)
 
 /**
  * Helper function to get the 'psinfo_t' data from "/proc/%d/psinfo".
@@ -692,19 +677,6 @@ void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     int ret;
 
     /*
-     * On Solaris, the full path to the executable command is the link in
-     * /proc/<pid>/paths/a.out. But it is only readable for processes we own.
-     */
-#if defined(__solaris__)
-    snprintf(fn, sizeof fn, "/proc/%d/path/a.out", pid);
-    if ((ret = readlink(fn, exePath, PATH_MAX - 1)) > 0) {
-        // null terminate and create String to store for command
-        exePath[ret] = '\0';
-        CHECK_NULL(cmdexe = JNU_NewStringPlatform(env, exePath));
-    }
-#endif
-
-    /*
      * Now try to open /proc/%d/psinfo
      */
     if (getPsinfo(pid, &psinfo) < 0) {
@@ -733,4 +705,4 @@ void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
                       prargs[0] == '\0' ? NULL : prargs);
 }
 
-#endif // defined(__solaris__) || defined(_AIX)
+#endif // defined(_AIX)

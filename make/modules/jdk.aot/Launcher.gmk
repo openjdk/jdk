@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,8 @@ $(eval $(call SetupBuildLauncher, jaotc, \
     JAVA_ARGS := --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
-        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
-        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.sparc=$(call CommaList, jdk.internal.vm.compiler  jdk.aot)  \
         -XX:+UnlockExperimentalVMOptions -XX:+UseAOT \
         -XX:+CalculateClassFingerprint \
         -Djvmci.UseProfilingInformation=false \

@@ -28,16 +28,12 @@ import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.runtime.solaris_sparc.SolarisSPARCJavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.solaris_x86.SolarisX86JavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.solaris_amd64.SolarisAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.win32_amd64.Win32AMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.win32_x86.Win32X86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_x86.LinuxX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_amd64.LinuxAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_aarch64.LinuxAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_ppc64.LinuxPPC64JavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.linux_sparc.LinuxSPARCJavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_x86.BsdX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
@@ -98,15 +94,7 @@ public class Threads {
 
         access = null;
         // FIXME: find the platform specific PD class by reflection?
-        if (os.equals("solaris")) {
-            if (cpu.equals("sparc")) {
-                access = new SolarisSPARCJavaThreadPDAccess();
-            } else if (cpu.equals("x86")) {
-                access = new SolarisX86JavaThreadPDAccess();
-            } else if (cpu.equals("amd64")) {
-                access = new SolarisAMD64JavaThreadPDAccess();
-            }
-        } else if (os.equals("win32")) {
+        if (os.equals("win32")) {
             if (cpu.equals("x86")) {
                 access =  new Win32X86JavaThreadPDAccess();
             } else if (cpu.equals("amd64")) {
@@ -117,8 +105,6 @@ public class Threads {
                 access = new LinuxX86JavaThreadPDAccess();
             } else if (cpu.equals("amd64")) {
                 access = new LinuxAMD64JavaThreadPDAccess();
-            } else if (cpu.equals("sparc")) {
-                access = new LinuxSPARCJavaThreadPDAccess();
             } else if (cpu.equals("ppc64")) {
                 access = new LinuxPPC64JavaThreadPDAccess();
             } else if (cpu.equals("aarch64")) {

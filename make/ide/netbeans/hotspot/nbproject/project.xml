@@ -22,10 +22,6 @@
                     <type>0</type>
                 </confElem>
                 <confElem>
-                    <name>Solaris_64</name>
-                    <type>0</type>
-                </confElem>
-                <confElem>
                     <name>Windws64</name>
                     <type>0</type>
                 </confElem>

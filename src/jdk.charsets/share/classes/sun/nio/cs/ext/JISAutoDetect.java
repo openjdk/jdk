@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class JISAutoDetect
             (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
         private final static String SJISName = getSJISName();
-        private final static String EUCJPName = getEUCJPName();
+        private final static String EUCJPName = "EUC_JP";
         private DelegatableDecoder detectedDecoder = null;
 
         public Decoder(Charset cs) {
@@ -225,23 +225,10 @@ public class JISAutoDetect
          * Returned Shift_JIS Charset name is OS dependent
          */
         private static String getSJISName() {
-            if (osName.equals("Solaris") || osName.equals("SunOS"))
-                return("PCK");
-            else if (osName.startsWith("Windows"))
+            if (osName.startsWith("Windows"))
                 return("windows-31J");
             else
                 return("Shift_JIS");
-        }
-
-        /**
-         * Returned EUC-JP Charset name is OS dependent
-         */
-
-        private static String getEUCJPName() {
-            if (osName.equals("Solaris") || osName.equals("SunOS"))
-                return("x-eucjp-open");
-            else
-                return("EUC_JP");
         }
 
     }

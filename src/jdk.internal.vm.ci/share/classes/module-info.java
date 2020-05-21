@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,5 @@ module jdk.internal.vm.ci {
 
     provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
         jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.sparc.SPARCHotSpotJVMCIBackendFactory;
+        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory;
 }

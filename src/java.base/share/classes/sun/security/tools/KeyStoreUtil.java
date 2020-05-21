@@ -300,13 +300,10 @@ public class KeyStoreUtil {
     public static void loadProviderByClass(
             String provClass, String arg, ClassLoader cl) {
 
-        // For compatibility, SunPKCS11, OracleUcrypto, and SunMSCAPI
+        // For compatibility, SunPKCS11, and SunMSCAPI
         // can still be loadable with -providerClass.
         if (provClass.equals("sun.security.pkcs11.SunPKCS11")) {
             loadProviderByName("SunPKCS11", arg);
-            return;
-        } else if (provClass.equals("com.oracle.security.crypto.UcryptoProvider")) {
-            loadProviderByName("OracleUcrypto", arg);
             return;
         } else if (provClass.equals("sun.security.mscapi.SunMSCAPI")) {
             loadProviderByName("SunMSCAPI", arg);

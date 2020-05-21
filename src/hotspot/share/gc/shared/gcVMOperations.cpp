@@ -55,12 +55,10 @@ VM_GC_Operation::~VM_GC_Operation() {
 void VM_GC_Operation::notify_gc_begin(bool full) {
   HOTSPOT_GC_BEGIN(
                    full);
-  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 }
 
 void VM_GC_Operation::notify_gc_end() {
   HOTSPOT_GC_END();
-  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 }
 
 // Allocations may fail in several threads at about the same time,

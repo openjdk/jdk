@@ -128,8 +128,6 @@ public class Basic {
 
         // sanity check supportedFileAttributeViews
         checkSupported(fs, "basic");
-        if (os.equals("SunOS"))
-            checkSupported(fs, "posix", "unix", "owner", "acl", "user");
         if (os.equals("Linux"))
             checkSupported(fs, "posix", "unix", "owner", "dos", "user");
         if (os.contains("OS X"))

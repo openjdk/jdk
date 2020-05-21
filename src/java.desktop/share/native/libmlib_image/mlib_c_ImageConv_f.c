@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,29 +66,19 @@
 /***************************************************************/
 mlib_status mlib_convMxNnw_u8(MLIB_PARAMS_CONV_MN_NW)
 {
-#ifdef __sparc
-  return mlib_c_convMxNnw_u8(MLIB_CALL_PARAMS_CONV_MN_NW);
-#else
-
   if (mlib_ImageConvVersion(m, n, scale, MLIB_BYTE) == 0)
     return mlib_c_convMxNnw_u8(MLIB_CALL_PARAMS_CONV_MN_NW);
   else
     return mlib_i_convMxNnw_u8(MLIB_CALL_PARAMS_CONV_MN_NW);
-#endif /* __sparc */
 }
 
 /***************************************************************/
 mlib_status mlib_convMxNext_u8(MLIB_PARAMS_CONV_MN_EXT)
 {
-#ifdef __sparc
-  return mlib_c_convMxNext_u8(MLIB_CALL_PARAMS_CONV_MN_EXT);
-#else
-
   if (mlib_ImageConvVersion(m, n, scale, MLIB_BYTE) == 0)
     return mlib_c_convMxNext_u8(MLIB_CALL_PARAMS_CONV_MN_EXT);
   else
     return mlib_i_convMxNext_u8(MLIB_CALL_PARAMS_CONV_MN_EXT);
-#endif /* __sparc */
 }
 
 /***************************************************************/

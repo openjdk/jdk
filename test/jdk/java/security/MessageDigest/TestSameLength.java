@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,6 @@ public class TestSameLength {
             // Compare input and output
             return outputLen == output.length;
         } catch (NoSuchAlgorithmException nae) {
-            if (algo.startsWith("SHA3") && !isSHA3supported()) {
-                return true;
-            }
             throw nae;
         } catch (Exception ex) {
             System.err.println("Testing: " + algo + "/" + dataLen + "/"
@@ -100,21 +97,6 @@ public class TestSameLength {
             ex.printStackTrace();
             throw ex;
         }
-    }
-
-    // SHA-3 hash algorithms are only supported by "SUN" provider
-    // and "OracleUcrypto" provider on Solaris 12.0 or later
-    // This method checks if system supports SHA-3
-    private boolean isSHA3supported() {
-        if (Security.getProvider("SUN") != null) {
-            return true;
-        }
-        if (Security.getProvider("OracleUcrypto") != null
-                && "SunOS".equals(System.getProperty("os.name"))
-                && System.getProperty("os.version").compareTo("5.12") >= 0) {
-            return true;
-        }
-        return false;
     }
 
     private static enum UpdateMethod {

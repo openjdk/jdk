@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,8 @@ public class ConfigShortPath {
     public static void main(String[] args) throws Exception {
         Provider p = Security.getProvider("SunPKCS11");
         if (p == null) {
-            // re-try w/ SunPKCS11-Solaris
-            p = Security.getProvider("SunPKCS11-Solaris");
-            if (p == null) {
-                System.out.println("Skipping test - no PKCS11 provider available");
-                return;
-            }
+            System.out.println("Skipping test - no PKCS11 provider available");
+            return;
         }
 
         String osInfo = System.getProperty("os.name", "");

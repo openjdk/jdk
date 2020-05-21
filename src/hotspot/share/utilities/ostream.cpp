@@ -1046,7 +1046,7 @@ bufferedStream::~bufferedStream() {
 
 #ifndef PRODUCT
 
-#if defined(SOLARIS) || defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
+#if defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

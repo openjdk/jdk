@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,21 +45,6 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
         ./hotspot/gtest/server/libjvm.so
         "
    fi
-elif [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-  SKIP_BIN_DIFF="true"
-  SKIP_FULLDUMP_DIFF="true"
-  MAX_KNOWN_DIS_DIFF_SIZE="3000"
-  SORT_SYMBOLS="
-      ./lib/libfontmanager.so
-      ./lib/libjimage.so
-      ./lib/server/libjvm.so
-      ./hotspot/gtest/server/libjvm.so
-      "
-  KNOWN_DIS_DIFF="
-      ./lib/libfontmanager.so
-      ./lib/libsaproc.so
-  "
-  STRIP_TESTS_BEFORE_COMPARE="true"
 elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
   SKIP_BIN_DIFF="true"
   SKIP_FULLDUMP_DIFF="true"

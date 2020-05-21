@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,11 +148,10 @@ public class AotCompiler {
                 + " [-compile <compileItems>]* [-extraopt <java option>]*");
     }
 
-    // runs ld -v (or ld -V on solaris) and check its exit code
+    // runs ld -v and check its exit code
     private static boolean checkLd(Path bin) {
         try {
-            return 0 == ProcessTools.executeCommand(bin.toString(),
-                                                    Platform.isSolaris() ? "-V" : "-v")
+            return 0 == ProcessTools.executeCommand(bin.toString(), "-v")
                                     .getExitValue();
         } catch (Throwable t) {
             // any errors mean ld doesn't work
@@ -220,40 +219,6 @@ public class AotCompiler {
                                .resolve("usr")
                                .resolve("bin")
                                .resolve("ld");
-            } else if (Platform.isSolaris()) {
-                if (Platform.isSparc()) {
-                    @Artifact(organization =  "jpg.infra.builddeps",
-                            name = "devkit-solaris_sparcv9",
-                            revision = "SS12u4-Solaris11u1+1.1",
-                            extension = "tar.gz")
-                    class DevkitSolarisSparc { }
-
-                    String artifactName = "jpg.infra.builddeps."
-                            + "devkit-solaris_sparcv9-"
-                            + "SS12u4-Solaris11u1+1.1";
-                    Path devkit = ArtifactResolver.resolve(DevkitSolarisSparc.class)
-                                                  .get(artifactName);
-                    linker = devkit.resolve("SS12u4-Solaris11u1")
-                                   .resolve("gnu")
-                                   .resolve("bin")
-                                   .resolve("ld");
-                } else if (Platform.isX64()) {
-                    @Artifact(organization =  "jpg.infra.builddeps",
-                            name = "devkit-solaris_x64",
-                            revision = "SS12u4-Solaris11u1+1.0",
-                            extension = "tar.gz")
-                    class DevkitSolarisX64 { }
-
-                    String artifactName = "jpg.infra.builddeps."
-                            + "devkit-solaris_x64-"
-                            + "SS12u4-Solaris11u1+1.0";
-                    Path devkit = ArtifactResolver.resolve(DevkitSolarisX64.class)
-                                                  .get(artifactName);
-                    linker = devkit.resolve("SS12u4-Solaris11u1")
-                                   .resolve("bin")
-                                   .resolve("amd64")
-                                   .resolve("ld");
-                }
             } else if (Platform.isLinux()) {
                 if (Platform.isAArch64()) {
                     @Artifact(organization = "jpg.infra.builddeps",

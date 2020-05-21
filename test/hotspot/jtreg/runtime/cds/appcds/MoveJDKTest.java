@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 // This test works only on Linux because it depends on symlinks and the name of the hotspot DLL (libjvm.so).
 // It probably doesn't work on Windows.
 // TODO: change libjvm.so to libjvm.dylib on MacOS, before adding "@requires os.family == mac"
-// TODO: test on solaris, before adding "@requires os.family == solaris"
 
 import java.io.File;
 import java.nio.file.Files;

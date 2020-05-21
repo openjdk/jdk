@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,20 +39,7 @@
 /***************************************************************/
 
 #if ! defined ( __MEDIALIB_OLD_NAMES )
-#if defined ( __SUNPRO_C )
-
-#pragma weak mlib_memmove = __mlib_memmove
-#pragma weak mlib_malloc = __mlib_malloc
-#pragma weak mlib_realloc = __mlib_realloc
-#pragma weak mlib_free = __mlib_free
-#pragma weak mlib_memset = __mlib_memset
-#pragma weak mlib_memcpy = __mlib_memcpy
-
-#ifdef MLIB_NO_LIBSUNMATH
-#pragma weak mlib_sincosf = __mlib_sincosf
-#endif /* MLIB_NO_LIBSUNMATH */
-
-#elif defined ( __GNUC__ ) /* defined ( __SUNPRO_C ) */
+#if defined ( __GNUC__ )
 
   __typeof__ ( __mlib_memmove) mlib_memmove
     __attribute__ ((weak,alias("__mlib_memmove")));
@@ -67,19 +54,16 @@
   __typeof__ ( __mlib_memcpy) mlib_memcpy
     __attribute__ ((weak,alias("__mlib_memcpy")));
 
-#ifdef MLIB_NO_LIBSUNMATH
-
 void __mlib_sincosf (float x, float *s, float *c);
 
 __typeof__ ( __mlib_sincosf) mlib_sincosf
     __attribute__ ((weak,alias("__mlib_sincosf")));
-#endif /* MLIB_NO_LIBSUNMATH */
 
-#else /* defined ( __SUNPRO_C ) */
+#else /* defined ( __GNUC__ ) */
 
 #error  "unknown platform"
 
-#endif /* defined ( __SUNPRO_C ) */
+#endif /* defined ( __GNUC__ ) */
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 
 /***************************************************************/
@@ -127,12 +111,8 @@ void *__mlib_memmove(void *s1, void *s2, mlib_u32 n)
   return memmove(s1, s2, n);
 }
 
-#ifdef MLIB_NO_LIBSUNMATH
-
 void __mlib_sincosf (mlib_f32 x, mlib_f32 *s, mlib_f32 *c)
 {
   *s = (mlib_f32)sin(x);
   *c = (mlib_f32)cos(x);
 }
-
-#endif /* MLIB_NO_LIBSUNMATH */

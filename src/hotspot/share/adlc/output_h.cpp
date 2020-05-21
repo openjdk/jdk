@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -741,13 +741,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "// Pipeline_Use_Cycle_Mask Class\n");
   fprintf(fp_hpp, "class Pipeline_Use_Cycle_Mask {\n");
 
-  if (_pipeline->_maxcycleused <=
-#ifdef SPARC
-    64
-#else
-    32
-#endif
-      ) {
+  if (_pipeline->_maxcycleused <= 32) {
     fprintf(fp_hpp, "protected:\n");
     fprintf(fp_hpp, "  %s _mask;\n\n", _pipeline->_maxcycleused <= 32 ? "uint" : "uint64_t" );
     fprintf(fp_hpp, "public:\n");

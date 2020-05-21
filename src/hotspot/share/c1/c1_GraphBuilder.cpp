@@ -2082,23 +2082,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   Value recv = has_receiver ? apop() : NULL;
   int vtable_index = Method::invalid_vtable_index;
 
-#ifdef SPARC
-  // Currently only supported on Sparc.
-  // The UseInlineCaches only controls dispatch to invokevirtuals for
-  // loaded classes which we weren't able to statically bind.
-  if (!UseInlineCaches && target->is_loaded() && code == Bytecodes::_invokevirtual
-      && !target->can_be_statically_bound()) {
-    // Find a vtable index if one is available
-    // For arrays, callee_holder is Object. Resolving the call with
-    // Object would allow an illegal call to finalize() on an
-    // array. We use holder instead: illegal calls to finalize() won't
-    // be compiled as vtable calls (IC call resolution will catch the
-    // illegal call) and the few legal calls on array types won't be
-    // either.
-    vtable_index = target->resolve_vtable_index(calling_klass, holder);
-  }
-#endif
-
   // A null check is required here (when there is a receiver) for any of the following cases
   // - invokespecial, always need a null check.
   // - invokevirtual, when the target is final and loaded. Calls to final targets will become optimized

@@ -850,10 +850,6 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine09agent00 := $(NSK_AOD_INC
 ################################################################################
 
 # Platform specific setup
-ifeq ($(call And, $(call isTargetOs, solaris) $(call isTargetCpuArch, sparc)), false)
-  BUILD_HOTSPOT_JTREG_EXCLUDE += liboverflow.c exeThreadSignalMask.c
-endif
-
 ifeq ($(call isTargetOs, linux), true)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
@@ -872,10 +868,6 @@ else
 endif
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
-
-ifeq ($(call isTargetOs, solaris), true)
-    BUILD_HOTSPOT_JTREG_EXCLUDE += libterminatedThread.c
-endif
 
 ifeq ($(call isTargetOs, windows), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT

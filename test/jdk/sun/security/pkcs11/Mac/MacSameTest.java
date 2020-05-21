@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,19 +86,7 @@ public class MacSameTest extends PKCS11Test {
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException {
         System.out.println("Test " + algo);
-        Mac mac;
-        try {
-            mac = Mac.getInstance(algo, provider);
-        } catch (NoSuchAlgorithmException nsae) {
-            if ("SunPKCS11-Solaris".equals(provider.getName())) {
-                // depending on Solaris configuration,
-                // it can support HMAC or not with Mac
-                System.out.println("Expected NoSuchAlgorithmException thrown: "
-                        + nsae);
-                return;
-            }
-            throw nsae;
-        }
+        Mac mac = Mac.getInstance(algo, provider);
 
         byte[] plain = new byte[MESSAGE_SIZE];
         for (int i = 0; i < MESSAGE_SIZE; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,21 +33,12 @@ class WriterOutputBuffer implements OutputBuffer {
     private static final int KB = 1024;
     private static int BUFFER_SIZE = 4 * KB;
 
-    static {
-        // Set a larger buffer size for Solaris
-        final String osName = SecuritySupport.getSystemProperty("os.name");
-        if (osName.equalsIgnoreCase("solaris")) {
-            BUFFER_SIZE = 32 * KB;
-        }
-    }
-
     private Writer _writer;
 
     /**
      * Initializes a WriterOutputBuffer by creating an instance of a
      * BufferedWriter. The size of the buffer in this writer may have
-     * a significant impact on throughput. Solaris prefers a larger
-     * buffer, while Linux works better with a smaller one.
+     * a significant impact on throughput.
      */
     public WriterOutputBuffer(Writer writer) {
         _writer = new BufferedWriter(writer, BUFFER_SIZE);

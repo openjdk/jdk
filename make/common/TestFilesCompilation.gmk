@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@ define SetupTestFilesCompilationBody
         DISABLED_WARNINGS_gcc := format undef unused-function unused-value, \
         DISABLED_WARNINGS_clang := undef format-nonliteral \
             missing-field-initializers sometimes-uninitialized, \
-        DISABLED_WARNINGS_CXX_solstudio := wvarhidenmem doubunder, \
         LIBS := $$($1_LIBS_$$(name)), \
         TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \

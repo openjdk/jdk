@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,17 +85,6 @@ inline unsigned count_trailing_zeros(uintx x) {
   return __cnttz4(x);
 #endif
 }
-
-/*****************************************************************************
- * Oracle Studio
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_solstudio)
-
-// No compiler built-in / intrinsic, so use inline assembler.
-
-#include "utilities/macros.hpp"
-
-#include OS_CPU_HEADER(count_trailing_zeros)
 
 /*****************************************************************************
  * Unknown toolchain

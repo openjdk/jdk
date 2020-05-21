@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          correctly when it is moved to another screen in multiscreen system,
  *          XToolkit
  * @author artem.ananiev@sun.com: area=awt.multiscreen
- * @requires (os.family == "linux") | (os.family == "solaris")
+ * @requires os.family == "linux"
  * @modules java.desktop/sun.awt
  *          java.desktop/sun.awt.X11
  *          java.desktop/java.awt.peer

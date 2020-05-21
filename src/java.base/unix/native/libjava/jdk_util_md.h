@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,7 @@
 #define JDK_UTIL_MD_H
 
 // checking for nanness
-#ifdef __solaris__
-#include <ieeefp.h>
-#define ISNANF(f) isnanf(f)
-#define ISNAND(d) isnand(d)
-#elif defined(MACOSX)
+#if defined(MACOSX)
 #include <math.h>
 #define ISNANF(f) isnan(f)
 #define ISNAND(d) isnan(d)

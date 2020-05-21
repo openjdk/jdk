@@ -64,27 +64,8 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     if (gethostname(hostname, sizeof(hostname)) != 0) {
         strcpy(hostname, "localhost");
     } else {
-#if defined(__solaris__)
-        // try to resolve hostname via nameservice
-        // if it is known but getnameinfo fails, hostname will still be the
-        // value from gethostname
-        struct addrinfo hints, *res;
-
         // make sure string is null-terminated
         hostname[NI_MAXHOST] = '\0';
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_flags = AI_CANONNAME;
-        hints.ai_family = AF_INET;
-
-        if (getaddrinfo(hostname, NULL, &hints, &res) == 0) {
-            getnameinfo(res->ai_addr, res->ai_addrlen, hostname, sizeof(hostname),
-                        NULL, 0, NI_NAMEREQD);
-            freeaddrinfo(res);
-        }
-#else
-        // make sure string is null-terminated
-        hostname[NI_MAXHOST] = '\0';
-#endif
     }
     return (*env)->NewStringUTF(env, hostname);
 }

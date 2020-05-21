@@ -109,18 +109,10 @@ one of the limiting factors for build performance.
 
 At a minimum, a machine with 2-4 cores is advisable, as well as 2-4 GB of RAM.
 (The more cores to use, the more memory you need.) At least 6 GB of free disk
-space is required (8 GB minimum for building on Solaris).
+space is required.
 
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
-
-### Building on sparc
-
-At a minimum, a machine with 4 cores is advisable, as well as 4 GB of RAM. (The
-more cores to use, the more memory you need.) At least 8 GB of free disk space
-is required.
-
-Note: The sparc port is deprecated.
 
 ### Building on aarch64
 
@@ -138,7 +130,7 @@ This is not recommended. Instead, see the section on [Cross-compiling](
 
 ## Operating System Requirements
 
-The mainline JDK project supports Linux, Solaris, macOS, AIX and Windows.
+The mainline JDK project supports Linux, macOS, AIX and Windows.
 Support for other operating system, e.g. BSD, exists in separate "port"
 projects.
 
@@ -153,11 +145,10 @@ time of writing.
  Operating system   Vendor/version used
  -----------------  -------------------------------------------------------
  Linux              Oracle Enterprise Linux 6.4 / 7.6
- Solaris            Solaris 11.3 SRU 20
  macOS              Mac OS X 10.13 (High Sierra)
  Windows            Windows Server 2012 R2
 
-The double version numbers for Linux and Solaris are due to the hybrid model
+The double version numbers for Linux are due to the hybrid model
 used at Oracle, where header files and external libraries from an older version
 are used when building on a more modern version of the OS.
 
@@ -247,21 +238,6 @@ options.
 Note that while it's possible to build on WSL, testing is still not fully
 supported.
 
-### Solaris
-
-See `make/devkit/solaris11.1-package-list.txt` for a list of recommended
-packages to install when building on Solaris. The versions specified in this
-list is the versions used by the daily builds at Oracle, and is likely to work
-properly.
-
-Older versions of Solaris shipped a broken version of `objcopy`. At least
-version 2.21.1 is needed, which is provided by Solaris 11 Update 1. Objcopy is
-needed if you want to have external debug symbols. Please make sure you are
-using at least version 2.21.1 of objcopy, or that you disable external debug
-symbols.
-
-Note: The Solaris port is deprecated.
-
 ### macOS
 
 Apple is using a quite aggressive scheme of pushing OS updates, and coupling
@@ -314,7 +290,6 @@ one-to-one correlation between target operating system and toolchain.
  ------------------ -------------------------
  Linux              gcc, clang
  macOS              Apple Xcode (using clang)
- Solaris            Oracle Solaris Studio
  AIX                IBM XL C/C++
  Windows            Microsoft Visual Studio
 
@@ -329,7 +304,6 @@ issues.
  ------------------ -------------------------------------------------------
  Linux              gcc 9.2.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Solaris            Oracle Solaris Studio 12.6 (with compiler version 5.15)
  Windows            Microsoft Visual Studio 2019 update 16.5.3
 
 All compilers are expected to be able to compile to the C99 language standard,
@@ -378,36 +352,6 @@ the JDK can no longer be built, please see the section on [Problems with the
 Build Environment](#problems-with-the-build-environment), and [Getting
 Help](#getting-help) to find out if there are any recent, non-merged patches
 available for this update.
-
-### Oracle Solaris Studio
-
-The minimum accepted version of the Solaris Studio compilers is 5.13
-(corresponding to Solaris Studio 12.4). Older versions will not be accepted by
-configure.
-
-The Solaris Studio installation should contain at least these packages:
-
- Package                                            Version
- -------------------------------------------------- -------------
- developer/solarisstudio-124/backend                12.4-1.0.6.0
- developer/solarisstudio-124/c++                    12.4-1.0.10.0
- developer/solarisstudio-124/cc                     12.4-1.0.4.0
- developer/solarisstudio-124/library/c++-libs       12.4-1.0.10.0
- developer/solarisstudio-124/library/math-libs      12.4-1.0.0.1
- developer/solarisstudio-124/library/studio-gccrt   12.4-1.0.0.1
- developer/solarisstudio-124/studio-common          12.4-1.0.0.1
- developer/solarisstudio-124/studio-ja              12.4-1.0.0.1
- developer/solarisstudio-124/studio-legal           12.4-1.0.0.1
- developer/solarisstudio-124/studio-zhCN            12.4-1.0.0.1
-
-Compiling with Solaris Studio can sometimes be finicky. This is the exact
-version used by Oracle, which worked correctly at the time of writing:
-```
-$ cc -V
-cc: Sun C 5.13 SunOS_i386 2014/10/20
-$ CC -V
-CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30
-```
 
 ### Microsoft Visual Studio
 
@@ -494,7 +438,6 @@ rather than bundling the JDK's own copy.
     libfreetype6-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
-  * To install on Solaris, try running `pkg install system/library/freetype-2`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
@@ -509,7 +452,6 @@ your operating system.
     libcups2-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     cups-devel`.
-  * To install on Solaris, try running `pkg install print/cups`.
 
 Use `--with-cups=<path>` if `configure` does not properly locate your CUPS
 files.
@@ -517,18 +459,12 @@ files.
 ### X11
 
 Certain [X11](http://www.x.org/) libraries and include files are required on
-Linux and Solaris.
+Linux.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
     libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel`.
-  * To install on Solaris, try running `pkg install x11/header/x11-protocols
-    x11/library/libice x11/library/libpthread-stubs x11/library/libsm
-    x11/library/libx11 x11/library/libxau x11/library/libxcb
-    x11/library/libxdmcp x11/library/libxevie x11/library/libxext
-    x11/library/libxrender x11/library/libxrandr x11/library/libxscrnsaver
-    x11/library/libxtst x11/library/toolkit/libxt`.
 
 Use `--with-x=<path>` if `configure` does not properly locate your X11 files.
 
@@ -602,8 +538,6 @@ will present no issues, but if you have a very old `make`, or a non-GNU Make
 
 If you want to override the default make found by `configure`, use the `MAKE`
 configure variable, e.g. `configure MAKE=/opt/gnu/make`.
-
-On Solaris, it is common to call the GNU version of make by using `gmake`.
 
 ### GNU Bash
 
@@ -1460,12 +1394,6 @@ clean` and restart the build.
 
 #### Out of Memory Errors
 
-On Solaris, you might get an error message like this:
-```
-Trouble writing out table to disk
-```
-To solve this, increase the amount of swap space on your build machine.
-
 On Windows, you might get error messages like this:
 ```
 fatal error - couldn't allocate heap
@@ -1604,8 +1532,7 @@ module depends on other modules (e.g. `java.base`), those modules will be built
 first.
 
 You can also specify a set of modules, just as you can always specify a set of
-make targets: `make jdk.crypto.cryptoki jdk.crypto.ec jdk.crypto.mscapi
-jdk.crypto.ucrypto`
+make targets: `make jdk.crypto.cryptoki jdk.crypto.ec jdk.crypto.mscapi`
 
 #### Building Individual Module Phases
 

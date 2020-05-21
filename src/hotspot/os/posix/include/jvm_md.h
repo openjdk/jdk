@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 #endif
 #define JNI_LIB_NAME(NAME) JNI_LIB_PREFIX NAME JNI_LIB_SUFFIX
 
-#if defined(AIX) || defined(SOLARIS)
+#if defined(AIX)
 #define JVM_MAXPATHLEN MAXPATHLEN
 #else
 // Hack: MAXPATHLEN is 4095 on some Linux and 4096 on others. This may
@@ -87,14 +87,8 @@
 #define JVM_SIGTERM    SIGTERM
 
 #define BREAK_SIGNAL     SIGQUIT           /* Thread dumping support.    */
-#ifdef SOLARIS
-#define ASYNC_SIGNAL     SIGJVM2           /* Event-based suspend/resume support */
-#endif // SOLARIS
 #define SHUTDOWN1_SIGNAL SIGHUP            /* Shutdown Hooks support.    */
 #define SHUTDOWN2_SIGNAL SIGINT
 #define SHUTDOWN3_SIGNAL SIGTERM
-
-/* With 1.4.1 libjsig added versioning: used in os_solaris.cpp and jsig.c */
-#define JSIG_VERSION_1_4_1   0x30140100
 
 #endif /* !_JAVASOFT_JVM_MD_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,21 +189,7 @@ public class Test {
     }
 
     private static boolean checkExpectedOptionSupport() {
-        if (Platform.isSolaris()) {
-            OSVersion solarisVersion = OSVersion.current();
-            OSVersion solarisVersionToCheck = new OSVersion(11, 2);
-            if (solarisVersion.compareTo(solarisVersionToCheck) >= 0) {
-                System.out.println("This Solaris version (" + solarisVersion
-                        + ") should support SO_FLOW_SLA option");
-                return true;
-            } else {
-                System.out.println("This Solaris version (" + solarisVersion
-                        + ") should not support SO_FLOW_SLA option");
-            }
-        } else {
-            System.out.println("Not Solaris, SO_FLOW_SLA should not be " +
-                    "supported");
-        }
+        System.out.println("SO_FLOW_SLA should not be supported");
         return false;
     }
 

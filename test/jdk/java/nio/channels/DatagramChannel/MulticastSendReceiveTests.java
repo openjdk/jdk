@@ -204,7 +204,7 @@ public class MulticastSendReceiveTests {
             } catch (UnsupportedOperationException x) {
                 String os = System.getProperty("os.name");
                 // Exclude-mode filtering supported on these platforms so UOE should never be thrown
-                if (os.equals("SunOS") || os.equals("Linux"))
+                if (os.equals("Linux"))
                     throw x;
                 System.out.println("Exclude-mode filtering not supported!");
             }
@@ -234,7 +234,7 @@ public class MulticastSendReceiveTests {
             } catch (UnsupportedOperationException x) {
                 String os = System.getProperty("os.name");
                 // Include-mode filtering supported on these platforms so UOE should never be thrown
-                if (os.equals("SunOS") || os.equals("Linux"))
+                if (os.equals("Linux"))
                     throw x;
                 System.out.println("Include-mode filtering not supported!");
             }
@@ -259,7 +259,6 @@ public class MulticastSendReceiveTests {
         boolean canIPv6JoinIPv4Group =
                 Platform.isLinux() ||
                 Platform.isOSX() ||
-                Platform.isSolaris() ||
                 Platform.isWindows();
 
         for (NetworkInterface nif : ip4MulticastInterfaces) {

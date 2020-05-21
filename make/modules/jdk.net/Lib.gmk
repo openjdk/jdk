@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(call isTargetOs, solaris linux macosx), true)
+ifeq ($(call isTargetOs, linux macosx), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
       NAME := extnet, \
@@ -36,7 +36,6 @@ ifeq ($(call isTargetOs, solaris linux macosx), true)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := -ljava, \
-      LIBS_solaris := -lsocket, \
       LIBS_linux := -ljvm, \
   ))
 

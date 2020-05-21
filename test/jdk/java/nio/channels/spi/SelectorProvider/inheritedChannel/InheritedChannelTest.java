@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4673940 4930794 8211842
  * @summary Unit tests for inetd feature
- * @requires (os.family == "linux" | os.family == "solaris" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
@@ -63,8 +63,7 @@ public class InheritedChannelTest {
     private static final Path POLICY_PASS = Paths.get(TEST_SRC, "java.policy.pass");
     private static final Path POLICY_FAIL = Paths.get(TEST_SRC, "java.policy.fail");
 
-    private static final String OS = System.getProperty("os.name").toLowerCase();
-    private static final String OS_NAME = OS.startsWith("sunos") ? "solaris" : OS;
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
 
     private static final String ARCH = System.getProperty("os.arch");
     private static final String OS_ARCH = ARCH.equals("i386") ? "i586" : ARCH;

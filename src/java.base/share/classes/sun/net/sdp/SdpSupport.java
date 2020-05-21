@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.security.action.GetPropertyAction;
 
 public final class SdpSupport {
     private static final String os = GetPropertyAction.privilegedGetProperty("os.name");
-    private static final boolean isSupported = (os.equals("SunOS") || (os.equals("Linux")));
+    private static final boolean isSupported = os.equals("Linux");
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 

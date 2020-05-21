@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class EventEmitter : public CHeapObj<mtTracing> {
   void write_event(const ObjectSample* sample, EdgeStore* edge_store);
   size_t write_events(ObjectSampler* sampler, EdgeStore* store, bool emit_all);
 
-  static void emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_all);
+  static void emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHECKPOINT_EVENTEMITTER_HPP

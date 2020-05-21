@@ -41,7 +41,7 @@ public class OsVersionTest {
         if (osVersion == null) {
             throw new Error("Cant query 'os.version' property!");
         }
-        if (Platform.isLinux() || Platform.isSolaris()) {
+        if (Platform.isLinux()) {
             OutputAnalyzer output = ProcessTools.executeProcess("uname", "-r");
             if (!osVersion.equals(output.getOutput().trim())) {
                 throw new Error(osVersion + " != " + output.getOutput().trim());

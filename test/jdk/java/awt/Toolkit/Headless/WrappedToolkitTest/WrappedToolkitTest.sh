@@ -1,7 +1,7 @@
 #!/bin/ksh -p
 
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ pass()
 # Checking for proper OS
 OS=`uname -s`
 case "$OS" in
-   AIX | CYGWIN* | Darwin | Linux | SunOS )
+   AIX | CYGWIN* | Darwin | Linux )
       FILESEP="/"
       ;;
     
@@ -122,7 +122,7 @@ case "$OS" in
     fi
     ;;
 
-  AIX | Linux | SunOS )
+  AIX | Linux )
     ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} \
                          --add-exports java.desktop/sun.awt=ALL-UNNAMED \
                          --add-exports java.desktop/sun.awt.X11=ALL-UNNAMED ${CP} \
@@ -172,7 +172,7 @@ case "$OS" in
     fi
     ;;
 
-  AIX | Linux | SunOS )
+  AIX | Linux )
     ${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.awt.headless=true \
                          --add-opens java.desktop/sun.awt=ALL-UNNAMED \
                          --add-opens java.desktop/sun.awt.X11=ALL-UNNAMED ${CP} \

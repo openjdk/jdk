@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   # NOTE: No optimization or debug flags set here
   ifeq ($(call isBuildOs, linux), true)
     ADLC_CFLAGS := -fno-exceptions -DLINUX
-  else ifeq ($(call isBuildOs, solaris), true)
-    ADLC_LDFLAGS := -m64
-    ADLC_CFLAGS := -m64
-    ADLC_CFLAGS_WARNINGS := +w
   else ifeq ($(call isBuildOs, aix), true)
     ADLC_LDFLAGS := -q64
     ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
@@ -88,8 +84,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   # ADLC flags depending on target OS
   ifeq ($(call isTargetOs, linux), true)
     ADLCFLAGS += -DLINUX=1 -D_GNU_SOURCE=1
-  else ifeq ($(call isTargetOs, solaris), true)
-    ADLCFLAGS += -DSOLARIS=1 -DSPARC_WORKS=1
   else ifeq ($(call isTargetOs, aix), true)
     ADLCFLAGS += -DAIX=1
   else ifeq ($(call isTargetOs, macosx), true)

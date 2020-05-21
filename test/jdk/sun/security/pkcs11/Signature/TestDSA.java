@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,21 +121,6 @@ public class TestDSA extends PKCS11Test {
         long start = System.currentTimeMillis();
 
         System.out.println("Testing provider " + provider + "...");
-
-        /*
-         * Use Solaris SPARC 11.2 or later to avoid an intermittent failure
-         * when running SunPKCS11-Solaris (8044554)
-         */
-        if (provider.getName().equals("SunPKCS11-Solaris") &&
-            props.getProperty("os.name").equals("SunOS") &&
-            props.getProperty("os.arch").equals("sparcv9") &&
-            props.getProperty("os.version").compareTo("5.11") <= 0 &&
-            getDistro().compareTo("11.2") < 0) {
-
-            System.out.println("SunPKCS11-Solaris provider requires " +
-                "Solaris SPARC 11.2 or later, skipping");
-            return;
-        }
 
         if (provider.getService("Signature", "SHA1withDSA") == null) {
             System.out.println("DSA not supported, skipping");

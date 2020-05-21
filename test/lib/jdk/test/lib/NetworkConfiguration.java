@@ -68,11 +68,11 @@ public class NetworkConfiguration {
         isIPv6Available = !ip6Interfaces().collect(Collectors.toList()).isEmpty();
         ip6Interfaces().forEach(nif -> {
             ip6Addresses(nif)
-                // On Solaris or AIX, a configuration with only local or loopback
+                // On AIX, a configuration with only local or loopback
                 // addresses does not fully enable IPv6 operations.
                 // E.g. IPv6 multicasting does not work.
                 // So, don't set has_testableipv6address if we only find these.
-                .filter(addr -> Platform.isSolaris() || Platform.isAix() ?
+                .filter(addr -> Platform.isAix() ?
                     !(addr.isAnyLocalAddress() || addr.isLoopbackAddress()) : true)
                 .forEach(ia -> {
                     has_testableipv6address = true;

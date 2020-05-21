@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,6 @@ public final class PortConfig {
         if (os.startsWith("Linux")) {
             defaultLower = 32768;
             defaultUpper = 61000;
-        } else if (os.startsWith("SunOS")) {
-            defaultLower = 32768;
-            defaultUpper = 65535;
         } else if (os.contains("OS X")) {
             defaultLower = 49152;
             defaultUpper = 65535;

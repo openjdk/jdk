@@ -230,9 +230,6 @@ public class TestShutdownEvent {
             if (Platform.isWindows()) {
                 return 0;
             }
-            if (signalName.equals("HUP") && Platform.isSolaris()) {
-                return 0;
-            }
             return 1;
         }
 

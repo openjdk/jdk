@@ -72,26 +72,7 @@ fi
 # Disassembly diff filters. These filters try to filter out ephemeral parts of the
 # disassembly, such as hard-coded addresses, to be able to catch "actual" differences.
 
-if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-  if [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]; then
-    DIS_DIFF_FILTER="$SED \
-        -e 's/^[0-9a-f]\{16\}/<ADDR>:/' \
-        -e 's/^ *[0-9a-f]\{3,12\}:/  <ADDR>:/' \
-        -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/' \
-        -e 's/\$[a-zA-Z0-9_\$]\{15\}\./<SYM>./' \
-        -e 's/, [0-9a-fx\-]\{1,8\}/, <ADDR>/g' \
-        -e 's/0x[0-9a-f]\{1,8\}/<HEX>/g' \
-        -e 's/\! [0-9a-f]\{1,8\} /! <ADDR> /' \
-        -e 's/call  [0-9a-f]\{4,7\}/call  <ADDR>/' \
-        -e 's/%hi(0),/%hi(<HEX>),/' \
-        "
-  elif [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
-    # Random strings looking like this differ: <.XAKoKoPIac2W0OA.
-    DIS_DIFF_FILTER="$SED \
-        -e 's/<\.[A-Za-z0-9]\{\15}\./<.SYM./' \
-        "
-  fi
-elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
   if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then
     DIS_DIFF_FILTER="$SED -r \
         -e 's/^  [0-9A-F]{16}: //' \
@@ -458,14 +439,7 @@ compare_zip_file() {
     fi
 
     CONTENTS_DIFF_FILE=$WORK_DIR/$ZIP_FILE.diff
-    # On solaris, there is no -q option.
-    if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-        $DIFF -r $OTHER_UNZIPDIR $THIS_UNZIPDIR \
-            | $GREP -v -e "^<" -e "^>" -e "^Common subdirectories:" \
-            > $CONTENTS_DIFF_FILE
-    else
-        $DIFF -rq $OTHER_UNZIPDIR $THIS_UNZIPDIR > $CONTENTS_DIFF_FILE
-    fi
+    $DIFF -rq $OTHER_UNZIPDIR $THIS_UNZIPDIR > $CONTENTS_DIFF_FILE
 
     ONLY_OTHER=$($GREP "^Only in $OTHER_UNZIPDIR" $CONTENTS_DIFF_FILE)
     ONLY_THIS=$($GREP "^Only in $THIS_UNZIPDIR" $CONTENTS_DIFF_FILE)
@@ -485,14 +459,8 @@ compare_zip_file() {
     fi
 
     if [ "$CMP_ZIPS_CONTENTS" = "true" ]; then
-        if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-            DIFFING_FILES=$($GREP -e 'differ$' -e '^diff ' $CONTENTS_DIFF_FILE \
-                | $SED -e 's/^Files //g' -e 's/diff -r //g' | $CUT -f 1 -d ' ' \
-                | $SED "s|$OTHER_UNZIPDIR/||g")
-        else
-            DIFFING_FILES=$($GREP -e "differ$" $CONTENTS_DIFF_FILE \
-                | $CUT -f 2 -d ' ' | $SED "s|$OTHER_UNZIPDIR/||g")
-        fi
+        DIFFING_FILES=$($GREP -e "differ$" $CONTENTS_DIFF_FILE \
+            | $CUT -f 2 -d ' ' | $SED "s|$OTHER_UNZIPDIR/||g")
 
         # Separate executable/library files from other files in zip.
         DIFFING_TEXT_FILES=
@@ -829,10 +797,6 @@ compare_bin_file() {
         # to filter out that extra information.
         $DUMPBIN -exports $OTHER_FILE | $GREP  -E '^ +[0-9A-F]+ +[0-9A-F]+ [0-9A-F]+' | sed 's/ = .*//g' | cut -c27- | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $DUMPBIN -exports $THIS_FILE  | $GREP  -E '^ +[0-9A-F]+ +[0-9A-F]+ [0-9A-F]+' | sed 's/ = .*//g' | cut -c27- | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
-    elif [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
-        # Some symbols get seemingly random 15 character prefixes. Filter them out.
-        $NM -a $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SED 's/^\([a-zA-Z] [\.\$]\)[a-zA-Z0-9_\$]\{15,15\}\./\1./g' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
-        $NM -a $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SED 's/^\([a-zA-Z] [\.\$]\)[a-zA-Z0-9_\$]\{15,15\}\./\1./g' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
     elif [ "$OPENJDK_TARGET_OS" = "aix" ]; then
         $OBJDUMP -T $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $OBJDUMP -T $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this

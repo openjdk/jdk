@@ -1039,9 +1039,6 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 
 void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
 #ifndef PRODUCT
-#if defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5140
-#pragma error_messages(off, SEC_NULL_PTR_DEREF)
-#endif
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
     char *t = NULL;

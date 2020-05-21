@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 6401700 6412803 8058950
  * @summary  Tests that modal dialog is shown on the screen and
  * iconified/restored correctly if some of its blocked windows are invisible
- * @requires (os.family == "linux" | os.family == "solaris")
+ * @requires os.family == "linux"
  * @run main/manual InvisibleParentTest
  */
 import java.awt.Dialog;

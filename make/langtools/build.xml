@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+  ~ Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
   ~ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
   ~
   ~ This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@
     <property name="xpatch.noquotes.cmd" value="--patch-module=${xpatch.noquotes.rest}"/>
 
     <!-- java.marker is set to a marker file to check for within a Java install dir.
-         The best file to check for across Solaris/Linux/Windows/MacOS is one of the
+         The best file to check for across Linux/Windows/MacOS is one of the
          executables; regrettably, that is OS-specific. -->
     <condition property="java.marker" value="bin/java">
         <os family="unix"/>

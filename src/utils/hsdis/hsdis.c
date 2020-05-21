@@ -484,12 +484,6 @@ static const char* native_arch_name() {
 #ifdef LIBARCH_amd64
   res = "i386:x86-64";
 #endif
-#ifdef LIBARCH_sparc
-  res = "sparc:v8plusb";
-#endif
-#ifdef LIBARCH_sparcv9
-  res = "sparc:v9b";
-#endif
 #if  defined(LIBARCH_ppc64) || defined(LIBARCH_ppc64le)
   res = "powerpc:common64";
 #endif

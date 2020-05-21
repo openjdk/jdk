@@ -87,7 +87,6 @@ suite = {
       "dependencies" : [
         "mx:JUNIT",
         "jdk.vm.ci.amd64",
-        "jdk.vm.ci.sparc",
         "jdk.vm.ci.code",
         "jdk.vm.ci.hotspot",
       ],
@@ -139,15 +138,6 @@ suite = {
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "9+",
       "workingSets" : "JVMCI,AMD64",
-    },
-
-    "jdk.vm.ci.sparc" : {
-      "subDir" : "../jdk.internal.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : ["jdk.vm.ci.code"],
-      "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9+",
-      "workingSets" : "JVMCI,SPARC",
     },
 
     "jdk.vm.ci.hotspot" : {
@@ -205,18 +195,6 @@ suite = {
       "workingSets" : "JVMCI,HotSpot,AMD64",
     },
 
-    "jdk.vm.ci.hotspot.sparc" : {
-      "subDir" : "../jdk.internal.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : [
-        "jdk.vm.ci.sparc",
-        "jdk.vm.ci.hotspot",
-      ],
-      "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9+",
-      "workingSets" : "JVMCI,HotSpot,SPARC",
-    },
-
     "hotspot" : {
       "native" : True,
       "class" : "HotSpotProject",
@@ -239,7 +217,6 @@ suite = {
         "jdk.vm.ci.common",
         "jdk.vm.ci.aarch64",
         "jdk.vm.ci.amd64",
-        "jdk.vm.ci.sparc",
       ],
       "distDependencies" : [
         "JVMCI_SERVICES",
@@ -251,7 +228,6 @@ suite = {
       "dependencies" : [
         "jdk.vm.ci.hotspot.aarch64",
         "jdk.vm.ci.hotspot.amd64",
-        "jdk.vm.ci.hotspot.sparc",
       ],
       "distDependencies" : [
         "JVMCI_SERVICES",

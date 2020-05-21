@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @requires os.family == "Linux"
  * @bug 4863423
  * @summary Test Util caching policy
  */
@@ -35,11 +36,6 @@ public class BigReadWrite {
     static int testSize = 15;
 
     public static void main(String[] args) throws Exception {
-        // One platform suffices to check for this bug
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("SunOS"))
-            return;
-
         FileOutputStream fos = new FileOutputStream("/dev/zero");
         FileChannel fc = fos.getChannel();
 

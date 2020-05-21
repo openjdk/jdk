@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,6 @@ static int getPortRange(struct portrange *range)
             return ret == 2 ? 0 : -1;
         }
         return -1;
-    }
-
-#elif defined(__solaris__)
-    {
-        range->higher = net_getParam("/dev/tcp", "tcp_largest_anon_port");
-        range->lower = net_getParam("/dev/tcp", "tcp_smallest_anon_port");
-        return 0;
     }
 #elif defined(_ALLBSD_SOURCE)
     {

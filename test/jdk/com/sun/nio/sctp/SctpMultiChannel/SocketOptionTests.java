@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,11 +116,8 @@ public class SocketOptionTests {
 
             checkOption(smc, SO_LINGER, -1);  /* default should be negative */
 
-            /* Setting SO_LINGER not support for one-to-many on Solaris */
-            if (!"SunOS".equals(osName)) {
-                smc.setOption(SO_LINGER, 2000, null);
-                checkOption(smc, SO_LINGER, 2000);
-            }
+            smc.setOption(SO_LINGER, 2000, null);
+            checkOption(smc, SO_LINGER, 2000);
 
             /* SCTP_PRIMARY_ADDR */
             sctpPrimaryAddr();
@@ -195,28 +192,19 @@ public class SocketOptionTests {
             debug("\t" + addr);
         }
 
-        /* retrieval of SCTP_PRIMARY_ADDR is not supported on Solaris */
-        if ("SunOS".equals(osName)) {
-            /* For now do not set this option. There is a bug on Solaris 10 pre Update 5
-             * where setting this option returns Invalid argument */
-            //debug("Set SCTP_PRIMARY_ADDR with " + addrToSet);
-            //smc.setOption(SCTP_PRIMARY_ADDR, addrToSet, assoc);
-            return;
-        } else { /* Linux */
-            SocketAddress primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
-            System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
-            /* Verify that this is one of the remote addresses */
-            check(remoteAddresses.contains(primaryAddr), "SCTP_PRIMARY_ADDR returned bogus address!");
+        SocketAddress primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
+        System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
+        /* Verify that this is one of the remote addresses */
+        check(remoteAddresses.contains(primaryAddr), "SCTP_PRIMARY_ADDR returned bogus address!");
 
-            for (Iterator<SocketAddress> it = remoteAddresses.iterator(); it.hasNext(); ) {
-                InetSocketAddress addrToSet = (InetSocketAddress) it.next();
-                System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
-                smc.setOption(SCTP_PRIMARY_ADDR, addrToSet, assoc);
-                System.out.println("SCTP_PRIMARY_ADDR set to    : " + addrToSet);
-                primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
-                System.out.println("SCTP_PRIMARY_ADDR returned  : " + primaryAddr);
-                check(addrToSet.equals(primaryAddr), "SCTP_PRIMARY_ADDR not set correctly");
-            }
+        for (Iterator<SocketAddress> it = remoteAddresses.iterator(); it.hasNext(); ) {
+            InetSocketAddress addrToSet = (InetSocketAddress) it.next();
+            System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
+            smc.setOption(SCTP_PRIMARY_ADDR, addrToSet, assoc);
+            System.out.println("SCTP_PRIMARY_ADDR set to    : " + addrToSet);
+            primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
+            System.out.println("SCTP_PRIMARY_ADDR returned  : " + primaryAddr);
+            check(addrToSet.equals(primaryAddr), "SCTP_PRIMARY_ADDR not set correctly");
         }
         smc.close();
         peerChannel.close();

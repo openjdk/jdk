@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,6 @@ public class Type1Font extends FileFont {
         throws FontFormatException {
         super(platname, nativeNames);
         fontRank = Font2D.TYPE1_RANK;
-        checkedNatives = true;
         try {
             verify();
         } catch (Throwable t) {

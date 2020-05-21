@@ -135,11 +135,7 @@ JNIEXPORT void JNICALL Java_Launcher_launch0
      * Launch the program. As this isn't a complete inetd or Runtime.exec
      * implementation we don't have a reaper to pick up child exit status.
      */
-#ifdef __solaris__
-    pid = fork1();
-#else
     pid = fork();
-#endif
     if (pid != 0) {
         if (pid < 0) {
             ThrowException(env, "java/io/IOException", "fork failed");

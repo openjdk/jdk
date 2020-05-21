@@ -223,7 +223,7 @@ public class Promiscuous {
             test(INET, nif, ip4Group1, ip4Group2);
 
             // Solaris and Linux allow IPv6 sockets join IPv4 multicast groups
-            if (os.equals("SunOS") || os.equals("Linux"))
+            if (os.equals("Linux"))
                 test(UNSPEC, nif, ip4Group1, ip4Group2);
         }
     }

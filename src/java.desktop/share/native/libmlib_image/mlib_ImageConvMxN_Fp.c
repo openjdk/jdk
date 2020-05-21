@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,9 +174,6 @@ void mlib_ImageConvMxNMulAdd_F32(mlib_f32       *dst,
     mlib_f32 val1 = src[nch];
     mlib_f32 hdvl = dst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_f32 hdvl0 = val0 * hval0 + hdvl;
       mlib_f32 val2 = src2[i * nch];
@@ -198,9 +195,6 @@ void mlib_ImageConvMxNMulAdd_F32(mlib_f32       *dst,
     mlib_f32 val0 = src[0];
     mlib_f32 val1 = src[nch];
     mlib_f32 hdvl = dst[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_f32 hdvl0 = val0 * hval0 + hdvl;
       mlib_f32 val2 = src2[i * nch];
@@ -221,9 +215,6 @@ void mlib_ImageConvMxNMulAdd_F32(mlib_f32       *dst,
     mlib_f32 val1 = src[nch];
     mlib_f32 hdvl = dst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_f32 hdvl0 = val0 * hval0 + hdvl;
       mlib_f32 val2 = src2[i * nch];
@@ -250,9 +241,6 @@ void mlib_ImageConvMxNF322F32_ext(mlib_f32       *dst,
 
   for (i = 0; i < dx_l; i++)
     dst[i] = val;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; i < n - dx_r; i++)
     dst[i] = src[nch * (i - dx_l)];
   val = dst[n - dx_r - 1];
@@ -349,9 +337,6 @@ void mlib_ImageConvMxNMulAdd2_F32(mlib_f32       *hdst,
     mlib_f32 hdvl = hdst[0];
     mlib_f32 vdvl = vdst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_f32 hdvl0 = val0 * hval0 + hdvl;
       mlib_f32 vdvl0 = val0 * vval0 + vdvl;
@@ -382,9 +367,6 @@ void mlib_ImageConvMxNMulAdd2_F32(mlib_f32       *hdst,
     mlib_f32 hdvl = hdst[0];
     mlib_f32 vdvl = vdst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_f32 hdvl0 = val0 * hval0 + hdvl;
       mlib_f32 vdvl0 = val0 * vval0 + vdvl;
@@ -411,9 +393,6 @@ void mlib_ImageConvMxNMulAdd2_F32(mlib_f32       *hdst,
     mlib_f32 hdvl = hdst[0];
     mlib_f32 vdvl = vdst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_f32 hdvl0 = val0 * hval0 + hdvl;
       mlib_f32 vdvl0 = val0 * vval0 + vdvl;
@@ -457,9 +436,6 @@ void mlib_ImageConvMxNMulAdd2_D64(mlib_d64       *hdst,
     mlib_d64 hdvl = hdst[0];
     mlib_d64 vdvl = vdst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 hdvl0 = val0 * hval0 + hdvl;
       mlib_d64 vdvl0 = val0 * vval0 + vdvl;
@@ -490,9 +466,6 @@ void mlib_ImageConvMxNMulAdd2_D64(mlib_d64       *hdst,
     mlib_d64 hdvl = hdst[0];
     mlib_d64 vdvl = vdst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 hdvl0 = val0 * hval0 + hdvl;
       mlib_d64 vdvl0 = val0 * vval0 + vdvl;
@@ -519,9 +492,6 @@ void mlib_ImageConvMxNMulAdd2_D64(mlib_d64       *hdst,
     mlib_d64 hdvl = hdst[0];
     mlib_d64 vdvl = vdst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 hdvl0 = val0 * hval0 + hdvl;
       mlib_d64 vdvl0 = val0 * vval0 + vdvl;
@@ -561,9 +531,6 @@ void mlib_ImageConvMxNMulAdd_D64(mlib_d64       *dst,
     mlib_d64 val1 = src[nch];
     mlib_d64 hdvl = dst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 hdvl0 = val0 * hval0 + hdvl;
       mlib_d64 val2 = src2[i * nch];
@@ -586,9 +553,6 @@ void mlib_ImageConvMxNMulAdd_D64(mlib_d64       *dst,
     mlib_d64 val1 = src[nch];
     mlib_d64 hdvl = dst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 hdvl0 = val0 * hval0 + hdvl;
       mlib_d64 val2 = src2[i * nch];
@@ -609,9 +573,6 @@ void mlib_ImageConvMxNMulAdd_D64(mlib_d64       *dst,
     mlib_d64 val1 = src[nch];
     mlib_d64 hdvl = dst[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 hdvl0 = val0 * hval0 + hdvl;
       mlib_d64 val2 = src2[i * nch];
@@ -638,9 +599,6 @@ void mlib_ImageConvMxND642D64_ext(mlib_d64       *dst,
 
   for (i = 0; i < dx_l; i++)
     dst[i] = val;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; i < n - dx_r; i++)
     dst[i] = src[nch * (i - dx_l)];
   val = dst[n - dx_r - 1];

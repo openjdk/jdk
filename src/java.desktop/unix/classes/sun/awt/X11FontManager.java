@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,8 +708,7 @@ public final class X11FontManager extends FcFontManager {
          * and do the best we can.
          */
         FontConfiguration mFontConfig = new MFontConfiguration(this);
-        if ((FontUtilities.isLinux && !mFontConfig.foundOsSpecificFile()) ||
-            (FontUtilities.isSolaris && !mFontConfig.fontFilesArePresent())) {
+        if ((FontUtilities.isLinux && !mFontConfig.foundOsSpecificFile())) {
             FcFontConfiguration fcFontConfig =
                 new FcFontConfiguration(this);
             if (fcFontConfig.init()) {

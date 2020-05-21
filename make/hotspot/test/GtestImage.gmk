@@ -56,14 +56,4 @@ ifeq ($(call isTargetOs, windows), true)
   )
 endif
 
-ifeq ($(call isTargetOs, solaris), true)
-  $(foreach v, $(JVM_VARIANTS), \
-    $(eval $(call SetupCopyFiles, COPY_GTEST_STLPORT_$v, \
-        DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
-        FILES := $(STLPORT_LIB), \
-    )) \
-    $(eval TARGETS += $$(COPY_GTEST_STLPORT_$v)) \
-  )
-endif
-
 all: $(TARGETS)

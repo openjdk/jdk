@@ -107,10 +107,6 @@ public class TestEC {
         new ReadPKCS12().main(p);
         new ReadCertificates().main(p);
 
-        // ClientJSSEServerJSSE fails on Solaris 11 when both SunEC and
-        // SunPKCS11-Solaris providers are enabled.
-        // Workaround:
-        // Security.removeProvider("SunPKCS11-Solaris");
         new ClientJSSEServerJSSE().main(p);
 
         long stop = System.currentTimeMillis();

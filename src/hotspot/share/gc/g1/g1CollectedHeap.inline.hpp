@@ -139,7 +139,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   card_table()->g1_mark_as_young(mr);
 }
 
-inline ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
+inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 

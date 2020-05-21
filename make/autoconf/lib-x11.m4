@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,13 +88,6 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
       AC_MSG_ERROR([Could not find X11 libraries. $HELP_MSG])
     fi
 
-    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-      OPENWIN_HOME="/usr/openwin"
-      X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
-      X_LIBS="-L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
-          -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
-    fi
-
     AC_LANG_PUSH(C)
     OLD_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
@@ -121,16 +114,6 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
       HELP_MSG_MISSING_DEPENDENCY([x11])
       AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h Xrandr.h XTest.h Intrinsic.h). $HELP_MSG])
     fi
-
-    # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
-    # defined in libawt_xawt.
-    AC_MSG_CHECKING([if XlinearGradient is defined in Xrender.h])
-    AC_COMPILE_IFELSE(
-        [AC_LANG_PROGRAM([[#include <X11/extensions/Xrender.h>]],
-            [[XLinearGradient x;]])],
-        [AC_MSG_RESULT([yes])],
-        [AC_MSG_RESULT([no])
-         X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"])
 
     CFLAGS="$OLD_CFLAGS"
     AC_LANG_POP(C)

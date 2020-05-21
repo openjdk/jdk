@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,9 @@ public class SendFailed {
 
     void test(String[] args) throws IOException {
         SocketAddress address = null;
-        String os = System.getProperty("os.name").toLowerCase();
 
         if (!Util.isSCTPSupported()) {
             out.println("SCTP protocol is not supported");
-            out.println("Test cannot be run");
-            return;
-        } else if (os.startsWith("sunos")) {
-            out.println("Test not supported on Solaris");
             out.println("Test cannot be run");
             return;
         }

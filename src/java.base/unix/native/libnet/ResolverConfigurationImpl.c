@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef __solaris__
-#include <sys/systeminfo.h>
-#endif
-
 #include <string.h>
 
 #include "jni.h"
@@ -40,30 +36,6 @@
 #define MAXDNAME                1025
 #endif
 
-
-/*
- * Class:     sun_net_dns_ResolverConfigurationImpl
- * Method:    localDomain0
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_sun_net_dns_ResolverConfigurationImpl_localDomain0(JNIEnv *env, jclass cls)
-{
-    /*
-     * On Solaris the LOCALDOMAIN environment variable has absolute
-     * priority.
-     */
-#ifdef __solaris__
-    {
-        char *cp = getenv("LOCALDOMAIN");
-        if (cp != NULL) {
-            jstring s = (*env)->NewStringUTF(env, cp);
-            return s;
-        }
-    }
-#endif
-    return (jstring)NULL;
-}
 
 /*
  * Class:     sun_net_dns_ResolverConfigurationImpl
@@ -76,35 +48,9 @@ Java_sun_net_dns_ResolverConfigurationImpl_fallbackDomain0(JNIEnv *env, jclass c
     char buf[MAXDNAME];
 
     /*
-     * On Solaris if domain or search directives aren't specified
-     * in /etc/resolv.conf then sysinfo or gethostname is used to
-     * determine the domain name.
-     *
-     * On Linux if domain or search directives aren't specified
+     * If domain or search directives aren't specified
      * then gethostname is used.
      */
-
-#ifdef __solaris__
-    {
-        int ret = sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf));
-
-        if ((ret > 0) && (ret<sizeof(buf))) {
-            char *cp;
-            jstring s;
-
-            if (buf[0] == '+') {
-                buf[0] = '.';
-            }
-            cp = strchr(buf, '.');
-            if (cp == NULL) {
-                s = (*env)->NewStringUTF(env, buf);
-            } else {
-                s = (*env)->NewStringUTF(env, cp+1);
-            }
-            return s;
-        }
-    }
-#endif
 
     if (gethostname(buf, sizeof(buf)) == 0) {
         char *cp;

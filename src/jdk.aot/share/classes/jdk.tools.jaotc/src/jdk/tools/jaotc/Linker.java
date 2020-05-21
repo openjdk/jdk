@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,15 +82,6 @@ final class Linker {
                 linkerPath = (options.linkerpath != null) ? options.linkerpath : "ld";
                 linkerCmd = linkerPath + " -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
                 linkerCheck = linkerPath + " -v";
-                break;
-            case "SunOS":
-                if (name.endsWith(".so")) {
-                    objectFileName = name.substring(0, name.length() - ".so".length());
-                }
-                objectFileName = objectFileName + ".o";
-                linkerPath = (options.linkerpath != null) ? options.linkerpath : "ld";
-                linkerCmd = linkerPath + " -shared -o " + libraryFileName + " " + objectFileName;
-                linkerCheck = linkerPath + " -V";
                 break;
             case "Mac OS X":
                 if (name.endsWith(".dylib")) {

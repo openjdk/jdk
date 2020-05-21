@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ final class ElfTargetInfo {
         }
 
         osName = System.getProperty("os.name").toLowerCase();
-        if (!osName.equals("linux") && !osName.equals("sunos")) {
+        if (!osName.equals("linux")) {
             System.out.println("Unsupported Operating System " + osName);
             osName = "Unknown";
         }

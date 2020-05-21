@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class TestCurves extends PKCS11Test {
             return true;
         }
 
-        if (isBadNSSVersion(p) || isBadSolarisSparc(p)) {
+        if (isBadNSSVersion(p)) {
             return true;
         }
 
@@ -66,13 +66,6 @@ public class TestCurves extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-        // Check if this is sparc for later failure avoidance.
-        boolean sparc = false;
-        if (props.getProperty("os.arch").equals("sparcv9")) {
-            sparc = true;
-            System.out.println("This is a sparcv9");
-        }
-
         Random random = new Random();
         byte[] data = new byte[2048];
         random.nextBytes(data);
@@ -88,26 +81,10 @@ public class TestCurves extends PKCS11Test {
             kp2 = kpg.generateKeyPair();
 
             testSigning(p, "SHA1withECDSA", data, kp1, kp2);
-            // Check because Solaris ncp driver does not support these but
-            // Solaris metaslot causes them to be run.
-            try {
-                testSigning(p, "SHA224withECDSA", data, kp1, kp2);
-                testSigning(p, "SHA256withECDSA", data, kp1, kp2);
-                testSigning(p, "SHA384withECDSA", data, kp1, kp2);
-                testSigning(p, "SHA512withECDSA", data, kp1, kp2);
-            } catch (ProviderException e) {
-                if (sparc) {
-                    Throwable t = e.getCause();
-                    if (t instanceof sun.security.pkcs11.wrapper.PKCS11Exception &&
-                        t.getMessage().equals("CKR_ATTRIBUTE_VALUE_INVALID")) {
-                        System.out.print("-Failure not uncommon.  Probably pre-T4.");
-                    } else {
-                        throw e;
-                    }
-                } else {
-                    throw e;
-                }
-            }
+            testSigning(p, "SHA224withECDSA", data, kp1, kp2);
+            testSigning(p, "SHA256withECDSA", data, kp1, kp2);
+            testSigning(p, "SHA384withECDSA", data, kp1, kp2);
+            testSigning(p, "SHA512withECDSA", data, kp1, kp2);
             System.out.println();
 
             KeyAgreement ka1 = KeyAgreement.getInstance("ECDH", p);

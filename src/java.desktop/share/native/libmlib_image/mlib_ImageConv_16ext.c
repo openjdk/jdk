@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,6 @@ typedef union {
   adr_dst = (type *)mlib_ImageGetData(dst)
 
 /***************************************************************/
-#ifndef __sparc
 #if IMG_TYPE == 1
 
 /*
@@ -223,7 +222,6 @@ typedef union {
     dst = (mlib_u16)val
 
 #endif /* IMG_TYPE == 1 */
-#endif /* __sparc */
 
 /***************************************************************/
 #define MAX_KER   7
@@ -291,9 +289,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
       sl = adr_src + c;
       dl = adr_dst + c;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < hsize; i++) buffd[i] = 0.0;
 
       for (j = 0; j < wid; j++) {
@@ -303,9 +298,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
           sbuff[i - k_off] = (FTYPE)sl[0];
         }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
         for (; (i < shgt + dy_t) && (ii < smax_hsize); i++, ii++) {
           sbuff[i - k_off] = (FTYPE)sl[(i - dy_t)*sll];
         }
@@ -321,9 +313,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
           p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
           k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (i = 0; i < hsize; i += 2) {
             p0 = p2; p1 = p3; p2 = p4;
 
@@ -344,9 +333,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
           p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
           k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (i = 0; i <= (hsize - 2); i += 2) {
             p0 = p2; p1 = p3; p2 = p4;
 
@@ -377,9 +363,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
           p2 = buff[0]; p3 = buff[1];
           k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (i = 0; i <= (hsize - 2); i += 2) {
             p0 = p2; p1 = p3;
 
@@ -411,9 +394,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
           p2 = buff[0];
           k0 = pk[0]; k1 = pk[1];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (i = 0; i <= (hsize - 2); i += 2) {
             p0 = p2;
 
@@ -444,9 +424,6 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
 
           k0 = pk[0];
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
           for (i = 0; i <= (hsize - 2); i += 2) {
             p0 = buff[i]; p1 = buff[i + 1];
 
@@ -569,9 +546,6 @@ mlib_status CONV_FUNC_MxN
         buff[i] = (FTYPE)sl[0];
       }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < swid; i++) {
         buff[i + dx_l] = (FTYPE)sl[i*chan1];
       }
@@ -585,9 +559,6 @@ mlib_status CONV_FUNC_MxN
 
     buff_ind = 0;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < wid; i++) buffd[i] = 0.0;
 
     for (j = 0; j < hgt; j++) {
@@ -619,9 +590,6 @@ mlib_status CONV_FUNC_MxN
             k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6; p5 = p7;
 
@@ -632,9 +600,6 @@ mlib_status CONV_FUNC_MxN
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6; p5 = p7;
 
@@ -669,9 +634,6 @@ mlib_status CONV_FUNC_MxN
             k4 = pk[4]; k5 = pk[5];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -682,9 +644,6 @@ mlib_status CONV_FUNC_MxN
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -719,9 +678,6 @@ mlib_status CONV_FUNC_MxN
             k4 = pk[4];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5;
 
@@ -732,9 +688,6 @@ mlib_status CONV_FUNC_MxN
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5;
 
@@ -767,9 +720,6 @@ mlib_status CONV_FUNC_MxN
             k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
 
@@ -780,9 +730,6 @@ mlib_status CONV_FUNC_MxN
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
 
@@ -814,9 +761,6 @@ mlib_status CONV_FUNC_MxN
             k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3;
 
@@ -827,9 +771,6 @@ mlib_status CONV_FUNC_MxN
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3;
 
@@ -861,9 +802,6 @@ mlib_status CONV_FUNC_MxN
             k0 = pk[0]; k1 = pk[1];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
 
@@ -874,9 +812,6 @@ mlib_status CONV_FUNC_MxN
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
 
@@ -950,7 +885,7 @@ mlib_status CONV_FUNC_MxN
 }
 
 /***************************************************************/
-#ifndef __sparc /* for x86, using integer multiplies is faster */
+/* for x86, using integer multiplies is faster */
 
 #define STORE_RES(res, x)                                       \
   x >>= shift2;                                                 \
@@ -1027,9 +962,6 @@ mlib_status CONV_FUNC_MxN_I
         buff[i] = (mlib_s32)sl[0];
       }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = 0; i < swid; i++) {
         buff[i + dx_l] = (mlib_s32)sl[i*chan1];
       }
@@ -1043,9 +975,6 @@ mlib_status CONV_FUNC_MxN_I
 
     buff_ind = 0;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < wid; i++) buffd[i] = 0;
 
     for (j = 0; j < hgt; j++) {
@@ -1077,9 +1006,6 @@ mlib_status CONV_FUNC_MxN_I
             k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6; p5 = p7;
 
@@ -1090,9 +1016,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6; p5 = p7;
 
@@ -1124,9 +1047,6 @@ mlib_status CONV_FUNC_MxN_I
             k4 = pk[4]; k5 = pk[5];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -1137,9 +1057,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
 
@@ -1171,9 +1088,6 @@ mlib_status CONV_FUNC_MxN_I
             k4 = pk[4];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5;
 
@@ -1184,9 +1098,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5;
 
@@ -1216,9 +1127,6 @@ mlib_status CONV_FUNC_MxN_I
             k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
 
@@ -1229,9 +1137,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
 
@@ -1260,9 +1165,6 @@ mlib_status CONV_FUNC_MxN_I
             k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3;
 
@@ -1273,9 +1175,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3;
 
@@ -1304,9 +1203,6 @@ mlib_status CONV_FUNC_MxN_I
             k0 = pk[0]; k1 = pk[1];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
 
@@ -1317,9 +1213,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
 
@@ -1347,9 +1240,6 @@ mlib_status CONV_FUNC_MxN_I
             k0 = pk[0];
 
             if (l < (n - 1) || off < m) {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = buff[i]; p1 = buff[i + 1];
 
@@ -1358,9 +1248,6 @@ mlib_status CONV_FUNC_MxN_I
               }
 
             } else {
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = buff[i]; p1 = buff[i + 1];
 
@@ -1428,7 +1315,5 @@ mlib_status CONV_FUNC_MxN_I
 
   return MLIB_SUCCESS;
 }
-
-#endif /* __sparc ( for x86, using integer multiplies is faster ) */
 
 /***************************************************************/

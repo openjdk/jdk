@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,9 +148,6 @@ void mlib_ImageConvMxNMulAdd_S32(mlib_d64       *dst,
       hval2 = 0.f;
     }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (i = 0; i < n; i++) {
       mlib_d64 dval0 = val0 * hval0 + dval;
       mlib_d64 val2 = src2[i * nch];
@@ -174,9 +171,6 @@ void mlib_ImageConvMxNMedian_S32(mlib_s32 *dst,
 {
   mlib_s32 i;
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (i = 0; i < n; i++) {
     mlib_s32 res;
 
@@ -199,9 +193,6 @@ void mlib_ImageConvMxNS322S32_ext(mlib_s32       *dst,
 
   for (i = 0; i < dx_l; i++)
     dst[i] = (mlib_s32) val;
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; i < n - dx_r; i++)
     dst[i] = src[nch * (i - dx_l)];
   val = dst[n - dx_r - 1];

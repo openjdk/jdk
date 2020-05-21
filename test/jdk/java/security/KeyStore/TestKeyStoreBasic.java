@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class TestKeyStoreBasic {
             "jks", "jceks", "pkcs12", "PKCS11KeyStore"
     };
     private static final String[] PROVIDERS = {
-            "SUN", "SunJCE", "SunJSSE", "SunPKCS11-Solaris"
+            "SUN", "SunJCE", "SunJSSE"
     };
     private static final String ALIAS_HEAD = "test";
 
@@ -125,26 +125,8 @@ public class TestKeyStoreBasic {
 
     public void run() throws Exception {
         for (String provider : PROVIDERS) {
-            try {
-                runTest(provider);
-                System.out.println("Test with provider " + provider + " passed");
-            } catch (java.security.KeyStoreException e) {
-                if (provider.equals("SunPKCS11-Solaris")) {
-                    System.out.println("KeyStoreException is expected: "
-                            + "PKCS11KeyStore is invalid keystore type: " + e);
-                } else {
-                    throw e;
-                }
-            } catch (NoSuchProviderException e) {
-                String osName = System.getProperty("os.name");
-                if (provider.equals("SunPKCS11-Solaris")
-                        && !osName.equals("SunOS")) {
-                    System.out.println("Skip SunPKCS11-Solaris provider on "
-                            + osName);
-                } else {
-                    throw e;
-                }
-            }
+            runTest(provider);
+            System.out.println("Test with provider " + provider + " passed");
         }
     }
 

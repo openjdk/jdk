@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,9 +93,6 @@ void mlib_ImageAffine_bit_1ch_nn(mlib_affine_param *param,
       dp[0] = res;
     }
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (; i <= (xRight - 8); i += 8) {
       srcPixelPtr0 = MLIB_POINTER_GET(lineAddr, MLIB_POINTER_SHIFT(Y));
       Y += dY;

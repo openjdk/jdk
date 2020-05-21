@@ -263,6 +263,8 @@ public class Sockets {
     private static Map<Class<?>,Set<SocketOption<?>>> optionSets() {
         Map<Class<?>,Set<SocketOption<?>>> options = new HashMap<>();
         boolean flowsupported = PlatformSocketOptions.get().flowSupported();
+        boolean incomingNapiIdsupported = PlatformSocketOptions.get().incomingNapiIdSupported();
+
         boolean reuseportsupported = isReusePortAvailable();
         // Socket
 
@@ -288,6 +290,9 @@ public class Sockets {
                     ExtendedSocketOptions.TCP_KEEPIDLE,
                     ExtendedSocketOptions.TCP_KEEPINTERVAL));
         }
+        if (incomingNapiIdsupported) {
+            set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);
+        }
         set = Collections.unmodifiableSet(set);
         options.put(Socket.class, set);
 
@@ -308,6 +313,9 @@ public class Sockets {
                     ExtendedSocketOptions.TCP_KEEPINTERVAL));
         }
         set.add(StandardSocketOptions.IP_TOS);
+        if (incomingNapiIdsupported) {
+            set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);
+        }
         set = Collections.unmodifiableSet(set);
         options.put(ServerSocket.class, set);
 
@@ -323,6 +331,9 @@ public class Sockets {
         set.add(StandardSocketOptions.IP_TOS);
         if (flowsupported) {
             set.add(ExtendedSocketOptions.SO_FLOW_SLA);
+        }
+        if (incomingNapiIdsupported) {
+            set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);
         }
         set = Collections.unmodifiableSet(set);
         options.put(DatagramSocket.class, set);

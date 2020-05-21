@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #define JAVA_MD_H
 
 /*
- * This file contains common defines and includes for Solaris, Linux and MacOSX.
+ * This file contains common defines and includes for unix.
  */
 #include <limits.h>
 #include <unistd.h>

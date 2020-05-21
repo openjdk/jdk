@@ -43,7 +43,7 @@
 #include "oops/compressedOops.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
-PSPromotionManager::OopStarTaskQueueSet* PSPromotionManager::_stack_array_depth = NULL;
+PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_depth = NULL;
 PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = NULL;
 PSOldGen*                      PSPromotionManager::_old_gen = NULL;
 MutableSpace*                  PSPromotionManager::_young_space = NULL;
@@ -61,7 +61,7 @@ void PSPromotionManager::initialize() {
   assert(_manager_array == NULL, "Attempt to initialize twice");
   _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(promotion_manager_num);
 
-  _stack_array_depth = new OopStarTaskQueueSet(ParallelGCThreads);
+  _stack_array_depth = new PSScannerTasksQueueSet(ParallelGCThreads);
 
   // Create and register the PSPromotionManager(s) for the worker threads.
   for(uint i=0; i<ParallelGCThreads; i++) {
@@ -134,13 +134,14 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
 void
 PSPromotionManager::print_local_stats(outputStream* const out, uint i) const {
   #define FMT " " SIZE_FORMAT_W(10)
-  out->print_cr("%3u" FMT FMT FMT FMT, i, _masked_pushes, _masked_steals,
+  out->print_cr("%3u" FMT FMT FMT FMT,
+                i, _array_chunk_pushes, _array_chunk_steals,
                 _arrays_chunked, _array_chunks_processed);
   #undef FMT
 }
 
 static const char* const pm_stats_hdr[] = {
-  "    --------masked-------     arrays      array",
+  "    ----partial array----     arrays      array",
   "thr       push      steal    chunked     chunks",
   "--- ---------- ---------- ---------- ----------"
 };
@@ -177,7 +178,7 @@ PSPromotionManager::print_taskqueue_stats() {
 void
 PSPromotionManager::reset_stats() {
   claimed_stack_depth()->stats.reset();
-  _masked_pushes = _masked_steals = 0;
+  _array_chunk_pushes = _array_chunk_steals = 0;
   _arrays_chunked = _array_chunks_processed = 0;
 }
 #endif // TASKQUEUE_STATS
@@ -249,23 +250,23 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   MutableSpace* old_space = heap->old_gen()->object_space();
 #endif /* ASSERT */
 
-  OopStarTaskQueue* const tq = claimed_stack_depth();
+  PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
-    StarTask p;
+    ScannerTask task;
 
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
-    while (tq->pop_overflow(p)) {
-      process_popped_location_depth(p);
+    while (tq->pop_overflow(task)) {
+      process_popped_location_depth(task);
     }
 
     if (totally_drain) {
-      while (tq->pop_local(p)) {
-        process_popped_location_depth(p);
+      while (tq->pop_local(task)) {
+        process_popped_location_depth(task);
       }
     } else {
-      while (tq->size() > _target_stack_size && tq->pop_local(p)) {
-        process_popped_location_depth(p);
+      while (tq->size() > _target_stack_size && tq->pop_local(task)) {
+        process_popped_location_depth(task);
       }
     }
   } while ((totally_drain && !tq->taskqueue_empty()) || !tq->overflow_empty());
@@ -309,8 +310,10 @@ template <class T> void PSPromotionManager::process_array_chunk_work(
   }
 }
 
-void PSPromotionManager::process_array_chunk(oop old) {
+void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
   assert(PSChunkLargeArrays, "invariant");
+
+  oop old = task.to_source_array();
   assert(old->is_objArray(), "invariant");
   assert(old->is_forwarded(), "invariant");
 
@@ -325,8 +328,8 @@ void PSPromotionManager::process_array_chunk(oop old) {
     start = end - _array_chunk_size;
     assert(start > 0, "invariant");
     arrayOop(old)->set_length(start);
-    push_depth(mask_chunked_array_oop(old));
-    TASKQUEUE_STATS_ONLY(++_masked_pushes);
+    push_depth(ScannerTask(PartialArrayScanTask(old)));
+    TASKQUEUE_STATS_ONLY(++_array_chunk_pushes);
   } else {
     // this is the final chunk for this array
     start = 0;

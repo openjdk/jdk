@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,6 @@ public class ScatteringRead {
         test1(); // for bug 4452020
         test2(); // for bug 4629048
         System.gc();
-
-        // Test 3 proves that the system is capable of reading
-        // more than MAX_INT bytes in one shot. But it is unsuitable
-        // for automated testing because oftentimes less bytes are
-        // read for various reasons, and this is allowed by the spec.
-        // test3(); // for bug 4638365
     }
 
     private static void test1() throws Exception {
@@ -105,48 +99,4 @@ public class ScatteringRead {
             throw new Exception("Scattering read changed buf limit.");
         fis.close();
     }
-
-    private static void test3() throws Exception {
-        // Only works on 64 bit Solaris
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("SunOS"))
-            return;
-        String dataModel = System.getProperty("sun.arch.data.model");
-        if (!dataModel.startsWith("64"))
-            return;
-
-        ByteBuffer dstBuffers[] = new ByteBuffer[NUM_BUFFERS];
-        File f = File.createTempFile("test3", null);
-        f.deleteOnExit();
-        prepTest3File(f, (long)BIG_BUFFER_CAP);
-        RandomAccessFile raf = new RandomAccessFile(f, "rw");
-        FileChannel fc = raf.getChannel();
-        MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0,
-                                      BIG_BUFFER_CAP);
-        for (int i=0; i<NUM_BUFFERS; i++) {
-            dstBuffers[i] = mbb;
-        }
-        fc.close();
-        raf.close();
-
-        // Source must be large
-        FileInputStream fis = new FileInputStream("/dev/zero");
-        fc = fis.getChannel();
-
-        long bytesRead = fc.read(dstBuffers);
-        if (bytesRead <= Integer.MAX_VALUE)
-            throw new RuntimeException("Test 3 failed "+bytesRead+" < "+Integer.MAX_VALUE);
-
-        fc.close();
-        fis.close();
-    }
-
-    static void prepTest3File(File blah, long testSize) throws Exception {
-        RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-        FileChannel fc = raf.getChannel();
-        fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
-        fc.close();
-        raf.close();
-    }
-
 }

@@ -122,10 +122,6 @@ ifeq ($(call isTargetOs, windows), true)
   PLATFORM_MODULES += jdk.crypto.mscapi
 endif
 
-ifeq ($(call isTargetOs, solaris), true)
-  PLATFORM_MODULES += jdk.crypto.ucrypto
-endif
-
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
     jdk.incubator.jpackage \

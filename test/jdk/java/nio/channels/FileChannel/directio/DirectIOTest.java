@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 8164900
  * @summary Test for ExtendedOpenOption.DIRECT flag
- * @requires (os.family == "linux" | os.family == "solaris"
- *         | os.family == "aix")
+ * @requires (os.family == "linux" | os.family == "aix")
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @run main/native DirectIOTest
@@ -80,17 +79,7 @@ public class DirectIOTest {
     }
 
     public static boolean isDirectIOSupportedByFS(Path p) throws Exception {
-        boolean supported = true;
-        if (Platform.isSolaris()) {
-            String fsType = Files.getFileStore(p).type();
-            if (!fsType.equals("nfs") && !fsType.equals("ufs")) {
-                // print a message and return without failing
-                System.out.format("Skipping test: file system type %s of "
-                    + "FileStore of %s is neither nfs nor ufs.%n", fsType, p);
-                supported = false;
-            }
-        }
-        return supported;
+        return true;
     }
 
     private static boolean isFileInCache(Path p) {

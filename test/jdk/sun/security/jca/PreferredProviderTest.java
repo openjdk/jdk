@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,87 +46,18 @@ public class PreferredProviderTest {
             throws NoSuchAlgorithmException, NoSuchPaddingException {
 
         String actualProvider = null;
-        boolean solaris = os.contains("sun");
         String preferredProp
                 = "AES/GCM/NoPadding:SunJCE, MessageDigest.SHA-256:SUN";
         System.out.printf("%nExecuting test for the platform '%s'%n", os);
-        if (!solaris) {
-            //For other platform it will try to set the preferred algorithm and
-            //Provider and verify the usage of it.
-            Security.setProperty(
-                    "jdk.security.provider.preferred", preferredProp);
-            verifyPreferredProviderProperty(os, type, preferredProp);
 
-            verifyDigestProvider(os, type, Arrays.asList(
-                    new DataTuple("SHA-256", "SUN")));
-        } else {
-            //Solaris has different providers that support the same algorithm
-            //which makes for better testing.
-            switch (type) {
-                case "sparcv9":
-                    preferredProp = "AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, " +
-                            "HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE";
-                    Security.setProperty(
-                            "jdk.security.provider.preferred", preferredProp);
-                    verifyPreferredProviderProperty(os, type, preferredProp);
+        // Try to set the preferred algorithm and Provider and verify
+        // the usage of it.
+        Security.setProperty(
+                "jdk.security.provider.preferred", preferredProp);
+        verifyPreferredProviderProperty(os, type, preferredProp);
 
-                    verifyDigestProvider(os, type, Arrays.asList(
-                            new DataTuple("SHA1", "SUN"),
-                            new DataTuple("SHA-1", "SUN"),
-                            new DataTuple("SHA-224", "SUN"),
-                            new DataTuple("SHA-256", "SUN"),
-                            new DataTuple("SHA-384", "SUN"),
-                            new DataTuple("SHA-512", "SUN"),
-                            new DataTuple("SHA-512/224", "SUN"),
-                            new DataTuple("SHA-512/256", "SUN")));
-
-                    verifyMacProvider(os, type, Arrays.asList(
-                            new DataTuple("HmacSHA1", "SunJCE"),
-                            new DataTuple("HmacSHA224", "SunJCE"),
-                            new DataTuple("HmacSHA256", "SunJCE"),
-                            new DataTuple("HmacSHA384", "SunJCE"),
-                            new DataTuple("HmacSHA512", "SunJCE")));
-                    break;
-                case "amd64":
-                    preferredProp = "AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, " +
-                            "HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE, " +
-                            "RSA:SunRsaSign, SHA1withRSA:SunRsaSign, " +
-                            "Group.SHA2RSA:SunRsaSign";
-                    Security.setProperty(
-                            "jdk.security.provider.preferred", preferredProp);
-                    verifyPreferredProviderProperty(os, type, preferredProp);
-
-                    verifyKeyFactoryProvider(os, type, Arrays.asList(
-                            new DataTuple("RSA", "SunRsaSign")));
-
-                    verifyDigestProvider(os, type, Arrays.asList(
-                            new DataTuple("SHA1", "SUN"),
-                            new DataTuple("SHA-1", "SUN"),
-                            new DataTuple("SHA-224", "SUN"),
-                            new DataTuple("SHA-256", "SUN"),
-                            new DataTuple("SHA-384", "SUN"),
-                            new DataTuple("SHA-512", "SUN"),
-                            new DataTuple("SHA-512/224", "SUN"),
-                            new DataTuple("SHA-512/256", "SUN")));
-
-                    verifyMacProvider(os, type, Arrays.asList(
-                            new DataTuple("HmacSHA1", "SunJCE"),
-                            new DataTuple("HmacSHA224", "SunJCE"),
-                            new DataTuple("HmacSHA256", "SunJCE"),
-                            new DataTuple("HmacSHA384", "SunJCE"),
-                            new DataTuple("HmacSHA512", "SunJCE")));
-
-                    verifySignatureProvider(os, type, Arrays.asList(
-                            new DataTuple("SHA1withRSA", "SunRsaSign"),
-                            new DataTuple("SHA224withRSA", "SunRsaSign"),
-                            new DataTuple("SHA256withRSA", "SunRsaSign"),
-                            new DataTuple("SHA384withRSA", "SunRsaSign"),
-                            new DataTuple("SHA512withRSA", "SunRsaSign")));
-                    break;
-            }
-            verifyDigestProvider(os, type, Arrays.asList(
-                    new DataTuple("MD5", "OracleUcrypto")));
-        }
+        verifyDigestProvider(os, type, Arrays.asList(
+                new DataTuple("SHA-256", "SUN")));
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         actualProvider = cipher.getProvider().getName();

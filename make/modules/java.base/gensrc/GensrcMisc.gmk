@@ -104,21 +104,6 @@ ifeq ($(call isTargetOs, windows), false)
 
 endif
 
-################################################################################
-
-ifeq ($(call isTargetOs, solaris), true)
-
-  GENSRC_SC_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java
-
-  $(GENSRC_SC_FILE): \
-      $(TOPDIR)/src/java.base/solaris/classes/sun/nio/fs/SolarisConstants.java.template
-	$(generate-preproc-src)
-
-  TARGETS += $(GENSRC_SC_FILE)
-
-endif
-
-################################################################################
 # Create the javax/crypto/JceSecurity.class, using the build default.
 #
 ifeq ($(UNLIMITED_CRYPTO), true)

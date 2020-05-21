@@ -3795,8 +3795,7 @@ size_t os::Linux::find_default_large_page_size() {
     IA32_ONLY(4 * M)
     IA64_ONLY(256 * M)
     PPC_ONLY(4 * M)
-    S390_ONLY(1 * M)
-    SPARC_ONLY(4 * M);
+    S390_ONLY(1 * M);
 #endif // ZERO
 
   FILE *fp = fopen("/proc/meminfo", "r");

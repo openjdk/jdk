@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4627316 6743526
  * @summary Test option to limit direct memory allocation,
  *          various bad values fail to launch the VM
- * @requires (os.arch == "x86_64") | (os.arch == "amd64") | (os.arch == "sparcv9")
+ * @requires (os.arch == "x86_64") | (os.arch == "amd64")
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts

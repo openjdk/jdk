@@ -550,7 +550,6 @@ public class HotSpotGraphBuilderPlugins {
             assert config.cipherBlockChainingEncryptAESCryptStub != 0L;
             assert config.cipherBlockChainingDecryptAESCryptStub != 0L;
             String arch = config.osArch;
-            String decryptSuffix = arch.equals("sparc") ? "WithOriginalKey" : "";
 
             Registration r = new Registration(plugins, "com.sun.crypto.provider.CipherBlockChaining", replacements);
 
@@ -559,7 +558,7 @@ public class HotSpotGraphBuilderPlugins {
                             byte[].class, int.class);
 
             Pair<String, String> cbcDecryptName = selectIntrinsicName(config, "com/sun/crypto/provider/CipherBlockChaining", "implDecrypt", "decrypt");
-            registerAndCheckMismatch(r, CipherBlockChainingSubstitutions.class, cbcDecryptName, cbcDecryptName.getLeft() + decryptSuffix, Receiver.class, byte[].class, int.class, int.class,
+            registerAndCheckMismatch(r, CipherBlockChainingSubstitutions.class, cbcDecryptName, cbcDecryptName.getLeft(), Receiver.class, byte[].class, int.class, int.class,
                             byte[].class, int.class);
 
             r = new Registration(plugins, "com.sun.crypto.provider.AESCrypt", replacements);
@@ -568,7 +567,7 @@ public class HotSpotGraphBuilderPlugins {
             registerAndCheckMismatch(r, AESCryptSubstitutions.class, aesEncryptName, Receiver.class, byte[].class, int.class, byte[].class, int.class);
 
             Pair<String, String> aesDecryptName = selectIntrinsicName(config, "com/sun/crypto/provider/AESCrypt", "implDecryptBlock", "decryptBlock");
-            registerAndCheckMismatch(r, AESCryptSubstitutions.class, aesDecryptName, aesDecryptName.getLeft() + decryptSuffix, Receiver.class, byte[].class, int.class, byte[].class, int.class);
+            registerAndCheckMismatch(r, AESCryptSubstitutions.class, aesDecryptName, aesDecryptName.getLeft(), Receiver.class, byte[].class, int.class, byte[].class, int.class);
         }
     }
 

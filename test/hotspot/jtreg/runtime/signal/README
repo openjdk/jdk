@@ -1,4 +1,4 @@
-Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,3 @@ to be specified. So, test these signals only with -Xrs flag.
 
 On Linux and Mac OS X, SIGUSR2 is used to implement suspend and resume. So,
 don't test SIGUSR2 on Linux and Mac OS X.
-
-SIGJVM1 and SIGJVM2 exist only on Solaris and are reserved for exclusive use
-by the JVM. So don't test SIGJVM1 and SIGJVM2.

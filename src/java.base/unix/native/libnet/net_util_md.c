@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,6 @@
 #include <sys/utsname.h>
 #endif
 
-#if defined(__solaris__)
-#include <inet/nd.h>
-#include <limits.h>
-#include <stropts.h>
-#include <sys/filio.h>
-#include <sys/sockio.h>
-#endif
-
 #if defined(MACOSX)
 #include <sys/sysctl.h>
 #endif
@@ -59,20 +51,6 @@
 #define IPV6_FLOWINFO_SEND      33
 #endif
 
-#if defined(__solaris__) && !defined(MAXINT)
-#define MAXINT INT_MAX
-#endif
-
-/*
- * EXCLBIND socket options only on Solaris
- */
-#if defined(__solaris__) && !defined(TCP_EXCLBIND)
-#define TCP_EXCLBIND            0x21
-#endif
-#if defined(__solaris__) && !defined(UDP_EXCLBIND)
-#define UDP_EXCLBIND            0x0101
-#endif
-
 #define RESTARTABLE(_cmd, _result) do { \
     do { \
         _result = _cmd; \
@@ -84,94 +62,6 @@ int NET_SocketAvailable(int s, int *pbytes) {
     RESTARTABLE(ioctl(s, FIONREAD, pbytes), result);
     return result;
 }
-
-#ifdef __solaris__
-static int init_tcp_max_buf, init_udp_max_buf;
-static int tcp_max_buf;
-static int udp_max_buf;
-static int useExclBind = 0;
-
-/*
- * Get the specified parameter from the specified driver. The value
- * of the parameter is assumed to be an 'int'. If the parameter
- * cannot be obtained return -1
- */
-int net_getParam(char *driver, char *param)
-{
-    struct strioctl stri;
-    char buf [64];
-    int s;
-    int value;
-
-    s = open (driver, O_RDWR);
-    if (s < 0) {
-        return -1;
-    }
-    strncpy (buf, param, sizeof(buf));
-    stri.ic_cmd = ND_GET;
-    stri.ic_timout = 0;
-    stri.ic_dp = buf;
-    stri.ic_len = sizeof(buf);
-    if (ioctl (s, I_STR, &stri) < 0) {
-        value = -1;
-    } else {
-        value = atoi(buf);
-    }
-    close (s);
-    return value;
-}
-
-/*
- * Iterative way to find the max value that SO_SNDBUF or SO_RCVBUF
- * for Solaris versions that do not support the ioctl() in net_getParam().
- * Ugly, but only called once (for each sotype).
- *
- * As an optimization, we make a guess using the default values for Solaris
- * assuming they haven't been modified with ndd.
- */
-
-#define MAX_TCP_GUESS 1024 * 1024
-#define MAX_UDP_GUESS 2 * 1024 * 1024
-
-#define FAIL_IF_NOT_ENOBUFS if (errno != ENOBUFS) return -1
-
-static int findMaxBuf(int fd, int opt, int sotype) {
-    int a = 0;
-    int b = MAXINT;
-    int initial_guess;
-    int limit = -1;
-
-    if (sotype == SOCK_DGRAM) {
-        initial_guess = MAX_UDP_GUESS;
-    } else {
-        initial_guess = MAX_TCP_GUESS;
-    }
-
-    if (setsockopt(fd, SOL_SOCKET, opt, &initial_guess, sizeof(int)) == 0) {
-        initial_guess++;
-        if (setsockopt(fd, SOL_SOCKET, opt, &initial_guess,sizeof(int)) < 0) {
-            FAIL_IF_NOT_ENOBUFS;
-            return initial_guess - 1;
-        }
-        a = initial_guess;
-    } else {
-        FAIL_IF_NOT_ENOBUFS;
-        b = initial_guess - 1;
-    }
-    do {
-        int mid = a + (b-a)/2;
-        if (setsockopt(fd, SOL_SOCKET, opt, &mid, sizeof(int)) == 0) {
-            limit = mid;
-            a = mid + 1;
-        } else {
-            FAIL_IF_NOT_ENOBUFS;
-            b = mid - 1;
-        }
-    } while (b >= a);
-
-    return limit;
-}
-#endif
 
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
@@ -283,50 +173,6 @@ jint  IPv6_supported()
     }
 #endif
 
-    /**
-     * On Solaris 8 it's possible to create INET6 sockets even
-     * though IPv6 is not enabled on all interfaces. Thus we
-     * query the number of IPv6 addresses to verify that IPv6
-     * has been configured on at least one interface.
-     *
-     * On Linux it doesn't matter - if IPv6 is built-in the
-     * kernel then IPv6 addresses will be bound automatically
-     * to all interfaces.
-     */
-#ifdef __solaris__
-
-#ifdef SIOCGLIFNUM
-    {
-        struct lifnum numifs;
-
-        numifs.lifn_family = AF_INET6;
-        numifs.lifn_flags = 0;
-        if (ioctl(fd, SIOCGLIFNUM, (char *)&numifs) < 0) {
-            /**
-             * SIOCGLIFNUM failed - assume IPv6 not configured
-             */
-            close(fd);
-            return JNI_FALSE;
-        }
-        /**
-         * If no IPv6 addresses then return false. If count > 0
-         * it's possible that all IPv6 addresses are "down" but
-         * that's okay as they may be brought "up" while the
-         * VM is running.
-         */
-        if (numifs.lifn_count == 0) {
-            close(fd);
-            return JNI_FALSE;
-        }
-    }
-#else
-    /* SIOCGLIFNUM not defined in build environment ??? */
-    close(fd);
-    return JNI_FALSE;
-#endif
-
-#endif /* __solaris */
-
     /*
      *  OK we may have the stack available in the kernel,
      *  we should also check if the APIs are available.
@@ -402,26 +248,6 @@ void platformInit () {
 void platformInit () {}
 
 #endif
-
-void parseExclusiveBindProperty(JNIEnv *env) {
-#ifdef __solaris__
-    jstring s, flagSet;
-    jclass iCls;
-    jmethodID mid;
-
-    s = (*env)->NewStringUTF(env, "sun.net.useExclusiveBind");
-    CHECK_NULL(s);
-    iCls = (*env)->FindClass(env, "java/lang/System");
-    CHECK_NULL(iCls);
-    mid = (*env)->GetStaticMethodID(env, iCls, "getProperty",
-                "(Ljava/lang/String;)Ljava/lang/String;");
-    CHECK_NULL(mid);
-    flagSet = (*env)->CallStaticObjectMethod(env, iCls, mid, s);
-    if (flagSet != NULL) {
-        useExclBind = 1;
-    }
-#endif
-}
 
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd) {
@@ -588,7 +414,7 @@ NET_MapSocketOption(jint cmd, int *level, int *optname) {
                 *level = IPPROTO_IPV6;
                 *optname = IPV6_MULTICAST_LOOP;
                 return 0;
-#if (defined(__solaris__) || defined(MACOSX))
+#if defined(MACOSX)
             // Map IP_TOS request to IPV6_TCLASS
             case java_net_SocketOptions_IP_TOS:
                 *level = IPPROTO_IPV6;
@@ -737,65 +563,6 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
         *iptos &= (IPTOS_TOS_MASK | IPTOS_PREC_MASK);
     }
 
-    /*
-     * SOL_SOCKET/{SO_SNDBUF,SO_RCVBUF} - On Solaris we may need to clamp
-     * the value when it exceeds the system limit.
-     */
-#ifdef __solaris__
-    if (level == SOL_SOCKET) {
-        if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
-            int sotype=0;
-            socklen_t arglen;
-            int *bufsize, maxbuf;
-            int ret;
-
-            /* Attempt with the original size */
-            ret = setsockopt(fd, level, opt, arg, len);
-            if ((ret == 0) || (ret == -1 && errno != ENOBUFS))
-                return ret;
-
-            /* Exceeded system limit so clamp and retry */
-
-            arglen = sizeof(sotype);
-            if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&sotype,
-                           &arglen) < 0) {
-                return -1;
-            }
-
-            /*
-             * We try to get tcp_maxbuf (and udp_max_buf) using
-             * an ioctl() that isn't available on all versions of Solaris.
-             * If that fails, we use the search algorithm in findMaxBuf()
-             */
-            if (!init_tcp_max_buf && sotype == SOCK_STREAM) {
-                tcp_max_buf = net_getParam("/dev/tcp", "tcp_max_buf");
-                if (tcp_max_buf == -1) {
-                    tcp_max_buf = findMaxBuf(fd, opt, SOCK_STREAM);
-                    if (tcp_max_buf == -1) {
-                        return -1;
-                    }
-                }
-                init_tcp_max_buf = 1;
-            } else if (!init_udp_max_buf && sotype == SOCK_DGRAM) {
-                udp_max_buf = net_getParam("/dev/udp", "udp_max_buf");
-                if (udp_max_buf == -1) {
-                    udp_max_buf = findMaxBuf(fd, opt, SOCK_DGRAM);
-                    if (udp_max_buf == -1) {
-                        return -1;
-                    }
-                }
-                init_udp_max_buf = 1;
-            }
-
-            maxbuf = (sotype == SOCK_STREAM) ? tcp_max_buf : udp_max_buf;
-            bufsize = (int *)arg;
-            if (*bufsize > maxbuf) {
-                *bufsize = maxbuf;
-            }
-        }
-    }
-#endif
-
 #ifdef _AIX
     if (level == SOL_SOCKET) {
         if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
@@ -908,19 +675,10 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
  *
  * Linux allows a socket to bind to 127.0.0.255 which must be
  * caught.
- *
- * On Solaris with IPv6 enabled we must use an exclusive
- * bind to guarantee a unique port number across the IPv4 and
- * IPv6 port spaces.
- *
  */
 int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 {
-#if defined(__solaris__)
-    int level = -1;
-    int exclbind = -1;
-#endif
     int rv;
     int arg, alen;
 
@@ -938,60 +696,7 @@ NET_Bind(int fd, SOCKETADDRESS *sa, int len)
     }
 #endif
 
-#if defined(__solaris__)
-    /*
-     * Solaris has separate IPv4 and IPv6 port spaces so we
-     * use an exclusive bind when SO_REUSEADDR is not used to
-     * give the illusion of a unified port space.
-     * This also avoids problems with IPv6 sockets connecting
-     * to IPv4 mapped addresses whereby the socket conversion
-     * results in a late bind that fails because the
-     * corresponding IPv4 port is in use.
-     */
-    alen = sizeof(arg);
-
-    if (useExclBind ||
-        getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&arg, &alen) == 0)
-    {
-        if (useExclBind || arg == 0) {
-            /*
-             * SO_REUSEADDR is disabled or sun.net.useExclusiveBind
-             * property is true so enable TCP_EXCLBIND or
-             * UDP_EXCLBIND
-             */
-            alen = sizeof(arg);
-            if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&arg, &alen) == 0)
-            {
-                if (arg == SOCK_STREAM) {
-                    level = IPPROTO_TCP;
-                    exclbind = TCP_EXCLBIND;
-                } else {
-                    level = IPPROTO_UDP;
-                    exclbind = UDP_EXCLBIND;
-                }
-            }
-
-            arg = 1;
-            setsockopt(fd, level, exclbind, (char *)&arg, sizeof(arg));
-        }
-    }
-
-#endif
-
     rv = bind(fd, &sa->sa, len);
-
-#if defined(__solaris__)
-    if (rv < 0) {
-        int en = errno;
-        /* Restore *_EXCLBIND if the bind fails */
-        if (exclbind != -1) {
-            int arg = 0;
-            setsockopt(fd, level, exclbind, (char *)&arg,
-                       sizeof(arg));
-        }
-        errno = en;
-    }
-#endif
 
     return rv;
 }

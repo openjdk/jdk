@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,9 +256,6 @@ void mlib_ImageCopy_bit_na(const mlib_u8 *sa,
   }
 
   if (j < size) lsrc1 = sp[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; j <= size - 64; j += 64) {
     lsrc0 = lsrc1;
     lsrc1 = sp[1];
@@ -387,9 +384,6 @@ void mlib_ImageCopy_bit_na_r(const mlib_u8 *sa,
 #ifdef _LITTLE_ENDIAN
   src1 = (src1 << 24) | ((src1 & 0xFF00) << 8) | ((src1 >> 8) & 0xFF00) | (src1 >> 24);
 #endif /* _LITTLE_ENDIAN */
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; j <= size - 32; j += 32) {
     src0 = src1;
     src1 = sp[-1];
@@ -478,9 +472,6 @@ void mlib_ImageCopy_bit_na_r(const mlib_u8 *sa,
   }
 
   if (j < size) lsrc1 = sp[0];
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
   for (; j <= size - 64; j += 64) {
     lsrc0 = lsrc1;
     lsrc1 = sp[-1];

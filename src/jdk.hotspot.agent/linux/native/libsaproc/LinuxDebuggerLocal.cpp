@@ -52,10 +52,6 @@
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
 #endif
 
-#if defined(sparc) || defined(sparcv9)
-#include "sun_jvm_hotspot_debugger_sparc_SPARCThreadContext.h"
-#endif
-
 #if defined(ppc64) || defined(ppc64le)
 #include "sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext.h"
 #endif
@@ -405,7 +401,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   return (err == PS_OK)? array : 0;
 }
 
-#if defined(i586) || defined(amd64) || defined(sparc) || defined(sparcv9) | defined(ppc64) || defined(ppc64le) || defined(aarch64)
+#if defined(i586) || defined(amd64) || defined(ppc64) || defined(ppc64le) || defined(aarch64)
 extern "C"
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jint lwp_id) {
@@ -430,9 +426,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
 #endif
 #ifdef aarch64
 #define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
-#endif
-#if defined(sparc) || defined(sparcv9)
-#define NPRGREG sun_jvm_hotspot_debugger_sparc_SPARCThreadContext_NPRGREG
 #endif
 #if defined(ppc64) || defined(ppc64le)
 #define NPRGREG sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext_NPRGREG
@@ -496,39 +489,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   regs[REG_INDEX(GS)] = gregs.gs;
 
 #endif /* amd64 */
-
-#if defined(sparc) || defined(sparcv9)
-
-#define REG_INDEX(reg) sun_jvm_hotspot_debugger_sparc_SPARCThreadContext_##reg
-
-#ifdef _LP64
-  regs[REG_INDEX(R_PSR)] = gregs.tstate;
-  regs[REG_INDEX(R_PC)]  = gregs.tpc;
-  regs[REG_INDEX(R_nPC)] = gregs.tnpc;
-  regs[REG_INDEX(R_Y)]   = gregs.y;
-#else
-  regs[REG_INDEX(R_PSR)] = gregs.psr;
-  regs[REG_INDEX(R_PC)]  = gregs.pc;
-  regs[REG_INDEX(R_nPC)] = gregs.npc;
-  regs[REG_INDEX(R_Y)]   = gregs.y;
-#endif
-  regs[REG_INDEX(R_G0)]  =            0 ;
-  regs[REG_INDEX(R_G1)]  = gregs.u_regs[0];
-  regs[REG_INDEX(R_G2)]  = gregs.u_regs[1];
-  regs[REG_INDEX(R_G3)]  = gregs.u_regs[2];
-  regs[REG_INDEX(R_G4)]  = gregs.u_regs[3];
-  regs[REG_INDEX(R_G5)]  = gregs.u_regs[4];
-  regs[REG_INDEX(R_G6)]  = gregs.u_regs[5];
-  regs[REG_INDEX(R_G7)]  = gregs.u_regs[6];
-  regs[REG_INDEX(R_O0)]  = gregs.u_regs[7];
-  regs[REG_INDEX(R_O1)]  = gregs.u_regs[8];
-  regs[REG_INDEX(R_O2)]  = gregs.u_regs[ 9];
-  regs[REG_INDEX(R_O3)]  = gregs.u_regs[10];
-  regs[REG_INDEX(R_O4)]  = gregs.u_regs[11];
-  regs[REG_INDEX(R_O5)]  = gregs.u_regs[12];
-  regs[REG_INDEX(R_O6)]  = gregs.u_regs[13];
-  regs[REG_INDEX(R_O7)]  = gregs.u_regs[14];
-#endif /* sparc */
 
 #if defined(aarch64)
 

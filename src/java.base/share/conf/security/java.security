@@ -60,12 +60,6 @@
 #
 # List of providers and their preference orders (see above):
 #
-#ifdef solaris
-# Note: The OracleUcrypto provider is deprecated and subject to removal in
-# a future version of the JDK.
-security.provider.tbd=OracleUcrypto
-security.provider.tbd=SunPKCS11 ${java.home}/conf/security/sunpkcs11-solaris.cfg
-#endif
 security.provider.tbd=SUN
 security.provider.tbd=SunRsaSign
 security.provider.tbd=SunEC
@@ -83,9 +77,7 @@ security.provider.tbd=SunMSCAPI
 #ifdef macosx
 security.provider.tbd=Apple
 #endif
-#ifndef solaris
 security.provider.tbd=SunPKCS11
-#endif
 
 #
 # A list of preferred providers for specific algorithms. These providers will
@@ -119,12 +111,6 @@ security.provider.tbd=SunPKCS11
 #   jdk.security.provider.preferred=AES/GCM/NoPadding:SunJCE, \
 #         MessageDigest.SHA-256:SUN, Group.HmacSHA2:SunJCE
 #
-#ifdef solaris-sparc
-# Optional Solaris-SPARC configuration for non-FIPS 140 configurations.
-#   jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
-#   HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE
-#
-#endif
 #jdk.security.provider.preferred=
 
 
@@ -135,7 +121,7 @@ security.provider.tbd=SunPKCS11
 # and "DRBG" SecureRandom implementations in the "Sun" provider.
 # (Other SecureRandom implementations might also use this property.)
 #
-# On Unix-like systems (for example, Solaris/Linux/MacOS), the
+# On Unix-like systems (for example, Linux/MacOS), the
 # "NativePRNG", "SHA1PRNG" and "DRBG" implementations obtains seed data from
 # special device files such as file:/dev/random.
 #

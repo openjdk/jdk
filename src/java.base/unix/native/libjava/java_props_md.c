@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,27 +313,6 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         }
 #endif
 
-#ifdef __solaris__
-        if (strcmp(p,"eucJP") == 0) {
-            /* For Solaris use customized vendor defined character
-             * customized EUC-JP converter
-             */
-            *std_encoding = "eucJP-open";
-        } else if (strcmp(p, "Big5") == 0 || strcmp(p, "BIG5") == 0) {
-            /*
-             * Remap the encoding string to Big5_Solaris which augments
-             * the default converter for Solaris Big5 locales to include
-             * seven additional ideographic characters beyond those included
-             * in the Java "Big5" converter.
-             */
-            *std_encoding = "Big5_Solaris";
-        } else if (strcmp(p, "Big5-HKSCS") == 0) {
-            /*
-             * Solaris uses HKSCS2001
-             */
-            *std_encoding = "Big5-HKSCS-2001";
-        }
-#endif
 #ifdef MACOSX
         /*
          * For the case on MacOS X where encoding is set to US-ASCII, but we

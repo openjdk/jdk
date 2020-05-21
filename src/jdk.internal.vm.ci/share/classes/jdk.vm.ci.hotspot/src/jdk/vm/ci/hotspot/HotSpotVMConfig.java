@@ -58,8 +58,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
             case "x86_64":
                 return "amd64";
 
-            case "sparcv9":
-                return "sparc";
             default:
                 return arch;
         }

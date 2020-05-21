@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -693,10 +693,6 @@ BilinearInterp(jint *pRGB, jint numpix,
         val += max;           /* range is now [0 -> max] */ \
     } while (0)
 
-#ifdef __sparc
-/* For sparc, floating point multiplies are faster than integer */
-#define BICUBIC_USE_DBL_LUT
-#else
 /* For x86, integer multiplies are faster than floating point */
 /* Note that on x86 Linux the choice of best algorithm varies
  * depending on the compiler optimization and the processor type.
@@ -706,7 +702,6 @@ BilinearInterp(jint *pRGB, jint numpix,
  * build until the (lack of) optimization issues on Linux are resolved.
  */
 #define BICUBIC_USE_INT_MATH
-#endif
 
 #ifdef BICUBIC_USE_DBL_CAST
 

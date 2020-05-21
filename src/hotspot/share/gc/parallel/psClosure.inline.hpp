@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ private:
   template <class T> void do_oop_work(T *p) {
     if (PSScavenge::should_scavenge(p)) {
       // We never card mark roots, maybe call a func without test?
-      _promotion_manager->copy_and_push_safe_barrier<T, promote_immediately>(p);
+      _promotion_manager->copy_and_push_safe_barrier<promote_immediately>(p);
     }
   }
 public:

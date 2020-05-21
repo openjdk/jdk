@@ -26,7 +26,6 @@
  * @bug 8048357
  * @summary PKCS8 Standards Conformance Tests
  * @library /test/lib
- * @requires (os.family != "solaris")
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  *          java.base/sun.security.provider
@@ -35,10 +34,6 @@
  * @run main PKCS8Test
  */
 
-/*
- * Skip Solaris since the DSAPrivateKeys returned by
- * SunPKCS11 Provider are not subclasses of PKCS8Key
- */
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;

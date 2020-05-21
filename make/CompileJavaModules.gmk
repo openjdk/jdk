@@ -53,14 +53,7 @@ java.base_EXCLUDES += java/lang/doc-files
 # data files and shouldn't go in the product
 java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
-ifeq ($(call isTargetOs, solaris), false)
-  java.base_EXCLUDE_FILES += \
-      SolarisLoginModule.java \
-      SolarisSystem.java \
-      #
-endif
-
-ifeq ($(call isTargetOs, solaris macosx aix), false)
+ifeq ($(call isTargetOs, macosx aix), false)
   java.base_EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
 endif
 
@@ -448,10 +441,8 @@ jdk.internal.vm.compiler_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler \
     #
 
 jdk.internal.vm.compiler_EXCLUDES += \
@@ -461,7 +452,6 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.api.test \
     org.graalvm.compiler.asm.aarch64.test \
     org.graalvm.compiler.asm.amd64.test \
-    org.graalvm.compiler.asm.sparc.test \
     org.graalvm.compiler.asm.test \
     org.graalvm.compiler.core.aarch64.test \
     org.graalvm.compiler.core.amd64.test \
@@ -475,7 +465,6 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.hotspot.jdk15.test \
     org.graalvm.compiler.hotspot.jdk9.test \
     org.graalvm.compiler.hotspot.lir.test \
-    org.graalvm.compiler.hotspot.sparc.test \
     org.graalvm.compiler.hotspot.test \
     org.graalvm.compiler.jtt \
     org.graalvm.compiler.lir.jtt \
@@ -517,10 +506,8 @@ jdk.aot_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler,jdk.aot \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler,jdk.aot \
     #
 
 jdk.aot_EXCLUDES += \

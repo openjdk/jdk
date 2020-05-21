@@ -170,7 +170,7 @@ Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
-#if defined(__linux__) || defined(__APPLE__) || defined(__solaris__)
+#if defined(__linux__) || defined(__APPLE__)
     /* IPv6 sockets can join IPv4 multicast groups */
     return JNI_TRUE;
 #else
@@ -182,7 +182,7 @@ Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
 {
-#if defined(__APPLE__) || defined(__solaris__)
+#if defined(__APPLE__)
     /* IPV6_ADD_MEMBERSHIP can be used to join IPv4 multicast groups */
     return JNI_TRUE;
 #else

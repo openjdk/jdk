@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @requires os.family != "windows" & os.family != "aix"
  *
  * @summary converted from VM testbase runtime/signal/sigfpe01.
- * VM testbase keywords: [signal, runtime, linux, solaris, macosx]
+ * VM testbase keywords: [signal, runtime, linux, macosx]
  *
-  * @library /test/lib
+ * @library /test/lib
  * @run main/native SigTestDriver SIGFPE
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,26 +117,6 @@ public class TestTotalSwap {
             String swapSizeStr = ProcessTools.executeCommand("free", "-b")
                                              .firstMatch("Swap:\\s+([0-9]+)\\s+.*", 1);
             return Long.parseLong(swapSizeStr);
-        } else if (Platform.isSolaris()) {
-            // swapfile             dev   swaplo blocks   free
-            // /dev/dsk/c0t0d0s1   136,1      16 1638608 1600528
-            OutputAnalyzer out= ProcessTools.executeCommand(
-                    "/usr/sbin/swap",
-                    "-l"
-            );
-
-            long swapSize = 0;
-
-            for (String line : out.asLines()) {
-                if (line.contains("swapfile")) continue;
-
-                String[] vals = line.split("\\s+");
-                if (vals.length == 5) {
-                    swapSize += Long.parseLong(vals[3]) * 512; // size is reported in 512b blocks
-                }
-            }
-
-            return swapSize;
         } else if (Platform.isOSX()) {
             // total = 8192.00M used = 7471.11M free = 720.89M (encrypted)
             String swapSizeStr = ProcessTools.executeCommand(

@@ -46,7 +46,7 @@ class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
-  ScannerTasksQueue* _task_queue;
+  G1ScannerTasksQueue* _task_queue;
   G1RedirtyCardsQueue _rdcq;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
@@ -202,7 +202,7 @@ public:
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
 
-  inline void steal_and_trim_queue(ScannerTasksQueueSet *task_queues);
+  inline void steal_and_trim_queue(G1ScannerTasksQueueSet *task_queues);
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markWord m);

@@ -35,12 +35,10 @@ PROC_SRC_SUBDIRS := \
     org.graalvm.compiler.core.aarch64 \
     org.graalvm.compiler.core.amd64 \
     org.graalvm.compiler.core.common \
-    org.graalvm.compiler.core.sparc \
     org.graalvm.compiler.debug \
     org.graalvm.compiler.hotspot \
     org.graalvm.compiler.hotspot.aarch64 \
     org.graalvm.compiler.hotspot.amd64 \
-    org.graalvm.compiler.hotspot.sparc \
     org.graalvm.compiler.graph \
     org.graalvm.compiler.java \
     org.graalvm.compiler.lir \
@@ -85,13 +83,11 @@ ADD_EXPORTS := \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.events=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspotvmconfig=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.inittimer=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.services=jdk.internal.vm.compiler \
-    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler \
     #
 
 $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) $(PROCESSOR_JARS)

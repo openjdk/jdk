@@ -13,7 +13,6 @@ programs you received.  If you do not wish to install the Elliptic Curve
 Cryptography library, you may delete the Elliptic Curve Cryptography library by 
 removing:
 
-      Solaris:  $(JAVA_HOME)/lib/libsunec.so
       Linux:    $(JAVA_HOME)/lib/libsunec.so
       macOS:    $(JAVA_HOME)/lib/libsunec.dylib
       Windows:  $(JAVA_HOME)\bin\sunec.dll

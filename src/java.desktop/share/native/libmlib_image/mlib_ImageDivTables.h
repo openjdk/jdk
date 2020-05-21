@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifdef __DIV_TABLE_DEFINED
-
-#ifdef __SUNPRO_C
-#pragma align 64 (mlib_div6_tab)
-#pragma align 64 (mlib_div1_tab)
-#pragma align 64 (mlib_HSL2RGB_L2)
-#pragma align 64 (mlib_HSL2RGB_F)
-#pragma align 64 (mlib_U82F32)
-#pragma align 64 (mlib_FlipAndFixRotateTable)
-#endif /* __SUNPRO_C */
 
 const mlib_u16 mlib_div6_tab[];
 const mlib_u16 mlib_div1_tab[];

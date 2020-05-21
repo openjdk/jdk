@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,21 +109,6 @@ public class TestSignatures extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-
-        /*
-         * Use Solaris SPARC 11.2 or later to avoid an intermittent failure
-         * when running SunPKCS11-Solaris (8044554)
-         */
-        if (p.getName().equals("SunPKCS11-Solaris") &&
-            props.getProperty("os.name").equals("SunOS") &&
-            props.getProperty("os.arch").equals("sparcv9") &&
-            props.getProperty("os.version").compareTo("5.11") <= 0 &&
-            getDistro().compareTo("11.2") < 0) {
-
-            System.out.println("SunPKCS11-Solaris provider requires " +
-                "Solaris SPARC 11.2 or later, skipping");
-            return;
-        }
 
         long start = System.currentTimeMillis();
         provider = p;

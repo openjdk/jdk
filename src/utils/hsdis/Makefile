@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # The Universal Permissive License (UPL), Version 1.0
@@ -44,37 +44,13 @@
 #
 #
 
-# Single gnu makefile for solaris, linux and windows (windows requires cygwin and mingw)
+# Single gnu makefile for linux and windows (windows requires cygwin and mingw)
 
 # Default arch; it is changed below as needed.
 ARCH		= i386
 OS		= $(shell uname)
 AR		= ar
 
-## OS = SunOS ##
-ifeq		($(OS),SunOS)
-CPU             = $(shell uname -p)
-ARCH1=$(CPU:i586=i386)
-ARCH=$(ARCH1:i686=i386)
-OS		= solaris
-CC 		= cc
-CFLAGS		+= -KPIC
-ifdef LP64
-ifeq ($(ARCH),sparc)
-ARCH            = sparcv9
-endif
-ifeq ($(ARCH),i386)
-ARCH            = amd64
-endif
-endif
-CFLAGS/sparcv9	+= -xarch=v9
-CFLAGS/amd64	+= -m64
-CFLAGS		+= $(CFLAGS/$(ARCH))
-DLDFLAGS	+= -G
-LDFLAGS         += -ldl
-OUTFLAGS	+= -o $@
-LIB_EXT		= .so
-else
 ## OS = Linux ##
 ifeq		($(OS),Linux)
 ifneq           ($(MINGW),)
@@ -92,20 +68,17 @@ CONFIGURE_ARGS= --host=$(MINGW) --target=$(MINGW)
 else   #linux
 CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
-ARCH2=$(ARCH1:i686=i386)
-ARCH=$(ARCH2:sparc64=sparcv9)
+ARCH=$(ARCH1:i686=i386)
 ifdef LP64
-CFLAGS/sparcv9	+= -m64
 CFLAGS/amd64	+= -m64
 CFLAGS/ppc64	+= -m64
 CFLAGS/ppc64le  += -m64 -DABI_ELFv2
 else
-ARCH=$(ARCH2:amd64=i386)
+ARCH=$(ARCH1:amd64=i386)
 ifneq ($(findstring arm,$(ARCH)),)
 ARCH=arm
 endif
 CFLAGS/i386	+= -m32
-CFLAGS/sparc	+= -m32
 endif
 CFLAGS		+= $(CFLAGS/$(ARCH))
 CFLAGS		+= -fPIC
@@ -136,12 +109,10 @@ CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
 ARCH=$(ARCH1:i686=i386)
 ifdef LP64
-CFLAGS/sparcv9  += -m64
 CFLAGS/amd64    += -m64
 else
 ARCH=$(ARCH1:amd64=i386)
 CFLAGS/i386     += -m32
-CFLAGS/sparc    += -m32
 endif # LP64
 CFLAGS          += $(CFLAGS/$(ARCH))
 CFLAGS          += -fPIC
@@ -167,11 +138,9 @@ LIB_EXT		= .dll
 endif   # Darwin
 endif   # AIX
 endif	# Linux
-endif	# SunOS
 
 LIBARCH		= $(ARCH)
 ifdef		LP64
-LIBARCH64/sparc	= sparcv9
 LIBARCH64/i386	= amd64
 LIBARCH64	= $(LIBARCH64/$(ARCH))
 ifneq		($(LIBARCH64),)

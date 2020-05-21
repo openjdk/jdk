@@ -3488,12 +3488,6 @@ BytecodeInterpreter::print() {
   tty->print_cr("stack_base: " INTPTR_FORMAT, (uintptr_t) this->_stack_base);
   tty->print_cr("stack_limit: " INTPTR_FORMAT, (uintptr_t) this->_stack_limit);
   tty->print_cr("monitor_base: " INTPTR_FORMAT, (uintptr_t) this->_monitor_base);
-#ifdef SPARC
-  tty->print_cr("last_Java_pc: " INTPTR_FORMAT, (uintptr_t) this->_last_Java_pc);
-  tty->print_cr("frame_bottom: " INTPTR_FORMAT, (uintptr_t) this->_frame_bottom);
-  tty->print_cr("&native_fresult: " INTPTR_FORMAT, (uintptr_t) &this->_native_fresult);
-  tty->print_cr("native_lresult: " INTPTR_FORMAT, (uintptr_t) this->_native_lresult);
-#endif
 #if !defined(ZERO) && defined(PPC)
   tty->print_cr("last_Java_fp: " INTPTR_FORMAT, (uintptr_t) this->_last_Java_fp);
 #endif // !ZERO

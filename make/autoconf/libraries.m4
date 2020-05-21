@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -101,14 +101,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_LIBFFI
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
-  LIB_SETUP_SOLARIS_STLPORT
   LIB_TESTS_SETUP_GRAALUNIT
-
-  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    GLOBAL_LIBS="-lc"
-  else
-    GLOBAL_LIBS=""
-  fi
 
   BASIC_JDKLIB_LIBS=""
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
@@ -119,26 +112,18 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   BASIC_JVM_LIBS="$LIBM"
 
   # Dynamic loading library
-  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xaix; then
+  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBDL"
   fi
 
   # Threading library
   if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
-  elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lthread"
   fi
 
   # perfstat lib
   if test "x$OPENJDK_TARGET_OS" = xaix; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lperfstat"
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lsocket -lsched -ldoor -ldemangle -lnsl \
-        -lrt -lkstat"
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBCXX_JVM"
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
@@ -158,7 +143,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   AC_SUBST(JVM_LIBS)
   AC_SUBST(OPENJDK_BUILD_JDKLIB_LIBS)
   AC_SUBST(OPENJDK_BUILD_JVM_LIBS)
-  AC_SUBST(GLOBAL_LIBS)
 ])
 
 ################################################################################
@@ -188,29 +172,4 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   # Control if libzip can use mmap. Available for purposes of overriding.
   LIBZIP_CAN_USE_MMAP=true
   AC_SUBST(LIBZIP_CAN_USE_MMAP)
-])
-
-################################################################################
-# libstlport.so.1 is needed for running gtest on Solaris. Find it to
-# redistribute it in the test image.
-################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
-[
-  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
-    # Find the root of the Solaris Studio installation from the compiler path
-    SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
-    STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
-    AC_MSG_CHECKING([for libstlport.so.1])
-    if ! test -f "$STLPORT_LIB" && test "x$OPENJDK_TARGET_CPU_ISADIR" = "x/sparcv9"; then
-      # SS12u3 has libstlport under 'stlport4/v9' instead of 'stlport4/sparcv9'
-      STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4/v9/libstlport.so.1"
-    fi
-    if test -f "$STLPORT_LIB"; then
-      AC_MSG_RESULT([yes, $STLPORT_LIB])
-      UTIL_FIXUP_PATH([STLPORT_LIB])
-    else
-      AC_MSG_RESULT([no, not found at $STLPORT_LIB, cannot build Hotspot gtests])
-    fi
-    AC_SUBST(STLPORT_LIB)
-  fi
 ])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,59 +68,7 @@ public class MFontConfiguration extends FontConfiguration {
      */
     protected void initReorderMap() {
         reorderMap = new HashMap<>();
-        if (osName == null) {  /* null means SunOS */
-            initReorderMapForSolaris();
-        } else {
-            initReorderMapForLinux();
-        }
-    }
 
-    private void initReorderMapForSolaris() {
-        /* Don't create a no-op entry, so we can optimize this case
-         * i.e. we don't need to do anything so can avoid slower paths in
-         * the code.
-         */
-//      reorderMap.put("UTF-8", "latin-1");
-        reorderMap.put("UTF-8.hi", "devanagari"); // NB is in Lucida.
-        reorderMap.put("UTF-8.ja",
-                       split("japanese-x0201,japanese-x0208,japanese-x0212"));
-        reorderMap.put("UTF-8.ko", "korean-johab");
-        reorderMap.put("UTF-8.th", "thai");
-        reorderMap.put("UTF-8.zh.TW", "chinese-big5");
-        reorderMap.put("UTF-8.zh.HK", split("chinese-big5,chinese-hkscs"));
-        reorderMap.put("UTF-8.zh.CN",
-                       split("chinese-gb18030-0,chinese-gb18030-1"));
-        reorderMap.put("UTF-8.zh",
-                       split("chinese-big5,chinese-hkscs,chinese-gb18030-0,chinese-gb18030-1"));
-        reorderMap.put("Big5", "chinese-big5");
-        reorderMap.put("Big5-HKSCS", split("chinese-big5,chinese-hkscs"));
-        reorderMap.put("GB2312", split("chinese-gbk,chinese-gb2312"));
-        reorderMap.put("x-EUC-TW",
-            split("chinese-cns11643-1,chinese-cns11643-2,chinese-cns11643-3"));
-        reorderMap.put("GBK", "chinese-gbk");
-        reorderMap.put("GB18030",split("chinese-gb18030-0,chinese-gb18030-1"));
-
-        reorderMap.put("TIS-620", "thai");
-        reorderMap.put("x-PCK",
-                       split("japanese-x0201,japanese-x0208,japanese-x0212"));
-        reorderMap.put("x-eucJP-Open",
-                       split("japanese-x0201,japanese-x0208,japanese-x0212"));
-        reorderMap.put("EUC-KR", "korean");
-        /* Don't create a no-op entry, so we can optimize this case */
-//      reorderMap.put("ISO-8859-1", "latin-1");
-        reorderMap.put("ISO-8859-2", "latin-2");
-        reorderMap.put("ISO-8859-5", "cyrillic-iso8859-5");
-        reorderMap.put("windows-1251", "cyrillic-cp1251");
-        reorderMap.put("KOI8-R", "cyrillic-koi8-r");
-        reorderMap.put("ISO-8859-6", "arabic");
-        reorderMap.put("ISO-8859-7", "greek");
-        reorderMap.put("ISO-8859-8", "hebrew");
-        reorderMap.put("ISO-8859-9", "latin-5");
-        reorderMap.put("ISO-8859-13", "latin-7");
-        reorderMap.put("ISO-8859-15", "latin-9");
-    }
-
-    private void initReorderMapForLinux() {
         reorderMap.put("UTF-8.ja.JP", "japanese-iso10646");
         reorderMap.put("UTF-8.ko.KR", "korean-iso10646");
         reorderMap.put("UTF-8.zh.TW", "chinese-tw-iso10646");
@@ -131,12 +79,7 @@ public class MFontConfiguration extends FontConfiguration {
         reorderMap.put("GB2312", "chinese-gb18030");
         reorderMap.put("Big5", "chinese-big5");
         reorderMap.put("EUC-KR", "korean");
-        if (osName.equals("Sun")){
-            reorderMap.put("GB18030", "chinese-cn-iso10646");
-        }
-        else {
-            reorderMap.put("GB18030", "chinese-gb18030");
-        }
+        reorderMap.put("GB18030", "chinese-gb18030");
     }
 
     /**
@@ -145,10 +88,7 @@ public class MFontConfiguration extends FontConfiguration {
     protected void setOsNameAndVersion(){
         super.setOsNameAndVersion();
 
-        if (osName.equals("SunOS")) {
-            //don't care os name on Solaris
-            osName = null;
-        } else if (osName.equals("Linux")) {
+        if (osName.equals("Linux")) {
             try {
                 File f;
                 if ((f = new File("/etc/fedora-release")).canRead()) {

@@ -95,7 +95,7 @@ public abstract class AbstractFilePermissionTest {
             return true;
         }
 
-        if (!Platform.isLinux() && !Platform.isSolaris()) {
+        if (!Platform.isLinux()) {
             System.out.println("Test not designed to run on this operating system, skipping...");
             return true;
         }

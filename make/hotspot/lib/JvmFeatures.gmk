@@ -50,9 +50,6 @@ ifeq ($(call check-jvm-feature, zero), true)
   ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
     JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
   endif
-  ifeq ($(call isTargetCpu, sparcv9), true)
-    BUILD_LIBJVM_EXTRA_FILES := $(TOPDIR)/src/hotspot/cpu/sparc/memset_with_concurrent_readers_sparc.cpp
-  endif
 endif
 
 ifeq ($(JVM_VARIANT), custom)

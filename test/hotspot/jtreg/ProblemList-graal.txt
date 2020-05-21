@@ -87,6 +87,7 @@ serviceability/tmtools/jstat/GcTest02.java                      8196611 generic-
 serviceability/tmtools/jstat/GcCapacityTest.java                8196611 generic-all
 
 serviceability/sa/ClhsdbInspect.java                            8230419 generic-all
+serviceability/sa/ClhsdbJstackXcompStress.java                  8244656 generic-all
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all

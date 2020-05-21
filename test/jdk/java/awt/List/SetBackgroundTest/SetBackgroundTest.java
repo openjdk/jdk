@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
   @test
   @bug 6246467
   @key headful
-  @requires (os.family == "linux") | (os.family == "solaris")
+  @requires os.family == "linux"
   @summary List does not honor user specified background, foreground colors on XToolkit
   @author Dmitry Cherepanov  area=awt.list
   @library /lib/client

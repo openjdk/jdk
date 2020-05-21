@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,45 +266,6 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 
     if (timeout <= 0) {
         connect_rv = NET_Connect(fd, &sa.sa, len);
-#ifdef __solaris__
-        if (connect_rv == -1 && errno == EINPROGRESS ) {
-
-            /* This can happen if a blocking connect is interrupted by a signal.
-             * See 6343810.
-             */
-            while (1) {
-                struct pollfd pfd;
-                pfd.fd = fd;
-                pfd.events = POLLOUT;
-
-                connect_rv = NET_Poll(&pfd, 1, -1);
-
-                if (connect_rv == -1) {
-                    if (errno == EINTR) {
-                        continue;
-                    } else {
-                        break;
-                    }
-                }
-                if (connect_rv > 0) {
-                    socklen_t optlen;
-                    /* has connection been established */
-                    optlen = sizeof(connect_rv);
-                    if (getsockopt(fd, SOL_SOCKET, SO_ERROR,
-                                   (void*)&connect_rv, &optlen) <0) {
-                        connect_rv = errno;
-                    }
-
-                    if (connect_rv != 0) {
-                        /* restore errno */
-                        errno = connect_rv;
-                        connect_rv = -1;
-                    }
-                    break;
-                }
-            }
-        }
-#endif
     } else {
         /*
          * A timeout was specified. We put the socket into non-blocking
@@ -893,16 +854,16 @@ Java_java_net_PlainSocketImpl_socketSetOption0
     }
 
     if (NET_SetSockOpt(fd, level, optname, (const void *)&optval, optlen) < 0) {
-#if defined(__solaris__) || defined(_AIX)
+#if defined(_AIX)
         if (errno == EINVAL) {
-            // On Solaris setsockopt will set errno to EINVAL if the socket
+            // On AIX setsockopt will set errno to EINVAL if the socket
             // is closed. The default error message is then confusing
             char fullMsg[128];
             jio_snprintf(fullMsg, sizeof(fullMsg), "Invalid option or socket reset by remote peer");
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
             return;
         }
-#endif /* __solaris__ */
+#endif /* _AIX */
         JNU_ThrowByNameWithMessageAndLastError
             (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
     }

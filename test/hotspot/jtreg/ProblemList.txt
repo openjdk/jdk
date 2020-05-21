@@ -29,10 +29,10 @@
 # List items are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
-#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
-#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
-#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
-#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
+#     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
 #
 # More than one label is allowed but must be on the same line.
 #
@@ -49,9 +49,6 @@ compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
 compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
-
-compiler/types/correctness/CorrectnessTest.java 8225620 solaris-sparcv9
-compiler/types/correctness/OffTest.java         8225620 solaris-sparcv9
 
 compiler/c2/Test6852078.java 8194310 generic-all
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class rfe4758438 implements PropertyChangeListener {
         tool = System.getProperty("tool");
 
         String osName = System.getProperty("os.name");
-        if (!"Linux".equals(osName) && !"SunOS".equals(osName))
+        if (!"Linux".equals(osName))
             System.out.println("This test need not be run on this platform");
         else
             new rfe4758438().doTest();

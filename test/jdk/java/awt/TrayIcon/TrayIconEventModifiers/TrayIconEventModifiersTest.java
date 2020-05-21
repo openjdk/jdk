@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,25 +109,6 @@ public class TrayIconEventModifiersTest {
                         "icon and rerun test.");
 
             System.out.println(System.getProperty("os.arch"));
-            if (System.getProperty("os.name").indexOf("Sun") != -1 &&
-                    System.getProperty("os.arch").indexOf("sparc") != -1) {
-                keyTypes = new int[]{
-                        KeyEvent.VK_SHIFT,
-                        KeyEvent.VK_CONTROL,
-                        KeyEvent.VK_META
-                };
-
-                keyNames = new String[]{
-                        "SHIFT",
-                        "CONTROL",
-                        "META"
-                };
-                keyMasks = new int[]{
-                        KeyEvent.SHIFT_DOWN_MASK,
-                        KeyEvent.CTRL_DOWN_MASK,
-                        KeyEvent.META_DOWN_MASK
-                };
-            }
 
             if (SystemTrayIconHelper.isOel7()) {
                 System.out.println("OEL 7 doesn't support click modifiers in " +

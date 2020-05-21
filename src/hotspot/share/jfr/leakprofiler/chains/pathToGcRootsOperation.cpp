@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all) :
-  _sampler(sampler),_edge_store(edge_store), _cutoff_ticks(cutoff), _emit_all(emit_all) {}
+PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs) :
+  _sampler(sampler),_edge_store(edge_store), _cutoff_ticks(cutoff), _emit_all(emit_all), _skip_bfs(skip_bfs) {}
 
 /* The EdgeQueue is backed by directly managed virtual memory.
  * We will attempt to dimension an initial reservation
@@ -113,7 +113,7 @@ void PathToGcRootsOperation::doit() {
 
   GranularTimer::start(_cutoff_ticks, 1000000);
   roots.process();
-  if (edge_queue.is_full()) {
+  if (edge_queue.is_full() || _skip_bfs) {
     // Pathological case where roots don't fit in queue
     // Do a depth-first search, but mark roots first
     // to avoid walking sideways over roots

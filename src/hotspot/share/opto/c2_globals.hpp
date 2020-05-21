@@ -361,9 +361,6 @@
   product(bool, BranchOnRegister, false,                                    \
           "Use Sparc V9 branch-on-register opcodes")                        \
                                                                             \
-  develop(bool, SparcV9RegsHiBitsZero, true,                                \
-          "Assume Sparc V9 I&L registers on V8+ systems are zero-extended") \
-                                                                            \
   product(bool, UseRDPCForConstantTableBase, false,                         \
           "Use Sparc RDPC instruction for the constant table base.")        \
                                                                             \

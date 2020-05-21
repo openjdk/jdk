@@ -85,8 +85,6 @@ public class TestHelper {
             System.getProperty("sun.arch.data.model").equals("64");
     static final boolean is32Bit =
             System.getProperty("sun.arch.data.model").equals("32");
-    static final boolean isSolaris =
-            System.getProperty("os.name", "unknown").startsWith("SunOS");
     static final boolean isLinux =
             System.getProperty("os.name", "unknown").startsWith("Linux");
     static final boolean isAIX =
@@ -94,8 +92,6 @@ public class TestHelper {
     static final String LIBJVM = isWindows
                         ? "jvm.dll"
                         : "libjvm" + (isMacOSX ? ".dylib" : ".so");
-
-    static final boolean isSparc = System.getProperty("os.arch").startsWith("sparc");
 
     // make a note of the golden default locale
     static final Locale DefaultLocale = Locale.getDefault();

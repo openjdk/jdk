@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ JAVA_OPTS="$TESTJAVAOPTS $TESTVMOPTS -cp $TESTCLASSPATH -agentlib:alloc001"
 # Set virtual memory usage limit to be not 'unlimited' on unix platforms
 # This is workaround for 6683371.
 case $VM_OS in
-aix | bsd | linux | solaris)
+aix | bsd | linux)
     echo "Check virtual memory usage limits"
     soft_limit=`ulimit -S -v` || ""
     hard_limit=`ulimit -H -v` || ""

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1658,7 +1658,7 @@ const mlib_f32 mlib_filters_s16f_bc2[] = {
   -0.0002439022f,    0.2502439022f,  255.9995119572f,   -0.2495119572f
 };
 
-#ifndef __sparc         /* for x86, using integer multiplies is faster */
+/* for x86, using integer multiplies is faster */
 
 /***************************************************************/
 const mlib_s16 mlib_filters_u8_bc[] = {
@@ -3213,5 +3213,3 @@ const mlib_s16 mlib_filters_s16_bc2[] = {
 };
 
 /***************************************************************/
-
-#endif  /* #ifndef __sparc */

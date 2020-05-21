@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,9 +314,6 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
       y2 = (mlib_s32) (dstHeight - 1);
 
     x += slope * (y1 - dY1);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (j = y1; j <= y2; j++) {
       val0 = x;
       SAT32(t);
@@ -358,9 +355,6 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
       y2 = (mlib_s32) (dstHeight - 1);
 
     x += slope * (y1 - dY1);
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
     for (j = y1; j <= y2; j++) {
       val0 = x;
       SAT32(rightEdges[j]);
@@ -402,9 +396,6 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
 
     if (div > 0) {
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = top; i <= bot; i++) {
         mlib_s32 xLeft = leftEdges[i];
         mlib_s32 xRight = rightEdges[i];
@@ -488,9 +479,6 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
     }
     else {
 
-#ifdef __SUNPRO_C
-#pragma pipeloop(0)
-#endif /* __SUNPRO_C */
       for (i = top; i <= bot; i++) {
         mlib_s32 xLeft = leftEdges[i];
         mlib_s32 xRight = rightEdges[i];

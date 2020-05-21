@@ -60,7 +60,7 @@ public class TestOopCmp {
 
         // The test is started with -XX:HeapBaseMinAddress=0x700000000 and a
         // small heap of only 4mb. This works pretty reliable and at least on
-        // Linux/Windows/Solaris we will get a heap starting at 0x700000000.
+        // Linux/Windows we will get a heap starting at 0x700000000.
         // The test also runs with -XX:+UseSerialGC which means that we'll get
         // eden starting at 0x700000000.
         // Calling 'System.gc()' will clean up all the objects from eden, so if

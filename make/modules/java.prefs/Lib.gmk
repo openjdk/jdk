@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_linux := -ljava, \
-    LIBS_solaris := -ljava, \
     LIBS_aix := -ljava, \
     LIBS_macosx := -framework CoreFoundation -framework Foundation, \
     LIBS_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \

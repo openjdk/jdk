@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jclass clazz,
     jint fd = fdval(env, fdo);
     int rv;
 
-#if defined(__solaris__)
-    rv = connect(fd, 0, 0);
-#else
     SOCKETADDRESS sa;
     socklen_t len = isIPv6 ? sizeof(struct sockaddr_in6) :
                              sizeof(struct sockaddr_in);
@@ -77,8 +74,6 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jclass clazz,
     if (rv < 0 && errno == EAFNOSUPPORT)
         rv = errno = 0;
 #endif // defined(_ALLBSD_SOURCE) || defined(_AIX)
-
-#endif // defined(__solaris__)
 
     if (rv < 0)
         handleSocketError(env, errno);

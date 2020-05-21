@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.awt.image.BufferedImage;
  * @test
  * @bug 8188081 8194135
  * @summary  The content in textArea can not be pasted after clicking "Copy" button.
- * @requires (os.family == "linux") | (os.family == "solaris")
+ * @requires os.family == "linux"
  * @key headful
  * @run main MultiSelectionTest
  */

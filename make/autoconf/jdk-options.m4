@@ -291,7 +291,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
   elif test "x$with_native_debug_symbols" = xexternal; then
 
-    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
       if test "x$OBJCOPY" = x; then
         # enabling of enable-debug-symbols and can't find objcopy
         # this is an error
@@ -304,7 +304,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
   elif test "x$with_native_debug_symbols" = xzipped; then
 
-    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
       if test "x$OBJCOPY" = x; then
         # enabling of enable-debug-symbols and can't find objcopy
         # this is an error

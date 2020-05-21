@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ public class NativeOrder {
             ((arch.equals("x86_64") && (bo != ByteOrder.LITTLE_ENDIAN))) ||
             ((arch.equals("ppc64") && (bo != ByteOrder.BIG_ENDIAN))) ||
             ((arch.equals("ppc64le") && (bo != ByteOrder.LITTLE_ENDIAN))) ||
-            ((arch.equals("s390x") && (bo != ByteOrder.BIG_ENDIAN))) ||
-            ((arch.equals("sparc") && (bo != ByteOrder.BIG_ENDIAN)))) {
+            ((arch.equals("s390x") && (bo != ByteOrder.BIG_ENDIAN)))) {
             throw new Exception("Wrong byte order");
         }
         System.err.println("test is OK");

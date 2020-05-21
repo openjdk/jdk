@@ -28,7 +28,7 @@ include LibCommon.gmk
 ################################################################################
 
 LIBMANAGEMENT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, solaris linux), true)
+ifeq ($(call isTargetOs, linux), true)
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBMANAGEMENT_OPTIMIZATION := LOW
   endif
@@ -41,7 +41,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
-    LIBS_solaris := -lkstat, \
     LIBS_aix := -lperfstat,\
     LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
 ))

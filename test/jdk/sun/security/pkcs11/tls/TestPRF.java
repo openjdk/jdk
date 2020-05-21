@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,14 +111,6 @@ public class TestPRF extends PKCS11Test {
                         kg.init(spec);
                         key = kg.generateKey();
                     } catch (Exception e) {
-                        if (secret == null) {
-                            // This fails on Solaris, but since we never call this
-                            // API for this case in JSSE, ignore the failure.
-                            // (SunJSSE uses the CKM_TLS_KEY_AND_MAC_DERIVE
-                            // mechanism)
-                            System.out.print("X");
-                            continue;
-                        }
                         System.out.println();
                         throw new Exception("Error on line: " + lineNumber, e);
                     }

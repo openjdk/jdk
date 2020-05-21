@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,11 @@ JRE_JAVA = $(JRE_IMAGE_DIR)/bin/java
 
 JAVA_BIN = $(BINDIR)/java
 
-all : jars.reorder libs.reorder
+all : jars.reorder
 
 tools : $(OBJDIR) $(OBJDIR)/libmcount.so $(OBJDIR)/remove_mcount
 
-copy : jars.copy libs.copy
+copy : jars.copy
 
 clean : 
 	$(RM) $(REORDER_JAR)
@@ -81,25 +81,6 @@ jars.copy:
 
 REORDER_JAR = $(OUTDIR)/reorder_$(subst .,_,$(JARFILE))-$(PLATFORM)
 reorder.jar : $(REORDER_JAR)
-
-libs.reorder :
-ifeq ($(PLATFORM), solaris)
-	$(MAKE) LIBBLDDIR=java/zip        LIBTMPDIR=sun/java.util.zip/zip   reorder.lib
-	$(MAKE) LIBBLDDIR=java/java       LIBTMPDIR=java/java.lang/java     reorder.lib
-	$(MAKE) LIBBLDDIR=java/nio        LIBTMPDIR=java/java.nio/nio       reorder.lib
-	$(MAKE) LIBBLDDIR=sun/font        LIBTMPDIR=sun/sun.awt.font/fontmanager reorder.lib
-	$(MAKE) LIBBLDDIR=sun/jpeg        LIBTMPDIR=sun/sun.awt/jpeg        reorder.lib
-	$(MAKE) LIBBLDDIR=java/verify     LIBTMPDIR=java/verify             reorder.lib
-endif
-
-libs.copy:
-ifeq ($(PLATFORM), solaris)
-	$(CP) $(OUTDIR)/reorder_java_zip-$(ARCH) ../../java/zip/reorder-$(ARCH)
-	$(CP) $(OUTDIR)/reorder_java_java-$(ARCH) ../../java/java/reorder-$(ARCH)
-	$(CP) $(OUTDIR)/reorder_sun_font-$(ARCH) ../../sun/font/reorder-$(ARCH)
-	$(CP) $(OUTDIR)/reorder_sun_jpeg-$(ARCH) ../../sun/jpeg/reorder-$(ARCH)
-	$(CP) $(OUTDIR)/reorder_java_verify-$(ARCH) ../../java/verify/reorder-$(ARCH)
-endif
 
 REORDER_LIB = $(OUTDIR)/reorder_$(subst /,_,$(LIBBLDDIR))-$(ARCH)
 reorder.lib : $(OBJDIR) $(REORDER_LIB)

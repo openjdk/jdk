@@ -297,7 +297,7 @@ void TieredThresholdPolicy::initialize() {
   }
 #endif
 
-#if defined SPARC || defined AARCH64
+#if defined AARCH64
   if (FLAG_IS_DEFAULT(InlineSmallCode)) {
     FLAG_SET_DEFAULT(InlineSmallCode, 2500);
   }

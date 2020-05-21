@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,31 +222,6 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         return name;
     }
 
-    private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsSysV() {
-        String command = "/usr/bin/lpstat -a " + printer;
-        String[] results= PrintServiceLookupProvider.execCmd(command);
-
-        if (results != null && results.length > 0) {
-            if (results[0].startsWith(printer + " accepting requests")) {
-                return PrinterIsAcceptingJobs.ACCEPTING_JOBS;
-            }
-            else if (results[0].startsWith(printer)) {
-                /* As well as "myprinter accepting requests", look for
-                 * "myprinter@somehost accepting requests".
-                 */
-                int index = printer.length();
-                String str = results[0];
-                if (str.length() > index &&
-                    str.charAt(index) == '@' &&
-                    str.indexOf(" accepting requests", index) > 0 &&
-                    str.indexOf(" not accepting requests", index) == -1) {
-                   return PrinterIsAcceptingJobs.ACCEPTING_JOBS;
-                }
-            }
-        }
-        return PrinterIsAcceptingJobs.NOT_ACCEPTING_JOBS ;
-    }
-
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsBSD() {
         if (PrintServiceLookupProvider.cmdIndex ==
             PrintServiceLookupProvider.UNINITIALIZED) {
@@ -324,9 +299,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobs() {
-        if (PrintServiceLookupProvider.isSysV()) {
-            return getPrinterIsAcceptingJobsSysV();
-        } else if (PrintServiceLookupProvider.isBSD()) {
+        if (PrintServiceLookupProvider.isBSD()) {
             return getPrinterIsAcceptingJobsBSD();
         } else if (PrintServiceLookupProvider.isAIX()) {
             return getPrinterIsAcceptingJobsAIX();
@@ -351,14 +324,6 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         } else {
             return null;
         }
-    }
-
-    private QueuedJobCount getQueuedJobCountSysV() {
-        String command = "/usr/bin/lpstat -R " + printer;
-        String[] results= PrintServiceLookupProvider.execCmd(command);
-        int qlen = (results == null) ? 0 : results.length;
-
-        return new QueuedJobCount(qlen);
     }
 
     private QueuedJobCount getQueuedJobCountBSD() {
@@ -417,22 +382,13 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private QueuedJobCount getQueuedJobCount() {
-        if (PrintServiceLookupProvider.isSysV()) {
-            return getQueuedJobCountSysV();
-        } else if (PrintServiceLookupProvider.isBSD()) {
+        if (PrintServiceLookupProvider.isBSD()) {
             return getQueuedJobCountBSD();
         } else if (PrintServiceLookupProvider.isAIX()) {
             return getQueuedJobCountAIX();
         } else {
             return new QueuedJobCount(0);
         }
-    }
-
-    private PrintServiceAttributeSet getSysVServiceAttributes() {
-        PrintServiceAttributeSet attrs = new HashPrintServiceAttributeSet();
-        attrs.add(getQueuedJobCountSysV());
-        attrs.add(getPrinterIsAcceptingJobsSysV());
-        return attrs;
     }
 
     private PrintServiceAttributeSet getBSDServiceAttributes() {
@@ -472,9 +428,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private PrintServiceAttributeSet getDynamicAttributes() {
-        if (PrintServiceLookupProvider.isSysV()) {
-            return getSysVServiceAttributes();
-        } else if (PrintServiceLookupProvider.isAIX()) {
+        if (PrintServiceLookupProvider.isAIX()) {
             return getAIXServiceAttributes();
         } else {
             return getBSDServiceAttributes();

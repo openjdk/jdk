@@ -98,8 +98,8 @@ class G1HeapSizingPolicy;
 class G1HeapSummary;
 class G1EvacSummary;
 
-typedef OverflowTaskQueue<ScannerTask, mtGC>         ScannerTasksQueue;
-typedef GenericTaskQueueSet<ScannerTasksQueue, mtGC> ScannerTasksQueueSet;
+typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
+typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
@@ -815,7 +815,7 @@ public:
   G1ConcurrentRefine* _cr;
 
   // The parallel task queues
-  ScannerTasksQueueSet *_task_queues;
+  G1ScannerTasksQueueSet *_task_queues;
 
   // True iff a evacuation has failed in the current collection.
   bool _evacuation_failed;
@@ -952,7 +952,7 @@ public:
   G1CMSubjectToDiscoveryClosure _is_subject_to_discovery_cm;
 public:
 
-  ScannerTasksQueue* task_queue(uint i) const;
+  G1ScannerTasksQueue* task_queue(uint i) const;
 
   uint num_task_queues() const;
 
@@ -1479,18 +1479,18 @@ private:
 protected:
   G1CollectedHeap*              _g1h;
   G1ParScanThreadState*         _par_scan_state;
-  ScannerTasksQueueSet*         _queues;
+  G1ScannerTasksQueueSet*       _queues;
   TaskTerminator*               _terminator;
   G1GCPhaseTimes::GCParPhases   _phase;
 
   G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
-  ScannerTasksQueueSet*   queues()         { return _queues; }
+  G1ScannerTasksQueueSet* queues()         { return _queues; }
   TaskTerminator*         terminator()     { return _terminator; }
 
 public:
   G1ParEvacuateFollowersClosure(G1CollectedHeap* g1h,
                                 G1ParScanThreadState* par_scan_state,
-                                ScannerTasksQueueSet* queues,
+                                G1ScannerTasksQueueSet* queues,
                                 TaskTerminator* terminator,
                                 G1GCPhaseTimes::GCParPhases phase)
     : _start_term(0.0), _term_time(0.0), _term_attempts(0),
