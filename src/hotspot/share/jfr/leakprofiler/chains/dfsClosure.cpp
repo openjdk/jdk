@@ -37,26 +37,8 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
-// max dfs depth should not exceed size of stack
-static const size_t max_dfs_depth = 5000;
-
-EdgeStore* DFSClosure::_edge_store = NULL;
-BitSet* DFSClosure::_mark_bits = NULL;
-const Edge* DFSClosure::_start_edge = NULL;
-size_t DFSClosure::_max_depth = max_dfs_depth;
-bool DFSClosure::_ignore_root_set = false;
-
-DFSClosure::DFSClosure() :
-  _parent(NULL),
-  _reference(UnifiedOopRef::encode_null()),
-  _depth(0) {
-}
-
-DFSClosure::DFSClosure(DFSClosure* parent, size_t depth) :
-  _parent(parent),
-  _reference(UnifiedOopRef::encode_null()),
-  _depth(depth) {
-}
+ // max dfs depth should not exceed size of stack
+static const size_t max_dfs_depth = 4000;
 
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
                                       BitSet* mark_bits,
@@ -65,14 +47,8 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
   assert(mark_bits != NULL," invariant");
   assert(start_edge != NULL, "invariant");
 
-  _edge_store = edge_store;
-  _mark_bits = mark_bits;
-  _start_edge = start_edge;
-  _ignore_root_set = false;
-  assert(_max_depth == max_dfs_depth, "invariant");
-
   // Depth-first search, starting from a BFS egde
-  DFSClosure dfs;
+  DFSClosure dfs(edge_store, mark_bits, start_edge);
   start_edge->pointee()->oop_iterate(&dfs);
 }
 
@@ -81,22 +57,26 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL, "invariant");
 
-  _edge_store = edge_store;
-  _mark_bits = mark_bits;
-  _start_edge = NULL;
-
   // Mark root set, to avoid going sideways
-  _max_depth = 1;
-  _ignore_root_set = false;
-  DFSClosure dfs;
+  DFSClosure dfs(edge_store, mark_bits, NULL);
+  dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
   rs.process();
 
   // Depth-first search
-  _max_depth = max_dfs_depth;
-  _ignore_root_set = true;
-  assert(_start_edge == NULL, "invariant");
+  dfs._max_depth = max_dfs_depth;
+  dfs._ignore_root_set = true;
   rs.process();
+}
+
+DFSClosure::DFSClosure(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge)
+  :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
+  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
+  _reference_stack = NEW_C_HEAP_ARRAY(UnifiedOopRef, max_dfs_depth, mtTracing);
+}
+
+DFSClosure::~DFSClosure() {
+  FREE_C_HEAP_ARRAY(UnifiedOopRef, _reference_stack);
 }
 
 void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
@@ -104,19 +84,18 @@ void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   assert(!reference.is_null(), "invariant");
 
   if (GranularTimer::is_finished()) {
-     return;
+    return;
   }
   if (_depth == 0 && _ignore_root_set) {
     // Root set is already marked, but we want
     // to continue, so skip is_marked check.
     assert(_mark_bits->is_marked(pointee), "invariant");
-  } else {
+  }  else {
     if (_mark_bits->is_marked(pointee)) {
       return;
     }
   }
-
-  _reference = reference;
+  _reference_stack[_depth] = reference;
   _mark_bits->mark_obj(pointee);
   assert(_mark_bits->is_marked(pointee), "invariant");
 
@@ -127,8 +106,10 @@ void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
 
   assert(_max_depth >= 1, "invariant");
   if (_depth < _max_depth - 1) {
-    DFSClosure next_level(this, _depth + 1);
-    pointee->oop_iterate(&next_level);
+    _depth++;
+    pointee->oop_iterate(this);
+    assert(_depth > 0, "invariant");
+    _depth--;
   }
 }
 
@@ -140,11 +121,10 @@ void DFSClosure::add_chain() {
   size_t idx = 0;
 
   // aggregate from depth-first search
-  const DFSClosure* c = this;
-  while (c != NULL) {
+  for (size_t i = 0; i <= _depth; i++) {
     const size_t next = idx + 1;
-    chain[idx++] = Edge(&chain[next], c->reference());
-    c = c->parent();
+    const size_t depth = _depth - i;
+    chain[idx++] = Edge(&chain[next], _reference_stack[depth]);
   }
   assert(_depth + 1 == idx, "invariant");
   assert(array_length == idx + 1, "invariant");
