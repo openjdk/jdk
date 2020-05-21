@@ -36,23 +36,19 @@ class EdgeQueue;
 // Class responsible for iterating the heap depth-first
 class DFSClosure : public BasicOopIterateClosure {
  private:
-  static EdgeStore* _edge_store;
-  static BitSet*    _mark_bits;
-  static const Edge*_start_edge;
-  static size_t _max_depth;
-  static bool _ignore_root_set;
-  DFSClosure* _parent;
-  UnifiedOopRef _reference;
+  EdgeStore* _edge_store;
+  BitSet* _mark_bits;
+  const Edge*_start_edge;
+  size_t _max_depth;
   size_t _depth;
+  bool _ignore_root_set;
+  UnifiedOopRef* _reference_stack;
+
+  DFSClosure(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge);
+  ~DFSClosure();
 
   void add_chain();
   void closure_impl(UnifiedOopRef reference, const oop pointee);
-
-  DFSClosure* parent() const { return _parent; }
-  UnifiedOopRef reference() const { return _reference; }
-
-  DFSClosure(DFSClosure* parent, size_t depth);
-  DFSClosure();
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }

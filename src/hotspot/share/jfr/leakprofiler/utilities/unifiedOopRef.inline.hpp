@@ -85,7 +85,8 @@ inline UnifiedOopRef UnifiedOopRef::encode_in_heap(const oop* ref) {
 }
 
 inline UnifiedOopRef UnifiedOopRef::encode_null() {
-  return UnifiedOopRef();
+  UnifiedOopRef result = { 0 };
+  return result;
 }
 
 inline oop UnifiedOopRef::dereference() const {
