@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -246,9 +246,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Jamaica">
 				<exemplarCity>Jamaika</exemplarCity>
-			</zone>
-			<zone type="Asia/Qostanay">
-				<exemplarCity>Kostanay</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
 				<exemplarCity>Kolombo</exemplarCity>
@@ -1185,7 +1182,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">R☉ {0}</unitPattern>
 				<unitPattern count="other">R☉ {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">inHg {0}</unitPattern>
 				<unitPattern count="other">inHg {0}</unitPattern>
 			</unit>

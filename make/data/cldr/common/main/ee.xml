@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -74,7 +74,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Yevugbe (Australia)</language>
 			<language type="en_CA">Yevugbe (Canada)</language>
 			<language type="en_GB">Yevugbe (Britain)</language>
+			<language type="en_GB" alt="short">Yevugbe (GB)</language>
 			<language type="en_US">Yevugbe (America)</language>
+			<language type="en_US" alt="short">Yevugbe (US)</language>
 			<language type="eo">esperantogbe</language>
 			<language type="es">Spanishgbe</language>
 			<language type="es_419">Spanishgbe (Latin America)</language>
@@ -4253,7 +4255,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolk Island gaƒoƒo me</standard>
+					<generic draft="contributed">Norfolk Island gaƒoƒo me</generic>
+					<standard draft="contributed">Norfolk Island nutome gaƒoƒo me</standard>
+					<daylight draft="contributed">Norfolk Island dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">

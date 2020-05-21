@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -87,7 +87,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="zero" draft="contributed">{0} متر في الثانية المربعة</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} متر في الثانية المربعة</unitPattern>
 				<unitPattern count="two" draft="contributed">متران في الثانية المربعة</unitPattern>
@@ -175,7 +175,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" draft="contributed">{0} بوصة مربعة</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} بوصة مربعة</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<unitPattern count="zero" draft="contributed">{0} جزء في المليون</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} جزء في المليون</unitPattern>
 				<unitPattern count="two" draft="contributed">جزءان في المليون</unitPattern>
@@ -343,7 +343,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" draft="contributed">{0} كتلة شمسية</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} كتلة شمسية</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="zero" draft="contributed">{0} رطل لكل بوصة مربعة</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} رطل لكل بوصة مربعة</unitPattern>
 				<unitPattern count="two" draft="contributed">رطلان لكل بوصة مربعة</unitPattern>
@@ -513,7 +513,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" draft="contributed">{0} قيراطًا</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} قيراط</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<unitPattern count="zero" draft="contributed">{0} جزء/مليون</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} جزء/مليون</unitPattern>
 				<unitPattern count="two" draft="contributed">جزءان/مليون</unitPattern>
@@ -529,7 +529,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" draft="contributed">{0} لترًا/كم</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} لتر/كم</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="zero" draft="contributed">{0} لتر/١٠٠ كم</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} لتر/١٠٠ كم</unitPattern>
 				<unitPattern count="two" draft="contributed">لتران/١٠٠ كم</unitPattern>
@@ -682,7 +682,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" draft="contributed">{0} كتلة شمسية</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} كتلة شمسية</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="zero" draft="contributed">{0} رطل/بوصة²</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} رطل/بوصة²</unitPattern>
 				<unitPattern count="two" draft="contributed">رطلان/بوصة²</unitPattern>

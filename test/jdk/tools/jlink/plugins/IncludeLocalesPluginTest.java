@@ -256,9 +256,11 @@ public class IncludeLocalesPluginTest {
             List.of(
                 "(root)", "as_IN", "as", "bn_IN", "bn", "bo_IN", "bo", "brx_IN", "brx",
                 "ccp", "ccp_IN","en", "en_001", "en_IN", "en_US", "en_US_POSIX", "gu_IN",
-                "gu", "hi_IN", "hi", "kn_IN", "kn", "kok_IN", "kok", "ks_IN", "ks", "ml_IN",
-                "ml", "mr_IN", "mr", "ne_IN", "ne", "or_IN", "or", "pa", "pa_IN_#Guru",
-                "pa__#Guru", "ta_IN", "ta", "te_IN", "te", "ur_IN", "ur"),
+                "gu", "hi_IN", "hi", "kn_IN", "kn", "kok_IN", "kok", "ks_IN", "ks", "mai",
+                "mai_IN", "mni", "mni_IN", "mni_IN_#Beng", "mni__#Beng", "ml_IN", "ml",
+                "mr_IN", "mr", "ne_IN", "ne", "or_IN", "or", "pa", "pa_IN_#Guru",
+                "pa__#Guru", "sat", "sat_IN", "sat_IN_#Olck", "sat__#Olck", "sd", "sd_IN",
+                "sd_IN_#Deva", "sd__#Deva", "ta_IN", "ta", "te_IN", "te", "ur_IN", "ur"),
             "",
         },
 

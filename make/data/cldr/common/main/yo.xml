@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -18,28 +18,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</localeDisplayPattern>
 		<languages>
 			<language type="af">Èdè Afrikani</language>
+			<language type="agq">Ágẹ̀ẹ̀mù</language>
 			<language type="ak">Èdè Akani</language>
 			<language type="am">Èdè Amariki</language>
 			<language type="ar">Èdè Árábìkì</language>
 			<language type="as">Ti Assam</language>
+			<language type="asa">Asu</language>
+			<language type="ast">Asturian</language>
 			<language type="az">Èdè Azerbaijani</language>
+			<language type="bas">Basaa</language>
 			<language type="be">Èdè Belarusi</language>
+			<language type="bem">Béḿbà</language>
+			<language type="bez">Bẹ́nà</language>
 			<language type="bg">Èdè Bugaria</language>
+			<language type="bm">Báḿbàrà</language>
 			<language type="bn">Èdè Bengali</language>
+			<language type="bo">Tibetán</language>
 			<language type="br">Èdè Bretoni</language>
+			<language type="brx">Bódò</language>
 			<language type="bs">Èdè Bosnia</language>
 			<language type="ca">Èdè Catala</language>
+			<language type="ccp">Chakma</language>
+			<language type="ce">Chechen</language>
+			<language type="ceb">Cebuano</language>
+			<language type="cgg">Chiga</language>
+			<language type="chr">Shẹ́rókiì</language>
+			<language type="ckb">Ààrin Gbùngbùn Kurdish</language>
+			<language type="co">Corsican</language>
 			<language type="cs">Èdè seeki</language>
+			<language type="cu">Síláfííkì Ilé Ìjọ́sìn</language>
 			<language type="cy">Èdè Welshi</language>
 			<language type="da">Èdè Ilẹ̀ Denmark</language>
+			<language type="dav">Táítà</language>
 			<language type="de">Èdè Jámánì</language>
 			<language type="de_AT">Èdè Jámánì (Ọ́síríà )</language>
 			<language type="de_CH">Èdè Ilẹ̀ Jámánì (Orílẹ́ède swítsàlandì)</language>
+			<language type="dje">Ṣárúmà</language>
+			<language type="dsb">Ṣobíànù Ìpìlẹ̀</language>
+			<language type="dua">Duala</language>
+			<language type="dyo">Jola-Fonyi</language>
+			<language type="dz">Dzongkha</language>
+			<language type="ebu">Ẹmbù</language>
+			<language type="ee">Ewè</language>
 			<language type="el">Èdè Giriki</language>
 			<language type="en">Èdè Gẹ̀ẹ́sì</language>
 			<language type="en_AU">Èdè Gẹ̀ẹ́sì (órílẹ̀-èdè Ọsirélíà)</language>
 			<language type="en_CA">Èdè Gẹ̀ẹ́sì (Orílẹ̀-èdè Kánádà)</language>
 			<language type="en_GB">Èdè òyìnbó Gẹ̀ẹ́sì</language>
+			<language type="en_GB" alt="short">Èdè Gẹ̀ẹ́sì (GB)</language>
+			<language type="en_US" alt="short">Èdè Gẹ̀ẹ́sì (US)</language>
 			<language type="eo">Èdè Esperanto</language>
 			<language type="es">Èdè Sípáníìṣì</language>
 			<language type="es_419">Èdè Sípáníìṣì (orílẹ̀-èdè Látìn-Amẹ́ríkà) ( Èdè Sípáníìshì (Látìn-Amẹ́ríkà)</language>
@@ -47,6 +74,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_MX">Èdè Sípáníìṣì (orílẹ̀-èdè Mẹ́síkò)</language>
 			<language type="et">Èdè Estonia</language>
 			<language type="eu">Èdè Baski</language>
+			<language type="ewo">Èwóǹdò</language>
 			<language type="fa">Èdè Pasia</language>
 			<language type="ff">Èdè Fúlàní</language>
 			<language type="fi">Èdè Finisi</language>
@@ -55,56 +83,137 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr">Èdè Faransé</language>
 			<language type="fr_CA">Èdè Faransé (orílẹ̀-èdè Kánádà)</language>
 			<language type="fr_CH">Èdè Faranṣé (Súwísàlaǹdì)</language>
+			<language type="fur">Firiúlíànì</language>
 			<language type="fy">Èdè Frisia</language>
 			<language type="ga">Èdè Ireland</language>
 			<language type="gd">Èdè Gaelik ti Ilu Scotland</language>
 			<language type="gl">Èdè Galicia</language>
 			<language type="gn">Èdè Guarani</language>
+			<language type="gsw">Súwísì ti Jámánì</language>
 			<language type="gu">Èdè Gujarati</language>
+			<language type="guz">Gusii</language>
+			<language type="gv">Máǹkì</language>
 			<language type="ha">Èdè Hausa</language>
+			<language type="haw">Hawaiian</language>
 			<language type="he">Èdè Heberu</language>
 			<language type="hi">Èdè Híńdì</language>
+			<language type="hmn">Hmong</language>
 			<language type="hr">Èdè Kroatia</language>
+			<language type="hsb">Sorbian Apá Òkè</language>
+			<language type="ht">Haitian Creole</language>
 			<language type="hu">Èdè Hungaria</language>
 			<language type="hy">Èdè Ile Armenia</language>
 			<language type="ia">Èdè pipo</language>
 			<language type="id">Èdè Indonéṣíà</language>
 			<language type="ie">Iru Èdè</language>
 			<language type="ig">Èdè Yíbò</language>
+			<language type="ii">Ṣíkuán Yì</language>
 			<language type="is">Èdè Icelandic</language>
 			<language type="it">Èdè Ítálì</language>
 			<language type="ja">Èdè Jàpáànù</language>
+			<language type="jgo">Ńgòmbà</language>
+			<language type="jmc">Máṣámè</language>
 			<language type="jv">Èdè Javanasi</language>
 			<language type="ka">Èdè Georgia</language>
+			<language type="kab">Kabilè</language>
+			<language type="kam">Káńbà</language>
+			<language type="kde">Mákondé</language>
+			<language type="kea">Kabufadíánù</language>
+			<language type="khq">Koira Ṣíínì</language>
+			<language type="ki">Kíkúyù</language>
+			<language type="kk">Kaṣakì</language>
+			<language type="kkj">Kàkó</language>
+			<language type="kl">Kalaalísùtì</language>
+			<language type="kln">Kálẹnjín</language>
 			<language type="km">Èdè kameri</language>
 			<language type="kn">Èdè Kannada</language>
 			<language type="ko">Èdè Kòríà</language>
+			<language type="kok">Kónkánì</language>
+			<language type="ks">Kaṣímirì</language>
+			<language type="ksb">Ṣáńbálà</language>
+			<language type="ksf">Báfíà</language>
+			<language type="ksh">Colognian</language>
+			<language type="ku">Kọdiṣì</language>
+			<language type="kw">Kọ́nììṣì</language>
+			<language type="ky">Kírígíìsì</language>
 			<language type="la">Èdè Latini</language>
+			<language type="lag">Láńgì</language>
+			<language type="lb">Lùṣẹ́mbọ́ọ̀gì</language>
+			<language type="lg">Ganda</language>
+			<language type="lkt">Lákota</language>
+			<language type="ln">Lìǹgálà</language>
+			<language type="lo">Láò</language>
+			<language type="lrc">Apáàríwá Lúrì</language>
 			<language type="lt">Èdè Lithuania</language>
+			<language type="lu">Lúbà-Katanga</language>
+			<language type="luy">Luyíà</language>
 			<language type="lv">Èdè Latvianu</language>
+			<language type="mas">Másáì</language>
+			<language type="mer">Mérù</language>
+			<language type="mfe">Morisiyen</language>
+			<language type="mg">Malagasì</language>
+			<language type="mgh">Makhuwa-Meeto</language>
+			<language type="mgo">Métà</language>
+			<language type="mi">Màórì</language>
 			<language type="mk">Èdè Macedonia</language>
+			<language type="ml">Málàyálámù</language>
+			<language type="mn">Mòngólíà</language>
 			<language type="mr">Èdè marathi</language>
 			<language type="ms">Èdè Malaya</language>
 			<language type="mt">Èdè Malta</language>
+			<language type="mua">Múndàngì</language>
+			<language type="mul">Ọlọ́pọ̀ èdè</language>
 			<language type="my">Èdè Bumiisi</language>
+			<language type="mzn">Masanderani</language>
+			<language type="naq">Námà</language>
+			<language type="nb">Nọ́ọ́wè Bokímàl</language>
+			<language type="nd">Àríwá Ndebele</language>
+			<language type="nds">Jámánì ìpìlẹ̀</language>
 			<language type="ne">Èdè Nepali</language>
 			<language type="nl">Èdè Dọ́ọ̀ṣì</language>
+			<language type="nmg">Kíwáṣíò</language>
+			<language type="nn">Nọ́ọ́wè Nínọ̀sìkì</language>
+			<language type="nnh">Ngiembùnù</language>
 			<language type="no">Èdè Norway</language>
+			<language type="nus">Núẹ̀</language>
+			<language type="ny">Ńyájà</language>
+			<language type="nyn">Ńyákọ́lè</language>
 			<language type="oc">Èdè Occitani</language>
+			<language type="om">Òròmọ́</language>
+			<language type="or">Òdíà</language>
+			<language type="os">Ọṣẹ́tíìkì</language>
 			<language type="pa">Èdè Punjabi</language>
 			<language type="pl">Èdè Póláǹdì</language>
+			<language type="prg">Púrúṣíànù</language>
+			<language type="ps">Páshítò</language>
 			<language type="pt">Èdè Pọtogí</language>
 			<language type="pt_BR">Èdè Pọtogí (Orilẹ̀-èdè Bràsíl)</language>
 			<language type="pt_PT">Èdè Pọtogí (orílẹ̀-èdè Yúróòpù)</language>
+			<language type="qu">Kúẹ́ńjùà</language>
+			<language type="rm">Rómáǹṣì</language>
+			<language type="rn">Rúńdì</language>
 			<language type="ro">Èdè Romania</language>
+			<language type="rof">Róńbò</language>
 			<language type="ru">Èdè Rọ́ṣíà</language>
 			<language type="rw">Èdè Ruwanda</language>
+			<language type="rwk">Riwa</language>
 			<language type="sa">Èdè awon ara Indo</language>
+			<language type="sah">Sàkíhà</language>
+			<language type="saq">Samburu</language>
+			<language type="sbp">Sangu</language>
 			<language type="sd">Èdè Sindhi</language>
+			<language type="se">Apáàríwá Sami</language>
+			<language type="seh">Ṣẹnà</language>
+			<language type="ses">Koiraboro Seni</language>
+			<language type="sg">Sango</language>
 			<language type="sh">Èdè Serbo-Croatiani</language>
+			<language type="shi">Taṣelíìtì</language>
 			<language type="si">Èdè Sinhalese</language>
 			<language type="sk">Èdè Slovaki</language>
 			<language type="sl">Èdè Slovenia</language>
+			<language type="sm">Sámóánù</language>
+			<language type="smn">Inari Sami</language>
+			<language type="sn">Ṣọnà</language>
 			<language type="so">Èdè ara Somalia</language>
 			<language type="sq">Èdè Albania</language>
 			<language type="sr">Èdè Serbia</language>
@@ -114,45 +223,98 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sw">Èdè Swahili</language>
 			<language type="ta">Èdè Tamili</language>
 			<language type="te">Èdè Telugu</language>
+			<language type="teo">Tẹ́sò</language>
+			<language type="tg">Tàjíìkì</language>
 			<language type="th">Èdè Tai</language>
 			<language type="ti">Èdè Tigrinya</language>
 			<language type="tk">Èdè Turkmen</language>
 			<language type="tlh">Èdè Klingoni</language>
+			<language type="to">Tóńgàn</language>
 			<language type="tr">Èdè Tọọkisi</language>
+			<language type="tt">Tatarí</language>
+			<language type="twq">Tasawak</language>
+			<language type="tzm">Ààrin Gbùngbùn Atlas Tamazight</language>
+			<language type="ug">Yúgọ̀</language>
 			<language type="uk">Èdè Ukania</language>
 			<language type="und">Èdè àìmọ̀</language>
 			<language type="ur">Èdè Udu</language>
 			<language type="uz">Èdè Uzbek</language>
 			<language type="vi">Èdè Jetinamu</language>
+			<language type="vo">Fọ́lápùùkù</language>
+			<language type="vun">Funjo</language>
+			<language type="wae">Wọsà</language>
+			<language type="wo">Wọ́lọ́ọ̀fù</language>
 			<language type="xh">Èdè Xhosa</language>
+			<language type="xog">Ṣógà</language>
+			<language type="yav">Yangbẹn</language>
 			<language type="yi">Èdè Yiddishi</language>
 			<language type="yo">Èdè Yorùbá</language>
+			<language type="yue">Cantonese</language>
+			<language type="zgh">Àfẹnùkò Támásáìtì ti Mòrókò</language>
 			<language type="zh">Èdè Mandarin tí wọ́n ń sọ lórílẹ̀-èdè Ṣáínà</language>
 			<language type="zh" alt="menu">Ṣáídà, Mandrínì</language>
-			<language type="zh_Hant" draft="provisional">Èdè Ìbílẹ̀ Ṣáínà</language>
+			<language type="zh_Hant">Èdè Ìbílẹ̀ Ṣáínà</language>
 			<language type="zu">Èdè Ṣulu</language>
+			<language type="zxx">Kò sí àkóònú elédè</language>
 		</languages>
 		<scripts>
 			<script type="Arab">èdè Lárúbáwá</script>
+			<script type="Armn">Àmẹ́níà</script>
+			<script type="Beng">Báńgílà</script>
+			<script type="Bopo">Bopomófò</script>
+			<script type="Brai">Bíráìlè</script>
 			<script type="Cyrl">èdè ilẹ̀ Rọ́ṣíà</script>
+			<script type="Deva">Dẹfanagárì</script>
+			<script type="Ethi">Ẹtiópíìkì</script>
+			<script type="Geor">Jọ́jíànù</script>
+			<script type="Grek">Jọ́jíà</script>
+			<script type="Gujr">Gujaráti</script>
+			<script type="Guru">Gurumúkhì</script>
+			<script type="Hanb">Han pẹ̀lú Bopomófò</script>
+			<script type="Hang">Háńgùlù</script>
+			<script type="Hani">Háànù</script>
 			<script type="Hans">tí wọ́n mú rọrùn.</script>
 			<script type="Hans" alt="stand-alone">Hans tí wọ́n mú rọrùn.</script>
 			<script type="Hant">Hans àtọwọ́dọ́wọ́</script>
-			<script type="Hant" alt="stand-alone">Hans àtọwọ́dọ́wọ́</script>
+			<script type="Hebr">Hébérù</script>
+			<script type="Hira">Hiragánà</script>
+			<script type="Hrkt">ìlànà àfọwọ́kọ ará Jàpánù</script>
 			<script type="Jpan">èdè jàpáànù</script>
+			<script type="Kana">Katakánà</script>
+			<script type="Khmr">Kẹmẹ̀</script>
+			<script type="Knda">Kanada</script>
 			<script type="Kore">Kóríà</script>
+			<script type="Laoo">Láò</script>
 			<script type="Latn">Èdè Látìn</script>
+			<script type="Mlym">Málàyálámù</script>
+			<script type="Mong">Mòngólíà</script>
+			<script type="Mymr">Myánmarà</script>
+			<script type="Orya">Òdíà</script>
+			<script type="Sinh">Sìnhálà</script>
+			<script type="Taml">Támílì</script>
+			<script type="Telu">Télúgù</script>
+			<script type="Thaa">Taana</script>
+			<script type="Tibt">Tíbétán</script>
+			<script type="Zmth">Àmì Ìṣèsìrò</script>
+			<script type="Zsye">Émójì</script>
+			<script type="Zsym">Àwọn àmì</script>
 			<script type="Zxxx">Aikọsilẹ</script>
+			<script type="Zyyy">Wọ́pọ̀</script>
 			<script type="Zzzz">Ìṣọwọ́kọ̀wé àìmọ̀</script>
 		</scripts>
 		<territories>
+			<territory type="001">Agbáyé</territory>
+			<territory type="002">Áfíríkà</territory>
 			<territory type="003">Àríwá Amẹ́ríkà</territory>
 			<territory type="005">Gúúṣù Amẹ́ríkà</territory>
+			<territory type="009">Oceania</territory>
 			<territory type="011">Ìwọ̀ oorùn Afíríkà</territory>
 			<territory type="013">Ààrin Gbùgbùn Àmẹ́ríkà</territory>
 			<territory type="014">Ìlà Oorùn Áfíríkà</territory>
+			<territory type="015">Northern Africa</territory>
 			<territory type="017">Ààrín gbùngbùn Afíríkà</territory>
 			<territory type="018">Apágúúsù Áfíríkà</territory>
+			<territory type="019">Amẹ́ríkà</territory>
 			<territory type="021">Apáàríwá Amẹ́ríkà</territory>
 			<territory type="029">Káríbíànù</territory>
 			<territory type="030">Ìlà Òòrùn Eṣíà</territory>
@@ -163,12 +325,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="054">Mẹlanéṣíà</territory>
 			<territory type="057">Agbègbè Maikironéṣíà</territory>
 			<territory type="061">Polineṣíà</territory>
+			<territory type="142">Asia</territory>
 			<territory type="143">Ààrin Gbùngbùn Éṣíà</territory>
 			<territory type="145">Ìwọ̀ Òòrùn Eṣíà</territory>
+			<territory type="150">Europe</territory>
 			<territory type="151">Ìlà Òrùn Yúrópù</territory>
 			<territory type="154">Northern Europe</territory>
 			<territory type="155">Ìwọ̀ Òòrùn Yúrópù</territory>
+			<territory type="202">Sàhárà Áfíríkà</territory>
 			<territory type="419">Látín Amẹ́ríkà</territory>
+			<territory type="AC">Erékùsù Ascension</territory>
 			<territory type="AD">Orílẹ́ède Ààndórà</territory>
 			<territory type="AE">Orílẹ́ède Ẹmirate ti Awọn Arabu</territory>
 			<territory type="AF">Orílẹ́ède Àfùgànístánì</territory>
@@ -177,11 +343,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AL">Orílẹ́ède Àlùbàníánì</territory>
 			<territory type="AM">Orílẹ́ède Améníà</territory>
 			<territory type="AO">Orílẹ́ède Ààngólà</territory>
+			<territory type="AQ">Antakítíkà</territory>
 			<territory type="AR">Orílẹ́ède Agentínà</territory>
 			<territory type="AS">Sámóánì ti Orílẹ́ède Àméríkà</territory>
 			<territory type="AT">Orílẹ́ède Asítíríà</territory>
 			<territory type="AU">Orílẹ́ède Ástràlìá</territory>
 			<territory type="AW">Orílẹ́ède Árúbà</territory>
+			<territory type="AX">Àwọn Erékùsù ti Åland</territory>
 			<territory type="AZ">Orílẹ́ède Asẹ́bájánì</territory>
 			<territory type="BA">Orílẹ́ède Bọ̀síníà àti Ẹtisẹgófínà</territory>
 			<territory type="BB">Orílẹ́ède Bábádósì</territory>
@@ -192,16 +360,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BH">Orílẹ́ède Báránì</territory>
 			<territory type="BI">Orílẹ́ède Bùùrúndì</territory>
 			<territory type="BJ">Orílẹ́ède Bẹ̀nẹ̀</territory>
+			<territory type="BL">St. Barthélemy</territory>
 			<territory type="BM">Orílẹ́ède Bémúdà</territory>
 			<territory type="BN">Orílẹ́ède Búrúnẹ́lì</territory>
 			<territory type="BO">Orílẹ́ède Bọ̀lífíyà</territory>
+			<territory type="BQ">Caribbean Netherlands</territory>
 			<territory type="BR">Orilẹ̀-èdè Bàràsílì</territory>
 			<territory type="BS">Orílẹ́ède Bàhámásì</territory>
 			<territory type="BT">Orílẹ́ède Bútánì</territory>
+			<territory type="BV">Erékùsù Bouvet</territory>
 			<territory type="BW">Orílẹ́ède Bọ̀tìsúwánà</territory>
 			<territory type="BY">Orílẹ́ède Bélárúsì</territory>
 			<territory type="BZ">Orílẹ́ède Bèlísẹ̀</territory>
 			<territory type="CA">Orílẹ́ède Kánádà</territory>
+			<territory type="CC">Erékùsù Cocos (Keeling)</territory>
 			<territory type="CD">Orilẹ́ède Kóngò</territory>
 			<territory type="CF">Orílẹ́ède Àrin gùngun Áfíríkà</territory>
 			<territory type="CG">Orílẹ́ède Kóngò</territory>
@@ -212,17 +384,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CM">Orílẹ́ède Kamerúúnì</territory>
 			<territory type="CN">Orilẹ̀-èdè Ṣáínà</territory>
 			<territory type="CO">Orílẹ́ède Kòlómíbìa</territory>
+			<territory type="CP">Erékùsù Clipperston</territory>
 			<territory type="CR">Orílẹ́ède Kuusita Ríkà</territory>
 			<territory type="CU">Orílẹ́ède Kúbà</territory>
 			<territory type="CV">Orílẹ́ède Etíokun Kápé féndè</territory>
+			<territory type="CW">Curaçao</territory>
+			<territory type="CX">Erékùsù Christmas</territory>
 			<territory type="CY">Orílẹ́ède Kúrúsì</territory>
 			<territory type="CZ">Orílẹ́ède ṣẹ́ẹ́kì</territory>
 			<territory type="DE">Orílẹèdè Jámánì</territory>
+			<territory type="DG">Diego Gaṣia</territory>
 			<territory type="DJ">Orílẹ́ède Díbọ́ótì</territory>
 			<territory type="DK">Orílẹ́ède Dẹ́mákì</territory>
 			<territory type="DM">Orílẹ́ède Dòmíníkà</territory>
 			<territory type="DO">Orilẹ́ède Dòmíníkánì</territory>
 			<territory type="DZ">Orílẹ́ède Àlùgèríánì</territory>
+			<territory type="EA">Seuta àti Melilla</territory>
 			<territory type="EC">Orílẹ́ède Ekuádò</territory>
 			<territory type="EE">Orílẹ́ède Esitonia</territory>
 			<territory type="EG">Orílẹ́ède Égípítì</territory>
@@ -231,16 +408,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ES">Orílẹ́ède Sipani</territory>
 			<territory type="ET">Orílẹ́ède Etopia</territory>
 			<territory type="EU">Ìṣọ̀kan Yúròpù</territory>
+			<territory type="EZ">Agbègbè Euro</territory>
 			<territory type="FI">Orílẹ́ède Filandi</territory>
 			<territory type="FJ">Orílẹ́ède Fiji</territory>
 			<territory type="FK">Orílẹ́ède Etikun Fakalandi</territory>
 			<territory type="FM">Orílẹ́ède Makoronesia</territory>
+			<territory type="FO">Àwọn Erékùsù ti Faroe</territory>
 			<territory type="FR">Orílẹ́ède Faranse</territory>
 			<territory type="GA">Orílẹ́ède Gabon</territory>
 			<territory type="GB">Orílẹ́èdè Gẹ̀ẹ́sì</territory>
 			<territory type="GD">Orílẹ́ède Genada</territory>
 			<territory type="GE">Orílẹ́ède Gọgia</territory>
 			<territory type="GF">Orílẹ́ède Firenṣi Guana</territory>
+			<territory type="GG">Guernsey</territory>
 			<territory type="GH">Orílẹ́ède Gana</territory>
 			<territory type="GI">Orílẹ́ède Gibaratara</territory>
 			<territory type="GL">Orílẹ́ède Gerelandi</territory>
@@ -249,23 +429,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GP">Orílẹ́ède Gadelope</territory>
 			<territory type="GQ">Orílẹ́ède Ekutoria Gini</territory>
 			<territory type="GR">Orílẹ́ède Geriisi</territory>
+			<territory type="GS">Gúúsù Georgia àti Gúúsù Àwọn Erékùsù Sandwich</territory>
 			<territory type="GT">Orílẹ́ède Guatemala</territory>
 			<territory type="GU">Orílẹ́ède Guamu</territory>
 			<territory type="GW">Orílẹ́ède Gene-Busau</territory>
 			<territory type="GY">Orílẹ́ède Guyana</territory>
+			<territory type="HK">Hong Kong SAR ti Ṣáìnà</territory>
+			<territory type="HM">Erékùsù Heard àti Erékùsù McDonald</territory>
 			<territory type="HN">Orílẹ́ède Hondurasi</territory>
 			<territory type="HR">Orílẹ́ède Kòróátíà</territory>
 			<territory type="HT">Orílẹ́ède Haati</territory>
 			<territory type="HU">Orílẹ́ède Hungari</territory>
+			<territory type="IC">Ẹrékùsù Kánárì</territory>
 			<territory type="ID">Orílẹ́ède Indonesia</territory>
 			<territory type="IE">Orílẹ́ède Ailandi</territory>
 			<territory type="IL">Orílẹ́ède Iserẹli</territory>
+			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">Orílẹ́ède India</territory>
 			<territory type="IO">Orílẹ́ède Etíkun Índíánì ti Ìlú Bírítísì</territory>
 			<territory type="IQ">Orílẹ́ède Iraki</territory>
 			<territory type="IR">Orílẹ́ède Irani</territory>
 			<territory type="IS">Orílẹ́ède Aṣilandi</territory>
 			<territory type="IT">Orílẹ́ède Itáli</territory>
+			<territory type="JE">Jersey</territory>
 			<territory type="JM">Orílẹ́ède Jamaika</territory>
 			<territory type="JO">Orílẹ́ède Jọdani</territory>
 			<territory type="JP">Orílẹ́ède Japani</territory>
@@ -294,12 +480,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MA">Orílẹ́ède Moroko</territory>
 			<territory type="MC">Orílẹ́ède Monako</territory>
 			<territory type="MD">Orílẹ́ède Modofia</territory>
+			<territory type="ME">Montenegro</territory>
+			<territory type="MF">St. Martin</territory>
 			<territory type="MG">Orílẹ́ède Madasika</territory>
 			<territory type="MH">Orílẹ́ède Etikun Máṣali</territory>
 			<territory type="MK">Àríwá Macedonia</territory>
 			<territory type="ML">Orílẹ́ède Mali</territory>
 			<territory type="MM">Orílẹ́ède Manamari</territory>
 			<territory type="MN">Orílẹ́ède Mogolia</territory>
+			<territory type="MO">Macao SAR ti Ṣáìnà</territory>
 			<territory type="MO" alt="short">Màkáò</territory>
 			<territory type="MP">Orílẹ́ède Etikun Guusu Mariana</territory>
 			<territory type="MQ">Orílẹ́ède Matinikuwi</territory>
@@ -341,8 +530,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PW">Orílẹ́ède Paalu</territory>
 			<territory type="PY">Orílẹ́ède Paraguye</territory>
 			<territory type="QA">Orílẹ́ède Kota</territory>
+			<territory type="QO">Agbègbè Oceania</territory>
 			<territory type="RE">Orílẹ́ède Riuniyan</territory>
 			<territory type="RO">Orílẹ́ède Romaniya</territory>
+			<territory type="RS">Serbia</territory>
 			<territory type="RU">Orílẹ́ède Rọṣia</territory>
 			<territory type="RW">Orílẹ́ède Ruwanda</territory>
 			<territory type="SA">Orílẹ́ède Saudi Arabia</territory>
@@ -353,6 +544,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SG">Orílẹ́ède Singapo</territory>
 			<territory type="SH">Orílẹ́ède Hẹlena</territory>
 			<territory type="SI">Orílẹ́ède Silofania</territory>
+			<territory type="SJ">Svalbard &amp; Jan Mayen</territory>
 			<territory type="SK">Orílẹ́ède Silofakia</territory>
 			<territory type="SL">Orílẹ́ède Siria looni</territory>
 			<territory type="SM">Orílẹ́ède Sani Marino</territory>
@@ -362,9 +554,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SS">Gúúsù Sudan</territory>
 			<territory type="ST">Orílẹ́ède Sao tomi ati piriiṣipi</territory>
 			<territory type="SV">Orílẹ́ède Ẹẹsáfádò</territory>
+			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Orílẹ́ède Siria</territory>
 			<territory type="SZ">Orílẹ́ède Saṣiland</territory>
 			<territory type="SZ" alt="variant">Síwásìlandì</territory>
+			<territory type="TA">Tristan da Kunha</territory>
 			<territory type="TC">Orílẹ́ède Tọọki ati Etikun Kakọsi</territory>
 			<territory type="TD">Orílẹ́ède ṣààdì</territory>
 			<territory type="TF">Agbègbè Gúúsù Faranṣé</territory>
@@ -384,6 +578,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TZ">Orílẹ́ède Tàǹsáníà</territory>
 			<territory type="UA">Orílẹ́ède Ukarini</territory>
 			<territory type="UG">Orílẹ́ède Uganda</territory>
+			<territory type="UM">Àwọn Erékùsù Kékèké Agbègbè US</territory>
 			<territory type="UN">Ìṣọ̀kan àgbáyé</territory>
 			<territory type="US">Orílẹ̀-èdè Amẹrikà</territory>
 			<territory type="UY">Orílẹ́ède Nruguayi</territory>
@@ -397,6 +592,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Orílẹ́ède Faniatu</territory>
 			<territory type="WF">Orílẹ́ède Wali ati futuna</territory>
 			<territory type="WS">Orílẹ́ède Samọ</territory>
+			<territory type="XA">Pseudo-Accents</territory>
+			<territory type="XB">Pseudo-Bidi</territory>
 			<territory type="XK">Kòsófò</territory>
 			<territory type="YE">Orílẹ́ède yemeni</territory>
 			<territory type="YT">Orílẹ́ède Mayote</territory>
@@ -405,11 +602,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Orílẹ́ède ṣimibabe</territory>
 			<territory type="ZZ">Àgbègbè àìmọ̀</territory>
 		</territories>
+		<keys>
+			<key type="calendar">Kàlẹ́ńdà</key>
+			<key type="cf">Ìgúnrégé Kọ́rẹ́ńsì</key>
+			<key type="collation">Ètò Ẹlẹ́sẹẹsẹ</key>
+			<key type="currency">Kọ́rẹ́ńsì</key>
+			<key type="hc">Òbíríkiti Wákàtí (12 vs 24)</key>
+			<key type="lb">Àra Ìda Ìlà</key>
+			<key type="ms">Èto Ìdiwọ̀n</key>
+			<key type="numbers">Àwọn nọ́ńbà</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist">Kàlẹ̀ńdà Buddhist</type>
+			<type key="calendar" type="chinese">Kàlẹ̀ńdà ti Ṣáìnà</type>
+			<type key="calendar" type="dangi">Kàlẹ̀ńdà dangi</type>
+			<type key="calendar" type="ethiopic">Kàlẹ̀ńdà Ẹtíópíìkì</type>
 			<type key="calendar" type="gregorian">Kàlẹ́ńdà Gregory</type>
+			<type key="calendar" type="hebrew">Kàlẹ̀ńdà Hébérù</type>
+			<type key="calendar" type="islamic">Kàlẹ̀ńdà Lárúbáwá</type>
 			<type key="calendar" type="iso8601">Kàlẹ́ńdà ISO-8601</type>
+			<type key="calendar" type="japanese">Kàlẹ̀ńdà ti Jàpánù</type>
+			<type key="calendar" type="persian">Kàlẹ̀ńdà Pásíànù</type>
+			<type key="calendar" type="roc">Kàlẹ̀ńdà Minguo</type>
+			<type key="cf" type="account">Ìgúnrégé Ìṣirò Owó Kọ́rẹ́ńsì</type>
+			<type key="cf" type="standard">Ìgúnrégé Gbèdéke Kọ́rẹ́ńsì</type>
+			<type key="collation" type="ducet">Ètò Ẹlẹ́sẹẹsẹ Àkùàyàn Unicode</type>
+			<type key="collation" type="search">Ìṣàwárí Ète-Gbogbogbò</type>
 			<type key="collation" type="standard">Ìlànà Onírúurú Ètò</type>
+			<type key="hc" type="h11">Èto Wákàtí 12 (0–11)</type>
+			<type key="hc" type="h12">Èto Wákàtí 12 (1–12)</type>
+			<type key="hc" type="h23">Èto Wákàtí 24 (0–23)</type>
+			<type key="hc" type="h24">Èto Wákàtí 24 (1–24)</type>
+			<type key="lb" type="loose">Àra Ìda Ìlà Títú</type>
+			<type key="lb" type="normal">Àra Ìda Ìlà Déédéé</type>
+			<type key="lb" type="strict">Àra Ìda Ìlà Mímúná</type>
+			<type key="ms" type="metric">Èto Mẹ́tíríìkì</type>
+			<type key="ms" type="uksystem">Èto Ìdiwọ̀n Ọba</type>
+			<type key="ms" type="ussystem">Èto Ìdiwọ̀n US</type>
+			<type key="numbers" type="arab">àwọn díjítì Làrubáwá-Índíà</type>
+			<type key="numbers" type="arabext">Àwọn Díjíìtì Lárúbáwá-Índíà fífẹ̀</type>
+			<type key="numbers" type="armn">Àwọn nọ́ńbà Àmẹ́níà</type>
+			<type key="numbers" type="armnlow">Àwọn Nọ́ńbà Kékèké ti Amẹ́ríkà</type>
+			<type key="numbers" type="beng">Àwọn díjíìtì Báńgílà</type>
+			<type key="numbers" type="deva">Àwọn díjììtì Defanagárì</type>
+			<type key="numbers" type="ethi">Àwọn nọ́ńbà Ẹtiópíìkì</type>
+			<type key="numbers" type="fullwide">Àwọn Díjíìtì Fífẹ̀-Ẹ̀kún</type>
+			<type key="numbers" type="geor">Àwọn nọ́ńbà Jọ́jíà</type>
+			<type key="numbers" type="grek">Àwọn nọ́ńbà Gíríìkì</type>
+			<type key="numbers" type="greklow">Àwọn Nọ́ńbà Gíríìkì Kékèké</type>
+			<type key="numbers" type="gujr">Àwọn díjíìtì Gùjárátì</type>
+			<type key="numbers" type="guru">Àwọn Díjíìtì Gurumukì</type>
+			<type key="numbers" type="hanidec">Àwọn nọ́ńbà Dẹ́símà Ṣáìnà</type>
+			<type key="numbers" type="hans">Àwọn nọ́ńbà Ìrọ̀rùn ti Ṣáìnà</type>
+			<type key="numbers" type="hansfin">Àwọn nọ́ńbà Ìṣúná Ìrọ̀rùn Ṣáìnà</type>
+			<type key="numbers" type="hant">Àwọn nọ́ńbà Ìbílẹ̀ Ṣáìnà</type>
+			<type key="numbers" type="hantfin">Àwọn nọ́ńbà Ìṣúná Ìbílẹ̀ Ṣáìnà</type>
+			<type key="numbers" type="hebr">Àwọn nọ́ńbà Hébérù</type>
+			<type key="numbers" type="jpan">Àwọn nọ́ńbà Jápànù</type>
+			<type key="numbers" type="jpanfin">Àwọn nọ́ńbà Ìṣúná Jàpáànù</type>
+			<type key="numbers" type="khmr">Àwọn díjíìtì Kẹ́mẹ̀</type>
+			<type key="numbers" type="knda">Àwọn díjíìtì kanada</type>
+			<type key="numbers" type="laoo">Àwọn díjíìtì Láó</type>
 			<type key="numbers" type="latn">Díjíítì Ìwọ̀ Oòrùn</type>
+			<type key="numbers" type="mlym">Àwọn díjíìtì Málàyálámù</type>
+			<type key="numbers" type="mymr">Àwọn díjíìtì Myánmarí</type>
+			<type key="numbers" type="orya">Àwọn díjíìtì Òdíà</type>
+			<type key="numbers" type="roman">Àwọn díjíìtì Rómánù</type>
+			<type key="numbers" type="romanlow">Àwọn díjíìtì Rómánù Kékeré</type>
+			<type key="numbers" type="taml">Àwọn díjíìtì Ìbílẹ̀ Támílù</type>
+			<type key="numbers" type="tamldec">Àwọn díjíìtì Tàmílù</type>
+			<type key="numbers" type="telu">Àwọn díjíìtì Télúgù</type>
+			<type key="numbers" type="thai">Àwọn díjíìtì Thai</type>
+			<type key="numbers" type="tibt">Àwọn díjíìtì Tibetán</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mẹ́tíríìkì</measurementSystemName>
@@ -737,7 +1001,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
-						<era type="0" alt="variant">BCE</era>
 						<era type="1">AD</era>
 						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
@@ -1000,6 +1263,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Ọjọ́ Àìkú yìí</relative>
 				<relative type="1">Ọjọ́ Àìkú tó ń bọ̀</relative>
 			</field>
+			<field type="sun-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">Ọjọ́ Àíkú +{0}</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="dayperiod">
 				<displayName>Àárọ̀/ọ̀sán</displayName>
 			</field>
@@ -1256,6 +1524,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Chile Summer Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Àkókò Ṣáínà</generic>
+					<standard>Àkókò Ìfẹnukòsí Ṣáínà</standard>
+					<daylight>Àkókò Ojúmọmọ Ṣáínà</daylight>
+				</long>
+			</metazone>
 			<metazone type="Choibalsan">
 				<long>
 					<generic>Choibalsan Time</generic>
@@ -1287,6 +1562,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Cook Islands Half Summer Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Àkókò Kúbà</generic>
+					<standard>Àkókò Àfẹnukò Kúbà</standard>
+					<daylight>Àkókò Ojúmọmọ Kúbà</daylight>
+				</long>
+			</metazone>
 			<metazone type="Davis">
 				<long>
 					<standard>Davis Time</standard>
@@ -1295,6 +1577,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="DumontDUrville">
 				<long>
 					<standard>Dumont-d’Urville Time</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Àkókò Ìlà oorùn Timor</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -1386,6 +1673,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Greenwich Mean Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Àkókò Ìlà oorùn Greenland</generic>
+					<standard>Àkókò Ìwọ̀ Ìfẹnukò oorùn Greenland</standard>
+					<daylight>Àkókò ìgbà Ooru Greenland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Àkókò Ìwọ̀ oorùn Greenland</generic>
+					<standard>Àkókò Àfẹnukò Ìwọ̀ Oòrùn Greenland</standard>
+					<daylight>Àkókò Àfẹnukò Ìgba Oòru Greenland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Gulf Standard Time [translation hint: translate as just &quot;Gulf Time&quot;]</standard>
@@ -1394,6 +1695,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>Guyana Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Àkókò Hawaii-Aleutian</generic>
+					<standard>Àkókò Àfẹnukò Hawaii-Aleutian</standard>
+					<daylight>Àkókò Ojúmọmọ Hawaii-Aleutian</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -1420,9 +1728,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Indian Ocean Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Àkókò Indochina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Àkókò Ààrin Gbùngbùn Indonesia</standard>
+				</long>
+			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
 					<standard>Eastern Indonesia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Àkókò Ìwọ̀ oorùn Indonesia</standard>
 				</long>
 			</metazone>
 			<metazone type="Iran">
@@ -1543,6 +1866,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Mawson Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Àkókò Apá Ìwọ̀ Oorùn Mẹ́ṣíkò</generic>
+					<standard>Àkókò Àfẹnukò Apá Ìwọ̀ Oorùn Mẹ́ṣíkò</standard>
+					<daylight>Àkókò Ojúmọmọ Apá Ìwọ̀ Oorùn Mẹ́ṣíkò</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Àkókò Pásífíìkì Mẹ́ṣíkò</generic>
+					<standard>Àkókò Àfẹnukò Pásífíìkì Mẹ́síkò</standard>
+					<daylight>Àkókò Ojúmọmọ Pásífíìkì Mẹ́síkò</daylight>
+				</long>
+			</metazone>
 			<metazone type="Mongolia">
 				<long>
 					<generic>Ulaanbaatar Time</generic>
@@ -1586,6 +1923,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>New Zealand Daylight Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Àkókò Newfoundland</generic>
+					<standard>Àkókò Àfẹnukò Newfoundland</standard>
+					<daylight>Àkókò Ojúmọmọ Newfoundland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Niue">
 				<long>
 					<standard>Niue Time</standard>
@@ -1593,7 +1937,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolk Island Time</standard>
+					<generic draft="contributed">Norfolk Island Time</generic>
+					<standard draft="contributed">Norfolk Island Standard Time</standard>
+					<daylight draft="contributed">Norfolk Island Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -1658,6 +2004,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Phoenix_Islands">
 				<long>
 					<standard>Phoenix Islands Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Àkókò Pierre &amp; Miquelon</generic>
+					<standard>Àkókò Àfẹnukò Pierre &amp; Miquelon</standard>
+					<daylight>Àkókò Ojúmọmọ Pierre &amp; Miquelon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -1866,6 +2219,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="other">0 ẹgbẹ̀rún</pattern>
+					<pattern type="10000" count="other">00 ẹgbẹ̀rún</pattern>
+					<pattern type="100000" count="other">000 ẹgbẹ̀rún</pattern>
+					<pattern type="1000000" count="other">0 mílíọ̀nù</pattern>
+					<pattern type="10000000" count="other">00 mílíọ̀nù</pattern>
+					<pattern type="100000000" count="other">000 mílíọ̀nù</pattern>
+					<pattern type="1000000000" count="other">0 bilíọ̀nù</pattern>
+					<pattern type="10000000000" count="other">00 bilíọ̀nù</pattern>
+					<pattern type="100000000000" count="other">000 bilíọ̀nù</pattern>
+					<pattern type="1000000000000" count="other">0 tiriliọ̀nù</pattern>
+					<pattern type="10000000000000" count="other">00 tiriliọ̀nù</pattern>
+					<pattern type="100000000000000" count="other">000 tiriliọ̀nù</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 		</decimalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
@@ -1912,11 +2281,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="AED">
 				<displayName>Diami ti Awon Orílẹ́ède Arabu</displayName>
 			</currency>
+			<currency type="AFN">
+				<displayName>Afugánì Afuganísítàànì</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Lẹ́kẹ̀ Àlìbéníà</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Dírààmù Àmẹ́níà</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Gílídà Netherlands Antillean</displayName>
+			</currency>
 			<currency type="AOA">
 				<displayName>Wansa ti Orílẹ́ède Àngólà</displayName>
 			</currency>
+			<currency type="ARS">
+				<displayName>Pẹ́sò Agẹntínà</displayName>
+			</currency>
 			<currency type="AUD">
 				<displayName>Dọla ti Orílẹ́ède Ástràlìá</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Fuloríìnì Àrúbà</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Mánààtì Àsàbáíjáì</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Àmi Yíyípadà Bosnia-Herzegovina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Dọ́là Bábádọ̀ọ̀sì</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Tákà Báńgíládẹ̀ẹ̀ṣì</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Owó Lẹ́fì Bọ̀lìgéríà</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName>Dina ti Orílẹ́ède Báránì</displayName>
@@ -1924,12 +2326,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BIF">
 				<displayName>Faransi ti Orílẹ́ède Bùùrúndì</displayName>
 			</currency>
+			<currency type="BMD">
+				<displayName>Dọ́là Bẹ̀múdà</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Dọ́là Bùrùnéì</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Bọlifiánò Bọ̀lífíà</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Owó ti Orílẹ̀-èdè Brazil</displayName>
 				<displayName count="other">Awon owó ti Orílẹ̀-èdè Brazil</displayName>
 			</currency>
+			<currency type="BSD">
+				<displayName>Dọ́là Bàhámà</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Ìngọ́tírọ̀mù Bútàànì</displayName>
+			</currency>
 			<currency type="BWP">
 				<displayName>Pula ti Orílẹ́ède Bọ̀tìsúwánà</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Rọ́bù Bẹ̀lárùùsì</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Dọ́là Bẹ̀lísè</displayName>
 			</currency>
 			<currency type="CAD">
 				<displayName>Dọla ti Orílẹ́ède Kánádà</displayName>
@@ -1940,14 +2363,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="CHF">
 				<displayName>Faransi ti Orílẹ́ède Siwisi</displayName>
 			</currency>
+			<currency type="CLP">
+				<displayName>Pẹ́sò Ṣílè</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Yúànì Sháínà</displayName>
+			</currency>
 			<currency type="CNY">
 				<displayName>Reminibi ti Orílẹ́ède ṣáínà</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>Pẹ́sò Kòlóḿbíà</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Kólọ́ọ̀nì Kosita Ríkà</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Pẹ́sò Yíyípadà Kúbà</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Pẹ́sò Kúbà</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName>Kabofediano ti Orílẹ́ède Esuodo</displayName>
 			</currency>
+			<currency type="CZK">
+				<displayName>Koruna Ṣẹ́ẹ̀kì</displayName>
+			</currency>
 			<currency type="DJF">
 				<displayName>Faransi ti Orílẹ́ède Dibouti</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Kírónì Dáníṣì</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Pẹ́sò Dòníníkà</displayName>
 			</currency>
 			<currency type="DZD">
 				<displayName>Dina ti Orílẹ́ède Àlùgèríánì</displayName>
@@ -1966,20 +2416,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>owó Yúrò</displayName>
 				<displayName count="other">Awon owó Yúrò</displayName>
 			</currency>
+			<currency type="FJD">
+				<displayName>Dọ́là Fíjì</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Pọ́n-ùn Erékùsù Falkland</displayName>
+			</currency>
 			<currency type="GBP">
 				<displayName>Pọ́n-ùn ti Orilẹ̀-èdè Gẹ̀ẹ́sì</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>Lárì Jọ́jíà</displayName>
 			</currency>
 			<currency type="GHC">
 				<displayName>ṣidi ti Orílẹ́ède Gana</displayName>
 			</currency>
+			<currency type="GHS">
+				<displayName>Sídì Ghanaian</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Pọ́n-ùn Gibraltar</displayName>
+			</currency>
 			<currency type="GMD">
 				<displayName>Dalasi ti Orílẹ́ède Gamibia</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Fírànkì Gíníànì</displayName>
 			</currency>
 			<currency type="GNS">
 				<displayName>Faransi ti Orílẹ́ède Gini</displayName>
 			</currency>
+			<currency type="GTQ">
+				<displayName>Kúẹ́tísààlì Guatimílà</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Dọ́là Gùyánà</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Dọ́là Hong Kong</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Lẹmipírà Ọ́ńdúrà</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Kúnà Croatian</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Gọ́dì Àítì</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Fọ́ríǹtì Họ̀ngérí</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Rúpìyá Indonésíà</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Ṣékélì Tuntun Ísírẹ̀ẹ̀lì</displayName>
+			</currency>
 			<currency type="INR">
 				<displayName>Rupi ti Orílẹ́ède Indina</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Dínárì Ìráákì</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Rial Iranian</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Kòrónà Icelandic</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Dọ́là Jàmáíkà</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Dínárì Jọ́dàànì</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yeni ti Orílẹ́ède Japani</displayName>
@@ -1987,11 +2497,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="KES">
 				<displayName>ṣiili ti Orílẹ́ède Kenya</displayName>
 			</currency>
+			<currency type="KGS">
+				<displayName>Sómú Kirijísítàànì</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Ráyò Kàm̀bọ́díà</displayName>
+			</currency>
 			<currency type="KMF">
 				<displayName>Faransi ti Orílẹ́ède ṣomoriani</displayName>
 			</currency>
+			<currency type="KPW">
+				<displayName>Wọ́ọ̀nù Àríwá Kòríà</displayName>
+			</currency>
 			<currency type="KRW">
+				<displayName>Wọ́ọ̀nù Gúúsù Kòríà</displayName>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
+			</currency>
+			<currency type="KWD">
+				<displayName>Dínárì Kuwaiti</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Dọ́là Erékùsù Cayman</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Tẹngé Kasakísítàànì</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Kíììpù Làótì</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Pọ́n-ùn Lebanese</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Rúpìì Siri Láńkà</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Dọla ti Orílẹ́ède Liberia</displayName>
@@ -2005,8 +2543,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="MAD">
 				<displayName>Dirami ti Orílẹ́ède Moroko</displayName>
 			</currency>
+			<currency type="MDL">
+				<displayName>Owó Léhù Moldovan</displayName>
+			</currency>
 			<currency type="MGA">
 				<displayName>Faransi ti Orílẹ́ède Malagasi</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Dẹ́nà Masidóníà</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Kíyàtì Myanmar</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>Túgúrììkì Mòǹgólíà</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Pàtákà Màkáò</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>Ouguiya ti Orílẹ́ède Maritania (1973–2017)</displayName>
@@ -2017,11 +2570,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="MUR">
 				<displayName>Rupi ti Orílẹ́ède Maritiusi</displayName>
 			</currency>
+			<currency type="MVR">
+				<displayName>Rúfìyá Mọ̀lìdífà</displayName>
+			</currency>
 			<currency type="MWK">
 				<displayName>Kaṣa ti Orílẹ́ède Malawi</displayName>
 			</currency>
+			<currency type="MXN">
+				<displayName>Pẹ́sò Mẹ́síkò</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Ríngìtì Màléṣíà</displayName>
+			</currency>
 			<currency type="MZM">
 				<displayName>Metika ti Orílẹ́ède Mosamibiki</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Mẹ́tíkààlì Mòsáḿbíìkì</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName>Dọla ti Orílẹ́ède Namibia</displayName>
@@ -2030,6 +2595,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Náìrà ti Orílẹ̀-èdè Nàìjíríà</displayName>
 				<displayName count="other">Náírà Nàìjíríà</displayName>
 				<symbol>₦</symbol>
+			</currency>
+			<currency type="NIO">
+				<displayName>Kọ̀dóbà Naikarágúà</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Kírónì Nọ́ọ́wè</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Rúpìì Nẹ̵́pààlì</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>Dọ́là New Zealand</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Ráyò Omani</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Bálíbóà Pànámà</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Sólì Pèrúù</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kínà Papua Guinea Tuntun</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Písò Fílípìnì</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Rúpìì Pakisitánì</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Sílọ̀tì Pọ́líṣì</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Gúáránì Párágúwè</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Ráyò Kàtárì</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Léhù Ròméníà</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Dínárì Sàbíà</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>Owó ruble ti ilẹ̀ Rọ́ṣíà</displayName>
@@ -2042,6 +2652,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SAR">
 				<displayName>Riya ti Orílẹ́ède Saudi</displayName>
 			</currency>
+			<currency type="SBD">
+				<displayName>Dọ́là Erékùsù Sọ́lómọ́nì</displayName>
+			</currency>
 			<currency type="SCR">
 				<displayName>Rupi ti Orílẹ́ède Sayiselesi</displayName>
 			</currency>
@@ -2050,6 +2663,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SDP">
 				<displayName>Pọọun ti Orílẹ́ède Sudani</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Kòrónà Súwídìn</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Dọ́là Síngápọ̀</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName>Pọọun ti Orílẹ́ède ̣Elena</displayName>
@@ -2060,20 +2679,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SOS">
 				<displayName>Sile ti Orílẹ́ède Somali</displayName>
 			</currency>
+			<currency type="SRD">
+				<displayName>Dọ́là Súrínámì</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName>Pọ́n-ùn Gúúsù Sùdáànì</displayName>
+			</currency>
 			<currency type="STD">
 				<displayName>Dobira ti Orílẹ́ède Sao tome Ati Pirisipe (1977–2017)</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>Dobira ti Orílẹ́ède Sao tome Ati Pirisipe</displayName>
 			</currency>
+			<currency type="SYP">
+				<displayName>Pọ́n-ùn Sírìà</displayName>
+			</currency>
 			<currency type="SZL">
 				<displayName>Lilangeni</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Báàtì Tháì</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>Sómónì Tajikístàànì</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>Mánààtì Tọkimẹnístàànì</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName>Dina ti Orílẹ́ède Tunisia</displayName>
 			</currency>
+			<currency type="TOP">
+				<displayName>Pàángà Tóńgà</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Lírà Tọ́kì</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Dọ́là Trinidad &amp; Tobago</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Dọ́là Tàìwánì Tuntun</displayName>
+			</currency>
 			<currency type="TZS">
 				<displayName>Sile ti Orílẹ́ède Tansania</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Ọrifiníyà Yukiréníà</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>Siile ti Orílẹ́ède Uganda</displayName>
@@ -2083,15 +2735,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Dọ́là ti Orílẹ̀-Èdè Amẹ́ríkà</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
+			<currency type="UYU">
+				<displayName>Pẹ́sò Úrúgúwè</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Sómú Usibẹkísítàànì</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Bọ̀lífà Fẹnẹsuẹ́là</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Dáhùn Vietnamese</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Fátù Vanuatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Tálà Sàmóà</displayName>
+			</currency>
 			<currency type="XAF">
 				<displayName>Faransi ti Orílẹ́ède BEKA</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Dọ́là Ilà Oòrùn Karíbíà</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Faransi ti Orílẹ́ède BIKEAO</displayName>
 			</currency>
+			<currency type="XPF">
+				<displayName>Fírànkì CFP</displayName>
+			</currency>
 			<currency type="XXX">
 				<displayName>owóníná àìmọ̀</displayName>
 				<displayName count="other">owóníná àìmọ̀</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Ráyò Yẹ́mẹ̀nì</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>Randi ti Orílẹ́ède Ariwa Afirika</displayName>

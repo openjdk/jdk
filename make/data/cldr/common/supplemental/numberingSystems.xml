@@ -22,6 +22,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="cham" type="numeric" digits="꩐꩑꩒꩓꩔꩕꩖꩗꩘꩙"/>
         <numberingSystem id="cyrl" type="algorithmic" rules="cyrillic-lower"/>
         <numberingSystem id="deva" type="numeric" digits="०१२३४५६७८९"/>
+        <numberingSystem id="diak" type="numeric" digits="&#x11950;&#x11951;&#x11952;&#x11953;&#x11954;&#x11955;&#x11956;&#x11957;&#x11958;&#x11959;"/>
         <numberingSystem id="ethi" type="algorithmic" rules="ethiopic"/>
         <numberingSystem id="fullwide" type="numeric" digits="０１２３４５６７８９"/>
         <numberingSystem id="geor" type="algorithmic" rules="georgian"/>
@@ -75,6 +76,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="roman" type="algorithmic" rules="roman-upper"/>
         <numberingSystem id="romanlow" type="algorithmic" rules="roman-lower"/>
         <numberingSystem id="saur" type="numeric" digits="꣐꣑꣒꣓꣔꣕꣖꣗꣘꣙"/>
+        <numberingSystem id="segment" type="numeric" digits="&#x1FBF0;&#x1FBF1;&#x1FBF2;&#x1FBF3;&#x1FBF4;&#x1FBF5;&#x1FBF6;&#x1FBF7;&#x1FBF8;&#x1FBF9;"/>
         <numberingSystem id="shrd" type="numeric" digits="&#x111D0;&#x111D1;&#x111D2;&#x111D3;&#x111D4;&#x111D5;&#x111D6;&#x111D7;&#x111D8;&#x111D9;"/>
         <numberingSystem id="sind" type="numeric" digits="&#x112F0;&#x112F1;&#x112F2;&#x112F3;&#x112F4;&#x112F5;&#x112F6;&#x112F7;&#x112F8;&#x112F9;"/>
         <numberingSystem id="sinh" type="numeric" digits="&#x0DE6;&#x0DE7;&#x0DE8;&#x0DE9;&#x0DEA;&#x0DEB;&#x0DEC;&#x0DED;&#x0DEE;&#x0DEF;"/>

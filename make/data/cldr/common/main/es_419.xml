@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -32,6 +32,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="es_ES">español de España</language>
 			<language type="es_MX">español de México</language>
 			<language type="eu">vasco</language>
+			<language type="fa_AF">darí</language>
 			<language type="fr_CA">francés canadiense</language>
 			<language type="fr_CH">francés suizo</language>
 			<language type="goh" draft="contributed">alemán de la alta edad antigua</language>
@@ -75,6 +76,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Laoo">lao</script>
 			<script type="Latn">latín</script>
 			<script type="Mlym">malayalam</script>
+			<script type="Olck" draft="contributed">ol chiki</script>
 		</scripts>
 		<territories>
 			<territory type="011">África del Oeste</territory>
@@ -106,7 +108,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNormalization">orden normalizado</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">islamic-umalqura</type>
+			<type key="calendar" type="islamic-rgsa">calendario islámico (Arabia Saudita)</type>
+			<type key="calendar" type="islamic-tbla">calendario islámico tabular</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">ordenar símbolos</type>
 			<type key="colAlternate" type="shifted" draft="contributed">ordenar ignorando símbolos</type>
 			<type key="colBackwards" type="no" draft="contributed">ordenar acentos normalmente</type>
@@ -1004,7 +1007,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>hora de la Isla Norfolk</standard>
+					<generic draft="contributed">hora de la Isla Norfolk</generic>
+					<standard draft="contributed">hora estándar de la Isla Norfolk</standard>
+					<daylight draft="contributed">hora de verano de la Isla Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
@@ -1313,7 +1318,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">G</displayName>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">m/s²</displayName>
 				<unitPattern count="one" draft="contributed">{0}m/s²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
@@ -1473,7 +1478,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="600" draft="contributed">seminegrita</styleName>
 		<styleName type="wght" subtype="600" alt="demi">seminegrita demi</styleName>
 		<styleName type="wght" subtype="800">extranegrita</styleName>
-		<styleName type="wght" subtype="800" alt="ultra" draft="contributed">ultra</styleName>
+		<styleName type="wght" subtype="800" alt="ultra">extra negrita</styleName>
 		<styleName type="wght" subtype="900" alt="heavy" draft="contributed">pesada</styleName>
 		<styleName type="wght" subtype="950" draft="contributed">extranegra</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack" draft="contributed">ultranegra</styleName>

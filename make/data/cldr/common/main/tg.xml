@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -935,18 +935,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Дхул-Ҳ.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="provisional">муҳаррам</month>
-							<month type="2" draft="provisional">сафар</month>
-							<month type="3" draft="provisional">Рабеъ I</month>
-							<month type="4" draft="provisional">Рабеъ II</month>
-							<month type="5" draft="provisional">ҷимоди-ул-уло</month>
-							<month type="6" draft="provisional">ҷимоди-ул-сони</month>
-							<month type="7" draft="provisional">раҷаб</month>
-							<month type="8" draft="provisional">Шабан</month>
-							<month type="9" draft="provisional">Рамадан</month>
-							<month type="10" draft="provisional">Шаввал</month>
-							<month type="11" draft="provisional">Дхут-Қидаҳ</month>
-							<month type="12" draft="provisional">Дхут-Ҳиҷҷаҳ</month>
+							<month type="1">муҳаррам</month>
+							<month type="2">сафар</month>
+							<month type="3">Рабеъ I</month>
+							<month type="4">Рабеъ II</month>
+							<month type="5">ҷимоди-ул-уло</month>
+							<month type="6">ҷимоди-ул-сони</month>
+							<month type="7">раҷаб</month>
+							<month type="8">Шабан</month>
+							<month type="9">Рамадан</month>
+							<month type="10">Шаввал</month>
+							<month type="11">Дхут-Қидаҳ</month>
+							<month type="12">Дхут-Ҳиҷҷаҳ</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -965,18 +965,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Дхул-Ҳ.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="provisional">муҳаррам</month>
-							<month type="2" draft="provisional">сафар</month>
-							<month type="3" draft="provisional">Рабеъ I</month>
-							<month type="4" draft="provisional">Рабеъ II</month>
-							<month type="5" draft="provisional">ҷимоди-ул-уло</month>
-							<month type="6" draft="provisional">ҷимоди-ул-сони</month>
-							<month type="7" draft="provisional">раҷаб</month>
-							<month type="8" draft="provisional">Шабан</month>
-							<month type="9" draft="provisional">Рамадан</month>
-							<month type="10" draft="provisional">Шаввал</month>
-							<month type="11" draft="provisional">Дхул-Қидаҳ</month>
-							<month type="12" draft="provisional">Дхул-Ҳиҷҷаҳ</month>
+							<month type="1">муҳаррам</month>
+							<month type="2">сафар</month>
+							<month type="3">Рабеъ I</month>
+							<month type="4">Рабеъ II</month>
+							<month type="5">ҷимоди-ул-уло</month>
+							<month type="6">ҷимоди-ул-сони</month>
+							<month type="7">раҷаб</month>
+							<month type="8">Шабан</month>
+							<month type="9">Рамадан</month>
+							<month type="10">Шаввал</month>
+							<month type="11">Дхул-Қидаҳ</month>
+							<month type="12">Дхул-Ҳиҷҷаҳ</month>
 						</monthWidth>
 					</monthContext>
 				</months>

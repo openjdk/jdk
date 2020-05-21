@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1860,46 +1860,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 			</calendar>
 			<calendar type="generic">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">M01</month>
-							<month type="2" draft="unconfirmed">M02</month>
-							<month type="3" draft="unconfirmed">M03</month>
-							<month type="4" draft="unconfirmed">M04</month>
-							<month type="5" draft="unconfirmed">M05</month>
-							<month type="6" draft="unconfirmed">M06</month>
-							<month type="7" draft="unconfirmed">M07</month>
-							<month type="8" draft="unconfirmed">M08</month>
-							<month type="9" draft="unconfirmed">M09</month>
-							<month type="10" draft="unconfirmed">M10</month>
-							<month type="11" draft="unconfirmed">M11</month>
-							<month type="12" draft="unconfirmed">M12</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">1</month>
-							<month type="2" draft="unconfirmed">2</month>
-							<month type="3" draft="unconfirmed">3</month>
-							<month type="4" draft="unconfirmed">4</month>
-							<month type="5" draft="unconfirmed">5</month>
-							<month type="6" draft="unconfirmed">6</month>
-							<month type="7" draft="unconfirmed">7</month>
-							<month type="8" draft="unconfirmed">8</month>
-							<month type="9" draft="unconfirmed">9</month>
-							<month type="10" draft="unconfirmed">10</month>
-							<month type="11" draft="unconfirmed">11</month>
-							<month type="12" draft="unconfirmed">12</month>
-						</monthWidth>
-					</monthContext>
-				</months>
-				<eras>
-					<eraAbbr>
-						<era type="0" draft="unconfirmed">ERA0</era>
-						<era type="1" draft="unconfirmed">ERA1</era>
-					</eraAbbr>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -4346,7 +4306,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard draft="contributed">Norfolkeilânske tiid</standard>
+					<generic draft="contributed">Norfolkeilânske tiid</generic>
+					<standard draft="contributed">Norfolkeilânske standerttiid</standard>
+					<daylight draft="contributed">Norfolkeilânske simmertiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6459,7 +6421,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} hynstekrêft</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} hynstekrêften</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
@@ -6694,7 +6656,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} pk</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pk</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
@@ -6894,7 +6856,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} pk</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pk</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
 			</unit>

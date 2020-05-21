@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -52,7 +52,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa">אוואדית</language>
 			<language type="ay">איימארית</language>
 			<language type="az">אזרית</language>
-			<language type="az" alt="short">אזרית</language>
 			<language type="ba">בשקירית</language>
 			<language type="bal">באלוצ׳י</language>
 			<language type="ban">באלינזית</language>
@@ -151,6 +150,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">בסקית</language>
 			<language type="ewo">אוונדו</language>
 			<language type="fa">פרסית</language>
+			<language type="fa_AF">דארי</language>
 			<language type="fan">פנג</language>
 			<language type="fat">פאנטי</language>
 			<language type="ff">פולה</language>
@@ -552,6 +552,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<scripts>
 			<script type="Arab">ערבי</script>
 			<script type="Arab" alt="variant">ערבי-פרסי</script>
+			<script type="Aran" draft="contributed">נסתעליק</script>
+			<script type="Armi" draft="contributed">ארמית רשמית</script>
 			<script type="Armn">ארמני</script>
 			<script type="Bali">באלינזי</script>
 			<script type="Beng">בנגלי</script>
@@ -597,9 +599,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Maya" draft="contributed">מאיה</script>
 			<script type="Mlym">מליאלאם</script>
 			<script type="Mong">מונגולי</script>
+			<script type="Mtei" draft="contributed">מאיטי מאייק</script>
 			<script type="Mymr">מיאנמר</script>
+			<script type="Nkoo" draft="contributed">נ׳קו</script>
+			<script type="Olck" draft="contributed">אול צ׳יקי</script>
 			<script type="Orya">אודייה</script>
 			<script type="Phnx">פיניקי</script>
+			<script type="Qaag" draft="contributed">זאוגיי</script>
 			<script type="Runr">רוני</script>
 			<script type="Sinh">סינהלה</script>
 			<script type="Syrc">סורי</script>
@@ -741,7 +747,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">צרפת</territory>
 			<territory type="GA">גבון</territory>
 			<territory type="GB">בריטניה</territory>
-			<territory type="GB" alt="short">בריטניה</territory>
 			<territory type="GD">גרנדה</territory>
 			<territory type="GE">גאורגיה</territory>
 			<territory type="GF">גיאנה הצרפתית</territory>
@@ -5584,7 +5589,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>שעון האי נורפוק</standard>
+					<generic draft="contributed">שעון האי נורפוק</generic>
+					<standard draft="contributed">שעון האי נורפוק (חורף)</standard>
+					<daylight draft="contributed">שעון האי נורפוק (קיץ)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -7707,8 +7714,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>דצי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>סנטי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>מילי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>מיקרו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ננו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>פיקו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>פמטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>אטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>זפטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>יוקטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>דקא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>הקטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>קילו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>מגה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>גיגה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>טרה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>פטא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>אקסה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>זטא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>יוטא{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} ל{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0} בריבוע</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0} מעוקב</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>כוח ג׳י</displayName>
@@ -7717,7 +7796,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} כוחות ג׳י</unitPattern>
 				<unitPattern count="other">{0} כוחות ג׳י</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>מטר לשנייה בריבוע</displayName>
 				<unitPattern count="one">{0} מטר לשנייה בריבוע</unitPattern>
 				<unitPattern count="two">{0} מטר לשנייה בריבוע</unitPattern>
@@ -7855,7 +7934,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} מילימול/ליטר</unitPattern>
 				<unitPattern count="other">{0} מילימול/ליטר</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>חלקים למיליון</displayName>
 				<unitPattern count="one">{0} חלקים למיליון</unitPattern>
 				<unitPattern count="two">{0} חלקים למיליון</unitPattern>
@@ -7897,7 +7976,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ליטרים/קילומטר</unitPattern>
 				<unitPattern count="other">{0} ליטרים/קילומטר</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ליטר/100 ק״מ</displayName>
 				<unitPattern count="one">ליטר/100 ק״מ</unitPattern>
 				<unitPattern count="two">{0} ליטר/100 ק״מ</unitPattern>
@@ -8556,21 +8635,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} כוח סוס</unitPattern>
 				<unitPattern count="other">{0} כוח סוס</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>מילימטר כספית</displayName>
 				<unitPattern count="one">מילימטר כספית אחד</unitPattern>
 				<unitPattern count="two">שני מילימטר כספית</unitPattern>
 				<unitPattern count="many">{0} מילימטר כספית</unitPattern>
 				<unitPattern count="other">{0} מילימטר כספית</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>פאונד לאינץ׳ רבוע</displayName>
 				<unitPattern count="one">פאונד אחד לאינץ׳ רבוע</unitPattern>
 				<unitPattern count="two">שני פאונד לאינץ׳ רבוע</unitPattern>
 				<unitPattern count="many">{0} פאונד לאינץ׳ רבוע</unitPattern>
 				<unitPattern count="other">{0} פאונד לאינץ׳ רבוע</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>אינץ׳ כספית</displayName>
 				<unitPattern count="one">אינץ׳ כספית {0}</unitPattern>
 				<unitPattern count="two">{0} אינץ׳ כספית</unitPattern>
@@ -8682,7 +8761,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} קלווין</unitPattern>
 				<unitPattern count="other">{0} קלווין</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>כוח פאונד</displayName>
 				<unitPattern count="one">{0} כוח פאונד</unitPattern>
 				<unitPattern count="two">{0} כוח פאונד</unitPattern>
@@ -8892,6 +8971,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>דצי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>סנטי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>מילי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ננו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>פיקו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>פמטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>אטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>זפטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>יוקטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>דקא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>הקטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>קילו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>מגה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>גיגה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>טרה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>פטא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>אקס{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>זטא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>יוטא{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8905,7 +9041,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="two">{0} m/s²</unitPattern>
@@ -9043,7 +9179,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="two">{0} ppm</unitPattern>
@@ -9071,7 +9207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ל׳/ק״מ</unitPattern>
 				<unitPattern count="other">{0} ל׳/ק״מ</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ל׳/100 ק״מ</displayName>
 				<unitPattern count="one">ל׳ {0}/100 ק״מ</unitPattern>
 				<unitPattern count="two">{0} ל׳/100 ק״מ</unitPattern>
@@ -9670,21 +9806,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} כ״ס</unitPattern>
 				<unitPattern count="other">{0} כ״ס</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="two">{0} mm Hg</unitPattern>
 				<unitPattern count="many">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="two">{0} psi</unitPattern>
 				<unitPattern count="many">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>in Hg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
@@ -9969,6 +10105,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>דצי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>סנטי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>מילי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ננו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>פיקו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>פמטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>אטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>זפטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>יוקטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>דקא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>הקטו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>קילו{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>מגה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>גיגה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>טרה{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>פטא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>אקס{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>זטא{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>יוטא{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -9979,7 +10172,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="contributed">{0} G</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">m/s²</displayName>
 				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} m/s²</unitPattern>
@@ -10047,7 +10240,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ל׳/100ק״מ</displayName>
 				<unitPattern count="one">{0}ל׳/100ק״מ</unitPattern>
 				<unitPattern count="two">{0}ל׳/100ק״מ</unitPattern>
@@ -10401,21 +10594,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="contributed">{0} כ״ס</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} כ״ס</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="contributed">mm Hg</displayName>
 				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} mm Hg</unitPattern>
 				<unitPattern count="many" draft="contributed">{0} mm Hg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">psi</displayName>
 				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} psi</unitPattern>
 				<unitPattern count="many" draft="contributed">{0} psi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">in Hg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>

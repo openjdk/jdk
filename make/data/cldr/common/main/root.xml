@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -4236,8 +4236,76 @@ for derived annotations.
 			<alias source="locale" path="../unitLength[@type='short']"/>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -4246,7 +4314,7 @@ for derived annotations.
 				<displayName>g-force</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -4327,7 +4395,7 @@ for derived annotations.
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
@@ -4351,7 +4419,7 @@ for derived annotations.
 				<displayName>L/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
@@ -4467,8 +4535,8 @@ for derived annotations.
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>μs</displayName>
-				<unitPattern count="other">{0} μs</unitPattern>
+				<displayName>µs</displayName>
+				<unitPattern count="other">{0} µs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>ns</displayName>
@@ -4759,15 +4827,15 @@ for derived annotations.
 				<displayName>hp</displayName>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
@@ -4831,7 +4899,7 @@ for derived annotations.
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
 			</unit>

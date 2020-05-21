@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -80,6 +80,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cad">kado</language>
 			<language type="car">karipski</language>
 			<language type="cch">atsam</language>
+			<language type="ccp">čakma</language>
 			<language type="ce">čečenski</language>
 			<language type="ceb">sebuanski</language>
 			<language type="cgg">čiga</language>
@@ -142,6 +143,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">baskijski</language>
 			<language type="ewo">evondo</language>
 			<language type="fa">persijski</language>
+			<language type="fa_AF">dari</language>
 			<language type="fan">fang</language>
 			<language type="fat">fanti</language>
 			<language type="ff">fula</language>
@@ -928,7 +930,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SX">Sveti Martin (Holandija)</territory>
 			<territory type="SY">Sirija</territory>
 			<territory type="SZ">Svazilend</territory>
-			<territory type="SZ" alt="variant">Svazilend</territory>
 			<territory type="TA">Tristan da Kunja</territory>
 			<territory type="TC">Ostrva Turks i Kaikos</territory>
 			<territory type="TD">Čad</territory>
@@ -965,6 +966,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Valis i Futuna</territory>
 			<territory type="WS">Samoa</territory>
+			<territory type="XA">Pseudoakcenti</territory>
+			<territory type="XB">Pseudobidi</territory>
 			<territory type="XK">Kosovo</territory>
 			<territory type="YE">Jemen</territory>
 			<territory type="YT">Majot</territory>
@@ -1700,9 +1703,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">p. n. e.</era>
-						<era type="0" alt="variant">p. n. e.</era>
 						<era type="1">n. e.</era>
-						<era type="1" alt="variant">n. e.</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">p.n.e.</era>
@@ -5080,7 +5081,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolk Ostrvo vreme</standard>
+					<generic draft="contributed">Norfolk Ostrvo vreme</generic>
+					<standard draft="contributed">Norfolk Ostrvo, standardno vreme</standard>
+					<daylight draft="contributed">Norfolk Ostrvo, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -7600,8 +7603,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>centi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ato{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>jokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>eksa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zeta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>jota{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>kvadratni {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">kvadratni {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">kvadratna {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">kvadratnih {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>kubni {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">kubni {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">kubna {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">kubnih {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -7612,7 +7687,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} ge sila</unitPattern>
 				<unitPattern count="other">{0} ge sila</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metri u sekundi na kvadrat</displayName>
 				<unitPattern count="one">{0} metar u sekundi na kvadrat</unitPattern>
 				<unitPattern count="few">{0} metra u sekundi na kvadrat</unitPattern>
@@ -7731,7 +7806,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} milimola po litri</unitPattern>
 				<unitPattern count="other">{0} milimola po litri</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>čestica na milion</displayName>
 				<unitPattern count="one">{0} čestica na milion</unitPattern>
 				<unitPattern count="few">{0} čestice na milion</unitPattern>
@@ -7761,7 +7836,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} litra po kilometru</unitPattern>
 				<unitPattern count="other">{0} litara po kilometru</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} litar na 100 kilometara</unitPattern>
 				<unitPattern count="few">{0} litra na 100 kilometara</unitPattern>
@@ -8278,19 +8353,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} konjske snage</unitPattern>
 				<unitPattern count="other">{0} konjskih snaga</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimetri živinog stuba</displayName>
 				<unitPattern count="one">{0} milimetar živinog stuba</unitPattern>
 				<unitPattern count="few">{0} milimetra živinog stuba</unitPattern>
 				<unitPattern count="other">{0} milimetara živinog stuba</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funte po kvadratnom inču</displayName>
 				<unitPattern count="one">{0} funta po kvadratnom inču</unitPattern>
 				<unitPattern count="few">{0} funte po kvadratnom inču</unitPattern>
 				<unitPattern count="other">{0} funti po kvadratnom inču</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inči živinog stuba</displayName>
 				<unitPattern count="one">{0} inč živinog stuba</unitPattern>
 				<unitPattern count="few">{0} inča živinog stuba</unitPattern>
@@ -8386,7 +8461,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} kelvina</unitPattern>
 				<unitPattern count="other">{0} kelvina</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>funta-fiti</displayName>
 				<unitPattern count="one">{0} funta-fit</unitPattern>
 				<unitPattern count="few">{0} funta-fita</unitPattern>
@@ -8571,6 +8646,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8580,7 +8660,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="few">{0} m/s²</unitPattern>
@@ -8699,7 +8779,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="few">{0} ppm</unitPattern>
@@ -8723,7 +8803,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="few">{0} L/100 km</unitPattern>
@@ -9232,19 +9312,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="few">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="few">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="few">{0} inHg</unitPattern>
@@ -9489,6 +9569,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0}²</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -9548,7 +9632,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="few">{0} L/100km</unitPattern>
@@ -9694,7 +9778,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few" draft="contributed">{0} ks</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ks</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
@@ -9937,7 +10021,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wdth" subtype="62.5" alt="compressed">extra-compressed</styleName>
 		<styleName type="wdth" subtype="62.5" alt="narrow">extra-narrow</styleName>
 		<styleName type="wdth" subtype="75">condensed</styleName>
-		<styleName type="wdth" subtype="75" alt="compressed">compressed</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">zbijeno</styleName>
 		<styleName type="wdth" subtype="75" alt="narrow">compressed</styleName>
 		<styleName type="wdth" subtype="87.5">semicondensed</styleName>
 		<styleName type="wdth" subtype="87.5" alt="compressed">semicompressed</styleName>
@@ -9947,8 +10031,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wdth" subtype="112.5" alt="extended">semiextended</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">semiwide</styleName>
 		<styleName type="wdth" subtype="125">expanded</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">extended</styleName>
-		<styleName type="wdth" subtype="125" alt="wide">wide</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">produženo</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">široko</styleName>
 		<styleName type="wdth" subtype="150">extra-expanded</styleName>
 		<styleName type="wdth" subtype="150" alt="extended">extra-extended</styleName>
 		<styleName type="wdth" subtype="150" alt="wide">extra-wide</styleName>
@@ -9968,10 +10052,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="700">bold</styleName>
 		<styleName type="wght" subtype="800">extra-bold</styleName>
 		<styleName type="wght" subtype="900">black</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">teško</styleName>
 		<styleName type="wght" subtype="950">extra-black</styleName>
-		<styleName type="wght" subtype="950" alt="ultrablack">ultrablack</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy">ultraheavy</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">izuzetno crno</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">izuzetno teško</styleName>
 		<featureName type="afrc">vertical fractions</featureName>
 		<featureName type="cpsp">capital spacing</featureName>
 		<featureName type="dlig">optional ligatures</featureName>

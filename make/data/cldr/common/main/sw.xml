@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -468,7 +468,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Grek">Kigiriki</script>
 			<script type="Gujr">Kigujarati</script>
 			<script type="Guru">Kigurmukhi</script>
-			<script type="Hanb">Hanb</script>
+			<script type="Hanb">Kihan chenye Bopomofo</script>
 			<script type="Hang">Kihangul</script>
 			<script type="Hani">Kihan</script>
 			<script type="Hans">Rahisi</script>
@@ -613,7 +613,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ES">Uhispania</territory>
 			<territory type="ET">Ethiopia</territory>
 			<territory type="EU">Umoja wa Ulaya</territory>
-			<territory type="EZ">EZ</territory>
+			<territory type="EZ">Jumuiya ya Ulaya</territory>
 			<territory type="FI">Ufini</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Visiwa vya Falkland</territory>
@@ -623,7 +623,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">Ufaransa</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">Ufalme wa Muungano</territory>
-			<territory type="GB" alt="short">Ufalme wa Muungano</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Jojia</territory>
 			<territory type="GF">Guiana ya Ufaransa</territory>
@@ -765,7 +764,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Syria</territory>
 			<territory type="SZ">Uswazi</territory>
-			<territory type="SZ" alt="variant">Uswazi</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Visiwa vya Turks na Caicos</territory>
 			<territory type="TD">Chad</territory>
@@ -788,7 +786,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Visiwa Vidogo vya Nje vya Marekani</territory>
 			<territory type="UN">Umoja wa Mataifa</territory>
-			<territory type="UN" alt="short">Umoja wa Mataifa</territory>
 			<territory type="US">Marekani</territory>
 			<territory type="US" alt="short">US</territory>
 			<territory type="UY">Uruguay</territory>
@@ -3089,6 +3086,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
 			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kostanay</exemplarCity>
+			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Qyzylorda</exemplarCity>
 			</zone>
@@ -4339,7 +4339,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Saa za Kisiwa cha Norfolk</standard>
+					<generic draft="contributed">Saa za Kisiwa cha Norfolk</generic>
+					<standard draft="contributed">Saa za Wastani za Kisiwa cha Norfolk</standard>
+					<daylight draft="contributed">Saa za Majira ya joto za Kisiwa cha Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4988,7 +4990,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CZK">
-				<displayName>CZK</displayName>
+				<displayName>koruna ya Jamhuri ya Czech</displayName>
 				<displayName count="one">koruna ya Jamhuri ya Czech</displayName>
 				<displayName count="other">koruna za Jamhuri ya Czech</displayName>
 				<symbol draft="contributed">CZK</symbol>
@@ -5851,15 +5853,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>desi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} kwa kila {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0} mraba</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} mraba</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} mraba</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0} mchemraba</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} mchemraba</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} mchemraba</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>mvuto wa graviti</displayName>
 				<unitPattern count="one">mvuto wa graviti {0}</unitPattern>
 				<unitPattern count="other">mvuto wa graviti {0}</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mita kwa kila sekunde mraba</displayName>
 				<unitPattern count="one">mita {0} kwa kila sekunde mraba</unitPattern>
 				<unitPattern count="other">mita {0} kwa kila sekunde mraba</unitPattern>
@@ -5959,7 +6031,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">milimoli {0} kwa kila lita</unitPattern>
 				<unitPattern count="other">milimoli {0} kwa kila lita</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">ppm {0}</unitPattern>
 				<unitPattern count="other">ppm {0}</unitPattern>
@@ -5989,7 +6061,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">lita {0} kwa kilomita</unitPattern>
 				<unitPattern count="other">lita {0} kwa kilomita</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>lita kwa kilomita 100</displayName>
 				<unitPattern count="one">lita {0} kwa kilomita 100</unitPattern>
 				<unitPattern count="other">lita {0} kwa kilomita 100</unitPattern>
@@ -6435,17 +6507,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">kipimo cha hospawa {0}</unitPattern>
 				<unitPattern count="other">kipimo cha hospawa {0}</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimita za zebaki</displayName>
 				<unitPattern count="one">milimita {0} ya zebaki</unitPattern>
 				<unitPattern count="other">milimita {0} za zebaki</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pauni kwa kila inchi mraba</displayName>
 				<unitPattern count="one">pauni {0} kwa kila inchi mraba</unitPattern>
 				<unitPattern count="other">pauni {0} kwa kila inchi mraba</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inchi za zebaki</displayName>
 				<unitPattern count="one">inchi {0} ya zebaki</unitPattern>
 				<unitPattern count="other">inchi {0} za zebaki</unitPattern>
@@ -6525,7 +6597,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">kelvini {0}</unitPattern>
 				<unitPattern count="other">kelvini {0}</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>paunifuti</displayName>
 				<unitPattern count="one">paunifuti {0}</unitPattern>
 				<unitPattern count="other">paunifuti {0}</unitPattern>
@@ -6674,6 +6746,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>desi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>milli{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6682,7 +6814,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">G {0}</unitPattern>
 				<unitPattern count="other">G {0}</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mita kwa kila sekunde mraba</displayName>
 				<unitPattern count="one">m {0}/s²</unitPattern>
 				<unitPattern count="other">m {0}/s²</unitPattern>
@@ -6782,7 +6914,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">mmol {0}/lita</unitPattern>
 				<unitPattern count="other">mmol {0}/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">ppm {0}</unitPattern>
 				<unitPattern count="other">ppm {0}</unitPattern>
@@ -6810,7 +6942,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">lita {0} kwa kilomita</unitPattern>
 				<unitPattern count="other">lita {0} kwa kilomita</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>lita kwa kilomita 100</displayName>
 				<unitPattern count="one">lita {0} kwa kilomita 100</unitPattern>
 				<unitPattern count="other">lita {0}/km100</unitPattern>
@@ -7244,17 +7376,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimita za zebaki</displayName>
 				<unitPattern count="one">milimita {0} ya zebaki</unitPattern>
 				<unitPattern count="other">mm Hg {0}</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pauni kwa kila inchi mraba</displayName>
 				<unitPattern count="one">psi {0}</unitPattern>
 				<unitPattern count="other">psi {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inchi za zebaki</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -7470,6 +7602,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>desi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>milli{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7518,7 +7710,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">asilimia {0}</unitPattern>
 				<unitPattern count="other">asilimia {0}</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>lita kwa kilomita 100</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>
@@ -7642,7 +7834,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">hp {0}</unitPattern>
 				<unitPattern count="other">hp {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2771,7 +2771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>forsa G</displayName>
 				<unitPattern count="other">{0} forsa G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metru pur sigundu kuadradu</displayName>
 				<unitPattern count="other">{0} metru pur sigundu kuadradu</unitPattern>
 			</unit>
@@ -2848,7 +2848,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol pur litru</displayName>
 				<unitPattern count="other">{0} milimol pur litru</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>parti pur milhãu</displayName>
 				<unitPattern count="other">{0} parti pur milhãu</unitPattern>
 			</unit>
@@ -2868,7 +2868,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>litru pur kilómetru</displayName>
 				<unitPattern count="other">{0} litru pur kilómetru</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litru pur 100 kilómetru</displayName>
 				<unitPattern count="other">{0} litru pur 100 kilómetru</unitPattern>
 			</unit>
@@ -3249,15 +3249,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kabalu-vapor</displayName>
 				<unitPattern count="other">{0} kabalu-vapor</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milímetru di merkúriu</displayName>
 				<unitPattern count="other">{0} milímetru di merkúriu</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>libra pur pulegada kuadradu</displayName>
 				<unitPattern count="other">{0} libra pur pulegada kuadradu</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>pulegada di merkúriu</displayName>
 				<unitPattern count="other">{0} pulegada di merkúriu</unitPattern>
 			</unit>
@@ -3317,7 +3317,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kelvin</displayName>
 				<unitPattern count="other">{0} kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pe-libra</displayName>
 				<unitPattern count="other">{0} pe-libra</unitPattern>
 			</unit>
@@ -3519,7 +3519,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol/litru</displayName>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>parti/milhãu</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
@@ -3527,7 +3527,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>l/km</displayName>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litru/100km</displayName>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
@@ -3900,7 +3900,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="other">{0} l/100km</unitPattern>
 			</unit>

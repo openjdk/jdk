@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -180,6 +180,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">evondo</language>
 			<language type="ext">estremenju</language>
 			<language type="fa">pärsia</language>
+			<language type="fa_AF">dari</language>
 			<language type="fan">fangi</language>
 			<language type="fat">fanti</language>
 			<language type="ff">fula</language>
@@ -201,7 +202,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fur">friuuli</language>
 			<language type="fy">läänefriisi</language>
 			<language type="ga">iiri</language>
-			<language type="gaa">gaa</language>
 			<language type="gag">gagauusi</language>
 			<language type="gan">kani</language>
 			<language type="gay">gajo</language>
@@ -470,7 +470,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">moldova</language>
 			<language type="rof">rombo</language>
 			<language type="rom">mustlaskeel</language>
-			<language type="root">root</language>
 			<language type="rtm">rotuma</language>
 			<language type="ru">vene</language>
 			<language type="rue">russiini</language>
@@ -4814,7 +4813,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolki saarte aeg</standard>
+					<generic draft="contributed">Norfolki saarte aeg</generic>
+					<standard draft="contributed">Norfolki saarte standardaeg</standard>
+					<daylight draft="contributed">Norfolki saarte suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6790,8 +6791,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>detsi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>milli{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ato{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>jokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>eksa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zeta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>jota{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} {1} kohta</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>ruut{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ruut{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ruut{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>kuup{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">kuup{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">kuup{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -6801,7 +6872,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Maa raskuskiirendus</unitPattern>
 				<unitPattern count="other">{0} Maa raskuskiirendust</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>meetrid sekundi ruudu kohta</displayName>
 				<unitPattern count="one">{0} meeter sekundi ruudu kohta</unitPattern>
 				<unitPattern count="other">{0} meetrit sekundi ruudu kohta</unitPattern>
@@ -6901,7 +6972,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimool liitri kohta</unitPattern>
 				<unitPattern count="other">{0} millimooli liitri kohta</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>osa miljoni kohta</displayName>
 				<unitPattern count="one">{0} osa miljoni kohta</unitPattern>
 				<unitPattern count="other">{0} osa miljoni kohta</unitPattern>
@@ -6931,7 +7002,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} liiter kilomeetri kohta</unitPattern>
 				<unitPattern count="other">{0} liitrit kilomeetri kohta</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>liitrid 100 kilomeetri kohta</displayName>
 				<unitPattern count="one">liiter 100 kilomeetri kohta</unitPattern>
 				<unitPattern count="other">{0} liitrit 100 kilomeetri kohta</unitPattern>
@@ -7420,17 +7491,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hobujõud</unitPattern>
 				<unitPattern count="other">{0} hobujõudu</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>millimeetrid elavhõbedasammast</displayName>
 				<unitPattern count="one">{0} millimeeter elavhõbedasammast</unitPattern>
 				<unitPattern count="other">{0} millimeetrit elavhõbedasammast</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>naelad ruuttolli kohta</displayName>
 				<unitPattern count="one">{0} nael ruuttolli kohta</unitPattern>
 				<unitPattern count="other">{0} naela ruuttolli kohta</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>tollid elavhõbedasammast</displayName>
 				<unitPattern count="one">{0} toll elavhõbedasammast</unitPattern>
 				<unitPattern count="other">{0} tolli elavhõbedasammast</unitPattern>
@@ -7510,7 +7581,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kelvin</unitPattern>
 				<unitPattern count="other">{0} kelvinit</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>naeljalad</displayName>
 				<unitPattern count="one">{0} naeljalg</unitPattern>
 				<unitPattern count="other">{0} naeljalga</unitPattern>
@@ -7680,7 +7751,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -7780,7 +7851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>osa/miljon</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -7810,7 +7881,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
@@ -8294,17 +8365,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hj</unitPattern>
 				<unitPattern count="other">{0} hj</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>in Hg</displayName>
 				<unitPattern count="one">{0} in Hg</unitPattern>
 				<unitPattern count="other">{0} in Hg</unitPattern>
@@ -8379,7 +8450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
 				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
@@ -8580,7 +8651,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100km</unitPattern>
 				<unitPattern count="other">{0} l/100km</unitPattern>
@@ -8736,12 +8807,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hj</unitPattern>
 				<unitPattern count="other">{0} hj</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">″ Hg</displayName>
 				<unitPattern count="one">{0} toll Hg</unitPattern>
 				<unitPattern count="other">{0} tolli Hg</unitPattern>

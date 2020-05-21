@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -50,7 +50,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa">ავადი</language>
 			<language type="ay">აიმარა</language>
 			<language type="az">აზერბაიჯანული</language>
-			<language type="az" alt="short">აზერბაიჯანული</language>
 			<language type="ba">ბაშკირული</language>
 			<language type="bal">ბელუჯი</language>
 			<language type="ban">ბალინური</language>
@@ -146,6 +145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">ბასკური</language>
 			<language type="ewo">ევონდო</language>
 			<language type="fa">სპარსული</language>
+			<language type="fa_AF">დარი</language>
 			<language type="ff">ფულა</language>
 			<language type="fi">ფინური</language>
 			<language type="fil">ფილიპინური</language>
@@ -955,7 +955,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UG">უგანდა</territory>
 			<territory type="UM">აშშ-ის შორეული კუნძულები</territory>
 			<territory type="UN">გაერო</territory>
-			<territory type="UN" alt="short">გაერო</territory>
 			<territory type="US">ამერიკის შეერთებული შტატები</territory>
 			<territory type="US" alt="short">აშშ</territory>
 			<territory type="UY">ურუგვაი</territory>
@@ -4750,7 +4749,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>ნორფოლკის კუნძულის დრო</standard>
+					<generic draft="contributed">ნორფოლკის კუნძულის დრო</generic>
+					<standard draft="contributed">ნორფოლკის კუნძულის სტანდარტული დრო</standard>
+					<daylight draft="contributed">ნორფოლკის კუნძულის ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6489,15 +6490,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>დეცი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>სანტი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>მილი{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>მიკრო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ნანო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>პიკო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ფემტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ატო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ზეპტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>იოქტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>დეკა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ჰეკტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>კილო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>მეგა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>გიგა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ტერა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>პეტა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ექსა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ზეტა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>იოტა{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>კვადრატული {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">კვადრატული {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">კვადრატული {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>კუბური {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">კუბური {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">კუბური {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ინერციის ძალა</displayName>
 				<unitPattern count="one">{0} ინერციის ძალა</unitPattern>
 				<unitPattern count="other">{0} ინერციის ძალა</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>მეტრი კვადრატულ წამში</displayName>
 				<unitPattern count="one">{0} მ/წმ²</unitPattern>
 				<unitPattern count="other">{0} მ/წმ²</unitPattern>
@@ -6597,7 +6668,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} მილიმოლი ლიტრზე</unitPattern>
 				<unitPattern count="other">{0} მილიმოლი ლიტრზე</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ნაწილი მილიონზე</displayName>
 				<unitPattern count="one">{0} ნაწილი მილიონზე</unitPattern>
 				<unitPattern count="other">{0} ნაწილი მილიონზე</unitPattern>
@@ -6617,7 +6688,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ლიტრი კილომეტრზე</unitPattern>
 				<unitPattern count="other">{0} ლიტრი კილომეტრზე</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ლიტრი 100 კილომეტრში</displayName>
 				<unitPattern count="one">{0} ლიტრი 100 კილომეტრში</unitPattern>
 				<unitPattern count="other">{0} ლიტრი 100 კილომეტრში</unitPattern>
@@ -7073,17 +7144,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ცხენის ძალა</unitPattern>
 				<unitPattern count="other">{0} ცხენის ძალა</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>მილიმეტრი ვერცხლისწყლის სვეტისა</displayName>
 				<unitPattern count="one">{0} მილიმეტრი ვერცხლისწყლის სვეტისა</unitPattern>
 				<unitPattern count="other">{0} მილიმეტრი ვერცხლისწყლის სვეტისა</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ფუნტი კვადრატულ დუიმზე</displayName>
 				<unitPattern count="one">{0} ფუნტი კვადრატულ დუიმზე</unitPattern>
 				<unitPattern count="other">{0} ფუნტი კვადრატულ დუიმზე</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ვერცხლისწყლის დუიმი</displayName>
 				<unitPattern count="one">{0} ვერცხლისწყლის დუიმი</unitPattern>
 				<unitPattern count="other">{0} ვერცხლისწყლის დუიმი</unitPattern>
@@ -7307,15 +7378,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>დ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ს{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>მ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>მკ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ნ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>პკ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ფ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ზეპტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>იოქტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>დეკა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ჰ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>კ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>გ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ტ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>პტ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ექსა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ზეტა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ი{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ინ. ძ.</displayName>
 				<unitPattern count="one">{0} ინ. ძ.</unitPattern>
 				<unitPattern count="other">{0} ინ. ძ.</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>მ/წმ²</displayName>
 				<unitPattern count="one">{0} მ/წმ²</unitPattern>
 				<unitPattern count="other">{0} მ/წმ²</unitPattern>
@@ -7415,7 +7556,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} მმოლ/ლ</unitPattern>
 				<unitPattern count="other">{0} მმოლ/ლ</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ნაწილი/მილიონზე</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -7435,7 +7576,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ლ/კმ</unitPattern>
 				<unitPattern count="other">{0} ლ/კმ</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ლ/100კმ</displayName>
 				<unitPattern count="one">{0} ლ/100კმ</unitPattern>
 				<unitPattern count="other">{0} ლ/100კმ</unitPattern>
@@ -7881,17 +8022,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ცხ. ძ.</unitPattern>
 				<unitPattern count="other">{0} ცხ. ძ.</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>მმ ვწყ. სვ.</displayName>
 				<unitPattern count="one">{0} მმ ვწყ. სვ.</unitPattern>
 				<unitPattern count="other">{0} მმ ვწყ. სვ.</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ფნტ. კვ. დმ.</displayName>
 				<unitPattern count="one">{0} ფნტ. კვ. დმ.</unitPattern>
 				<unitPattern count="other">{0} ფნტ. კვ. დმ.</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ვრც. დმ.</displayName>
 				<unitPattern count="one">{0} ვრც. დმ.</unitPattern>
 				<unitPattern count="other">{0} ვრც. დმ.</unitPattern>
@@ -8115,8 +8256,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>დ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ს{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>მ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>მკ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ნ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>პკ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ფ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ზეპტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>იოქტო{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>დეკა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ჰ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>კ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>გ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ტ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>პტ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ექსა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ზეტა{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ი{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0} ინ. ძ.</unitPattern>
@@ -8163,7 +8374,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ლ/100კმ</displayName>
 				<unitPattern count="one">{0}ლ/100კმ</unitPattern>
 				<unitPattern count="other">{0}ლ/100კმ</unitPattern>
@@ -8282,7 +8493,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ცხ.ძ.</unitPattern>
 				<unitPattern count="other">{0}ცხ.ძ.</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} ვრც. დმ.</unitPattern>
 				<unitPattern count="other">{0} ვრც. დმ.</unitPattern>
 			</unit>

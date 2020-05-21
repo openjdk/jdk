@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2782,7 +2782,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>čas kupy Norfolk</standard>
+					<generic draft="contributed">čas kupy Norfolk</generic>
+					<standard draft="contributed">standardny čas kupy Norfolk</standard>
+					<daylight draft="contributed">lětni čas kupy Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4592,7 +4594,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} jednotki zemskeho pospěšenja</unitPattern>
 				<unitPattern count="other">{0} jednotkow zemskeho pospěšenja</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metry na kwadratnu sekundu</displayName>
 				<unitPattern count="one">{0} meter na kwadratnu sekundu</unitPattern>
 				<unitPattern count="two">{0} metraj na kwadratnu sekundu</unitPattern>
@@ -5182,21 +5184,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} konjace mocy</unitPattern>
 				<unitPattern count="other">{0} konjacych mocow</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimetry žiwoslěbroweho stołpika</displayName>
 				<unitPattern count="one">{0} milimeter žiwoslěbroweho stołpika</unitPattern>
 				<unitPattern count="two">{0} milimetraj žiwoslěbroweho stołpika</unitPattern>
 				<unitPattern count="few">{0} milimetry žiwoslěbroweho stołpika</unitPattern>
 				<unitPattern count="other">{0} milimetrow žiwoslěbroweho stołpika</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>punty na kwadratny cól</displayName>
 				<unitPattern count="one">{0} punt na kwadratny cól</unitPattern>
 				<unitPattern count="two">{0} puntaj na kwadratny cól</unitPattern>
 				<unitPattern count="few">{0} punty na kwadratny cól</unitPattern>
 				<unitPattern count="other">{0} puntow na kwadratny cól</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>cóle žiwoslěbroweho stołpika</displayName>
 				<unitPattern count="one">{0} cól žiwoslěbroweho stołpika</unitPattern>
 				<unitPattern count="two">{0} cólej žiwoslěbroweho stołpika</unitPattern>
@@ -5415,7 +5417,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="two">{0} m/s²</unitPattern>
@@ -6005,21 +6007,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="two">{0} mm Hg</unitPattern>
 				<unitPattern count="few">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="two">{0} psi</unitPattern>
 				<unitPattern count="few">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
@@ -6455,7 +6457,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
 				<unitPattern count="few">{0} inHg</unitPattern>

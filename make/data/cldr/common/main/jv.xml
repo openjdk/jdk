@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -20,7 +20,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="af">af</language>
+			<language type="af">Afrika</language>
 			<language type="agq">Aghem</language>
 			<language type="ak">Akan</language>
 			<language type="am">Amharik</language>
@@ -31,9 +31,8 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="ast">Asturia</language>
 			<language type="az">Azerbaijan</language>
 			<language type="az" alt="short">Azeri</language>
-			<language type="ban">ban</language>
 			<language type="bas">Basaa</language>
-			<language type="be">be</language>
+			<language type="be">Belarus</language>
 			<language type="bem">Bemba</language>
 			<language type="bez">Bena</language>
 			<language type="bg">Bulgaria</language>
@@ -42,7 +41,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="bo">Tibet</language>
 			<language type="br">Breton</language>
 			<language type="brx">Bodo</language>
-			<language type="bs">bs</language>
+			<language type="bs">Bosnia lan Hercegovina</language>
 			<language type="ca">Katala</language>
 			<language type="ccp">Chakma</language>
 			<language type="ce">Chechen</language>
@@ -255,7 +254,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="zxx">Konten tanpa linguistik</language>
 		</languages>
 		<scripts>
-			<script type="Arab">Arab</script>
+			<script type="Arab">hija’iyah</script>
 			<script type="Armn">Armenia</script>
 			<script type="Beng">Bangla</script>
 			<script type="Bopo">Bopomofo</script>
@@ -290,6 +289,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<script type="Orya">Odia</script>
 			<script type="Sinh">Sinhala</script>
 			<script type="Taml">Tamil</script>
+			<script type="Telu">Telugu</script>
 			<script type="Thaa">Thaana</script>
 			<script type="Thai">Thailand</script>
 			<script type="Tibt">Tibetan</script>
@@ -3753,7 +3753,9 @@ terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Wektu Pulo Norfolk</standard>
+					<generic draft="contributed">Wektu Pulo Norfolk</generic>
+					<standard draft="contributed">Wektu Standar Pulo Norfolk</standard>
+					<daylight draft="contributed">Wektu Ketigo Pulo Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4460,7 +4462,6 @@ terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 			<currency type="MOP">
 				<displayName>Pataca Macau</displayName>
-				<displayName count="other">MOP</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>Ouguiya Mauritania (1973 - 2017)</displayName>
@@ -4749,14 +4750,82 @@ terms of use, see http://www.unicode.org/copyright.html
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>desi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} saben {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>peng loro {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">peng loro {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>peng telu {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">peng telu {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>tenaga-g</displayName>
 				<unitPattern count="other">{0} tenaga-g</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>meter saben detik kuadrat</displayName>
 				<unitPattern count="other">{0} meter saben detik kuadrat</unitPattern>
 			</unit>
@@ -4833,7 +4902,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>milimol saben liter</displayName>
 				<unitPattern count="other">{0} milimol saben liter</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>bagean saben yuta</displayName>
 				<unitPattern count="other">{0} bagean saben yuta</unitPattern>
 			</unit>
@@ -4853,7 +4922,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>liter saben kilometer</displayName>
 				<unitPattern count="other">{0} liter saben kilometer</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>liter saben 100 kilometer</displayName>
 				<unitPattern count="other">{0} liter saben 100 kilometer</unitPattern>
 			</unit>
@@ -5228,15 +5297,15 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>tenogo jaran</displayName>
 				<unitPattern count="other">{0} tenogo jaran</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimeter saka raksa</displayName>
 				<unitPattern count="other">{0} milimeter saka raksa</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pon saben inci kuadrat</displayName>
 				<unitPattern count="other">{0} pon saben inci kuadrat</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inci saka raksa</displayName>
 				<unitPattern count="other">{0} inci saka raksa</unitPattern>
 			</unit>
@@ -5296,7 +5365,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kelvin</displayName>
 				<unitPattern count="other">{0} kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pon-kaki</displayName>
 				<unitPattern count="other">{0} pon-kaki</unitPattern>
 			</unit>
@@ -5422,6 +5491,9 @@ terms of use, see http://www.unicode.org/copyright.html
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -5429,7 +5501,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>tenaga-g</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>meter/detik²</displayName>
 				<unitPattern count="other">{0} meter/detik²</unitPattern>
 			</unit>
@@ -5506,7 +5578,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>bagean/yuta</displayName>
 				<unitPattern count="other">{0} bagean saben yuta</unitPattern>
 			</unit>
@@ -5525,7 +5597,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>liter/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>
@@ -5879,15 +5951,15 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>tenogo jaran</displayName>
 				<unitPattern count="other">{0} tenogo jaran</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
@@ -5935,7 +6007,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pon-kaki</displayName>
 				<unitPattern count="other">{0} pon-kaki</unitPattern>
 			</unit>
@@ -6056,6 +6128,9 @@ terms of use, see http://www.unicode.org/copyright.html
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6063,7 +6138,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>

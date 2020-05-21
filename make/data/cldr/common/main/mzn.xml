@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -268,7 +268,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hang">هانگول</script>
 			<script type="Hani">هان</script>
 			<script type="Hans">ساده‌بَیی هان</script>
-			<script type="Hans" alt="stand-alone">ساده‌بَیی هان</script>
 			<script type="Hant">سنتی هانت</script>
 			<script type="Hant" alt="stand-alone">استاندارد ِسنتی هانت</script>
 			<script type="Hebr">عبری</script>
@@ -393,7 +392,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR">فرانسه</territory>
 			<territory type="GA">گابون</territory>
 			<territory type="GB">بریتانیا</territory>
-			<territory type="GB" alt="short">بریتانیا</territory>
 			<territory type="GD">گرانادا</territory>
 			<territory type="GE">گرجستون</territory>
 			<territory type="GF">فرانسه‌ی ِگویان</territory>
@@ -1901,7 +1899,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>g-force</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -1933,7 +1931,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>L/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
@@ -2302,7 +2300,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>g-force</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -2334,7 +2332,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>L/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
@@ -2699,7 +2697,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -405,7 +405,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yue" alt="menu" draft="unconfirmed">Tacinwat, Takantunit</language>
 			<language type="zgh" draft="unconfirmed">Tamaziɣt Tizeɣt Tamerrukit</language>
 			<language type="zh">Tacinwat, Tamundarint</language>
-			<language type="zh" alt="menu" draft="unconfirmed">Tacinwat, Tamundarint</language>
 			<language type="zh_Hans" draft="unconfirmed">Tacinwat taḥerfit</language>
 			<language type="zh_Hans" alt="long" draft="unconfirmed">Tacinwat tamundarint taḥerfit</language>
 			<language type="zh_Hant" draft="unconfirmed">Tacinwat tamensayt</language>
@@ -4080,7 +4079,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard draft="unconfirmed">Akud n Tigzirt n Nuṛfulk</standard>
+					<generic draft="unconfirmed">Akud n Tigzirt n Nuṛfulk</generic>
+					<standard draft="unconfirmed">Akud Amagnu n Tigzirt n Nuṛfulk</standard>
+					<daylight draft="unconfirmed">Akud n Unebdu n Tigzirt n Nuṛfulk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">

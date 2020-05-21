@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -150,6 +150,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">ବାସ୍କ୍ୱି</language>
 			<language type="ewo">ଇୱୋଣ୍ଡୋ</language>
 			<language type="fa">ପର୍ସିଆନ୍</language>
+			<language type="fa_AF">ଦାରି</language>
 			<language type="fan">ଫାଙ୍ଗ</language>
 			<language type="fat">ଫାଣ୍ଟି</language>
 			<language type="ff">ଫୁଲାହ</language>
@@ -742,7 +743,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CA">କାନାଡା</territory>
 			<territory type="CC">କୋକୋସ୍ (କୀଲିଂ) ଦ୍ଵୀପପୁଞ୍ଜ</territory>
 			<territory type="CD">କଙ୍ଗୋ (ଡିଆରସି)</territory>
-			<territory type="CD" alt="variant">କଙ୍ଗୋ (ଡିଆରସି)</territory>
 			<territory type="CF">ମଧ୍ୟ ଆଫ୍ରିକୀୟ ସାଧାରଣତନ୍ତ୍ର</territory>
 			<territory type="CG">କଙ୍ଗୋ-ବ୍ରାଜିଭିଲ୍ଲେ</territory>
 			<territory type="CG" alt="variant">କଙ୍ଗୋ (ସାଧାରଣତନ୍ତ୍ର)</territory>
@@ -977,6 +977,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ଜିମ୍ବାୱେ</territory>
 			<territory type="ZZ">ଅଜଣା ଅଞ୍ଚଳ</territory>
 		</territories>
+		<variants>
+			<variant type="1901">ପାରମ୍ପରିକ ଜର୍ମାନ ବର୍ଣ୍ଣପ୍ରକରଣ</variant>
+			<variant type="1996">1996ର ଜର୍ମାନ ବର୍ଣ୍ଣପ୍ରକରଣ</variant>
+			<variant type="1694ACAD">ଆଦ୍ୟ ଆଧୁନିକ ଫରାସୀ</variant>
+			<variant type="1959ACAD">ଏକାଡେମିକ</variant>
+			<variant type="ALUKU">ଆଲୁକୁ ଉପଭାଷା</variant>
+			<variant type="UNIFON">ୟୁନିଫନ୍ ଫନେଟିକ୍ ଆଲଫାବେଟ୍</variant>
+			<variant type="VAIDIKA">ବୈଦିକ</variant>
+			<variant type="VALENCIA">ଭେଲେନସିଆନ୍</variant>
+		</variants>
 		<keys>
 			<key type="calendar">କ୍ୟାଲେଣ୍ଡର୍</key>
 			<key type="cf">ମୁଦ୍ରା ଫର୍ମାଟ୍‌</key>
@@ -1040,6 +1050,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="laoo">ଲାଓ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="latn">ପାଶ୍ଚାତ୍ୟ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="mlym">ମଲୟାଲମ୍ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="mong">ମଙ୍ଗୋଲୀୟ ଡିଜିଟ୍</type>
 			<type key="numbers" type="mymr">ମିଆଁମାର୍‌ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="orya">ଓଡ଼ିଆ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="roman">ରୋମାନ୍‌ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
@@ -1796,6 +1807,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>ତ୍ରୟ.</displayName>
+				<relative type="-1">ଗତ ତିନିମାସ</relative>
+				<relative type="0">ଏହି ତ୍ରୟମାସ</relative>
+				<relative type="1">ଆଗାମୀ ତ୍ରୟମାସ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ତ୍ରୟ. ରେ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ତ୍ରୟ. ରେ</relativeTimePattern>
@@ -1807,6 +1821,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-narrow">
 				<displayName>ତ୍ରୟ.</displayName>
+				<relative type="-1">ଗତ ତିନିମାସ</relative>
+				<relative type="0">ଏହି ତିନିମାସ</relative>
+				<relative type="1">ଆଗାମୀ ତିନିମାସ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ତ୍ରୟ. ରେ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ତ୍ରୟ. ରେ</relativeTimePattern>
@@ -3657,6 +3674,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>ହରାରେ</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>ଆକା ସମୟ</generic>
+					<standard>ଆକା ମାନକ ସମୟ</standard>
+					<daylight>ଆକା ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>ଆଫଗାନିସ୍ତାନ ସମୟ</standard>
@@ -3689,6 +3713,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଆଲାସ୍କା ସମୟ</generic>
 					<standard>ଆଲାସ୍କା ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଆଲାସ୍କା ଦିବାଲୋକ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic>ଅଲମାଟୀ ସମୟ</generic>
+					<standard>ଅଲମାଟୀ ମାନକ ସମୟ</standard>
+					<daylight>ଅଲମାଟୀ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -3726,11 +3757,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ପାସିଫିକ୍ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic>ଅନାଡିର୍ ସମୟ</generic>
+					<standard>ଅନାଡିର୍ ମାନକ ସମୟ</standard>
+					<daylight>ଅନାଡିର୍ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Apia">
 				<long>
 					<generic>ଆପିଆ ସମୟ</generic>
 					<standard>ଆପିଆ ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଆପିଆ ଦିବାଲୋକ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic>ଅକତୌ ସମୟ</generic>
+					<standard>ଅକତୌ ମାନକ ସମୟ</standard>
+					<daylight>ଅକତୌ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic>ଅକ୍ତୋବ ସମୟ</generic>
+					<standard>ଅକ୍ତୋବ ମାନକ ସମୟ</standard>
+					<daylight>ଅକ୍ତୋବ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4013,6 +4065,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>ଗ୍ରୀନୱିଚ୍ ମିନ୍ ସମୟ</standard>
 				</long>
+				<short>
+					<standard draft="contributed">GMT</standard>
+				</short>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
@@ -4120,6 +4175,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ଜାପାନ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>ପେଟ୍ରୋପାଭଲୋଭ୍ସକ-କମଚଟସ୍କି ସମୟ</generic>
+					<standard>ପେଟ୍ରୋପାଭଲୋଭ୍ସକ-କମଚଟସ୍କି ମାନକ ସମୟ</standard>
+					<daylight>ପେଟ୍ରୋପାଭଲୋଭ୍ସକ-କମଚଟସ୍କି ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>ପୂର୍ବ କାଜାକସ୍ତାନ୍ ସମୟ</standard>
@@ -4154,6 +4216,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>କିର୍ଗିସ୍ତାନ ସମୟ</standard>
 				</long>
 			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard>ଲଙ୍କା ସମୟ</standard>
+				</long>
+			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>ଲାଇନ୍‌ ଦ୍ୱୀପପୁଞ୍ଜ ସମୟ</standard>
@@ -4164,6 +4231,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଲର୍ଡ ହୋୱେ ସମୟ</generic>
 					<standard>ଲର୍ଡ ହୋୱେ ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଲର୍ଡ ହୋୱେ ଦିବାଲୋକ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic>ମାକାଓ ସମୟ</generic>
+					<standard>ମକାଓ ମାନକ ସମୟ</standard>
+					<daylight>ମକାଓ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macquarie">
@@ -4281,7 +4355,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>ନରଫୋକ୍‌ ଦ୍ୱୀପ ସମୟ</standard>
+					<generic draft="contributed">ନରଫୋକ୍‌ ଦ୍ୱୀପ ସମୟ</generic>
+					<standard draft="contributed">ନରଫୋକ୍‌ ଦ୍ୱୀପ ମାନାଙ୍କ ସମୟ</standard>
+					<daylight draft="contributed">ନରଫୋକ୍‌ ଦ୍ୱୀପ ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4289,6 +4365,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଫର୍ଣ୍ଣାଣ୍ଡୋ ଡି ନୋରୋନ୍ନା ସମୟ</generic>
 					<standard>ଫର୍ଣ୍ଣାଣ୍ଡୋ ଡି ନୋରୋନ୍ନା ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଫର୍ଣ୍ଣାଣ୍ଡୋ ଡି ନୋରୋନ୍ନା ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard>ଉତ୍ତର ମେରିଆନା ଆଇଲ୍ୟାଣ୍ଡ ସମୟ</standard>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
@@ -4370,6 +4451,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ପୋୟଙ୍ଗୟାଙ୍ଗ ସମୟ</standard>
 				</long>
 			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic>କାଜିଲୋର୍ଡା ସମୟ</generic>
+					<standard>କାଜିଲୋର୍ଡା ମାନକ ସମୟ</standard>
+					<daylight>କାଜିଲୋର୍ଡା ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>ରିୟୁନିଅନ୍‌ ସମୟ</standard>
@@ -4385,6 +4473,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ସଖାଲିନ୍ ସମୟ</generic>
 					<standard>ସଖାଲିନ୍ ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ସଖାଲିନ୍ ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>ସମାରା ସମୟ</generic>
+					<standard>ସମାରା ମାନକ ସମୟ</standard>
+					<daylight>ସମାରା ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
@@ -5779,15 +5874,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ଡେସି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ସେଣ୍ଟି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ମିଲି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>ମାଇକ୍ରୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ନାନୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ପିକୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ଫିମଟୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ଅଟୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern draft="provisional">ଜିପୋଟ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern draft="provisional">ୟୋକଟ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ଡେକା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern draft="provisional">ହେକ୍ଟା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>କିଲୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ମେଗା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ଗିଗା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ଟେରା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ପିଟା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ଏକ୍ସା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ଜିଟା{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ୟୋଟା{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1} ପ୍ରତି {0}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>ସ୍କୋୟାର୍ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ସ୍କୋୟାର୍{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ସ୍କୋ{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>କ୍ୟୁବି {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">କ୍ୟୁବିକ୍ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">କ୍ୟୁ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ଜି-ଫୋର୍ସ୍</displayName>
 				<unitPattern count="one">{0} ଜି-ଫୋର୍ସ୍</unitPattern>
 				<unitPattern count="other">{0} ଜି-ଫୋର୍ସ୍</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ମିଟର୍ ପ୍ରତି ସେକେଣ୍ଡ୍ ବର୍ଗ</displayName>
 				<unitPattern count="one">{0} ମିଟର୍ ପ୍ରତି ସେକେଣ୍ଡ୍ ବର୍ଗ</unitPattern>
 				<unitPattern count="other">{0} ମିଟର୍ ପ୍ରତି ସେକେଣ୍ଡ୍ ବର୍ଗ</unitPattern>
@@ -5887,7 +6052,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ମିଲିମୋଲ୍ ପ୍ରତି ଲିଟର୍</unitPattern>
 				<unitPattern count="other">{0} ମିଲିମୋଲ୍ ପ୍ରତି ଲିଟର୍</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ଅଂଶ ପ୍ରତି ନିୟୁତ</displayName>
 				<unitPattern count="one">{0} ଅଂଶ ପ୍ରତି ନିୟୁତ</unitPattern>
 				<unitPattern count="other">{0} ଅଂଶ ପ୍ରତି ନିୟୁତ</unitPattern>
@@ -5917,7 +6082,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଲିଟର୍ ପ୍ରତି କିଲୋମିଟର୍</unitPattern>
 				<unitPattern count="other">{0} ଲିଟର୍ ପ୍ରତି କିଲୋମିଟର୍</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>100 କିଲୋମିଟର୍ ପ୍ରତି ଲିଟର୍</displayName>
 				<unitPattern count="one">100 କିଲୋମିଟର୍ ପ୍ରତି {0} ଲିଟର୍</unitPattern>
 				<unitPattern count="other">100 କିଲୋମିଟର୍ ପ୍ରତି {0} ଲିଟର୍</unitPattern>
@@ -6353,17 +6518,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ହର୍ସପାୱାର୍</unitPattern>
 				<unitPattern count="other">{0} ହର୍ସପାୱାର୍</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>ପାରାର ମିଲିମିଟର୍</displayName>
 				<unitPattern count="one">ପାରାର {0} ମିଲିମିଟର୍</unitPattern>
 				<unitPattern count="other">ପାରାର {0} ମିଲିମିଟର୍</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ପାଉଣ୍ଡ୍ ପ୍ରତି ବର୍ଗ ଇଞ୍ଚ</displayName>
 				<unitPattern count="one">ପ୍ରତି ବର୍ଗ ଇଞ୍ଚ {0} ପାଉଣ୍ଡ୍</unitPattern>
 				<unitPattern count="other">ପ୍ରତି ବର୍ଗ ଇଞ୍ଚ {0} ପାଉଣ୍ଡ୍</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ପାରାର ଇଞ୍ଜି</displayName>
 				<unitPattern count="one">ପାରାର {0} ଇଞ୍ଜି</unitPattern>
 				<unitPattern count="other">ପାରାର {0} ଇଞ୍ଜି</unitPattern>
@@ -6443,7 +6608,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} କେଲଭିନ୍</unitPattern>
 				<unitPattern count="other">{0} କେଲଭିନ୍</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ପାଉଣ୍ଡ-ଫିଟ</displayName>
 				<unitPattern count="one">{0} ପାଉଣ୍ଡ-ଫୁଟ</unitPattern>
 				<unitPattern count="other">{0} ପାଉଣ୍ଡ-ଫିଟ</unitPattern>
@@ -6597,6 +6762,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ଡେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ସେ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ମି.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ନେ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ପିକ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ଫି.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ଅ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ଜିପ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ୟୋକ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ଡେକ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ହେ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>କି.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ମେ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ଗି.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ଟେ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ପି.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ଏ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ଜି.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ୟୋ.{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6608,7 +6830,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଜି</unitPattern>
 				<unitPattern count="other">{0} ଜି</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ମିଟର୍/ସେ²</displayName>
 				<unitPattern count="one">{0} ମି/ସେ²</unitPattern>
 				<unitPattern count="other">{0} ମି/ସେ²</unitPattern>
@@ -6708,7 +6930,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ମିଲିମୋଲ୍/ଲି</unitPattern>
 				<unitPattern count="other">{0} ମିଲିମୋଲ୍/ଲି</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ଅଂଶ/ନିୟୁତ</displayName>
 				<unitPattern count="one">{0} ପିପିଏମ୍</unitPattern>
 				<unitPattern count="other">{0} ପିପିଏମ୍</unitPattern>
@@ -6736,7 +6958,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଲି/କିମି</unitPattern>
 				<unitPattern count="other">{0} ଲି/କିମି</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ଲି/100 କିମି</displayName>
 				<unitPattern count="one">{0} ଲି/100 କିମି</unitPattern>
 				<unitPattern count="other">{0} ଲି/100 କିମି</unitPattern>
@@ -7158,17 +7380,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଏଚପି</unitPattern>
 				<unitPattern count="other">{0} ଏଚପି</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -7378,6 +7600,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ଡେସି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ସେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ମି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ନେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ପି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ଫି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ଅ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ଜି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ୟୋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ଡେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ହେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>କି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ମେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ଗି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ଟେ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ପି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ଏ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ଜି{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ୟୋ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7386,7 +7665,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ଲି/100କିମି</displayName>
 				<unitPattern count="one">{0}ଲି/100 କିମି</unitPattern>
 				<unitPattern count="other">{0}ଲି/100 କିମି</unitPattern>
@@ -7460,6 +7739,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ଗ୍ରାମ୍</displayName>
 				<unitPattern count="one">{0}ଗ୍ରା</unitPattern>
 				<unitPattern count="other">{0}ଗ୍ରା</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>ଅର୍ଥ ମାସ୍</displayName>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>କିମି/ଘ</displayName>

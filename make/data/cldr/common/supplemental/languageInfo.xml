@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
-<!-- Copyright © 1991-2013 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms 
-	of use, see http://www.unicode.org/copyright.html -->
+<!--
+Copyright © 1991-2020 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
 <supplementalData>
 	<version number="$Revision$"/>
 	<languageMatching>
@@ -198,110 +201,122 @@
 			<languageMatch desired="lb"	supported="de"	distance="4"	oneway="true"/>	<!-- lb ⇒ de -->
 			<languageMatch desired="da"	supported="no"	distance="8"/>	<!-- da ⇒ no -->
 			<languageMatch desired="da"	supported="nb"	distance="8"/>	<!-- da ⇒ nb -->
-			<languageMatch desired="ab"	supported="ru"	distance="10"	oneway="true"/>	<!-- ab ⇒ ru -->
-			<languageMatch desired="ach"	supported="en"	distance="10"	oneway="true"/>	<!-- ach ⇒ en -->
-			<languageMatch desired="af"	supported="nl"	distance="10"	oneway="true"/>	<!-- af ⇒ nl -->
-			<languageMatch desired="ak"	supported="en"	distance="10"	oneway="true"/>	<!-- ak ⇒ en -->
-			<languageMatch desired="ay"	supported="es"	distance="10"	oneway="true"/>	<!-- ay ⇒ es -->
-			<languageMatch desired="az"	supported="ru"	distance="10"	oneway="true"/>	<!-- az ⇒ ru -->
-			<languageMatch desired="be"	supported="ru"	distance="10"	oneway="true"/>	<!-- be ⇒ ru -->
-			<languageMatch desired="bem"	supported="en"	distance="10"	oneway="true"/>	<!-- bem ⇒ en -->
-			<languageMatch desired="bh"	supported="hi"	distance="10"	oneway="true"/>	<!-- bh ⇒ hi -->
-			<languageMatch desired="bn"	supported="en"	distance="10"	oneway="true"/>	<!-- bn ⇒ en -->
-			<languageMatch desired="br"	supported="fr"	distance="10"	oneway="true"/>	<!-- br ⇒ fr -->
-			<languageMatch desired="ceb"	supported="fil"	distance="10"	oneway="true"/>	<!-- ceb ⇒ fil -->
-			<languageMatch desired="chr"	supported="en"	distance="10"	oneway="true"/>	<!-- chr ⇒ en -->
-			<languageMatch desired="ckb"	supported="ar"	distance="10"	oneway="true"/>	<!-- ckb ⇒ ar -->
-			<languageMatch desired="co"	supported="fr"	distance="10"	oneway="true"/>	<!-- co ⇒ fr -->
-			<languageMatch desired="crs"	supported="fr"	distance="10"	oneway="true"/>	<!-- crs ⇒ fr -->
-			<languageMatch desired="cy"	supported="en"	distance="10"	oneway="true"/>	<!-- cy ⇒ en -->
-			<languageMatch desired="ee"	supported="en"	distance="10"	oneway="true"/>	<!-- ee ⇒ en -->
-			<languageMatch desired="eo"	supported="en"	distance="10"	oneway="true"/>	<!-- eo ⇒ en -->
-			<languageMatch desired="et"	supported="fi"	distance="10"	oneway="true"/>	<!-- et ⇒ fi -->
-			<languageMatch desired="eu"	supported="es"	distance="10"	oneway="true"/>	<!-- eu ⇒ es -->
-			<languageMatch desired="fo"	supported="da"	distance="10"	oneway="true"/>	<!-- fo ⇒ da -->
-			<languageMatch desired="fy"	supported="nl"	distance="10"	oneway="true"/>	<!-- fy ⇒ nl -->
-			<languageMatch desired="ga"	supported="en"	distance="10"	oneway="true"/>	<!-- ga ⇒ en -->
-			<languageMatch desired="gaa"	supported="en"	distance="10"	oneway="true"/>	<!-- gaa ⇒ en -->
-			<languageMatch desired="gd"	supported="en"	distance="10"	oneway="true"/>	<!-- gd ⇒ en -->
-			<languageMatch desired="gl"	supported="es"	distance="10"	oneway="true"/>	<!-- gl ⇒ es -->
-			<languageMatch desired="gn"	supported="es"	distance="10"	oneway="true"/>	<!-- gn ⇒ es -->
-			<languageMatch desired="gu"	supported="hi"	distance="10"	oneway="true"/>	<!-- gu ⇒ hi -->
-			<languageMatch desired="ha"	supported="en"	distance="10"	oneway="true"/>	<!-- ha ⇒ en -->
-			<languageMatch desired="haw"	supported="en"	distance="10"	oneway="true"/>	<!-- haw ⇒ en -->
-			<languageMatch desired="ht"	supported="fr"	distance="10"	oneway="true"/>	<!-- ht ⇒ fr -->
-			<languageMatch desired="hy"	supported="ru"	distance="10"	oneway="true"/>	<!-- hy ⇒ ru -->
-			<languageMatch desired="ia"	supported="en"	distance="10"	oneway="true"/>	<!-- ia ⇒ en -->
-			<languageMatch desired="ig"	supported="en"	distance="10"	oneway="true"/>	<!-- ig ⇒ en -->
-			<languageMatch desired="is"	supported="en"	distance="10"	oneway="true"/>	<!-- is ⇒ en -->
-			<languageMatch desired="jv"	supported="id"	distance="10"	oneway="true"/>	<!-- jv ⇒ id -->
-			<languageMatch desired="ka"	supported="en"	distance="10"	oneway="true"/>	<!-- ka ⇒ en -->
-			<languageMatch desired="kg"	supported="fr"	distance="10"	oneway="true"/>	<!-- kg ⇒ fr -->
-			<languageMatch desired="kk"	supported="ru"	distance="10"	oneway="true"/>	<!-- kk ⇒ ru -->
-			<languageMatch desired="km"	supported="en"	distance="10"	oneway="true"/>	<!-- km ⇒ en -->
-			<languageMatch desired="kn"	supported="en"	distance="10"	oneway="true"/>	<!-- kn ⇒ en -->
-			<languageMatch desired="kri"	supported="en"	distance="10"	oneway="true"/>	<!-- kri ⇒ en -->
-			<languageMatch desired="ku"	supported="tr"	distance="10"	oneway="true"/>	<!-- ku ⇒ tr -->
-			<languageMatch desired="ky"	supported="ru"	distance="10"	oneway="true"/>	<!-- ky ⇒ ru -->
-			<languageMatch desired="la"	supported="it"	distance="10"	oneway="true"/>	<!-- la ⇒ it -->
-			<languageMatch desired="lg"	supported="en"	distance="10"	oneway="true"/>	<!-- lg ⇒ en -->
-			<languageMatch desired="ln"	supported="fr"	distance="10"	oneway="true"/>	<!-- ln ⇒ fr -->
-			<languageMatch desired="lo"	supported="en"	distance="10"	oneway="true"/>	<!-- lo ⇒ en -->
-			<languageMatch desired="loz"	supported="en"	distance="10"	oneway="true"/>	<!-- loz ⇒ en -->
-			<languageMatch desired="lua"	supported="fr"	distance="10"	oneway="true"/>	<!-- lua ⇒ fr -->
-			<languageMatch desired="mfe"	supported="en"	distance="10"	oneway="true"/>	<!-- mfe ⇒ en -->
-			<languageMatch desired="mg"	supported="fr"	distance="10"	oneway="true"/>	<!-- mg ⇒ fr -->
-			<languageMatch desired="mi"	supported="en"	distance="10"	oneway="true"/>	<!-- mi ⇒ en -->
-			<languageMatch desired="mk"	supported="bg"	distance="10"	oneway="true"/>	<!-- mk ⇒ bg -->
-			<languageMatch desired="ml"	supported="en"	distance="10"	oneway="true"/>	<!-- ml ⇒ en -->
-			<languageMatch desired="mn"	supported="ru"	distance="10"	oneway="true"/>	<!-- mn ⇒ ru -->
-			<languageMatch desired="mr"	supported="hi"	distance="10"	oneway="true"/>	<!-- mr ⇒ hi -->
-			<languageMatch desired="ms"	supported="id"	distance="10"	oneway="true"/>	<!-- ms ⇒ id -->
-			<languageMatch desired="mt"	supported="en"	distance="10"	oneway="true"/>	<!-- mt ⇒ en -->
-			<languageMatch desired="my"	supported="en"	distance="10"	oneway="true"/>	<!-- my ⇒ en -->
-			<languageMatch desired="ne"	supported="en"	distance="10"	oneway="true"/>	<!-- ne ⇒ en -->
-			<languageMatch desired="nn"	supported="nb"	distance="10"/>	<!-- nn ⇒ nb -->
-			<languageMatch desired="nn"	supported="no"	distance="10"	oneway="true"/>	<!-- nn ⇒ no -->
-			<languageMatch desired="nso"	supported="en"	distance="10"	oneway="true"/>	<!-- nso ⇒ en -->
-			<languageMatch desired="ny"	supported="en"	distance="10"	oneway="true"/>	<!-- ny ⇒ en -->
-			<languageMatch desired="nyn"	supported="en"	distance="10"	oneway="true"/>	<!-- nyn ⇒ en -->
-			<languageMatch desired="oc"	supported="fr"	distance="10"	oneway="true"/>	<!-- oc ⇒ fr -->
-			<languageMatch desired="om"	supported="en"	distance="10"	oneway="true"/>	<!-- om ⇒ en -->
-			<languageMatch desired="or"	supported="en"	distance="10"	oneway="true"/>	<!-- or ⇒ en -->
-			<languageMatch desired="pa"	supported="en"	distance="10"	oneway="true"/>	<!-- pa ⇒ en -->
-			<languageMatch desired="pcm"	supported="en"	distance="10"	oneway="true"/>	<!-- pcm ⇒ en -->
-			<languageMatch desired="ps"	supported="en"	distance="10"	oneway="true"/>	<!-- ps ⇒ en -->
-			<languageMatch desired="qu"	supported="es"	distance="10"	oneway="true"/>	<!-- qu ⇒ es -->
-			<languageMatch desired="rm"	supported="de"	distance="10"	oneway="true"/>	<!-- rm ⇒ de -->
-			<languageMatch desired="rn"	supported="en"	distance="10"	oneway="true"/>	<!-- rn ⇒ en -->
-			<languageMatch desired="rw"	supported="fr"	distance="10"	oneway="true"/>	<!-- rw ⇒ fr -->
-			<languageMatch desired="sa"	supported="hi"	distance="10"	oneway="true"/>	<!-- sa ⇒ hi -->
-			<languageMatch desired="sd"	supported="en"	distance="10"	oneway="true"/>	<!-- sd ⇒ en -->
-			<languageMatch desired="si"	supported="en"	distance="10"	oneway="true"/>	<!-- si ⇒ en -->
-			<languageMatch desired="sn"	supported="en"	distance="10"	oneway="true"/>	<!-- sn ⇒ en -->
-			<languageMatch desired="so"	supported="en"	distance="10"	oneway="true"/>	<!-- so ⇒ en -->
-			<languageMatch desired="sq"	supported="en"	distance="10"	oneway="true"/>	<!-- sq ⇒ en -->
-			<languageMatch desired="st"	supported="en"	distance="10"	oneway="true"/>	<!-- st ⇒ en -->
-			<languageMatch desired="su"	supported="id"	distance="10"	oneway="true"/>	<!-- su ⇒ id -->
-			<languageMatch desired="sw"	supported="en"	distance="10"	oneway="true"/>	<!-- sw ⇒ en -->
-			<languageMatch desired="ta"	supported="en"	distance="10"	oneway="true"/>	<!-- ta ⇒ en -->
-			<languageMatch desired="te"	supported="en"	distance="10"	oneway="true"/>	<!-- te ⇒ en -->
-			<languageMatch desired="tg"	supported="ru"	distance="10"	oneway="true"/>	<!-- tg ⇒ ru -->
-			<languageMatch desired="ti"	supported="en"	distance="10"	oneway="true"/>	<!-- ti ⇒ en -->
-			<languageMatch desired="tk"	supported="ru"	distance="10"	oneway="true"/>	<!-- tk ⇒ ru -->
-			<languageMatch desired="tlh"	supported="en"	distance="10"	oneway="true"/>	<!-- tlh ⇒ en -->
-			<languageMatch desired="tn"	supported="en"	distance="10"	oneway="true"/>	<!-- tn ⇒ en -->
-			<languageMatch desired="to"	supported="en"	distance="10"	oneway="true"/>	<!-- to ⇒ en -->
-			<languageMatch desired="tt"	supported="ru"	distance="10"	oneway="true"/>	<!-- tt ⇒ ru -->
-			<languageMatch desired="tum"	supported="en"	distance="10"	oneway="true"/>	<!-- tum ⇒ en -->
-			<languageMatch desired="ug"	supported="zh"	distance="10"	oneway="true"/>	<!-- ug ⇒ zh -->
-			<languageMatch desired="ur"	supported="en"	distance="10"	oneway="true"/>	<!-- ur ⇒ en -->
-			<languageMatch desired="uz"	supported="ru"	distance="10"	oneway="true"/>	<!-- uz ⇒ ru -->
-			<languageMatch desired="wo"	supported="fr"	distance="10"	oneway="true"/>	<!-- wo ⇒ fr -->
-			<languageMatch desired="xh"	supported="en"	distance="10"	oneway="true"/>	<!-- xh ⇒ en -->
-			<languageMatch desired="yi"	supported="en"	distance="10"	oneway="true"/>	<!-- yi ⇒ en -->
-			<languageMatch desired="yo"	supported="en"	distance="10"	oneway="true"/>	<!-- yo ⇒ en -->
-			<languageMatch desired="zu"	supported="en"	distance="10"	oneway="true"/>	<!-- zu ⇒ en -->
+			<!-- various fallbacks for more or less loosely related languages -->
+			<!-- CLDR-13528:
+			    Distance 20 for some linguistic relation (e.g., Creoles to French)
+			    or a local language in the area of another (e.g., Breton to French).
+			    Distance 30 for fallbacks to prevalent second languages,
+			    and in the absence of better information. -->
+			<languageMatch desired="ab"	supported="ru"	distance="30"	oneway="true"/>	<!-- Abkhazian: ab ⇒ ru -->
+			<languageMatch desired="ach"	supported="en"	distance="30"	oneway="true"/>	<!-- Acoli (Southern Luo dialect in Uganda): ach ⇒ en -->
+			<languageMatch desired="af"	supported="nl"	distance="20"	oneway="true"/>	<!-- Afrikaans: af ⇒ nl -->
+			<languageMatch desired="ak"	supported="en"	distance="30"	oneway="true"/>	<!-- Akan: ak ⇒ en -->
+			<languageMatch desired="ay"	supported="es"	distance="20"	oneway="true"/>	<!-- Aymara: ay ⇒ es -->
+			<languageMatch desired="az"	supported="ru"	distance="30"	oneway="true"/>	<!-- Azerbaijani: az ⇒ ru -->
+			<languageMatch desired="be"	supported="ru"	distance="20"	oneway="true"/>	<!-- Belarusian: be ⇒ ru -->
+			<languageMatch desired="bem"	supported="en"	distance="30"	oneway="true"/>	<!-- Bemba (Zambia): bem ⇒ en -->
+			<languageMatch desired="bh"	supported="hi"	distance="30"	oneway="true"/>	<!-- Bihari languages (gets canonicalized to bho): bh ⇒ hi -->
+			<languageMatch desired="bn"	supported="en"	distance="30"	oneway="true"/>	<!-- Bangla: bn ⇒ en -->
+			<languageMatch desired="br"	supported="fr"	distance="20"	oneway="true"/>	<!-- Breton: br ⇒ fr -->
+			<languageMatch desired="ceb"	supported="fil"	distance="30"	oneway="true"/>	<!-- Cebuano: ceb ⇒ fil -->
+			<languageMatch desired="chr"	supported="en"	distance="20"	oneway="true"/>	<!-- Cherokee: chr ⇒ en -->
+			<languageMatch desired="ckb"	supported="ar"	distance="30"	oneway="true"/>	<!-- Sorani Kurdish: ckb ⇒ ar -->
+			<languageMatch desired="co"	supported="fr"	distance="20"	oneway="true"/>	<!-- Corsican: co ⇒ fr -->
+			<languageMatch desired="crs"	supported="fr"	distance="20"	oneway="true"/>	<!-- Seselwa Creole French: crs ⇒ fr -->
+			<languageMatch desired="cy"	supported="en"	distance="20"	oneway="true"/>	<!-- Welsh: cy ⇒ en -->
+			<languageMatch desired="ee"	supported="en"	distance="30"	oneway="true"/>	<!-- Ewe: ee ⇒ en -->
+			<languageMatch desired="eo"	supported="en"	distance="30"	oneway="true"/>	<!-- Esperanto: eo ⇒ en -->
+
+			<!-- CLDR-13650: No fallback for Estonian -->
+			<!-- languageMatch desired="et"	supported="fi"	distance="30"	oneway="true"/-->	<!-- Estonian: et ⇒ fi -->
+
+			<languageMatch desired="eu"	supported="es"	distance="20"	oneway="true"/>	<!-- Basque: eu ⇒ es -->
+			<languageMatch desired="fo"	supported="da"	distance="20"	oneway="true"/>	<!-- Faroese: fo ⇒ da -->
+			<languageMatch desired="fy"	supported="nl"	distance="20"	oneway="true"/>	<!-- Western Frisian: fy ⇒ nl -->
+			<languageMatch desired="ga"	supported="en"	distance="20"	oneway="true"/>	<!-- Irish: ga ⇒ en -->
+			<languageMatch desired="gaa"	supported="en"	distance="30"	oneway="true"/>	<!-- Ga: gaa ⇒ en -->
+			<languageMatch desired="gd"	supported="en"	distance="20"	oneway="true"/>	<!-- Scottish Gaelic: gd ⇒ en -->
+			<languageMatch desired="gl"	supported="es"	distance="20"	oneway="true"/>	<!-- Galician: gl ⇒ es -->
+			<languageMatch desired="gn"	supported="es"	distance="20"	oneway="true"/>	<!-- Guarani: gn ⇒ es -->
+			<languageMatch desired="gu"	supported="hi"	distance="30"	oneway="true"/>	<!-- Gujarati: gu ⇒ hi -->
+			<languageMatch desired="ha"	supported="en"	distance="30"	oneway="true"/>	<!-- Hausa: ha ⇒ en -->
+			<languageMatch desired="haw"	supported="en"	distance="20"	oneway="true"/>	<!-- Hawaiian: haw ⇒ en -->
+			<languageMatch desired="ht"	supported="fr"	distance="20"	oneway="true"/>	<!-- Haitian Creole: ht ⇒ fr -->
+			<languageMatch desired="hy"	supported="ru"	distance="30"	oneway="true"/>	<!-- Armenian: hy ⇒ ru -->
+			<languageMatch desired="ia"	supported="en"	distance="30"	oneway="true"/>	<!-- Interlingua: ia ⇒ en -->
+			<languageMatch desired="ig"	supported="en"	distance="30"	oneway="true"/>	<!-- Igbo: ig ⇒ en -->
+			<languageMatch desired="is"	supported="en"	distance="20"	oneway="true"/>	<!-- Icelandic: is ⇒ en -->
+			<languageMatch desired="jv"	supported="id"	distance="20"	oneway="true"/>	<!-- Javanese: jv ⇒ id -->
+			<languageMatch desired="ka"	supported="en"	distance="30"	oneway="true"/>	<!-- Georgian: ka ⇒ en -->
+			<languageMatch desired="kg"	supported="fr"	distance="30"	oneway="true"/>	<!-- Kongo: kg ⇒ fr -->
+			<languageMatch desired="kk"	supported="ru"	distance="30"	oneway="true"/>	<!-- Kazakh: kk ⇒ ru -->
+			<languageMatch desired="km"	supported="en"	distance="30"	oneway="true"/>	<!-- Khmer: km ⇒ en -->
+			<languageMatch desired="kn"	supported="en"	distance="30"	oneway="true"/>	<!-- Kannada: kn ⇒ en -->
+			<languageMatch desired="kri"	supported="en"	distance="30"	oneway="true"/>	<!-- Krio: kri ⇒ en -->
+			<languageMatch desired="ku"	supported="tr"	distance="30"	oneway="true"/>	<!-- Kurdish: ku ⇒ tr -->
+			<languageMatch desired="ky"	supported="ru"	distance="30"	oneway="true"/>	<!-- Kirghiz: ky ⇒ ru -->
+			<languageMatch desired="la"	supported="it"	distance="20"	oneway="true"/>	<!-- Latin: la ⇒ it -->
+			<languageMatch desired="lg"	supported="en"	distance="30"	oneway="true"/>	<!-- Luganda: lg ⇒ en -->
+			<languageMatch desired="ln"	supported="fr"	distance="30"	oneway="true"/>	<!-- Lingala: ln ⇒ fr -->
+			<languageMatch desired="lo"	supported="en"	distance="30"	oneway="true"/>	<!-- Lao: lo ⇒ en -->
+			<languageMatch desired="loz"	supported="en"	distance="30"	oneway="true"/>	<!-- Lozi: loz ⇒ en -->
+			<languageMatch desired="lua"	supported="fr"	distance="30"	oneway="true"/>	<!-- Luba-Lulua: lua ⇒ fr -->
+			<languageMatch desired="mfe"	supported="en"	distance="30"	oneway="true"/>	<!-- Morisyen: mfe ⇒ en -->
+			<languageMatch desired="mg"	supported="fr"	distance="30"	oneway="true"/>	<!-- Malagasy: mg ⇒ fr -->
+			<languageMatch desired="mi"	supported="en"	distance="20"	oneway="true"/>	<!-- Maori: mi ⇒ en -->
+
+			<!-- CLDR-13625: Macedonian should not fall back to Bulgarian -->
+			<!-- languageMatch desired="mk"	supported="bg"	distance="30"	oneway="true"/-->	<!-- Macedonian: mk ⇒ bg -->
+
+			<languageMatch desired="ml"	supported="en"	distance="30"	oneway="true"/>	<!-- Malayalam: ml ⇒ en -->
+			<languageMatch desired="mn"	supported="ru"	distance="30"	oneway="true"/>	<!-- Mongolian: mn ⇒ ru -->
+			<languageMatch desired="mr"	supported="hi"	distance="30"	oneway="true"/>	<!-- Marathi: mr ⇒ hi -->
+			<languageMatch desired="ms"	supported="id"	distance="30"	oneway="true"/>	<!-- Malay: ms ⇒ id -->
+			<languageMatch desired="mt"	supported="en"	distance="30"	oneway="true"/>	<!-- Maltese: mt ⇒ en -->
+			<languageMatch desired="my"	supported="en"	distance="30"	oneway="true"/>	<!-- Myanmar: my ⇒ en -->
+			<languageMatch desired="ne"	supported="en"	distance="30"	oneway="true"/>	<!-- Nepali: ne ⇒ en -->
+			<languageMatch desired="nn"	supported="nb"	distance="20"/>	<!-- Nynorsk: nn ⟺ nb -->
+			<languageMatch desired="nn"	supported="no"	distance="20"/>	<!-- Nynorsk: nn ⟺ no; CLDR-13679  -->
+			<languageMatch desired="nso"	supported="en"	distance="30"	oneway="true"/>	<!-- Northern Sotho: nso ⇒ en -->
+			<languageMatch desired="ny"	supported="en"	distance="30"	oneway="true"/>	<!-- Nyanja: ny ⇒ en -->
+			<languageMatch desired="nyn"	supported="en"	distance="30"	oneway="true"/>	<!-- Nyankole: nyn ⇒ en -->
+			<languageMatch desired="oc"	supported="fr"	distance="20"	oneway="true"/>	<!-- Occitan: oc ⇒ fr -->
+			<languageMatch desired="om"	supported="en"	distance="30"	oneway="true"/>	<!-- Oromo: om ⇒ en -->
+			<languageMatch desired="or"	supported="en"	distance="30"	oneway="true"/>	<!-- Odia: or ⇒ en -->
+			<languageMatch desired="pa"	supported="en"	distance="30"	oneway="true"/>	<!-- Punjabi: pa ⇒ en -->
+			<languageMatch desired="pcm"	supported="en"	distance="20"	oneway="true"/>	<!-- Nigerian Pidgin: pcm ⇒ en -->
+			<languageMatch desired="ps"	supported="en"	distance="30"	oneway="true"/>	<!-- Pashto: ps ⇒ en -->
+			<languageMatch desired="qu"	supported="es"	distance="30"	oneway="true"/>	<!-- Quechua: qu ⇒ es -->
+			<languageMatch desired="rm"	supported="de"	distance="20"	oneway="true"/>	<!-- Romansh: rm ⇒ de -->
+			<languageMatch desired="rn"	supported="en"	distance="30"	oneway="true"/>	<!-- Rundi: rn ⇒ en -->
+			<languageMatch desired="rw"	supported="fr"	distance="30"	oneway="true"/>	<!-- Kinyarwanda: rw ⇒ fr -->
+			<languageMatch desired="sa"	supported="hi"	distance="30"	oneway="true"/>	<!-- Sanskrit: sa ⇒ hi -->
+			<languageMatch desired="sd"	supported="en"	distance="30"	oneway="true"/>	<!-- Sindhi: sd ⇒ en -->
+			<languageMatch desired="si"	supported="en"	distance="30"	oneway="true"/>	<!-- Sinhalese: si ⇒ en -->
+			<languageMatch desired="sn"	supported="en"	distance="30"	oneway="true"/>	<!-- Shona: sn ⇒ en -->
+			<languageMatch desired="so"	supported="en"	distance="30"	oneway="true"/>	<!-- Somali: so ⇒ en -->
+			<languageMatch desired="sq"	supported="en"	distance="30"	oneway="true"/>	<!-- Albanian: sq ⇒ en -->
+			<languageMatch desired="st"	supported="en"	distance="30"	oneway="true"/>	<!-- Southern Sotho: st ⇒ en -->
+			<languageMatch desired="su"	supported="id"	distance="20"	oneway="true"/>	<!-- Sundanese: su ⇒ id -->
+			<languageMatch desired="sw"	supported="en"	distance="30"	oneway="true"/>	<!-- Swahili: sw ⇒ en -->
+			<languageMatch desired="ta"	supported="en"	distance="30"	oneway="true"/>	<!-- Tamil: ta ⇒ en -->
+			<languageMatch desired="te"	supported="en"	distance="30"	oneway="true"/>	<!-- Telugu: te ⇒ en -->
+			<languageMatch desired="tg"	supported="ru"	distance="30"	oneway="true"/>	<!-- Tajik: tg ⇒ ru -->
+			<languageMatch desired="ti"	supported="en"	distance="30"	oneway="true"/>	<!-- Tigrinya: ti ⇒ en -->
+			<languageMatch desired="tk"	supported="ru"	distance="30"	oneway="true"/>	<!-- Turkmen: tk ⇒ ru -->
+			<languageMatch desired="tlh"	supported="en"	distance="30"	oneway="true"/>	<!-- Klingon: tlh ⇒ en -->
+			<languageMatch desired="tn"	supported="en"	distance="30"	oneway="true"/>	<!-- Tswana: tn ⇒ en -->
+			<languageMatch desired="to"	supported="en"	distance="30"	oneway="true"/>	<!-- Tonga: to ⇒ en -->
+			<languageMatch desired="tt"	supported="ru"	distance="30"	oneway="true"/>	<!-- Tatar: tt ⇒ ru -->
+			<languageMatch desired="tum"	supported="en"	distance="30"	oneway="true"/>	<!-- Tumbuka: tum ⇒ en -->
+			<languageMatch desired="ug"	supported="zh"	distance="20"	oneway="true"/>	<!-- Uighur: ug ⇒ zh -->
+			<languageMatch desired="ur"	supported="en"	distance="30"	oneway="true"/>	<!-- Urdu: ur ⇒ en -->
+			<languageMatch desired="uz"	supported="ru"	distance="30"	oneway="true"/>	<!-- Uzbek: uz ⇒ ru -->
+			<languageMatch desired="wo"	supported="fr"	distance="30"	oneway="true"/>	<!-- Wolof: wo ⇒ fr -->
+			<languageMatch desired="xh"	supported="en"	distance="30"	oneway="true"/>	<!-- Xhosa: xh ⇒ en -->
+			<languageMatch desired="yi"	supported="en"	distance="30"	oneway="true"/>	<!-- Yiddish: yi ⇒ en -->
+			<languageMatch desired="yo"	supported="en"	distance="30"	oneway="true"/>	<!-- Yoruba: yo ⇒ en -->
+			<languageMatch desired="zu"	supported="en"	distance="30"	oneway="true"/>	<!-- Zulu: zu ⇒ en -->
 			
 			<!-- START generated by GenerateLanguageMatches.java: don't manually change -->
 			<!-- Encompassed by Arabic -->
@@ -542,7 +557,42 @@
 			<languageMatch desired="sr_Latn"	supported="sr_Cyrl"	distance="5"/>	<!-- sr; Latn ⇒ sr; Cyrl -->
 			<languageMatch desired="zh_Hans"	supported="zh_Hant"	distance="15"	oneway="true"/>	<!-- zh; Hans ⇒ zh; Hant -->
 			<languageMatch desired="zh_Hant"	supported="zh_Hans"	distance="19"	oneway="true"/>	<!-- zh; Hant ⇒ zh; Hans -->
+			<!-- zh_Hani: Slightly bigger distance than zh_Hant->zh_Hans -->
+			<languageMatch desired="zh_Hani"	supported="zh_Hans"	distance="20"	oneway="true"/>
+			<languageMatch desired="zh_Hani"	supported="zh_Hant"	distance="20"	oneway="true"/>
+			<!-- Latin transliterations of some languages, initially from CLDR-13577 -->
+			<languageMatch desired="ar_Latn"	supported="ar_Arab"	distance="20"	oneway="true"/>
+			<languageMatch desired="bn_Latn"	supported="bn_Beng"	distance="20"	oneway="true"/>
+			<languageMatch desired="gu_Latn"	supported="gu_Gujr"	distance="20"	oneway="true"/>
+			<languageMatch desired="hi_Latn"	supported="hi_Deva"	distance="20"	oneway="true"/>
+			<languageMatch desired="kn_Latn"	supported="kn_Knda"	distance="20"	oneway="true"/>
+			<languageMatch desired="ml_Latn"	supported="ml_Mlym"	distance="20"	oneway="true"/>
+			<languageMatch desired="mr_Latn"	supported="mr_Deva"	distance="20"	oneway="true"/>
+			<languageMatch desired="ta_Latn"	supported="ta_Taml"	distance="20"	oneway="true"/>
+			<languageMatch desired="te_Latn"	supported="te_Telu"	distance="20"	oneway="true"/>
+			<languageMatch desired="zh_Latn"	supported="zh_Hans"	distance="20"	oneway="true"/> <!-- Pinyin -->
+			<!-- start fallbacks for group script codes, initially from CLDR-13526
+                             Look for plus signs on https://www.unicode.org/iso15924/iso15924-codes.html -->
+			<languageMatch desired="ja_Latn"	supported="ja_Jpan"	distance="5"	oneway="true"/>
+			<languageMatch desired="ja_Hani"	supported="ja_Jpan"	distance="5"	oneway="true"/>
+			<languageMatch desired="ja_Hira"	supported="ja_Jpan"	distance="5"	oneway="true"/>
+			<languageMatch desired="ja_Kana"	supported="ja_Jpan"	distance="5"	oneway="true"/>
+			<languageMatch desired="ja_Hrkt"	supported="ja_Jpan"	distance="5"	oneway="true"/>
+			<languageMatch desired="ja_Hira"	supported="ja_Hrkt"	distance="5"	oneway="true"/>
+			<languageMatch desired="ja_Kana"	supported="ja_Hrkt"	distance="5"	oneway="true"/>
+			<languageMatch desired="ko_Hani"	supported="ko_Kore"	distance="5"	oneway="true"/>
+			<languageMatch desired="ko_Hang"	supported="ko_Kore"	distance="5"	oneway="true"/>
+			<languageMatch desired="ko_Jamo"	supported="ko_Kore"	distance="5"	oneway="true"/>
+			<languageMatch desired="ko_Jamo"	supported="ko_Hang"	distance="5"	oneway="true"/>
+			<!-- No special mappings for zh Bopo/Hanb
+			     because Bopomofo is used only in TW, and unsure how widely.
+			     No special mappings for styled scripts like Latf or Aran
+			     because those would apply to many languages;
+			     if desired, those would be better handled as matcher-specific script aliases. -->
+			<!-- end fallbacks for group script codes -->
+			<!-- default script mismatch distance -->
 			<languageMatch desired="*_*"	supported="*_*"	distance="50"/>	<!-- *; * ⇒ *; * -->
+
 			<languageMatch desired="ar_*_$maghreb"	supported="ar_*_$maghreb"	distance="4"/>	<!-- ar; *; $maghreb ⇒ ar; *; $maghreb -->
 			<languageMatch desired="ar_*_$!maghreb"	supported="ar_*_$!maghreb"	distance="4"/>	<!-- ar; *; $!maghreb ⇒ ar; *; $!maghreb -->
 			<languageMatch desired="ar_*_*"	supported="ar_*_*"	distance="5"/>	<!-- ar; *; * ⇒ ar; *; * -->

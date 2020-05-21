@@ -240,7 +240,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2004-05-31 03:00" from="2000-03-03 03:00" mzone="Argentina"/>
 				<usesMetazone to="2004-07-25 04:00" from="2004-05-31 03:00" mzone="Argentina_Western"/>
 				<usesMetazone to="2008-01-21 02:00" from="2004-07-25 04:00" mzone="Argentina"/>
-				<usesMetazone from="2008-01-21 02:00" mzone="Argentina_Western"/>
+				<usesMetazone to="2009-10-11 04:00" from="2008-01-21 02:00" mzone="Argentina_Western"/>
+				<usesMetazone from="2009-10-11 04:00" mzone="Argentina"/>
 			</timezone>
 			<timezone type="America/Argentina/Tucuman">
 				<usesMetazone to="1991-03-03 02:00" mzone="Argentina"/>
@@ -825,7 +826,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Asia/Aqtobe">
 				<usesMetazone to="1991-12-15 19:00" mzone="Aktyubinsk"/>
 				<usesMetazone to="2004-10-30 21:00" from="1991-12-15 19:00" mzone="Aqtobe"/>
-				<usesMetazone from="2005-10-30 21:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Western"/>
 			</timezone>
 			<timezone type="Asia/Ashgabat">
 				<usesMetazone to="1991-10-26 20:00" mzone="Ashkhabad"/>
@@ -872,7 +873,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Choibalsan">
 				<usesMetazone to="1983-03-31 16:00" mzone="Mongolia"/>
-				<usesMetazone from="1983-03-31 16:00" mzone="Choibalsan"/>
+				<usesMetazone to="2008-03-30 15:00" from="1983-03-31 16:00" mzone="Choibalsan"/>
+				<usesMetazone from="2008-03-30 15:00" mzone="Mongolia"/>
 			</timezone>
 			<timezone type="Asia/Colombo">
 				<usesMetazone to="1996-05-24 18:30" mzone="India"/>
@@ -1728,6 +1730,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Europe_Central" territory="RS" type="Europe/Belgrade"/>
 			<mapZone other="Europe_Central" territory="SE" type="Europe/Stockholm"/>
 			<mapZone other="Europe_Central" territory="SI" type="Europe/Ljubljana"/>
+			<mapZone other="Europe_Central" territory="SJ" type="Arctic/Longyearbyen"/>
 			<mapZone other="Europe_Central" territory="SK" type="Europe/Bratislava"/>
 			<mapZone other="Europe_Central" territory="SM" type="Europe/San_Marino"/>
 			<mapZone other="Europe_Central" territory="TN" type="Africa/Tunis"/>

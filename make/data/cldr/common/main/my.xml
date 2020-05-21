@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -124,6 +124,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">ဘာစ်ခ်</language>
 			<language type="ewo">အီဝန်ဒို</language>
 			<language type="fa">ပါရှန်</language>
+			<language type="fa_AF">ဒါရီ</language>
 			<language type="ff">ဖူလာ</language>
 			<language type="fi">ဖင်လန်</language>
 			<language type="fil">ဖိလစ်ပိုင်</language>
@@ -759,7 +760,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">စင့်မာတင်</territory>
 			<territory type="SY">ဆီးရီးယား</territory>
 			<territory type="SZ">ဆွာဇီလန်</territory>
-			<territory type="SZ" alt="variant">ဆွာဇီလန်</territory>
 			<territory type="TA">ထရစ္စတန် ဒါ ကွန်ဟာ</territory>
 			<territory type="TC">တခ်စ်နှင့်ကာအီကိုစ်ကျွန်းစု</territory>
 			<territory type="TD">ချဒ်</territory>
@@ -769,7 +769,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TJ">တာဂျီကစ္စတန်</territory>
 			<territory type="TK">တိုကလောင်</territory>
 			<territory type="TL">အရှေ့တီမော</territory>
-			<territory type="TL" alt="variant">အရှေ့တီမော</territory>
 			<territory type="TM">တာ့ခ်မင်နစ္စတန်</territory>
 			<territory type="TN">တူနီးရှား</territory>
 			<territory type="TO">တွန်ဂါ</territory>
@@ -782,7 +781,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UG">ယူဂန်းဒါး</territory>
 			<territory type="UM">ယူနိုက်တက်စတိတ် ကျွန်းနိုင်ငံများ</territory>
 			<territory type="UN">ကုလသမဂ္ဂ</territory>
-			<territory type="UN" alt="short">ကုလသမဂ္ဂ</territory>
 			<territory type="US">အမေရိကန် ပြည်ထောင်စု</territory>
 			<territory type="US" alt="short">ယူအက်စ်</territory>
 			<territory type="UY">ဥရုဂွေး</territory>
@@ -796,6 +794,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">ဗနွားတူ</territory>
 			<territory type="WF">ဝေါလစ်နှင့် ဖူကျူးနား</territory>
 			<territory type="WS">ဆမိုးအား</territory>
+			<territory type="XA">နိုင်ငံခြားသံ</territory>
+			<territory type="XB">စာပြောင်းပြန်</territory>
 			<territory type="XK">ကိုဆိုဗို</territory>
 			<territory type="YE">ယီမင်</territory>
 			<territory type="YT">မေယော့</territory>
@@ -4169,7 +4169,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>နောဖော့ခ်ကျွန်းအချိန်</standard>
+					<generic draft="contributed">နောဖော့ခ်ကျွန်း အချိန်</generic>
+					<standard draft="contributed">နောဖော့ခ်ကျွန်း စံတော်ချိန်</standard>
+					<daylight draft="contributed">နောဖော့ခ်ကျွန်း နွေရာသီ စံတော်ချိန်</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5554,14 +5556,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ဒက်စီ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>စင်တီ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>မီလီ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>မိုက်ခရို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>နာနို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ပီကို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ဖမ်တို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>အက်တို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ဇက်ပ်တို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ယောက်တို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ဒက်ကာ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ဟက်တို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>ကီလို {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>မီဂါ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ဂစ်ဂါ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>တယ်ရာ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ပက်တာ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>အိတ်စ်ဆာ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ဇက်တာ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ယိုဒါ {0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>တစ်{1} လျှင် {0}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>နှစ်ထပ်ကိန်း {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">နှစ်ထပ်ကိန်း {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>ကုဗ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ကုဗ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ဆွဲငင်အား</displayName>
 				<unitPattern count="other">{0} ဆွဲငင်အား</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>မီတာ/စက္ကန့်နှစ်ထပ်ကိန်း</displayName>
 				<unitPattern count="other">{0} မီတာ/စက္ကန့်နှစ်ထပ်ကိန်း</unitPattern>
 			</unit>
@@ -5642,7 +5712,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>တစ်လီတာရှိ မီလီမိုးလ်</displayName>
 				<unitPattern count="other">တစ်လီတာရှိ {0} မီလီမိုးလ်</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>တစ်သန်းပုံ တစ်ပုံ</displayName>
 				<unitPattern count="other">တစ်သန်းပုံ {0} ပုံ</unitPattern>
 			</unit>
@@ -5666,7 +5736,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>တစ်ကီလိုမီတာရှိ လီတာ</displayName>
 				<unitPattern count="other">တစ်ကီလိုမီတာရှိ {0} လီတာ</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>တစ်ရာကီလိုမီတာရှိ လီတာ</displayName>
 				<unitPattern count="other">တစ်ရာကီလိုမီတာရှိ {0} လီတာ</unitPattern>
 			</unit>
@@ -6022,15 +6092,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>မြင်းကောင်ရေအား</displayName>
 				<unitPattern count="other">{0} မြင်းကောင်ရေအား</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>ပြဒါးမီလီမီတာ</displayName>
 				<unitPattern count="other">{0} ပြဒါးမီလီမီတာ</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ပေါင်/စတုရန်းလက်မ</displayName>
 				<unitPattern count="other">တစ်စတုရန်းလက်မလျှင် {0} ပေါင်</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ပြဒါးလက်မ</displayName>
 				<unitPattern count="other">{0} ပြဒါးလက်မ</unitPattern>
 			</unit>
@@ -6090,7 +6160,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ကယ်လ်ဗင်</displayName>
 				<unitPattern count="other">{0} ကယ်လ်ဗင်</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf.ft</displayName>
 				<unitPattern count="other">{0} lbf.ft</unitPattern>
 			</unit>
@@ -6216,6 +6286,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6223,7 +6299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ဆွဲငင်အား</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>မီတာ/စက္ကန့်နှစ်ထပ်ကိန်း</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -6304,7 +6380,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>တစ်သန်းပုံ တစ်ပုံ</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
@@ -6328,7 +6404,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>လီတာ/ကီလိုမီတာ</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>တစ်ရာကီလိုမီတာရှိ လီတာ</displayName>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>
@@ -6682,15 +6758,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>hp</displayName>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ပေါင်/စတုရန်းလက်မ</displayName>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
@@ -6749,7 +6825,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf.ft</displayName>
 				<unitPattern count="other">{0} lbf.ft</unitPattern>
 			</unit>
@@ -6875,6 +6951,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y {0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6912,7 +6994,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
@@ -7005,7 +7087,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">

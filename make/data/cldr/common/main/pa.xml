@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -118,6 +118,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">ਬਾਸਕ</language>
 			<language type="ewo">ਇਵੋਂਡੋ</language>
 			<language type="fa">ਫ਼ਾਰਸੀ</language>
+			<language type="fa_AF">ਦਾਰੀ</language>
 			<language type="ff">ਫੁਲਾਹ</language>
 			<language type="fi">ਫਿਨਿਸ਼</language>
 			<language type="fil">ਫਿਲੀਪਿਨੋ</language>
@@ -437,6 +438,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</languages>
 		<scripts>
 			<script type="Arab">ਅਰਬੀ</script>
+			<script type="Aran" draft="contributed">ਨਸਤਾਲੀਕ</script>
 			<script type="Armn">ਅਰਮੀਨੀਆਈ</script>
 			<script type="Beng">ਬੰਗਾਲੀ</script>
 			<script type="Bopo">ਬੋਪੋਮੋਫੋ</script>
@@ -4972,7 +4974,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਵੇਲਾ</standard>
+					<generic draft="contributed">ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਵੇਲਾ</generic>
+					<standard draft="contributed">ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਮਿਆਰੀ ਵੇਲਾ</standard>
+					<daylight draft="contributed">ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਗਰਮੀਆਂ ਦਾ ਵੇਲਾ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6646,7 +6650,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XEU">
 				<displayName>ਯੂਰਪੀ ਮੁਦਰਾ ਇਕਾਈ</displayName>
-				<displayName count="one">XEU</displayName>
+				<displayName count="one">ਯੂਰਪੀਅਨ ਮੁਦਰਾ ਇਕਾਈ</displayName>
 				<displayName count="other">ਯੂਰਪੀ ਮੁਦਰਾ ਇਕਾਈ</displayName>
 				<symbol>XEU</symbol>
 			</currency>
@@ -6703,15 +6707,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ਡੈਸੀ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ਸੈਂਟੀ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ਮਿਲੀ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>ਮਾਈਕ੍ਰੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ਨੈਨੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ਪਿਕੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ਫੈਮਟੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ਐੱਟੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ਜ਼ੈਪਟੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ਯੋਕਟੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ਡੇਕਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ਹੈਕਟੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>ਕਿਲੋ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ਮੈਗਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ਗੀਗਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ਟੈਰਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ਪੇਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ਐਕਸਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ਜ਼ੀਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ਯੋਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} ਪ੍ਰਤੀ {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ਵਰਗ{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ਘਣ{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</displayName>
 				<unitPattern count="one">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
 				<unitPattern count="other">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
@@ -6811,7 +6885,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</displayName>
 				<unitPattern count="one">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
 				<unitPattern count="other">{0} ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
@@ -6841,7 +6915,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
@@ -7330,17 +7404,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਹੌਰਸਪਾਵਰ</unitPattern>
 				<unitPattern count="other">{0} ਹੌਰਸਪਾਵਰ</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>ਮਿਲੀਮੀਟਰ ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਮੀਟਰ ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਮੀਟਰ ਪਾਰਾ</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ਪੌਂਡ ਪ੍ਰਤੀ ਵਰਗ ਇੰਚ</displayName>
 				<unitPattern count="one">{0} ਪੌਂਡ ਪ੍ਰਤੀ ਵਰਗ ਇੰਚ</unitPattern>
 				<unitPattern count="other">{0} ਪੌਂਡ ਪ੍ਰਤੀ ਵਰਗ ਇੰਚ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ਇੰਚ ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0} ਇੰਚ ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0} ਇੰਚ ਪਾਰਾ</unitPattern>
@@ -7420,7 +7494,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਕੈਲਵਿਨ</unitPattern>
 				<unitPattern count="other">{0} ਕੈਲਵਿਨ</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ਪੌਂਡ-ਫੁੱਟ</displayName>
 				<unitPattern count="one">{0} ਪੌਂਡ-ਫੁੱਟ</unitPattern>
 				<unitPattern count="other">{0} ਪੌਂਡ-ਫੁੱਟ</unitPattern>
@@ -7579,8 +7653,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ਡੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ਸੈਂ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ਮਿ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>ਮਾ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ਨੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ਪਿ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ਫੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ਐੱ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ਜ਼ੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ਯੋ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ਡੇ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ਹੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>ਕਿ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ਮੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ਗੀਗਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ਟੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ਪੇਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ਐਕਸਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ਜ਼ੀਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ਯੋਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -7590,7 +7734,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ਮੀਟਰ/ਸਕਿੰਟ²</displayName>
 				<unitPattern count="one">{0} ਮੀ/ਸ²</unitPattern>
 				<unitPattern count="other">{0} ਮੀ/ਸ²</unitPattern>
@@ -7690,7 +7834,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਮਿ.ਮੋ./ਲਿ.</unitPattern>
 				<unitPattern count="other">{0} ਮਿ.ਮੋ./ਲਿ.</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ਹਿੱਸੇ/ਮਿਲੀਅਨ</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -7718,7 +7862,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਲਿ./ਕਿ.ਮੀ.</unitPattern>
 				<unitPattern count="other">{0} ਲਿ./ਕਿ.ਮੀ.</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ਲਿ./100ਕਿ.ਮੀ.</displayName>
 				<unitPattern count="one">{0}ਲਿ/100 ਕਿਮੀ</unitPattern>
 				<unitPattern count="other">{0}ਲਿ/100 ਕਿਮੀ</unitPattern>
@@ -8195,17 +8339,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਹੌਰਸਪਾਵਰ</unitPattern>
 				<unitPattern count="other">{0} ਹੌਰਸਪਾਵਰ</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>ਮਿ.ਮੀ. ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0} ਮਿ.ਮੀ. ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0} ਮਿ.ਮੀ. ਪਾਰਾ</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ਪੌਂ.ਵ.ਇੰਚ</displayName>
 				<unitPattern count="one">{0} ਪੌਂ.ਵ.ਇੰਚ</unitPattern>
 				<unitPattern count="other">{0} ਪੌਂ.ਵ.ਇੰਚ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ਇੰਚ ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0} ਇੰਚ ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0} ਇੰਚ ਪਾਰਾ</unitPattern>
@@ -8434,14 +8578,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ਡੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ਸੈਂ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ਮਿ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>ਮਾ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ਨੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ਪਿ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ਫੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ਐੱ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ਜ਼ੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ਯੋ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ਡੇ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ਹੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>ਕਿ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ਮੈ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ਗੀਗਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ਪੇਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ਐਕਸਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ਜ਼ੀਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ਯੋਟਾ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0}G</unitPattern>
 				<unitPattern count="other">{0}Gs</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="one">{0}ਮੀ/ਸ²</unitPattern>
 				<unitPattern count="other">{0}ਮੀ/ਸ²</unitPattern>
 			</unit>
@@ -8510,7 +8721,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ਲਿ./ਕਿ.ਮੀ.</unitPattern>
 				<unitPattern count="other">{0}ਲਿ./ਕਿ.ਮੀ.</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ਲਿ./100ਕਿ.ਮੀ.</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
@@ -8819,17 +9030,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="contributed">ਮਿ.ਮੀ. ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0} ਮਿ.ਮੀ. ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0} ਮਿ.ਮੀ. ਪਾਰਾ</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">ਪੌਂ.ਵ.ਇੰਚ</displayName>
 				<unitPattern count="one">{0} ਪੌਂ.ਵ.ਇੰਚ</unitPattern>
 				<unitPattern count="other">{0} ਪੌਂ.ਵ.ਇੰਚ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">ਇੰਚ ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0}&quot; ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0}&quot; ਪਾਰਾ</unitPattern>

@@ -99,7 +99,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%language60_GA" value="(fan|mye)"/>
 		<coverageVariable key="%language60_NG" value="(ff|ha|ibb|ig|kr|yo)"/>
 		<coverageVariable key="%language60_TD" value="(shu|dzg|kbl|mde|mua|sba)"/>
-		<coverageVariable key="%language80" value="(a([fkmrz]|gq|s[at]?)|b([gm-os]|as|e[mz]?|rx?)|c([aosuy]|cp|eb?|gg|hr|kb)|d([ez]|av?|je|sb|ua|yo)|e([elnos-u]|bu|wo)|f([afory]|il?|ur)|g([adlv]|sw|uz?)|h([eirtuy]|aw?|mn|sb)|i[adgist]|j([av]|go|mc)|k([imnuwy]|a[bm]?|de|ea|hq|kj?|ln?|ok?|s[bfh]?)|l([bgnotv]|ag?|kt|rc|u[oy]?)|m([iklnr-ty]|as|er|fe|g[ho]?|u[al]|zn)|n([bel]|aq|ds?|mg|nh?|us|yn?)|o[mrs]|p([alst]|rg)|qu|r([mnu]|of?|wk?)|s([dgiklnoqrt-w]|a[hq]?|bp|e[hs]?|hi|mn?)|t([ag-ikort]|eo?|wq|zm)|u([gkrz]|nd)|v([io]|ai|un)|w(ae|o)|x(h|og)|y([io]|av|ue)|z([hu]|gh|xx))"/>
+		<coverageVariable key="%language80" value="(a([fkmrz]|gq|s[at]?)|b([gm-os]|as|e[mz]?|rx?)|c([aosuy]|cp|eb?|gg|hr|kb)|d([ez]|av?|je|sb|ua|yo)|e([elnos-u]|bu|wo)|f([afory]|il?|ur)|fa_AF|g([adlv]|sw|uz?)|h([eirtuy]|aw?|mn|sb)|i[adgist]|j([av]|go|mc)|k([imnuwy]|a[bm]?|de|ea|hq|kj?|ln?|ok?|s[bfh]?)|l([bgnotv]|ag?|kt|rc|u[oy]?)|m([iklr-ty]|a[is]|er|fe|g[ho]?|ni?|u[al]|zn)|n([bel]|aq|ds?|mg|nh?|us|yn?)|o[mrs]|p([alst]|cm|rg)|qu|r([mnu]|of?|wk?)|s([dgiklnoqrt-w]|a[hqt]?|bp|e[hs]?|hi|mn?)|t([ag-ikort]|eo?|wq|zm)|u([gkrz]|nd)|v([io]|ai|un)|w(ae|o)|x(h|og)|y([io]|av|ue)|z([hu]|gh|xx))"/>
 		<coverageVariable key="%languagecomp" value="(gan|hak|hsn|nan|wuu)"/> <!-- not currently used, just for reference: the only valid language codes that are not in modern coverage -->
 		<coverageVariable key="%lbTypes80" value="(strict|normal|loose)"/>
         <coverageVariable key="%lwTypes" value="(normal|breakall|keepall)"/>
@@ -121,15 +121,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%metazone60" value="(Africa_Western|Arabian|Australia_(Central(Western)?|(East|West)ern)|China|Israel|Japan|Korea|Moscow)"/>
 		<coverageVariable key="%metazone60_stdonly" value="(Africa_(Central|(East|South)ern)|India|Indochina|Indonesia_(Central|(East|West)ern))"/>
 		<coverageVariable key="%metazone60_AE_stdonly" value="Gulf"/>
-		<coverageVariable key="%metazone80" value="(Alaska|Amazon|Apia|Argentina(_Western)?|Armenia|Azerbaijan|Azores|Bangladesh|Brasilia|Cape_Verde|Chatham|Chile|Choibalsan|Colombia|Cook|Cuba|Easter|Falkland|Fiji|Georgia|Greenland_(East|West)ern|Hawaii_Aleutian|Hong_Kong|Hovd|Iran|Irkutsk|Krasnoyarsk|Lord_Howe|Magadan|Mauritius|Mexico_(Northwest|Pacific)|Mongolia|New_(Caledonia|Zealand)|Newfoundland|Noronha|Novosibirsk|Omsk|Pakistan|Paraguay|Peru|Philippines|Pierre_Miquelon|Sakhalin|Samoa|Taipei|Tonga|Turkmenistan|Uruguay|Uzbekistan|Vanuatu|Vladivostok|Volgograd|Yakutsk|Yekaterinburg)"/>
-		<coverageVariable key="%metazone80_stdonly" value="(Afghanistan|Bhutan|Bolivia|Brunei|Chamorro|Christmas|Cocos|Davis|DumontDUrville|East_Timor|Ecuador|Europe_Further_Eastern|French_(Guiana|Southern)|Gambier|Galapagos|Gilbert_Islands|Gulf|Guyana|Indian_Ocean|Kazakhstan_(East|West)ern|Kosrae|Kyrgystan|Line_Islands|Macquarie|Malaysia|Maldives|Marquesas|Marshall_Islands|Mawson|Myanmar|Nauru|Nepal|Niue|Norfolk|Palau|Papua_New_Guinea|Phoenix_Islands|Pitcairn|Ponape|Pyongyang|Reunion|Rothera|Seychelles|Singapore|Solomon|South_Georgia|Suriname|Syowa|Tahiti|Tajikistan|Tokelau|Truk|Tuvalu|Venezuela|Vostok|Wake|Wallis)"/>
+		<coverageVariable key="%metazone80" value="(Alaska|Amazon|Apia|Argentina(_Western)?|Armenia|Azerbaijan|Azores|Bangladesh|Brasilia|Cape_Verde|Chatham|Chile|Choibalsan|Colombia|Cook|Cuba|Easter|Falkland|Fiji|Georgia|Greenland_(East|West)ern|Hawaii_Aleutian|Hong_Kong|Hovd|Iran|Irkutsk|Krasnoyarsk|Lord_Howe|Magadan|Mauritius|Mexico_(Northwest|Pacific)|Mongolia|New_(Caledonia|Zealand)|Newfoundland|Norfolk|Noronha|Novosibirsk|Omsk|Pakistan|Paraguay|Peru|Philippines|Pierre_Miquelon|Sakhalin|Samoa|Taipei|Tonga|Turkmenistan|Uruguay|Uzbekistan|Vanuatu|Vladivostok|Volgograd|Yakutsk|Yekaterinburg)"/>
+		<coverageVariable key="%metazone80_stdonly" value="(Afghanistan|Bhutan|Bolivia|Brunei|Chamorro|Christmas|Cocos|Davis|DumontDUrville|East_Timor|Ecuador|Europe_Further_Eastern|French_(Guiana|Southern)|Gambier|Galapagos|Gilbert_Islands|Gulf|Guyana|Indian_Ocean|Kazakhstan_(East|West)ern|Kosrae|Kyrgystan|Line_Islands|Macquarie|Malaysia|Maldives|Marquesas|Marshall_Islands|Mawson|Myanmar|Nauru|Nepal|Niue|Palau|Papua_New_Guinea|Phoenix_Islands|Pitcairn|Ponape|Pyongyang|Reunion|Rothera|Seychelles|Singapore|Solomon|South_Georgia|Suriname|Syowa|Tahiti|Tajikistan|Tokelau|Truk|Tuvalu|Venezuela|Vostok|Wake|Wallis)"/>
 		<coverageVariable key="%metazone100" value="(Acre|Almaty|Anadyr|Aqtau|Aqtobe|Kamchatka|Macau|Qyzylorda|Samara)"/>
 		<coverageVariable key="%metazone100_stdonly" value="(Casey|Guam|Lanka|North_Mariana)"/>
 		<coverageVariable key="%miscPatternTypes" value="(atLeast|range)"/>
 		<coverageVariable key="%monthTypes" value="(1[0-3]?|[2-9])"/>
         <coverageVariable key="%msTypes80" value="(metric|u[ks]system)"/>
 		<coverageVariable key="%numberingSystem80" value="(arab(ext)?|armn(low)?|beng|deva|ethi|fullwide|geor|grek(low)?|gujr|guru|hanidec|han[st](fin)?|hebr|jpan(fin)?|khmr|knda|laoo|mlym|mymr|orya|roman(low)?|taml(dec)?|telu|thai|tibt)"/>
-		<coverageVariable key="%numberingSystem100" value="(finance|native|traditional|bali|brah|cakm|cham|gong|gonm|hanidays|hmnp|java|jpanyear|kali|lana(tham)?|lepc|limb|mong|mtei|mymrshan|nkoo|olck|osma|rohg|saur|shrd|sora|sund|takr|talu|vaii|wcho)"/>
+		<coverageVariable key="%numberingSystem100" value="(finance|native|traditional|bali|brah|cakm|cham|diak|gong|gonm|hanidays|hmnp|java|jpanyear|kali|lana(tham)?|lepc|limb|mong|mtei|mymrshan|nkoo|olck|osma|rohg|saur|shrd|sora|sund|takr|talu|vaii|wcho)"/>
 		<coverageVariable key="%persianCalendarTerritories" value="(AF|IR)"/>
 		<coverageVariable key="%phonebookCollationLanguages" value="(de|fi)"/>
 		<coverageVariable key="%ptVariants" value="(ABL1943|AO1990|COLB1945)"/>
@@ -140,7 +140,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%script40" value="(Latn|Hans|Hant|Cyrl|Arab)"/>
 		<coverageVariable key="%script60" value="(Jpan|Kore)"/>
 		<coverageVariable key="%script80" value="(Armn|Beng|Bopo|Brai|Deva|Ethi|Geor|Grek|Gujr|Guru|Hani|Hang|Hebr|Hira|Knda|Kana|Khmr|Laoo|Mlym|Mong|Mymr|Orya|Sinh|Taml|Telu|Thaa|Thai|Tibt|Hanb|Hrkt|Jamo|Jpan|Kore|Zmth|Zsye|Zsym|Zxxx|Zyyy|Zzzz)"/>
-		<coverageVariable key="%script100" value="(Afak|Aghb|Ahom|Armi|Avst|Bali|Bamu|Bass|Batk|Blis|Brah|Bugi|Buhd|Cakm|Cans|Cari|Cham|Cher|Cirt|Copt|Cprt|Cyrs|Dogr|Dsrt|Dupl|Egy[dhp]|Elba|Elym|Geok|Glag|Gong|Gonm|Goth|Gran|Hatr|Hano|Hluw|Hmng|Hmnp|Hrkt|Hung|Inds|Ital|Java|Jurc|Kali|Khar|Khoj|Kpel|Kthi|Lana|Lat[fg]|Lepc|Limb|Lin[ab]|Lisu|Loma|Ly[cd]i|Mahj|Maka|Man[di]|Maya|Medf|Mend|Mer[co]|Modi|Moon|Mroo|Mtei|Mult|Nand|Narb|Nbat|Nkgb|Nkoo|Nshu|Ogam|Olck|Orkh|Osma|Palm|Pauc|Perm|Phag|Phl[ipv]|Phnx|Plrd|Prti|Rjng|Rohg|Roro|Runr|Samr|Sar[ab]|Saur|Sgnw|Shaw|Shrd|Sidd|Sind|Sogd|Sogo|Sora|Soyo|Sund|Sylo|Syr[cejn]|Tagb|Takr|Tal[eu]|Tang|Tavt|Teng|Tfng|Tglg|Tirh|Ugar|Vaii|Visp|Wara|Wcho|Wole|Xpeo|Xsux|Yiii|Zanb|Zinh|Zmth)"/>
+		<coverageVariable key="%script100" value="(Afak|Aghb|Ahom|Armi|Avst|Bali|Bamu|Bass|Batk|Blis|Brah|Bugi|Buhd|Cakm|Cans|Cari|Cham|Cher|Chrs|Cirt|Copt|Cprt|Cyrs|Diak|Dogr|Dsrt|Dupl|Egy[dhp]|Elba|Elym|Geok|Glag|Gong|Gonm|Goth|Gran|Hatr|Hano|Hluw|Hmng|Hmnp|Hrkt|Hung|Inds|Ital|Java|Jurc|Kali|Khar|Khoj|Kits|Kpel|Kthi|Lana|Lat[fg]|Lepc|Limb|Lin[ab]|Lisu|Loma|Ly[cd]i|Mahj|Maka|Man[di]|Maya|Medf|Mend|Mer[co]|Modi|Moon|Mroo|Mtei|Mult|Nand|Narb|Nbat|Nkgb|Nkoo|Nshu|Ogam|Olck|Orkh|Osma|Palm|Pauc|Perm|Phag|Phl[ipv]|Phnx|Plrd|Prti|Rjng|Rohg|Roro|Runr|Samr|Sar[ab]|Saur|Sgnw|Shaw|Shrd|Sidd|Sind|Sogd|Sogo|Sora|Soyo|Sund|Sylo|Syr[cejn]|Tagb|Takr|Tal[eu]|Tang|Tavt|Teng|Tfng|Tglg|Tirh|Ugar|Vaii|Visp|Wara|Wcho|Wole|Xpeo|Xsux|Yezi|Yiii|Zanb|Zinh|Zmth)"/>
 		<coverageVariable key="%shortLong" value="(short|long)"/>
 		<coverageVariable key="%anyAlphaNum" value="([-a-zA-Z0-9]+)"/>
         <coverageVariable key="%ssTypes" value="(standard|none)"/>
@@ -160,11 +160,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%unitDurationTypes" value="duration-(year|month|week|day|hour|minute|second|millisecond)"/>
 		<coverageVariable key="%unitLengths" value="(long|short|narrow)"/>
 		<coverageVariable key="%unitNonNarrowLengths" value="(long|short)"/>
-		<coverageVariable key="%unitsCommonMetric" value="(concentr-percent|consumption-liter-per-100kilometers|length-(centi|milli|kilo)?meter|mass-(kilo)?gram|temperature-celsius|speed-kilometer-per-hour|volume-liter)"/>
+		<coverageVariable key="%unitsCommonMetric" value="(concentr-percent|consumption-liter-per-100-kilometer|length-(centi|milli|kilo)?meter|mass-(kilo)?gram|temperature-celsius|speed-kilometer-per-hour|volume-liter)"/>
 		<coverageVariable key="%unitsCommonUS" value="(length-(inch|foot|yard|mile)|mass-(ounce|pound)|temperature-fahrenheit|speed-mile-per-hour)"/>
 		<coverageVariable key="%unitsEnglish" value="(length-fathom|length-furlong|mass-stone|volume-bushel|energy-british-thermal-unit)"/>
 		<coverageVariable key="%unitsNonEnglish" value="[a-z]++-(?!(furlong|fathom|stone|bushel|mile-nautical))([a-z]++([-a-z]++)?)"/>
-		<coverageVariable key="%unitsOther" value="(length-(picometer|light-year)|pressure-(hectopascal|inch-hg|millibar)|acceleration-g-force|angle-(degree|minute|second)|area-(acre|hectare|square-(foot|kilometer|meter|mile))|power-(horsepower|kilowatt|watt)|speed-meter-per-second|volume-cubic-(mile|kilometer))"/>
+		<coverageVariable key="%unitsOther" value="(length-(picometer|light-year)|pressure-(hectopascal|inch-ofhg|millibar)|acceleration-g-force|angle-(degree|minute|second)|area-(acre|hectare|square-(foot|kilometer|meter|mile))|power-(horsepower|kilowatt|watt)|speed-meter-per-second|volume-cubic-(mile|kilometer))"/>
 		<coverageVariable key="%variantTypes" value="([A-Z0-9]++)"/>
 		<coverageVariable key="%wideAbbr" value="(wide|abbreviated)"/>
 		<coverageVariable key="%yesNo" value="(yes|no)"/>
@@ -641,7 +641,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel value="moderate" match="numbers/symbols[@numberSystem='latn']/perMille"/>
 		<coverageLevel value="moderate" match="numbers/symbols[@numberSystem='latn']/infinity"/>
 		<coverageLevel value="moderate" match="numbers/symbols[@numberSystem='latn']/nan"/>
-        <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%compoundUnitTypes']/compoundUnitPattern"/>
+        <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='${Target-Plurals}']"/>
+        <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1"/>
+        <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern"/>
+        <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/unitPrefixPattern"/>
         <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/coordinateUnit/displayName"/>
         <coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/coordinateUnit/coordinateUnitPattern[@type='%anyAlphaNum']"/>
 		<coverageLevel value="moderate" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%unitsNonEnglish']/unitPattern[@count='${Target-Plurals}']"/>

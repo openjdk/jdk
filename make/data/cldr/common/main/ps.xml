@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -115,6 +115,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">باسکي</language>
 			<language type="ewo">اوونڊو</language>
 			<language type="fa">فارسي</language>
+			<language type="fa_AF">دری (افغانستان)</language>
 			<language type="ff">فولاح</language>
 			<language type="fi">فینلنډي</language>
 			<language type="fil">فلیپیني</language>
@@ -127,7 +128,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fur">فرائیلیین</language>
 			<language type="fy">لوېديځ فريشي</language>
 			<language type="ga">ائيرلېنډي</language>
-			<language type="gaa">gaa</language>
 			<language type="gd">سکاټلېنډي ګېلک</language>
 			<language type="gez">ګیز</language>
 			<language type="gil">گلبرتي</language>
@@ -753,7 +753,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UM">د متحده ایالاتو ټاپوګان</territory>
 			<territory type="UN">ملگري ملتونه</territory>
 			<territory type="US">متحده آيالات</territory>
-			<territory type="US" alt="short">متحده آيالات</territory>
 			<territory type="UY">یوروګوی</territory>
 			<territory type="UZ">اوزبکستان</territory>
 			<territory type="VA">واتیکان ښار</territory>
@@ -3079,7 +3078,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>نووک</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity draft="provisional">اټوکوټورمیټ</exemplarCity>
+				<exemplarCity>اټوکوټورمیټ</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>ډنمارکشان</exemplarCity>
@@ -3445,7 +3444,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>پورټ مورسبی</exemplarCity>
 			</zone>
 			<zone type="Pacific/Bougainville">
-				<exemplarCity draft="provisional">بوګن ویل</exemplarCity>
+				<exemplarCity>بوګن ویل</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
 				<exemplarCity>منیلا</exemplarCity>
@@ -4470,7 +4469,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>د نورفکاس ټاپو وخت</standard>
+					<generic draft="contributed">د نورفکاس ټاپو وخت</generic>
+					<standard draft="contributed">د نورفکاس ټاپو معياري وخت</standard>
+					<daylight draft="contributed">د نورفکاس ټاپو اوړي وخت</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5129,14 +5130,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">پاکلېنډ ټاپوګانو پونډز</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName draft="provisional">برتانوې پونډ</displayName>
-				<displayName count="one" draft="provisional">برتانوې پونډ</displayName>
-				<displayName count="other" draft="provisional">برتانوې پونډونه</displayName>
+				<displayName>برتانوې پونډ</displayName>
+				<displayName count="one">برتانوې پونډ</displayName>
+				<displayName count="other">برتانوې پونډونه</displayName>
 			</currency>
 			<currency type="GEL">
-				<displayName draft="provisional">جارجیاېي لارې</displayName>
-				<displayName count="one" draft="provisional">جارجیا لاري</displayName>
-				<displayName count="other" draft="provisional">جارجیاېي لارېز</displayName>
+				<displayName>جارجیاېي لارې</displayName>
+				<displayName count="one">جارجیا لاري</displayName>
+				<displayName count="other">جارجیاېي لارېز</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>ګانين سيډي</displayName>
@@ -5202,6 +5203,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>اسرايلي نيو شيکل</displayName>
 				<displayName count="one">اسرايلي نيو شيکل</displayName>
 				<displayName count="other">اسرايلي نيو شيکلز</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>هندي روپۍ</displayName>
+				<displayName count="one">هندي روپۍ</displayName>
+				<displayName count="other">هندي روپۍ</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>عراقي دينار</displayName>
@@ -5279,9 +5285,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">قازقستاني ټينجز</displayName>
 			</currency>
 			<currency type="LAK">
-				<displayName draft="provisional">لاشې کپ</displayName>
-				<displayName count="one" draft="provisional">لاشې کپ</displayName>
-				<displayName count="other" draft="provisional">لاشې کپس</displayName>
+				<displayName>لاشې کپ</displayName>
+				<displayName count="one">لاشې کپ</displayName>
+				<displayName count="other">لاشې کپس</displayName>
 			</currency>
 			<currency type="LBP">
 				<displayName>لبناني پونډ</displayName>
@@ -5689,15 +5695,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>پرېکړه{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>سانتي {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ملی {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>مایکرو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>نانو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>پیکو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>فيمتو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>أتو{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>زیپټو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>یکوټو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ډیکا {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>هیکو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>کیلو {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>میگا {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ګیګا {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>تیرا {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>پیټا {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>إکساء {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>زیټا {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>یوټا {0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}في {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>مربع {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}مربع</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} مربع</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>کیوبک {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}معکب</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>د جاذبې قوه</displayName>
 				<unitPattern count="one">{0} د جاذبې قوه</unitPattern>
 				<unitPattern count="other">{0} د جاذبې قوه</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ميترز في مربع سيکنډ</displayName>
 				<unitPattern count="one">{0} ميتر في مربع سيکنډ</unitPattern>
 				<unitPattern count="other">{0} ميتر في مربع سيکنډ</unitPattern>
@@ -5797,7 +5873,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ملي مول في ليټر</unitPattern>
 				<unitPattern count="other">{0} ملي مول في ليټر</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>پارټتس في مليون</displayName>
 				<unitPattern count="one">{0} پارټ في مليون</unitPattern>
 				<unitPattern count="other">{0} پارټس في مليون</unitPattern>
@@ -5827,7 +5903,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ليټر في کيلو متر</unitPattern>
 				<unitPattern count="other">{0} ليټرز في کيلو متر</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ليټرز في ۱۰۰ کيلو مترز</displayName>
 				<unitPattern count="one">{0} ليټر في ۱۰۰ کلو ميترز</unitPattern>
 				<unitPattern count="other">{0} ليټرز في ۱۰۰ کيلو مترز</unitPattern>
@@ -6106,7 +6182,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} هر انچ</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="provisional">پارسيکس</displayName>
+				<displayName>پارسيکس</displayName>
 				<unitPattern count="one" draft="provisional">{0} في ثانيه</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} في ثانيې</unitPattern>
 			</unit>
@@ -6247,17 +6323,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} هارس پاور</unitPattern>
 				<unitPattern count="other">{0} هارس پاور</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>د پارې ملي مترز</displayName>
 				<unitPattern count="one">{0} د پارې ملي متر</unitPattern>
 				<unitPattern count="other">{0} د پارې ملي مترز</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>پاونډز في مربع انچ</displayName>
 				<unitPattern count="one">{0} پاونډ في مربع انچ</unitPattern>
 				<unitPattern count="other">{0} پاونډز في مربع انچ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>د پارې انچې</displayName>
 				<unitPattern count="one">{0} د پارې انچ</unitPattern>
 				<unitPattern count="other">{0} د پارې انچې</unitPattern>
@@ -6330,7 +6406,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} کيلون</unitPattern>
 				<unitPattern count="other">{0} کيلونز</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>پاونډ فټونه</displayName>
 				<unitPattern count="one">{0} پاونډ فټ</unitPattern>
 				<unitPattern count="other">{0} پاونډ فټونه</unitPattern>
@@ -6456,15 +6532,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">مربع {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>د جاذبې قوه</displayName>
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -6563,7 +6709,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>پارټس/مليون</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -6591,7 +6737,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="other">{0} L/100km</unitPattern>
@@ -7011,25 +7157,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<displayName draft="provisional">bar</displayName>
-				<unitPattern count="one" draft="provisional">{0} bar</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} bar</unitPattern>
+				<displayName>bar</displayName>
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
@@ -7226,15 +7372,83 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">مربع {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="concentr-percent">
 				<displayName>سلنه</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="other">{0} L/100km</unitPattern>

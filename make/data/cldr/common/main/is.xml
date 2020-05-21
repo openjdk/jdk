@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -51,7 +51,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa">avadí</language>
 			<language type="ay">aímara</language>
 			<language type="az">aserska</language>
-			<language type="az" alt="short">aserska</language>
 			<language type="ba">baskír</language>
 			<language type="bal">balúkí</language>
 			<language type="ban">balíska</language>
@@ -153,6 +152,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">baskneska</language>
 			<language type="ewo">evondó</language>
 			<language type="fa">persneska</language>
+			<language type="fa_AF">darí</language>
 			<language type="fan">fang</language>
 			<language type="fat">fantí</language>
 			<language type="ff">fúla</language>
@@ -196,7 +196,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gwi">gvísín</language>
 			<language type="ha">hása</language>
 			<language type="hai">haída</language>
-			<language type="hak">hak</language>
 			<language type="haw">havaíska</language>
 			<language type="he">hebreska</language>
 			<language type="hi">hindí</language>
@@ -206,7 +205,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ho">hírímótú</language>
 			<language type="hr">króatíska</language>
 			<language type="hsb">hásorbneska</language>
-			<language type="hsn">hsn</language>
 			<language type="ht">haítíska</language>
 			<language type="hu">ungverska</language>
 			<language type="hup">húpa</language>
@@ -340,7 +338,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="myv">ersja</language>
 			<language type="mzn">masanderaní</language>
 			<language type="na">nárúska</language>
-			<language type="nan">nan</language>
 			<language type="nap">napólíska</language>
 			<language type="naq">nama</language>
 			<language type="nb">norskt bókmál</language>
@@ -519,7 +516,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="was">vasjó</language>
 			<language type="wbp">varlpiri</language>
 			<language type="wo">volof</language>
-			<language type="wuu">wuu</language>
 			<language type="xal">kalmúkska</language>
 			<language type="xh">sósa</language>
 			<language type="xog">sóga</language>
@@ -733,7 +729,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CG" alt="variant">Kongó (Lýðveldið)</territory>
 			<territory type="CH">Sviss</territory>
 			<territory type="CI">Fílabeinsströndin</territory>
-			<territory type="CI" alt="variant">Fílabeinsströndin</territory>
 			<territory type="CK">Cooks-eyjar</territory>
 			<territory type="CL">Síle</territory>
 			<territory type="CM">Kamerún</territory>
@@ -747,7 +742,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CX">Jólaey</territory>
 			<territory type="CY">Kýpur</territory>
 			<territory type="CZ">Tékkland</territory>
-			<territory type="CZ" alt="variant">Tékkland</territory>
 			<territory type="DE">Þýskaland</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Djíbútí</territory>
@@ -774,7 +768,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">Frakkland</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">Bretland</territory>
-			<territory type="GB" alt="short">Bretland</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Georgía</territory>
 			<territory type="GF">Franska Gvæjana</territory>
@@ -916,7 +909,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">Sankti Martin</territory>
 			<territory type="SY">Sýrland</territory>
 			<territory type="SZ">Svasíland</territory>
-			<territory type="SZ" alt="variant">Svasíland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Turks- og Caicoseyjar</territory>
 			<territory type="TD">Tsjad</territory>
@@ -6749,7 +6741,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Tími á Norfolk-eyju</standard>
+					<generic draft="contributed">Tími á Norfolk-eyju</generic>
+					<standard draft="contributed">Staðaltími á Norfolk-eyju</standard>
+					<daylight draft="contributed">Sumartími á Norfolk-eyju</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -8424,6 +8418,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>desi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>milli{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>míkró{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nanó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>píkó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femtó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>attó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>septó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>jóktó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hektó{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kíló{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>gíga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>setta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>jótta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} á {1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8432,7 +8486,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} þyngdarhröðun</unitPattern>
 				<unitPattern count="other">{0} þyngdarhröðun</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metrar á sekúndu, á sekúndu</displayName>
 				<unitPattern count="one">{0} metri á sekúndu, á sekúndu</unitPattern>
 				<unitPattern count="other">{0} metrar á sekúndu, á sekúndu</unitPattern>
@@ -8532,7 +8586,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimól á lítra</unitPattern>
 				<unitPattern count="other">{0} millimól á lítra</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>milljónarhlutar</displayName>
 				<unitPattern count="one">{0} milljónarhluti</unitPattern>
 				<unitPattern count="other">{0} milljónarhlutar</unitPattern>
@@ -8562,7 +8616,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lítri á kílómetra</unitPattern>
 				<unitPattern count="other">{0} lítrar á kílómetra</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>lítrar á 100 kílómetra</displayName>
 				<unitPattern count="one">{0} lítri á 100 kílómetra</unitPattern>
 				<unitPattern count="other">{0} lítrar á 100 kílómetra</unitPattern>
@@ -9047,17 +9101,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hestafl</unitPattern>
 				<unitPattern count="other">{0} hestöfl</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>millimetrar af kvikasilfri</displayName>
 				<unitPattern count="one">{0} millimetrar af kvikasilfri</unitPattern>
 				<unitPattern count="other">{0} millimetrar af kvikasilfri</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pund á fertommu</displayName>
 				<unitPattern count="one">{0} pund á fertommu</unitPattern>
 				<unitPattern count="other">{0} pund á fertommu</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>tommur af kvikasilfri</displayName>
 				<unitPattern count="one">{0} tomma af kvikasilfri</unitPattern>
 				<unitPattern count="other">{0} tommur af kvikasilfri</unitPattern>
@@ -9137,7 +9191,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kelvin</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pundfet</displayName>
 				<unitPattern count="one">{0} pundfet</unitPattern>
 				<unitPattern count="other">{0} pundfet</unitPattern>
@@ -9299,7 +9353,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metrar/sek²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -9399,7 +9453,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} m.mól/l</unitPattern>
 				<unitPattern count="other">{0} m.mól/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>milljónarhlutar</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -9427,7 +9481,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
@@ -9901,17 +9955,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hö</unitPattern>
 				<unitPattern count="other">{0} hö</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -10132,7 +10186,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}G</unitPattern>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -10190,7 +10244,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mmol/L</unitPattern>
 				<unitPattern count="other">{0}mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -10200,7 +10254,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="one">{0}l/100km</unitPattern>
 				<unitPattern count="other">{0}l/100km</unitPattern>
@@ -10439,17 +10493,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} W</unitPattern>
 				<unitPattern count="other">{0} W</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0}&quot; Hg</unitPattern>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>

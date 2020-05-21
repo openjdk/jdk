@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -52,7 +52,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa">ավադհի</language>
 			<language type="ay">այմարա</language>
 			<language type="az">ադրբեջաներեն</language>
-			<language type="az" alt="short">ադրբեջաներեն</language>
 			<language type="ba">բաշկիրերեն</language>
 			<language type="ban">բալիերեն</language>
 			<language type="bas">բասաա</language>
@@ -75,7 +74,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">բուգիերեն</language>
 			<language type="byn">բիլին</language>
 			<language type="ca">կատալաներեն</language>
-			<language type="ccp" draft="provisional">չակմա</language>
+			<language type="ccp">չակմա</language>
 			<language type="ce">չեչեներեն</language>
 			<language type="ceb">սեբուերեն</language>
 			<language type="cgg">չիգա</language>
@@ -130,6 +129,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">բասկերեն</language>
 			<language type="ewo">էվոնդո</language>
 			<language type="fa">պարսկերեն</language>
+			<language type="fa_AF">դարի</language>
 			<language type="ff">ֆուլահ</language>
 			<language type="fi">ֆիններեն</language>
 			<language type="fil">ֆիլիպիներեն</language>
@@ -491,7 +491,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zh">չինարեն</language>
 			<language type="zh_Hans">պարզեցված չինարեն</language>
 			<language type="zh_Hant">չինարեն, ավանդական</language>
-			<language type="zh_Hant" alt="long" draft="provisional">չինարեն (ավանդական չինարեն)</language>
+			<language type="zh_Hant" alt="long">չինարեն (ավանդական չինարեն)</language>
 			<language type="zu">զուլուերեն</language>
 			<language type="zun">զունիերեն</language>
 			<language type="zxx">առանց լեզվային բովանդակության</language>
@@ -514,9 +514,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hang">հանգըլ</script>
 			<script type="Hani">չինական</script>
 			<script type="Hans">պարզեցված չինական</script>
-			<script type="Hans" alt="stand-alone">պարզեցված չինական</script>
 			<script type="Hant">ավանդական չինական</script>
-			<script type="Hant" alt="stand-alone">ավանդական չինական</script>
 			<script type="Hebr">եբրայական</script>
 			<script type="Hira">հիրագանա</script>
 			<script type="Hrkt">ճապոնական վանկագիր</script>
@@ -4275,7 +4273,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Նորֆոլկ կղզու ժամանակ</standard>
+					<generic draft="contributed">Նորֆոլկ կղզու ժամանակ</generic>
+					<standard draft="contributed">Նորֆոլկ կղզու ստանդարտ ժամանակ</standard>
+					<daylight draft="contributed">Նորֆոլկ կղզու ամառային ժամանակ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4872,9 +4872,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
-				<displayName>CNH</displayName>
-				<displayName count="one">CNH</displayName>
-				<displayName count="other">CNH</displayName>
+				<displayName>չինական օֆշորային յուան</displayName>
+				<displayName count="one">չինական օֆշորային յուան</displayName>
+				<displayName count="other">չինական օֆշորային յուան</displayName>
 				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
@@ -5763,15 +5763,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>դեցի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>սանտի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>միլի{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>միկրո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>նանո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>պիկո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ֆեմտո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ատտո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>զեպտո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>յոկտո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>դեկա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>հեկտո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>կիլո{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>մեգա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>գիգա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>տերա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>պետա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>էքսա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>զետտա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>յոտտա{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>քառակուսի {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">քառակուսի {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">քառակուսի {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>խորանարդ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">խորանարդ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ազատ անկման արագացում</displayName>
 				<unitPattern count="one">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>մետրեր/վայրկյան քառակուսի</displayName>
 				<unitPattern count="one">{0} մետր/վայրկյան քառակուսի</unitPattern>
 				<unitPattern count="other">{0} մետր/վայրկյան քառակուսի</unitPattern>
@@ -5871,7 +5941,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} միլիմոլ լիտրի վրա</unitPattern>
 				<unitPattern count="other">{0} միլիմոլ լիտրի վրա</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>մասնիկներ միլիոնի վրա</displayName>
 				<unitPattern count="one">{0} մասնիկ միլիոնի վրա</unitPattern>
 				<unitPattern count="other">{0} մասնիկ միլիոնի վրա</unitPattern>
@@ -5901,7 +5971,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} լիտր կիլոմետրի վրա</unitPattern>
 				<unitPattern count="other">{0} լիտր կիլոմետրի վրա</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>լիտրեր 100 կիլոմետրի վրա</displayName>
 				<unitPattern count="one">{0} լիտր 100 կիլոմետրի վրա</unitPattern>
 				<unitPattern count="other">{0} լիտր 100 կիլոմետրի վրա</unitPattern>
@@ -6375,17 +6445,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ձիաուժ</unitPattern>
 				<unitPattern count="other">{0} ձիաուժ</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>սնդիկի սյան միլիմետրեր</displayName>
 				<unitPattern count="one">{0} միլիմետր սնդիկի սյուն</unitPattern>
 				<unitPattern count="other">{0} միլիմետր սնդիկի սյուն</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ֆունտեր քառակուսի դյույմի վրա</displayName>
 				<unitPattern count="one">{0} ֆունտ քառակուսի դյույմի վրա</unitPattern>
 				<unitPattern count="other">{0} ֆունտ քառակուսի դյույմի վրա</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>սնդիկի սյան դյույմեր</displayName>
 				<unitPattern count="one">{0} դյույմ սնդիկի սյուն</unitPattern>
 				<unitPattern count="other">{0} դյույմ սնդիկի սյուն</unitPattern>
@@ -6465,7 +6535,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} կելվին</unitPattern>
 				<unitPattern count="other">{0} կելվին</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ֆունտ-ֆուտեր</displayName>
 				<unitPattern count="one">{0} ֆունտ-ֆուտ</unitPattern>
 				<unitPattern count="other">{0} ֆունտ-ֆուտ</unitPattern>
@@ -6619,15 +6689,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>դ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ս{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>մ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>մկ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ն{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>պ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ֆ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>զ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>յ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>դա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>հ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>կ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>Մ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>Գ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>Տ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>Պ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>Է{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Զ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Յ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g</displayName>
 				<unitPattern count="one">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>մ/վ²</displayName>
 				<unitPattern count="one">{0} մ/վ²</unitPattern>
 				<unitPattern count="other">{0} մ/վ²</unitPattern>
@@ -6727,7 +6865,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} մմոլ/լ</unitPattern>
 				<unitPattern count="other">{0} մմոլ/լ</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>մասնիկ/միլիոն</displayName>
 				<unitPattern count="one">{0} մասնիկ/միլիոն</unitPattern>
 				<unitPattern count="other">{0} մասնիկ/միլիոն</unitPattern>
@@ -6757,7 +6895,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} լ/կմ</unitPattern>
 				<unitPattern count="other">{0} լ/կմ</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>լ/100 կմ</displayName>
 				<unitPattern count="one">{0} լ/100 կմ</unitPattern>
 				<unitPattern count="other">{0} լ/100 կմ</unitPattern>
@@ -7208,17 +7346,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ձ․ու․</unitPattern>
 				<unitPattern count="other">{0} ձ․ու․</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>մմ ս.ս.</displayName>
 				<unitPattern count="one">{0} մմ ս.ս.</unitPattern>
 				<unitPattern count="other">{0} մմ ս.ս.</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ֆ․/քառ․ դյմ</displayName>
 				<unitPattern count="one">{0} ֆ./քառ․ դյմ</unitPattern>
 				<unitPattern count="other">{0} ֆ./քառ․ դյմ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>դյույմ ս.ս.</displayName>
 				<unitPattern count="one">{0} դյմ. ս.ս.</unitPattern>
 				<unitPattern count="other">{0} դյմ. ս.ս.</unitPattern>
@@ -7298,7 +7436,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Կ</unitPattern>
 				<unitPattern count="other">{0} Կ</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ֆնտ-ֆտ</displayName>
 				<unitPattern count="one">{0} ֆնտ-ֆտ</unitPattern>
 				<unitPattern count="other">{0} ֆնտ-ֆտ</unitPattern>
@@ -7452,8 +7590,76 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>դ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ս{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>մ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>մկ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ն{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>պ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ֆ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>զ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>յ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>դա{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>հ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>կ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>Մ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>Գ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>Տ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>Պ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>Է{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Զ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Յ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0}G</unitPattern>
@@ -7500,7 +7706,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>լ/100 կմ</displayName>
 				<unitPattern count="one">{0} լ/100 կմ</unitPattern>
 				<unitPattern count="other">{0} լ/100 կմ</unitPattern>
@@ -7619,7 +7825,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ձ/ու</unitPattern>
 				<unitPattern count="other">{0}ձ/ու</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0}&quot; ս. ս.</unitPattern>
 				<unitPattern count="other">{0}&quot; ս. ս</unitPattern>
 			</unit>

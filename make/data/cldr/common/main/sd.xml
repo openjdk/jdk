@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -116,6 +116,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">باسڪي</language>
 			<language type="ewo">اوانڊو</language>
 			<language type="fa">فارسي</language>
+			<language type="fa_AF">دري</language>
 			<language type="ff">فلاهه</language>
 			<language type="fi">فنش</language>
 			<language type="fil">فلپائني</language>
@@ -589,7 +590,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR">فرانس</territory>
 			<territory type="GA">گبون</territory>
 			<territory type="GB">برطانيه</territory>
-			<territory type="GB" alt="short">برطانيه</territory>
 			<territory type="GD">گرينڊا</territory>
 			<territory type="GE">جارجيا</territory>
 			<territory type="GF">فرانسيسي گيانا</territory>
@@ -608,7 +608,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GW">گني بسائو</territory>
 			<territory type="GY">گيانا</territory>
 			<territory type="HK">هانگ ڪانگ</territory>
-			<territory type="HK" alt="short">هانگ ڪانگ</territory>
 			<territory type="HM">هرڊ ۽ مڪڊونلڊ ٻيٽ</territory>
 			<territory type="HN">هنڊورس</territory>
 			<territory type="HR">ڪروئيشيا</territory>
@@ -4132,7 +4131,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>نار فوڪ آئي لينڊ جو وقت</standard>
+					<generic draft="contributed">نار فوڪ آئي لينڊ جو وقت</generic>
+					<standard draft="contributed">نار فوڪ آئي لينڊ جو معياري وقت</standard>
+					<daylight draft="contributed">نار فوڪ آئي لينڊ جي ڏينهن جو وقت</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4686,9 +4687,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
-				<displayName>BYR</displayName>
-				<displayName count="one">BYR</displayName>
-				<displayName count="other">BYR</displayName>
 				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
@@ -5596,8 +5594,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>centi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>micro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yocto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hecto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>في {1} تي {0}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>اسڪوائر {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">اسڪوائر {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">اسڪوائر {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>ڪيوبڪ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">cubic {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ڪيوبڪ{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -5607,7 +5672,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ڪشش ثقل</unitPattern>
 				<unitPattern count="other">{0} ڪشش ثقل</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ميٽر في سيڪنڊ اسڪوائر</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} ميٽر في سيڪنڊ اسڪوائر</unitPattern>
@@ -5707,7 +5772,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ملي مولز في ليٽر</unitPattern>
 				<unitPattern count="other">{0} ملي مولز في ليٽر</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>حصا في ملين</displayName>
 				<unitPattern count="one">{0} حصا في ملين</unitPattern>
 				<unitPattern count="other">{0} حصا في ملين</unitPattern>
@@ -5737,7 +5802,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ليٽرز في ڪلو ميٽر</unitPattern>
 				<unitPattern count="other">{0} ليٽرز في ڪلو ميٽر</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ليٽرز في 100 ڪلو ميٽر</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="other">{0} ليٽرز في 100 ڪلو ميٽر</unitPattern>
@@ -6213,17 +6278,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} هارس پاور</unitPattern>
 				<unitPattern count="other">{0} هارس پاور</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>مرڪري جو ملي ميٽر</displayName>
 				<unitPattern count="one">مرڪري جو {0} ملي ميٽر</unitPattern>
 				<unitPattern count="other">مرڪري جو {0} ملي ميٽر</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>پائونڊز في اسڪوائر انچ</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} پائونڊز في اسڪوائر انچ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>مرڪري جا انچز</displayName>
 				<unitPattern count="one">مرڪري جا {0} انچز</unitPattern>
 				<unitPattern count="other">مرڪري جا {0} انچز</unitPattern>
@@ -6303,7 +6368,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ڪيلونز</unitPattern>
 				<unitPattern count="other">{0} ڪيلونز</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>پائونڊ-فيٽ</displayName>
 				<unitPattern count="one">{0} پائونڊ-فوٽ</unitPattern>
 				<unitPattern count="other">{0} پائونڊ-فيٽ</unitPattern>
@@ -6457,8 +6522,74 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -6468,7 +6599,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ڪشش ثقل</unitPattern>
 				<unitPattern count="other">{0} ڪشش ثقل</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>ميٽر في سيڪنڊ اسڪوائر</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -6568,7 +6699,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ملي مولز في ليٽر</unitPattern>
 				<unitPattern count="other">{0} ملي مولز في ليٽر</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>حصا في ملين</displayName>
 				<unitPattern count="one">{0} حصا في ملين</unitPattern>
 				<unitPattern count="other">{0} حصا في ملين</unitPattern>
@@ -6598,7 +6729,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="other">{0} L/100km</unitPattern>
@@ -7045,17 +7176,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} هارس پاور</unitPattern>
 				<unitPattern count="other">{0} هارس پاور</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>مرڪري جو ملي ميٽر</displayName>
 				<unitPattern count="one">مرڪري جو {0} ملي ميٽر</unitPattern>
 				<unitPattern count="other">مرڪري جو {0} ملي ميٽر</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>پائونڊز في اسڪوائر انچ</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>مرڪري جا انچز</displayName>
 				<unitPattern count="one">مرڪري جا {0} انچز</unitPattern>
 				<unitPattern count="other">مرڪري جا {0} انچز</unitPattern>
@@ -7130,7 +7261,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ڪيلونز</unitPattern>
 				<unitPattern count="other">{0} ڪيلونز</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
 				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
@@ -7284,8 +7415,70 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -7295,7 +7488,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="other">{0} L/100km</unitPattern>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -179,6 +179,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">इवोन्डो</language>
 			<language type="ext">एक्सट्रेमादुराली</language>
 			<language type="fa">फारसी</language>
+			<language type="fa_AF">दारी</language>
 			<language type="fan">फाङ</language>
 			<language type="fat">फान्टी</language>
 			<language type="ff">फुलाह</language>
@@ -626,9 +627,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hani">हान</script>
 			<script type="Hano">हानुनु</script>
 			<script type="Hans">सरलिकृत चिनियाँ</script>
-			<script type="Hans" alt="stand-alone">सरलिकृत चिनियाँ</script>
 			<script type="Hant">परम्परागत चिनियाँ</script>
-			<script type="Hant" alt="stand-alone">परम्परागत चिनियाँ</script>
 			<script type="Hebr">हिब्रु</script>
 			<script type="Hira">हिरागना</script>
 			<script type="Hmng">पहावह हमोङ्ग</script>
@@ -710,8 +709,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Xpeo">पुरानो पर्सियन</script>
 			<script type="Yiii">यी</script>
 			<script type="Zinh">इन्हेरिटेड</script>
-			<script type="Zmth">Zmth</script>
-			<script type="Zsye">Zsye</script>
+			<script type="Zmth">गणितीय चिन्ह</script>
+			<script type="Zsye">इमोजी</script>
 			<script type="Zsym">प्रतीकहरू</script>
 			<script type="Zxxx">नलेखिएको</script>
 			<script type="Zyyy">साझा</script>
@@ -979,7 +978,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">सिन्ट मार्टेन</territory>
 			<territory type="SY">सिरिया</territory>
 			<territory type="SZ">स्वाजिल्याण्ड</territory>
-			<territory type="SZ" alt="variant">स्वाजिल्याण्ड</territory>
 			<territory type="TA">ट्रिस्टान डा कुन्हा</territory>
 			<territory type="TC">तुर्क र काइकोस टापु</territory>
 			<territory type="TD">चाड</territory>
@@ -1016,7 +1014,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">भानुआतु</territory>
 			<territory type="WF">वालिस र फुटुना</territory>
 			<territory type="WS">सामोआ</territory>
-			<territory type="XA" draft="provisional">सिउडो-एक्सेन्ट्स</territory>
+			<territory type="XA">सिउडो-एक्सेन्ट्स</territory>
 			<territory type="XB">सिउडो-बिडी</territory>
 			<territory type="XK">कोसोभो</territory>
 			<territory type="YE">येमेन</territory>
@@ -1032,11 +1030,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</variants>
 		<keys>
 			<key type="calendar">पात्रो</key>
-			<key type="cf">cf</key>
+			<key type="cf">मुद्राको ढाँचा</key>
 			<key type="collation">क्रमबद्ध सुची</key>
 			<key type="currency">मुद्रा</key>
-			<key type="hc">hc</key>
-			<key type="lb">lb</key>
+			<key type="hc">समय चक्र (12 तथा 24)</key>
+			<key type="lb">पङ्क्ति विच्छेदको शैली</key>
 			<key type="ms">मापन प्रणाली</key>
 			<key type="numbers">अङ्कहरू</key>
 		</keys>
@@ -1069,9 +1067,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h12">hc-h12</type>
 			<type key="hc" type="h23">hc-h23</type>
 			<type key="hc" type="h24">hc-h24</type>
-			<type key="lb" type="loose">loose</type>
-			<type key="lb" type="normal">normal</type>
-			<type key="lb" type="strict">strict</type>
+			<type key="lb" type="loose">पङ्क्ति विच्छेदको खुला शैली</type>
+			<type key="lb" type="normal">पङ्क्ति विच्छेदको सामान्य शैली</type>
+			<type key="lb" type="strict">पङ्क्ति विच्छेदको कडा शैली</type>
 			<type key="ms" type="metric">मेट्रिक प्रणाली</type>
 			<type key="ms" type="uksystem">इम्पेरियल मापन प्रणाली</type>
 			<type key="ms" type="ussystem">संयुक्त राज्य मापन प्रणाली</type>
@@ -4390,7 +4388,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>नोर्फल्क टापू समय</standard>
+					<generic draft="contributed">नोर्फल्क टापू समय</generic>
+					<standard draft="contributed">नोर्फल्क टापू मानक समय</standard>
+					<daylight draft="contributed">नोर्फल्क टापू ग्रीष्मकालीन समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4686,14 +4686,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="deva">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern draft="contributed">#,##,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern draft="contributed">#,##,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -4770,31 +4770,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<percentFormats numberSystem="deva">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern>#,##0%</pattern>
+					<pattern>#,##,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern>#,##0%</pattern>
+					<pattern>#,##,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
 		<currencyFormats numberSystem="deva">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>¤ #,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>¤ #,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>¤ #,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -5921,15 +5921,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>डेसि{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>सेन्टी{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>मिली{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>माइक्रो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>नानो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>पिको{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>फेमटो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>अटो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>जेप्टो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>योक्टो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>डेका{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>हेक्टो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>किलो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>मेगा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>गिगा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>टेरा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>पेटा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>एक्सा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>जेटा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>योटा{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}प्रति{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>वर्ग {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">वर्ग {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">वर्ग {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>घन {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">घन {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">घन {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>गुरूत्वाकर्षण शक्ति</displayName>
 				<unitPattern count="one">{0} गुरूत्वाकर्षण शक्ति</unitPattern>
 				<unitPattern count="other">{0} गुरूत्वाकर्षण शक्ति</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>मिटर प्रति वर्ग सेकेन्ड</displayName>
 				<unitPattern count="one">{0}मिटर प्रति सेकेण्ड वर्ग</unitPattern>
 				<unitPattern count="other">{0}मिटर प्रति सेकेण्ड वर्ग</unitPattern>
@@ -6029,7 +6099,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -6059,7 +6129,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}लिटर प्रति किलोमिटर</unitPattern>
 				<unitPattern count="other">{0}लिटर प्रति किलोमिटर</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>लिटर प्रति १०० किलोमिटर</displayName>
 				<unitPattern count="one">{0}लिटर प्रति १०० किलोमिटर</unitPattern>
 				<unitPattern count="other">{0}लिटर प्रति १०० किलोमिटर</unitPattern>
@@ -6533,17 +6603,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} हर्सपावर</unitPattern>
 				<unitPattern count="other">{0} हर्सपावर</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>मिलिमिटर पारो</displayName>
 				<unitPattern count="one">{0} मिलिमिटर पारो</unitPattern>
 				<unitPattern count="other">{0} मिलिमिटर पारो</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>पाउन्ड प्रति वर्ग इन्च</displayName>
 				<unitPattern count="one">{0} पाउन्ड प्रति वर्ग इन्च</unitPattern>
 				<unitPattern count="other">{0}पाउन्ड प्रति वर्ग इन्च</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>इन्च पारो</displayName>
 				<unitPattern count="one">{0} इन्च पारो</unitPattern>
 				<unitPattern count="other">{0} इन्च पारो</unitPattern>
@@ -6623,7 +6693,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>पाउन्ड फिट</displayName>
 				<unitPattern count="one">{0} पाउन्ड फुट</unitPattern>
 				<unitPattern count="other">{0} पाउन्ड फिट</unitPattern>
@@ -6777,8 +6847,73 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>डे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>से.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>मि.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>मा.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ना.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>पि.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>फे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>अ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>जे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>यो.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>डेका{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>हे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>कि.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>मे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>गि.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>टे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>पे.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ए.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>जेटा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>योटा{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}प्रति {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -6788,7 +6923,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -6888,7 +7023,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -6916,7 +7051,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>लि./१००कि.मि.</displayName>
 				<unitPattern count="one">{0}लि./१००कि.मि.</unitPattern>
 				<unitPattern count="other">{0}लि./१००कि.मि.</unitPattern>
@@ -7386,17 +7521,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} हर्सपावर</unitPattern>
 				<unitPattern count="other">{0} हर्सपावर</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>इन्च पारो</displayName>
 				<unitPattern count="one">{0} इन्च पारो</unitPattern>
 				<unitPattern count="other">{0} इन्च पारो</unitPattern>
@@ -7620,8 +7755,73 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>डेसि{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>सेन्टी{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>मिली{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>माइक्रो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>नानो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>पिको{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>फेमटो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>अटो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>जेप्टो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>योक्टो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>डेका{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>हेक्टो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>किलो{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>मेगा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>गिगा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>टेरा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>पेटा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>एक्सा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>जेटा{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>योटा{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}प्रति {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0} g</unitPattern>
@@ -7668,7 +7868,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}प्रतिशत</unitPattern>
 				<unitPattern count="other">{0}प्रतिशत</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>लि./१००कि.मि.</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>
@@ -7789,7 +7989,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} हर्सपावर</unitPattern>
 				<unitPattern count="other">{0} हर्सपावर</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} ईञ्‍च पारो</unitPattern>
 				<unitPattern count="other">{0} ईञ्‍च पारो</unitPattern>
 			</unit>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -302,13 +302,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CA">Canadá</territory>
 			<territory type="CC">Islas Cocos</territory>
 			<territory type="CD">Congo (RDC)</territory>
-			<territory type="CD" alt="variant">Congo (RDC)</territory>
 			<territory type="CF">República Centroafricana</territory>
 			<territory type="CG">Congo</territory>
-			<territory type="CG" alt="variant">Congo</territory>
 			<territory type="CH">Suiza</territory>
 			<territory type="CI">Côte d’Ivoire</territory>
-			<territory type="CI" alt="variant">Côte d’Ivoire</territory>
 			<territory type="CK">Islas Cook</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Camerún</territory>
@@ -341,13 +338,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FI">Finlandia</territory>
 			<territory type="FJ">Fiyi</territory>
 			<territory type="FK">Islas Malvinas</territory>
-			<territory type="FK" alt="variant">Islas Malvinas</territory>
 			<territory type="FM">Micronesia</territory>
 			<territory type="FO">Islas Feroe</territory>
 			<territory type="FR">Francia</territory>
 			<territory type="GA">Gabón</territory>
 			<territory type="GB">Reino Unido</territory>
-			<territory type="GB" alt="short">Reino Unido</territory>
 			<territory type="GD">Granada</territory>
 			<territory type="GE">Georgia</territory>
 			<territory type="GF">Guayana Francesa</territory>
@@ -485,7 +480,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Siria</territory>
 			<territory type="SZ">Suazilandia</territory>
-			<territory type="SZ" alt="variant">Suazilandia</territory>
 			<territory type="TA">Tristán de Acuña</territory>
 			<territory type="TC">Islas Turcas y Caicos</territory>
 			<territory type="TD">Chad</territory>
@@ -495,7 +489,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TJ">Tayikistán</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timor-Leste</territory>
-			<territory type="TL" alt="variant">Timor-Leste</territory>
 			<territory type="TM">Turkmenistán</territory>
 			<territory type="TN">Túnez</territory>
 			<territory type="TO">Tonga</territory>
@@ -508,7 +501,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Islas menores alejadas de los EE.UU.</territory>
 			<territory type="US">Estados Unidos</territory>
-			<territory type="US" alt="short">Estados Unidos</territory>
 			<territory type="UY">Uruguay</territory>
 			<territory type="UZ">Uzbekistán</territory>
 			<territory type="VA">Santa Sede (Ciudad del Vaticano)</territory>
@@ -1055,7 +1047,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
-						<era type="0" alt="variant">BCE</era>
 						<era type="1">d.C.</era>
 						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
@@ -3769,7 +3760,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Hora de la Isla Norfolk</standard>
+					<generic draft="contributed">Hora de la Isla Norfolk</generic>
+					<standard draft="contributed">Hora Estandar de la Isla Norfolk</standard>
+					<daylight draft="contributed">Hora de Verano de la Isla Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">

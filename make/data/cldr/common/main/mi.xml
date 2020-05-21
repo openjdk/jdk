@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -103,19 +103,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<dates>
 		<calendars>
 			<calendar type="generic">
-				<days>
-					<dayContext type="format">
-						<dayWidth type="wide">
-							<day type="sun" draft="provisional">Rātapu</day>
-							<day type="mon" draft="provisional">Mane</day>
-							<day type="tue" draft="provisional">Tūrei</day>
-							<day type="wed" draft="provisional">Wenerei</day>
-							<day type="thu" draft="provisional">Tāite</day>
-							<day type="fri" draft="provisional">Paraire</day>
-							<day type="sat" draft="provisional">Hātarei</day>
-						</dayWidth>
-					</dayContext>
-				</days>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -474,9 +461,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
-						<era type="0" alt="variant">BCE</era>
 						<era type="1">CE</era>
-						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -984,61 +969,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
-			<currency type="ANG">
-				<displayName>ANG</displayName>
-				<displayName count="other">ANG</displayName>
-			</currency>
-			<currency type="ARS">
-				<displayName>ARS</displayName>
-				<displayName count="other">ARS</displayName>
-			</currency>
-			<currency type="AWG">
-				<displayName>AWG</displayName>
-				<displayName count="other">AWG</displayName>
-			</currency>
-			<currency type="BBD">
-				<displayName>BBD</displayName>
-				<displayName count="other">BBD</displayName>
-			</currency>
-			<currency type="BMD">
-				<displayName>BMD</displayName>
-				<displayName count="other">BMD</displayName>
-			</currency>
 			<currency type="BRL">
 				<displayName>Real Parahi</displayName>
 				<displayName count="other">real Parahi</displayName>
 			</currency>
-			<currency type="BSD">
-				<displayName>BSD</displayName>
-				<displayName count="other">BSD</displayName>
-			</currency>
-			<currency type="BZD">
-				<displayName>BZD</displayName>
-				<displayName count="other">BZD</displayName>
-			</currency>
-			<currency type="CAD">
-				<displayName>CAD</displayName>
-				<displayName count="other">CAD</displayName>
-			</currency>
 			<currency type="CNY">
 				<displayName>Yuan Haina</displayName>
 				<displayName count="other">yuan Haina</displayName>
-			</currency>
-			<currency type="CRC">
-				<displayName>CRC</displayName>
-				<displayName count="other">CRC</displayName>
-			</currency>
-			<currency type="CUC">
-				<displayName>CUC</displayName>
-				<displayName count="other">CUC</displayName>
-			</currency>
-			<currency type="CUP">
-				<displayName>CUP</displayName>
-				<displayName count="other">CUP</displayName>
-			</currency>
-			<currency type="DOP">
-				<displayName>DOP</displayName>
-				<displayName count="other">DOP</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
@@ -1048,67 +985,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Pāuna Piritene</displayName>
 				<displayName count="other">pāuna Piritene</displayName>
 			</currency>
-			<currency type="GTQ">
-				<displayName>GTQ</displayName>
-				<displayName count="other">GTQ</displayName>
-			</currency>
-			<currency type="HNL">
-				<displayName>HNL</displayName>
-				<displayName count="other">HNL</displayName>
-			</currency>
-			<currency type="HTG">
-				<displayName>HTG</displayName>
-				<displayName count="other">HTG</displayName>
-			</currency>
 			<currency type="INR">
 				<displayName>Rupī Iniana</displayName>
 				<displayName count="other">rupī Iniana</displayName>
-			</currency>
-			<currency type="JMD">
-				<displayName>JMD</displayName>
-				<displayName count="other">JMD</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yen Hapanihi</displayName>
 				<displayName count="other">yen Hapanihi</displayName>
 				<symbol draft="contributed">¥</symbol>
 			</currency>
-			<currency type="KYD">
-				<displayName>KYD</displayName>
-				<displayName count="other">KYD</displayName>
-			</currency>
-			<currency type="MXN">
-				<displayName>MXN</displayName>
-				<displayName count="other">MXN</displayName>
-			</currency>
-			<currency type="NIO">
-				<displayName>NIO</displayName>
-				<displayName count="other">NIO</displayName>
-			</currency>
 			<currency type="NZD">
 				<displayName>Tāra o Aotearoa</displayName>
 				<displayName count="other">tāra o Aotearoa</displayName>
 				<symbol>$</symbol>
 			</currency>
-			<currency type="PAB">
-				<displayName>PAB</displayName>
-				<displayName count="other">PAB</displayName>
-			</currency>
 			<currency type="RUB">
 				<displayName>Rūpera Ruhiana</displayName>
 				<displayName count="other">rūpera Ruhiana</displayName>
 			</currency>
-			<currency type="TTD">
-				<displayName>TTD</displayName>
-				<displayName count="other">TTD</displayName>
-			</currency>
 			<currency type="USD">
 				<displayName>Tāra US</displayName>
 				<displayName count="other">tāra US</displayName>
-			</currency>
-			<currency type="XCD">
-				<displayName>XCD</displayName>
-				<displayName count="other">XCD</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>Moni Tē Mōhiotia</displayName>

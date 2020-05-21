@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -48,6 +48,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="arp">Arapaho</language>
 			<language type="arq">Algerijns Arabisch</language>
 			<language type="ars">Nadjdi-Arabisch</language>
+			<language type="ars" alt="menu">Arabisch, Nadjdi</language>
 			<language type="arw">Arawak</language>
 			<language type="ary">Marokkaans Arabisch</language>
 			<language type="arz">Egyptisch Arabisch</language>
@@ -121,6 +122,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">Cherokee</language>
 			<language type="chy">Cheyenne</language>
 			<language type="ckb">Soranî</language>
+			<language type="ckb" alt="menu">Koerdisch, Soranî</language>
 			<language type="co">Corsicaans</language>
 			<language type="cop">Koptisch</language>
 			<language type="cps">Capiznon</language>
@@ -170,6 +172,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">Ewondo</language>
 			<language type="ext">Extremeens</language>
 			<language type="fa">Perzisch</language>
+			<language type="fa_AF">Dari</language>
 			<language type="fan">Fang</language>
 			<language type="fat">Fanti</language>
 			<language type="ff">Fulah</language>
@@ -608,7 +611,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yo">Yoruba</language>
 			<language type="yrl">Nheengatu</language>
 			<language type="yue">Kantonees</language>
-			<language type="yue" alt="menu">Kantonees</language>
 			<language type="za">Zhuang</language>
 			<language type="zap">Zapotec</language>
 			<language type="zbl">Blissymbolen</language>
@@ -631,6 +633,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Ahom" draft="contributed">Ahom</script>
 			<script type="Arab">Arabisch</script>
 			<script type="Arab" alt="variant">Perso-Arabisch</script>
+			<script type="Aran" draft="contributed">Nastaliq</script>
 			<script type="Armi">Keizerlijk Aramees</script>
 			<script type="Armn">Armeens</script>
 			<script type="Avst">Avestaans</script>
@@ -651,12 +654,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Cari">Carisch</script>
 			<script type="Cham" draft="contributed">Cham</script>
 			<script type="Cher">Cherokee</script>
+			<script type="Chrs" draft="contributed">Chorasmisch</script>
 			<script type="Cirt">Cirth</script>
 			<script type="Copt">Koptisch</script>
 			<script type="Cprt">Cyprisch</script>
 			<script type="Cyrl">Cyrillisch</script>
 			<script type="Cyrs">Oudkerkslavisch Cyrillisch</script>
 			<script type="Deva">Devanagari</script>
+			<script type="Diak" draft="contributed">Dives Akuru</script>
 			<script type="Dogr" draft="contributed">Dogra</script>
 			<script type="Dsrt">Deseret</script>
 			<script type="Dupl" draft="contributed">Duployan snelschrift</script>
@@ -676,7 +681,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Grek">Grieks</script>
 			<script type="Gujr">Gujarati</script>
 			<script type="Guru">Gurmukhi</script>
-			<script type="Hanb">Hanb</script>
+			<script type="Hanb">Han met Bopomofo</script>
 			<script type="Hang">Hangul</script>
 			<script type="Hani">Han</script>
 			<script type="Hano">Hanunoo</script>
@@ -703,6 +708,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Khar">Kharoshthi</script>
 			<script type="Khmr">Khmer</script>
 			<script type="Khoj" draft="contributed">Khojki</script>
+			<script type="Kits" draft="contributed">Kitaans kleinschrift</script>
 			<script type="Knda">Kannada</script>
 			<script type="Kore">Koreaans</script>
 			<script type="Kpel" draft="contributed">Kpelle</script>
@@ -761,7 +767,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Phnx">Foenicisch</script>
 			<script type="Plrd">Pollard-fonetisch</script>
 			<script type="Prti">Inscriptioneel Parthisch</script>
-			<script type="Qaag" draft="contributed">Qaag</script>
+			<script type="Qaag" draft="contributed">Zawgyi</script>
 			<script type="Rjng">Rejang</script>
 			<script type="Rohg" draft="contributed">Hanifi Rohingya</script>
 			<script type="Roro">Rongorongo</script>
@@ -809,6 +815,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Wole" draft="contributed">Woleai</script>
 			<script type="Xpeo">Oudperzisch</script>
 			<script type="Xsux">Sumero-Akkadian Cuneiform</script>
+			<script type="Yezi" draft="contributed">Jezidi</script>
 			<script type="Yiii">Yi</script>
 			<script type="Zanb" draft="contributed">vierkant Zanabazar</script>
 			<script type="Zinh">Overgeërfd</script>
@@ -1154,6 +1161,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="BISKE">San Giorgio/Bila-dialect</variant>
 			<variant type="BOHORIC" draft="contributed">Bohorič-alfabet</variant>
 			<variant type="BOONT">Boontling</variant>
+			<variant type="BORNHOLM" draft="contributed">Bornholms</variant>
 			<variant type="CISAUP" draft="contributed">Cisaup</variant>
 			<variant type="COLB1945" draft="contributed">Portugese-Braziliaanse spellingsverdrag van 1945</variant>
 			<variant type="CORNU" draft="contributed">Cornu</variant>
@@ -1336,6 +1344,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="cham" draft="contributed">Cham cijfers</type>
 			<type key="numbers" type="cyrl" draft="contributed">Cyrillische cijfers</type>
 			<type key="numbers" type="deva">Devanagari cijfers</type>
+			<type key="numbers" type="diak" draft="contributed">Dives Akuru cijfers</type>
 			<type key="numbers" type="ethi">Ethiopische cijfers</type>
 			<type key="numbers" type="finance" draft="contributed">Financiële cijfers</type>
 			<type key="numbers" type="fullwide">cijfers met volledige breedte</type>
@@ -4954,7 +4963,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">y – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">M-y GGGGG – M-y GGGGG</greatestDifference>
@@ -9972,7 +9981,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolkeilandse tijd</standard>
+					<generic draft="contributed">Norfolkeilandse tijd</generic>
+					<standard draft="contributed">Norfolkeilandse standaardtijd</standard>
+					<daylight draft="contributed">Norfolkeilandse zomertijd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -14651,8 +14662,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>centi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>milli{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>micro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yocto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deca{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hecto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>vierkante {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">vierkante {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">vierkante {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>kubieke {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">kubieke {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">kubieke {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}{1}</compoundUnitPattern>
@@ -14662,7 +14743,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G-kracht</unitPattern>
 				<unitPattern count="other">{0} G-krachten</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>meter per seconde kwadraat</displayName>
 				<unitPattern count="one">{0} meter per seconde kwadraat</unitPattern>
 				<unitPattern count="other">{0} meter per seconde kwadraat</unitPattern>
@@ -14757,7 +14838,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimol per liter</unitPattern>
 				<unitPattern count="other">{0} millimol per liter</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -14782,7 +14863,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} liter per kilometer</unitPattern>
 				<unitPattern count="other">{0} liter per kilometer</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>liter per 100 kilometer</displayName>
 				<unitPattern count="one">{0} liter per 100 kilometer</unitPattern>
 				<unitPattern count="other">{0} liter per 100 kilometer</unitPattern>
@@ -15273,17 +15354,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} paardenkracht</unitPattern>
 				<unitPattern count="other">{0} paardenkrachten</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>millimeter-kwikdruk</displayName>
 				<unitPattern count="one">{0} millimeter-kwikdruk</unitPattern>
 				<unitPattern count="other">{0} millimeter-kwikdruk</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inch-kwikdruk</displayName>
 				<unitPattern count="one">{0} inch-kwikdruk</unitPattern>
 				<unitPattern count="other">{0} inch-kwikdruk</unitPattern>
@@ -15363,9 +15444,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kelvin</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pound-feet</displayName>
-				<unitPattern count="one">{0} pound-foot</unitPattern>
+				<unitPattern count="one">{0} pound-force-foot</unitPattern>
 				<unitPattern count="other">{0} pound-feet</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
@@ -15533,7 +15614,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -15628,7 +15709,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -15648,7 +15729,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="one">{0} l/100km</unitPattern>
 				<unitPattern count="other">{0} l/100km</unitPattern>
@@ -16094,17 +16175,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} pk</unitPattern>
 				<unitPattern count="other">{0} pk</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -16324,7 +16405,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">m/s²</displayName>
 				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
@@ -16419,7 +16500,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} mmol/l</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName draft="contributed">ppm</displayName>
 				<unitPattern count="one" draft="contributed">{0} ppm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ppm</unitPattern>
@@ -16439,7 +16520,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} l/km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="one">{0} l/100km</unitPattern>
 				<unitPattern count="other">{0} l/100km</unitPattern>
@@ -16846,17 +16927,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} pk</unitPattern>
 				<unitPattern count="other">{0} pk</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="contributed">mmHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} mmHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">psi</displayName>
 				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>

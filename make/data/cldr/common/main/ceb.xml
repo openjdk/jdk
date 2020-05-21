@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -21,47 +21,47 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		</localeDisplayPattern>
 		<languages>
 			<language type="ar">Arabic</language>
-			<language type="ar_001">Modern Standard Arabic</language>
+			<language type="ar_001">Modernong Tamdanang Arabic</language>
 			<language type="bn">Bangla</language>
 			<language type="ceb">Binisaya</language>
 			<language type="de">Aleman</language>
-			<language type="de_AT">Aleman (Austriano)</language>
-			<language type="de_CH">Aleman (Swiss Hataas nga Aleman)</language>
+			<language type="de_AT">Austriano nga Aleman</language>
+			<language type="de_CH">Swiss nga Taas nga Aleman</language>
 			<language type="en">Ingles</language>
-			<language type="en_AU">Australyanong Ingles</language>
-			<language type="en_CA">Ingles (Kanada)</language>
-			<language type="en_GB">Ingles (Britaniko)</language>
-			<language type="en_GB" alt="short">Ingles (Britaniko)</language>
-			<language type="en_US">Ingles (Amerika)</language>
-			<language type="en_US" alt="short">Ingles (Amerika)</language>
+			<language type="en_AU">Ingles sa Australia</language>
+			<language type="en_CA">Ingles sa Canada</language>
+			<language type="en_GB">Britanikong Ingles</language>
+			<language type="en_GB" alt="short">Ingles sa UK</language>
+			<language type="en_US">Ingles sa Amerika</language>
+			<language type="en_US" alt="short">Ingles sa US</language>
 			<language type="es">Espanyol</language>
-			<language type="es_419">Espanyol (Latino Amerikano)</language>
-			<language type="es_ES">Espanyol (Uropanhon)</language>
-			<language type="es_MX">Espanyol (Mexicano)</language>
-			<language type="fr">Pransesa</language>
-			<language type="fr_CA">Pranses (Kanada)</language>
-			<language type="fr_CH">Pransesa (Swiss)</language>
+			<language type="es_419">Espanyol sa Latin Amerika</language>
+			<language type="es_ES">Espanyol sa Europe</language>
+			<language type="es_MX">Espanyol sa Mexico</language>
+			<language type="fr">Pranses</language>
+			<language type="fr_CA">Pranses sa Canada</language>
+			<language type="fr_CH">Swiss nga Pranses</language>
 			<language type="hi">Hindi</language>
 			<language type="id">Indonesian</language>
 			<language type="it">Italiano</language>
-			<language type="ja">Nipponggo</language>
+			<language type="ja">Hinapon</language>
 			<language type="ko">Korean</language>
 			<language type="nl">Dutch</language>
 			<language type="nl_BE">Flemish</language>
 			<language type="pl">Polish</language>
 			<language type="pt">Portuguese</language>
-			<language type="pt_BR">Portuguese (Brazilyano)</language>
-			<language type="pt_PT">Portuguese (Uropanhon)</language>
+			<language type="pt_BR">Brazilyanong Portuguese</language>
+			<language type="pt_PT">Portuguese sa Europe</language>
 			<language type="ru">Ruso</language>
 			<language type="th">Thai</language>
 			<language type="tr">Turkish</language>
-			<language type="und">Wala Mailhing Pinulongan</language>
-			<language type="zh">Intsik</language>
-			<language type="zh" alt="menu">Chinese, Mandarin</language>
-			<language type="zh_Hans">Pinasimpleng Intsik</language>
-			<language type="zh_Hans" alt="long">Simplified Mandarin Chinese</language>
-			<language type="zh_Hant">Tradisyonal Intsik</language>
-			<language type="zh_Hant" alt="long">Traditional Mandarin Chinese</language>
+			<language type="und">Wala Mailhing Lengguwahe</language>
+			<language type="zh">Inintsik</language>
+			<language type="zh" alt="menu">Inintsik, Mandarin</language>
+			<language type="zh_Hans">Pinasimpleng Inintsik</language>
+			<language type="zh_Hans" alt="long">Pinasimpleng Mandarin nga Inintsik</language>
+			<language type="zh_Hant">Tradisyonal nga Ininstsik</language>
+			<language type="zh_Hant" alt="long">Tradisyonal nga Mandarin nga Inintsik</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Arabo</script>
@@ -70,11 +70,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<script type="Hans" alt="stand-alone">Pinasimpleng Han</script>
 			<script type="Hant">Tradisyonal</script>
 			<script type="Hant" alt="stand-alone">Tradisyonal nga Han</script>
-			<script type="Jpan">Japanese</script>
+			<script type="Jpan">Hinapon</script>
 			<script type="Kore">Korean</script>
 			<script type="Latn">Latin</script>
-			<script type="Zxxx">Dili-sinulat</script>
-			<script type="Zzzz">Wala Mailihing Alpabeto</script>
+			<script type="Zxxx">Dili Sinulat</script>
+			<script type="Zzzz">Wala Mailhing Script</script>
 		</scripts>
 		<territories>
 			<territory type="001">Kalibutan</territory>
@@ -88,7 +88,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="015">Northern Africa</territory>
 			<territory type="017">Middle Africa</territory>
 			<territory type="018">Southern Africa</territory>
-			<territory type="019">Americas</territory>
+			<territory type="019">Mga Amerika</territory>
 			<territory type="021">Northern America</territory>
 			<territory type="029">Caribbean</territory>
 			<territory type="030">Eastern Asia</territory>
@@ -193,9 +193,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="FK" alt="variant">Falkland Islands (Islas Malvinas)</territory>
 			<territory type="FM">Micronesia</territory>
 			<territory type="FO">Faroe Islands</territory>
-			<territory type="FR">Pransiya</territory>
+			<territory type="FR">Pransya</territory>
 			<territory type="GA">Gabon</territory>
-			<territory type="GB">Hiniusang Gingharian</territory>
+			<territory type="GB">United Kingdom</territory>
 			<territory type="GB" alt="short">UK</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Georgia</territory>
@@ -235,7 +235,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="JE">Jersey</territory>
 			<territory type="JM">Jamaica</territory>
 			<territory type="JO">Jordan</territory>
-			<territory type="JP">Hapon</territory>
+			<territory type="JP">Japan</territory>
 			<territory type="KE">Kenya</territory>
 			<territory type="KG">Kyrgyzstan</territory>
 			<territory type="KH">Cambodia</territory>
@@ -362,6 +362,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="UM">U.S. Outlying Islands</territory>
 			<territory type="UN">United Nations</territory>
 			<territory type="US">Estados Unidos</territory>
+			<territory type="US" alt="short">US</territory>
 			<territory type="UY">Uruguay</territory>
 			<territory type="UZ">Uzbekistan</territory>
 			<territory type="VA">Vatican City</territory>
@@ -381,13 +382,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="ZA">South Africa</territory>
 			<territory type="ZM">Zambia</territory>
 			<territory type="ZW">Zimbabwe</territory>
-			<territory type="ZZ">Wala-mailhing Rehiyon</territory>
+			<territory type="ZZ">Wala Mailhing Rehiyon</territory>
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian">Gregorian nga Kalendaryo</type>
 			<type key="calendar" type="iso8601">Kalendaryo sa ISO-8601</type>
-			<type key="collation" type="standard">Standard nga Paagi sa Pagpihig</type>
-			<type key="numbers" type="latn">Kasadpanhong mga Digit</type>
+			<type key="collation" type="standard">Tamdanang Paagi sa Paghan-ay</type>
+			<type key="numbers" type="latn">Mga Western Digit</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metric</measurementSystemName>
@@ -395,9 +396,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<measurementSystemName type="US">US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">Pinulongan: {0}</codePattern>
-			<codePattern type="script">Alpabeto {0}</codePattern>
-			<codePattern type="territory">Rehiyon {0}</codePattern>
+			<codePattern type="language">Lengguwahe: {0}</codePattern>
+			<codePattern type="script">Script: {0}</codePattern>
+			<codePattern type="territory">Rehiyon: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<layout>
@@ -408,7 +409,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 	</layout>
 	<characters>
 		<exemplarCharacters>[a b d e g h i k l m n o p r s t u w y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[c f j q v x z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[c f j ñ q v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
 	</characters>
@@ -490,6 +491,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -635,18 +639,18 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">En</month>
-							<month type="2" draft="contributed">Peb</month>
-							<month type="3" draft="contributed">Mar</month>
-							<month type="4" draft="contributed">Apr</month>
-							<month type="5" draft="contributed">May</month>
-							<month type="6" draft="contributed">Hun</month>
-							<month type="7" draft="contributed">Hul</month>
-							<month type="8" draft="contributed">Ag</month>
-							<month type="9" draft="contributed">Set</month>
-							<month type="10" draft="contributed">Okt</month>
-							<month type="11" draft="contributed">Nob</month>
-							<month type="12" draft="contributed">Dis</month>
+							<month type="1">Ene</month>
+							<month type="2">Peb</month>
+							<month type="3">Mar</month>
+							<month type="4">Abr</month>
+							<month type="5">May</month>
+							<month type="6">Hun</month>
+							<month type="7">Hul</month>
+							<month type="8">Ago</month>
+							<month type="9">Set</month>
+							<month type="10">Okt</month>
+							<month type="11">Nob</month>
+							<month type="12">Dis</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">E</month>
@@ -684,10 +688,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<day type="sun">Dom</day>
 							<day type="mon">Lun</day>
 							<day type="tue">Mar</day>
-							<day type="wed">Mks</day>
-							<day type="thu">Hu</day>
-							<day type="fri">Bi</day>
-							<day type="sat">Sa</day>
+							<day type="wed">Miy</day>
+							<day type="thu">Huw</day>
+							<day type="fri">Biy</day>
+							<day type="sat">Sab</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">D</day>
@@ -718,6 +722,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Dom</day>
+							<day type="mon">Lun</day>
+							<day type="tue">Mar</day>
+							<day type="wed">Miy</day>
+							<day type="thu">Huw</day>
+							<day type="fri">Biy</day>
+							<day type="sat">Sab</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">D</day>
 							<day type="mon">L</day>
@@ -746,10 +759,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					</quarterContext>
 					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="contributed">Q1</quarter>
-							<quarter type="2" draft="contributed">Q2</quarter>
-							<quarter type="3" draft="contributed">Q3</quarter>
-							<quarter type="4" draft="contributed">Q4</quarter>
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">unang quarter</quarter>
@@ -773,13 +786,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				</dayPeriods>
 				<eras>
 					<eraNames>
+						<era type="0">Sa Wala Pa Si Kristo</era>
 						<era type="0" alt="variant">Sa Wala Pa ang Common Era</era>
+						<era type="1">Anno Domini</era>
 						<era type="1" alt="variant">Common Era</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">WK</era>
-						<era type="0" alt="variant">WKP</era>
+						<era type="0">BC</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">KP</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -861,9 +877,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -899,6 +915,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -937,10 +956,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
 							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="h">h – h a</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
@@ -975,9 +998,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1142,17 +1171,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT {0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>Oras {0}</regionFormat>
-			<regionFormat type="daylight">Tag-init Oras {0}</regionFormat>
-			<regionFormat type="standard">Sukdanang Oras {0}</regionFormat>
+			<regionFormat>{0} Oras</regionFormat>
+			<regionFormat type="daylight">{0} Oras sa Tag-init</regionFormat>
+			<regionFormat type="standard">{0} Tamdanang Oras</regionFormat>
 			<fallbackFormat>{1} {0}</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard>Koordinado nga Unibersohanong Oras</standard>
+					<standard>Gikoordinar nga Kinatibuk-ang Oras</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Wala Mailhing Siyudad</exemplarCity>
+				<exemplarCity>Wala Mailhing Lungsod</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
@@ -1195,7 +1224,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Alaska</generic>
 					<standard>Tamdanang Oras sa Alaska</standard>
-					<daylight>Oras sa Adlawan sa Alaska</daylight>
+					<daylight>Oras sa Tag-init sa Alaska</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -1207,37 +1236,37 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Taliwala nga Oras Norte Amerika</generic>
-					<standard>Taliwala nga Sukdanang Oras Norte Amerika</standard>
-					<daylight>Taliwala sa Kahayag sa Adlawng Oras Norte Amerika</daylight>
+					<generic>Sentrong Oras</generic>
+					<standard>Sentong Tamdanan nga Oras</standard>
+					<daylight>Sentrong Oras sa Tag-init</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Norte Amerika Oras sa Sidlakan</generic>
-					<standard>Norte Amerika Sukdanang Oras</standard>
-					<daylight>Norte Amerika Oras sa Sidlakan sa Kahayag sa Adlaw</daylight>
+					<generic>Oras sa Sidlakan</generic>
+					<standard>Tamdanan nga Oras sa Sidlakan</standard>
+					<daylight>Oras sa Tag-init sa Sidlakan</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Norte Amerika Oras sa Kabukiran</generic>
-					<standard>Norte Amerika Sukdanang Oras sa Kabukiran</standard>
-					<daylight>Norte Amerika Oras sa Kahayag sa Adlaw sa Kabukiran</daylight>
+					<generic>Oras sa Kabukiran</generic>
+					<standard>Tamdanang Oras sa Kabukiran</standard>
+					<daylight>Oras sa Tag-init sa Kabukiran</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Norte Amerika Oras sa Pasipiko</generic>
-					<standard>Norte Amerika Sukdanang Oras sa Pasipiko</standard>
-					<daylight>Norte Amerika Oras sa Kahayag sa Adlaw sa Pasipiko</daylight>
+					<generic>Oras sa Pasipiko</generic>
+					<standard>Tamdanang Oras sa Pasipiko</standard>
+					<daylight>Oras sa Tag-init sa Pasipiko</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
 				<long>
 					<generic>Oras sa Apia</generic>
 					<standard>Tamdanang Oras sa Apia</standard>
-					<daylight>Oras sa Adlawan sa Apia</daylight>
+					<daylight>Oras sa Tag-init sa Apia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -1270,37 +1299,37 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Norte Amerika Oras sa Atlantiko</generic>
-					<standard>Norte Amerika Sukdanang Oras sa Atlantiko</standard>
-					<daylight>Norte Amerika Oras sa Kahayag sa Adlaw sa Atlantiko</daylight>
+					<generic>Oras sa Atlantiko</generic>
+					<standard>Tamdanang Oras sa Atlantiko</standard>
+					<daylight>Oras sa Tag-init sa Atlantiko</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
 					<generic>Oras sa Central Australia</generic>
 					<standard>Tamdanang Oras sa Central Australia</standard>
-					<daylight>Oras sa Adlawan sa Central Australia</daylight>
+					<daylight>Oras sa Tag-init sa Central Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
 					<generic>Oras sa Central Western Australia</generic>
 					<standard>Tamdanang Oras sa Central Western Australia</standard>
-					<daylight>Oras sa Adlawan sa Central Western Australia</daylight>
+					<daylight>Oras sa Tag-init sa Central Western Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
 					<generic>Oras sa Eastern Australia</generic>
 					<standard>Tamdanang Oras sa Eastern Australia</standard>
-					<daylight>Oras sa Adlawan sa Eastern Australia</daylight>
+					<daylight>Oras sa Tag-init sa Eastern Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
 					<generic>Oras sa Western Australia</generic>
 					<standard>Tamdanang Oras sa Western Australia</standard>
-					<daylight>Oras sa Adlawan sa Western Australia</daylight>
+					<daylight>Oras sa Tag-init sa Western Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
@@ -1362,7 +1391,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Chatham</generic>
 					<standard>Tamdanang Oras sa Chatham</standard>
-					<daylight>Oras sa Adlawan sa Chatham</daylight>
+					<daylight>Oras sa Tag-init sa Chatham</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
@@ -1414,7 +1443,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Cuba</generic>
 					<standard>Tamdanang Oras sa Cuba</standard>
-					<daylight>Oras sa Adlawan sa Cuba</daylight>
+					<daylight>Oras sa Tag-init sa Cuba</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -1446,16 +1475,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>Oras sa Europa sa Taliwala sa Adlaw</generic>
-					<standard>Sukdanang Oras sa Europa sa Taliwala sa Adlaw</standard>
-					<daylight>Oras sa Europa Taliwala sa Adlaw sa Tag-init</daylight>
+					<generic>Oras sa Central Europe</generic>
+					<standard>Tamdanang Oras sa Central Europe</standard>
+					<daylight>Oras sa Tag-init sa Central Europe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic>Oras sa Taga-Oryente sa Europa</generic>
-					<standard>Sukdanang Oras sa Taga-Oryente sa Europa</standard>
-					<daylight>Oras sa Taga-Oryente sa Europa sa Tag-int</daylight>
+					<generic>Oras sa Eastern Europe</generic>
+					<standard>Tamdanang Oras sa Eastern Europe</standard>
+					<daylight>Oras sa Tag-init sa Eastern Europe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
@@ -1465,9 +1494,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>Oras sa Kasadpanon sa Europa</generic>
-					<standard>Sukadanang Oras sa Kasadpanon sa Europa</standard>
-					<daylight>Oras sa Kasadpanon sa Europa sa Tag-init</daylight>
+					<generic>Oras sa Western Europe</generic>
+					<standard>Tamdanang Oras sa Western Europe</standard>
+					<daylight>Oras sa Tag-init sa Western Europe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
@@ -1518,7 +1547,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Kasarangang Oras sa Greenwich</standard>
+					<standard>Oras sa Greenwich Mean</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -1549,7 +1578,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Hawaii-Aleutian</generic>
 					<standard>Tamdanang Oras sa Hawaii-Aleutian</standard>
-					<daylight>Oras sa Adlawan sa Hawaii-Aleutian</daylight>
+					<daylight>Oras sa Tag-init sa Hawaii-Aleutian</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -1667,7 +1696,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Lord Howe</generic>
 					<standard>Tamdanang Oras sa Lord Howe</standard>
-					<daylight>Oras sa Adlawan sa Lord Howe</daylight>
+					<daylight>Oras sa Tag-init sa Lord Howe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macquarie">
@@ -1718,14 +1747,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Northwest Mexico</generic>
 					<standard>Tamdanang Oras sa Northwest Mexico</standard>
-					<daylight>Oras sa Adlawan sa Northwest Mexico</daylight>
+					<daylight>Oras sa Tag-init sa Northwest Mexico</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>Oras sa Mexican Pacific</generic>
 					<standard>Tamdanang Oras sa Mexican Pacific</standard>
-					<daylight>Oras sa Adlawan sa Mexican Pacific</daylight>
+					<daylight>Oras sa Tag-init sa Mexican Pacific</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -1768,14 +1797,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa New Zealand</generic>
 					<standard>Tamdanang Oras sa New Zealand</standard>
-					<daylight>Oras sa Adlawan sa New Zealand</daylight>
+					<daylight>Oras sa Tag-init sa New Zealand</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
 					<generic>Oras sa Newfoundland</generic>
 					<standard>Tamdanang Oras sa Newfoundland</standard>
-					<daylight>Oras sa Adlawan sa Newfoundland</daylight>
+					<daylight>Oras sa Tag-init sa Newfoundland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -1785,7 +1814,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Oras sa Norfolk Island</standard>
+					<generic draft="contributed">Oras sa Norfolk Island</generic>
+					<standard draft="contributed">Tamdanang Oras sa Norfolk Island</standard>
+					<daylight draft="contributed">Oras sa Tag-init sa Norfolk Island</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -1856,7 +1887,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa St. Pierre &amp; Miquelon</generic>
 					<standard>Tamdanang Oras sa St. Pierre &amp; Miquelon</standard>
-					<daylight>Oras sa Adlawan sa St. Pierre &amp; Miquelon</daylight>
+					<daylight>Oras sa Tag-init sa St.Pierre &amp; Miquelon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -1895,7 +1926,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Samoa</generic>
 					<standard>Tamdanang Oras sa Samoa</standard>
-					<daylight>Oras sa Adlawan sa Samoa</daylight>
+					<daylight>Oras sa Tag-init sa Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2185,7 +2216,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="BRL">
 				<displayName>Brazilian Real</displayName>
 				<displayName count="one">Brazilian real</displayName>
-				<displayName count="other">Brazilian reals</displayName>
+				<displayName count="other">Mga Brazilian real</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName>Bahamian Dollar</displayName>
@@ -2225,7 +2256,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="CHF">
 				<displayName>Swiss Franc</displayName>
 				<displayName count="one">Swiss franc</displayName>
-				<displayName count="other">Swiss francs</displayName>
+				<displayName count="other">Mga Swiss franc</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>Chilean Peso</displayName>
@@ -2238,9 +2269,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Chinese yuan (layo sa baybayon)</displayName>
 			</currency>
 			<currency type="CNY">
-				<displayName>Intsik nga Yuan</displayName>
-				<displayName count="one" draft="contributed">Intsik ng yuan</displayName>
-				<displayName count="other" draft="contributed">Intsik ng yuan</displayName>
+				<displayName>Chinese Yuan</displayName>
+				<displayName count="one">Chinese yuan</displayName>
+				<displayName count="other">Chinese yuan</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName>Colombian Peso</displayName>
@@ -2323,9 +2354,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Mga Falkland Islands pound</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName>Inglatera nga Libra</displayName>
-				<displayName count="one">Inglatera nga libra</displayName>
-				<displayName count="other">Inglatera nga libra</displayName>
+				<displayName>British Pound</displayName>
+				<displayName count="one">British pound</displayName>
+				<displayName count="other">Mga British pound</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>Georgian Lari</displayName>
@@ -2398,9 +2429,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Mga Israeli new shekel</displayName>
 			</currency>
 			<currency type="INR">
-				<displayName>Rupee sa India</displayName>
-				<displayName count="one">rupee sa India</displayName>
-				<displayName count="other">Mga rupee sa India</displayName>
+				<displayName>Indian Rupee</displayName>
+				<displayName count="one">Indian rupee</displayName>
+				<displayName count="other">Mga Indian rupee</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>Iraqi Dinar</displayName>
@@ -2428,9 +2459,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Mga Jordanian dinar</displayName>
 			</currency>
 			<currency type="JPY">
-				<displayName>Hapon nga Yen</displayName>
-				<displayName count="one" draft="contributed">Hapon nga yen</displayName>
-				<displayName count="other" draft="contributed">Hapon nga yen</displayName>
+				<displayName>Japanese Yen</displayName>
+				<displayName count="one">Japanese yen</displayName>
+				<displayName count="other">Japanese yen</displayName>
 			</currency>
 			<currency type="KES">
 				<displayName>Kenyan Shilling</displayName>
@@ -2659,9 +2690,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Mga Serbian dinar</displayName>
 			</currency>
 			<currency type="RUB">
-				<displayName>Rusong ruble</displayName>
-				<displayName count="one" draft="contributed">Rusong ruble</displayName>
-				<displayName count="other" draft="contributed">Rusong ruble</displayName>
+				<displayName>Russian Ruble</displayName>
+				<displayName count="one">Russian ruble</displayName>
+				<displayName count="other">Mga Russian ruble</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName>Rwandan Franc</displayName>
@@ -2794,9 +2825,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Mga Ugandan shilling</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>Dolyar sa US</displayName>
-				<displayName count="one">dolyar sa US</displayName>
-				<displayName count="other">dolyares sa US</displayName>
+				<displayName>US Dollar</displayName>
+				<displayName count="one">US dollar</displayName>
+				<displayName count="other">Mga US dollar</displayName>
 				<symbol draft="contributed">US $</symbol>
 			</currency>
 			<currency type="UYU">
@@ -2881,14 +2912,84 @@ the LDML specification (http://unicode.org/reports/tr35/)
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>centi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>milli{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>micro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yocto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hecto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} kada {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>square {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">square {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">square {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>cubic {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">cubic {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">cubic {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0} g-force</unitPattern>
 				<unitPattern count="other">{0} g-force</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mga metro kada second squared</displayName>
 				<unitPattern count="one">{0} ka metro kada second squared</unitPattern>
 				<unitPattern count="other">{0} ka mga metro kada second squared</unitPattern>
@@ -2988,7 +3089,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka millimole kada litro</unitPattern>
 				<unitPattern count="other">{0} ka mga millimole kada litro</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>mga part per million</displayName>
 				<unitPattern count="one">{0} ka part per million</unitPattern>
 				<unitPattern count="other">{0} ka mga part per million</unitPattern>
@@ -3018,7 +3119,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} litro kada kilometro</unitPattern>
 				<unitPattern count="other">{0} ka mga litro kada kilometro</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>mga litro kada 100 kilometro</displayName>
 				<unitPattern count="one">{0} ka litro kada 100 kilometro</unitPattern>
 				<unitPattern count="other">{0} ka litro kada 100 kilometro</unitPattern>
@@ -3494,17 +3595,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka horsepower</unitPattern>
 				<unitPattern count="other">{0} ka horsepower</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mga millimetro sa mercury</displayName>
 				<unitPattern count="one">{0} ka millimetro sa mercury</unitPattern>
 				<unitPattern count="other">{0} ka mga millimetro sa mercury</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>mga pound kada kuwadradong pulgada</displayName>
 				<unitPattern count="one">{0} ka pound kada kuwadradong pulgada</unitPattern>
 				<unitPattern count="other">{0} ka mga pound kada kuwadradong pulgada</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>mga pulgada sa mercury</displayName>
 				<unitPattern count="one">{0} ka pulgada sa mercury</unitPattern>
 				<unitPattern count="other">{0} ka mga pulgada sa mercury</unitPattern>
@@ -3579,10 +3680,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka kelvin</unitPattern>
 				<unitPattern count="other">{0} ka mga kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
-				<displayName>mga pound-foot</displayName>
-				<unitPattern count="one">{0} ka pound-foot</unitPattern>
-				<unitPattern count="other">{0} ka mga pound-foot</unitPattern>
+			<unit type="torque-pound-force-foot">
+				<displayName>mga pound-force-foot</displayName>
+				<unitPattern count="one">{0} ka pound-force-foot</unitPattern>
+				<unitPattern count="other">{0} ka mga pound-force-foot</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>mga newton-meter</displayName>
@@ -3733,7 +3834,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mga metro/sec²</displayName>
 			</unit>
 			<unit type="angle-radian">
@@ -3794,7 +3895,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/litro</displayName>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>mga part/million</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -3814,7 +3915,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>mga litro/km</displayName>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
@@ -4032,7 +4133,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="power-watt">
 				<displayName>mga watt</displayName>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
@@ -4122,7 +4223,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>
@@ -4155,7 +4259,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="duration-minute">
 				<displayName>minuto</displayName>
 				<unitPattern count="one">{0} minuto</unitPattern>
-				<unitPattern count="other">{0}minuto</unitPattern>
+				<unitPattern count="other">{0} minuto</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>segundo</displayName>
@@ -4206,6 +4310,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<coordinateUnit>
 				<displayName>direksyon</displayName>
+				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -4222,8 +4330,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<listPattern>
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, at {1}</listPatternPart>
-			<listPatternPart type="2">{0} at {1}</listPatternPart>
+			<listPatternPart type="end">{0}, ug {1}</listPatternPart>
+			<listPatternPart type="2">{0} ug {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
 			<listPatternPart type="end">{0}, o {1}</listPatternPart>

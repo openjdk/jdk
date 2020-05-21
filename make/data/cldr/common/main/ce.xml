@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -42,7 +42,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="awa">авадхи</language>
 			<language type="ay">аймара</language>
 			<language type="az">азербайджанийн</language>
-			<language type="az" alt="short">азербайджанийн</language>
 			<language type="ba">башкирийн</language>
 			<language type="ban">балийн</language>
 			<language type="bas">баса</language>
@@ -432,9 +431,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hang">хангыль</script>
 			<script type="Hani">китайн</script>
 			<script type="Hans">атта китайн</script>
-			<script type="Hans" alt="stand-alone">атта китайн</script>
 			<script type="Hant">ламастан китайн</script>
-			<script type="Hant" alt="stand-alone">ламастан китайн</script>
 			<script type="Hebr">жугтийн</script>
 			<script type="Hira">хирагана</script>
 			<script type="Hrkt">катакана я хирагана</script>
@@ -581,7 +578,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR">Франци</territory>
 			<territory type="GA">Габон</territory>
 			<territory type="GB">Йоккха Британи</territory>
-			<territory type="GB" alt="short">Йоккха Британи</territory>
 			<territory type="GD">Гренада</territory>
 			<territory type="GE">Гуьржийчоь</territory>
 			<territory type="GF">Французийн Гвиана</territory>
@@ -3489,7 +3485,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Норфолк</standard>
+					<generic draft="contributed">Норфолк</generic>
+					<standard draft="contributed">Норфолк, стандартан хан</standard>
+					<daylight draft="contributed">Норфолк, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">

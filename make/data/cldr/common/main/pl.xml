@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -117,6 +117,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">czirokeski</language>
 			<language type="chy">czejeński</language>
 			<language type="ckb">sorani</language>
+			<language type="ckb" alt="menu">kurdyjski sorani</language>
 			<language type="co">korsykański</language>
 			<language type="cop">koptyjski</language>
 			<language type="cps">capiznon</language>
@@ -175,6 +176,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">ewondo</language>
 			<language type="ext">estremadurski</language>
 			<language type="fa">perski</language>
+			<language type="fa_AF">dari</language>
 			<language type="fan">fang</language>
 			<language type="fat">fanti</language>
 			<language type="ff">fulani</language>
@@ -641,6 +643,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Afak" draft="unconfirmed">afaka</script>
 			<script type="Arab">arabskie</script>
 			<script type="Arab" alt="variant">perso-arabskie</script>
+			<script type="Aran" draft="contributed">nastaliq</script>
 			<script type="Armi">armi</script>
 			<script type="Armn">ormiańskie</script>
 			<script type="Avst">awestyjskie</script>
@@ -753,6 +756,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Phnx">fenicki</script>
 			<script type="Plrd">fonetyczny Pollard’a</script>
 			<script type="Prti">partyjski inskrypcyjny</script>
+			<script type="Qaag" draft="contributed">zawgyi</script>
 			<script type="Rjng">rejang</script>
 			<script type="Roro">rongorongo</script>
 			<script type="Runr">runiczne</script>
@@ -4786,7 +4790,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>Alaska</generic>
+					<generic>czas Alaska</generic>
 					<standard>Alaska (czas standardowy)</standard>
 					<daylight>Alaska (czas letni)</daylight>
 				</long>
@@ -4842,7 +4846,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Apia</generic>
+					<generic>czas Apia</generic>
 					<standard>Apia (czas standardowy)</standard>
 					<daylight>Apia (czas letni)</daylight>
 				</long>
@@ -4863,28 +4867,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>Półwysep Arabski</generic>
+					<generic>czas Półwysep Arabski</generic>
 					<standard>Półwysep Arabski (czas standardowy)</standard>
 					<daylight>Półwysep Arabski (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>Argentyna</generic>
+					<generic>czas Argentyna</generic>
 					<standard>Argentyna (czas standardowy)</standard>
 					<daylight>Argentyna (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
-					<generic>Argentyna Zachodnia</generic>
+					<generic>czas Argentyna Zachodnia</generic>
 					<standard>Argentyna Zachodnia (czas standardowy)</standard>
 					<daylight>Argentyna Zachodnia (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
-					<generic>Armenia</generic>
+					<generic>czas Armenia</generic>
 					<standard>Armenia (czas standardowy)</standard>
 					<daylight>Armenia (czas letni)</daylight>
 				</long>
@@ -4926,143 +4930,128 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic>Azerbejdżan</generic>
+					<generic>czas Azerbejdżan</generic>
 					<standard>Azerbejdżan (czas standardowy)</standard>
 					<daylight>Azerbejdżan (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic>Azory</generic>
+					<generic>czas Azory</generic>
 					<standard>Azory (czas standardowy)</standard>
 					<daylight>Azory (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>Bangladesz</generic>
+					<generic>czas Bangladesz</generic>
 					<standard>Bangladesz (czas standardowy)</standard>
 					<daylight>Bangladesz (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Bhutan">
-				<long>
-					<standard>Bhutan</standard>
-				</long>
-			</metazone>
 			<metazone type="Bolivia">
 				<long>
-					<standard>Boliwia</standard>
+					<standard>czas Boliwia</standard>
 				</long>
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic>Brasília</generic>
+					<generic>czas Brasília</generic>
 					<standard>Brasília (czas standardowy)</standard>
 					<daylight>Brasília (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Brunei">
-				<long>
-					<standard>Brunei</standard>
-				</long>
-			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic>Wyspy Zielonego Przylądka</generic>
+					<generic>czas Wyspy Zielonego Przylądka</generic>
 					<standard>Wyspy Zielonego Przylądka (czas standardowy)</standard>
 					<daylight>Wyspy Zielonego Przylądka (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chamorro">
 				<long>
-					<standard>Czamorro</standard>
+					<standard>czas Czamorro</standard>
 				</long>
 			</metazone>
 			<metazone type="Chatham">
 				<long>
-					<generic>Chatham</generic>
+					<generic>czas Chatham</generic>
 					<standard>Chatham (czas standardowy)</standard>
 					<daylight>Chatham (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>Chile</generic>
+					<generic>czas Chile</generic>
 					<standard>Chile (czas standardowy)</standard>
 					<daylight>Chile (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>Chiny</generic>
+					<generic>czas Chiny</generic>
 					<standard>Chiny (czas standardowy)</standard>
 					<daylight>Chiny (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
-					<generic>Czojbalsan</generic>
+					<generic>czas Czojbalsan</generic>
 					<standard>Czojbalsan (czas standardowy)</standard>
 					<daylight>Czojbalsan (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
 				<long>
-					<standard>Wyspa Bożego Narodzenia</standard>
+					<standard>czas Wyspa Bożego Narodzenia</standard>
 				</long>
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>Wyspy Kokosowe</standard>
+					<standard>czas Wyspy Kokosowe</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
-					<generic>Kolumbia</generic>
+					<generic>czas Kolumbia</generic>
 					<standard>Kolumbia (czas standardowy)</standard>
 					<daylight>Kolumbia (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
-					<generic>Wyspy Cooka</generic>
+					<generic>czas Wyspy Cooka</generic>
 					<standard>Wyspy Cooka (czas standardowy)</standard>
 					<daylight>Wyspy Cooka (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>Kuba</generic>
+					<generic>czas Kuba</generic>
 					<standard>Kuba (czas standardowy)</standard>
 					<daylight>Kuba (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Davis">
-				<long>
-					<standard>Davis</standard>
-				</long>
-			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>Dumont-d’Urville</standard>
+					<standard>czas Dumont-d’Urville</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
 				<long>
-					<standard>Timor Wschodni</standard>
+					<standard>czas Timor Wschodni</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic>Wyspa Wielkanocna</generic>
+					<generic>czas Wyspa Wielkanocna</generic>
 					<standard>Wyspa Wielkanocna (czas standardowy)</standard>
 					<daylight>Wyspa Wielkanocna (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
 				<long>
-					<standard>Ekwador</standard>
+					<standard>czas Ekwador</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
@@ -5108,48 +5097,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Falklandy</generic>
+					<generic>czas Falklandy</generic>
 					<standard>Falklandy (czas standardowy)</standard>
 					<daylight>Falklandy (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
-					<generic>Fidżi</generic>
+					<generic>czas Fidżi</generic>
 					<standard>Fidżi (czas standardowy)</standard>
 					<daylight>Fidżi (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>Gujana Francuska</standard>
+					<standard>czas Gujana Francuska</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Francuskie Terytoria Południowe i Antarktyczne</standard>
-				</long>
-			</metazone>
-			<metazone type="Galapagos">
-				<long>
-					<standard>Galapagos</standard>
+					<standard>czas Francuskie Terytoria Południowe i Antarktyczne</standard>
 				</long>
 			</metazone>
 			<metazone type="Gambier">
 				<long>
-					<standard>Wyspy Gambiera</standard>
+					<standard>czas Wyspy Gambiera</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic>Gruzja</generic>
+					<generic>czas Gruzja</generic>
 					<standard>Gruzja (czas standardowy)</standard>
 					<daylight>Gruzja (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gilbert_Islands">
 				<long>
-					<standard>Wyspy Gilberta</standard>
+					<standard>czas Wyspy Gilberta</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
@@ -5159,45 +5143,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Grenlandia Wschodnia</generic>
+					<generic>czas Grenlandia Wschodnia</generic>
 					<standard>Grenlandia Wschodnia (czas standardowy)</standard>
 					<daylight>Grenlandia Wschodnia (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Grenlandia Zachodnia</generic>
+					<generic>czas Grenlandia Zachodnia</generic>
 					<standard>Grenlandia Zachodnia (czas standardowy)</standard>
 					<daylight>Grenlandia Zachodnia (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
 				<long>
-					<standard>Zatoka Perska</standard>
+					<standard>czas Zatoka Perska</standard>
 				</long>
 			</metazone>
 			<metazone type="Guyana">
 				<long>
-					<standard>Gujana</standard>
+					<standard>czas Gujana</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Hawaje-Aleuty</generic>
+					<generic>czas Hawaje-Aleuty</generic>
 					<standard>Hawaje-Aleuty (czas standardowy)</standard>
 					<daylight>Hawaje-Aleuty (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
-					<generic>Hongkong</generic>
+					<generic>czas Hongkong</generic>
 					<standard>Hongkong (czas standardowy)</standard>
 					<daylight>Hongkong (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic>Kobdo</generic>
+					<generic>czas Kobdo</generic>
 					<standard>Kobdo (czas standardowy)</standard>
 					<daylight>Kobdo (czas letni)</daylight>
 				</long>
@@ -5209,7 +5193,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
-					<standard>Ocean Indyjski</standard>
+					<standard>czas Ocean Indyjski</standard>
 				</long>
 			</metazone>
 			<metazone type="Indochina">
@@ -5219,43 +5203,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
-					<standard>Indonezja Środkowa</standard>
+					<standard>czas Indonezja Środkowa</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
-					<standard>Indonezja Wschodnia</standard>
+					<standard>czas Indonezja Wschodnia</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Western">
 				<long>
-					<standard>Indonezja Zachodnia</standard>
+					<standard>czas Indonezja Zachodnia</standard>
 				</long>
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>Iran</generic>
+					<generic>czas Iran</generic>
 					<standard>Iran (czas standardowy)</standard>
 					<daylight>Iran (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
-					<generic>Irkuck</generic>
+					<generic>czas Irkuck</generic>
 					<standard>Irkuck (czas standardowy)</standard>
 					<daylight>Irkuck (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>Izrael</generic>
+					<generic>czas Izrael</generic>
 					<standard>Izrael (czas standardowy)</standard>
 					<daylight>Izrael (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>Japonia</generic>
+					<generic>czas Japonia</generic>
 					<standard>Japonia (czas standardowy)</standard>
 					<daylight>Japonia (czas letni)</daylight>
 				</long>
@@ -5269,97 +5253,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
-					<standard>Kazachstan Wschodni</standard>
+					<standard>czas Kazachstan Wschodni</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
 				<long>
-					<standard>Kazachstan Zachodni</standard>
+					<standard>czas Kazachstan Zachodni</standard>
 				</long>
 			</metazone>
 			<metazone type="Korea">
 				<long>
-					<generic>Korea</generic>
+					<generic>czas Korea</generic>
 					<standard>Korea (czas standardowy)</standard>
 					<daylight>Korea (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Kosrae">
-				<long>
-					<standard>Kosrae</standard>
-				</long>
-			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
-					<generic>Krasnojarsk</generic>
+					<generic>czas Krasnojarsk</generic>
 					<standard>Krasnojarsk (czas standardowy)</standard>
 					<daylight>Krasnojarsk (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>Kirgistan</standard>
+					<standard>czas Kirgistan</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
 				<long>
-					<standard>Line Islands</standard>
+					<standard>czas Line Islands</standard>
 				</long>
 			</metazone>
 			<metazone type="Lord_Howe">
 				<long>
-					<generic>Lord Howe</generic>
+					<generic>czas Lord Howe</generic>
 					<standard>Lord Howe (czas standardowy)</standard>
 					<daylight>Lord Howe (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
-					<generic>Magadan</generic>
+					<generic>czas Magadan</generic>
 					<standard>Magadan (czas standardowy)</standard>
 					<daylight>Magadan (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
 				<long>
-					<standard>Malezja</standard>
+					<standard>czas Malezja</standard>
 				</long>
 			</metazone>
 			<metazone type="Maldives">
 				<long>
-					<standard>Malediwy</standard>
+					<standard>czas Malediwy</standard>
 				</long>
 			</metazone>
 			<metazone type="Marquesas">
 				<long>
-					<standard>Markizy</standard>
+					<standard>czas Markizy</standard>
 				</long>
 			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
-					<standard>Wyspy Marshalla</standard>
+					<standard>czas Wyspy Marshalla</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic>Mauritius</generic>
+					<generic>czas Mauritius</generic>
 					<standard>Mauritius (czas standardowy)</standard>
 					<daylight>Mauritius (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Mawson">
-				<long>
-					<standard>Mawson</standard>
-				</long>
-			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
-					<generic>Meksyk Północno-Zachodni</generic>
+					<generic>czas Meksyk Północno-Zachodni</generic>
 					<standard>Meksyk Północno-Zachodni (czas standardowy)</standard>
 					<daylight>Meksyk Północno-Zachodni (czas letni)</daylight>
 				</long>
@@ -5373,148 +5342,118 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
-					<generic>Ułan Bator</generic>
+					<generic>czas Ułan Bator</generic>
 					<standard>Ułan Bator (czas standardowy)</standard>
 					<daylight>Ułan Bator (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
-					<generic>Moskwa</generic>
+					<generic>czas Moskwa</generic>
 					<standard>Moskwa (czas standardowy)</standard>
 					<daylight>Moskwa (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
 				<long>
-					<standard>Mjanma</standard>
-				</long>
-			</metazone>
-			<metazone type="Nauru">
-				<long>
-					<standard>Nauru</standard>
-				</long>
-			</metazone>
-			<metazone type="Nepal">
-				<long>
-					<standard>Nepal</standard>
+					<standard>czas Mjanma</standard>
 				</long>
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>Nowa Kaledonia</generic>
+					<generic>czas Nowa Kaledonia</generic>
 					<standard>Nowa Kaledonia (czas standardowy)</standard>
 					<daylight>Nowa Kaledonia (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
-					<generic>Nowa Zelandia</generic>
+					<generic>czas Nowa Zelandia</generic>
 					<standard>Nowa Zelandia (czas standardowy)</standard>
 					<daylight>Nowa Zelandia (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>Nowa Fundlandia</generic>
+					<generic>czas Nowa Fundlandia</generic>
 					<standard>Nowa Fundlandia (czas standardowy)</standard>
 					<daylight>Nowa Fundlandia (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Niue">
-				<long>
-					<standard>Niue</standard>
-				</long>
-			</metazone>
-			<metazone type="Norfolk">
-				<long>
-					<standard>Norfolk</standard>
-				</long>
-			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic>Fernando de Noronha</generic>
+					<generic>czas Fernando de Noronha</generic>
 					<standard>Fernando de Noronha (czas standardowy)</standard>
 					<daylight>Fernando de Noronha (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
-					<generic>Nowosybirsk</generic>
+					<generic>czas Nowosybirsk</generic>
 					<standard>Nowosybirsk (czas standardowy)</standard>
 					<daylight>Nowosybirsk (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
-					<generic>Omsk</generic>
+					<generic>czas Omsk</generic>
 					<standard>Omsk (czas standardowy)</standard>
 					<daylight>Omsk (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
-					<generic>Pakistan</generic>
+					<generic>czas Pakistan</generic>
 					<standard>Pakistan (czas standardowy)</standard>
 					<daylight>Pakistan (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Palau">
-				<long>
-					<standard>Palau</standard>
-				</long>
-			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
-					<standard>Papua-Nowa Gwinea</standard>
+					<standard>czas Papua-Nowa Gwinea</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>Paragwaj</generic>
+					<generic>czas Paragwaj</generic>
 					<standard>Paragwaj (czas standardowy)</standard>
 					<daylight>Paragwaj (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
-					<generic>Peru</generic>
+					<generic>czas Peru</generic>
 					<standard>Peru (czas standardowy)</standard>
 					<daylight>Peru (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
-					<generic>Filipiny</generic>
+					<generic>czas Filipiny</generic>
 					<standard>Filipiny (czas standardowy)</standard>
 					<daylight>Filipiny (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Phoenix_Islands">
 				<long>
-					<standard>Feniks</standard>
+					<standard>czas Feniks</standard>
 				</long>
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>Saint-Pierre i Miquelon</generic>
+					<generic>czas Saint-Pierre i Miquelon</generic>
 					<standard>Saint-Pierre i Miquelon (czas standardowy)</standard>
 					<daylight>Saint-Pierre i Miquelon (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Pitcairn">
-				<long>
-					<standard>Pitcairn</standard>
-				</long>
-			</metazone>
 			<metazone type="Ponape">
 				<long>
-					<standard>Pohnpei</standard>
+					<standard>czas Pohnpei</standard>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>Pjongjang</standard>
+					<standard>czas Pjongjang</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -5524,19 +5463,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">czas kyzyłordzki letni</daylight>
 				</long>
 			</metazone>
-			<metazone type="Reunion">
-				<long>
-					<standard>Reunion</standard>
-				</long>
-			</metazone>
-			<metazone type="Rothera">
-				<long>
-					<standard>Rothera</standard>
-				</long>
-			</metazone>
 			<metazone type="Sakhalin">
 				<long>
-					<generic>Sachalin</generic>
+					<generic>czas Sachalin</generic>
 					<standard>Sachalin (czas standardowy)</standard>
 					<daylight>Sachalin (czas letni)</daylight>
 				</long>
@@ -5550,152 +5479,127 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa</generic>
+					<generic>czas Samoa</generic>
 					<standard>Samoa (czas standardowy)</standard>
 					<daylight>Samoa (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>Seszele</standard>
+					<standard>czas Seszele</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
 				<long>
-					<standard>Singapur</standard>
+					<standard>czas Singapur</standard>
 				</long>
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>Wyspy Salomona</standard>
+					<standard>czas Wyspy Salomona</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
 				<long>
-					<standard>Georgia Południowa</standard>
+					<standard>czas Georgia Południowa</standard>
 				</long>
 			</metazone>
 			<metazone type="Suriname">
 				<long>
-					<standard>Surinam</standard>
-				</long>
-			</metazone>
-			<metazone type="Syowa">
-				<long>
-					<standard>Syowa</standard>
-				</long>
-			</metazone>
-			<metazone type="Tahiti">
-				<long>
-					<standard>Tahiti</standard>
+					<standard>czas Surinam</standard>
 				</long>
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Tajpej</generic>
+					<generic>czas Tajpej</generic>
 					<standard>Tajpej (czas standardowy)</standard>
 					<daylight>Tajpej (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
-					<standard>Tadżykistan</standard>
-				</long>
-			</metazone>
-			<metazone type="Tokelau">
-				<long>
-					<standard>Tokelau</standard>
+					<standard>czas Tadżykistan</standard>
 				</long>
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>Tonga</generic>
+					<generic>czas Tonga</generic>
 					<standard>Tonga (czas standardowy)</standard>
 					<daylight>Tonga (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Truk">
 				<long>
-					<standard>Chuuk</standard>
+					<standard>czas Chuuk</standard>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>Turkmenistan</generic>
+					<generic>czas Turkmenistan</generic>
 					<standard>Turkmenistan (czas standardowy)</standard>
 					<daylight>Turkmenistan (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Tuvalu">
-				<long>
-					<standard>Tuvalu</standard>
-				</long>
-			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>Urugwaj</generic>
+					<generic>czas Urugwaj</generic>
 					<standard>Urugwaj (czas standardowy)</standard>
 					<daylight>Urugwaj (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic>Uzbekistan</generic>
+					<generic>czas Uzbekistan</generic>
 					<standard>Uzbekistan (czas standardowy)</standard>
 					<daylight>Uzbekistan (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
-					<generic>Vanuatu</generic>
+					<generic>czas Vanuatu</generic>
 					<standard>Vanuatu (czas standardowy)</standard>
 					<daylight>Vanuatu (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Venezuela">
 				<long>
-					<standard>Wenezuela</standard>
+					<standard>czas Wenezuela</standard>
 				</long>
 			</metazone>
 			<metazone type="Vladivostok">
 				<long>
-					<generic>Władywostok</generic>
+					<generic>czas Władywostok</generic>
 					<standard>Władywostok (czas standardowy)</standard>
 					<daylight>Władywostok (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
-					<generic>Wołgograd</generic>
+					<generic>czas Wołgograd</generic>
 					<standard>Wołgograd (czas standardowy)</standard>
 					<daylight>Wołgograd (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
 				<long>
-					<standard>Wostok</standard>
-				</long>
-			</metazone>
-			<metazone type="Wake">
-				<long>
-					<standard>Wake</standard>
+					<standard>czas Wostok</standard>
 				</long>
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>Wallis i Futuna</standard>
+					<standard>czas Wallis i Futuna</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
-					<generic>Jakuck</generic>
+					<generic>czas Jakuck</generic>
 					<standard>Jakuck (czas standardowy)</standard>
 					<daylight>Jakuck (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>Jekaterynburg</generic>
+					<generic>czas Jekaterynburg</generic>
 					<standard>Jekaterynburg (czas standardowy)</standard>
 					<daylight>Jekaterynburg (czas letni)</daylight>
 				</long>
@@ -7641,7 +7545,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="approximately">~{0}</pattern>
-			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
@@ -7650,18 +7554,92 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="few">{0} miesiące</pluralMinimalPairs>
 			<pluralMinimalPairs count="many">{0} miesięcy</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} miesiąca</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">Skręć w {0} w prawo.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Skręć w {0}. w prawo.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>decy{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>centy{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>jokto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>eksa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>jotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} na {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0} kw.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} kw.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} kw.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0} kw.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} kw.</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0} sześc.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} sześc.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} sześc.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0} sześc.</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} sześc.</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>stała grawitacji</displayName>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metry na sekundę do kwadratu</displayName>
 				<unitPattern count="one">{0} metr na sekundę do kwadratu</unitPattern>
 				<unitPattern count="few">{0} metry na sekundę do kwadratu</unitPattern>
@@ -7799,7 +7777,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} milimoli na litr</unitPattern>
 				<unitPattern count="other">{0} milimola na litr</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>części na milion</displayName>
 				<unitPattern count="one">{0} część na milion</unitPattern>
 				<unitPattern count="few">{0} części na milion</unitPattern>
@@ -7841,7 +7819,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} litrów na kilometr</unitPattern>
 				<unitPattern count="other">{0} litra na kilometr</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litry na 100 kilometrów</displayName>
 				<unitPattern count="one">{0} litr na 100 kilometrów</unitPattern>
 				<unitPattern count="few">{0} litry na 100 kilometrów</unitPattern>
@@ -8473,21 +8451,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} koni mechanicznych</unitPattern>
 				<unitPattern count="other">{0} konia mechanicznego</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimetry słupa rtęci</displayName>
 				<unitPattern count="one">{0} milimetr słupa rtęci</unitPattern>
 				<unitPattern count="few">{0} milimetry słupa rtęci</unitPattern>
 				<unitPattern count="many">{0} milimetrów słupa rtęci</unitPattern>
 				<unitPattern count="other">{0} milimetra słupa rtęci</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funty na cal kwadratowy</displayName>
 				<unitPattern count="one">{0} funt na cal kwadratowy</unitPattern>
 				<unitPattern count="few">{0} funty na cal kwadratowy</unitPattern>
 				<unitPattern count="many">{0} funtów na cal kwadratowy</unitPattern>
 				<unitPattern count="other">{0} funta na cal kwadratowy</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>cale słupa rtęci</displayName>
 				<unitPattern count="one">{0} cal słupa rtęci</unitPattern>
 				<unitPattern count="few">{0} cale słupa rtęci</unitPattern>
@@ -8599,7 +8577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} kelwinów</unitPattern>
 				<unitPattern count="other">{0} kelwina</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>stopofunty</displayName>
 				<unitPattern count="one">{0} stopofunt</unitPattern>
 				<unitPattern count="few">{0} stopofunty</unitPattern>
@@ -8892,7 +8870,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>części/milion</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
@@ -8915,7 +8893,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="few">{0} l/100 km</unitPattern>
@@ -9021,11 +8999,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>V</displayName>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="few">{0} cal</unitPattern>
-				<unitPattern count="many">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName>kcal</displayName>
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="few">{0} kcal</unitPattern>
+				<unitPattern count="many">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>J</displayName>
@@ -9226,7 +9204,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} st. C</unitPattern>
 				<unitPattern count="other">{0} st. C</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
 				<unitPattern count="few">{0} lbf⋅ft</unitPattern>
@@ -9425,7 +9403,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="few">{0} l/100 km</unitPattern>
@@ -9456,9 +9434,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-day">
 				<displayName>dzień</displayName>
 				<unitPattern count="one">{0} d.</unitPattern>
-				<unitPattern count="few">{0} dn.</unitPattern>
-				<unitPattern count="many">{0} dn.</unitPattern>
-				<unitPattern count="other">{0} dn.</unitPattern>
+				<unitPattern count="few">{0} d.</unitPattern>
+				<unitPattern count="many">{0} d.</unitPattern>
+				<unitPattern count="other">{0} d.</unitPattern>
 				<perUnitPattern draft="contributed">{0}/d.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -9698,7 +9676,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="62.5" alt="compressed">extra-compressed</styleName>
 		<styleName type="wdth" subtype="62.5" alt="narrow">extra-narrow</styleName>
 		<styleName type="wdth" subtype="75">condensed</styleName>
-		<styleName type="wdth" subtype="75" alt="compressed">compressed</styleName>
 		<styleName type="wdth" subtype="75" alt="narrow">compressed</styleName>
 		<styleName type="wdth" subtype="87.5">semicondensed</styleName>
 		<styleName type="wdth" subtype="87.5" alt="compressed">semicompressed</styleName>
@@ -9708,8 +9685,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="112.5" alt="extended">semiextended</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">semiwide</styleName>
 		<styleName type="wdth" subtype="125">expanded</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">extended</styleName>
-		<styleName type="wdth" subtype="125" alt="wide">wide</styleName>
 		<styleName type="wdth" subtype="150">extra-expanded</styleName>
 		<styleName type="wdth" subtype="150" alt="extended">extra-extended</styleName>
 		<styleName type="wdth" subtype="150" alt="wide">extra-wide</styleName>
@@ -9729,10 +9704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="700">bold</styleName>
 		<styleName type="wght" subtype="800">extra-bold</styleName>
 		<styleName type="wght" subtype="900">black</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
 		<styleName type="wght" subtype="950">extra-black</styleName>
-		<styleName type="wght" subtype="950" alt="ultrablack">ultrablack</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy">ultraheavy</styleName>
 		<featureName type="afrc">ułamki pionowe</featureName>
 		<featureName type="cpsp">odstępy między kapitalikami</featureName>
 		<featureName type="dlig">opcjonalne ligatury</featureName>

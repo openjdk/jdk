@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -50,9 +50,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Arab">arábalaš</script>
 			<script type="Hani">kiinnálaš</script>
 			<script type="Hans">álkes kiinnálaš</script>
-			<script type="Hans" alt="stand-alone">álkes kiinnálaš</script>
 			<script type="Hant">árbevirolaš kiinnálaš</script>
-			<script type="Hant" alt="stand-alone">árbevirolaš kiinnálaš</script>
 			<script type="Zxxx">orrut čállojuvvot</script>
 			<script type="Zzzz">dovdameahttun čállin</script>
 		</scripts>
@@ -87,7 +85,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic">etiohpalaš kaleandar</type>
 			<type key="calendar" type="ethiopic-amete-alem">etiohpalaš-amete-alem kaleandar</type>
 			<type key="calendar" type="gregorian">gregorialaš kalendar</type>
-			<type key="numbers" type="fullwide">fullwide</type>
 		</types>
 		<codePatterns>
 			<codePattern type="script">čállin: {0}</codePattern>

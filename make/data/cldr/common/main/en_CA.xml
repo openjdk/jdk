@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -950,7 +950,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="short">
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">metres/sec.²</displayName>
 			</unit>
 			<unit type="angle-radian">
@@ -1015,7 +1015,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
@@ -1176,7 +1176,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-watt">
 				<displayName draft="contributed">W</displayName>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">inHg</displayName>
 			</unit>
 			<unit type="speed-meter-per-second">
@@ -1316,7 +1316,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}L/km</unitPattern>
 				<unitPattern count="other">{0}L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>

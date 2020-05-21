@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -110,6 +110,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">체로키어</language>
 			<language type="chy">샤이엔어</language>
 			<language type="ckb">소라니 쿠르드어</language>
+			<language type="ckb" alt="menu">쿠르드어(소라니)</language>
 			<language type="co">코르시카어</language>
 			<language type="cop">콥트어</language>
 			<language type="cr">크리어</language>
@@ -157,6 +158,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">바스크어</language>
 			<language type="ewo">이원도어</language>
 			<language type="fa">페르시아어</language>
+			<language type="fa_AF">다리어</language>
 			<language type="fan">팡그어</language>
 			<language type="fat">판티어</language>
 			<language type="ff">풀라어</language>
@@ -568,6 +570,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Aghb" draft="contributed">코카시안 알바니아 문자</script>
 			<script type="Arab">아랍 문자</script>
 			<script type="Arab" alt="variant">페르소-아라비아 문자</script>
+			<script type="Aran" draft="contributed">나스탈리크체</script>
 			<script type="Armi" draft="contributed">아랍제국 문자</script>
 			<script type="Armn">아르메니아 문자</script>
 			<script type="Avst" draft="contributed">아베스타 문자</script>
@@ -682,6 +685,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Phnx" draft="contributed">페니키아 문자</script>
 			<script type="Plrd" draft="contributed">폴라드 표음 문자</script>
 			<script type="Prti" draft="contributed">명문 파라티아 문자</script>
+			<script type="Qaag" draft="contributed">저지 문자</script>
 			<script type="Rjng" draft="contributed">레장 문자</script>
 			<script type="Roro" draft="contributed">롱고롱고</script>
 			<script type="Runr">룬 문자</script>
@@ -853,7 +857,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">프랑스</territory>
 			<territory type="GA">가봉</territory>
 			<territory type="GB">영국</territory>
-			<territory type="GB" alt="short">영국</territory>
 			<territory type="GD">그레나다</territory>
 			<territory type="GE">조지아</territory>
 			<territory type="GF">프랑스령 기아나</territory>
@@ -1018,9 +1021,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UG">우간다</territory>
 			<territory type="UM">미국령 해외 제도</territory>
 			<territory type="UN">유엔</territory>
-			<territory type="UN" alt="short">유엔</territory>
 			<territory type="US">미국</territory>
-			<territory type="US" alt="short">미국</territory>
 			<territory type="UY">우루과이</territory>
 			<territory type="UZ">우즈베키스탄</territory>
 			<territory type="VA">바티칸 시국</territory>
@@ -5821,7 +5822,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>노퍽섬 시간</standard>
+					<generic draft="contributed">노퍽섬 시간</generic>
+					<standard draft="contributed">노퍽섬 표준시</standard>
+					<daylight draft="contributed">노퍽섬 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -7514,14 +7517,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>데시{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>센티{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>밀리{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>마이크로{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>나노{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>피코{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>펨토{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>아토{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>젭토{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>욕토{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>데카{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>헥토{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>킬로{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>메가{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>기가{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>테라{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>페타{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>엑사{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>제타{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>요타{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1}당 {0}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>제곱{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">제곱{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>세제곱{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">세제곱{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>중력가속도</displayName>
 				<unitPattern count="other">{0} 중력가속도</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>제곱 초당 미터</displayName>
 				<unitPattern count="other">{0}제곱 초당 미터</unitPattern>
 			</unit>
@@ -7602,7 +7673,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>리터당 밀리몰</displayName>
 				<unitPattern count="other">리터당 {0}밀리몰</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -7622,7 +7693,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>킬로미터당 리터</displayName>
 				<unitPattern count="other">킬로미터당 {0}리터</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>100킬로미터당 리터</displayName>
 				<unitPattern count="other">100킬로미터당 {0}리터</unitPattern>
 			</unit>
@@ -7982,15 +8053,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>마력</displayName>
 				<unitPattern count="other">{0}마력</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>수은주밀리미터</displayName>
 				<unitPattern count="other">{0}수은주밀리미터</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>제곱인치당 파운드</displayName>
 				<unitPattern count="other">{0}제곱인치당 파운드</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>수은주인치</displayName>
 				<unitPattern count="other">{0}수은주인치</unitPattern>
 			</unit>
@@ -8046,7 +8117,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>켈빈</displayName>
 				<unitPattern count="other">{0}켈빈</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
@@ -8181,7 +8252,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>g-force</displayName>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0}m/s²</unitPattern>
 			</unit>
@@ -8262,7 +8333,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0}mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -8281,7 +8352,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>L/km</displayName>
 				<unitPattern count="other">{0}L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
@@ -8674,15 +8745,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>hp</displayName>
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="other">{0}inHg</unitPattern>
 			</unit>
@@ -8746,7 +8817,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
@@ -8877,7 +8948,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">g-force</displayName>
 				<unitPattern count="other" draft="contributed">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">m/s²</displayName>
 				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
 			</unit>
@@ -8912,7 +8983,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
@@ -9109,15 +9180,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other" draft="contributed">{0}HP</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="contributed">mmHg</displayName>
 				<unitPattern count="other" draft="contributed">{0}mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">psi</displayName>
 				<unitPattern count="other" draft="contributed">{0}psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="other" draft="contributed">{0}&quot;Hg</unitPattern>
 			</unit>

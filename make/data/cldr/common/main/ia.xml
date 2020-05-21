@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -3624,7 +3624,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} fortia g</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metros per secunda quadrate</displayName>
 				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} metros per secunda quadrate</unitPattern>
@@ -3719,7 +3719,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} mmol/L</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} millimoles per litro</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>partes per million</displayName>
 				<unitPattern count="one" draft="contributed">{0} ppm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} partes per million</unitPattern>
@@ -3739,7 +3739,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} L/km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} litros per kilometro</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litros per 100 kilometros</displayName>
 				<unitPattern count="one" draft="contributed">{0} L/100km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} litros per 100 kilometros</unitPattern>
@@ -4125,17 +4125,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} cv</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} cavallos-vapor</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimetros de mercurio</displayName>
 				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} milimetros de mercurio</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>libras per pollice quadrate</displayName>
 				<unitPattern count="one" draft="contributed">{0} lb/in²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} libras per pollice quadrate</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>pollices de mercurio</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pollices de mercurio</unitPattern>
@@ -4337,7 +4337,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
@@ -4432,7 +4432,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} mmol/L</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one" draft="contributed">{0} ppm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ppm</unitPattern>
@@ -4452,7 +4452,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} L/km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one" draft="contributed">{0} L/100km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} L/100km</unitPattern>
@@ -4838,17 +4838,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} cv</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} cv</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>lb/in²</displayName>
 				<unitPattern count="one" draft="contributed">{0} lb/in²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} lb/in²</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
@@ -5050,7 +5050,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0}%</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one" draft="contributed">{0} L/100km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} L/100km</unitPattern>

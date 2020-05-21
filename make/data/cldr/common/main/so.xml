@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -63,6 +63,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">Ingiriis Biritish</language>
 			<language type="en_GB" alt="short">Ingiriiska Boqortooyada Midooday</language>
 			<language type="en_US">Ingiriis Maraykan</language>
+			<language type="en_US" alt="short">Ingiriisi (US)</language>
 			<language type="eo">Isberaanto</language>
 			<language type="es">Isbaanish</language>
 			<language type="es_419">Isbaanishka Laatiin Ameerika</language>
@@ -71,6 +72,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">Basquu</language>
 			<language type="ewo">Eewondho</language>
 			<language type="fa">Faarisi</language>
+			<language type="fa_AF">Faarsi</language>
 			<language type="ff">Fuulah</language>
 			<language type="fi">Finishka</language>
 			<language type="fil">Tagalog</language>
@@ -78,6 +80,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr">Faransiis</language>
 			<language type="fr_CA">Faransiiska Kanada</language>
 			<language type="fr_CH">Faransiis (Iswiiserlaand)</language>
+			<language type="frc">Faransiiska Cajun</language>
 			<language type="fur">Firiyuuliyaan</language>
 			<language type="fy">Firiisiyan Galbeed</language>
 			<language type="ga">Ayrish</language>
@@ -138,12 +141,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lkt">Laakoota</language>
 			<language type="ln">Lingala</language>
 			<language type="lo">Lao</language>
+			<language type="lou">Louisiana Creole</language>
 			<language type="lrc">Koonfurta Luuri</language>
 			<language type="lt">Lituwaanays</language>
 			<language type="lu">Luuba-kataanga</language>
 			<language type="luo">Luwada</language>
 			<language type="luy">Luhya</language>
 			<language type="lv">Laatfiyaan</language>
+			<language type="mai">Dadka Maithili</language>
 			<language type="mas">Masaay</language>
 			<language type="mer">Meeru</language>
 			<language type="mfe">Moorisayn</language>
@@ -191,6 +196,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="rn">Rundhi</language>
 			<language type="ro">Romanka</language>
 			<language type="rof">Rombo</language>
+			<language type="root">Xidid</language>
 			<language type="ru">Ruush</language>
 			<language type="rw">Ruwaandha</language>
 			<language type="rwk">Raawa</language>
@@ -257,41 +263,172 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zxx">Luuqad Looma Hayo</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Adlam</script>
+			<script type="Aghb">Qoraalka Luuqada Caucasian Albanian</script>
+			<script type="Ahom">Dadka Ahom</script>
 			<script type="Arab">Carabi</script>
+			<script type="Aran">Farta Luuqada Faarsiga</script>
+			<script type="Armi">Luuqada Imperial Aramaic</script>
 			<script type="Armn">Armeeniyaan</script>
+			<script type="Avst">Luuqada Avestan</script>
+			<script type="Bali">Baliniis</script>
+			<script type="Bamu">Bamum</script>
+			<script type="Bass">Qoraalka Vah</script>
+			<script type="Batk">Batak</script>
 			<script type="Beng">Baangla</script>
+			<script type="Bhks">Qoraalka Bhaiksuki</script>
+			<script type="Bopo">Farta Manadariinka Taywaan</script>
+			<script type="Brah">Dhirta Brahmi</script>
 			<script type="Brai">Qoraalka Indhoolaha</script>
+			<script type="Bugi">Luuqada Buginiiska</script>
+			<script type="Buhd">Luuqada Buhid</script>
+			<script type="Cakm">Jakma</script>
+			<script type="Cans">Qoraalka Luuqada Aborajiinka ee Kanada</script>
+			<script type="Cari">Luuqada kaariyaanka</script>
+			<script type="Cham">Jam</script>
+			<script type="Cher">Jerokee</script>
+			<script type="Chrs">Luuqada Korasmiyaanka</script>
+			<script type="Copt">Dadka Kotiga</script>
+			<script type="Cprt">sibraas dhalad ah</script>
 			<script type="Cyrl">Siriylik</script>
 			<script type="Deva">Dhefangaari</script>
+			<script type="Diak">Luuqadaha Dives Akuru</script>
+			<script type="Dogr">Dadka Dogra</script>
+			<script type="Dsrt">Gobalka Deseret</script>
+			<script type="Dupl">Qoraalka Duployan shorthand</script>
+			<script type="Egyp">Fartii hore ee Masaarida</script>
+			<script type="Elba">Magaalada Elbasan</script>
+			<script type="Elym">Qoraalka Elymaic</script>
 			<script type="Ethi">Itoobiya</script>
 			<script type="Geor">Jiyoorjoyaan</script>
+			<script type="Glag">Qoraalka Glagolitic</script>
+			<script type="Gong">Gumjala Gondi</script>
+			<script type="Gonm">Qoraalka Masaram Gondi</script>
+			<script type="Goth">Dadka Gothic</script>
+			<script type="Gran">Qoraalka Grantha</script>
 			<script type="Grek">Giriik</script>
 			<script type="Gujr">Gujaraati</script>
+			<script type="Guru">Luuqada gujarati</script>
+			<script type="Hanb">luuqada Han iyo Farta Mandariinka Taywaan</script>
 			<script type="Hang">Hanguul</script>
+			<script type="Hani">Luuqada Han</script>
+			<script type="Hano">Qoraalka Hanunoo</script>
 			<script type="Hans">La fududeeyay</script>
 			<script type="Hans" alt="stand-alone">Haan La fududeeyay</script>
 			<script type="Hant">Hore</script>
 			<script type="Hant" alt="stand-alone">Haanti hore</script>
+			<script type="Hatr">Qoraalka Hatran</script>
 			<script type="Hebr">Cibraani</script>
 			<script type="Hira">Hiragana</script>
+			<script type="Hluw">Qoraalka Anatolian Hieroglyphs</script>
+			<script type="Hmng">Hmonga pahawh</script>
+			<script type="Hmnp">Hmonga Nyiakeng Puachue</script>
 			<script type="Hrkt">Qoraalka Xuruufta Jabaaniiska</script>
+			<script type="Hung">Hangariyaankii Hore</script>
+			<script type="Ital">Itaaliggii Hore</script>
 			<script type="Jamo">Jaamo</script>
+			<script type="Java">Jafaniis</script>
 			<script type="Jpan">Jabaaniis</script>
+			<script type="Kali">Kayah LI</script>
 			<script type="Kana">Katakaana</script>
+			<script type="Khar">Koraalka kharooshi</script>
 			<script type="Khmr">Khamer</script>
+			<script type="Khoj">Qoraalka Khojki</script>
+			<script type="Kits">Qoraalka yar ee Khitan</script>
 			<script type="Knda">Kanada</script>
 			<script type="Kore">Kuuriyaan</script>
+			<script type="Kthi">kaithi</script>
+			<script type="Lana">Lanna</script>
+			<script type="Laoo">Dalka Lao</script>
 			<script type="Latn">Laatiin</script>
+			<script type="Lepc">Lebja</script>
+			<script type="Limb">Limbu</script>
+			<script type="Lina">Nidaamka qoraalka Linear A</script>
+			<script type="Linb">Nidaamka qoraalka Linear B</script>
+			<script type="Lisu">Wabiga Fraser</script>
+			<script type="Lyci">Lyciantii Hore</script>
+			<script type="Lydi">Lydian</script>
+			<script type="Mahj">Mahajani</script>
+			<script type="Maka">Makasar</script>
+			<script type="Mand">Luuqada Mandaean</script>
+			<script type="Mani">Manichaean</script>
+			<script type="Marc">Marchen</script>
+			<script type="Medf">Madefaidrin</script>
+			<script type="Mend">Mende</script>
+			<script type="Merc">Meroitic Curve</script>
+			<script type="Mero">Meroitic</script>
 			<script type="Mlym">Maalayalam</script>
+			<script type="Modi">Moodi</script>
 			<script type="Mong">Mongooliyaan</script>
+			<script type="Mroo">Mro</script>
+			<script type="Mtei">Qoraalka Luuqada Meitei</script>
+			<script type="Mult">Multani</script>
 			<script type="Mymr">Mayanmaar</script>
+			<script type="Nand">Nandinagari</script>
+			<script type="Narb">Carabiyadii Hore ee Wuqooye</script>
+			<script type="Nbat">Nabataean</script>
+			<script type="Newa">Newa</script>
+			<script type="Nkoo">N’Ko</script>
+			<script type="Nshu">Nüshu</script>
+			<script type="Ogam">Ogham</script>
+			<script type="Olck">Ol Jiki</script>
+			<script type="Orkh">Orkhon</script>
 			<script type="Orya">Oodhiya</script>
+			<script type="Osge">Osage</script>
+			<script type="Osma">Osmanya</script>
+			<script type="Palm">Palmyrene</script>
+			<script type="Pauc">Baaw Sin Haaw</script>
+			<script type="Perm">Permic gii hore</script>
+			<script type="Phag">Qoraalka Phags-pa</script>
+			<script type="Phli">Qoraaladii hore ee Pahlavi</script>
+			<script type="Phlp">Qoraalka midig laga bilaabo ee faarsiyiintii</script>
+			<script type="Phnx">Luuqada Phoenicianka</script>
+			<script type="Plrd">Shibanaha</script>
+			<script type="Prti">Qoraalka Parthian</script>
+			<script type="Qaag">Qoraalka Sawgiga</script>
+			<script type="Rjng">Dadka Rejan</script>
+			<script type="Rohg">Hanifi Rohingya</script>
+			<script type="Runr">Dadka Rejang</script>
+			<script type="Samr">Dadka Samaritan</script>
+			<script type="Sarb">Crabiyaankii Hore ee Wuqooyi</script>
+			<script type="Saur">Sawrashtra</script>
+			<script type="Sgnw">Qaabka dhagoolka loola hadlo</script>
+			<script type="Shaw">calaamad qoris</script>
+			<script type="Shrd">Sharada</script>
+			<script type="Sidd">Siddham</script>
+			<script type="Sind">khudwadi</script>
 			<script type="Sinh">Sinhaala</script>
+			<script type="Sogd">Sogdiyaan</script>
+			<script type="Sogo">Sogdiyaankii Hore</script>
+			<script type="Sora">Qoraalka Sora Sompeng</script>
+			<script type="Soyo">Soyombo</script>
+			<script type="Sund">Dadka Sundaniiska</script>
+			<script type="Sylo">Qoraalka Luuqada Sylheti</script>
+			<script type="Syrc">Lahjada Syriac</script>
+			<script type="Tagb">Tagbanwa</script>
+			<script type="Takr">Takri</script>
+			<script type="Tale">Tai Le</script>
+			<script type="Talu">Tai Lue cusub</script>
 			<script type="Taml">Taamiil</script>
+			<script type="Tang">Luuqada Tangut</script>
+			<script type="Tavt">Farta lagu Qoro Luuqadaha Tai</script>
 			<script type="Telu">Teeluguu</script>
+			<script type="Tfng">Farta Tifinagh</script>
+			<script type="Tglg">Luuqada Tagalog</script>
 			<script type="Thaa">Daana</script>
 			<script type="Thai">Taay</script>
 			<script type="Tibt">Tibetaan</script>
+			<script type="Tirh">Qoraalka Luuqada Maithili</script>
+			<script type="Ugar">Luuqada Ugaritic</script>
+			<script type="Vaii">Dadka Vai</script>
+			<script type="Wara">Nidaamka Qoraalka Luuqada Ho</script>
+			<script type="Wcho">Dadka wanjo</script>
+			<script type="Xpeo">Faarsigii Hore</script>
+			<script type="Xsux">Qoraalkii Hore ee dadka Sumaariyiinta ee dhulka mesobataamiya</script>
+			<script type="Yezi">Dadka Yesiidiga</script>
+			<script type="Yiii">Tiknoolajiyada Yi</script>
+			<script type="Zanb">Xarafka laba jibaaran ee kujira Xarfaha Zanabazar</script>
+			<script type="Zinh">Dhaxlay</script>
 			<script type="Zmth">Aqoonsiga Xisaabta</script>
 			<script type="Zsye">Calaamad Dareen Muujin</script>
 			<script type="Zsym">Calaamado</script>
@@ -383,6 +520,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CL">Jili</territory>
 			<territory type="CM">Kaameruun</territory>
 			<territory type="CN">Shiinaha</territory>
+			<territory type="CO">Koloombiya</territory>
 			<territory type="CP">Jasiiradda Kilibarton</territory>
 			<territory type="CR">Kosta Riika</territory>
 			<territory type="CU">Kuuba</territory>
@@ -435,8 +573,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT">Guwaatamaala</territory>
 			<territory type="GU">Guaam</territory>
 			<territory type="GW">Gini-Bisaaw</territory>
+			<territory type="GY">Guyana</territory>
 			<territory type="HK">Hong Kong</territory>
-			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM">Jasiiradda Haad &amp; MakDonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Korweeshiya</territory>
@@ -491,7 +629,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MM">Miyanmar</territory>
 			<territory type="MN">Mongooliya</territory>
 			<territory type="MO">Makaaw</territory>
-			<territory type="MO" alt="short">Makaaw</territory>
 			<territory type="MP">Jasiiradda Waqooyiga Mariaana</territory>
 			<territory type="MQ">Maartinik</territory>
 			<territory type="MR">Muritaaniya</territory>
@@ -594,6 +731,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Fanuaatu</territory>
 			<territory type="WF">Walis &amp; Futuna</territory>
 			<territory type="WS">Samoowa</territory>
+			<territory type="XA">Shigshiga</territory>
+			<territory type="XB">Pseudo-Bidi</territory>
 			<territory type="XK">Koosofo</territory>
 			<territory type="YE">Yaman</territory>
 			<territory type="YT">Mayotte</territory>
@@ -602,6 +741,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Simbaabwe</territory>
 			<territory type="ZZ">Gobol aan la aqoonin amase aan saxnayn</territory>
 		</territories>
+		<variants>
+			<variant type="1901">orthofraphygii hore ee Jarmalka</variant>
+			<variant type="1994">Heerka orthographyga Resiyaanka</variant>
+			<variant type="1996">Orthigraphygii jarmal ee 1996</variant>
+			<variant type="1606NICT">Fransiiskii dhexe ee ugu dambeeyay ilaa 1606</variant>
+			<variant type="1694ACAD">Faransiiskii Hore</variant>
+			<variant type="1959ACAD">Tacliin</variant>
+			<variant type="ABL1943">Qaacideeynta orthographygii 1943</variant>
+			<variant type="ALALC97">ALA-LC Romanization, 1997 daabacaad</variant>
+			<variant type="ALUKU">Lahjada Aluku</variant>
+			<variant type="AO1990">Heshiiska luuqada orthografiga burtuqiiska 1990</variant>
+			<variant type="BAKU1926">Farta Latin Turkiga ee Mideeysan</variant>
+			<variant type="BALANKA">Lahjada Balanka ee Anii</variant>
+			<variant type="BARLA">lahjada kooxda Barlavento ee kabuverdianu</variant>
+			<variant type="BISKE">Lahjada San Giorgio/Bila</variant>
+			<variant type="BOHORIC">Farta Bohorič</variant>
+			<variant type="BOONT">Luuqada Boontling</variant>
+			<variant type="BORNHOLM">BOONHOLM</variant>
+			<variant type="COLB1945">Shirkii orthografiga ee Portuguese-Brazilian 1945</variant>
+			<variant type="DAJNKO">alfabeetka Dajnko</variant>
+			<variant type="EKAVSK">dhaqyada isku jirka ah ee Serbiyaanka iyo Ekviyaan</variant>
+			<variant type="EMODENG">Ingiriiskii hore ee casriga ahaa</variant>
+			<variant type="IJEKAVSK">dhawaaqyada Serbiyaanka iyo Ijekaviyaan</variant>
+			<variant type="KKCOR">orhographyga caadiga ah</variant>
+			<variant type="KSCOR">heerka orthographyga</variant>
+			<variant type="LENGADOC">LENGADOK</variant>
+			<variant type="LIPAW">Lahjada Lipavaz ee Resiyaanka</variant>
+			<variant type="LUNA1918">LUUNA1918</variant>
+			<variant type="METELKO">alfaabeetka nmetelko</variant>
+			<variant type="MONOTON">MOONOTOONIK</variant>
+			<variant type="NDYUKA">lahjada Ndyuka</variant>
+			<variant type="NEDIS">lahjada Natisone</variant>
+			<variant type="NEWFOUND">HELITAANCUSUB</variant>
+			<variant type="NICARD">KAARKANI</variant>
+			<variant type="NJIVA">lahjada Gniva/Njiva</variant>
+			<variant type="NULIK">Folabuka casriga ah</variant>
+			<variant type="OSOJS">lahjada Oseacco/Osojane</variant>
+			<variant type="OXENDICT">hinggaadinta Qaamuuska Ingiriisiga Oxford</variant>
+			<variant type="POSIX">Kombiyuutar</variant>
+			<variant type="SAAHO">Saaho</variant>
+			<variant type="SCOTLAND">Heerka Ingiriisiga Iskootishka</variant>
+			<variant type="SCOUSE">GARAACID</variant>
+			<variant type="SIMPLE">Fudud</variant>
+			<variant type="SOLBA">lahjada Stolvizza/Solbica</variant>
+			<variant type="TARASK">orthographyga Taraskievica</variant>
+			<variant type="UCCOR">orthograpghyga mideeysan</variant>
+			<variant type="UCRCOR">orthographyga mideeysan ee hadana ladul maray</variant>
+			<variant type="VALENCIA">Faleensiyaawi</variant>
+		</variants>
 		<keys>
 			<key type="calendar">Habeentiris</key>
 			<key type="cf">Habka Lacagta</key>
@@ -615,20 +803,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">Habeentiriska Buudhist</type>
 			<type key="calendar" type="chinese">Habeetiriska Shiinaha</type>
+			<type key="calendar" type="coptic">Habeentiriska Koptiga</type>
 			<type key="calendar" type="dangi">Habeetiriska Dangi</type>
 			<type key="calendar" type="ethiopic">Habeentiriska Itoobiya</type>
+			<type key="calendar" type="ethiopic-amete-alem">Taariikhda Itoobiya ee Amete Alem</type>
 			<type key="calendar" type="gregorian">Habeetiriska Geregoriyaan</type>
 			<type key="calendar" type="hebrew">Habeentiriska yuhuudda</type>
+			<type key="calendar" type="indian">Taariikhda Qaranka Hindiya</type>
 			<type key="calendar" type="islamic">Habeentiriska islaamka</type>
+			<type key="calendar" type="islamic-civil">Taariikhda Islaamiga (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-rgsa">Habeentiriska Islaamka (Sacuudiga, aragtida)</type>
+			<type key="calendar" type="islamic-tbla">Taariikhda Islaamiga (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-umalqura">Taariikhda Islaamiga(Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Habeentiriska ISO-8601</type>
 			<type key="calendar" type="japanese">Habeentiriska jabbaanka</type>
 			<type key="calendar" type="persian">Habeentiriska Baarshiyaanka</type>
 			<type key="calendar" type="roc">Habeentiriska Minguwo</type>
 			<type key="cf" type="account">Habka Xisaabinta Lacagta</type>
 			<type key="cf" type="standard">Habka Heerka Lacagta</type>
+			<type key="collation" type="big5han">Isku hagaajinta Shiineeskii Hore - Big5</type>
+			<type key="collation" type="compat">Iswaafajinta Isku hajintii hore</type>
+			<type key="collation" type="dictionary">Isku hagaajinta Qaamuuska</type>
 			<type key="collation" type="ducet">Lambar Sireedka Caalamiga ee Kala Soocidda Dalabka</type>
+			<type key="collation" type="emoji">Isku hagaajinta Emojiga</type>
+			<type key="collation" type="eor">Xeerarka Dalabka Yurub</type>
+			<type key="collation" type="gb2312han">Isku hagaajinta Farta shiineeska</type>
+			<type key="collation" type="phonebook">Isku hagaajinta foonbuuga</type>
+			<type key="collation" type="pinyin">Isku hagaajinta Pinyin</type>
+			<type key="collation" type="reformed">Isku hagaajinta Reformed</type>
 			<type key="collation" type="search">Raadinta Guud</type>
+			<type key="collation" type="searchjl">Raadinta Shibanaha Hangul</type>
 			<type key="collation" type="standard">Amarka Kala Soocidda Caadiga ah</type>
+			<type key="collation" type="stroke">Isku hagaajinta Farta</type>
+			<type key="collation" type="traditional">Isku hagaajin Fareedkii Hore</type>
+			<type key="collation" type="unihan">Isku hagaajinta Farta Radical-Stroke</type>
+			<type key="collation" type="zhuyin">Isku hagaajinta Farta Zhuyin</type>
 			<type key="hc" type="h11">12 Saac ee Nidaamka Saacadda (0–12)</type>
 			<type key="hc" type="h12">12 Saac ee Nidaamka Saacadda (1–12)</type>
 			<type key="hc" type="h23">24 Saac ee Nidaamka Saacadda (0–23)</type>
@@ -639,15 +848,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="ms" type="metric">Nidaamka Metric</type>
 			<type key="ms" type="uksystem">Nidaamka Cabbirka Imperial-ka</type>
 			<type key="ms" type="ussystem">Nidaamka Cabbirka ee US</type>
+			<type key="numbers" type="ahom">Godadka Ahom</type>
 			<type key="numbers" type="arab">Gdadka Carabi-Hindiya</type>
 			<type key="numbers" type="arabext">Tirooyinka Dheeraadka ah ee Godadka Carabi-Hindiya</type>
 			<type key="numbers" type="armn">Nidaam Tireedka Armeeniya</type>
 			<type key="numbers" type="armnlow">Nidaam Tireedka Yaryar ee Armeeniya</type>
+			<type key="numbers" type="bali">Godadka Balinese</type>
 			<type key="numbers" type="beng">Godadka Banglaa</type>
+			<type key="numbers" type="brah">Godadka Brahmi</type>
+			<type key="numbers" type="cakm">Godadka Chakma</type>
+			<type key="numbers" type="cham">Godadka cham</type>
+			<type key="numbers" type="cyrl">Lambarada Cyrillic</type>
 			<type key="numbers" type="deva">Godadka Defangaari</type>
+			<type key="numbers" type="diak">Godadka Dives Akuru</type>
 			<type key="numbers" type="ethi">Nidaam Tireedka Itoobiya</type>
 			<type key="numbers" type="fullwide">Ballac Godadka Buuxa</type>
 			<type key="numbers" type="geor">Nidaam Tireedka Giyoorgiyaanka</type>
+			<type key="numbers" type="gong">Godadka Gunjala Gondi</type>
+			<type key="numbers" type="gonm">Lambarada Masaram Gondi</type>
 			<type key="numbers" type="grek">Nidaam Tireedka Giriiga</type>
 			<type key="numbers" type="greklow">Nidaam Tireedka Yaryar ee Giriiga</type>
 			<type key="numbers" type="gujr">Godadka Gujaraati</type>
@@ -658,22 +876,57 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Nidaam Tireedka Hore ee Shiinaha</type>
 			<type key="numbers" type="hantfin">Nidaam Tireedkii Hore ee Dhaqaalaha Shiinaha</type>
 			<type key="numbers" type="hebr">Nidaam Tireedka Cibraanka</type>
+			<type key="numbers" type="hmng">Nidaam Tireedka Hebrew</type>
+			<type key="numbers" type="hmnp">Godadka Nyiakeng Puachue Hmong</type>
+			<type key="numbers" type="java">Godadka Javanese</type>
 			<type key="numbers" type="jpan">Nidaam Tireedka Jabbaanka</type>
 			<type key="numbers" type="jpanfin">Nidaam Tireedka Dhaqaalaha Jabbaanka</type>
+			<type key="numbers" type="kali">Godadka Kayah Li</type>
 			<type key="numbers" type="khmr">Godadka Khamer</type>
 			<type key="numbers" type="knda">Godadka Kanada</type>
+			<type key="numbers" type="lana">Godadka Tai Tham Hora</type>
+			<type key="numbers" type="lanatham">Godadka Tai Tham</type>
 			<type key="numbers" type="laoo">Godadka Laao</type>
 			<type key="numbers" type="latn">Godadka Ree Galbeedka</type>
+			<type key="numbers" type="lepc">Godadka Lepcha</type>
+			<type key="numbers" type="limb">Godadka Limbu</type>
+			<type key="numbers" type="mathbold">Godad Xisaabeedka Waaweeyn</type>
+			<type key="numbers" type="mathdbl">Godad Xisaabeedka Labalaabma</type>
+			<type key="numbers" type="mathmono">Godad Xisaabeedka Monospace</type>
+			<type key="numbers" type="mathsanb">Godad xisaabeedka waaweeyn ee Sans-Serif</type>
+			<type key="numbers" type="mathsans">Godad xisaabeedka Sans-Serif</type>
 			<type key="numbers" type="mlym">Godadka Malayalam</type>
+			<type key="numbers" type="modi">Godadka Modi</type>
+			<type key="numbers" type="mong">Godadka Mongooliyaanka</type>
+			<type key="numbers" type="mroo">Godadka Mro</type>
+			<type key="numbers" type="mtei">Godadka Meetei Mayek</type>
 			<type key="numbers" type="mymr">Godadka Mayanmaar</type>
+			<type key="numbers" type="mymrshan">Godadka Myanmar Shan</type>
+			<type key="numbers" type="mymrtlng">Godadka Myanmar Tai Laing</type>
+			<type key="numbers" type="nkoo">Godadka N’Ko</type>
+			<type key="numbers" type="olck">Godadka Ol Chiki</type>
 			<type key="numbers" type="orya">Godadka Oodhiya</type>
+			<type key="numbers" type="osma">Godadka Osmanya</type>
+			<type key="numbers" type="rohg">Godadka Hanifi Rohingya</type>
 			<type key="numbers" type="roman">Nidaam Tireedka Roomaanka</type>
 			<type key="numbers" type="romanlow">Nidaam Tireedka yaryar ee Roomaanka</type>
+			<type key="numbers" type="saur">Godadka Saurashtra</type>
+			<type key="numbers" type="shrd">Godadka Sharada</type>
+			<type key="numbers" type="sind">Godadka Khudawadi</type>
+			<type key="numbers" type="sinh">Godadka Sinhala Lith</type>
+			<type key="numbers" type="sora">Godadka Sora Sompeng</type>
+			<type key="numbers" type="sund">Godadka Sundaniiska</type>
+			<type key="numbers" type="takr">Godadka Takri</type>
+			<type key="numbers" type="talu">Godadka cusub ee Tai Lue</type>
 			<type key="numbers" type="taml">Nidaam Tireedki Hore ee Taaamiil</type>
 			<type key="numbers" type="tamldec">Godka Tirada Taamiil</type>
 			<type key="numbers" type="telu">Godka Tirada Telugu</type>
 			<type key="numbers" type="thai">Godka Tirada Thai</type>
 			<type key="numbers" type="tibt">Godka Tirada Tibetan</type>
+			<type key="numbers" type="tirh">Godadka Tirhuta</type>
+			<type key="numbers" type="vaii">Godadka Vai</type>
+			<type key="numbers" type="wara">Godadka Warang Citi</type>
+			<type key="numbers" type="wcho">Godadka Wancho</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
@@ -701,6 +954,157 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Bisha1</month>
+							<month type="2">Bisha2</month>
+							<month type="3">Bisha3</month>
+							<month type="4">Bisha4</month>
+							<month type="5">Bisha5</month>
+							<month type="6">Bisha6</month>
+							<month type="7">Bisha7</month>
+							<month type="8">Bisha8</month>
+							<month type="9">Bisha9</month>
+							<month type="10">Bisha10</month>
+							<month type="11">Bisha11</month>
+							<month type="12">Bisha12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Bisha Koobaad</month>
+							<month type="2">bisha labaad</month>
+							<month type="3">bisha saddexaad</month>
+							<month type="4">bisha afaraad</month>
+							<month type="5">bisha shanaad</month>
+							<month type="6">bisha lixaad</month>
+							<month type="7">bisha todobaad</month>
+							<month type="8">bisha siddedad</month>
+							<month type="9">bisha sagaalad</month>
+							<month type="10">bisha tobnaad</month>
+							<month type="11">bisha kow iyo tobnaad</month>
+							<month type="12">bisha laba iyo tobnaad</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">Bisha Koobaad</month>
+							<month type="2">Bisha Labaad</month>
+							<month type="3">Bisha Sadexaad</month>
+							<month type="4">Bisha Afraad</month>
+							<month type="5">Bisha Shanaad</month>
+							<month type="6">Bisha Lixaad</month>
+							<month type="7">Bisha Todabaad</month>
+							<month type="8">Bisha Sideedaad</month>
+							<month type="9">Bisha Sagaalaad</month>
+							<month type="10">Bisha Tobnaad</month>
+							<month type="11">Bisha Kow iyo Tobnaad</month>
+							<month type="12">Bisha laba iyo Tobnaad</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<cyclicNameSets>
+					<cyclicNameSet type="solarTerms">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1">guga ayaa bilaabmaya</cyclicName>
+								<cyclicName type="2">biyaha roobka</cyclicName>
+								<cyclicName type="3">xayayaan lakiciyay</cyclicName>
+								<cyclicName type="4">guga ekuinikis</cyclicName>
+								<cyclicName type="5">dhalaalaya cad na</cyclicName>
+								<cyclicName type="6">hadhuudha roobka</cyclicName>
+								<cyclicName type="7">jiilaalka ayaa bilaabmaya</cyclicName>
+								<cyclicName type="8">hadhuudh buuxda</cyclicName>
+								<cyclicName type="9">hadhuudh dhagta kujirta</cyclicName>
+								<cyclicName type="10">xaalka kulka</cyclicName>
+								<cyclicName type="11">kulayl yar</cyclicName>
+								<cyclicName type="12">kulayl weeyn</cyclicName>
+								<cyclicName type="13">daayrta ayaa bilaabmaysa</cyclicName>
+								<cyclicName type="14">dhamaadka kulaylka</cyclicName>
+								<cyclicName type="15">dhado cad</cyclicName>
+								<cyclicName type="16">ekuinokiska daayrta</cyclicName>
+								<cyclicName type="17">dhado qaboow</cyclicName>
+								<cyclicName type="18">baraf soo dhacaya</cyclicName>
+								<cyclicName type="19">qaboowbaha ayaa bilaabmaya</cyclicName>
+								<cyclicName type="20">baraf yar</cyclicName>
+								<cyclicName type="21">baraf weeyn</cyclicName>
+								<cyclicName type="22">qorax qabow</cyclicName>
+								<cyclicName type="23">qaboow yar</cyclicName>
+								<cyclicName type="24">qaboow weeyn</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1">guga ayaa bilaabmaya</cyclicName>
+								<cyclicName type="2">biyaha roobka</cyclicName>
+								<cyclicName type="3">cayayaan kacay</cyclicName>
+								<cyclicName type="5">dhalaalya cad na</cyclicName>
+								<cyclicName type="7">kulka ayaa bilaabmaya</cyclicName>
+								<cyclicName type="8">hadhuudh buuxda</cyclicName>
+								<cyclicName type="9">hadhuudh ku jirta dhagaha</cyclicName>
+								<cyclicName type="10">xaalada kulka</cyclicName>
+								<cyclicName type="11">kuleeyl yar</cyclicName>
+								<cyclicName type="12">kulayl weeyn</cyclicName>
+								<cyclicName type="13">deyrta ayaa bilaameeysa</cyclicName>
+								<cyclicName type="19">kulka ayaa bilaabmaya</cyclicName>
+								<cyclicName type="20">barafka yar</cyclicName>
+								<cyclicName type="21">baraf weeyn</cyclicName>
+								<cyclicName type="22">xaalada qaboobaha</cyclicName>
+								<cyclicName type="23">qaboow weeyn</cyclicName>
+								<cyclicName type="24">qaboow weeyn</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="3">cayayaan lakiciyay</cyclicName>
+								<cyclicName type="10">xaalada kulka</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="zodiacs">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1">Jiir</cyclicName>
+								<cyclicName type="2">Dibi</cyclicName>
+								<cyclicName type="3">Shabeel</cyclicName>
+								<cyclicName type="4">Bakeeyle</cyclicName>
+								<cyclicName type="5">Masduullaa</cyclicName>
+								<cyclicName type="6">Mas</cyclicName>
+								<cyclicName type="7">Faras</cyclicName>
+								<cyclicName type="8">Ri</cyclicName>
+								<cyclicName type="9">Daanyeer</cyclicName>
+								<cyclicName type="10">Diiq</cyclicName>
+								<cyclicName type="11">Eey</cyclicName>
+								<cyclicName type="12">Doofaar</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1">Jiir</cyclicName>
+								<cyclicName type="2">Dibi</cyclicName>
+								<cyclicName type="3">Shabeel</cyclicName>
+								<cyclicName type="4">Bakeeyle</cyclicName>
+								<cyclicName type="5">Masduullaa</cyclicName>
+								<cyclicName type="6">Mas</cyclicName>
+								<cyclicName type="7">Faras</cyclicName>
+								<cyclicName type="8">Ri</cyclicName>
+								<cyclicName type="9">Daanyeer</cyclicName>
+								<cyclicName type="10">Diiq</cyclicName>
+								<cyclicName type="11">Eey</cyclicName>
+								<cyclicName type="12">Doofaar</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1">Jiir</cyclicName>
+								<cyclicName type="2">Dibi</cyclicName>
+								<cyclicName type="3">Shabeel</cyclicName>
+								<cyclicName type="4">Bakeeyle</cyclicName>
+								<cyclicName type="5">Masduullaa</cyclicName>
+								<cyclicName type="6">Mas</cyclicName>
+								<cyclicName type="7">Faras</cyclicName>
+								<cyclicName type="8">Ri</cyclicName>
+								<cyclicName type="9">daanyeer</cyclicName>
+								<cyclicName type="10">Diiq</cyclicName>
+								<cyclicName type="11">Eey</cyclicName>
+								<cyclicName type="12">Doofaar</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+				</cyclicNameSets>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -817,19 +1221,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH – HH</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1129,6 +1547,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1">CD</era>
 						<era type="1" alt="variant">TM</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">B</era>
+						<era type="1">A</era>
+						<era type="1" alt="variant">CE</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1316,6 +1739,98 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="hebrew">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>M/d/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'barta' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'barta' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="indian">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>M/d/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'barta' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'barta' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="islamic">
 				<months>
 					<monthContext type="format">
@@ -1380,9 +1895,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">AH</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">HD</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">AH</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Janaayo</month>
+							<month type="2">Feebraayo</month>
+							<month type="3">Maarso</month>
+							<month type="4">Abril</month>
+							<month type="5">Maayo</month>
+							<month type="6">Juun</month>
+							<month type="7">Luuliyo</month>
+							<month type="8">Agoosto</month>
+							<month type="9">Sabteembar</month>
+							<month type="10">Oktoobar</month>
+							<month type="11">Noofeembar</month>
+							<month type="12">Diiseembar</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="roc">
+				<eras>
+					<eraNames>
+						<era type="0">Kahor R.O.C.</era>
+						<era type="1">Minguo</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">Kahor R.O.C.</era>
+						<era type="1">Minguo</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">Kahor R.O.C.</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
@@ -1443,6 +1999,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-short">
 				<displayName>rbc</displayName>
+				<relative type="-1">Rubucii ugu dambeeyay</relative>
+				<relative type="0">Rubucan</relative>
+				<relative type="1">Rubuca xiga</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} rbc</relativeTimePattern>
 					<relativeTimePattern count="other">{0} rbc</relativeTimePattern>
@@ -1835,6 +2394,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName>ilbrqsi</displayName>
+				<relative type="0">Iminka</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ilbrqsi</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ilbrqsi</relativeTimePattern>
@@ -1862,6 +2422,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>Waqtiga Isku-xiran ee Caalamka</standard>
 				</long>
+				<short>
+					<standard>Waqtiga UTC</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Magaalo Aan La Garanayn</exemplarCity>
@@ -2976,6 +3539,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity>Haraare</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Wakhtiga Acre</generic>
+					<standard>Wakhtiga Caadiga ah ee Acre</standard>
+					<daylight>Wakhtiga Kulka ee Acre</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Waqtiga Afggaanistaan</standard>
@@ -3008,6 +3578,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Waqtiga Alaska</generic>
 					<standard>Waqtiga Caadiga Ah ee Alaska</standard>
 					<daylight>Waqtiga Dharaarta ee Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic>Waqtiga Almaty</generic>
+					<standard>Waqtiga Caadiga ah ee Almaty</standard>
+					<daylight>Saacada Waqtiga Kulaylaha ee Almaty</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -3045,11 +3622,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Waqtiga Dharaarta ee Basifika Waqooyiga Ameerika</daylight>
 				</long>
 			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic>Wakhtiga Anadyr</generic>
+					<standard>Wakhtiga Caadiga ah ee Anadyr</standard>
+					<daylight>Wakhtiga Kulka ee Anadyr</daylight>
+				</long>
+			</metazone>
 			<metazone type="Apia">
 				<long>
 					<generic>Waqtiga Abiya</generic>
 					<standard>Waqtiga Caadiga Ah ee Abiya</standard>
 					<daylight>Waqtiga Dharaarta ee Abiya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic>Waqtiga Aqtau</generic>
+					<standard>Waqtiga Caadiga ah ee Aqtau</standard>
+					<daylight>Saacada Waqtiga Kulaylaha Aqtau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic>Waqtiga Aqtobe</generic>
+					<standard>Waqtiga Caadiga ah ee Aqtobe</standard>
+					<daylight>Saacada Waqtiga kulaylaha Aqtobe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3363,6 +3961,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Waqtiga Caadiga Ah ee Hawaay-Alutiyaan</standard>
 					<daylight>Waqtiga Dharaarta ee Hawaay-Alutiyaan</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">HAT</generic>
+					<standard draft="contributed">HAST</standard>
+					<daylight draft="contributed">HADT</daylight>
+				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -3434,6 +4037,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Waqtiga Jabaan</generic>
 					<standard>Waqtiga Caadiga Ah ee Jabaan</standard>
 					<daylight>Waqtiga Dharaarta ee Jabaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Wakhtiga Petropavlovsk-Kamchatski</generic>
+					<standard>Wakhtiga Caadiga ah ee Petropavlovsk-Kamchatski</standard>
+					<daylight>Wakhtiga Kulka ee Petropavlovsk-Kamchatski</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3597,7 +4207,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Waqtiga Noorfek Aylaan</standard>
+					<generic draft="contributed">Waqtiga Noorfek Aylaan</generic>
+					<standard draft="contributed">Waqtiga Caadiga Ah ee Noorfek Aylaan</standard>
+					<daylight draft="contributed">Waqtiga Xagaaga ee Noorfek Aylaan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -3686,6 +4298,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Waqtiga Boyongyang</standard>
 				</long>
 			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic>Waqtiga Qyzylorda</generic>
+					<standard>Waqtiga Caadiga ah ee Qyzylorda</standard>
+					<daylight>Saacada Waqtiga Kulaylaha Qyzylorda</daylight>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Waqtiga Riyuuniyon</standard>
@@ -3701,6 +4320,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Waqtiga Sakhalin</generic>
 					<standard>Waqtiga Caadiga Ah ee Sakhalin</standard>
 					<daylight>Waqtiga Xagaaga ee Sakhalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Wakhtiga Samara</generic>
+					<standard>Wakhtiga Caadiga ah ee Samara</standard>
+					<daylight>Wakhtiga Kulka ee Samara</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
@@ -3858,8 +4484,128 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="arab">
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="arabext">
+			<exponential>E</exponential>
+		</symbols>
+		<symbols numberSystem="bali">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="beng">
+			<plusSign draft="contributed">+</plusSign>
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="cham">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<superscriptingExponent>(^)</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="gong">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="guru">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="java">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="kali">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="knda">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="lana">
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
 		<symbols numberSystem="latn">
 			<nan>MaL</nan>
+		</symbols>
+		<symbols numberSystem="lepc">
+			<superscriptingExponent>(^)</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="limb">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="mong">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="orya">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="osma">
+			<superscriptingExponent>(^)</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="saur">
+			<superscriptingExponent>×</superscriptingExponent>
+		</symbols>
+		<symbols numberSystem="sund">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="takr">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="talu">
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="telu">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="thai">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<superscriptingExponent>×</superscriptingExponent>
+			<nan>NaN</nan>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<nan>NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
@@ -3970,6 +4716,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">kawansada Angola</displayName>
 				<displayName count="other">kawansada Angola</displayName>
 			</currency>
+			<currency type="ARA">
+				<displayName>Argentine Austral</displayName>
+				<displayName count="one">Argentine Austral</displayName>
+				<displayName count="other">Argentine Australs</displayName>
+			</currency>
+			<currency type="ARL">
+				<displayName>Beesada Ley ee Arjentiin (1970–1983)</displayName>
+				<displayName count="one">Beesada Ley ee Arjentiin (1970–1983)</displayName>
+				<displayName count="other">Beesada Ley ee Arjentiin (1970–1983)</displayName>
+			</currency>
+			<currency type="ARM">
+				<displayName>Beesada Ley ee Arjentiin (1881–1970)</displayName>
+				<displayName count="one">Beesada Ley ee Arjentiin (1881–1970)</displayName>
+				<displayName count="other">Beesada Ley ee Arjentiin (1881–1970)</displayName>
+			</currency>
+			<currency type="ARP">
+				<displayName>Beesada Ley ee Arjentiin (1883–1985)</displayName>
+				<displayName count="one">Beesada Ley ee Arjentiin (1883–1985)</displayName>
+				<displayName count="other">Beesada Ley ee Arjentiin (1883–1985)</displayName>
+			</currency>
 			<currency type="ARS">
 				<displayName>Beesada Arjentiin</displayName>
 				<displayName count="one">Beesada Arjentiin</displayName>
@@ -3989,6 +4755,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Manaata Asarbeyjan</displayName>
 				<displayName count="one">manaata Asarbeyjan</displayName>
 				<displayName count="other">manaata Asarbeyjan</displayName>
+			</currency>
+			<currency type="BAD">
+				<displayName>Diinaarka BBosnia-Hersogofina 1.00 konfatibal maakta Bosnia-Hersogofina 1 konfatibal maaka Bosnia-Hersogofina (1992–1994)</displayName>
+				<displayName count="one">Diinaarka BBosnia-Hersogofina (1992–1994)</displayName>
+				<displayName count="other">Diinaarka BBosnia-Hersogofina 1.00 konfatibal maakta Bosnia-Hersogofina 1 konfatibal maaka Bosnia-Hersogofina (1992–1994)</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>Konfatibal Maakta Bosnia-Hersogofina</displayName>
@@ -4035,6 +4806,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Bolifiyanada Bolifiya</displayName>
 				<displayName count="one">Bolifiyanada Bolifiya</displayName>
 				<displayName count="other">Bolifiyanada Bolifiya</displayName>
+			</currency>
+			<currency type="BOL">
+				<displayName>Bolifiyaabka Bolifiyaano(1863–1963)</displayName>
+				<displayName count="one">Bolifiyaabka Bolifiyaano(1863–1963)</displayName>
+				<displayName count="other">Bolifiyaabka Bolifiyaano(1863–1963)</displayName>
 			</currency>
 			<currency type="BRL">
 				<displayName>Realka Barasil</displayName>
@@ -4146,6 +4922,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">dinaarka Aljeriya</displayName>
 				<displayName count="other">dinaarka Aljeriya</displayName>
 			</currency>
+			<currency type="EEK">
+				<displayName>Kroonka Estooniya</displayName>
+				<displayName count="one">Kroonka Estooniya</displayName>
+				<displayName count="other">Kroonka Estooniya</displayName>
+			</currency>
 			<currency type="EGP">
 				<displayName>Bowndka Masar</displayName>
 				<displayName count="one">bowndka Masar</displayName>
@@ -4165,6 +4946,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Yuuroo</displayName>
 				<displayName count="one">yuuroo</displayName>
 				<displayName count="other">yuuroo</displayName>
+			</currency>
+			<currency type="FIM">
+				<displayName>Markkada Fiinishka ah</displayName>
+				<displayName count="one">Markkada Fiinishka ah</displayName>
+				<displayName count="other">Markkada Fiinishka ah</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>Doolarka Fiji</displayName>
@@ -4246,6 +5032,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">rubiah Indonesiya</displayName>
 				<displayName count="other">rubiah Indonesiya</displayName>
 			</currency>
+			<currency type="IEP">
+				<displayName>baawnka Ayrishka</displayName>
+				<displayName count="one">baawnka Ayrishka</displayName>
+				<displayName count="other">baawnka Ayrishka</displayName>
+			</currency>
 			<currency type="ILS">
 				<displayName>Niyuu Shekelka Israaiil</displayName>
 				<displayName count="one">niyuu shekelka Israaiil</displayName>
@@ -4265,6 +5056,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Riyaalka Iran</displayName>
 				<displayName count="one">riyaalka Iran</displayName>
 				<displayName count="other">riyaalka Iran</displayName>
+			</currency>
+			<currency type="ISJ">
+				<displayName count="one">krónaha Iceland (1918–1981)</displayName>
+				<displayName count="other">krónaha Iceland (1918–1981)</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>Koronada Eysland</displayName>
@@ -4350,6 +5145,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Doolarka Liberiya</displayName>
 				<displayName count="one">doolarka Liberiya</displayName>
 				<displayName count="other">doolarka Liberiya</displayName>
+			</currency>
+			<currency type="LVR">
+				<displayName>Rubalka Latfiya</displayName>
+				<displayName count="one">rubalka Latvia</displayName>
+				<displayName count="other">rubalka Latfiya</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Dinaarka Libya</displayName>
@@ -4742,12 +5542,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>cadaadis dib ku riixaya</displayName>
 				<unitPattern count="one">{0} cadaadis dib ku riixaya</unitPattern>
 				<unitPattern count="other">{0} cadaadis dib ku riixaya</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mitir ilbiriqsigii jibaaranba</displayName>
 				<unitPattern count="one">{0} mitir ilbiriqsigii jibaaranba</unitPattern>
 				<unitPattern count="other">{0} mitir ilbiriqsigii jibaaranba</unitPattern>
@@ -4847,7 +5665,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} milimool litirkiiba</unitPattern>
 				<unitPattern count="other">{0} milimool litirkiiba</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>baart milyankiiba</displayName>
 				<unitPattern count="one">{0} baart milyankiiba</unitPattern>
 				<unitPattern count="other">{0} baart milyankiiba</unitPattern>
@@ -4877,7 +5695,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">litar kiilomitirkiiba</unitPattern>
 				<unitPattern count="other">{0} litir kiilomitirkiiba</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litar 100-kii kiilomitirba</displayName>
 				<unitPattern count="one">{0} litar 100-kii kiilomitirba</unitPattern>
 				<unitPattern count="other">{0} litar 100-kii kiilomitirba</unitPattern>
@@ -5317,17 +6135,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} horasbaawar</unitPattern>
 				<unitPattern count="other">{0} horasbaawar</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimitir maarkuri</displayName>
 				<unitPattern count="one">{0} milimitir maarkuri</unitPattern>
 				<unitPattern count="other">{0} milimitir maarkuri</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>bownd injigii jibaaranba</displayName>
 				<unitPattern count="one">{0} bownd injigii jibaaranba</unitPattern>
 				<unitPattern count="other">{0} bownd injigii jibaaranba</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>injis maarkuri</displayName>
 				<unitPattern count="one">{0} inji maarkuri</unitPattern>
 				<unitPattern count="other">{0} inji maarkuri</unitPattern>
@@ -5392,7 +6210,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} kelfin</unitPattern>
 				<unitPattern count="other">{0} kelfin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>bownd-fiit</displayName>
 				<unitPattern count="one">{0} bownd-fiit</unitPattern>
 				<unitPattern count="other">{0} bownd-fiit</unitPattern>
@@ -5485,6 +6303,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} akre-fiit</unitPattern>
 				<unitPattern count="other">{0} akre-fiit</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>cabirka bushels</displayName>
+				<unitPattern count="one">{0}cabirka bushel</unitPattern>
+				<unitPattern count="other">{0}cabirka bushels</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>galaan</displayName>
 				<unitPattern count="one">{0} galaan</unitPattern>
@@ -5551,7 +6374,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} C</unitPattern>
 				<unitPattern count="other">{0} C</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mitir/ilbrqsi²</displayName>
 				<unitPattern count="one">{0} m/i²</unitPattern>
 				<unitPattern count="other">{0} m/i²</unitPattern>
@@ -5619,7 +6442,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} kr</unitPattern>
 				<unitPattern count="other">{0} kr</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>baart/milyan</displayName>
 				<unitPattern count="one">{0} bbm</unitPattern>
 				<unitPattern count="other">{0} bbm</unitPattern>
@@ -5929,12 +6752,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hb</unitPattern>
 				<unitPattern count="other">{0} hb</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>bij</displayName>
 				<unitPattern count="one">{0} bij</unitPattern>
 				<unitPattern count="other">{0} bij</unitPattern>
@@ -5985,7 +6808,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-fahrenheit">
 				<displayName>deg. F</displayName>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>bwd⋅ft</displayName>
 				<unitPattern count="one">{0} bwd⋅ft</unitPattern>
 				<unitPattern count="other">{0} bwd⋅ft</unitPattern>
@@ -6034,6 +6857,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>akr ft</displayName>
 				<unitPattern count="one">{0} akr ft</unitPattern>
 				<unitPattern count="other">{0} akr ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>cabirka bushels</displayName>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
@@ -6096,8 +6922,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>toban sano</displayName>
+				<unitPattern count="one">{0}diis</unitPattern>
+				<unitPattern count="other">{0}diis</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>snd</displayName>
@@ -6178,6 +7012,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>litar</displayName>
 				<unitPattern count="one">{0}L</unitPattern>
 				<unitPattern count="other">{0}L</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mkoob</displayName>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>cabirka bushel</displayName>
 			</unit>
 			<coordinateUnit>
 				<displayName>jiho</displayName>
