@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package sun.util.locale.provider;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
+import java.util.ServiceConfigurationError;
 import java.util.spi.LocaleServiceProvider;
 
 /**
@@ -50,16 +50,20 @@ public class HostLocaleProviderAdapter extends AuxLocaleProviderAdapter {
     @SuppressWarnings("unchecked")
     protected <P extends LocaleServiceProvider> P findInstalledProvider(final Class<P> c) {
         try {
-            Method getter = HostLocaleProviderAdapterImpl.class.getMethod(
-                    "get" + c.getSimpleName(), (Class<?>[]) null);
-            return (P)getter.invoke(null, (Object[]) null);
-        }  catch (NoSuchMethodException |
-                  IllegalAccessException |
-                  IllegalArgumentException |
-                  InvocationTargetException ex) {
-            LocaleServiceProviderPool.config(HostLocaleProviderAdapter.class, ex.toString());
+            return (P)Class.forName(
+                        "sun.util.locale.provider.HostLocaleProviderAdapterImpl")
+                    .getMethod("get" + c.getSimpleName(), (Class<?>[]) null)
+                    .invoke(null, (Object[]) null);
+        } catch (ClassNotFoundException |
+                 NoSuchMethodException ex) {
+            // permissible exceptions as platform may not support host adapter
+            return null;
+        } catch (IllegalAccessException |
+                 IllegalArgumentException |
+                 InvocationTargetException ex) {
+            throw new ServiceConfigurationError(
+                "Host locale provider cannot be located.", ex);
         }
-        return null;
     }
 
     /**
