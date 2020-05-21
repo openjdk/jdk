@@ -67,16 +67,10 @@ public class DeterministicDump {
         String baseArchive2 = dump(baseArgs);
         compare(baseArchive, baseArchive2);
 
-
-        // (2) This will cause GC to happen after we've allocated 1MB of metaspace objects
-        // while processing the built-in SharedClassListFile.
-        String withGCArchive = dump(baseArgs, "-XX:MetaspaceSize=1M");
-        compare(baseArchive, withGCArchive);
-
-        // (3) This will cause archive to be relocated during dump time. We should
-        //     still get the same bits. (This simulates relocation that happens when
+        // (2) This will cause the archive to be relocated during dump time. We should
+        //     still get the same bits. This simulates relocation that happens when
         //     Address Space Layout Randomization prevents the archive space to
-        //     be mapped at the default location)
+        //     be mapped at the default location.
         String relocatedArchive = dump(baseArgs, "-XX:+UnlockDiagnosticVMOptions", "-XX:ArchiveRelocationMode=1");
         compare(baseArchive, relocatedArchive);
     }
