@@ -138,6 +138,11 @@ public class FileURLConnection extends URLConnection {
         }
     }
 
+    public Map<String,List<String>> getHeaderFields() {
+        initializeHeaders();
+        return super.getHeaderFields();
+    }
+
     public String getHeaderField(String name) {
         initializeHeaders();
         return super.getHeaderField(name);

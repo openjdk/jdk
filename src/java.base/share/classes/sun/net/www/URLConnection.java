@@ -25,6 +25,7 @@
 
 package sun.net.www;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -107,6 +108,26 @@ public abstract class URLConnection extends java.net.URLConnection {
             return null;
         }
         return properties == null ? null : properties.findValue(name);
+    }
+
+
+    Map<String, List<String>> headerFields;
+
+    @Override
+    public Map<String, List<String>> getHeaderFields() {
+        if (headerFields == null) {
+            try {
+                getInputStream();
+                if (properties == null) {
+                    headerFields = super.getHeaderFields();
+                } else {
+                    headerFields = properties.getHeaders();
+                }
+            } catch (IOException e) {
+                return super.getHeaderFields();
+            }
+        }
+        return headerFields;
     }
 
     /**
