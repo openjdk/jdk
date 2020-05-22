@@ -98,27 +98,6 @@ class UnixNativeDispatcher {
     private static native void close0(int fd);
 
     /**
-     * FILE* fopen(const char *filename, const char* mode);
-     */
-    static long fopen(UnixPath filename, String mode) throws UnixException {
-        NativeBuffer pathBuffer = copyToNativeBuffer(filename);
-        NativeBuffer modeBuffer = NativeBuffers.asNativeBuffer(Util.toBytes(mode));
-        try {
-            return fopen0(pathBuffer.address(), modeBuffer.address());
-        } finally {
-            modeBuffer.release();
-            pathBuffer.release();
-        }
-    }
-    private static native long fopen0(long pathAddress, long modeAddress)
-        throws UnixException;
-
-    /**
-     * fclose(FILE* stream)
-     */
-    static native void fclose(long stream) throws UnixException;
-
-    /**
      * void rewind(FILE* stream);
      */
     static native void rewind(long stream) throws UnixException;
@@ -578,25 +557,6 @@ class UnixNativeDispatcher {
     }
     private static native void statvfs0(long pathAddress, UnixFileStoreAttributes attrs)
         throws UnixException;
-
-    /**
-     * long int pathconf(const char *path, int name);
-     */
-    static long pathconf(UnixPath path, int name) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            return pathconf0(buffer.address(), name);
-        } finally {
-            buffer.release();
-        }
-    }
-    private static native long pathconf0(long pathAddress, int name)
-        throws UnixException;
-
-    /**
-     * long fpathconf(int fildes, int name);
-     */
-    static native long fpathconf(int filedes, int name) throws UnixException;
 
     /**
      * char* strerror(int errnum)
