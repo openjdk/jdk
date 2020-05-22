@@ -78,8 +78,12 @@ public class ClhsdbClasses {
                 expStrMap.put(printCmd,
                               List.of("public class " + APP_DOT_CLASSNAME + " @" + classAddress));
                 expStrMap.put(classesCmd, List.of(
-                        APP_SLASH_CLASSNAME + " @" + classAddress,
-                        "java/lang/Class @0x"));
+                        APP_SLASH_CLASSNAME + " @" + classAddress, // check for app class at right address
+                        "java/lang/Class @0x",                // check for java/lang/Class
+                        "java/lang/Object @0x",               // check for java/lang/Object
+                        "java/lang/Cloneable @0x",            // check for an interface type
+                        "\\[Ljava/lang/String; @0x",          // check for array type
+                        "\\[J @0x", "\\[I @0x", "\\[Z @0x")); // check for array of a few pimitive types
                 test.run(theApp.getPid(), cmds, expStrMap, null);
             }
         } catch (SkippedException se) {

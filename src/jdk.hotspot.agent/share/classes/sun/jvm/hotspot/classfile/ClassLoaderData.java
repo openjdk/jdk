@@ -92,7 +92,11 @@ public class ClassLoaderData extends VMObject {
   public Klass find(String className) {
     for (Klass l = getKlasses(); l != null; l = l.getNextLinkKlass()) {
         if (l.getName().equals(className)) {
-            return l;
+            if (l instanceof InstanceKlass && !((InstanceKlass)l).isLoaded()) {
+                return null; // don't return partially loaded classes
+            } else {
+                return l;
+            }
         }
     }
     return null;
@@ -102,14 +106,17 @@ public class ClassLoaderData extends VMObject {
       array klasses */
   public void classesDo(ClassLoaderDataGraph.ClassVisitor v) {
       for (Klass l = getKlasses(); l != null; l = l.getNextLinkKlass()) {
+          // Only visit InstanceKlasses that are at least in the "loaded" init_state. Otherwise
+          // the InstanceKlass won't have some required fields initialized, which can cause problems.
+          if (l instanceof InstanceKlass && !((InstanceKlass)l).isLoaded()) {
+              continue;
+          }
           v.visit(l);
       }
   }
 
   /** Iterate over all klasses in the dictionary, including initiating loader. */
   public void allEntriesDo(ClassLoaderDataGraph.ClassAndLoaderVisitor v) {
-      for (Klass l = getKlasses(); l != null; l = l.getNextLinkKlass()) {
-          dictionary().allEntriesDo(v, getClassLoader());
-      }
+      dictionary().allEntriesDo(v, getClassLoader());
   }
 }
