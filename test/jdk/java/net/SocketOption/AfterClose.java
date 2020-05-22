@@ -238,7 +238,7 @@ public class AfterClose {
         DatagramSocket datagramSocket = createClosedUnboundDatagramSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> datagramSocket.setOption(option, value));
+                if (!RO.equals(value)) expectThrows(IOE, () -> datagramSocket.setOption(option, value));
                 expectThrows(IOE, () -> datagramSocket.getOption(option));
             }
         }
@@ -251,7 +251,7 @@ public class AfterClose {
         DatagramSocket datagramSocket = createClosedBoundDatagramSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> datagramSocket.setOption(option, value));
+                if (!RO.equals(value)) expectThrows(IOE, () -> datagramSocket.setOption(option, value));
                 expectThrows(IOE, () -> datagramSocket.getOption(option));
             }
         }
@@ -264,7 +264,7 @@ public class AfterClose {
         DatagramSocket datagramSocket = createClosedBoundDatagramSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> datagramSocket.setOption(option, value));
+                if (!RO.equals(value)) expectThrows(IOE, () -> datagramSocket.setOption(option, value));
                 expectThrows(IOE, () -> datagramSocket.getOption(option));
             }
         }
@@ -288,7 +288,7 @@ public class AfterClose {
         MulticastSocket multicastSocket = createClosedUnboundMulticastSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> multicastSocket.setOption(option, value));
+                if (!RO.equals(value)) expectThrows(IOE, () -> multicastSocket.setOption(option, value));
                 expectThrows(IOE, () -> multicastSocket.getOption(option));
             }
         }
@@ -301,7 +301,7 @@ public class AfterClose {
         MulticastSocket multicastSocket = createClosedBoundMulticastSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> multicastSocket.setOption(option, value));
+                if (!RO.equals(value)) expectThrows(IOE, () -> multicastSocket.setOption(option, value));
                 expectThrows(IOE, () -> multicastSocket.getOption(option));
             }
         }
