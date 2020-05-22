@@ -684,6 +684,7 @@ public final class String
      *
      * @since 1.6
      */
+    @Override
     public boolean isEmpty() {
         return value.length == 0;
     }

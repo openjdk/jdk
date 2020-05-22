@@ -1646,6 +1646,18 @@ public abstract class $Type$Buffer
     }
 
     /**
+     * Returns {@code true} if this character buffer is empty.
+     *
+     * @return {@code true} if there are {@code 0} remaining characters,
+     *         otherwise {@code false}
+     *
+     * @since 15
+     */
+    public final boolean isEmpty() {
+        return remaining() == 0;
+    }
+
+    /**
      * Reads the character at the given index relative to the current
      * position.
      *
