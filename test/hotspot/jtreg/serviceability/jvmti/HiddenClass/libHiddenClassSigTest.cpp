@@ -76,7 +76,12 @@ is_hidden(JNIEnv* jni, jclass klass) {
     is_hid_mid = is_hidden_mid(jni);
   }
   // invoke j.l.Class.isHidden() method
-  return jni->CallBooleanMethod(klass, is_hid_mid);
+  bool res = jni->CallBooleanMethod(klass, is_hid_mid);
+  if (jni->ExceptionCheck()) {
+    jni->ExceptionDescribe();
+    jni->FatalError("is_hidden: Exception in jni CallBooleanMethod\n");
+  }
+  return res;
 }
 
 /* Check the class signature matches the expected. */
@@ -154,6 +159,8 @@ check_hidden_class_loader(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
 
   err = jvmti->GetClassLoader(klass, &loader);
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_loader: Error in JVMTI GetClassLoader");
+
+  jni->EnsureLocalCapacity(256); // to avoid warnings: JNI local refs NN exceeds capacity
 
   err = jvmti->GetClassLoaderClasses(loader, &count, &loader_classes);
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_loader: Error in JVMTI GetClassLoaderClasses");

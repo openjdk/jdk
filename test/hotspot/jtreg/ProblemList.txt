@@ -106,7 +106,6 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
-serviceability/jvmti/HiddenClass/P/Q/HiddenClassSigTest.java 8244571 generic-all
 
 #############################################################################
 
