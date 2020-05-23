@@ -22,19 +22,28 @@
  */
 /*
    @test
-  @key headful
+   @key headful
    @bug 4927934
    @summary JTree traversal is unlike Native windows tree traversal
    @author Andrey Pikalev
    @run main bug4927934
 */
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.tree.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
+import java.awt.Robot;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JFrame;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.JScrollPane;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 public class bug4927934 implements TreeSelectionListener, TreeExpansionListener, FocusListener {
 
@@ -55,107 +64,113 @@ public class bug4927934 implements TreeSelectionListener, TreeExpansionListener,
         robot = new Robot();
         robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                frame = new JFrame();
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    frame = new JFrame();
 
-                DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
-                createNodes(root);
-                tree = new JTree(root);
-                JScrollPane scrollPane = new JScrollPane(tree);
-                frame.getContentPane().add(scrollPane);
+                    DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
+                    createNodes(root);
+                    tree = new JTree(root);
+                    JScrollPane scrollPane = new JScrollPane(tree);
+                    frame.getContentPane().add(scrollPane);
 
-                tree.addFocusListener((FocusListener)listener);
-                tree.addTreeSelectionListener((TreeSelectionListener)listener);
-                tree.addTreeExpansionListener((TreeExpansionListener)listener);
+                    tree.addFocusListener((FocusListener) listener);
+                    tree.addTreeSelectionListener((TreeSelectionListener) listener);
+                    tree.addTreeExpansionListener((TreeExpansionListener) listener);
 
-                frame.setSize(300, 300);
-                frame.setVisible(true);
-            }
-        });
+                    frame.setSize(300, 300);
+                    frame.setVisible(true);
+                }
+            });
 
-        robot.waitForIdle();
-        Thread.sleep(1000);
+            robot.waitForIdle();
+            Thread.sleep(1000);
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                tree.requestFocus();
-            }
-        });
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    tree.requestFocus();
+                }
+            });
 
-        synchronized(listener) {
-            if (!focusGained) {
-                System.out.println("waiting focusGained...");
-                try {
-                    listener.wait(10000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            synchronized (listener) {
+                if (!focusGained) {
+                    System.out.println("waiting focusGained...");
+                    try {
+                        listener.wait(10000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-        }
 
-        // GO TO RIGHT
-        selectionChanged = false;
-        hitKey(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
-        if (!checkSelectionChanged(tree, 0)) {
-            throw new RuntimeException("Root should be selected");
-        }
+            // GO TO RIGHT
+            selectionChanged = false;
+            hitKey(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
+            if (!checkSelectionChanged(tree, 0)) {
+                throw new RuntimeException("Root should be selected");
+            }
 
-        selectionChanged = false;
-        hitKey(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
-        if (!checkSelectionChanged(tree, 1)) {
-            throw new RuntimeException("Node should be selected");
-        }
+            selectionChanged = false;
+            hitKey(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
+            if (!checkSelectionChanged(tree, 1)) {
+                throw new RuntimeException("Node should be selected");
+            }
 
-        treeExpanded = false;
-        hitKey(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
-        if (!isTreeExpanded()) {
-            throw new RuntimeException("Node should be expanded");
-        }
+            treeExpanded = false;
+            hitKey(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
+            if (!isTreeExpanded()) {
+                throw new RuntimeException("Node should be expanded");
+            }
 
-        selectionChanged = false;
-        hitKey(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
-        if (!checkSelectionChanged(tree, 2)) {
-            throw new RuntimeException("Leaf1 should be selected");
-        }
+            selectionChanged = false;
+            hitKey(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
+            if (!checkSelectionChanged(tree, 2)) {
+                throw new RuntimeException("Leaf1 should be selected");
+            }
 
-        selectionChanged = false;
-        hitKey(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
-        if (!checkSelectionChanged(tree, 2)) {
-            throw new RuntimeException("Leaf1 should be selected");
-        }
+            selectionChanged = false;
+            hitKey(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
+            if (!checkSelectionChanged(tree, 2)) {
+                throw new RuntimeException("Leaf1 should be selected");
+            }
 
-        // GO TO LEFT
-        selectionChanged = false;
-        hitKey(KeyEvent.VK_LEFT);
-        robot.waitForIdle();
-        if (!checkSelectionChanged(tree, 1)) {
-            throw new RuntimeException("Node should be selected");
-        }
+            // GO TO LEFT
+            selectionChanged = false;
+            hitKey(KeyEvent.VK_LEFT);
+            robot.waitForIdle();
+            if (!checkSelectionChanged(tree, 1)) {
+                throw new RuntimeException("Node should be selected");
+            }
 
-        treeCollapsed = false;
-        hitKey(KeyEvent.VK_LEFT);
-        if (!isTreeCollapsed()) {
-            throw new RuntimeException("Node should be collapsed");
-        }
+            treeCollapsed = false;
+            hitKey(KeyEvent.VK_LEFT);
+            if (!isTreeCollapsed()) {
+                throw new RuntimeException("Node should be collapsed");
+            }
 
-        selectionChanged = false;
-        hitKey(KeyEvent.VK_LEFT);
-        robot.waitForIdle();
-        if (!checkSelectionChanged(tree, 0)) {
-            throw new RuntimeException("Root should be selected");
-        }
+            selectionChanged = false;
+            hitKey(KeyEvent.VK_LEFT);
+            robot.waitForIdle();
+            if (!checkSelectionChanged(tree, 0)) {
+                throw new RuntimeException("Root should be selected");
+            }
 
-        treeCollapsed = false;
-        hitKey(KeyEvent.VK_LEFT);
-        robot.waitForIdle();
-        if (!isTreeCollapsed()) {
-            throw new RuntimeException("Root should be collapsed");
+            treeCollapsed = false;
+            hitKey(KeyEvent.VK_LEFT);
+            robot.waitForIdle();
+            if (!isTreeCollapsed()) {
+                throw new RuntimeException("Root should be collapsed");
+            }
+        } finally {
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(frame::dispose);
+            }
         }
     }
 

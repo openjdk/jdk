@@ -31,13 +31,34 @@
  * @author Peter Zhelezniakov
  * @run main bug4330357
  */
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.tree.*;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
+import javax.swing.AbstractCellEditor;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.tree.DefaultTreeCellEditor;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeCellEditor;
 
 public class bug4330357 {
 
+    private static JFrame frame;
     private static JTree tree;
     private static JButton button;
     private static Robot robot;
@@ -48,38 +69,44 @@ public class bug4330357 {
 
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 
-        javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
+        try {
+            javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 
-            public void run() {
-                createAndShowGUI();
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+
+            robot.waitForIdle();
+
+            clickMouse(getTreeRowClickPoint(1));
+            Util.hitKeys(robot, KeyEvent.VK_F2);
+            Util.hitKeys(robot, KeyEvent.VK_A, KeyEvent.VK_B, KeyEvent.VK_C);
+            robot.waitForIdle();
+
+            if (!hasComponent(JTextField.class)) {
+                throw new RuntimeException("Cell editor is missed for path: color");
             }
-        });
-
-        robot.waitForIdle();
-
-        clickMouse(getTreeRowClickPoint(1));
-        Util.hitKeys(robot, KeyEvent.VK_F2);
-        Util.hitKeys(robot, KeyEvent.VK_A, KeyEvent.VK_B, KeyEvent.VK_C);
-        robot.waitForIdle();
-
-        if (!hasComponent(JTextField.class)) {
-            throw new RuntimeException("Cell editor is missed for path: color");
-        }
 
 
-        clickMouse(getButtonClickPoint());
-        robot.waitForIdle();
+            clickMouse(getButtonClickPoint());
+            robot.waitForIdle();
 
-        clickMouse(getTreeRowClickPoint(2));
-        Util.hitKeys(robot, KeyEvent.VK_F2);
-        robot.waitForIdle();
+            clickMouse(getTreeRowClickPoint(2));
+            Util.hitKeys(robot, KeyEvent.VK_F2);
+            robot.waitForIdle();
 
-        if (!hasComponent(JComboBox.class)) {
-            throw new RuntimeException("Cell editor is missed for path: sports");
-        }
+            if (!hasComponent(JComboBox.class)) {
+                throw new RuntimeException("Cell editor is missed for path: sports");
+            }
 
-        if (hasComponent(JTextField.class)) {
-            throw new RuntimeException("Cell editor is wrongly shown for path: color");
+            if (hasComponent(JTextField.class)) {
+                throw new RuntimeException("Cell editor is wrongly shown for path: color");
+            }
+        } finally {
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(frame::dispose);
+            }
         }
     }
 
@@ -137,7 +164,7 @@ public class bug4330357 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame("Test");
+        frame = new JFrame("Test");
         frame.setSize(200, 200);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
