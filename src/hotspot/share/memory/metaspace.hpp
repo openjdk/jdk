@@ -171,25 +171,25 @@ class Metaspace : public AllStatic {
   static void assert_not_frozen() {
     assert(!_frozen, "sanity");
   }
-#ifdef _LP64
-  static void allocate_metaspace_compressed_klass_ptrs(ReservedSpace metaspace_rs, char* requested_addr, address cds_base);
-#endif
 
  private:
 
 #ifdef _LP64
-  static void set_narrow_klass_base_and_shift(ReservedSpace metaspace_rs, address cds_base);
 
+  // Reserve a range of memory at an address suitable for en/decoding narrow
+  // Klass pointers (see: CompressedClassPointers::is_valid_base()).
+  // The returned address shall both be suitable as a compressed class pointers
+  //  base, and aligned to Metaspace::reserve_alignment (which is equal to or a
+  //  multiple of allocation granularity).
+  // On error, returns an unreserved space.
+  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size);
+
+  // Given a prereserved space, use that to set up the compressed class space list.
   static void initialize_class_space(ReservedSpace rs);
-#endif
 
-  static ReservedSpace reserve_space(size_t size, size_t alignment,
-                                     char* requested_addr, bool use_requested_addr);
+  // Returns true if class space has been setup (initialize_class_space).
+  static bool class_space_is_initialized() { return _class_space_list != NULL; }
 
-#ifdef PREFERRED_METASPACE_ALIGNMENT
-  static ReservedSpace reserve_preferred_space(size_t size, size_t alignment,
-                                               bool large_pages, char *requested_addr,
-                                               bool use_requested_addr);
 #endif
 
  public:
@@ -223,7 +223,7 @@ class Metaspace : public AllStatic {
 
   static const char* metadata_type_name(Metaspace::MetadataType mdtype);
 
-  static void print_compressed_class_space(outputStream* st, const char* requested_addr = 0) NOT_LP64({});
+  static void print_compressed_class_space(outputStream* st) NOT_LP64({});
 
   // Return TRUE only if UseCompressedClassPointers is True.
   static bool using_class_space() {

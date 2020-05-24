@@ -50,6 +50,9 @@ public class SharedBaseAddress {
         for (String testEntry : testTable) {
             System.out.println("sharedBaseAddress = " + testEntry);
 
+            // Note: some platforms may restrict valid values for SharedBaseAddress; the VM should print
+            // a warning and use the default value instead. Similar, ASLR may prevent the given address
+            // from being used; this too should handled gracefully by using the default base address.
             OutputAnalyzer dumpOutput = TestCommon.dump(
                 appJar, new String[] {"Hello"}, "-XX:SharedBaseAddress=" + testEntry);
             TestCommon.checkDump(dumpOutput, "Loading classes to share");

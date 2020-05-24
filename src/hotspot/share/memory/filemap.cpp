@@ -1079,6 +1079,8 @@ bool FileMapInfo::open_for_read() {
                     os::strerror(errno));
     }
     return false;
+  } else {
+    log_info(cds)("Opened archive %s.", _full_path);
   }
 
   _fd = fd;
@@ -1981,11 +1983,13 @@ void FileMapInfo::unmap_region(int i) {
   size_t used = si->used();
   size_t size = align_up(used, os::vm_allocation_granularity());
 
-  if (mapped_base != NULL && size > 0 && si->mapped_from_file()) {
-    log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
-                  shared_region_name[i]);
-    if (!os::unmap_memory(mapped_base, size)) {
-      fatal("os::unmap_memory failed");
+  if (mapped_base != NULL) {
+    if (size > 0 && si->mapped_from_file()) {
+      log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
+                    shared_region_name[i]);
+      if (!os::unmap_memory(mapped_base, size)) {
+        fatal("os::unmap_memory failed");
+      }
     }
     si->set_mapped_base(NULL);
   }

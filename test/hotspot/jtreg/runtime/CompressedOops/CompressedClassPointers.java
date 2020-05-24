@@ -25,7 +25,7 @@
  * @test
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
- * @requires vm.bits == 64 & os.family != "windows" & !vm.graal.enabled
+ * @requires vm.bits == 64 & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -39,59 +39,101 @@ import jtreg.SkippedException;
 
 public class CompressedClassPointers {
 
+    static final String logging_option = "-Xlog:gc+metaspace=trace,cds=trace";
+
+    // Returns true if we are to test the narrow klass base; we only do this on
+    // platforms where we can be reasonably shure that we get reproducable placement).
+    static boolean testNarrowKlassBase() {
+        if (Platform.isWindows() || Platform.isPPC()) {
+            return false;
+        }
+        return true;
+
+    }
+
+    // CDS off, small heap, ccs size default (1G)
+    // A small heap should allow us to place the ccs within the lower 32G and thus allow zero based encoding.
     public static void smallHeapTest() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedBaseAddress=8g",
             "-Xmx128m",
-            "-Xlog:gc+metaspace=trace",
+            logging_option,
             "-Xshare:off",
-            "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Narrow klass base: 0x0000000000000000");
+        if (testNarrowKlassBase()) {
+            output.shouldContain("Narrow klass base: 0x0000000000000000");
+        }
         output.shouldHaveExitValue(0);
     }
 
+    // CDS off, small heap, ccs size explicitely set to 1G
+    // A small heap should allow us to place the ccs within the lower 32G and thus allow zero based encoding.
     public static void smallHeapTestWith1G() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:CompressedClassSpaceSize=1g",
             "-Xmx128m",
-            "-Xlog:gc+metaspace=trace",
+            logging_option,
             "-Xshare:off",
-            "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Narrow klass base: 0x0000000000000000, Narrow klass shift: 3");
+        if (testNarrowKlassBase()) {
+            output.shouldContain("Narrow klass base: 0x0000000000000000, Narrow klass shift: 3");
+        }
         output.shouldHaveExitValue(0);
     }
 
+    // CDS off, a very large heap, ccs size left to 1G default.
+    // We expect the ccs to be mapped somewhere far beyond the heap, such that it is not possible
+    // to use zero based encoding.
     public static void largeHeapTest() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
             "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
-            "-Xlog:gc+metaspace=trace",
+            logging_option,
             "-Xshare:off",
-            "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("Narrow klass base: 0x0000000000000000");
-        output.shouldContain("Narrow klass shift: 0");
+        if (testNarrowKlassBase()) {
+            output.shouldNotContain("Narrow klass base: 0x0000000000000000");
+            output.shouldContain("Narrow klass shift: 0");
+        }
         output.shouldHaveExitValue(0);
     }
 
-    public static void largePagesTest() throws Exception {
+    // Using large paged heap, metaspace uses small pages.
+    public static void largePagesForHeapTest() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-Xmx128m",
+                "-XX:+UseLargePages",
+                logging_option,
+                "-XX:+VerifyBeforeGC", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        if (testNarrowKlassBase()) {
+            output.shouldContain("Narrow klass base:");
+        }
+        output.shouldHaveExitValue(0);
+    }
+
+    // Using large pages for heap and metaspace.
+    // Note that this is still unexciting since the compressed class space always uses small pages;
+    // UseLargePagesInMetaspace only affects non-class metaspace.
+    public static void largePagesForHeapAndMetaspaceTest() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-Xmx128m",
-            "-XX:+UseLargePages",
-            "-Xlog:gc+metaspace=trace",
+            "-XX:+UseLargePages", "-XX:+UseLargePagesInMetaspace",
+            logging_option,
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Narrow klass base:");
+        if (testNarrowKlassBase()) {
+            output.shouldContain("Narrow klass base:");
+        }
         output.shouldHaveExitValue(0);
     }
 
@@ -262,7 +304,8 @@ public class CompressedClassPointers {
         smallHeapTest();
         smallHeapTestWith1G();
         largeHeapTest();
-        largePagesTest();
+        largePagesForHeapTest();
+        largePagesForHeapAndMetaspaceTest();
         heapBaseMinAddressTest();
         sharingTest();
 

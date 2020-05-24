@@ -58,10 +58,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #define INCLUDE_RTM_OPT 0
 #endif
 
-#if defined(AIX)
-#define PREFERRED_METASPACE_ALIGNMENT
-#endif
-
 #define SUPPORT_RESERVED_STACK_AREA
 
 // If UseSIGTRAP is active, we only use the poll bit and no polling page.

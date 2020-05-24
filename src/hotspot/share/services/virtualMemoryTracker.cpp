@@ -403,7 +403,8 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   if (reserved_rgn != NULL) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->flag() != flag) {
-      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type");
+      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\")",
+             NMTUtil::flag_to_name(reserved_rgn->flag()));
       reserved_rgn->set_flag(flag);
     }
   }
