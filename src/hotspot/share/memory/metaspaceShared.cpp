@@ -258,7 +258,9 @@ static void check_SharedBaseAddress() {
 void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   assert(DumpSharedSpaces, "should be called for dump time only");
 
+#ifdef _LP64
   check_SharedBaseAddress();
+#endif
 
   const size_t reserve_alignment = MetaspaceShared::reserved_space_alignment();
   char* shared_base = (char*)align_up((char*)SharedBaseAddress, reserve_alignment);
