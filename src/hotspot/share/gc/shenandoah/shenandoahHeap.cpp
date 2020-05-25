@@ -292,9 +292,35 @@ jint ShenandoahHeap::initialize() {
                               "Cannot commit region memory");
   }
 
+  // Try to fit the collection set bitmap at lower addresses. This optimizes code generation for cset checks.
+  // Go up until a sensible limit (subject to encoding constraints) and try to reserve the space there.
+  // If not successful, bite a bullet and allocate at whatever address.
+  {
+    size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
+    size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+
+    uintptr_t min = round_up_power_of_2(cset_align);
+    uintptr_t max = (1u << 30u);
+
+    for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
+      char* req_addr = (char*)addr;
+      assert(is_aligned(req_addr, cset_align), "Should be aligned");
+      ReservedSpace cset_rs(cset_size, os::vm_page_size(), false, req_addr);
+      if (cset_rs.is_reserved()) {
+        assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
+        _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
+        break;
+      }
+    }
+
+    if (_collection_set == NULL) {
+      ReservedSpace cset_rs(cset_size, os::vm_page_size(), false);
+      _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
+    }
+  }
+
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _free_set = new ShenandoahFreeSet(this, _num_regions);
-  _collection_set = new ShenandoahCollectionSet(this, sh_rs.base(), sh_rs.size());
 
   {
     ShenandoahHeapLocker locker(lock());
