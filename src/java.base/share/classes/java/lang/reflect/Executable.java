@@ -307,12 +307,12 @@ public abstract class Executable extends AccessibleObject
             final boolean realParamData = hasRealParameterData();
             final Type[] genericParamTypes = getGenericParameterTypes();
             final Type[] nonGenericParamTypes = getParameterTypes();
-            final Type[] out = new Type[nonGenericParamTypes.length];
-            final Parameter[] params = getParameters();
-            int fromidx = 0;
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
+                final Type[] out = new Type[nonGenericParamTypes.length];
+                final Parameter[] params = getParameters();
+                int fromidx = 0;
                 for (int i = 0; i < out.length; i++) {
                     final Parameter param = params[i];
                     if (param.isSynthetic() || param.isImplicit()) {
@@ -325,6 +325,7 @@ public abstract class Executable extends AccessibleObject
                         fromidx++;
                     }
                 }
+                return out;
             } else {
                 // Otherwise, use the non-generic parameter data.
                 // Without method parameter reflection data, we have
@@ -334,7 +335,6 @@ public abstract class Executable extends AccessibleObject
                 return genericParamTypes.length == nonGenericParamTypes.length ?
                     genericParamTypes : nonGenericParamTypes;
             }
-            return out;
         }
     }
 
