@@ -842,6 +842,53 @@ public class SSLSocketTemplate {
                 "ySpJCheuN25AjiSyilygQdlXoWRtMggsh8EQZT7iP4V4e9m3xRHzb5ECvsSTdZB1\n" +
                 "BQMcC90W2Avq+orqgBnr2in9UEd8qwQWAhQ7rSn+WvIxeuZ/CK4p04eMe5JzpA=="),
 
+        CA_ED25519(
+                "EdDSA",
+                // ED25519
+                // Validity
+                //     Not Before: May 24 23:32:35 2020 GMT
+                //     Not After : May 22 23:32:35 2030 GMT
+                // X509v3 Authority Key Identifier:
+                //     keyid:06:76:DB:88:EB:61:55:4C:C9:63:41:C2:A0:A8:57:3F:D7:F1:B8:EC
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIByTCCAXugAwIBAgIUCyxKvhErehsygx50JYArsHby9hAwBQYDK2VwMDsxCzAJ\n" +
+                "BgNVBAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3Qg\n" +
+                "U2VyaXZjZTAeFw0yMDA1MjQyMzMyMzVaFw0zMDA1MjIyMzMyMzVaMDsxCzAJBgNV\n" +
+                "BAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2Vy\n" +
+                "aXZjZTAqMAUGAytlcAMhAKdotuYIkH8PYbopSLbaf1BtqUY2d6AbTgK2prMzQ6B3\n" +
+                "o4GQMIGNMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFAZ224jrYVVMyWNBwqCo\n" +
+                "Vz/X8bjsMB8GA1UdIwQYMBaAFAZ224jrYVVMyWNBwqCoVz/X8bjsMA4GA1UdDwEB\n" +
+                "/wQEAwIBhjAqBgNVHSUBAf8EIDAeBggrBgEFBQcDAwYIKwYBBQUHAwgGCCsGAQUF\n" +
+                "BwMJMAUGAytlcANBADVAArvME8xFigFhCCCOTBoy/4ldGkDZQ/GT3Q6xnAP558FU\n" +
+                "0G32OprKQZP43D9bmFU0LMgCVM9bHWU+bu/10AU=\n" +
+                "-----END CERTIFICATE-----",
+                "MC4CAQAwBQYDK2VwBCIEII/VYp8nu/eqq2L5y7/3IzavBgis4LWP6Rikv0N8SpgL"),
+
+        CA_ED448(
+                "EdDSA",
+                // ED448
+                // Validity
+                //     Not Before: May 24 23:23:43 2020 GMT
+                //     Not After : May 22 23:23:43 2030 GMT
+                // X509v3 Authority Key Identifier:
+                //     keyid:F5:D5:9D:FB:6F:B7:50:29:DF:F0:B8:83:10:5F:9B:C4:A8:1C:E9:F4
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIICFDCCAZSgAwIBAgIUKcmLeKilq0LN40sniBJO7F1gb/owBQYDK2VxMDsxCzAJ\n" +
+                "BgNVBAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3Qg\n" +
+                "U2VyaXZjZTAeFw0yMDA1MjQyMzIzNDNaFw0zMDA1MjIyMzIzNDNaMDsxCzAJBgNV\n" +
+                "BAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2Vy\n" +
+                "aXZjZTBDMAUGAytlcQM6APYP8iSXS8xPVDike5RgCByfTtg4GGtpYfoBtt6G5szA\n" +
+                "55ExAKjm03wtk29nEPU2mCHF2QgfBzUrgKOBkDCBjTAPBgNVHRMBAf8EBTADAQH/\n" +
+                "MB0GA1UdDgQWBBT11Z37b7dQKd/wuIMQX5vEqBzp9DAfBgNVHSMEGDAWgBT11Z37\n" +
+                "b7dQKd/wuIMQX5vEqBzp9DAOBgNVHQ8BAf8EBAMCAYYwKgYDVR0lAQH/BCAwHgYI\n" +
+                "KwYBBQUHAwMGCCsGAQUFBwMIBggrBgEFBQcDCTAFBgMrZXEDcwAlRXA2gPb52yV3\n" +
+                "MKJErjmKlYSFExj5w5jafbbd0QgI1yDs+qSaZLjQ8ljwabmLDg+KR+167m0djQDI\n" +
+                "OOoVuL7bgM0RL836KnuuBzm+gTdPp0gCXy3k9lL0KA0V2YLJHXXzu3suu+7rdgoP\n" +
+                "plCh2hWdLgA=\n" +
+                "-----END CERTIFICATE-----",
+                "MEcCAQAwBQYDK2VxBDsEOd6/hRZqkUyTlJSwdN5gO/HnoWYda1fD83YUm5j6m2Bg\n" +
+                "hAQi+QadFsQLD7R6PI/4Q0twXqlKnxU5Ug=="),
+
         EE_ECDSA_SECP256R1(
                 "EC",
                 // SHA256withECDSA, curve secp256r1
@@ -1086,7 +1133,52 @@ public class SSLSocketTemplate {
                 "yOUBSVifWtlaWYefAhUAghgC0KCuDLED/Fe9lpQewb7fXq8CgYEAwsbtBjNoma9C\n" +
                 "fA2gKPfwoUuJuxO4eic/SjptnBYc2BnpJFFzc58u58s+kKYG7n/CjRSo7aqFAwvL\n" +
                 "ZXFUAFJU3BEgtE2V0d4dtYZfcMyAYRPpCdY/L9SgMXzmiTsTm5OUBLyGgOY/o4hx\n" +
-                "sEUubQ6ssDmrc/npsDGb9cCpwjQRJTYEFgIUNRiLmNzfTYOuVsjkySPzP5gPImM=");
+                "sEUubQ6ssDmrc/npsDGb9cCpwjQRJTYEFgIUNRiLmNzfTYOuVsjkySPzP5gPImM="),
+
+        EE_ED25519(
+                "EdDSA",
+                // ED25519
+                // Validity
+                //     Not Before: May 24 23:32:36 2020 GMT
+                //     Not After : May 22 23:32:36 2030 GMT
+                // X509v3 Authority Key Identifier:
+                //     keyid:06:76:DB:88:EB:61:55:4C:C9:63:41:C2:A0:A8:57:3F:D7:F1:B8:EC
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIBlDCCAUagAwIBAgIUFTt/jcgQ65nhTG8LkrWFJhhEGuwwBQYDK2VwMDsxCzAJ\n" +
+                "BgNVBAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3Qg\n" +
+                "U2VyaXZjZTAeFw0yMDA1MjQyMzMyMzZaFw0zMDA1MjIyMzMyMzZaMFUxCzAJBgNV\n" +
+                "BAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2Vy\n" +
+                "aXZjZTEYMBYGA1UEAwwPUmVncmVzc2lvbiBUZXN0MCowBQYDK2VwAyEAGAYQmKb7\n" +
+                "WNYpVxIdsc49lI1emNjF06/Jl85zlG0wc9OjQjBAMB0GA1UdDgQWBBQkJ2E4/S8Z\n" +
+                "EIM1v9uTc0eYtYNk3zAfBgNVHSMEGDAWgBQGdtuI62FVTMljQcKgqFc/1/G47DAF\n" +
+                "BgMrZXADQQCVZnl/AyIEtZ8r45e/hcfxwuezgRX+7e9NHZFV1A/TMGcBRORDfDUi\n" +
+                "bbh72K528fjT7P4/WoXvm1zJKOAzUOUL\n" +
+                "-----END CERTIFICATE-----",
+                "MC4CAQAwBQYDK2VwBCIEIGBmdh4tfc0lng/LWokhfFLlo0ZlmTn2lbI639qou2KP"),
+
+        EE_ED448(
+                "EdDSA",
+                // ED448
+                // Validity
+                //     Not Before: May 24 23:23:43 2020 GMT
+                //     Not After : May 22 23:23:43 2030 GMT
+                // X509v3 Authority Key Identifier:
+                //     keyid:F5:D5:9D:FB:6F:B7:50:29:DF:F0:B8:83:10:5F:9B:C4:A8:1C:E9:F4
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIB3zCCAV+gAwIBAgIUNlWzFrH2+BILqM3SNYQjKoY98S8wBQYDK2VxMDsxCzAJ\n" +
+                "BgNVBAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3Qg\n" +
+                "U2VyaXZjZTAeFw0yMDA1MjQyMzIzNDNaFw0zMDA1MjIyMzIzNDNaMFUxCzAJBgNV\n" +
+                "BAYTAlVTMQ0wCwYDVQQKDARqYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2Vy\n" +
+                "aXZjZTEYMBYGA1UEAwwPUmVncmVzc2lvbiBUZXN0MEMwBQYDK2VxAzoAoIubPNAg\n" +
+                "F11u3MQ5d9wujg10+80I0xzYzTqzzXrfJNtw+eU8NbUk86xiCvlMzJRH0Oo3DbY8\n" +
+                "NAKAo0IwQDAdBgNVHQ4EFgQUUiI1+qT1x+HsDgfZRIU6hUaAbmUwHwYDVR0jBBgw\n" +
+                "FoAU9dWd+2+3UCnf8LiDEF+bxKgc6fQwBQYDK2VxA3MAx8P0mle08s5YDd/p58dt\n" +
+                "yORqvDPwo5IYPasqN8Zeen1B9u1xF/kvDGFxCJ6D9Gi4ynnDx0FZFMkA83evZcxJ\n" +
+                "+X+swt7FyHwXrdkZcvjRKEcsWhkj+0FlxYF/NZzLTGuGIPYJnRLEwf/zr+5NDxKs\n" +
+                "fCoA\n" +
+                "-----END CERTIFICATE-----",
+                "MEcCAQAwBQYDK2VxBDsEOfbhmUSuKP9WCO7Nr6JxVq5rfJESk1MNMyYhC134SiAP\n" +
+                "Suw0Cu7RZVadpfPR7Kiwb2b/JXjMdY1HAA==");
 
         final String keyAlgo;
         final String certStr;
