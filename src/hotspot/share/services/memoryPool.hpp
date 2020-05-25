@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class MemoryPool : public CHeapObj<mtInternal> {
   // max size could be changed
   virtual size_t max_size()    const       { return _max_size; }
 
-  bool is_pool(instanceHandle pool) { return pool() == _memory_pool_obj; }
+  bool is_pool(instanceHandle pool) const;
 
   bool available_for_allocation()   { return _available_for_allocation; }
   bool set_available_for_allocation(bool value) {

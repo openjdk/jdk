@@ -80,36 +80,28 @@ class oop {
   void register_oop();
   void unregister_oop();
 
-public:
-  void set_obj(const void* p)         {
-    _o = (oopDesc*)p;
+  void register_if_checking() {
     if (CheckUnhandledOops) register_oop();
   }
 
-  oop()                               { set_obj(NULL); }
-  oop(const oop& o)                   { set_obj(o.obj()); }
-  oop(const volatile oop& o)          { set_obj(o.obj()); }
-  oop(const void* p)                  { set_obj(p); }
-  ~oop()                              {
+public:
+  oop()              : _o(NULL)        { register_if_checking(); }
+  oop(const oop& o)  : _o(o._o)        { register_if_checking(); }
+  oop(const void* p) : _o((oopDesc*)p) { register_if_checking(); }
+  ~oop() {
     if (CheckUnhandledOops) unregister_oop();
   }
 
-  oopDesc* obj()  const volatile      { return _o; }
+  oopDesc* obj() const                 { return _o; }
+  oopDesc* operator->() const          { return _o; }
+  operator oopDesc* () const           { return _o; }
 
-  // General access
-  oopDesc*  operator->() const        { return obj(); }
-  bool operator==(const oop o) const  { return obj() == o.obj(); }
-  bool operator==(void *p) const      { return obj() == p; }
-  bool operator!=(const volatile oop o) const { return obj() != o.obj(); }
-  bool operator!=(void *p) const      { return obj() != p; }
+  bool operator==(const oop& o) const  { return _o == o._o; }
+  bool operator==(void *p) const       { return _o == p; }
+  bool operator!=(const oop& o) const  { return _o != o._o; }
+  bool operator!=(void *p) const       { return _o != p; }
 
-  // Assignment
-  oop& operator=(const oop& o)                            { _o = o.obj(); return *this; }
-  volatile oop& operator=(const oop& o) volatile          { _o = o.obj(); return *this; }
-  volatile oop& operator=(const volatile oop& o) volatile { _o = o.obj(); return *this; }
-
-  // Explict user conversions
-  operator oopDesc* () const volatile { return obj(); }
+  oop& operator=(const oop& o)        { _o = o._o; return *this; }
 };
 
 template<>
@@ -128,7 +120,6 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
        type##Oop() : oop() {}                                              \
        type##Oop(const type##Oop& o) : oop(o) {}                           \
        type##Oop(const oop& o) : oop(o) {}                                 \
-       type##Oop(const volatile oop& o) : oop(o) {}                        \
        type##Oop(const void* p) : oop(p) {}                                \
        operator type##OopDesc* () const { return (type##OopDesc*)obj(); }  \
        type##OopDesc* operator->() const {                                 \
@@ -136,14 +127,6 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
        }                                                                   \
        type##Oop& operator=(const type##Oop& o) {                          \
             oop::operator=(o);                                             \
-            return *this;                                                  \
-       }                                                                   \
-       volatile type##Oop& operator=(const type##Oop& o) volatile {        \
-            (void)const_cast<oop&>(oop::operator=(o));                     \
-            return *this;                                                  \
-       }                                                                   \
-       volatile type##Oop& operator=(const volatile type##Oop& o) volatile {\
-            (void)const_cast<oop&>(oop::operator=(o));                     \
             return *this;                                                  \
        }                                                                   \
    };                                                                      \

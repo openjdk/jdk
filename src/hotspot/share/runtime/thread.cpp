@@ -1665,7 +1665,7 @@ void JavaThread::initialize() {
   }
 #endif // INCLUDE_JVMCI
   _reserved_stack_activation = NULL;  // stack base not known yet
-  (void)const_cast<oop&>(_exception_oop = oop(NULL));
+  set_exception_oop(oop());
   _exception_pc  = 0;
   _exception_handler_pc = 0;
   _is_method_handle_return = 0;
@@ -2252,6 +2252,13 @@ bool JavaThread::is_lock_owned(address adr) const {
   return false;
 }
 
+oop JavaThread::exception_oop() const {
+  return Atomic::load(&_exception_oop);
+}
+
+void JavaThread::set_exception_oop(oop o) {
+  Atomic::store(&_exception_oop, o);
+}
 
 void JavaThread::add_monitor_chunk(MonitorChunk* chunk) {
   chunk->set_next(monitor_chunks());
