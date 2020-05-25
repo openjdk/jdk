@@ -160,14 +160,14 @@ endef
 ################################################################################
 
 ################################################################################
-# Setup a rule for generating a VarHandleMemoryAddress java class
+# Setup a rule for generating a memory access var handle helper classes
 # Param 1 - Variable declaration prefix
 # Param 2 - Type with first letter capitalized
-define GenerateVarHandleMemoryAddress
+define GenerateVarHandleMemoryAccess
 
   $1_Type := $2
 
-  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandleMemoryAddressAs$$($1_Type)s.java
+  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/MemoryAccessVarHandle$$($1_Type)Helper.java
 
   ifeq ($$($1_Type), Byte)
     $1_type := byte
@@ -248,7 +248,7 @@ define GenerateVarHandleMemoryAddress
     $1_ARGS += -KfloatingPoint
   endif
 
-  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleMemoryAddressView.java.template $(BUILD_TOOLS_JDK)
+  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleMemoryAccess.java.template $(BUILD_TOOLS_JDK)
 	$$(call MakeDir, $$(@D))
 	$(RM) $$@
 	$(TOOL_SPP) -nel -K$$($1_type) \
@@ -274,6 +274,6 @@ $(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), \
 # List the types to generate source for, with capitalized first letter
 VARHANDLES_MEMORY_ADDRESS_TYPES := Byte Short Char Int Long Float Double
 $(foreach t, $(VARHANDLES_MEMORY_ADDRESS_TYPES), \
-  $(eval $(call GenerateVarHandleMemoryAddress,VAR_HANDLE_MEMORY_ADDRESS_$t,$t)))
+  $(eval $(call GenerateVarHandleMemoryAccess,VAR_HANDLE_MEMORY_ADDRESS_$t,$t)))
 
 TARGETS += $(GENSRC_VARHANDLES)

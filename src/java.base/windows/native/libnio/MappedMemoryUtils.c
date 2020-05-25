@@ -27,11 +27,11 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
-#include "java_nio_MappedByteBuffer.h"
+#include "java_nio_MappedMemoryUtils.h"
 #include <stdlib.h>
 
 JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
                                          jlong len, jint numPages)
 {
     jboolean loaded = JNI_FALSE;
@@ -44,14 +44,21 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
+Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     // no madvise available
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jobject fdo,
+Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
+                                     jlong len)
+{
+    // no madvise available
+}
+
+JNIEXPORT void JNICALL
+Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void *a = (void *) jlong_to_ptr(address);

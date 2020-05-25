@@ -22,11 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.SequenceLayout;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.Spliterator;
 import java.util.SpliteratorTestHelper;
@@ -61,5 +60,14 @@ public class SpliteratorTest {
     @Test(dataProvider = "DoubleSpliterator", dataProviderClass = DoubleStreamTestDataProvider.class )
     public void testDoubleSpliterator(String name, Supplier<Spliterator.OfDouble> supplier) {
         SpliteratorTestHelper.testDoubleSpliterator(supplier);
+    }
+
+    @Test(dataProvider = "SegmentSpliterator", dataProviderClass = SegmentTestDataProvider.class )
+    public void testSegmentSpliterator(String name, SequenceLayout layout, SpliteratorTestHelper.ContentAsserter<MemorySegment> contentAsserter) {
+        try (MemorySegment segment = MemorySegment.allocateNative(layout)) {
+            SegmentTestDataProvider.initSegment(segment);
+            SpliteratorTestHelper.testSpliterator(() -> MemorySegment.spliterator(segment, layout),
+                    SegmentTestDataProvider::segmentCopier, contentAsserter);
+        }
     }
 }

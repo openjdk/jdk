@@ -25,11 +25,14 @@
  */
 package jdk.incubator.foreign;
 
+import java.lang.constant.Constable;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.stream.LongStream;
 
 /**
  * A sequence layout. A sequence layout is used to denote a repetition of a given layout, also called the sequence layout's <em>element layout</em>.
@@ -66,13 +69,13 @@ public final class SequenceLayout extends AbstractLayout {
     private final MemoryLayout elementLayout;
 
     SequenceLayout(OptionalLong elemCount, MemoryLayout elementLayout) {
-        this(elemCount, elementLayout, elementLayout.bitAlignment(), Optional.empty());
+        this(elemCount, elementLayout, elementLayout.bitAlignment(), Map.of());
     }
 
-    SequenceLayout(OptionalLong elemCount, MemoryLayout elementLayout, long alignment, Optional<String> name) {
+    SequenceLayout(OptionalLong elemCount, MemoryLayout elementLayout, long alignment, Map<String, Constable> attributes) {
         super(elemCount.isPresent() && AbstractLayout.optSize(elementLayout).isPresent() ?
                 OptionalLong.of(elemCount.getAsLong() * elementLayout.bitSize()) :
-                OptionalLong.empty(), alignment, name);
+                OptionalLong.empty(), alignment, attributes);
         this.elemCount = elemCount;
         this.elementLayout = elementLayout;
     }
@@ -104,7 +107,122 @@ public final class SequenceLayout extends AbstractLayout {
      */
     public SequenceLayout withElementCount(long elementCount) {
         AbstractLayout.checkSize(elementCount, true);
-        return new SequenceLayout(OptionalLong.of(elementCount), elementLayout, alignment, name());
+        return new SequenceLayout(OptionalLong.of(elementCount), elementLayout, alignment, attributes);
+    }
+
+    /**
+     * Returns a new sequence layout where element layouts in the flattened projection of this
+     * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts
+     * according to the provided element counts. This transformation preserves the layout size;
+     * that is, multiplying the provided element counts must yield the same element count
+     * as the flattened projection of this sequence layout.
+     * <p>
+     * For instance, given a sequence layout of the kind:
+     * <pre>{@code
+    var seq = MemoryLayout.ofSequence(4, MemoryLayout.ofSequence(3, MemoryLayouts.JAVA_INT));
+     * }</pre>
+     * calling {@code seq.reshape(2, 6)} will yield the following sequence layout:
+     * <pre>{@code
+    var reshapeSeq = MemoryLayout.ofSequence(2, MemoryLayout.ofSequence(6, MemoryLayouts.JAVA_INT));
+     * }</pre>
+     * <p>
+     * If one of the provided element count is the special value {@code -1}, then the element
+     * count in that position will be inferred from the remaining element counts and the
+     * element count of the flattened projection of this layout. For instance, a layout equivalent to
+     * the above {@code reshapeSeq} can also be computed in the following ways:
+     * <pre>{@code
+    var reshapeSeqImplicit1 = seq.reshape(-1, 6);
+    var reshapeSeqImplicit2 = seq.reshape(2, -1);
+     * }</pre>
+     * @param elementCounts an array of element counts, of which at most one can be {@code -1}.
+     * @return a new sequence layout where element layouts in the flattened projection of this
+     * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts.
+     * @throws NullPointerException if {@code elementCounts == null}.
+     * @throws UnsupportedOperationException if this sequence layout does not have an element count.
+     * @throws IllegalArgumentException if two or more element counts are set to {@code -1}, or if one
+     * or more element count is {@code <= 0} (but other than {@code -1}) or, if, after any required inference,
+     * multiplying the element counts does not yield the same element count as the flattened projection of this
+     * sequence layout.
+     */
+    public SequenceLayout reshape(long... elementCounts) {
+        Objects.requireNonNull(elementCounts);
+        if (elementCounts.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        if (!elementCount().isPresent()) {
+            throw new UnsupportedOperationException("Cannot reshape a sequence layout whose element count is unspecified");
+        }
+        SequenceLayout flat = flatten();
+        long expectedCount = flat.elementCount().getAsLong();
+
+        long actualCount = 1;
+        int inferPosition = -1;
+        for (int i = 0 ; i < elementCounts.length ; i++) {
+            if (elementCounts[i] == -1) {
+                if (inferPosition == -1) {
+                    inferPosition = i;
+                } else {
+                    throw new IllegalArgumentException("Too many unspecified element counts");
+                }
+            } else if (elementCounts[i] <= 0) {
+                throw new IllegalArgumentException("Invalid element count: " + elementCounts[i]);
+            } else {
+                actualCount = elementCounts[i] * actualCount;
+            }
+        }
+
+        // infer an unspecified element count (if any)
+        if (inferPosition != -1) {
+            long inferredCount = expectedCount / actualCount;
+            elementCounts[inferPosition] = inferredCount;
+            actualCount = actualCount * inferredCount;
+        }
+
+        if (actualCount != expectedCount) {
+            throw new IllegalArgumentException("Element counts do not match expected size: " + expectedCount);
+        }
+
+        MemoryLayout res = flat.elementLayout();
+        for (int i = elementCounts.length - 1 ; i >= 0 ; i--) {
+            res = MemoryLayout.ofSequence(elementCounts[i], res);
+        }
+        return (SequenceLayout)res;
+    }
+
+    /**
+     * Returns a new, flattened sequence layout whose element layout is the first non-sequence
+     * element layout found by recursively traversing the element layouts of this sequence layout.
+     * This transformation preserves the layout size; nested sequence layout in this sequence layout will
+     * be dropped and their element counts will be incorporated into that of the returned sequence layout.
+     * For instance, given a sequence layout of the kind:
+     * <pre>{@code
+    var seq = MemoryLayout.ofSequence(4, MemoryLayout.ofSequence(3, MemoryLayouts.JAVA_INT));
+     * }</pre>
+     * calling {@code seq.flatten()} will yield the following sequence layout:
+     * <pre>{@code
+    var flattenedSeq = MemoryLayout.ofSequence(12, MemoryLayouts.JAVA_INT);
+     * }</pre>
+     * @return a new sequence layout with the same size as this layout (but, possibly, with different
+     * element count), whose element layout is not a sequence layout.
+     * @throws UnsupportedOperationException if this sequence layout, or one of the nested sequence layouts being
+     * flattened, does not have an element count.
+     */
+    public SequenceLayout flatten() {
+        if (!elementCount().isPresent()) {
+            throw badUnboundSequenceLayout();
+        }
+        long count = elementCount().getAsLong();
+        MemoryLayout elemLayout = elementLayout();
+        while (elemLayout instanceof SequenceLayout) {
+            SequenceLayout elemSeq = (SequenceLayout)elemLayout;
+            count = count * elemSeq.elementCount().orElseThrow(this::badUnboundSequenceLayout);
+            elemLayout = elemSeq.elementLayout();
+        }
+        return MemoryLayout.ofSequence(count, elemLayout);
+    }
+
+    private UnsupportedOperationException badUnboundSequenceLayout() {
+        return new UnsupportedOperationException("Cannot flatten a sequence layout whose element count is unspecified");
     }
 
     @Override
@@ -134,8 +252,8 @@ public final class SequenceLayout extends AbstractLayout {
     }
 
     @Override
-    SequenceLayout dup(long alignment, Optional<String> name) {
-        return new SequenceLayout(elementCount(), elementLayout, alignment, name);
+    SequenceLayout dup(long alignment, Map<String, Constable> attributes) {
+        return new SequenceLayout(elementCount(), elementLayout, alignment, attributes);
     }
 
     @Override
@@ -145,11 +263,11 @@ public final class SequenceLayout extends AbstractLayout {
 
     @Override
     public Optional<DynamicConstantDesc<SequenceLayout>> describeConstable() {
-        return elemCount.isPresent() ?
-                Optional.of(DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "value",
-                        CD_SEQUENCE_LAYOUT, MH_SIZED_SEQUENCE, elemCount.getAsLong(), elementLayout.describeConstable().get())) :
-                Optional.of(DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "value",
-                        CD_SEQUENCE_LAYOUT, MH_UNSIZED_SEQUENCE, elementLayout.describeConstable().get()));
+        return Optional.of(decorateLayoutConstant(elemCount.isPresent() ?
+                DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "value",
+                        CD_SEQUENCE_LAYOUT, MH_SIZED_SEQUENCE, elemCount.getAsLong(), elementLayout.describeConstable().get()) :
+                DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "value",
+                        CD_SEQUENCE_LAYOUT, MH_UNSIZED_SEQUENCE, elementLayout.describeConstable().get())));
     }
 
     //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout
@@ -169,5 +287,13 @@ public final class SequenceLayout extends AbstractLayout {
     @Override
     public SequenceLayout withBitAlignment(long alignmentBits) {
         return (SequenceLayout)super.withBitAlignment(alignmentBits);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SequenceLayout withAttribute(String name, Constable value) {
+        return (SequenceLayout)super.withAttribute(name, value);
     }
 }

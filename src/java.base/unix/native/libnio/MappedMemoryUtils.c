@@ -27,7 +27,7 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
-#include "java_nio_MappedByteBuffer.h"
+#include "java_nio_MappedMemoryUtils.h"
 #include <assert.h>
 #include <sys/mman.h>
 #include <stddef.h>
@@ -55,7 +55,7 @@ static long calculate_number_of_pages_in_range(void* address, size_t len, size_t
 #endif
 
 JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
                                          jlong len, jint numPages)
 {
     jboolean loaded = JNI_TRUE;
@@ -104,7 +104,7 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address
 
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
+Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
@@ -114,9 +114,19 @@ Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
     }
 }
 
+JNIEXPORT void JNICALL
+Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
+                                     jlong len)
+{
+    char *a = (char *)jlong_to_ptr(address);
+    int result = madvise((caddr_t)a, (size_t)len, MADV_DONTNEED);
+    if (result == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+    }
+}
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jobject fdo,
+Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);

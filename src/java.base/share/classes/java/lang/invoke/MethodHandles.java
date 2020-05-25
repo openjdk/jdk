@@ -4609,7 +4609,7 @@ assert((int)twice.invokeExact(21) == 42);
         }
     }
 
-    private static boolean permuteArgumentChecks(int[] reorder, MethodType newType, MethodType oldType) {
+    static boolean permuteArgumentChecks(int[] reorder, MethodType newType, MethodType oldType) {
         if (newType.returnType() != oldType.returnType())
             throw newIllegalArgumentException("return types do not match",
                     oldType, newType);

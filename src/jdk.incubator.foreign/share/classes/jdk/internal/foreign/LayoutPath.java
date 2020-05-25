@@ -33,6 +33,7 @@ import sun.invoke.util.Wrapper;
 import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
+
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
 
 /**
- * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout)},
+ * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout, ToLongFunction)},
  * a path can be constructed by selecting layout elements using the selector methods provided by this class
  * (see {@link #sequenceElement()}, {@link #sequenceElement(long)}, {@link #sequenceElement(long, long)}, {@link #groupElement(String)}).
  * Once a path has been fully constructed, clients can ask for the offset associated with the layout element selected
@@ -50,7 +51,7 @@ import java.util.stream.LongStream;
  */
 public class LayoutPath {
 
-    private static JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
+    private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
 
     private final MemoryLayout layout;
     private final long offset;
@@ -140,12 +141,12 @@ public class LayoutPath {
 
         checkAlignment(this);
 
-        return JLI.memoryAddressViewVarHandle(
+        return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(
                 carrier,
                 layout.byteAlignment() - 1, //mask
                 ((ValueLayout) layout).order(),
                 Utils.bitsToBytesOrThrow(offset, IllegalStateException::new),
-                LongStream.of(strides).map(s -> Utils.bitsToBytesOrThrow(s, IllegalStateException::new)).toArray());
+                LongStream.of(strides).map(s -> Utils.bitsToBytesOrThrow(s, IllegalStateException::new)).toArray()));
     }
 
     public MemoryLayout layout() {
@@ -241,7 +242,7 @@ public class LayoutPath {
         return newStrides;
     }
 
-    private static long[] EMPTY_STRIDES = new long[0];
+    private static final long[] EMPTY_STRIDES = new long[0];
 
     /**
      * This class provides an immutable implementation for the {@code PathElement} interface. A path element implementation

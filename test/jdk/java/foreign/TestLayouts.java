@@ -32,6 +32,7 @@ import jdk.incubator.foreign.MemoryLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.function.LongFunction;
+import java.util.stream.Stream;
 
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.SequenceLayout;
@@ -176,6 +177,25 @@ public class TestLayouts {
         assertEquals(struct.byteAlignment(), 8);
     }
 
+    @Test(dataProvider="basicLayouts")
+    public void testPaddingNoAlign(MemoryLayout layout) {
+        assertEquals(MemoryLayout.ofPaddingBits(layout.bitSize()).bitAlignment(), 1);
+    }
+
+    @Test(dataProvider="basicLayouts")
+    public void testStructPaddingAndAlign(MemoryLayout layout) {
+        MemoryLayout struct = MemoryLayout.ofStruct(
+                layout, MemoryLayout.ofPaddingBits(128 - layout.bitSize()));
+        assertEquals(struct.bitAlignment(), layout.bitAlignment());
+    }
+
+    @Test(dataProvider="basicLayouts")
+    public void testUnionPaddingAndAlign(MemoryLayout layout) {
+        MemoryLayout struct = MemoryLayout.ofUnion(
+                layout, MemoryLayout.ofPaddingBits(128 - layout.bitSize()));
+        assertEquals(struct.bitAlignment(), layout.bitAlignment());
+    }
+
     @Test
     public void testUnionSizeAndAlign() {
         MemoryLayout struct = MemoryLayout.ofUnion(
@@ -186,6 +206,11 @@ public class TestLayouts {
         );
         assertEquals(struct.byteSize(), 8);
         assertEquals(struct.byteAlignment(), 8);
+    }
+
+    @Test(dataProvider = "layoutKinds")
+    public void testPadding(LayoutKind kind) {
+        assertEquals(kind == LayoutKind.PADDING, kind.layout.isPadding());
     }
 
     @Test(dataProvider="layoutsAndAlignments")
@@ -236,6 +261,13 @@ public class TestLayouts {
         return values;
     }
 
+    @DataProvider(name = "layoutKinds")
+    public Object[][] layoutsKinds() {
+        return Stream.of(LayoutKind.values())
+                .map(lk -> new Object[] { lk })
+                .toArray(Object[][]::new);
+    }
+
     enum SizedLayoutFactory {
         VALUE_LE(size -> MemoryLayout.ofValueBits(size, ByteOrder.LITTLE_ENDIAN)),
         VALUE_BE(size -> MemoryLayout.ofValueBits(size, ByteOrder.BIG_ENDIAN)),
@@ -268,17 +300,15 @@ public class TestLayouts {
         }
     }
 
+    @DataProvider(name = "basicLayouts")
+    public Object[][] basicLayouts() {
+        return Stream.of(basicLayouts)
+                .map(l -> new Object[] { l })
+                .toArray(Object[][]::new);
+    }
+
     @DataProvider(name = "layoutsAndAlignments")
     public Object[][] layoutsAndAlignments() {
-        MemoryLayout[] basicLayouts = {
-                MemoryLayouts.JAVA_BYTE,
-                MemoryLayouts.JAVA_CHAR,
-                MemoryLayouts.JAVA_SHORT,
-                MemoryLayouts.JAVA_INT,
-                MemoryLayouts.JAVA_FLOAT,
-                MemoryLayouts.JAVA_LONG,
-                MemoryLayouts.JAVA_DOUBLE,
-        };
         Object[][] layoutsAndAlignments = new Object[basicLayouts.length * 5][];
         int i = 0;
         //add basic layouts
@@ -303,4 +333,14 @@ public class TestLayouts {
         }
         return layoutsAndAlignments;
     }
+
+    static MemoryLayout[] basicLayouts = {
+            MemoryLayouts.JAVA_BYTE,
+            MemoryLayouts.JAVA_CHAR,
+            MemoryLayouts.JAVA_SHORT,
+            MemoryLayouts.JAVA_INT,
+            MemoryLayouts.JAVA_FLOAT,
+            MemoryLayouts.JAVA_LONG,
+            MemoryLayouts.JAVA_DOUBLE,
+    };
 }

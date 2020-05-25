@@ -153,6 +153,15 @@ class Direct$Type$Buffer$RW$$BO$
         att = ob;
     }
 
+    // Invoked to construct a direct ByteBuffer referring to the block of
+    // memory. A given arbitrary object may also be attached to the buffer.
+    //
+    Direct$Type$Buffer(long addr, int cap, Object ob, FileDescriptor fd, boolean isSync, MemorySegmentProxy segment) {
+        super(-1, 0, cap, cap, fd, isSync, segment);
+        address = addr;
+        cleaner = null;
+        att = ob;
+    }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
     //

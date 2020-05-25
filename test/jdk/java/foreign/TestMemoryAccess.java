@@ -23,7 +23,10 @@
 
 /*
  * @test
- * @run testng/othervm -Xverify:all TestMemoryAccess
+ * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
+ * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
+ * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
+ * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  */
 
 import jdk.incubator.foreign.GroupLayout;
@@ -81,14 +84,15 @@ public class TestMemoryAccess {
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
         MemoryAddress outer_address;
         try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout))) {
+            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
             MemoryAddress addr = segment.baseAddress();
             try {
                 checker.check(handle, addr);
-                if (segment.isReadOnly()) {
+                if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
             } catch (UnsupportedOperationException ex) {
-                if (!segment.isReadOnly()) {
+                if (!isRO) {
                     throw new AssertionError(); //we should not have failed!
                 }
                 return;
@@ -112,16 +116,17 @@ public class TestMemoryAccess {
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
         MemoryAddress outer_address;
         try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq))) {
+            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
             MemoryAddress addr = segment.baseAddress();
             try {
                 for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
                     checker.check(handle, addr, i);
                 }
-                if (segment.isReadOnly()) {
+                if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
             } catch (UnsupportedOperationException ex) {
-                if (!segment.isReadOnly()) {
+                if (!isRO) {
                     throw new AssertionError(); //we should not have failed!
                 }
                 return;
@@ -180,6 +185,7 @@ public class TestMemoryAccess {
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
         MemoryAddress outer_address;
         try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq))) {
+            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
             MemoryAddress addr = segment.baseAddress();
             try {
                 for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
@@ -187,11 +193,11 @@ public class TestMemoryAccess {
                         checker.check(handle, addr, i, j);
                     }
                 }
-                if (segment.isReadOnly()) {
+                if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
             } catch (UnsupportedOperationException ex) {
-                if (!segment.isReadOnly()) {
+                if (!isRO) {
                     throw new AssertionError(); //we should not have failed!
                 }
                 return;
@@ -214,7 +220,7 @@ public class TestMemoryAccess {
     }
 
     static Function<MemorySegment, MemorySegment> ID = Function.identity();
-    static Function<MemorySegment, MemorySegment> IMMUTABLE = MemorySegment::asReadOnly;
+    static Function<MemorySegment, MemorySegment> IMMUTABLE = ms -> ms.withAccessModes(MemorySegment.READ | MemorySegment.CLOSE);
 
     @DataProvider(name = "elements")
     public Object[][] createData() {

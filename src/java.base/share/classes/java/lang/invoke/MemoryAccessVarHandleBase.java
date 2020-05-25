@@ -28,7 +28,7 @@ package java.lang.invoke;
 /**
  * Base class for memory access var handle implementations.
  */
-abstract class VarHandleMemoryAddressBase extends VarHandle {
+abstract class MemoryAccessVarHandleBase extends VarHandle {
 
     /** endianness **/
     final boolean be;
@@ -42,7 +42,7 @@ abstract class VarHandleMemoryAddressBase extends VarHandle {
     /** alignment constraint (in bytes, expressed as a bit mask) **/
     final long alignmentMask;
 
-    VarHandleMemoryAddressBase(VarForm form, boolean be, long length, long offset, long alignmentMask) {
+    MemoryAccessVarHandleBase(VarForm form, boolean be, long length, long offset, long alignmentMask) {
         super(form);
         this.be = be;
         this.length = length;
