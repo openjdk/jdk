@@ -488,6 +488,7 @@ void trace_method_handle_stub(const char* adaptername,
   if (last_sp != saved_sp && last_sp != NULL)
     tty->print_cr("*** last_sp=" INTPTR_FORMAT, p2i(last_sp));
   if (Verbose) {
+    ResourceMark rm;
     tty->print(" reg dump: ");
     int i;
     for (i = 0; i < trace_mh_nregs; i++) {
@@ -497,44 +498,43 @@ void trace_method_handle_stub(const char* adaptername,
       tty->print(" %s: " INTPTR_FORMAT, reg_name, p2i((void *)saved_regs[i]));
     }
     tty->cr();
-  }
 
-  if (Verbose) {
-    // dump last frame (from JavaThread::print_frame_layout)
+    {
+      // dump last frame (from JavaThread::print_frame_layout)
 
-    // Note: code is robust but the dumped informationm may not be
-    // 100% correct, particularly with respect to the dumped
-    // "unextended_sp". Getting it right for all trace_method_handle
-    // call paths is not worth the complexity/risk. The correct slot
-    // will be identified by *Rsender_sp anyway in the dump.
-    JavaThread* p = JavaThread::active();
+      // Note: code is robust but the dumped informationm may not be
+      // 100% correct, particularly with respect to the dumped
+      // "unextended_sp". Getting it right for all trace_method_handle
+      // call paths is not worth the complexity/risk. The correct slot
+      // will be identified by *Rsender_sp anyway in the dump.
+      JavaThread* p = JavaThread::active();
 
-    ResourceMark rm;
-    PRESERVE_EXCEPTION_MARK;
-    FrameValues values;
+      PRESERVE_EXCEPTION_MARK;
+      FrameValues values;
 
-    intptr_t* dump_fp = (intptr_t *) saved_bp;
-    address dump_pc = (address) saved_regs[trace_mh_nregs-2]; // LR (with LR,PC last in saved_regs)
-    frame dump_frame((intptr_t *)entry_sp, dump_fp, dump_pc);
+      intptr_t* dump_fp = (intptr_t *) saved_bp;
+      address dump_pc = (address) saved_regs[trace_mh_nregs-2]; // LR (with LR,PC last in saved_regs)
+      frame dump_frame((intptr_t *)entry_sp, dump_fp, dump_pc);
 
-    dump_frame.describe(values, 1);
-    // mark Rsender_sp if seems valid
-    if (has_mh) {
-      if ((saved_sp >= entry_sp - UNREASONABLE_STACK_MOVE) && (saved_sp < dump_fp)) {
-        values.describe(-1, saved_sp, "*Rsender_sp");
+      dump_frame.describe(values, 1);
+      // mark Rsender_sp if seems valid
+      if (has_mh) {
+        if ((saved_sp >= entry_sp - UNREASONABLE_STACK_MOVE) && (saved_sp < dump_fp)) {
+          values.describe(-1, saved_sp, "*Rsender_sp");
+        }
       }
+
+      // Note: the unextended_sp may not be correct
+      tty->print_cr("  stack layout:");
+      values.print(p);
     }
 
-    // Note: the unextended_sp may not be correct
-    tty->print_cr("  stack layout:");
-    values.print(p);
-  }
-  if (Verbose) {
     if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0)
+        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0) {
           java_lang_invoke_MethodHandle::form(mh)->print();
+        }
       }
     }
   }
