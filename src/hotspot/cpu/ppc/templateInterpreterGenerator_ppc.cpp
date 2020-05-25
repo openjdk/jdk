@@ -216,7 +216,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   __ bind(do_dontreachhere);
 
-  __ unimplemented("ShouldNotReachHere in slow_signature_handler", 120);
+  __ unimplemented("ShouldNotReachHere in slow_signature_handler");
 
   __ bind(do_array);
 
@@ -834,12 +834,12 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   Label frame_not_shrunk;
   __ cmpld(CCR0, R1_SP, R21_sender_SP);
   __ ble(CCR0, frame_not_shrunk);
-  __ stop("frame shrunk", 0x546);
+  __ stop("frame shrunk");
   __ bind(frame_not_shrunk);
   __ ld(Rscratch1, 0, R1_SP);
   __ ld(R0, 0, R21_sender_SP);
   __ cmpd(CCR0, R0, Rscratch1);
-  __ asm_assert_eq("backlink", 0x547);
+  __ asm_assert_eq("backlink");
 #endif // ASSERT
   __ mr(R1_SP, R21_sender_SP);
   __ bctr();
@@ -1726,7 +1726,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     Label Lok;
     __ lwz(R0, in_bytes(Method::access_flags_offset()), R19_method);
     __ andi_(R0, R0, JVM_ACC_SYNCHRONIZED);
-    __ asm_assert_eq("method needs synchronization", 0x8521);
+    __ asm_assert_eq("method needs synchronization");
     __ bind(Lok);
   }
 #endif // ASSERT

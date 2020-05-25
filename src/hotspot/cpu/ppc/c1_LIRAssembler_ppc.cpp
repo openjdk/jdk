@@ -3086,7 +3086,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   } else {
     __ cmpdi(CCR0, obj, 0);
     __ bne(CCR0, Lupdate);
-    __ stop("unexpect null obj", 0x9652);
+    __ stop("unexpect null obj");
 #endif
   }
 
@@ -3103,7 +3103,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       metadata2reg(exact_klass->constant_encoding(), R0);
       __ cmpd(CCR0, klass, R0);
       __ beq(CCR0, ok);
-      __ stop("exact klass and actual klass differ", 0x8564);
+      __ stop("exact klass and actual klass differ");
       __ bind(ok);
     }
 #endif
@@ -3170,7 +3170,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
           __ clrrdi_(R0, tmp, exact_log2(-TypeEntries::type_mask));
           __ beq(CCR0, ok); // First time here.
 
-          __ stop("unexpected profiling mismatch", 0x7865);
+          __ stop("unexpected profiling mismatch");
           __ bind(ok);
         }
 #endif

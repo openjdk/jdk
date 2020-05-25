@@ -294,7 +294,7 @@ void C1_MacroAssembler::initialize_object(
     } else {
       cmpwi(CCR0, t1, con_size_in_bytes);
     }
-    asm_assert_eq("bad size in initialize_object", 0x753);
+    asm_assert_eq("bad size in initialize_object");
   }
 #endif
 

@@ -164,6 +164,8 @@ void Disassembler::annotate(address here, outputStream* st) {
   const uint pos         = st->position();
   const uint aligned_pos = ((pos+tabspacing-1)/tabspacing)*tabspacing;
 
+  int stop_type = -1;
+
   if (MacroAssembler::is_bcxx(instruction)) {
     st->print(",bo=0b");
     print_instruction_bits(st, instruction, 6, 10);
@@ -180,9 +182,6 @@ void Disassembler::annotate(address here, outputStream* st) {
     print_decoded_bh_bits(st, instruction, 20,
                           !(MacroAssembler::is_bctr(instruction) ||
                             MacroAssembler::is_bctrl(instruction)));
-  } else if (MacroAssembler::is_trap_should_not_reach_here(instruction)) {
-    st->fill_to(aligned_pos + tabspacing);
-    st->print(";trap: should not reach here");
   } else if (MacroAssembler::is_trap_null_check(instruction)) {
     st->fill_to(aligned_pos + tabspacing);
     st->print(";trap: null check");
@@ -192,8 +191,8 @@ void Disassembler::annotate(address here, outputStream* st) {
   } else if (MacroAssembler::is_trap_ic_miss_check(instruction)) {
     st->fill_to(aligned_pos + tabspacing);
     st->print(";trap: ic miss check");
-  } else if (MacroAssembler::is_trap_zombie_not_entrant(instruction)) {
+  } else if ((stop_type = MacroAssembler::tdi_get_si16(instruction, Assembler::traptoUnconditional, 0)) != -1) {
     st->fill_to(aligned_pos + tabspacing);
-    st->print(";trap: zombie");
+    st->print(";trap: stop type %d", stop_type);
   }
 }

@@ -673,12 +673,6 @@ class MacroAssembler: public Assembler {
            is_tdi(x, traptoGreaterThanUnsigned, -1/*any reg*/, 0);
   }
 
-  inline void trap_zombie_not_entrant();
-  static bool is_trap_zombie_not_entrant(int x) { return is_tdi(x, traptoUnconditional, 0/*reg 0*/, 1); }
-
-  inline void trap_should_not_reach_here();
-  static bool is_trap_should_not_reach_here(int x) { return is_tdi(x, traptoUnconditional, 0/*reg 0*/, 2); }
-
   inline void trap_ic_miss_check(Register a, Register b);
   static bool is_trap_ic_miss_check(int x) {
     return is_td(x, traptoGreaterThanUnsigned | traptoLessThanUnsigned, -1/*any reg*/, -1/*any reg*/);
@@ -863,21 +857,21 @@ class MacroAssembler: public Assembler {
   //
 
   // assert on cr0
-  void asm_assert(bool check_equal, const char* msg, int id);
-  void asm_assert_eq(const char* msg, int id) { asm_assert(true, msg, id); }
-  void asm_assert_ne(const char* msg, int id) { asm_assert(false, msg, id); }
+  void asm_assert(bool check_equal, const char* msg);
+  void asm_assert_eq(const char* msg) { asm_assert(true, msg); }
+  void asm_assert_ne(const char* msg) { asm_assert(false, msg); }
 
  private:
   void asm_assert_mems_zero(bool check_equal, int size, int mem_offset, Register mem_base,
-                            const char* msg, int id);
+                            const char* msg);
 
  public:
 
-  void asm_assert_mem8_is_zero(int mem_offset, Register mem_base, const char* msg, int id) {
-    asm_assert_mems_zero(true,  8, mem_offset, mem_base, msg, id);
+  void asm_assert_mem8_is_zero(int mem_offset, Register mem_base, const char* msg) {
+    asm_assert_mems_zero(true,  8, mem_offset, mem_base, msg);
   }
-  void asm_assert_mem8_isnot_zero(int mem_offset, Register mem_base, const char* msg, int id) {
-    asm_assert_mems_zero(false, 8, mem_offset, mem_base, msg, id);
+  void asm_assert_mem8_isnot_zero(int mem_offset, Register mem_base, const char* msg) {
+    asm_assert_mems_zero(false, 8, mem_offset, mem_base, msg);
   }
 
   // Verify R16_thread contents.
@@ -903,22 +897,21 @@ class MacroAssembler: public Assembler {
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
  private:
+  void stop(int type, const char* msg);
 
+ public:
   enum {
     stop_stop                = 0,
     stop_untested            = 1,
     stop_unimplemented       = 2,
-    stop_shouldnotreachhere  = 3,
-    stop_end                 = 4
+    stop_shouldnotreachhere  = 3
   };
-  void stop(int type, const char* msg, int id);
 
- public:
   // Prints msg, dumps registers and stops execution.
-  void stop         (const char* msg = "", int id = 0) { stop(stop_stop,               msg, id); }
-  void untested     (const char* msg = "", int id = 0) { stop(stop_untested,           msg, id); }
-  void unimplemented(const char* msg = "", int id = 0) { stop(stop_unimplemented,      msg, id); }
-  void should_not_reach_here()                         { stop(stop_shouldnotreachhere,  "", -1); }
+  void stop         (const char* msg = NULL) { stop(stop_stop,               msg ); }
+  void untested     (const char* msg = NULL) { stop(stop_untested,           msg ); }
+  void unimplemented(const char* msg = NULL) { stop(stop_unimplemented,      msg ); }
+  void should_not_reach_here()               { stop(stop_shouldnotreachhere, NULL); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
 };

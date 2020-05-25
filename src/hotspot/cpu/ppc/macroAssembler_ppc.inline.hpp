@@ -281,12 +281,6 @@ inline void MacroAssembler::trap_null_check(Register a, trap_to_bits cmp) {
   assert(TrapBasedNullChecks, "sanity");
   tdi(cmp, a/*reg a*/, 0);
 }
-inline void MacroAssembler::trap_zombie_not_entrant() {
-  tdi(traptoUnconditional, 0/*reg 0*/, 1);
-}
-inline void MacroAssembler::trap_should_not_reach_here() {
-  tdi_unchecked(traptoUnconditional, 0/*reg 0*/, 2);
-}
 
 inline void MacroAssembler::trap_ic_miss_check(Register a, Register b) {
   td(traptoGreaterThanUnsigned | traptoLessThanUnsigned, a, b);

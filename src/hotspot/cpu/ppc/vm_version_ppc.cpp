@@ -102,9 +102,7 @@ void VM_Version::initialize() {
 
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
-    MSG(TrapBasedNotEntrantChecks);
     MSG(TrapBasedNullChecks);
-    FLAG_SET_ERGO(TrapBasedNotEntrantChecks, false);
     FLAG_SET_ERGO(TrapBasedNullChecks,       false);
     FLAG_SET_ERGO(TrapBasedICMissChecks,     false);
   }

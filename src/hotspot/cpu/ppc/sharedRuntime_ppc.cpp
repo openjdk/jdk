@@ -2345,7 +2345,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     RegisterSaver::restore_argument_registers_and_pop_frame(masm, frame_size, total_c_args, out_regs, out_regs2);
 
     __ asm_assert_mem8_is_zero(thread_(pending_exception),
-       "no pending exception allowed on exit from SharedRuntime::complete_monitor_locking_C", 0);
+       "no pending exception allowed on exit from SharedRuntime::complete_monitor_locking_C");
 
     __ bind(locked);
   }
@@ -2558,7 +2558,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C), r_oop, r_box, R16_thread);
 
     __ asm_assert_mem8_is_zero(thread_(pending_exception),
-       "no pending exception allowed on exit from SharedRuntime::complete_monitor_unlocking_C", 0);
+       "no pending exception allowed on exit from SharedRuntime::complete_monitor_unlocking_C");
 
     restore_native_result(masm, ret_type, workspace_slot_offset);
 
@@ -2772,7 +2772,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 #ifdef ASSERT
   // Make sure that there is at least one entry in the array.
   __ cmpdi(CCR0, number_of_frames_reg, 0);
-  __ asm_assert_ne("array_size must be > 0", 0x205);
+  __ asm_assert_ne("array_size must be > 0");
 #endif
 
   // Now push the new interpreter frames.
@@ -3084,7 +3084,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   __ lwz(R22_tmp2, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), unroll_block_reg);
   __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
 #endif
 
   // Allocate new interpreter frame(s) and possibly a c2i adapter

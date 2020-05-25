@@ -796,10 +796,10 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
   // empty before writing to them.
   __ ld(R0, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
   __ cmpdi(CCR0, R0, 0);
-  __ asm_assert_eq("exception oop already set", 0x963);
+  __ asm_assert_eq("exception oop already set");
   __ ld(R0, in_bytes(JavaThread::exception_pc_offset() ), R16_thread);
   __ cmpdi(CCR0, R0, 0);
-  __ asm_assert_eq("exception pc already set", 0x962);
+  __ asm_assert_eq("exception pc already set");
 #endif
 
   // Save the exception and issuing pc in the thread.

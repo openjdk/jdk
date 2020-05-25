@@ -902,7 +902,7 @@ void MacroAssembler::resize_frame(Register offset, Register tmp) {
 #ifdef ASSERT
   assert_different_registers(offset, tmp, R1_SP);
   andi_(tmp, offset, frame::alignment_in_bytes-1);
-  asm_assert_eq("resize_frame: unaligned", 0x204);
+  asm_assert_eq("resize_frame: unaligned");
 #endif
 
   // tmp <- *(SP)
@@ -941,7 +941,7 @@ void MacroAssembler::push_frame(Register bytes, Register tmp) {
 #ifdef ASSERT
   assert(bytes != R0, "r0 not allowed here");
   andi_(R0, bytes, frame::alignment_in_bytes-1);
-  asm_assert_eq("push_frame(Reg, Reg): unaligned", 0x203);
+  asm_assert_eq("push_frame(Reg, Reg): unaligned");
 #endif
   neg(tmp, bytes);
   stdux(R1_SP, R1_SP, tmp);
@@ -2313,7 +2313,7 @@ void MacroAssembler::tlab_allocate(
     Label L;
     andi_(R0, new_top, MinObjAlignmentInBytesMask);
     beq(CCR0, L);
-    stop("updated TLAB free is not properly aligned", 0x934);
+    stop("updated TLAB free is not properly aligned");
     bind(L);
   }
 #endif // ASSERT
@@ -2792,7 +2792,7 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
     ld(mark_word, oopDesc::mark_offset_in_bytes(), obj);
 #ifdef ASSERT
     andi_(R0, mark_word, markWord::monitor_value);
-    asm_assert_ne("must be inflated", 0xa754); // Deflating only allowed at safepoint.
+    asm_assert_ne("must be inflated"); // Deflating only allowed at safepoint.
 #endif
     addi(owner_addr_Reg, mark_word, owner_offset);
   }
@@ -2929,7 +2929,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Invariant 1: _recursions should be 0.
   //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
   asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
-                            "monitor->_recursions should be 0", -1);
+                            "monitor->_recursions should be 0");
 # endif
 
 #if INCLUDE_RTM_OPT
@@ -3058,7 +3058,7 @@ void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Ja
 
   // Verify that last_Java_pc was zeroed on return to Java
   asm_assert_mem8_is_zero(in_bytes(JavaThread::last_Java_pc_offset()), R16_thread,
-                          "last_Java_pc not zeroed before leaving Java", 0x200);
+                          "last_Java_pc not zeroed before leaving Java");
 
   // When returning from calling out from Java mode the frame anchor's
   // last_Java_pc will always be set to NULL. It is set here so that
@@ -3074,7 +3074,7 @@ void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Ja
 
 void MacroAssembler::reset_last_Java_frame(void) {
   asm_assert_mem8_isnot_zero(in_bytes(JavaThread::last_Java_sp_offset()),
-                             R16_thread, "SP was not set, still zero", 0x202);
+                             R16_thread, "SP was not set, still zero");
 
   BLOCK_COMMENT("reset_last_Java_frame {");
   li(R0, 0);
@@ -4327,7 +4327,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   bind(L_done);
 }   // multiply_to_len
 
-void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
+void MacroAssembler::asm_assert(bool check_equal, const char *msg) {
 #ifdef ASSERT
   Label ok;
   if (check_equal) {
@@ -4335,13 +4335,13 @@ void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
   } else {
     bne(CCR0, ok);
   }
-  stop(msg, id);
+  stop(msg);
   bind(ok);
 #endif
 }
 
 void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_offset,
-                                          Register mem_base, const char* msg, int id) {
+                                          Register mem_base, const char* msg) {
 #ifdef ASSERT
   switch (size) {
     case 4:
@@ -4355,7 +4355,7 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_of
     default:
       ShouldNotReachHere();
   }
-  asm_assert(check_equal, msg, id);
+  asm_assert(check_equal, msg);
 #endif // ASSERT
 }
 
@@ -4430,32 +4430,20 @@ void MacroAssembler::verify_oop_addr(RegisterOrConstant offs, Register base, con
   restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
 }
 
-const char* stop_types[] = {
-  "stop",
-  "untested",
-  "unimplemented",
-  "shouldnotreachhere"
-};
-
-static void stop_on_request(int tp, const char* msg) {
-  tty->print("PPC assembly code requires stop: (%s) %s\n", stop_types[tp%/*stop_end*/4], msg);
-  guarantee(false, "PPC assembly code requires stop: %s", msg);
-}
-
 // Call a C-function that prints output.
-void MacroAssembler::stop(int type, const char* msg, int id) {
+void MacroAssembler::stop(int type, const char* msg) {
 #ifndef PRODUCT
-  block_comment(err_msg("stop: %s %s {", stop_types[type%stop_end], msg));
+  block_comment(err_msg("stop(type %d): %s {", type, msg));
 #else
   block_comment("stop {");
 #endif
 
-  // setup arguments
-  load_const_optimized(R3_ARG1, type);
-  load_const_optimized(R4_ARG2, (void *)msg, /*tmp=*/R0);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, stop_on_request), R3_ARG1, R4_ARG2);
-  illtrap();
-  emit_int32(id);
+  if (type != stop_shouldnotreachhere) {
+    // Use R0 to pass msg. "shouldnotreachhere" preserves R0.
+    load_const_optimized(R0, (void*)msg);
+  }
+  tdi_unchecked(traptoUnconditional, 0/*reg 0*/, type);
+
   block_comment("} stop;");
 }
 
