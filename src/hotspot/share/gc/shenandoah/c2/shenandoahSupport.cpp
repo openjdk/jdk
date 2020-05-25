@@ -924,9 +924,16 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
 
   Node* raw_val        = new CastP2XNode(old_ctrl, val);
   Node* cset_idx       = new URShiftXNode(raw_val, igvn.intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint()));
-  Node* cset_addr      = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
-  Node* cset_load_addr = new AddPNode(phase->C->top(), cset_addr, cset_idx);
-  Node* cset_load      = new LoadBNode(old_ctrl, raw_mem, cset_load_addr,
+
+  // Figure out the target cset address with raw pointer math.
+  // This avoids matching AddP+LoadB that would emit inefficient code.
+  // See JDK-8245465.
+  Node* cset_addr_ptr  = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
+  Node* cset_addr      = new CastP2XNode(old_ctrl, cset_addr_ptr);
+  Node* cset_load_addr = new AddXNode(cset_addr, cset_idx);
+  Node* cset_load_ptr  = new CastX2PNode(cset_load_addr);
+
+  Node* cset_load      = new LoadBNode(old_ctrl, raw_mem, cset_load_ptr,
                                        DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(NULL),
                                        TypeInt::BYTE, MemNode::unordered);
   Node* cset_cmp       = new CmpINode(cset_load, igvn.zerocon(T_INT));
@@ -941,11 +948,13 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_control(ctrl,          loop, cset_iff);
   phase->register_control(not_cset_ctrl, loop, cset_iff);
 
-  phase->set_ctrl(cset_addr, phase->C->root());
+  phase->set_ctrl(cset_addr_ptr, phase->C->root());
 
   phase->register_new_node(raw_val,        old_ctrl);
   phase->register_new_node(cset_idx,       old_ctrl);
+  phase->register_new_node(cset_addr,      old_ctrl);
   phase->register_new_node(cset_load_addr, old_ctrl);
+  phase->register_new_node(cset_load_ptr,  old_ctrl);
   phase->register_new_node(cset_load,      old_ctrl);
   phase->register_new_node(cset_cmp,       old_ctrl);
   phase->register_new_node(cset_bool,      old_ctrl);
