@@ -156,6 +156,9 @@ final class ConstantMap {
     }
 
     public void put(long key, Object value) {
+        if (objects.hasKey(key)) {
+            objects.clearId(key);
+        }
         objects.put(key, value);
     }
 

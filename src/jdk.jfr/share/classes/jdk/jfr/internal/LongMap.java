@@ -77,6 +77,13 @@ public final class LongMap<T> {
         bitSet.set(bitSetIndex, false);
     }
 
+    public void clearId(long id) {
+        int bitSetIndex = bitSetIndex(tableIndexOf(id), 0);
+        for (int i = 0; i < bitCount; i++) {
+            bitSet.set(bitSetIndex + i, false);
+        }
+    }
+
     public boolean isSetId(long id, int bitIndex) {
         int bitSetIndex = bitSetIndex(tableIndexOf(id), bitIndex);
         return bitSet.get(bitSetIndex);
@@ -103,6 +110,9 @@ public final class LongMap<T> {
     }
 
     public boolean hasKey(long id) {
+        if (keys == EMPTY_KEYS) {
+            return false;
+        }
         int index = index(id);
         while (true) {
             if (objects[index] == null) {
