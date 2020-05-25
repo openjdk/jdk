@@ -977,7 +977,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   StubCodeMark mark(cgen, "StubRoutines", "shenandoah_lrb");
   address start = __ pc();
 
-  Label resolve_oop, slow_path;
+  Label slow_path;
 
   // We use RDI, which also serves as argument register for slow call.
   // RAX always holds the src object ptr, except after the slow call,
@@ -995,25 +995,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
   __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
   __ testbool(tmp2);
-  __ jccb(Assembler::notZero, resolve_oop);
-  __ pop(tmp2);
-  __ pop(tmp1);
-  __ ret(0);
-
-  // Test if object is already resolved.
-  __ bind(resolve_oop);
-  __ movptr(tmp2, Address(rax, oopDesc::mark_offset_in_bytes()));
-  // Test if both lowest bits are set. We trick it by negating the bits
-  // then test for both bits clear.
-  __ notptr(tmp2);
-  __ testb(tmp2, markWord::marked_value);
   __ jccb(Assembler::notZero, slow_path);
-  // Clear both lower bits. It's still inverted, so set them, and then invert back.
-  __ orptr(tmp2, markWord::marked_value);
-  __ notptr(tmp2);
-  // At this point, tmp2 contains the decoded forwarding pointer.
-  __ mov(rax, tmp2);
-
   __ pop(tmp2);
   __ pop(tmp1);
   __ ret(0);
