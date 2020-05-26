@@ -118,10 +118,10 @@ Java_TestNative_getCapacity(JNIEnv *env, jclass cls, jobject buf) {
 
 JNIEXPORT jlong JNICALL
 Java_TestNative_allocate(JNIEnv *env, jclass cls, jint size) {
-    return (jlong)malloc(size);
+    return (jlong)(uintptr_t)malloc(size);
 }
 
 JNIEXPORT void JNICALL
 Java_TestNative_free(JNIEnv *env, jclass cls, jlong ptr) {
-    free((void*) ptr);
+    free((void*)(uintptr_t)ptr);
 }
