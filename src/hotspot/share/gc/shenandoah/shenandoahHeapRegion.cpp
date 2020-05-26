@@ -626,6 +626,9 @@ void ShenandoahHeapRegion::do_commit() {
   if (!heap->commit_bitmap_slice(this)) {
     report_java_out_of_memory("Unable to commit bitmaps for region");
   }
+  if (AlwaysPreTouch) {
+    os::pretouch_memory(bottom(), end(), heap->pretouch_heap_page_size());
+  }
   heap->increase_committed(ShenandoahHeapRegion::region_size_bytes());
 }
 

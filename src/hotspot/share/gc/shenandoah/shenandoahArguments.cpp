@@ -148,13 +148,6 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
   }
 
-  if (AlwaysPreTouch) {
-    if (!FLAG_IS_DEFAULT(ShenandoahUncommit)) {
-      warning("AlwaysPreTouch is enabled, disabling ShenandoahUncommit");
-    }
-    FLAG_SET_DEFAULT(ShenandoahUncommit, false);
-  }
-
   if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
     log_info(gc)("Min heap equals to max heap, disabling ShenandoahUncommit");
     FLAG_SET_DEFAULT(ShenandoahUncommit, false);
