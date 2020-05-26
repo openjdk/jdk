@@ -41,11 +41,9 @@ public:
 
   virtual bool should_unload_classes();
 
-  virtual const char* name();
-
-  virtual bool is_diagnostic();
-
-  virtual bool is_experimental();
+  virtual const char* name()     { return "Aggressive"; }
+  virtual bool is_diagnostic()   { return true; }
+  virtual bool is_experimental() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEHEURISTICS_HPP

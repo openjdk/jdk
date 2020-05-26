@@ -39,11 +39,9 @@ public:
                                                      RegionData* data, size_t size,
                                                      size_t free);
 
-  virtual const char* name();
-
-  virtual bool is_diagnostic();
-
-  virtual bool is_experimental();
+  virtual const char* name()     { return "Static"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSTATICHEURISTICS_HPP

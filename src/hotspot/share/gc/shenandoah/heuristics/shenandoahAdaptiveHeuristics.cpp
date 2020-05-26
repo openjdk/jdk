@@ -161,15 +161,3 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
 
   return ShenandoahHeuristics::should_start_gc();
 }
-
-const char* ShenandoahAdaptiveHeuristics::name() {
-  return "adaptive";
-}
-
-bool ShenandoahAdaptiveHeuristics::is_diagnostic() {
-  return false;
-}
-
-bool ShenandoahAdaptiveHeuristics::is_experimental() {
-  return false;
-}

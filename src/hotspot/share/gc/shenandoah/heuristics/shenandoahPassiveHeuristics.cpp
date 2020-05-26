@@ -78,15 +78,3 @@ void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(Shenando
     }
   }
 }
-
-const char* ShenandoahPassiveHeuristics::name() {
-  return "passive";
-}
-
-bool ShenandoahPassiveHeuristics::is_diagnostic() {
-  return true;
-}
-
-bool ShenandoahPassiveHeuristics::is_experimental() {
-  return false;
-}
