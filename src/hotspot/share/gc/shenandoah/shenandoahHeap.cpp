@@ -46,6 +46,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
@@ -404,13 +405,10 @@ jint ShenandoahHeap::initialize() {
 
   _control_thread = new ShenandoahControlThread();
 
-  log_info(gc, init)("Initialize Shenandoah heap: " SIZE_FORMAT "%s initial, " SIZE_FORMAT "%s min, " SIZE_FORMAT "%s max",
-                     byte_size_in_proper_unit(_initial_size),  proper_unit_for_byte_size(_initial_size),
-                     byte_size_in_proper_unit(_minimum_size),  proper_unit_for_byte_size(_minimum_size),
-                     byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity())
-  );
+  _ref_proc_mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
+  _ref_proc_mt_discovery = _max_workers > 1;
 
-  log_info(gc, init)("Safepointing mechanism: thread-local poll");
+  ShenandoahInitLogger::print();
 
   return JNI_OK;
 }
@@ -440,8 +438,6 @@ void ShenandoahHeap::initialize_heuristics() {
             err_msg("GC mode \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
                     _gc_mode->name()));
   }
-  log_info(gc, init)("Shenandoah GC mode: %s",
-                     _gc_mode->name());
 
   _heuristics = _gc_mode->initialize_heuristics();
 
@@ -455,8 +451,6 @@ void ShenandoahHeap::initialize_heuristics() {
             err_msg("Heuristics \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
                     _heuristics->name()));
   }
-  log_info(gc, init)("Shenandoah heuristics: %s",
-                     _heuristics->name());
 }
 
 #ifdef _MSC_VER
@@ -504,8 +498,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _collection_set(NULL)
 {
   _heap = this;
-
-  log_info(gc, init)("GC threads: " UINT32_FORMAT " parallel, " UINT32_FORMAT " concurrent", ParallelGCThreads, ConcGCThreads);
 
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
@@ -2152,22 +2144,15 @@ void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
 void ShenandoahHeap::ref_processing_init() {
   assert(_max_workers > 0, "Sanity");
 
-  bool mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
-  bool mt_discovery = _max_workers > 1;
-
   _ref_processor =
     new ReferenceProcessor(&_subject_to_discovery,  // is_subject_to_discovery
-                           mt_processing,           // MT processing
+                           _ref_proc_mt_processing, // MT processing
                            _max_workers,            // Degree of MT processing
-                           mt_discovery,            // MT discovery
+                           _ref_proc_mt_discovery,  // MT discovery
                            _max_workers,            // Degree of MT discovery
                            false,                   // Reference discovery is not atomic
                            NULL,                    // No closure, should be installed before use
                            true);                   // Scale worker threads
-
-  log_info(gc, init)("Reference processing: %s discovery, %s processing",
-          mt_discovery ? "parallel" : "serial",
-          mt_processing ? "parallel" : "serial");
 
   shenandoah_assert_rp_isalive_not_installed();
 }

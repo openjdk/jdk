@@ -457,6 +457,7 @@ private:
 
 public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
+  ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
   ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
@@ -496,11 +497,15 @@ private:
   AlwaysTrueClosure    _subject_to_discovery;
   ReferenceProcessor*  _ref_processor;
   ShenandoahSharedFlag _process_references;
+  bool                 _ref_proc_mt_discovery;
+  bool                 _ref_proc_mt_processing;
 
   void ref_processing_init();
 
 public:
   ReferenceProcessor* ref_processor() { return _ref_processor; }
+  bool ref_processor_mt_discovery()   { return _ref_proc_mt_discovery;  }
+  bool ref_processor_mt_processing()  { return _ref_proc_mt_processing; }
   void set_process_references(bool pr);
   bool process_references() const;
 
