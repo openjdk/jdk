@@ -94,8 +94,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _rs_length_seq(new TruncatedSeq(TruncatedSeqLength)),
     _cost_per_byte_ms_during_cm_seq(new TruncatedSeq(TruncatedSeqLength)),
     _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
-    _recent_avg_pause_time_ratio(0.0),
-    _last_pause_time_ratio(0.0) {
+    _long_term_pause_time_ratio(0.0),
+    _short_term_pause_time_ratio(0.0) {
 
   // Seed sequences with initial values.
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
@@ -150,17 +150,16 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
 }
 
 void G1Analytics::compute_pause_time_ratio(double interval_ms, double pause_time_ms) {
-  _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum() / interval_ms;
-
-  // Clamp the result to [0.0 ... 1.0] to filter out nonsensical results due to bad input.
-  _recent_avg_pause_time_ratio = clamp(_recent_avg_pause_time_ratio, 0.0, 1.0);
+  _long_term_pause_time_ratio = _recent_gc_times_ms->sum() / interval_ms;
+  // Filter out nonsensical results due to bad input.
+  _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
   // Compute the ratio of just this last pause time to the entire time range stored
   // in the vectors. Comparing this pause to the entire range, rather than only the
   // most recent interval, has the effect of smoothing over a possible transient 'burst'
   // of more frequent pauses that don't really reflect a change in heap occupancy.
   // This reduces the likelihood of a needless heap expansion being triggered.
-  _last_pause_time_ratio =
+  _short_term_pause_time_ratio =
     (pause_time_ms * _recent_prev_end_times_for_all_gcs_sec->num()) / interval_ms;
 }
 

@@ -55,14 +55,14 @@ size_t G1HeapSizingPolicy::expansion_amount() {
          "we should have set it to a default value set_g1_gc_flags() "
          "if a user set it to 0");
 
-  double recent_gc_overhead = _analytics->recent_avg_pause_time_ratio() * 100.0;
-  double last_gc_overhead = _analytics->last_pause_time_ratio() * 100.0;
+  double long_term_gc_overhead = _analytics->long_term_pause_time_ratio() * 100.0;
+  double short_term_gc_overhead = _analytics->short_term_pause_time_ratio() * 100.0;
   size_t expand_bytes = 0;
 
   if (_g1h->capacity() == _g1h->max_capacity()) {
     log_trace(gc, ergo, heap)("Can not expand (heap already fully expanded) "
-                              "recent GC overhead: %1.2f %%  committed: " SIZE_FORMAT "B",
-                              recent_gc_overhead, _g1h->capacity());
+                              "long term GC overhead: %1.2f %%  committed: " SIZE_FORMAT "B",
+                              long_term_gc_overhead, _g1h->capacity());
 
     clear_ratio_check_data();
     return expand_bytes;
@@ -83,9 +83,9 @@ size_t G1HeapSizingPolicy::expansion_amount() {
   // If the last GC time ratio is over the threshold, increment the count of
   // times it has been exceeded, and add this ratio to the sum of exceeded
   // ratios.
-  if (last_gc_overhead > threshold) {
+  if (short_term_gc_overhead > threshold) {
     _ratio_over_threshold_count++;
-    _ratio_over_threshold_sum += last_gc_overhead;
+    _ratio_over_threshold_sum += short_term_gc_overhead;
   }
 
   // Check if we've had enough GC time ratio checks that were over the
@@ -95,7 +95,7 @@ size_t G1HeapSizingPolicy::expansion_amount() {
   // long enough to make the average exceed the threshold.
   bool filled_history_buffer = _pauses_since_start == _num_prev_pauses_for_heuristics;
   if ((_ratio_over_threshold_count == MinOverThresholdForGrowth) ||
-      (filled_history_buffer && (recent_gc_overhead > threshold))) {
+      (filled_history_buffer && (long_term_gc_overhead > threshold))) {
     size_t min_expand_bytes = HeapRegion::GrainBytes;
     size_t reserved_bytes = _g1h->max_capacity();
     size_t committed_bytes = _g1h->capacity();
@@ -129,7 +129,7 @@ size_t G1HeapSizingPolicy::expansion_amount() {
 
       double ratio_delta;
       if (filled_history_buffer) {
-        ratio_delta = recent_gc_overhead - threshold;
+        ratio_delta = long_term_gc_overhead - threshold;
       } else {
         ratio_delta = (_ratio_over_threshold_sum/_ratio_over_threshold_count) - threshold;
       }
@@ -145,8 +145,8 @@ size_t G1HeapSizingPolicy::expansion_amount() {
     }
 
     log_debug(gc, ergo, heap)("Attempt heap expansion (recent GC overhead higher than threshold after GC) "
-                              "recent GC overhead: %1.2f %% threshold: %1.2f %% uncommitted: " SIZE_FORMAT "B base expansion amount and scale: " SIZE_FORMAT "B (%1.2f%%)",
-                              recent_gc_overhead, threshold, uncommitted_bytes, expand_bytes, scale_factor * 100);
+                              "long term GC overhead: %1.2f %% threshold: %1.2f %% uncommitted: " SIZE_FORMAT "B base expansion amount and scale: " SIZE_FORMAT "B (%1.2f%%)",
+                              long_term_gc_overhead, threshold, uncommitted_bytes, expand_bytes, scale_factor * 100);
 
     expand_bytes = static_cast<size_t>(expand_bytes * scale_factor);
 
