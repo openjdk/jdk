@@ -89,7 +89,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
   GrainBytes = region_size;
-  log_info(gc, heap)("Heap region size: " SIZE_FORMAT "M", GrainBytes / M);
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
