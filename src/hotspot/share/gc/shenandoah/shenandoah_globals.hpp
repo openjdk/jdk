@@ -300,9 +300,6 @@
   diagnostic(bool, ShenandoahAllocFailureALot, false,                       \
           "Testing: make lots of artificial allocation failures.")          \
                                                                             \
-  diagnostic(bool, ShenandoahAlwaysPreTouch, false,                         \
-          "Pre-touch heap memory, overrides global AlwaysPreTouch.")        \
-                                                                            \
   experimental(intx, ShenandoahMarkScanPrefetch, 32,                        \
           "How many objects to prefetch ahead when traversing mark bitmaps."\
           "Set to 0 to disable prefetching.")                               \
