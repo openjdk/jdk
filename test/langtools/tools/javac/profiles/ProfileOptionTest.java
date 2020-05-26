@@ -147,28 +147,17 @@ public class ProfileOptionTest {
                         if (ise != null)
                             error("unexpected exception from compiler: " + ise);
                         break;
-                    case JDK1_9:
-                    case JDK1_10:
-                    case JDK1_11:
-                    case JDK1_12:
-                    case JDK1_13:
-                    case JDK1_14:
-                    case JDK1_15:
-                        if (p == Profile.DEFAULT)
-                            break;
-                        if (ise == null)
-                            error("IllegalStateException not thrown as expected");
-                        else if (!ise.getMessage().contains("option -profile " +
-                                "not allowed with target " + t.name)) {
-                            error("exception not thrown as expected: " + ise);
-                        }
-                        break;
                     default:
                         if (p == Profile.DEFAULT)
                             break;
                         if (ise == null)
                             error("IllegalStateException not thrown as expected");
-                        else if (!ise.getMessage().contains("profile " + p.name
+                        else if (t.compareTo(Target.JDK1_9) >= 0) {
+                            if (!ise.getMessage().contains("option -profile " +
+                                    "not allowed with target " + t.name)) {
+                                error("exception not thrown as expected: " + ise);
+                            }
+                        } else if (!ise.getMessage().contains("profile " + p.name
                                     + " is not valid for target release " + t.name)) {
                             error("exception not thrown as expected: " + ise);
                         }

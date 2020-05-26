@@ -547,7 +547,8 @@ public class Arguments {
         String profileString = options.get(Option.PROFILE);
         if (profileString != null) {
             Profile profile = Profile.lookup(profileString);
-            if (!profile.isValid(target)) {
+            if (target.compareTo(Target.JDK1_8) <= 0 && !profile.isValid(target)) {
+                // note: -profile not permitted for target >= 9, so error (below) not warning (here)
                 reportDiag(Warnings.ProfileTargetConflict(profile, target));
             }
 
