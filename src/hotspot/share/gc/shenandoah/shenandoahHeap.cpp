@@ -1854,8 +1854,9 @@ public:
 
 void ShenandoahHeap::op_weak_roots() {
   if (is_concurrent_weak_root_in_progress()) {
+    // Concurrent weak root processing
     {
-      // Concurrent weak root processing
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
       ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
       ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
       workers()->run_task(&task);
