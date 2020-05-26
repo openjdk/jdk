@@ -63,25 +63,41 @@ double G1HeapSizingPolicy::scale_with_heap(double pause_time_threshold) {
   return threshold;
 }
 
+static void log_expansion(double short_term_pause_time_ratio,
+                          double long_term_pause_time_ratio,
+                          double threshold,
+                          double pause_time_ratio,
+                          bool fully_expanded,
+                          size_t resize_bytes) {
+
+  log_debug(gc, ergo, heap)("Heap expansion: "
+                            "short term pause time ratio %1.2f%% long term pause time ratio %1.2f%% "
+                            "threshold %1.2f%% pause time ratio %1.2f%% fully expanded %s "
+                            "resize by " SIZE_FORMAT "B",
+                            short_term_pause_time_ratio * 100.0,
+                            long_term_pause_time_ratio * 100.0,
+                            threshold * 100.0,
+                            pause_time_ratio * 100.0,
+                            BOOL_TO_STR(fully_expanded),
+                            resize_bytes);
+}
+
 size_t G1HeapSizingPolicy::expansion_amount() {
   assert(GCTimeRatio > 0, "must be");
 
   double long_term_pause_time_ratio = _analytics->long_term_pause_time_ratio();
   double short_term_pause_time_ratio = _analytics->short_term_pause_time_ratio();
+  const double pause_time_threshold = 1.0 / (1.0 + GCTimeRatio);
+  double threshold = scale_with_heap(pause_time_threshold);
+
   size_t expand_bytes = 0;
 
   if (_g1h->capacity() == _g1h->max_capacity()) {
-    log_trace(gc, ergo, heap)("Cannot expand (heap already fully expanded) "
-                              "long term GC overhead: %1.2f%%  committed: " SIZE_FORMAT "B",
-                              long_term_pause_time_ratio * 100.0, _g1h->capacity());
-
+    log_expansion(short_term_pause_time_ratio, long_term_pause_time_ratio,
+                  threshold, pause_time_threshold, true, 0);
     clear_ratio_check_data();
     return expand_bytes;
   }
-
-  const double pause_time_threshold = 1.0 / (1.0 + GCTimeRatio);
-
-  double threshold = scale_with_heap(pause_time_threshold);
 
   // If the last GC time ratio is over the threshold, increment the count of
   // times it has been exceeded, and add this ratio to the sum of exceeded
@@ -90,6 +106,14 @@ size_t G1HeapSizingPolicy::expansion_amount() {
     _ratio_over_threshold_count++;
     _ratio_over_threshold_sum += short_term_pause_time_ratio;
   }
+
+  log_trace(gc, ergo, heap)("Heap expansion triggers: pauses since start: %u "
+                            "num prev pauses for heuristics: %u "
+                            "ratio over threshold count: %u",
+                            _pauses_since_start,
+                            _num_prev_pauses_for_heuristics,
+                            _ratio_over_threshold_count);
+
   // Check if we've had enough GC time ratio checks that were over the
   // threshold to trigger an expansion. We'll also expand if we've
   // reached the end of the history buffer and the average of all entries
@@ -146,18 +170,11 @@ size_t G1HeapSizingPolicy::expansion_amount() {
       }
     }
 
-    log_debug(gc, ergo, heap)("Attempt heap expansion (recent GC overhead higher than threshold after GC) "
-                              "long term GC overhead: %1.2f%% threshold: %1.2f%% uncommitted: " SIZE_FORMAT "B "
-                              "base expansion amount and scale: " SIZE_FORMAT "B (%1.2f%%)",
-                              long_term_pause_time_ratio * 100.0, threshold * 100.0,
-                              uncommitted_bytes, expand_bytes, scale_factor * 100.0);
-
     expand_bytes = static_cast<size_t>(expand_bytes * scale_factor);
 
     // Ensure the expansion size is at least the minimum growth amount
     // and at most the remaining uncommitted byte size.
-    expand_bytes = MAX2(expand_bytes, min_expand_bytes);
-    expand_bytes = MIN2(expand_bytes, uncommitted_bytes);
+    expand_bytes = clamp(expand_bytes, min_expand_bytes, uncommitted_bytes);
 
     clear_ratio_check_data();
   } else {
@@ -172,6 +189,9 @@ size_t G1HeapSizingPolicy::expansion_amount() {
       }
     }
   }
+
+  log_expansion(short_term_pause_time_ratio, long_term_pause_time_ratio,
+                threshold, pause_time_threshold, false, expand_bytes);
 
   return expand_bytes;
 }
