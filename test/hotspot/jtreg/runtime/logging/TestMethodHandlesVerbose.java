@@ -26,7 +26,7 @@
  * @bug 8244946
  * @summary Run simple test with -XX:+Verbose and -Xlog:methodhandles.
  *
- * @run main/othervm -XX:+Verbose -Xlog:methodhandles TestMethodHandlesVerbose
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+Verbose -Xlog:methodhandles TestMethodHandlesVerbose
  */
 
 public class TestMethodHandlesVerbose {
