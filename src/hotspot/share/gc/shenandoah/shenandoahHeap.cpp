@@ -305,7 +305,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      ReservedSpace cset_rs(cset_size, os::vm_page_size(), false, req_addr);
+      ReservedSpace cset_rs(cset_size, cset_align, false, req_addr);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -314,7 +314,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == NULL) {
-      ReservedSpace cset_rs(cset_size, os::vm_page_size(), false);
+      ReservedSpace cset_rs(cset_size, cset_align, false);
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
   }
