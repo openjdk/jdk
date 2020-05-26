@@ -286,8 +286,7 @@ Handle java_lang_String::create_from_unicode(const jchar* unicode, int length, T
     char* expected = UNICODE::as_utf8(unicode, length);
     char* actual = as_utf8_string(h_obj());
     if (strcmp(expected, actual) != 0) {
-      tty->print_cr("Unicode conversion failure: %s --> %s", expected, actual);
-      ShouldNotReachHere();
+      fatal("Unicode conversion failure: %s --> %s", expected, actual);
     }
   }
 #endif
@@ -324,19 +323,16 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
   }
 
 #ifdef ASSERT
-  // This check is too strict because the input string is not necessarily valid UTF8.
+  // This check is too strict when the input string is not a valid UTF8.
   // For example, it may be created with arbitrary content via jni_NewStringUTF.
-  /*
-  {
+  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, (int)strlen(utf8_str), false)) {
     ResourceMark rm;
     const char* expected = utf8_str;
     char* actual = as_utf8_string(h_obj());
     if (strcmp(expected, actual) != 0) {
-      tty->print_cr("String conversion failure: %s --> %s", expected, actual);
-      ShouldNotReachHere();
+      fatal("String conversion failure: %s --> %s", expected, actual);
     }
   }
-  */
 #endif
 
   return h_obj;
@@ -376,8 +372,7 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
     const char* expected = symbol->as_utf8();
     char* actual = as_utf8_string(h_obj());
     if (strncmp(expected, actual, utf8_len) != 0) {
-      tty->print_cr("Symbol conversion failure: %s --> %s", expected, actual);
-      ShouldNotReachHere();
+      fatal("Symbol conversion failure: %s --> %s", expected, actual);
     }
   }
 #endif
