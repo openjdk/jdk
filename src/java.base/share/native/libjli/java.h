@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,7 @@ jint ReadKnownVMs(const char *jvmcfg, jboolean speculative);
 char *CheckJvmType(int *argc, char ***argv, jboolean speculative);
 void AddOption(char *str, void *info);
 jboolean IsWhiteSpaceOption(const char* name);
+jlong CurrentTimeMicros();
 
 // Utility function defined in args.c
 int isTerminalOpt(char *arg);
