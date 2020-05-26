@@ -381,7 +381,6 @@
 #define VM_INT_CONSTANTS(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
   declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("STACK_BIAS", STACK_BIAS)                 \
                                                                           \
   declare_constant(CompLevel_none)                                        \
   declare_constant(CompLevel_simple)                                      \

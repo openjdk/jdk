@@ -1033,8 +1033,8 @@ static void simple_move32(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      // __ ld(FP, reg2offset(src.first()) + STACK_BIAS, L5);
-      // __ st(L5, SP, reg2offset(dst.first()) + STACK_BIAS);
+      // __ ld(FP, reg2offset(src.first()), L5);
+      // __ st(L5, SP, reg2offset(dst.first()));
       __ movl2ptr(rax, Address(rbp, reg2offset_in(src.first())));
       __ movptr(Address(rsp, reg2offset_out(dst.first())), rax);
     } else {

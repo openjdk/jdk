@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -199,7 +199,7 @@ static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers 
     Register r = as_Register(i);
     if (FrameMap::reg_needs_save(r)) {
       int sp_offset = cpu_reg_save_offsets[i];
-      __ std(r, sp_offset + STACK_BIAS, R1_SP);
+      __ std(r, sp_offset, R1_SP);
     }
   }
 
@@ -207,7 +207,7 @@ static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers 
     for (i = 0; i < FrameMap::nof_fpu_regs; i++) {
       FloatRegister r = as_FloatRegister(i);
       int sp_offset = fpu_reg_save_offsets[i];
-      __ stfd(r, sp_offset + STACK_BIAS, R1_SP);
+      __ stfd(r, sp_offset, R1_SP);
     }
   }
 
@@ -220,7 +220,7 @@ static void restore_live_registers(StubAssembler* sasm, Register result1, Regist
     Register r = as_Register(i);
     if (FrameMap::reg_needs_save(r) && r != result1 && r != result2) {
       int sp_offset = cpu_reg_save_offsets[i];
-      __ ld(r, sp_offset + STACK_BIAS, R1_SP);
+      __ ld(r, sp_offset, R1_SP);
     }
   }
 
@@ -228,7 +228,7 @@ static void restore_live_registers(StubAssembler* sasm, Register result1, Regist
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
       FloatRegister r = as_FloatRegister(i);
       int sp_offset = fpu_reg_save_offsets[i];
-      __ lfd(r, sp_offset + STACK_BIAS, R1_SP);
+      __ lfd(r, sp_offset, R1_SP);
     }
   }
 

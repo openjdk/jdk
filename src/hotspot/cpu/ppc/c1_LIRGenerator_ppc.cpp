@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -309,7 +309,7 @@ void LIRGenerator::store_stack_parameter(LIR_Opr item, ByteSize offset_from_sp) 
   BasicType t = item->type();
   LIR_Opr sp_opr = FrameMap::SP_opr;
   if ((t == T_LONG || t == T_DOUBLE) &&
-      ((in_bytes(offset_from_sp) - STACK_BIAS) % 8 != 0)) {
+      (in_bytes(offset_from_sp) % 8 != 0)) {
     __ unaligned_move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
   } else {
     __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));

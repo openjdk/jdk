@@ -790,9 +790,6 @@ class JavaValue {
 };
 
 
-#define STACK_BIAS      0
-
-
 // TosState describes the top-of-stack state before and after the execution of
 // a bytecode or method. The top-of-stack value may be cached in one or more CPU
 // registers. The TosState corresponds to the 'machine representation' of this cached

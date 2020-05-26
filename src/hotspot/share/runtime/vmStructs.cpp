@@ -2036,12 +2036,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
                                                                           \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
                                                                           \
-  /**************/                                                        \
-  /* Stack bias */                                                        \
-  /**************/                                                        \
-                                                                          \
-  declare_preprocessor_constant("STACK_BIAS", STACK_BIAS)                 \
-                                                                          \
   /****************/                                                      \
   /* Object sizes */                                                      \
   /****************/                                                      \

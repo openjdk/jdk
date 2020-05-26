@@ -1197,7 +1197,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     addr = frame_map()->address_for_double_slot(src->double_stack_ix());
   }
 
-  bool unaligned = (addr.disp() - STACK_BIAS) % 8 != 0;
+  bool unaligned = addr.disp() % 8 != 0;
   load(addr.base(), addr.disp(), dest, dest->type(), true /*wide*/, unaligned);
 }
 
@@ -1209,7 +1209,7 @@ void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type, bo
   } else if (dest->is_double_word())  {
     addr = frame_map()->address_for_slot(dest->double_stack_ix());
   }
-  bool unaligned = (addr.disp() - STACK_BIAS) % 8 != 0;
+  bool unaligned = addr.disp() % 8 != 0;
   store(from_reg, addr.base(), addr.disp(), from_reg->type(), true /*wide*/, unaligned);
 }
 

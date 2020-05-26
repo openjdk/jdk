@@ -99,7 +99,7 @@ void GraphKit::gen_stub(address C_function,
   // users will look at the other fields.
   //
   Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
-  Node *last_sp = basic_plus_adr(top(), frameptr(), (intptr_t) STACK_BIAS);
+  Node *last_sp = frameptr();
   store_to_memory(NULL, adr_sp, last_sp, T_ADDRESS, NoAlias, MemNode::unordered);
 
   // Set _thread_in_native
