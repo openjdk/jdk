@@ -81,6 +81,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
       else
         GTEST_FRAMEWORK_SRC=${with_gtest}
         AC_MSG_RESULT([$GTEST_FRAMEWORK_SRC])
+        UTIL_FIXUP_PATH([GTEST_FRAMEWORK_SRC])
       fi
     fi
   fi
