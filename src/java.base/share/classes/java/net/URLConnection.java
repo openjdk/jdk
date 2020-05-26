@@ -667,12 +667,15 @@ public abstract class URLConnection {
 
     /**
      * Returns the key for the {@code n}<sup>th</sup> header field.
-     * It returns {@code null} if there are fewer than {@code n+1} fields.
+     * Some implementations may treat the {@code 0}<sup>th</sup>
+     * header field as special, in which case, {@link #getHeaderField(int) getHeaderField(0)}
+     * may return some value, but {@code getHeaderFieldKey(0)} returns {@code null}.
+     * For {@code n > 0 } it returns {@code null} if there are fewer than {@code n+1} fields.
      *
      * @param   n   an index, where {@code n>=0}
      * @return  the key for the {@code n}<sup>th</sup> header field,
      *          or {@code null} if there are fewer than {@code n+1}
-     *          fields.
+     *          fields when {@code n > 0}.
      */
     public String getHeaderFieldKey(int n) {
         return null;
