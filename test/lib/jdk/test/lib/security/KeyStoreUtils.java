@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,19 +118,26 @@ public class KeyStoreUtils {
     }
 
     /**
-     * Create trust store with given certificates.
+     * Create trust store with given certificates and corresponding aliases.
      *
      * @param type the key store type
      * @param certStrs the certificates added to the trust store
+     * @param aliases the aliases corresponding to the trust entries respectively
      * @return the trust store
      * @throws Exception on errors
      */
-    public static KeyStore createTrustStore(String type, String[] certStrs)
-            throws Exception {
+    public static KeyStore createTrustStore(String type, String[] certStrs,
+            String[] aliases) throws Exception {
+        if (aliases != null && aliases.length != certStrs.length) {
+            throw new IllegalArgumentException(
+                    "The counts of certs and aliases are not matching.");
+        }
+
         KeyStore trustStore = initKeyStore(type);
 
         for (int i = 0; i < certStrs.length; i++) {
-            trustStore.setCertificateEntry("trust-" + i,
+            String alias = aliases == null ? "trust-" + i : aliases[i];
+            trustStore.setCertificateEntry(alias,
                     CertUtils.getCertFromString(certStrs[i]));
         }
 
@@ -140,25 +147,56 @@ public class KeyStoreUtils {
     /**
      * Create trust store with given certificates.
      *
+     * @param type the key store type
      * @param certStrs the certificates added to the trust store
      * @return the trust store
      * @throws Exception on errors
      */
-    public static KeyStore createTrustStore(String[] certStrs)
+    public static KeyStore createTrustStore(String type, String[] certStrs)
             throws Exception {
-        return createTrustStore(DEFAULT_TYPE, certStrs);
+        return createTrustStore(type, certStrs, null);
     }
 
     /**
-     * Create key store with given entries.
+     * Create trust store with given certificates and corresponding aliases.
+     *
+     * @param certStrs the certificates added to the trust store
+     * @param aliases the aliases corresponding to the trust entries respectively
+     * @return the trust store
+     * @throws Exception on errors
+     */
+    public static KeyStore createTrustStore(String[] certStrs, String[] aliases)
+            throws Exception {
+        return createTrustStore(DEFAULT_TYPE, certStrs, aliases);
+    }
+
+    /**
+     * Create trust store with given certificates.
+     *
+     * @param certStrs the certificates added to the trust store
+     * @return the trust store
+     * @throws Exception on errors
+     */
+    public static KeyStore createTrustStore(String[] certStrs) throws Exception {
+        return createTrustStore(DEFAULT_TYPE, certStrs, null);
+    }
+
+    /**
+     * Create key store with given entries and corresponding aliases.
      *
      * @param type the key store type
      * @param entries the key entries added to the key store
+     * @param aliases the aliases corresponding to the key entries respectively
      * @return the key store
      * @throws Exception on errors
      */
-    public static KeyStore createKeyStore(String type, KeyEntry[] entries)
-            throws Exception {
+    public static KeyStore createKeyStore(String type, KeyEntry[] entries,
+            String[] aliases) throws Exception {
+        if (aliases != null && aliases.length != entries.length) {
+            throw new IllegalArgumentException(
+                    "The counts of entries and aliases are not matching.");
+        }
+
         KeyStore keyStore = initKeyStore(type);
 
         for (int i = 0; i < entries.length; i++) {
@@ -173,10 +211,37 @@ public class KeyStoreUtils {
                 chain[j] = CertUtils.getCertFromString(entry.certStrs[j]);
             }
 
-            keyStore.setKeyEntry("cert-" + i, key, password, chain);
+            String alias = aliases == null ? "cert-" + i : aliases[i];
+            keyStore.setKeyEntry(alias, key, password, chain);
         }
 
         return keyStore;
+    }
+
+    /**
+     * Create key store with given entries.
+     *
+     * @param type the key store type
+     * @param entries the key entries added to the key store
+     * @return the key store
+     * @throws Exception on errors
+     */
+    public static KeyStore createKeyStore(String type, KeyEntry[] entries)
+            throws Exception {
+        return createKeyStore(type, entries, null);
+    }
+
+    /**
+     * Create key store with given entries and corresponding aliases.
+     *
+     * @param entries the key entries added to the key store
+     * @param aliases the aliases corresponding to the key entries respectively
+     * @return the key store
+     * @throws Exception on errors
+     */
+    public static KeyStore createKeyStore(KeyEntry[] entries, String[] aliases)
+            throws Exception {
+        return createKeyStore(DEFAULT_TYPE, entries, aliases);
     }
 
     /**
@@ -186,60 +251,12 @@ public class KeyStoreUtils {
      * @return the key store
      * @throws Exception on errors
      */
-    public static KeyStore createKeyStore(KeyEntry[] entries)
-            throws Exception {
-        return createKeyStore(DEFAULT_TYPE, entries);
+    public static KeyStore createKeyStore(KeyEntry[] entries) throws Exception {
+        return createKeyStore(DEFAULT_TYPE, entries, null);
     }
 
-    /**
-     * Create key store with given private keys and associated certificate chains.
-     * Note that here one chain contains only one certificate. If a chain needs
-     * to contain multiple certificates, please use the following methods:
-     * createKeyStore(String type, KeyEntry[] entries);
-     * createKeyStore(KeyEntry[] entries)
-     *
-     * @param type the key store type
-     * @param keyAlgos the key algorithm array
-     * @param keyStrs the PEM-encoded PKCS8 key string array
-     * @param passwords the key-associated password array
-     * @param certStrs the key-associated certificate array
-     * @return  the key store
-     * @throws Exception on errors
-     */
-    public static KeyStore createKeyStore(String type, String[] keyAlgos,
-            String[] keyStrs, String[] passwords, String[] certStrs)
-            throws Exception {
-        KeyEntry[] entries = new KeyEntry[keyStrs.length];
-        for (int i = 0; i < entries.length; i++) {
-            entries[i] = new KeyEntry(
-                    keyAlgos[i],
-                    keyStrs[i],
-                    passwords == null ? null : passwords[i],
-                    new String[] { certStrs[i] });
-        }
-        return createKeyStore(type, entries);
-    }
-
-    /**
-     * Create key store with given private keys and associated certificate chains.
-     * Note that here one chain contains only one certificate. If a chain needs
-     * to contain multiple certificates, please use the following methods:
-     * createKeyStore(String type, KeyEntry[] entries);
-     * createKeyStore(KeyEntry[] entries)
-     *
-     * @param keyAlgos the key algorithm array
-     * @param keyStrs the PEM-encoded PKCS8 key string array
-     * @param passwords the key-associated password array
-     * @param certStrs the key-associated certificate array
-     * @return  the key store
-     * @throws Exception on errors
-     */
-    public static KeyStore createKeyStore(String[] keyAlgos, String[] keyStrs,
-            String[] passwords, String[] certStrs) throws Exception {
-        return createKeyStore(DEFAULT_TYPE, keyAlgos, keyStrs, passwords,
-                certStrs);
-    }
-
+    // Initialize key store with given store type.
+    // Note that it always has no password.
     private static KeyStore initKeyStore(String type) throws Exception {
         KeyStore keyStore = KeyStore.getInstance(type);
         keyStore.load(null, null);
