@@ -652,7 +652,7 @@ $(eval $(call SetupTarget, test-image-hotspot-jtreg-graal, \
     DEPS := build-test-hotspot-jtreg-graal, \
 ))
 
-ifeq ($(BUILD_GTEST), true)
+ifneq ($GTEST_FRAMEWORK_SRC), )
   $(eval $(call SetupTarget, test-image-hotspot-gtest, \
       MAKEFILE := hotspot/test/GtestImage, \
       DEPS := hotspot, \
@@ -1109,7 +1109,7 @@ ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   test-image: $(JVM_TEST_IMAGE_TARGETS)
 else
   test-image: test-image-hotspot-jtreg-native
-  ifeq ($(BUILD_GTEST), true)
+  ifneq ($(GTEST_FRAMEWORK_SRC), )
     test-image: test-image-hotspot-gtest
   endif
 

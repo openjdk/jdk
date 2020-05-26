@@ -91,9 +91,6 @@ DISABLE_WARNING_PREFIX := @BUILD_CC_DISABLE_WARNING_PREFIX@
 # Save speed and disk space by not enabling debug symbols for the buildjdk
 ENABLE_DEBUG_SYMBOLS := false
 
-# Control whether Hotspot builds gtest tests
-BUILD_GTEST := false
-
 JVM_VARIANTS := server
 JVM_VARIANT_MAIN := server
 JVM_FEATURES_server := cds compiler1 compiler2 g1gc serialgc

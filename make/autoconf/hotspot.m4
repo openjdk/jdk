@@ -112,28 +112,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
 ])
 
 ###############################################################################
-# Check if gtest should be built
-#
-AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
-[
-  GTEST_AVAILABLE=true
-
-  AC_MSG_CHECKING([if Hotspot gtest test source is present])
-  if test -e "${TOPDIR}/test/hotspot/gtest"; then
-    AC_MSG_RESULT([yes])
-  else
-    AC_MSG_RESULT([no, cannot build gtest])
-    GTEST_AVAILABLE=false
-  fi
-
-  UTIL_ARG_ENABLE(NAME: hotspot-gtest, DEFAULT: auto,
-      RESULT: BUILD_GTEST, AVAILABLE: $GTEST_AVAILABLE,
-      DEFAULT_DESC: [enabled if possible to build],
-      DESC: [enable building of the Hotspot unit tests])
-  AC_SUBST(BUILD_GTEST)
-])
-
-###############################################################################
 # Misc hotspot setup that does not fit elsewhere.
 #
 AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
@@ -162,4 +140,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
 
   # --with-cpu-port is no longer supported
   UTIL_DEPRECATED_ARG_WITH(with-cpu-port)
+
+  # in jdk15 hotspot-gtest was replaced with --with-gtest
+  UTIL_DEPRECATED_ARG_ENABLE(hotspot-gtest)
 ])

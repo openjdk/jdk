@@ -829,6 +829,14 @@ https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/arti
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
+Building of Hotspot Gtest suite requires the source code of Google Test framework.
+The top directory, which contains both `googletest` and `googlemock`
+directories, should be specified via `--with-gtest`.
+The supported version of Google Test is 1.8.1, whose source code can be obtained:
+
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/release-1.8.1)
+ * or by checking out `release-1.8.1` tag of `googletest` project: `git clone -b release-1.8.1 https://github.com/google/googletest`
+
 To execute the most basic tests (tier 1), use:
 ```
 make run-test-tier1

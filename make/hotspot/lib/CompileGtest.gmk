@@ -27,7 +27,6 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/CompileGtest.gmk))
 
 GTEST_TEST_SRC += $(TOPDIR)/test/hotspot/gtest
 GTEST_LAUNCHER_SRC := $(TOPDIR)/test/hotspot/gtest/gtestLauncher.cpp
-GTEST_FRAMEWORK_SRC := $(TOPDIR)/test/fmw/gtest
 
 # On Windows, there are no internal debug symbols so must set copying to true
 # to get any at all.
@@ -36,6 +35,36 @@ ifeq ($(call isTargetOs, windows), true)
 else
   GTEST_COPY_DEBUG_SYMBOLS := false
 endif
+
+################################################################################
+
+# Disabling all warnings in gtest source code
+
+$(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBGTEST, \
+    NAME := gtest, \
+    TYPE := STATIC_LIBRARY, \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    OUTPUT_DIR := $(JVM_OUTPUTDIR)/libgtest, \
+    OBJECT_DIR := $(JVM_OUTPUTDIR)/libgtest/objs, \
+    SRC := \
+        $(GTEST_FRAMEWORK_SRC)/googletest/src \
+        $(GTEST_FRAMEWORK_SRC)/googlemock/src, \
+    INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
+    CFLAGS := $(filter-out $(WARNING_CFLAGS_JVM), $(JVM_CFLAGS)) \
+        -w \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
+    CFLAGS_windows := -EHsc, \
+    CFLAGS_macosx := -DGTEST_OS_MAC=1, \
+    OPTIMIZATION := $(JVM_OPTIMIZATION), \
+    COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
+    ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
+    STRIP_SYMBOLS := false, \
+))
+
+TARGETS += $(BUILD_GTEST_LIBGTEST)
 
 ################################################################################
 
@@ -64,15 +93,10 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := gtestLauncher.cpp, \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
-    EXTRA_FILES := \
-        $(GTEST_FRAMEWORK_SRC)/googletest/src/gtest-all.cc \
-        $(GTEST_FRAMEWORK_SRC)/googlemock/src/gmock-all.cc, \
     EXTRA_OBJECT_FILES := $(filter-out %/operator_new$(OBJ_SUFFIX), \
         $(BUILD_LIBJVM_ALL_OBJS)), \
     CFLAGS := $(JVM_CFLAGS) \
-        -I$(GTEST_FRAMEWORK_SRC)/googletest \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
-        -I$(GTEST_FRAMEWORK_SRC)/googlemock \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \
         $(addprefix -I,$(GTEST_TEST_SRC)), \
     CFLAGS_windows := -EHsc, \
@@ -83,7 +107,10 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \
     LDFLAGS := $(JVM_LDFLAGS), \
+    LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/libgtest, \
     LIBS := $(JVM_LIBS), \
+    LIBS_unix := -lgtest, \
+    LIBS_windows := $(JVM_OUTPUTDIR)/libgtest/gtest.lib, \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     MAPFILE := $(GTEST_JVM_MAPFILE), \
     USE_MAPFILE_FOR_SYMBOLS := true, \
@@ -91,8 +118,10 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
     STRIP_SYMBOLS := false, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
-    PRECOMPILED_HEADER_EXCLUDE := gtest-all.cc gmock-all.cc gtestMain.cpp, \
+    PRECOMPILED_HEADER_EXCLUDE := gtestMain.cpp, \
 ))
+
+$(BUILD_GTEST_LIBJVM) : $(BUILD_GTEST_LIBGTEST)
 
 TARGETS += $(BUILD_GTEST_LIBJVM)
 
