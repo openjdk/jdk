@@ -699,8 +699,8 @@ public:
   inline oop evacuate_object(oop src, Thread* thread);
 
   // Call before/after evacuation.
-  void enter_evacuation();
-  void leave_evacuation();
+  inline void enter_evacuation(Thread* t);
+  inline void leave_evacuation(Thread* t);
 
 // ---------- Helper functions
 //

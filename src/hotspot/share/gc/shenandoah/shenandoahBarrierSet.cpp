@@ -134,7 +134,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
         _heap->in_collection_set(obj) &&
         obj == fwd) {
       Thread *t = Thread::current();
-      ShenandoahEvacOOMScope oom_evac_scope;
+      ShenandoahEvacOOMScope oom_evac_scope(t);
       return _heap->evacuate_object(obj, t);
     } else {
       return fwd;

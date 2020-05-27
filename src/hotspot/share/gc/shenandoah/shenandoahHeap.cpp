@@ -3020,14 +3020,6 @@ MemoryUsage ShenandoahHeap::memory_usage() {
   return _memory_pool->get_memory_usage();
 }
 
-void ShenandoahHeap::enter_evacuation() {
-  _oom_evac_handler.enter_evacuation();
-}
-
-void ShenandoahHeap::leave_evacuation() {
-  _oom_evac_handler.leave_evacuation();
-}
-
 ShenandoahRegionIterator::ShenandoahRegionIterator() :
   _heap(ShenandoahHeap::heap()),
   _index(0) {}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /**
@@ -98,12 +99,12 @@ public:
    * When this method returns false, evacuation must not be entered, and caller
    * may safely continue with a simple resolve (if Java thread).
    */
-  void enter_evacuation();
+  inline void enter_evacuation(Thread* t);
 
   /**
    * Leave evacuation path.
    */
-  void leave_evacuation();
+  inline void leave_evacuation(Thread* t);
 
   /**
    * Signal out-of-memory during evacuation. It will prevent any other threads
@@ -113,12 +114,21 @@ public:
   void handle_out_of_memory_during_evacuation();
 
   void clear();
+
+private:
+  // Register/Unregister thread to evacuation OOM protocol
+  void register_thread(Thread* t);
+  void unregister_thread(Thread* t);
 };
 
 class ShenandoahEvacOOMScope : public StackObj {
+private:
+  Thread* const _thread;
+
 public:
-  ShenandoahEvacOOMScope();
-  ~ShenandoahEvacOOMScope();
+  inline ShenandoahEvacOOMScope();
+  inline ShenandoahEvacOOMScope(Thread* t);
+  inline ~ShenandoahEvacOOMScope();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHEVACOOMHANDLER_HPP
