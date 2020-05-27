@@ -345,9 +345,6 @@
   diagnostic(bool, ShenandoahLoadRefBarrier, true,                          \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  diagnostic(bool, ShenandoahConcurrentScanCodeRoots, true,                 \
-          "Scan code roots concurrently, instead of during a pause")        \
-                                                                            \
   diagnostic(uintx, ShenandoahCodeRootsStyle, 2,                            \
           "Use this style to scan the code cache roots:"                    \
           " 0 - sequential iterator;"                                       \

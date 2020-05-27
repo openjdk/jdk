@@ -308,9 +308,7 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
     workers->run_task(&mark_roots);
   }
 
-  if (ShenandoahConcurrentScanCodeRoots) {
-    clear_claim_codecache();
-  }
+  clear_claim_codecache();
 }
 
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
@@ -392,7 +390,7 @@ void ShenandoahConcurrentMark::initialize(uint workers) {
 }
 
 void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, ReferenceProcessor* rp) {
-  if (ShenandoahConcurrentScanCodeRoots && claim_codecache()) {
+  if (claim_codecache()) {
     ShenandoahObjToScanQueue* q = task_queues()->queue(worker_id);
     if (!_heap->unload_classes()) {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -943,11 +941,9 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, ShenandoahLiveData* live_da
 }
 
 bool ShenandoahConcurrentMark::claim_codecache() {
-  assert(ShenandoahConcurrentScanCodeRoots, "must not be called otherwise");
   return _claimed_codecache.try_set();
 }
 
 void ShenandoahConcurrentMark::clear_claim_codecache() {
-  assert(ShenandoahConcurrentScanCodeRoots, "must not be called otherwise");
   _claimed_codecache.unset();
 }

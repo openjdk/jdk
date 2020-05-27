@@ -235,17 +235,8 @@ void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDC
   assert(clds != NULL, "Only possible with CLD closure");
   _cld_roots.cld_do(clds, worker_id);
 
-  // With ShenandoahConcurrentScanCodeRoots, we avoid scanning the entire code cache here,
-  // and instead do that in concurrent phase under the relevant lock. This saves init mark
-  // pause time.
-  if (code != NULL && !ShenandoahConcurrentScanCodeRoots) {
-    _code_roots.code_blobs_do(code, worker_id);
-    ShenandoahParallelOopsDoThreadClosure tc_cl(oops, NULL, tc);
-    _thread_roots.threads_do(&tc_cl, worker_id);
-  } else {
-    ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-    _thread_roots.threads_do(&tc_cl, worker_id);
-  }
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
+  _thread_roots.threads_do(&tc_cl, worker_id);
 
   AlwaysTrueClosure always_true;
   _dedup_roots.oops_do(&always_true, oops, worker_id);
