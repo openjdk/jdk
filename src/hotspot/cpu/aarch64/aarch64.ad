@@ -1361,16 +1361,11 @@ source %{
   // traverse when searching from a card mark membar for the merge mem
   // feeding a trailing membar or vice versa
 
-// predicates controlling emit of ldr<x>/ldar<x> and associated dmb
+// predicates controlling emit of ldr<x>/ldar<x>
 
 bool unnecessary_acquire(const Node *barrier)
 {
   assert(barrier->is_MemBar(), "expecting a membar");
-
-  if (UseBarriersForVolatile) {
-    // we need to plant a dmb
-    return false;
-  }
 
   MemBarNode* mb = barrier->as_MemBar();
 
@@ -1390,26 +1385,15 @@ bool unnecessary_acquire(const Node *barrier)
 bool needs_acquiring_load(const Node *n)
 {
   assert(n->is_Load(), "expecting a load");
-  if (UseBarriersForVolatile) {
-    // we use a normal load and a dmb
-    return false;
-  }
-
   LoadNode *ld = n->as_Load();
-
   return ld->is_acquire();
 }
 
 bool unnecessary_release(const Node *n)
 {
   assert((n->is_MemBar() &&
-	  n->Opcode() == Op_MemBarRelease),
-	 "expecting a release membar");
-
-  if (UseBarriersForVolatile) {
-    // we need to plant a dmb
-    return false;
-  }
+          n->Opcode() == Op_MemBarRelease),
+         "expecting a release membar");
 
   MemBarNode *barrier = n->as_MemBar();
   if (!barrier->leading()) {
@@ -1437,11 +1421,6 @@ bool unnecessary_release(const Node *n)
 bool unnecessary_volatile(const Node *n)
 {
   // assert n->is_MemBar();
-  if (UseBarriersForVolatile) {
-    // we need to plant a dmb
-    return false;
-  }
-
   MemBarNode *mbvol = n->as_MemBar();
 
   bool release = mbvol->trailing_store();
@@ -1458,18 +1437,12 @@ bool unnecessary_volatile(const Node *n)
   return release;
 }
 
-// predicates controlling emit of str<x>/stlr<x> and associated dmbs
+// predicates controlling emit of str<x>/stlr<x>
 
 bool needs_releasing_store(const Node *n)
 {
   // assert n->is_Store();
-  if (UseBarriersForVolatile) {
-    // we use a normal store and dmb combination
-    return false;
-  }
-
   StoreNode *st = n->as_Store();
-
   return st->trailing_membar() != NULL;
 }
 
@@ -1480,10 +1453,6 @@ bool needs_releasing_store(const Node *n)
 bool needs_acquiring_load_exclusive(const Node *n)
 {
   assert(is_CAS(n->Opcode(), true), "expecting a compare and swap");
-  if (UseBarriersForVolatile) {
-    return false;
-  }
-
   LoadStoreNode* ldst = n->as_LoadStore();
   if (is_CAS(n->Opcode(), false)) {
     assert(ldst->trailing_membar() != NULL, "expected trailing membar");

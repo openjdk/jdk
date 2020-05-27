@@ -725,8 +725,7 @@
   declare_constant(VM_Version::CPU_CRC32)               \
   declare_constant(VM_Version::CPU_LSE)                 \
   declare_constant(VM_Version::CPU_STXR_PREFETCH)       \
-  declare_constant(VM_Version::CPU_A53MAC)              \
-  declare_constant(VM_Version::CPU_DMB_ATOMICS)
+  declare_constant(VM_Version::CPU_A53MAC)
 
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
     /*
      * These flags are set based on the corresponding command line flags.
      */
-    final boolean useBarriersForVolatile = getFlag("UseBarriersForVolatile", Boolean.class);
     final boolean useCRC32 = getFlag("UseCRC32", Boolean.class);
     final boolean useNeon = getFlag("UseNeon", Boolean.class);
     final boolean useSIMDForMemoryOps = getFlag("UseSIMDForMemoryOps", Boolean.class);
@@ -71,6 +70,5 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final long aarch64LSE = getConstant("VM_Version::CPU_LSE", Long.class);
     final long aarch64STXR_PREFETCH = getConstant("VM_Version::CPU_STXR_PREFETCH", Long.class);
     final long aarch64A53MAC = getConstant("VM_Version::CPU_A53MAC", Long.class);
-    final long aarch64DMB_ATOMICS = getConstant("VM_Version::CPU_DMB_ATOMICS", Long.class);
     // Checkstyle: resume
 }
