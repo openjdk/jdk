@@ -624,7 +624,7 @@ public final class StringConcatFactory {
                     String constantValue = el.getValue();
 
                     // Eagerly update the initialLengthCoder value
-                    initialLengthCoder = (long)mixer(String.class).invoke(initialLengthCoder, constantValue);
+                    initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constantValue);
 
                     if (pos < 0) {
                         // Collecting into prefixConstant
@@ -747,9 +747,11 @@ public final class StringConcatFactory {
     }
 
     private static MethodHandle prepender(String prefix, Class<?> cl, String suffix) {
+        if (prefix == null && suffix == null) {
+            return NULL_PREPENDERS.computeIfAbsent(cl, NULL_PREPEND);
+        }
         return MethodHandles.insertArguments(
-                MethodHandles.insertArguments(
-                        PREPENDERS.computeIfAbsent(cl, PREPEND), 2, prefix), 3, suffix);
+                        PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix, suffix);
     }
 
     private static MethodHandle mixer(Class<?> cl) {
@@ -762,7 +764,15 @@ public final class StringConcatFactory {
         public MethodHandle apply(Class<?> c) {
             return JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
-                            String.class, Wrapper.asPrimitiveType(c), String.class));
+                            Wrapper.asPrimitiveType(c), String.class, String.class));
+        }
+    };
+
+    private static final Function<Class<?>, MethodHandle> NULL_PREPEND = new Function<>() {
+        @Override
+        public MethodHandle apply(Class<?> c) {
+            return MethodHandles.insertArguments(
+                            PREPENDERS.computeIfAbsent(c, PREPEND), 3, (String)null, (String)null);
         }
     };
 
@@ -835,12 +845,14 @@ public final class StringConcatFactory {
     }
 
     private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;
+    private static final ConcurrentMap<Class<?>, MethodHandle> NULL_PREPENDERS;
     private static final ConcurrentMap<Class<?>, MethodHandle> MIXERS;
     private static final long INITIAL_CODER;
 
     static {
         INITIAL_CODER = JLA.stringConcatInitialCoder();
         PREPENDERS = new ConcurrentHashMap<>();
+        NULL_PREPENDERS = new ConcurrentHashMap<>();
         MIXERS = new ConcurrentHashMap<>();
     }
 
