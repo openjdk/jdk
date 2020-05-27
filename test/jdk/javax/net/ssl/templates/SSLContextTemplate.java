@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 
 /**
  * SSLContext template to speed up JSSE tests.
@@ -46,10 +44,9 @@ public interface SSLContextTemplate {
      * Create an instance of SSLContext for client use.
      */
     default SSLContext createClientSSLContext() throws Exception {
-        return createSSLContext(trustedCertStrs,
-                endEntityCertStrs, endEntityPrivateKeys,
-                endEntityPrivateKeyAlgs,
-                endEntityPrivateKeyNames,
+        return createSSLContext(
+                createClientKeyManager(),
+                createClientTrustManager(),
                 getClientContextParameters());
     }
 
@@ -57,10 +54,50 @@ public interface SSLContextTemplate {
      * Create an instance of SSLContext for server use.
      */
     default SSLContext createServerSSLContext() throws Exception {
-        return createSSLContext(trustedCertStrs,
-                endEntityCertStrs, endEntityPrivateKeys,
+        return createSSLContext(
+                createServerKeyManager(),
+                createServerTrustManager(),
+                getServerContextParameters());
+    }
+
+    /*
+     * Create an instance of KeyManager for client use.
+     */
+    default KeyManager createClientKeyManager() throws Exception {
+        return createKeyManager(
+                endEntityCertStrs,
+                endEntityPrivateKeys,
                 endEntityPrivateKeyAlgs,
                 endEntityPrivateKeyNames,
+                getServerContextParameters());
+    }
+
+    /*
+     * Create an instance of TrustManager for client use.
+     */
+    default TrustManager createClientTrustManager() throws Exception {
+        return createTrustManager(
+                trustedCertStrs,
+                getServerContextParameters());
+    }
+    /*
+     * Create an instance of KeyManager for server use.
+     */
+    default KeyManager createServerKeyManager() throws Exception {
+        return createKeyManager(
+                endEntityCertStrs,
+                endEntityPrivateKeys,
+                endEntityPrivateKeyAlgs,
+                endEntityPrivateKeyNames,
+                getServerContextParameters());
+    }
+
+    /*
+     * Create an instance of TrustManager for server use.
+     */
+    default TrustManager createServerTrustManager() throws Exception {
+        return createTrustManager(
+                trustedCertStrs,
                 getServerContextParameters());
     }
 
@@ -421,80 +458,107 @@ public interface SSLContextTemplate {
      * Create an instance of SSLContext with the specified trust/key materials.
      */
     private SSLContext createSSLContext(
-            String[] trustedMaterials,
+            KeyManager keyManager,
+            TrustManager trustManager,
+            ContextParameters params) throws Exception {
+
+        SSLContext context = SSLContext.getInstance(params.contextProtocol);
+        context.init(
+                new KeyManager[] {
+                        keyManager
+                    },
+                new TrustManager[] {
+                        trustManager
+                    },
+                null);
+
+        return  context;
+    }
+
+    /*
+     * Create an instance of KeyManager with the specified key materials.
+     */
+    private KeyManager createKeyManager(
             String[] keyMaterialCerts,
             String[] keyMaterialKeys,
             String[] keyMaterialKeyAlgs,
             String[] keyMaterialKeyNames,
             ContextParameters params) throws Exception {
 
-        KeyStore ts = null;     // trust store
-        KeyStore ks = null;     // key store
-        char passphrase[] = "passphrase".toCharArray();
+        char[] passphrase = "passphrase".toCharArray();
 
         // Generate certificate from cert string.
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        // Import the trused certs.
-        ByteArrayInputStream is;
-        if (trustedMaterials != null && trustedMaterials.length != 0) {
-            ts = KeyStore.getInstance("JKS");
-            ts.load(null, null);
-
-            Certificate[] trustedCert =
-                    new Certificate[trustedMaterials.length];
-            for (int i = 0; i < trustedMaterials.length; i++) {
-                String trustedCertStr = trustedMaterials[i];
-
-                is = new ByteArrayInputStream(trustedCertStr.getBytes());
-                try {
-                    trustedCert[i] = cf.generateCertificate(is);
-                } finally {
-                    is.close();
-                }
-
-                ts.setCertificateEntry("trusted-cert-" + i, trustedCert[i]);
-            }
-        }
-
         // Import the key materials.
         //
-        // Note that certification pathes bigger than one are not supported yet.
-        boolean hasKeyMaterials =
-            (keyMaterialCerts != null) && (keyMaterialCerts.length != 0) &&
-            (keyMaterialKeys != null) && (keyMaterialKeys.length != 0) &&
-            (keyMaterialKeyAlgs != null) && (keyMaterialKeyAlgs.length != 0) &&
-            (keyMaterialCerts.length == keyMaterialKeys.length) &&
-            (keyMaterialCerts.length == keyMaterialKeyAlgs.length);
-        if (hasKeyMaterials) {
-            ks = KeyStore.getInstance("JKS");
-            ks.load(null, null);
+        // Note that certification paths bigger than one are not supported yet.
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        ByteArrayInputStream is;
+        for (int i = 0; i < keyMaterialCerts.length; i++) {
+            String keyCertStr = keyMaterialCerts[i];
 
-            for (int i = 0; i < keyMaterialCerts.length; i++) {
-                String keyCertStr = keyMaterialCerts[i];
-
-                // generate the private key.
-                PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
+            // generate the private key.
+            PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
                     Base64.getMimeDecoder().decode(keyMaterialKeys[i]));
-                KeyFactory kf =
+            KeyFactory kf =
                     KeyFactory.getInstance(keyMaterialKeyAlgs[i]);
-                PrivateKey priKey = kf.generatePrivate(priKeySpec);
+            PrivateKey priKey = kf.generatePrivate(priKeySpec);
 
-                // generate certificate chain
-                is = new ByteArrayInputStream(keyCertStr.getBytes());
-                Certificate keyCert = null;
-                try {
-                    keyCert = cf.generateCertificate(is);
-                } finally {
-                    is.close();
-                }
-
-                Certificate[] chain = new Certificate[] { keyCert };
-
-                // import the key entry.
-                ks.setKeyEntry("cert-" + keyMaterialKeyNames[i],
-                        priKey, passphrase, chain);
+            // generate certificate chain
+            is = new ByteArrayInputStream(keyCertStr.getBytes());
+            Certificate keyCert = null;
+            try {
+                keyCert = cf.generateCertificate(is);
+            } finally {
+                is.close();
             }
+
+            Certificate[] chain = new Certificate[] { keyCert };
+
+            // import the key entry.
+            ks.setKeyEntry("cert-" + keyMaterialKeyNames[i],
+                    priKey, passphrase, chain);
+        }
+
+        KeyManagerFactory kmf =
+                KeyManagerFactory.getInstance(params.kmAlgorithm);
+        kmf.init(ks, passphrase);
+
+        KeyManager[] km = kmf.getKeyManagers();
+
+        return km[0];
+    }
+
+    /*
+     * Create an instance of TrustManager with the specified trust materials.
+     */
+    private TrustManager createTrustManager(
+            String[] trustedMaterials,
+            ContextParameters params) throws Exception {
+
+        // Generate certificate from cert string.
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+
+        // Import the trusted certs.
+        KeyStore ts = KeyStore.getInstance("PKCS12");
+        ts.load(null, null);
+
+        Certificate[] trustedCert =
+                new Certificate[trustedMaterials.length];
+        ByteArrayInputStream is;
+        for (int i = 0; i < trustedMaterials.length; i++) {
+            String trustedCertStr = trustedMaterials[i];
+
+            is = new ByteArrayInputStream(trustedCertStr.getBytes());
+            try {
+                trustedCert[i] = cf.generateCertificate(is);
+            } finally {
+                is.close();
+            }
+
+            ts.setCertificateEntry("trusted-cert-" + i, trustedCert[i]);
         }
 
         // Create an SSLContext object.
@@ -502,17 +566,7 @@ public interface SSLContextTemplate {
                 TrustManagerFactory.getInstance(params.tmAlgorithm);
         tmf.init(ts);
 
-        SSLContext context = SSLContext.getInstance(params.contextProtocol);
-        if (hasKeyMaterials && ks != null) {
-            KeyManagerFactory kmf =
-                    KeyManagerFactory.getInstance(params.kmAlgorithm);
-            kmf.init(ks, passphrase);
-
-            context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        } else {
-            context.init(null, tmf.getTrustManagers(), null);
-        }
-
-        return context;
+        TrustManager[] tms = tmf.getTrustManagers();
+        return tms[0];
     }
 }
