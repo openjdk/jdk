@@ -31,9 +31,7 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -41,7 +39,6 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -56,27 +53,32 @@ public class TestNimbusOverride extends JFrame
     private static boolean passed = false;
 
     public static void main(String [] args) throws Exception {
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            tf = new TestNimbusOverride();
-            tf.pack();
-            tf.setVisible(true);
-        });
-        robot.setAutoDelay(100);
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_SPACE);
-        robot.keyRelease(KeyEvent.VK_SPACE);
-        robot.waitForIdle();
-        SwingUtilities.invokeAndWait(() -> tf.dispose());
-        if (!passed) {
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    UIManager.setLookAndFeel(
+                            "javax.swing.plaf.nimbus.NimbusLookAndFeel");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                tf = new TestNimbusOverride();
+                tf.pack();
+                tf.setVisible(true);
+            });
+            robot.setAutoDelay(100);
+            robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_SPACE);
+            robot.keyRelease(KeyEvent.VK_SPACE);
+            robot.waitForIdle();
+            if (!passed) {
                 throw new RuntimeException(
-                        "Setting Nimbus.Overrides property affects custom keymap installation");
+                        "Setting Nimbus.Overrides property affects custom" +
+                                " keymap installation");
             }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> tf.dispose());
+        }
     }
 
     public TestNimbusOverride()
@@ -84,8 +86,8 @@ public class TestNimbusOverride extends JFrame
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         /*
-         * Create a frame containing a JEditorPane, and override the action for the space bar to show
-         * a dialog.
+         * Create a frame containing a JEditorPane, and override the action for
+         * the space bar to show a dialog.
          */
         JEditorPane pp = new JEditorPane();
         UIDefaults defaults = new UIDefaults();
@@ -102,7 +104,8 @@ public class TestNimbusOverride extends JFrame
         Keymap origKeymap = pp.getKeymap();
         Keymap km = JEditorPane.addKeymap("Test keymap", origKeymap);
 
-        km.addActionForKeyStroke(KeyStroke.getKeyStroke(' '), new AbstractAction("SHOW_SPACE") {
+        km.addActionForKeyStroke(KeyStroke.getKeyStroke(' '),
+                new AbstractAction("SHOW_SPACE") {
             @Override
             public void actionPerformed(ActionEvent e)
             {
