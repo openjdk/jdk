@@ -1219,6 +1219,8 @@ class SortedSymbolClosure: public SymbolClosure {
     if (a[0] < b[0]) {
       return -1;
     } else if (a[0] == b[0]) {
+      ResourceMark rm;
+      log_warning(cds)("Duplicated symbol %s unexpected", (*a)->as_C_string());
       return 0;
     } else {
       return 1;
