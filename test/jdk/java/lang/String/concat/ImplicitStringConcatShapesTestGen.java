@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,12 +101,32 @@ public class ImplicitStringConcatShapesTestGen {
                     escapeToUnicode(values.get(l1)),
                     l1
             ));
+            lines.add(String.format("test(\"%s\", \"prefix\" + %s);",
+                    escapeToUnicode("prefix" + values.get(l1)),
+                    l1
+            ));
+            lines.add(String.format("test(\"%s\", %s + \"suffix\");",
+                    escapeToUnicode(values.get(l1) + "suffix"),
+                    l1
+            ));
+            lines.add(String.format("test(\"%s\", \"prefix\" + %s + \"suffix\");",
+                    escapeToUnicode("prefix" + values.get(l1) + "suffix"),
+                    l1
+            ));
         }
 
         for (String l1 : l) {
             for (String l2 : l) {
                 lines.add(String.format("test(\"%s\", \"\" + %s + %s);",
                         escapeToUnicode(values.get(l1) + values.get(l2)),
+                        l1, l2
+                ));
+                lines.add(String.format("test(\"%s\", \"\" + %s + %s + \"suffix\");",
+                        escapeToUnicode(values.get(l1) + values.get(l2) + "suffix"),
+                        l1, l2
+                ));
+                lines.add(String.format("test(\"%s\", \"prefix\" + %s + \"suffix1\" + %s + \"suffix2\");",
+                        escapeToUnicode("prefix" + values.get(l1) + "suffix1" + values.get(l2) + "suffix2"),
                         l1, l2
                 ));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test implicit String concatenations, multiple shapes.
+ * @bug 8148483 8245959
  *
  * @compile ImplicitStringConcatShapes.java
  * @run main/othervm -Xverify:all ImplicitStringConcatShapes
@@ -32,7 +33,7 @@
  * @run main/othervm -Xverify:all ImplicitStringConcatShapes
  *
  * @compile -XDstringConcat=indy ImplicitStringConcatShapes.java
- * @run main/othervm ImplicitStringConcatShapes
+ * @run main/othervm -Xverify:all ImplicitStringConcatShapes
  *
  * @compile -XDstringConcat=indyWithConstants ImplicitStringConcatShapes.java
  * @run main/othervm -Xverify:all ImplicitStringConcatShapes
