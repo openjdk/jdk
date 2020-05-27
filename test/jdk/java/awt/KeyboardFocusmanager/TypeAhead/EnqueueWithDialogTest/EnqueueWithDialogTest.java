@@ -30,9 +30,26 @@
  * @run main EnqueueWithDialogTest
  */
 
-import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -57,8 +74,17 @@ public class EnqueueWithDialogTest
     static Robot robot;
     public static void main(String args[]) throws Exception {
         EnqueueWithDialogTest test = new EnqueueWithDialogTest();
-        test.init();
-        test.start();
+        try {
+            test.init();
+            test.start();
+        } finally {
+            if (d != null) {
+                d.dispose();
+            }
+            if (f != null) {
+                f.dispose();
+            }
+        }
     }
     public void init()
     {
