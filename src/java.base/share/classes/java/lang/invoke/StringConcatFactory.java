@@ -615,8 +615,7 @@ public final class StringConcatFactory {
         // We need one prepender per argument, but also need to fold in constants. We do so by greedily
         // create prependers that fold in surrounding constants into the argument prepender. This reduces
         // the number of unique MH combinator tree shapes we'll create in an application.
-        String prefixConstant = null, suffixConstant = null;
-        int pos = -1;
+        String constant = null;
         for (RecipeElement el : recipe.getElements()) {
             // Do the prepend, and put "new" index at index 1
             switch (el.getTag()) {
@@ -626,29 +625,22 @@ public final class StringConcatFactory {
                     // Eagerly update the initialLengthCoder value
                     initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constantValue);
 
-                    if (pos < 0) {
-                        // Collecting into prefixConstant
-                        prefixConstant = prefixConstant == null ? constantValue : prefixConstant + constantValue;
-                    } else {
-                        // Collecting into suffixConstant
-                        suffixConstant = suffixConstant == null ? constantValue : suffixConstant + constantValue;
-                    }
+                    // Collecting into a single constant that we'll either fold
+                    // into the next argument prepender, or into the newArray
+                    // combinator
+                    constant = constant == null ? constantValue : constant + constantValue;
                     break;
                 }
                 case TAG_ARG: {
-
-                    if (pos >= 0) {
-                        // Flush the previous non-constant arg with any prefix/suffix constant
-                        mh = MethodHandles.filterArgumentsWithCombiner(
-                                mh, 1,
-                                prepender(prefixConstant, ptypes[pos], suffixConstant),
-                                1, 0, // indexCoder, storage
-                                2 + pos  // selected argument
-                        );
-                        prefixConstant = suffixConstant = null;
-                    }
-                    // Mark the pos of next non-constant arg
-                    pos = el.getArgPos();
+                    // Add prepender, along with any prefix constant
+                    int pos = el.getArgPos();
+                    mh = MethodHandles.filterArgumentsWithCombiner(
+                            mh, 1,
+                            prepender(constant, ptypes[pos]),
+                            1, 0, // indexCoder, storage
+                            2 + pos  // selected argument
+                    );
+                    constant = null;
                     break;
                 }
                 default:
@@ -656,26 +648,22 @@ public final class StringConcatFactory {
             }
         }
 
-        // Insert any trailing args, constants
-        if (pos >= 0) {
-            mh = MethodHandles.filterArgumentsWithCombiner(
-                    mh, 1,
-                    prepender(prefixConstant, ptypes[pos], suffixConstant),
-                    1, 0, // indexCoder, storage
-                    2 + pos  // selected argument
-            );
-        } else if (prefixConstant != null) {
-            assert (suffixConstant == null);
-            // Sole prefixConstant can only happen if there were no non-constant arguments
-            mh = MethodHandles.filterArgumentsWithCombiner(
-                    mh, 1,
-                    MethodHandles.insertArguments(prepender(null, String.class, null), 2, prefixConstant),
-                    1, 0 // indexCoder, storage
-            );
-        }
-
         // Fold in byte[] instantiation at argument 0
-        mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArray(),
+        MethodHandle newArrayCombinator;
+        if (constant != null) {
+            // newArray variant that deals with prepending the trailing constant
+            //
+            // initialLengthCoder has been adjusted to have the correct coder
+            // and length already, but to avoid binding an extra variable to
+            // the method handle we now adjust the length to be correct for the
+            // first prepender above, while adjusting for the missing length of
+            // the constant in StringConcatHelper
+            initialLengthCoder -= constant.length();
+            newArrayCombinator = newArrayWithSuffix(constant);
+        } else {
+            newArrayCombinator = newArray();
+        }
+        mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArrayCombinator,
                 1 // index
         );
 
@@ -746,25 +734,25 @@ public final class StringConcatFactory {
         return mh;
     }
 
-    private static MethodHandle prepender(String prefix, Class<?> cl, String suffix) {
-        if (prefix == null && suffix == null) {
+    private static MethodHandle prepender(String prefix, Class<?> cl) {
+        if (prefix == null) {
             return NULL_PREPENDERS.computeIfAbsent(cl, NULL_PREPEND);
         }
         return MethodHandles.insertArguments(
-                        PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix, suffix);
+                        PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix);
     }
 
     private static MethodHandle mixer(Class<?> cl) {
         return MIXERS.computeIfAbsent(cl, MIX);
     }
 
-    // This one is deliberately non-lambdified to optimize startup time:
+    // These are deliberately not lambdas to optimize startup time:
     private static final Function<Class<?>, MethodHandle> PREPEND = new Function<>() {
         @Override
         public MethodHandle apply(Class<?> c) {
             return JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
-                            Wrapper.asPrimitiveType(c), String.class, String.class));
+                            Wrapper.asPrimitiveType(c), String.class));
         }
     };
 
@@ -772,11 +760,10 @@ public final class StringConcatFactory {
         @Override
         public MethodHandle apply(Class<?> c) {
             return MethodHandles.insertArguments(
-                            PREPENDERS.computeIfAbsent(c, PREPEND), 3, (String)null, (String)null);
+                            PREPENDERS.computeIfAbsent(c, PREPEND), 3, (String)null);
         }
     };
 
-    // This one is deliberately non-lambdified to optimize startup time:
     private static final Function<Class<?>, MethodHandle> MIX = new Function<>() {
         @Override
         public MethodHandle apply(Class<?> c) {
@@ -801,6 +788,18 @@ public final class StringConcatFactory {
         }
         return mh;
     }
+
+    private @Stable static MethodHandle NEW_ARRAY_SUFFIX;
+    private static MethodHandle newArrayWithSuffix(String suffix) {
+        MethodHandle mh = NEW_ARRAY_SUFFIX;
+        if (mh == null) {
+            NEW_ARRAY_SUFFIX = mh =
+                    JLA.stringConcatHelper("newArrayWithSuffix",
+                            methodType(byte[].class, String.class, long.class));
+        }
+        return MethodHandles.insertArguments(mh, 0, suffix);
+    }
+
     private @Stable static MethodHandle NEW_ARRAY;
     private static MethodHandle newArray() {
         MethodHandle mh = NEW_ARRAY;
