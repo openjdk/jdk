@@ -64,7 +64,11 @@ public class MacHelper {
                     cmd.outputBundle(), dmgImage));
             ThrowingConsumer.toConsumer(consumer).accept(dmgImage);
         } finally {
-            Executor.of("/usr/bin/hdiutil", "detach").addArgument(mountPoint).execute();
+            // detach might not work right away due to resource busy error, so
+            // repeat detach several times or fail. Try 10 times with 3 seconds
+            // delay.
+            Executor.of("/usr/bin/hdiutil", "detach").addArgument(mountPoint).
+                    executeAndRepeatUntilExitCode(0, 10, 3);
         }
     }
 

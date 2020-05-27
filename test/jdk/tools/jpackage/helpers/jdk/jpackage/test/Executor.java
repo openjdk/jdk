@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,30 @@ public final class Executor extends CommandArguments<Executor> {
 
     public List<String> executeAndGetOutput() {
         return saveOutput().execute().getOutput();
+    }
+
+    /*
+     * Repeates command "max" times and waits for "wait" seconds between each
+     * execution until command returns expected error code.
+     */
+    public Result executeAndRepeatUntilExitCode(int expectedCode, int max, int wait) {
+        Result result;
+        int count = 0;
+
+        do {
+            result = executeWithoutExitCodeCheck();
+            if (result.getExitCode() == expectedCode) {
+                return result;
+            }
+
+            try {
+                Thread.sleep(wait * 1000);
+            } catch (Exception ex) {} // Ignore
+
+            count++;
+        } while (count < max);
+
+        return result.assertExitCodeIs(expectedCode);
     }
 
     private boolean withSavedOutput() {
