@@ -31,7 +31,7 @@ class G1InitLogger : public GCInitLogger {
  protected:
   virtual void print_heap();
   virtual void print_workers();
-
+  virtual void print_gc_specific();
  public:
   static void print();
 };

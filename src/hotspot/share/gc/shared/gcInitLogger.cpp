@@ -39,6 +39,7 @@ void GCInitLogger::print_all() {
   print_compressed_oops();
   print_heap();
   print_workers();
+  print_gc_specific();
 }
 
 void GCInitLogger::print() {
@@ -104,6 +105,10 @@ void GCInitLogger::print_workers() {
   if (ConcGCThreads > 0) {
     log_info(gc, init)("Concurrent Workers: %u", ConcGCThreads);
   }
+}
+
+void GCInitLogger::print_gc_specific() {
+  // To allow additional gc specific logging.
 }
 
 const char* GCInitLogger::large_pages_support() {

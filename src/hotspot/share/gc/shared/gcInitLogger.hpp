@@ -38,6 +38,7 @@ class GCInitLogger : public StackObj {
   virtual void print_compressed_oops();
   virtual void print_heap();
   virtual void print_workers();
+  virtual void print_gc_specific();
  public:
   void print_all();
   static void print();

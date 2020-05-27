@@ -35,14 +35,14 @@ package gc.g1;
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    -XX:+UseG1GC -XX:G1PeriodicGCInterval=100
  *    -XX:+G1PeriodicGCInvokesConcurrent
- *    -Xlog:gc,gc+periodic=debug
+ *    -Xlog:gc*,gc+periodic=debug
  *    gc.g1.TestPeriodicCollectionJNI
  * @run main/othervm/native
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    -XX:+UseG1GC -XX:G1PeriodicGCInterval=100
  *    -XX:-G1PeriodicGCInvokesConcurrent
- *    -Xlog:gc,gc+periodic=debug
+ *    -Xlog:gc*,gc+periodic=debug
  *    gc.g1.TestPeriodicCollectionJNI
  */
 

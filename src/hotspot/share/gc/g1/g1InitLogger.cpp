@@ -40,6 +40,16 @@ void G1InitLogger::print_workers() {
   }
 }
 
+void G1InitLogger::print_gc_specific() {
+  // Print a message about periodic GC configuration.
+  if (G1PeriodicGCInterval != 0) {
+    log_info(gc, init)("Periodic GC: Enabled");
+    log_info(gc, init)("Periodic GC Interval: " UINTX_FORMAT "ms", G1PeriodicGCInterval);
+  } else {
+    log_info(gc, init)("Periodic GC: Disabled");
+  }
+}
+
 void G1InitLogger::print() {
   G1InitLogger init_log;
   init_log.print_all();
