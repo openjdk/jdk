@@ -154,9 +154,9 @@ public class CompressedClassPointers {
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
             "-XX:SharedBaseAddress=8g",
-            "-XX:+PrintCompressedOopsMode",
             "-XX:+VerifyBeforeGC",
-            "-Xshare:dump", "-Xlog:cds");
+            "-Xshare:dump",
+            "-Xlog:cds,gc+heap+coops=debug");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (output.firstMatch("Shared spaces are not supported in this VM") != null) {
             return;
@@ -170,7 +170,7 @@ public class CompressedClassPointers {
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
             "-XX:SharedBaseAddress=8g",
-            "-XX:+PrintCompressedOopsMode",
+            "-Xlog:gc+heap+coops=debug",
             "-Xshare:on",
             "-version");
           output = new OutputAnalyzer(pb.start());
@@ -269,9 +269,9 @@ public class CompressedClassPointers {
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
             "-XX:SharedBaseAddress=8g",
-            "-XX:+PrintCompressedOopsMode",
             "-XX:+VerifyBeforeGC",
-            "-Xshare:dump", "-Xlog:cds");
+            "-Xshare:dump",
+            "-Xlog:cds,gc+heap+coops=debug");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (output.firstMatch("Shared spaces are not supported in this VM") != null) {
             return;
@@ -287,7 +287,7 @@ public class CompressedClassPointers {
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
             "-XX:SharedBaseAddress=8g",
-            "-XX:+PrintCompressedOopsMode",
+            "-Xlog:gc+heap+coops=debug",
             "-Xshare:on",
             "-version");
           output = new OutputAnalyzer(pb.start());

@@ -602,7 +602,6 @@ static AliasedFlag const aliased_jvm_flags[] = {
 
 // NOTE: A compatibility request will be necessary for each alias to be removed.
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
   { "PrintSharedSpaces",         LogLevel::Info,  true,  LOG_TAGS(cds) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
   { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },

@@ -66,7 +66,7 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
 
   _heap_address_range = heap_space.region();
 
-  LogTarget(Info, gc, heap, coops) lt;
+  LogTarget(Debug, gc, heap, coops) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
