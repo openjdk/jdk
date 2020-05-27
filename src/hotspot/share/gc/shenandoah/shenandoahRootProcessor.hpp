@@ -212,11 +212,10 @@ public:
   void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
 };
 
-template <typename ITR>
 class ShenandoahCodeCacheRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
-  ITR _coderoots_iterator;
+  ShenandoahCodeRootsIterator   _coderoots_iterator;
 public:
   ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahCodeCacheRoots();
@@ -247,12 +246,11 @@ public:
   ShenandoahHeap* heap() const { return _heap; }
 };
 
-template <typename ITR>
 class ShenandoahRootScanner : public ShenandoahRootProcessor {
 private:
   ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahThreadRoots                                     _thread_roots;
-  ShenandoahCodeCacheRoots<ITR>                             _code_roots;
+  ShenandoahCodeCacheRoots                                  _code_roots;
   ShenandoahVMRoots<false /*concurrent*/ >                  _vm_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
@@ -271,9 +269,6 @@ public:
   void roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc = NULL);
 };
 
-typedef ShenandoahRootScanner<ShenandoahAllCodeRootsIterator> ShenandoahAllRootScanner;
-typedef ShenandoahRootScanner<ShenandoahCsetCodeRootsIterator> ShenandoahCSetRootScanner;
-
 // This scanner is only for SH::object_iteration() and only supports single-threaded
 // root scanning
 class ShenandoahHeapIterationRootScanner : public ShenandoahRootProcessor {
@@ -286,7 +281,7 @@ private:
   ShenandoahSerialWeakRoots                                _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                _weak_roots;
   ShenandoahConcurrentStringDedupRoots                     _dedup_roots;
-  ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator> _code_roots;
+  ShenandoahCodeCacheRoots                                 _code_roots;
 
 public:
   ShenandoahHeapIterationRootScanner();
@@ -305,7 +300,7 @@ private:
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
-  ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator>  _code_roots;
+  ShenandoahCodeCacheRoots                                  _code_roots;
   bool                                                      _stw_roots_processing;
   bool                                                      _stw_class_unloading;
 public:
@@ -326,7 +321,7 @@ private:
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
-  ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator>  _code_roots;
+  ShenandoahCodeCacheRoots                                  _code_roots;
 
 public:
   ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase);
@@ -346,7 +341,7 @@ private:
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
-  ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator>  _code_roots;
+  ShenandoahCodeCacheRoots                                  _code_roots;
 
 public:
   ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase);

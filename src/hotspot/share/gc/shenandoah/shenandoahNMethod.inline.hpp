@@ -124,35 +124,4 @@ ShenandoahNMethod** ShenandoahNMethodList::list() const {
   return _list;
 }
 
-template<bool CSET_FILTER>
-void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
-  size_t stride = 256; // educated guess
-
-  ShenandoahNMethod** const list = _list->list();
-
-  size_t max = (size_t)_limit;
-  while (_claimed < max) {
-    size_t cur = Atomic::fetch_and_add(&_claimed, stride);
-    size_t start = cur;
-    size_t end = MIN2(cur + stride, max);
-    if (start >= max) break;
-
-    for (size_t idx = start; idx < end; idx++) {
-      ShenandoahNMethod* nmr = list[idx];
-      assert(nmr != NULL, "Sanity");
-      if (nmr->is_unregistered()) {
-        continue;
-      }
-
-      nmr->assert_alive_and_correct();
-
-      if (CSET_FILTER && !nmr->has_cset_oops(_heap)) {
-        continue;
-      }
-
-      f->do_code_blob(nmr->nm());
-    }
-  }
-}
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_INLINE_HPP

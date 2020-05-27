@@ -73,27 +73,12 @@ protected:
   ShenandoahSharedFlag _seq_claimed;
   ShenandoahNMethodTableSnapshot* _table_snapshot;
 
-protected:
+public:
   ShenandoahCodeRootsIterator();
   ~ShenandoahCodeRootsIterator();
 
-  template<bool CSET_FILTER>
-  void dispatch_parallel_blobs_do(CodeBlobClosure *f);
-
-  template<bool CSET_FILTER>
-  void fast_parallel_blobs_do(CodeBlobClosure *f);
-};
-
-class ShenandoahAllCodeRootsIterator : public ShenandoahCodeRootsIterator {
-public:
-  ShenandoahAllCodeRootsIterator() : ShenandoahCodeRootsIterator() {};
   void possibly_parallel_blobs_do(CodeBlobClosure *f);
-};
-
-class ShenandoahCsetCodeRootsIterator : public ShenandoahCodeRootsIterator {
-public:
-  ShenandoahCsetCodeRootsIterator() : ShenandoahCodeRootsIterator() {};
-  void possibly_parallel_blobs_do(CodeBlobClosure* f);
+  void fast_parallel_blobs_do(CodeBlobClosure *f);
 };
 
 class ShenandoahCodeRoots : public AllStatic {
