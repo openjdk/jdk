@@ -222,13 +222,8 @@ public interface Instrumentation {
      * Instances of the retransformed class are not affected.
      *
      * <P>
-     * The retransformation may change method bodies, the constant pool and
-     * attributes (unless explicitly prohibited).
-     * The retransformation must not add, remove or rename fields or methods, change the
-     * signatures of methods, or change inheritance.
-     * The retransformation must not change the <code>NestHost</code>,
-     * <code>NestMembers</code>, or <code>Record</code> attributes.
-     * These restrictions may be lifted in future versions.
+     * The supported class file changes are described in
+     * <a href="{@docRoot}/../specs/jvmti.html#RetransformClasses">JVM TI RetransformClasses</a>.
      * The class file bytes are not checked, verified and installed
      * until after the transformations have been applied, if the resultant bytes are in
      * error this method will throw an exception.
@@ -313,13 +308,8 @@ public interface Instrumentation {
      * Instances of the redefined class are not affected.
      *
      * <P>
-     * The redefinition may change method bodies, the constant pool and attributes
-     * (unless explicitly prohibited).
-     * The redefinition must not add, remove or rename fields or methods, change the
-     * signatures of methods, or change inheritance.
-     * The redefinition must not change the <code>NestHost</code>,
-     * <code>NestMembers</code>, or <code>Record</code> attributes.
-     * These restrictions may be lifted in future versions.
+     * The supported class file changes are described in
+     * <a href="{@docRoot}/../specs/jvmti.html#RedefineClasses">JVM TI RedefineClasses</a>.
      * The class file bytes are not checked, verified and installed
      * until after the transformations have been applied, if the resultant bytes are in
      * error this method will throw an exception.
