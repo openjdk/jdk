@@ -76,6 +76,7 @@ class NativeInstruction {
   bool is_movz();
   bool is_movk();
   bool is_sigill_zombie_not_entrant();
+  bool is_stop();
 
  protected:
   address addr_at(int offset) const    { return address(this) + offset; }

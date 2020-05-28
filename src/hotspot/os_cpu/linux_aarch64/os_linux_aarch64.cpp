@@ -381,6 +381,21 @@ JVM_handle_linux_signal(int sig,
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
+      } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
+        // Pull a pointer to the error message out of the instruction
+        // stream.
+        const uint64_t *detail_msg_ptr
+          = (uint64_t*)(pc + NativeInstruction::instruction_size);
+        const char *detail_msg = (const char *)*detail_msg_ptr;
+        const char *msg = "stop";
+        if (TraceTraps) {
+          tty->print_cr("trap: %s: (SIGILL)", msg);
+        }
+
+        va_list detail_args;
+        VMError::report_and_die(INTERNAL_ERROR, msg, detail_msg, detail_args, thread,
+                                pc, info, ucVoid, NULL, 0, 0);
+        va_end(detail_args);
       }
       else
 
@@ -505,7 +520,7 @@ void os::print_context(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Linux::ucontext_get_pc(uc);
-  print_instructions(st, pc, sizeof(char));
+  print_instructions(st, pc, 4/*native instruction size*/);
   st->cr();
 }
 
