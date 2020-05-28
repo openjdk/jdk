@@ -746,7 +746,6 @@ javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
 javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
 javax/swing/JColorChooser/Test6541987.java 8143021 windows-all,linux-all,macosx-all
 javax/swing/JColorChooser/Test7194184.java 8194126 linux-all,macosx-all
-javax/swing/JTable/7124218/SelectEditTableCell.java 8148958 linux-all,macosx-all
 javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
 javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
