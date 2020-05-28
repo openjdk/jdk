@@ -59,6 +59,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.tiers.SuitesCreator;
@@ -100,7 +101,11 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
                     highTierLowering.add(new FinalizeProfileNodesPhase(HotSpotAOTProfilingPlugin.Options.TierAInvokeInlineeNotifyFreqLog.getValue(options)));
                 }
                 ListIterator<BasePhase<? super MidTierContext>> midTierLowering = ret.getMidTier().findPhase(LoweringPhase.class);
-                midTierLowering.add(new ReplaceConstantNodesPhase());
+                midTierLowering.add(new ReplaceConstantNodesPhase(true));
+
+                // Replace possible constants after GC barrier expansion.
+                ListIterator<BasePhase<? super LowTierContext>> lowTierLowering = ret.getLowTier().findPhase(LoweringPhase.class);
+                lowTierLowering.add(new ReplaceConstantNodesPhase(false));
 
                 // Replace inlining policy
                 if (Inline.getValue(options)) {

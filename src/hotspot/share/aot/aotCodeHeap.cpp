@@ -366,24 +366,30 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
   }
 }
 
-void AOTCodeHeap::link_primitive_array_klasses() {
+void AOTCodeHeap::link_klass(const Klass* klass) {
   ResourceMark rm;
+  assert(klass != NULL, "Should be given a klass");
+  AOTKlassData* klass_data = (AOTKlassData*) os::dll_lookup(_lib->dl_handle(), klass->signature_name());
+  if (klass_data != NULL) {
+    // Set both GOT cells, resolved and initialized klass pointers.
+    // _got_index points to second cell - resolved klass pointer.
+    _klasses_got[klass_data->_got_index-1] = (Metadata*)klass; // Initialized
+    _klasses_got[klass_data->_got_index  ] = (Metadata*)klass; // Resolved
+    if (PrintAOT) {
+      tty->print_cr("[Found  %s  in  %s]", klass->internal_name(), _lib->name());
+    }
+  }
+}
+
+void AOTCodeHeap::link_known_klasses() {
   for (int i = T_BOOLEAN; i <= T_CONFLICT; i++) {
     BasicType t = (BasicType)i;
     if (is_java_primitive(t)) {
       const Klass* arr_klass = Universe::typeArrayKlassObj(t);
-      AOTKlassData* klass_data = (AOTKlassData*) os::dll_lookup(_lib->dl_handle(), arr_klass->signature_name());
-      if (klass_data != NULL) {
-        // Set both GOT cells, resolved and initialized klass pointers.
-        // _got_index points to second cell - resolved klass pointer.
-        _klasses_got[klass_data->_got_index-1] = (Metadata*)arr_klass; // Initialized
-        _klasses_got[klass_data->_got_index  ] = (Metadata*)arr_klass; // Resolved
-        if (PrintAOT) {
-          tty->print_cr("[Found  %s  in  %s]", arr_klass->internal_name(), _lib->name());
-        }
-      }
+      link_klass(arr_klass);
     }
   }
+  link_klass(SystemDictionary::Reference_klass());
 }
 
 void AOTCodeHeap::register_stubs() {
@@ -590,9 +596,7 @@ void AOTCodeHeap::link_global_lib_symbols() {
     link_stub_routines_symbols();
     link_os_symbols();
     link_graal_runtime_symbols();
-
-    // Link primitive array klasses.
-    link_primitive_array_klasses();
+    link_known_klasses();
   }
 }
 
