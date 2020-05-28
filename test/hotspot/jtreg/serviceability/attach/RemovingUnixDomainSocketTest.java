@@ -47,7 +47,7 @@ public class RemovingUnixDomainSocketTest {
 
     private static void runJCmd(long pid) throws InterruptedException, IOException {
         JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
-        jcmd.addVMArgs(Utils.getTestJavaOpts());
+        jcmd.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion"));
         jcmd.addToolArg(Long.toString(pid));
         jcmd.addToolArg("VM.version");
 
@@ -65,8 +65,8 @@ public class RemovingUnixDomainSocketTest {
             "jcmd  stderr: [" + out.getStderr() + "]\n" +
             "jcmd  exitValue = " + out.getExitValue());
 
-        out.shouldHaveExitValue(0)
-           .stderrShouldBeEmptyIgnoreVMWarnings();
+        out.shouldHaveExitValue(0);
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
     }
 
     public static void main(String... args) throws Exception {
