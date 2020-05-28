@@ -113,7 +113,6 @@
 
 # jdk_awt
 
-java/awt/Desktop/OpenByUNCPathNameTest/OpenByUNCPathNameTest.java 8239827 windows-all
 java/awt/event/MouseEvent/MouseClickTest/MouseClickTest.java 8168389 windows-all,macosx-all
 java/awt/event/KeyEvent/SwallowKeyEvents/SwallowKeyEvents.java 8224055 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowBlockingTest.java 8168408 windows-all,macosx-all
