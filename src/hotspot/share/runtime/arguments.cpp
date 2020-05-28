@@ -565,6 +565,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
   { "UseLWPSynchronization",         JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "BranchOnRegister",              JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "LIRFillDelaySlots",             JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
