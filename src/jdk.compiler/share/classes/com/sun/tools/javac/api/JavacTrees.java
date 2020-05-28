@@ -909,6 +909,7 @@ public class JavacTrees extends DocTrees {
                 case CLASS:
                 case ENUM:
                 case INTERFACE:
+                case RECORD:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
                     if (env == null) return null;
