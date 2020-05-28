@@ -351,11 +351,6 @@
           " 1 - parallel iterator;"                                         \
           " 2 - parallel iterator with cset filters;")                      \
                                                                             \
-  diagnostic(bool, ShenandoahOptimizeStaticFinals, true,                    \
-          "Optimize barriers on static final fields. "                      \
-          "Turn it off for maximum compatibility with reflection or JNI "   \
-          "code that manipulates final fields.")                            \
-                                                                            \
   develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
           "Verify no missing barriers in C2.")                              \
                                                                             \
