@@ -122,6 +122,9 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     CallNode* call = rgn->as_Call();
     IdealLoopTree* loop = get_loop(call);
     rgn = new RegionNode(1);
+    Node* uncommon_proj_orig = uncommon_proj;
+    uncommon_proj = uncommon_proj->clone()->as_Proj();
+    register_control(uncommon_proj, loop, iff);
     rgn->add_req(uncommon_proj);
     register_control(rgn, loop, uncommon_proj);
     _igvn.replace_input_of(call, 0, rgn);
@@ -129,13 +132,9 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     if (_idom != NULL) {
       set_idom(call, rgn, dom_depth(rgn));
     }
-    for (DUIterator_Fast imax, i = uncommon_proj->fast_outs(imax); i < imax; i++) {
-      Node* n = uncommon_proj->fast_out(i);
-      if (n->is_Load() || n->is_Store()) {
-        _igvn.replace_input_of(n, 0, rgn);
-        --i; --imax;
-      }
-    }
+    // Move nodes pinned on the projection or whose control is set to
+    // the projection to the region.
+    lazy_replace(uncommon_proj_orig, rgn);
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < rgn->req(); proj_index++)
