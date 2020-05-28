@@ -44,13 +44,24 @@
  * the checks inside the loop could be eliminated. Currently, loop predication
  * optimization has been applied to remove array range check and loop invariant
  * checks (such as null checks).
+ *
+ * There are at least 3 kinds of predicates: a place holder inserted
+ * at parse time, the tests added by predication above the place
+ * holder (referred to as concrete predicates), skeleton predicates
+ * that are added between main loop and pre loop to protect C2 from
+ * inconsistencies in some rare cases of over unrolling. Skeleton
+ * predicates themselves are expanded and updated as unrolling
+ * proceeds. They don't compile to any code.
+ *
 */
 
 //-------------------------------register_control-------------------------
-void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) {
-  assert(n->is_CFG(), "must be control node");
+void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body) {
+  assert(n->is_CFG(), "msust be control node");
   _igvn.register_new_node_with_optimizer(n);
-  loop->_body.push(n);
+  if (update_body) {
+    loop->_body.push(n);
+  }
   set_loop(n, loop);
   // When called from beautify_loops() idom is not constructed yet.
   if (_idom != NULL) {

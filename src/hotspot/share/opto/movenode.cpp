@@ -150,9 +150,11 @@ Node* CMoveNode::Identity(PhaseGVN* phase) {
 //------------------------------Value------------------------------------------
 // Result is the meet of inputs
 const Type* CMoveNode::Value(PhaseGVN* phase) const {
-  if( phase->type(in(Condition)) == Type::TOP )
-  return Type::TOP;
-  return phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
+  if (phase->type(in(Condition)) == Type::TOP) {
+    return Type::TOP;
+  }
+  const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
+  return t->filter(_type);
 }
 
 //------------------------------make-------------------------------------------
