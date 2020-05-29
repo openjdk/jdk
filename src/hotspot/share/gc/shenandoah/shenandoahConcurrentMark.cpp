@@ -390,21 +390,23 @@ void ShenandoahConcurrentMark::initialize(uint workers) {
 }
 
 void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, ReferenceProcessor* rp) {
+  if (_heap->unload_classes()) {
+    return;
+  }
+
   if (claim_codecache()) {
     ShenandoahObjToScanQueue* q = task_queues()->queue(worker_id);
-    if (!_heap->unload_classes()) {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      // TODO: We can not honor StringDeduplication here, due to lock ranking
-      // inversion. So, we may miss some deduplication candidates.
-      if (_heap->has_forwarded_objects()) {
-        ShenandoahMarkResolveRefsClosure cl(q, rp);
-        CodeBlobToOopClosure blobs(&cl, !CodeBlobToOopClosure::FixRelocations);
-        CodeCache::blobs_do(&blobs);
-      } else {
-        ShenandoahMarkRefsClosure cl(q, rp);
-        CodeBlobToOopClosure blobs(&cl, !CodeBlobToOopClosure::FixRelocations);
-        CodeCache::blobs_do(&blobs);
-      }
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // TODO: We can not honor StringDeduplication here, due to lock ranking
+    // inversion. So, we may miss some deduplication candidates.
+    if (_heap->has_forwarded_objects()) {
+      ShenandoahMarkResolveRefsClosure cl(q, rp);
+      CodeBlobToOopClosure blobs(&cl, !CodeBlobToOopClosure::FixRelocations);
+      CodeCache::blobs_do(&blobs);
+    } else {
+      ShenandoahMarkRefsClosure cl(q, rp);
+      CodeBlobToOopClosure blobs(&cl, !CodeBlobToOopClosure::FixRelocations);
+      CodeCache::blobs_do(&blobs);
     }
   }
 }
