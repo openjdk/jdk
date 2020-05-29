@@ -1376,18 +1376,35 @@ double os::elapsedVTime() {
 }
 
 jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "linux error");
-  return jlong(time.tv_sec) * 1000  +  jlong(time.tv_usec / 1000);
+  if (os::Posix::supports_clock_gettime()) {
+    struct timespec ts;
+    int status = os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
+    assert_status(status == 0, status, "gettime error");
+    return jlong(ts.tv_sec) * MILLIUNITS +
+           jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
+  } else {
+    timeval time;
+    int status = gettimeofday(&time, NULL);
+    assert(status != -1, "linux error");
+    return jlong(time.tv_sec) * MILLIUNITS  +
+           jlong(time.tv_usec) / (MICROUNITS / MILLIUNITS);
+  }
 }
 
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "linux error");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
+  if (os::Posix::supports_clock_gettime()) {
+    struct timespec ts;
+    int status = os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
+    assert_status(status == 0, status, "gettime error");
+    seconds = jlong(ts.tv_sec);
+    nanos = jlong(ts.tv_nsec);
+  } else {
+    timeval time;
+    int status = gettimeofday(&time, NULL);
+    assert(status != -1, "linux error");
+    seconds = jlong(time.tv_sec);
+    nanos = jlong(time.tv_usec) * (NANOUNITS / MICROUNITS);
+  }
 }
 
 void os::Linux::fast_thread_clock_init() {

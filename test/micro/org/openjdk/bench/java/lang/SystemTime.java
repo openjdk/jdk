@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-public class Systems {
+public class SystemTime {
 
     @Benchmark
     public long currentTimeMillis() {
@@ -43,4 +44,9 @@ public class Systems {
         return System.nanoTime();
     }
 
+    @Benchmark
+    public long instantNowAsEpochNanos() {
+        Instant now = Instant.now();
+        return now.getEpochSecond() * 1_000_000_000L + now.getNano();
+    }
 }
