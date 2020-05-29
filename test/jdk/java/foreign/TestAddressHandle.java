@@ -60,11 +60,14 @@ public class TestAddressHandle {
     }
 
     @Test(dataProvider = "addressHandles")
-    public void testAddressHandle(VarHandle addrHandle) {
+    public void testAddressHandle(VarHandle addrHandle, int byteSize) {
         VarHandle longHandle = MemoryHandles.varHandle(long.class, ByteOrder.nativeOrder());
         try (MemorySegment segment = MemorySegment.allocateNative(8)) {
+            MemoryAddress target = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ?
+                    segment.baseAddress().addOffset(8 - byteSize) :
+                    segment.baseAddress();
             longHandle.set(segment.baseAddress(), 42L);
-            MemoryAddress address = (MemoryAddress)addrHandle.get(segment.baseAddress());
+            MemoryAddress address = (MemoryAddress)addrHandle.get(target);
             assertEquals(address.toRawLongValue(), 42L);
             try {
                 longHandle.get(address); // check that address cannot be de-referenced
@@ -72,14 +75,14 @@ public class TestAddressHandle {
             } catch (UnsupportedOperationException ex) {
                 assertTrue(true);
             }
-            addrHandle.set(segment.baseAddress(), address.addOffset(1));
+            addrHandle.set(target, address.addOffset(1));
             long result = (long)longHandle.get(segment.baseAddress());
             assertEquals(43L, result);
         }
     }
 
     @Test(dataProvider = "addressHandles")
-    public void testNull(VarHandle addrHandle) {
+    public void testNull(VarHandle addrHandle, int byteSize) {
         VarHandle longHandle = MemoryHandles.varHandle(long.class, ByteOrder.nativeOrder());
         try (MemorySegment segment = MemorySegment.allocateNative(8)) {
             longHandle.set(segment.baseAddress(), 0L);
@@ -118,29 +121,29 @@ public class TestAddressHandle {
     static Object[][] addressHandles() {
         return new Object[][] {
                 // long
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(long.class, ByteOrder.nativeOrder())) },
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(long.class, ByteOrder.nativeOrder()), 0)) },
-                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_LONG.varHandle(long.class)) },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(long.class, ByteOrder.nativeOrder())), 8 },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(long.class, ByteOrder.nativeOrder()), 0)), 8 },
+                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_LONG.varHandle(long.class)), 8 },
 
                 // int
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder())) },
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder()), 0)) },
-                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_INT.varHandle(int.class)) },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder())), 4 },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder()), 0)), 4 },
+                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_INT.varHandle(int.class)), 4 },
 
                 // short
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(short.class, ByteOrder.nativeOrder())) },
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(short.class, ByteOrder.nativeOrder()), 0)) },
-                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_SHORT.varHandle(short.class)) },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(short.class, ByteOrder.nativeOrder())), 2 },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(short.class, ByteOrder.nativeOrder()), 0)), 2 },
+                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_SHORT.varHandle(short.class)), 2 },
 
                 // char
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(char.class, ByteOrder.nativeOrder())) },
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(char.class, ByteOrder.nativeOrder()), 0)) },
-                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_CHAR.varHandle(char.class)) },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(char.class, ByteOrder.nativeOrder())), 2 },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(char.class, ByteOrder.nativeOrder()), 0)), 2 },
+                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_CHAR.varHandle(char.class)), 2 },
 
                 // byte
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder())) },
-                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder()), 0)) },
-                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_BYTE.varHandle(byte.class)) }
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder())), 1 },
+                { MemoryHandles.asAddressVarHandle(MemoryHandles.withOffset(MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder()), 0)), 1 },
+                { MemoryHandles.asAddressVarHandle(MemoryLayouts.JAVA_BYTE.varHandle(byte.class)), 1 }
         };
     }
 
