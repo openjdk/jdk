@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,12 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
@@ -63,6 +64,7 @@ public final class ResponseBodyHandlers {
     public static class PathBodyHandler implements BodyHandler<Path>{
         private final Path file;
         private final List<OpenOption> openOptions;  // immutable list
+        private final AccessControlContext acc;
         private final FilePermission filePermission;
 
         /**
@@ -77,25 +79,34 @@ public final class ResponseBodyHandlers {
             FilePermission filePermission = null;
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                String fn = pathForSecurityCheck(file);
-                FilePermission writePermission = new FilePermission(fn, "write");
-                sm.checkPermission(writePermission);
-                filePermission = writePermission;
+                try {
+                    String fn = pathForSecurityCheck(file);
+                    FilePermission writePermission = new FilePermission(fn, "write");
+                    sm.checkPermission(writePermission);
+                    filePermission = writePermission;
+                } catch (UnsupportedOperationException ignored) {
+                    // path not associated with the default file system provider
+                }
             }
-            return new PathBodyHandler(file, openOptions, filePermission);
+
+            assert filePermission == null || filePermission.getActions().equals("write");
+            var acc = sm != null ? AccessController.getContext() : null;
+            return new PathBodyHandler(file, openOptions, acc, filePermission);
         }
 
         private PathBodyHandler(Path file,
                                 List<OpenOption> openOptions,
+                                AccessControlContext acc,
                                 FilePermission filePermission) {
             this.file = file;
             this.openOptions = openOptions;
+            this.acc = acc;
             this.filePermission = filePermission;
         }
 
         @Override
         public BodySubscriber<Path> apply(ResponseInfo responseInfo) {
-            return new PathSubscriber(file, openOptions, filePermission);
+            return new PathSubscriber(file, openOptions, acc, filePermission);
         }
     }
 
@@ -149,6 +160,7 @@ public final class ResponseBodyHandlers {
     public static class FileDownloadBodyHandler implements BodyHandler<Path> {
         private final Path directory;
         private final List<OpenOption> openOptions;
+        private final AccessControlContext acc;
         private final FilePermission[] filePermissions;  // may be null
 
         /**
@@ -160,10 +172,17 @@ public final class ResponseBodyHandlers {
          */
         public static FileDownloadBodyHandler create(Path directory,
                                                      List<OpenOption> openOptions) {
+            String fn;
+            try {
+                fn = pathForSecurityCheck(directory);
+            } catch (UnsupportedOperationException uoe) {
+                // directory not associated with the default file system provider
+                throw new IllegalArgumentException("invalid path: " + directory, uoe);
+            }
+
             FilePermission filePermissions[] = null;
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                String fn = pathForSecurityCheck(directory);
                 FilePermission writePermission = new FilePermission(fn, "write");
                 String writePathPerm = fn + File.separatorChar + "*";
                 FilePermission writeInDirPermission = new FilePermission(writePathPerm, "write");
@@ -184,15 +203,19 @@ public final class ResponseBodyHandlers {
             if (!Files.isWritable(directory))
                 throw new IllegalArgumentException("non-writable directory: " + directory);
 
-            return new FileDownloadBodyHandler(directory, openOptions, filePermissions);
-
+            assert filePermissions == null || (filePermissions[0].getActions().equals("write")
+                    && filePermissions[1].getActions().equals("write"));
+            var acc = sm != null ? AccessController.getContext() : null;
+            return new FileDownloadBodyHandler(directory, openOptions, acc, filePermissions);
         }
 
         private FileDownloadBodyHandler(Path directory,
                                        List<OpenOption> openOptions,
+                                       AccessControlContext acc,
                                        FilePermission... filePermissions) {
             this.directory = directory;
             this.openOptions = openOptions;
+            this.acc = acc;
             this.filePermissions = filePermissions;
         }
 
@@ -273,7 +296,7 @@ public final class ResponseBodyHandlers {
                         "Resulting file, " + file.toString() + ", outside of given directory");
             }
 
-            return new PathSubscriber(file, openOptions, filePermissions);
+            return new PathSubscriber(file, openOptions, acc, filePermissions);
         }
     }
 }

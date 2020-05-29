@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -172,7 +174,9 @@ public class ResponseSubscribers {
 
         private final Path file;
         private final OpenOption[] options;
+        private final AccessControlContext acc;
         private final FilePermission[] filePermissions;
+        private final boolean isDefaultFS;
         private final CompletableFuture<Path> result = new MinimalFuture<>();
 
         private final AtomicBoolean subscribed = new AtomicBoolean();
@@ -192,25 +196,44 @@ public class ResponseSubscribers {
          */
         public static PathSubscriber create(Path file,
                                             List<OpenOption> options) {
-            FilePermission filePermission = null;
             SecurityManager sm = System.getSecurityManager();
+            FilePermission filePermission = null;
             if (sm != null) {
-                String fn = pathForSecurityCheck(file);
-                FilePermission writePermission = new FilePermission(fn, "write");
-                sm.checkPermission(writePermission);
-                filePermission = writePermission;
+                try {
+                    String fn = pathForSecurityCheck(file);
+                    FilePermission writePermission = new FilePermission(fn, "write");
+                    sm.checkPermission(writePermission);
+                    filePermission = writePermission;
+                } catch (UnsupportedOperationException ignored) {
+                    // path not associated with the default file system provider
+                }
             }
-            return new PathSubscriber(file, options, filePermission);
+
+            assert filePermission == null || filePermission.getActions().equals("write");
+            AccessControlContext acc = sm != null ? AccessController.getContext() : null;
+            return new PathSubscriber(file, options, acc, filePermission);
         }
 
         // pp so handler implementations in the same package can construct
         /*package-private*/ PathSubscriber(Path file,
                                            List<OpenOption> options,
+                                           AccessControlContext acc,
                                            FilePermission... filePermissions) {
             this.file = file;
             this.options = options.stream().toArray(OpenOption[]::new);
-            this.filePermissions =
-                    filePermissions == null ? EMPTY_FILE_PERMISSIONS : filePermissions;
+            this.acc = acc;
+            this.filePermissions = filePermissions == null || filePermissions[0] == null
+                            ? EMPTY_FILE_PERMISSIONS : filePermissions;
+            this.isDefaultFS = isDefaultFS(file);
+        }
+
+        private static boolean isDefaultFS(Path file) {
+            try {
+                file.toFile();
+                return true;
+            } catch (UnsupportedOperationException uoe) {
+                return false;
+            }
         }
 
         @Override
@@ -222,21 +245,28 @@ public class ResponseSubscribers {
             }
 
             this.subscription = subscription;
-            if (System.getSecurityManager() == null) {
+            if (acc == null) {
                 try {
                     out = FileChannel.open(file, options);
                 } catch (IOException ioe) {
                     result.completeExceptionally(ioe);
+                    subscription.cancel();
                     return;
                 }
             } else {
                 try {
                     PrivilegedExceptionAction<FileChannel> pa =
                             () -> FileChannel.open(file, options);
-                    out = AccessController.doPrivileged(pa, null, filePermissions);
+                    out = isDefaultFS
+                            ? AccessController.doPrivileged(pa, acc, filePermissions)
+                            : AccessController.doPrivileged(pa, acc);
                 } catch (PrivilegedActionException pae) {
                     Throwable t = pae.getCause() != null ? pae.getCause() : pae;
                     result.completeExceptionally(t);
+                    subscription.cancel();
+                    return;
+                } catch (Exception e) {
+                    result.completeExceptionally(e);
                     subscription.cancel();
                     return;
                 }
@@ -249,7 +279,7 @@ public class ResponseSubscribers {
             try {
                 out.write(items.toArray(Utils.EMPTY_BB_ARRAY));
             } catch (IOException ex) {
-                Utils.close(out);
+                close();
                 subscription.cancel();
                 result.completeExceptionally(ex);
             }
@@ -259,18 +289,34 @@ public class ResponseSubscribers {
         @Override
         public void onError(Throwable e) {
             result.completeExceptionally(e);
-            Utils.close(out);
+            close();
         }
 
         @Override
         public void onComplete() {
-            Utils.close(out);
+            close();
             result.complete(file);
         }
 
         @Override
         public CompletionStage<Path> getBody() {
             return result;
+        }
+
+        private void close() {
+            if (acc == null) {
+                Utils.close(out);
+            } else {
+                PrivilegedAction<Void> pa = () -> {
+                    Utils.close(out);
+                    return null;
+                };
+                if (isDefaultFS) {
+                    AccessController.doPrivileged(pa, acc, filePermissions);
+                } else {
+                    AccessController.doPrivileged(pa, acc);
+                }
+            }
         }
     }
 

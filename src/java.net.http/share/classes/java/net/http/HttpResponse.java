@@ -506,18 +506,24 @@ public interface HttpResponse<T> {
          * been completely written to the file, and {@link #body()} returns a
          * reference to its {@link Path}.
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodyHandler} is created. Care must be taken
-         * that the {@code BodyHandler} is not shared with untrusted code.
+         * <p> In the case of the default file system provider, security manager
+         * permission checks are performed in this factory method, when the
+         * {@code BodyHandler} is created. Otherwise,
+         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
+         * may be performed asynchronously against the caller's context
+         * at file access time.
+         * Care must be taken that the {@code BodyHandler} is not shared with
+         * untrusted code.
          *
-         * @param file the file to store the body in
-         * @param openOptions any options to use when opening/creating the file
+         * @param  file the file to store the body in
+         * @param  openOptions any options to use when opening/creating the file
          * @return a response body handler
          * @throws IllegalArgumentException if an invalid set of open options
-         *          are specified
-         * @throws SecurityException If a security manager has been installed
-         *          and it denies {@linkplain SecurityManager#checkWrite(String)
-         *          write access} to the file.
+         *         are specified
+         * @throws SecurityException in the case of the default file system
+         *         provider, and a security manager is installed,
+         *         {@link SecurityManager#checkWrite(String) checkWrite}
+         *         is invoked to check write access to the given file
          */
         public static BodyHandler<Path> ofFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
@@ -535,15 +541,21 @@ public interface HttpResponse<T> {
          *
          * <p> Equivalent to: {@code ofFile(file, CREATE, WRITE)}
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodyHandler} is created. Care must be taken
-         * that the {@code BodyHandler} is not shared with untrusted code.
+         * <p> In the case of the default file system provider, security manager
+         * permission checks are performed in this factory method, when the
+         * {@code BodyHandler} is created. Otherwise,
+         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
+         * may be performed asynchronously against the caller's context
+         * at file access time.
+         * Care must be taken that the {@code BodyHandler} is not shared with
+         * untrusted code.
          *
-         * @param file the file to store the body in
+         * @param  file the file to store the body in
          * @return a response body handler
-         * @throws SecurityException If a security manager has been installed
-         *          and it denies {@linkplain SecurityManager#checkWrite(String)
-         *          write access} to the file.
+         * @throws SecurityException in the case of the default file system
+         *         provider, and a security manager is installed,
+         *         {@link SecurityManager#checkWrite(String) checkWrite}
+         *         is invoked to check write access to the given file
          */
         public static BodyHandler<Path> ofFile(Path file) {
             return BodyHandlers.ofFile(file, CREATE, WRITE);
@@ -570,20 +582,22 @@ public interface HttpResponse<T> {
          * method, when the {@code BodyHandler} is created. Care must be taken
          * that the {@code BodyHandler} is not shared with untrusted code.
          *
-         * @param directory the directory to store the file in
-         * @param openOptions open options used when opening the file
+         * @param  directory the directory to store the file in
+         * @param  openOptions open options used when opening the file
          * @return a response body handler
          * @throws IllegalArgumentException if the given path does not exist,
-         *          is not a directory, is not writable, or if an invalid set
-         *          of open options are specified
-         * @throws SecurityException If a security manager has been installed
-         *          and it denies
-         *          {@linkplain SecurityManager#checkRead(String) read access}
-         *          to the directory, or it denies
-         *          {@linkplain SecurityManager#checkWrite(String) write access}
-         *          to the directory, or it denies
-         *          {@linkplain SecurityManager#checkWrite(String) write access}
-         *          to the files within the directory.
+         *         is not of the default file system, is not a directory,
+         *         is not writable, or if an invalid set of open options
+         *         are specified
+         * @throws SecurityException in the case of the default file system
+         *         provider and a security manager has been installed,
+         *         and it denies
+         *         {@linkplain SecurityManager#checkRead(String) read access}
+         *         to the directory, or it denies
+         *         {@linkplain SecurityManager#checkWrite(String) write access}
+         *         to the directory, or it denies
+         *         {@linkplain SecurityManager#checkWrite(String) write access}
+         *         to the files within the directory.
          */
         public static BodyHandler<Path> ofFileDownload(Path directory,
                                                        OpenOption... openOptions) {
@@ -1068,18 +1082,24 @@ public interface HttpResponse<T> {
          * <p> The {@link HttpResponse} using this subscriber is available after
          * the entire response has been read.
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodySubscriber} is created. Care must be taken
-         * that the {@code BodyHandler} is not shared with untrusted code.
+         * <p> In the case of the default file system provider, security manager
+         * permission checks are performed in this factory method, when the
+         * {@code BodySubscriber} is created. Otherwise,
+         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
+         * may be performed asynchronously against the caller's context
+         * at file access time.
+         * Care must be taken that the {@code BodySubscriber} is not shared with
+         * untrusted code.
          *
-         * @param file the file to store the body in
-         * @param openOptions the list of options to open the file with
+         * @param  file the file to store the body in
+         * @param  openOptions the list of options to open the file with
          * @return a body subscriber
          * @throws IllegalArgumentException if an invalid set of open options
-         *          are specified
-         * @throws SecurityException if a security manager has been installed
-         *          and it denies {@linkplain SecurityManager#checkWrite(String)
-         *          write access} to the file
+         *         are specified
+         * @throws SecurityException in the case of the default file system
+         *         provider, and a security manager is installed,
+         *         {@link SecurityManager#checkWrite(String) checkWrite}
+         *         is invoked to check write access to the given file
          */
         public static BodySubscriber<Path> ofFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
@@ -1097,15 +1117,21 @@ public interface HttpResponse<T> {
          *
          * <p> Equivalent to: {@code ofFile(file, CREATE, WRITE)}
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodySubscriber} is created. Care must be taken
-         * that the {@code BodyHandler} is not shared with untrusted code.
+         * <p> In the case of the default file system provider, security manager
+         * permission checks are performed in this factory method, when the
+         * {@code BodySubscriber} is created. Otherwise,
+         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
+         * may be performed asynchronously against the caller's context
+         * at file access time.
+         * Care must be taken that the {@code BodySubscriber} is not shared with
+         * untrusted code.
          *
-         * @param file the file to store the body in
+         * @param  file the file to store the body in
          * @return a body subscriber
-         * @throws SecurityException if a security manager has been installed
-         *          and it denies {@linkplain SecurityManager#checkWrite(String)
-         *          write access} to the file
+         * @throws SecurityException in the case of the default file system
+         *         provider, and a security manager is installed,
+         *         {@link SecurityManager#checkWrite(String) checkWrite}
+         *         is invoked to check write access to the given file
          */
         public static BodySubscriber<Path> ofFile(Path file) {
             return ofFile(file, CREATE, WRITE);
