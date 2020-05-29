@@ -51,20 +51,6 @@ public class MacAppBundler extends AbstractImageBundler {
                     params -> null,
                     (s, p) -> s);
 
-    public static final BundlerParamInfo<String> MAC_CF_BUNDLE_VERSION =
-            new StandardBundlerParam<>(
-                    "mac.CFBundleVersion",
-                    String.class,
-                    p -> {
-                        String s = VERSION.fetchFrom(p);
-                        if (validCFBundleVersion(s)) {
-                            return s;
-                        } else {
-                            return "100";
-                        }
-                    },
-                    (s, p) -> s);
-
     public static final BundlerParamInfo<String> DEFAULT_ICNS_ICON =
             new StandardBundlerParam<>(
             ".mac.default.icns",
@@ -99,60 +85,18 @@ public class MacAppBundler extends AbstractImageBundler {
             new StandardBundlerParam<>(
             Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(),
             String.class,
-            params -> IDENTIFIER.fetchFrom(params) + ".",
+            params -> getIdentifier(params) + ".",
             (s, p) -> s);
 
-    public static boolean validCFBundleVersion(String v) {
-        // CFBundleVersion (String - iOS, OS X) specifies the build version
-        // number of the bundle, which identifies an iteration (released or
-        // unreleased) of the bundle. The build version number should be a
-        // string comprised of three non-negative, period-separated integers
-        // with the first integer being greater than zero. The string should
-        // only contain numeric (0-9) and period (.) characters. Leading zeros
-        // are truncated from each integer and will be ignored (that is,
-        // 1.02.3 is equivalent to 1.2.3). This key is not localizable.
+    static String getIdentifier(Map<String, ? super Object> params) {
+        String s = MAIN_CLASS.fetchFrom(params);
+        if (s == null) return null;
 
-        if (v == null) {
-            return false;
+        int idx = s.lastIndexOf(".");
+        if (idx >= 1) {
+            return s.substring(0, idx);
         }
-
-        String p[] = v.split("\\.");
-        if (p.length > 3 || p.length < 1) {
-            Log.verbose(I18N.getString(
-                    "message.version-string-too-many-components"));
-            return false;
-        }
-
-        try {
-            BigInteger n = new BigInteger(p[0]);
-            if (BigInteger.ONE.compareTo(n) > 0) {
-                Log.verbose(I18N.getString(
-                        "message.version-string-first-number-not-zero"));
-                return false;
-            }
-            if (p.length > 1) {
-                n = new BigInteger(p[1]);
-                if (BigInteger.ZERO.compareTo(n) > 0) {
-                    Log.verbose(I18N.getString(
-                            "message.version-string-no-negative-numbers"));
-                    return false;
-                }
-            }
-            if (p.length > 2) {
-                n = new BigInteger(p[2]);
-                if (BigInteger.ZERO.compareTo(n) > 0) {
-                    Log.verbose(I18N.getString(
-                            "message.version-string-no-negative-numbers"));
-                    return false;
-                }
-            }
-        } catch (NumberFormatException ne) {
-            Log.verbose(I18N.getString("message.version-string-numbers-only"));
-            Log.verbose(ne);
-            return false;
-        }
-
-        return true;
+        return s;
     }
 
     @Override
@@ -179,10 +123,12 @@ public class MacAppBundler extends AbstractImageBundler {
         }
 
         // validate short version
-        if (!validCFBundleVersion(MAC_CF_BUNDLE_VERSION.fetchFrom(params))) {
-            throw new ConfigException(
-                    I18N.getString("error.invalid-cfbundle-version"),
-                    I18N.getString("error.invalid-cfbundle-version.advice"));
+        try {
+            String version = VERSION.fetchFrom(params);
+            CFBundleVersion.of(version);
+        } catch (IllegalArgumentException ex) {
+            throw new ConfigException(ex.getMessage(), I18N.getString(
+                    "error.invalid-cfbundle-version.advice"), ex);
         }
 
         // reject explicitly set sign to true and no valid signature key

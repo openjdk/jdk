@@ -308,23 +308,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                 (s, p) -> null
             );
 
-    static final StandardBundlerParam<String> IDENTIFIER =
-            new StandardBundlerParam<>(
-                    "identifier.default",
-                    String.class,
-                    params -> {
-                        String s = MAIN_CLASS.fetchFrom(params);
-                        if (s == null) return null;
-
-                        int idx = s.lastIndexOf(".");
-                        if (idx >= 1) {
-                            return s.substring(0, idx);
-                        }
-                        return s;
-                    },
-                    (s, p) -> s
-            );
-
     static final StandardBundlerParam<Boolean> BIND_SERVICES =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.BIND_SERVICES.getId(),

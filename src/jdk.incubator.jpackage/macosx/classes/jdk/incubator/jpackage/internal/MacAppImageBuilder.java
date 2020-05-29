@@ -110,29 +110,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                             return identifier;
                         }
 
-                        identifier = IDENTIFIER.fetchFrom(params);
-                        if (identifier != null) {
-                            return identifier;
-                        }
-                        // the IDENTIFIER (above) will default to derive from
-                        // the main-class, in case there is no main-class
-                        // (such as runtime installer) revert to the name.
-                        // any of these could be invalid, so check later.
-                        return APP_NAME.fetchFrom(params);
-                    },
-                    (s, p) -> s);
-
-    public static final BundlerParamInfo<String> MAC_CF_BUNDLE_VERSION =
-            new StandardBundlerParam<>(
-                    "mac.CFBundleVersion",
-                    String.class,
-                    p -> {
-                        String s = VERSION.fetchFrom(p);
-                        if (validCFBundleVersion(s)) {
-                            return s;
-                        } else {
-                            return "100";
-                        }
+                        return MacAppBundler.getIdentifier(params);
                     },
                     (s, p) -> s);
 
@@ -186,59 +164,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private void writeEntry(InputStream in, Path dstFile) throws IOException {
         Files.createDirectories(dstFile.getParent());
         Files.copy(in, dstFile);
-    }
-
-    public static boolean validCFBundleVersion(String v) {
-        // CFBundleVersion (String - iOS, OS X) specifies the build version
-        // number of the bundle, which identifies an iteration (released or
-        // unreleased) of the bundle. The build version number should be a
-        // string comprised of three non-negative, period-separated integers
-        // with the first integer being greater than zero. The string should
-        // only contain numeric (0-9) and period (.) characters. Leading zeros
-        // are truncated from each integer and will be ignored (that is,
-        // 1.02.3 is equivalent to 1.2.3). This key is not localizable.
-
-        if (v == null) {
-            return false;
-        }
-
-        String p[] = v.split("\\.");
-        if (p.length > 3 || p.length < 1) {
-            Log.verbose(I18N.getString(
-                    "message.version-string-too-many-components"));
-            return false;
-        }
-
-        try {
-            BigInteger n = new BigInteger(p[0]);
-            if (BigInteger.ONE.compareTo(n) > 0) {
-                Log.verbose(I18N.getString(
-                        "message.version-string-first-number-not-zero"));
-                return false;
-            }
-            if (p.length > 1) {
-                n = new BigInteger(p[1]);
-                if (BigInteger.ZERO.compareTo(n) > 0) {
-                    Log.verbose(I18N.getString(
-                            "message.version-string-no-negative-numbers"));
-                    return false;
-                }
-            }
-            if (p.length > 2) {
-                n = new BigInteger(p[2]);
-                if (BigInteger.ZERO.compareTo(n) > 0) {
-                    Log.verbose(I18N.getString(
-                            "message.version-string-no-negative-numbers"));
-                    return false;
-                }
-            }
-        } catch (NumberFormatException ne) {
-            Log.verbose(I18N.getString("message.version-string-numbers-only"));
-            Log.verbose(ne);
-            return false;
-        }
-
-        return true;
     }
 
     @Override
@@ -469,16 +394,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
         data.put("DEPLOY_BUNDLE_NAME",
                 getBundleName(params));
-        data.put("DEPLOY_BUNDLE_COPYRIGHT",
-                COPYRIGHT.fetchFrom(params) != null ?
-                COPYRIGHT.fetchFrom(params) : "Unknown");
+        data.put("DEPLOY_BUNDLE_COPYRIGHT", COPYRIGHT.fetchFrom(params));
         data.put("DEPLOY_LAUNCHER_NAME", getLauncherName(params));
-        data.put("DEPLOY_BUNDLE_SHORT_VERSION",
-                VERSION.fetchFrom(params) != null ?
-                VERSION.fetchFrom(params) : "1.0.0");
-        data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION",
-                MAC_CF_BUNDLE_VERSION.fetchFrom(params) != null ?
-                MAC_CF_BUNDLE_VERSION.fetchFrom(params) : "100");
+        data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
+        data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
 
         boolean hasMainJar = MAIN_JAR.fetchFrom(params) != null;
         boolean hasMainModule =

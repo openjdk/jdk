@@ -25,18 +25,21 @@
 
 package jdk.incubator.jpackage.internal;
 
+import java.math.BigInteger;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Dotted numeric version string.
  * E.g.: 1.0.37, 10, 0.5
  */
-class DottedVersion implements Comparable<String> {
+final class DottedVersion implements Comparable<String> {
 
-    public DottedVersion(String version) {
+    DottedVersion(String version) {
         greedy = true;
         components = parseVersionString(version, greedy);
         value = version;
@@ -48,49 +51,61 @@ class DottedVersion implements Comparable<String> {
         value = version;
     }
 
-    public static DottedVersion greedy(String version) {
+    static DottedVersion greedy(String version) {
         return new DottedVersion(version);
     }
 
-    public static DottedVersion lazy(String version) {
+    static DottedVersion lazy(String version) {
         return new DottedVersion(version, false);
     }
 
     @Override
     public int compareTo(String o) {
         int result = 0;
-        int[] otherComponents = parseVersionString(o, greedy);
-        for (int i = 0; i < Math.min(components.length, otherComponents.length)
+        BigInteger[] otherComponents = parseVersionString(o, greedy);
+        for (int i = 0; i < Math.max(components.length, otherComponents.length)
                 && result == 0; ++i) {
-            result = components[i] - otherComponents[i];
-        }
+            final BigInteger x;
+            if (i < components.length) {
+                x = components[i];
+            } else {
+                x = BigInteger.ZERO;
+            }
 
-        if (result == 0) {
-            result = components.length - otherComponents.length;
+            final BigInteger y;
+            if (i < otherComponents.length) {
+                y = otherComponents[i];
+            } else {
+                y = BigInteger.ZERO;
+            }
+            result = x.compareTo(y);
         }
 
         return result;
     }
 
-    private static int[] parseVersionString(String version, boolean greedy) {
+    private static BigInteger[] parseVersionString(String version, boolean greedy) {
         Objects.requireNonNull(version);
         if (version.isEmpty()) {
             if (!greedy) {
-                return new int[] {0};
+                return new BigInteger[] {BigInteger.ZERO};
             }
-            throw new IllegalArgumentException("Version may not be empty string");
+            throw new IllegalArgumentException(I18N.getString(
+                    "error.version-string-empty"));
         }
 
         int lastNotZeroIdx = -1;
-        List<Integer> components = new ArrayList<>();
+        List<BigInteger> components = new ArrayList<>();
         for (var component : version.split("\\.", -1)) {
             if (component.isEmpty()) {
                 if (!greedy) {
                     break;
                 }
 
-                throw new IllegalArgumentException(String.format(
-                        "Version [%s] contains a zero lenght component", version));
+                throw new IllegalArgumentException(MessageFormat.format(
+                        I18N.getString(
+                                "error.version-string-zero-length-component"),
+                        version));
             }
 
             if (!DIGITS.matcher(component).matches()) {
@@ -99,23 +114,27 @@ class DottedVersion implements Comparable<String> {
                     break;
                 }
 
-                throw new IllegalArgumentException(String.format(
-                        "Version [%s] contains invalid component [%s]", version,
-                        component));
+                throw new IllegalArgumentException(MessageFormat.format(
+                        I18N.getString(
+                                "error.version-string-invalid-component"),
+                        version, component));
             }
 
-            final int num;
+            final BigInteger num;
             try {
-                num = Integer.parseInt(component);
+                num = new BigInteger(component);
             } catch (NumberFormatException ex) {
                 if (!greedy) {
                     break;
                 }
 
-                throw ex;
+                throw new IllegalArgumentException(MessageFormat.format(
+                        I18N.getString(
+                                "error.version-string-invalid-component"),
+                        version, component));
             }
 
-            if (num != 0) {
+            if (num != BigInteger.ZERO) {
                 lastNotZeroIdx = components.size();
             }
             components.add(num);
@@ -127,9 +146,10 @@ class DottedVersion implements Comparable<String> {
         }
 
         if (components.isEmpty()) {
-            components.add(0);
+            components.add(BigInteger.ZERO);
         }
-        return components.stream().mapToInt(Integer::intValue).toArray();
+        return components.stream()
+                .collect(Collectors.toList()).toArray(BigInteger[]::new);
     }
 
     @Override
@@ -137,11 +157,11 @@ class DottedVersion implements Comparable<String> {
         return value;
     }
 
-    int[] getComponents() {
+    BigInteger[] getComponents() {
         return components;
     }
 
-    final private int[] components;
+    final private BigInteger[] components;
     final private String value;
     final private boolean greedy;
 

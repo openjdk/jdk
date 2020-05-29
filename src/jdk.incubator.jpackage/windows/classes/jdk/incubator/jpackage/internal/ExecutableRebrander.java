@@ -26,10 +26,10 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -37,14 +37,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.COPYRIGHT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
@@ -150,8 +148,8 @@ final class ExecutableRebrander {
     }
 
     private static String getFixedFileVersion(String value) {
-        int[] versionComponents = DottedVersion.greedy(value).getComponents();
-        int addComponentsCount = 4 - versionComponents.length;
+        int addComponentsCount = 4
+                - DottedVersion.greedy(value).getComponents().length;
         if (addComponentsCount > 0) {
             StringBuilder sb = new StringBuilder(value);
             do {

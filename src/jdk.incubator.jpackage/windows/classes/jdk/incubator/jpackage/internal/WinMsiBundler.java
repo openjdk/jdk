@@ -248,14 +248,12 @@ public class WinMsiBundler  extends AbstractBundler {
 
             /********* validate bundle parameters *************/
 
-            String version = PRODUCT_VERSION.fetchFrom(params);
-            if (!isVersionStringValid(version)) {
-                throw new ConfigException(
-                        MessageFormat.format(I18N.getString(
-                                "error.version-string-wrong-format"), version),
-                        MessageFormat.format(I18N.getString(
-                                "error.version-string-wrong-format.advice"),
-                                PRODUCT_VERSION.getID()));
+            try {
+                String version = PRODUCT_VERSION.fetchFrom(params);
+                MsiVersion.of(version);
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigException(ex.getMessage(), I18N.getString(
+                        "error.version-string-wrong-format.advice"), ex);
             }
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
@@ -268,57 +266,6 @@ public class WinMsiBundler  extends AbstractBundler {
                 throw new ConfigException(re);
             }
         }
-    }
-
-    // https://msdn.microsoft.com/en-us/library/aa370859%28v=VS.85%29.aspx
-    // The format of the string is as follows:
-    //     major.minor.build
-    // The first field is the major version and has a maximum value of 255.
-    // The second field is the minor version and has a maximum value of 255.
-    // The third field is called the build version or the update version and
-    // has a maximum value of 65,535.
-    static boolean isVersionStringValid(String v) {
-        if (v == null) {
-            return true;
-        }
-
-        String p[] = v.split("\\.");
-        if (p.length > 3) {
-            Log.verbose(I18N.getString(
-                    "message.version-string-too-many-components"));
-            return false;
-        }
-
-        try {
-            int val = Integer.parseInt(p[0]);
-            if (val < 0 || val > 255) {
-                Log.verbose(I18N.getString(
-                        "error.version-string-major-out-of-range"));
-                return false;
-            }
-            if (p.length > 1) {
-                val = Integer.parseInt(p[1]);
-                if (val < 0 || val > 255) {
-                    Log.verbose(I18N.getString(
-                            "error.version-string-minor-out-of-range"));
-                    return false;
-                }
-            }
-            if (p.length > 2) {
-                val = Integer.parseInt(p[2]);
-                if (val < 0 || val > 65535) {
-                    Log.verbose(I18N.getString(
-                            "error.version-string-build-out-of-range"));
-                    return false;
-                }
-            }
-        } catch (NumberFormatException ne) {
-            Log.verbose(I18N.getString("error.version-string-part-not-number"));
-            Log.verbose(ne);
-            return false;
-        }
-
-        return true;
     }
 
     private void prepareProto(Map<String, ? super Object> params)
