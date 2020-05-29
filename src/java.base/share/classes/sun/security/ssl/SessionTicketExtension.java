@@ -260,7 +260,8 @@ final class SessionTicketExtension {
         public byte[] encrypt(HandshakeContext hc, SSLSessionImpl session) {
             byte[] encrypted;
 
-            if (!hc.handshakeSession.isStatelessable(hc)) {
+            if (!hc.statelessResumption ||
+                    !hc.handshakeSession.isStatelessable()) {
                 return new byte[0];
             }
 
