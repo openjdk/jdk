@@ -26,7 +26,6 @@
 package jdk.jfr.api.consumer.recordingstream;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jdk.jfr.Event;
 import jdk.jfr.Name;

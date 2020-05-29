@@ -41,10 +41,6 @@
 package jdk.jfr.javaagent;
 
 import com.sun.tools.attach.VirtualMachine;
-import jdk.jfr.FlightRecorder;
-import jdk.jfr.FlightRecorderListener;
-import jdk.jfr.Recording;
-import jdk.jfr.RecordingState;
 
 
 public class TestLoadedAgent {

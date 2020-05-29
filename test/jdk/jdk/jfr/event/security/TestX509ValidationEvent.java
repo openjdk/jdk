@@ -25,9 +25,6 @@ package jdk.jfr.event.security;
 
 import java.util.List;
 
-import jdk.jfr.AnnotationElement;
-import jdk.jfr.EventType;
-import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
