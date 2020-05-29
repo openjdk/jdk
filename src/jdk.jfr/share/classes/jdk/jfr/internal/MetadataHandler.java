@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -59,6 +60,9 @@ import jdk.jfr.Unsigned;
 
 final class MetadataHandler extends DefaultHandler implements EntityResolver {
 
+    // Metadata and Checkpoint event
+    private final long RESERVED_EVENT_COUNT = 2;
+
     static class TypeElement {
         List<FieldElement> fields = new ArrayList<>();
         String name;
@@ -72,6 +76,7 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
         boolean stackTrace;
         boolean cutoff;
         boolean isEvent;
+        boolean isRelation;
         boolean experimental;
         boolean valueType;
     }
@@ -99,13 +104,11 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
     }
 
     final Map<String, TypeElement> types = new LinkedHashMap<>(200);
-    final Map<String, XmlType> xmlTypes = new HashMap<>(20);
-    final Map<String, List<AnnotationElement>> xmlContentTypes = new HashMap<>(20);
-    final List<String> relations = new ArrayList<>();
-    long eventTypeId = 255;
-    long structTypeId = 33;
+    final Map<String, XmlType> xmlTypes = new LinkedHashMap<>(20);
+    final Map<String, List<AnnotationElement>> xmlContentTypes = new LinkedHashMap<>(20);
     FieldElement currentField;
     TypeElement currentType;
+    long eventCount;
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
@@ -118,6 +121,7 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
             xmlType.unsigned = Boolean.valueOf(attributes.getValue("unsigned"));
             xmlTypes.put(xmlType.name, xmlType);
             break;
+        case "Relation":
         case "Type":
         case "Event":
             currentType = new TypeElement();
@@ -132,6 +136,7 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
             currentType.cutoff = getBoolean(attributes, "cutoff", false);
             currentType.experimental = getBoolean(attributes, "experimental", false);
             currentType.isEvent = qName.equals("Event");
+            currentType.isRelation = qName.equals("Relation");
             break;
         case "Field":
             currentField = new FieldElement();
@@ -150,10 +155,6 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
             String name = attributes.getValue("name");
             String annotation = attributes.getValue("annotation");
             xmlContentTypes.put(name, createAnnotationElements(annotation));
-            break;
-        case "Relation":
-            String n = attributes.getValue("name");
-            relations.add(n);
             break;
         }
     }
@@ -202,7 +203,11 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
         switch (qName) {
         case "Type":
         case "Event":
+        case "Relation":
             types.put(currentType.name, currentType);
+            if (currentType.isEvent) {
+                eventCount++;
+            }
             currentType = null;
             break;
         case "Field":
@@ -221,7 +226,6 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
                 parser.parse(is, t);
                 return t.buildTypes();
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new IOException(e);
             }
         }
@@ -237,12 +241,12 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
 
     private Map<String, AnnotationElement> buildRelationMap(Map<String, Type> typeMap) {
         Map<String, AnnotationElement> relationMap = new HashMap<>();
-        for (String relation : relations) {
-            Type relationType = new Type(Type.TYPES_PREFIX + relation, Type.SUPER_TYPE_ANNOTATION, eventTypeId++);
-            relationType.setAnnotations(Collections.singletonList(new AnnotationElement(Relational.class)));
-            AnnotationElement ae = PrivateAccess.getInstance().newAnnotation(relationType, Collections.emptyList(), true);
-            relationMap.put(relation, ae);
-            typeMap.put(relationType.getName(), relationType);
+        for (TypeElement t : types.values()) {
+            if (t.isRelation) {
+                Type relationType = typeMap.get(t.name);
+                AnnotationElement ae = PrivateAccess.getInstance().newAnnotation(relationType, Collections.emptyList(), true);
+                relationMap.put(t.name, ae);
+            }
         }
         return relationMap;
     }
@@ -276,7 +280,9 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
                     aes.addAll(Objects.requireNonNull(xmlContentTypes.get(f.contentType)));
                 }
                 if (f.relation != null) {
-                    aes.add(Objects.requireNonNull(relationMap.get(f.relation)));
+                    String relationTypeName = Type.TYPES_PREFIX + f.relation;
+                    AnnotationElement t = relationMap.get(relationTypeName);
+                    aes.add(Objects.requireNonNull(t));
                 }
                 if (f.label != null) {
                     aes.add(new AnnotationElement(Label.class, f.label));
@@ -301,10 +307,13 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
 
     private Map<String, Type> buildTypeMap() {
         Map<String, Type> typeMap = new HashMap<>();
-        for (Type type : Type.getKnownTypes()) {
-            typeMap.put(type.getName(), type);
+        Map<String, Type> knownTypeMap = new HashMap<>();
+        for (Type kt :Type.getKnownTypes()) {
+            typeMap.put(kt.getName(), kt);
+            knownTypeMap.put(kt.getName(), kt);
         }
-
+        long eventTypeId = RESERVED_EVENT_COUNT;
+        long typeId = RESERVED_EVENT_COUNT + eventCount + knownTypeMap.size();
         for (TypeElement t : types.values()) {
             List<AnnotationElement> aes = new ArrayList<>();
             if (t.category != null) {
@@ -339,33 +348,21 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
                 aes.add(new AnnotationElement(Enabled.class, false));
                 type = new PlatformEventType(t.name,  eventTypeId++, false, true);
             } else {
-                // Struct types had their own XML-element in the past. To have id assigned in the
-                // same order as generated .hpp file do some tweaks here.
-                boolean valueType = t.name.endsWith("StackFrame") || t.valueType;
-                type = new Type(t.name, null, valueType ?  eventTypeId++ : nextTypeId(t.name), false);
+                if (knownTypeMap.containsKey(t.name)) {
+                    type = knownTypeMap.get(t.name);
+                } else {
+                    if (t.isRelation) {
+                        type = new Type(t.name, Type.SUPER_TYPE_ANNOTATION, typeId++);
+                        aes.add(new AnnotationElement(Relational.class));
+                    } else {
+                        type = new Type(t.name, null, typeId++);
+                    }
+                }
             }
             type.setAnnotations(aes);
             typeMap.put(t.name, type);
         }
         return typeMap;
-    }
-
-    private long nextTypeId(String name) {
-        if (Type.THREAD.getName().equals(name)) {
-            return Type.THREAD.getId();
-        }
-        if (Type.STRING.getName().equals(name)) {
-            return Type.STRING.getId();
-        }
-        if (Type.CLASS.getName().equals(name)) {
-            return Type.CLASS.getId();
-        }
-        for (Type type : Type.getKnownTypes()) {
-            if (type.getName().equals(name)) {
-                return type.getId();
-            }
-        }
-        return structTypeId++;
     }
 
     private String[] buildCategoryArray(String category) {

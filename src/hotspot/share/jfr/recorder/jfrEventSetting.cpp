@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,10 @@ void JfrEventSetting::set_enabled(jlong id, bool enabled) {
 
 #ifdef ASSERT
 bool JfrEventSetting::bounds_check_event(jlong id) {
-  if ((unsigned)id < NUM_RESERVED_EVENTS || (unsigned)id >= MaxJfrEventId) {
+  if ((unsigned)id < FIRST_EVENT_ID) {
+    return false;
+  }
+  if ((unsigned)id > LAST_EVENT_ID) {
     return false;
   }
   return true;

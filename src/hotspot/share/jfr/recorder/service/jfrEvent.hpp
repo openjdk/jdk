@@ -192,8 +192,8 @@ class JfrEvent {
   JfrEventVerifier _verifier;
 
   void assert_precondition() {
-    assert(T::eventId >= (JfrEventId)NUM_RESERVED_EVENTS, "event id underflow invariant");
-    assert(T::eventId < MaxJfrEventId, "event id overflow invariant");
+    assert(T::eventId >= FIRST_EVENT_ID, "event id underflow invariant");
+    assert(T::eventId <= LAST_EVENT_ID, "event id overflow invariant");
     DEBUG_ONLY(static_cast<T*>(this)->verify());
   }
 

@@ -126,7 +126,8 @@ void JfrCheckpointWriter::release() {
 }
 
 void JfrCheckpointWriter::write_type(JfrTypeId type_id) {
-  assert(type_id < TYPES_END, "invariant");
+  assert(type_id <= LAST_TYPE_ID, "type id overflow invariant");
+  assert(type_id >= FIRST_TYPE_ID, "type id underflow invariant");
   write<u8>(type_id);
   increment();
 }

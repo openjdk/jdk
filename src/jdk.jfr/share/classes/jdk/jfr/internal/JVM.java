@@ -577,4 +577,13 @@ public final class JVM {
      * @return the handler, may be {@code null}
      */
     public native Object getHandler(Class<? extends jdk.internal.event.Event> eventClass);
+
+    /**
+     * Returns the id for the Java types defined in metadata.xml.
+     *
+     * @param name the name of the type
+     *
+     * @return the id, or a negative value if it does not exists.
+     */
+    public native long getTypeId(String name);
 }

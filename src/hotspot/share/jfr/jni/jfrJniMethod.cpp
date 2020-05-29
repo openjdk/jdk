@@ -49,6 +49,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
+#include "jfrfiles/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -349,4 +350,10 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_set_handler(JNIEnv * env, jobject jvm, jobject cl
   return JfrJavaSupport::set_handler(clazz, handler, thread);
 JVM_END
 
+NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstring type))
+  const char* type_name= env->GetStringUTFChars(type, NULL);
+  jlong id = JfrType::name_to_id(type_name);
+  env->ReleaseStringUTFChars(type, type_name);
+  return id;
+NO_TRANSITION_END
 
