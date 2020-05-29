@@ -36,6 +36,7 @@ extern uint32_t   ZGlobalPhase;
 const uint32_t    ZPhaseMark                    = 0;
 const uint32_t    ZPhaseMarkCompleted           = 1;
 const uint32_t    ZPhaseRelocate                = 2;
+const char*       ZGlobalPhaseToString();
 
 // Global sequence number
 extern uint32_t   ZGlobalSeqNum;

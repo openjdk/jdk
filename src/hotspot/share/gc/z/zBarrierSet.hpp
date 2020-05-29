@@ -40,7 +40,7 @@ public:
   virtual void on_thread_attach(Thread* thread);
   virtual void on_thread_detach(Thread* thread);
 
-  virtual void print_on(outputStream* st) const {}
+  virtual void print_on(outputStream* st) const;
 
   template <DecoratorSet decorators, typename BarrierSetT = ZBarrierSet>
   class AccessBarrier : public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
