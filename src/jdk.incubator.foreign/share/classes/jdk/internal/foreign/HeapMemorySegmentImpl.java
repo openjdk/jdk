@@ -52,8 +52,8 @@ public class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl {
     final Supplier<H> baseProvider;
 
     @ForceInline
-    HeapMemorySegmentImpl(long offset, Supplier<H> baseProvider, long length, int mask, Thread owner, MemoryScope scope) {
-        super(length, mask, owner, scope);
+    HeapMemorySegmentImpl(long offset, Supplier<H> baseProvider, long length, int mask, MemoryScope scope) {
+        super(length, mask, scope);
         this.offset = offset;
         this.baseProvider = baseProvider;
     }
@@ -69,8 +69,8 @@ public class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    HeapMemorySegmentImpl<H> dup(long offset, long size, int mask, Thread owner, MemoryScope scope) {
-        return new HeapMemorySegmentImpl<H>(this.offset + offset, baseProvider, size, mask, owner, scope);
+    HeapMemorySegmentImpl<H> dup(long offset, long size, int mask, MemoryScope scope) {
+        return new HeapMemorySegmentImpl<>(this.offset + offset, baseProvider, size, mask, scope);
     }
 
     @Override
@@ -121,7 +121,7 @@ public class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl {
 
     static <Z> HeapMemorySegmentImpl<Z> makeHeapSegment(Supplier<Z> obj, int length, int base, int scale) {
         int byteSize = length * scale;
-        MemoryScope scope = new MemoryScope(null, null);
-        return new HeapMemorySegmentImpl<>(base, obj, byteSize, defaultAccessModes(byteSize), Thread.currentThread(), scope);
+        MemoryScope scope = MemoryScope.create(null, null);
+        return new HeapMemorySegmentImpl<>(base, obj, byteSize, defaultAccessModes(byteSize), scope);
     }
 }

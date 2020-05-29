@@ -48,8 +48,8 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements 
 
     private final UnmapperProxy unmapper;
 
-    MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, int mask, Thread owner, MemoryScope scope) {
-        super(min, length, mask, owner, scope);
+    MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, int mask, MemoryScope scope) {
+        super(min, length, mask, scope);
         this.unmapper = unmapper;
     }
 
@@ -60,8 +60,8 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements 
     }
 
     @Override
-    MappedMemorySegmentImpl dup(long offset, long size, int mask, Thread owner, MemoryScope scope) {
-        return new MappedMemorySegmentImpl(min + offset, unmapper, size, mask, owner, scope);
+    MappedMemorySegmentImpl dup(long offset, long size, int mask, MemoryScope scope) {
+        return new MappedMemorySegmentImpl(min + offset, unmapper, size, mask, scope);
     }
 
     // mapped segment methods
@@ -103,13 +103,13 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements 
         if (bytesSize <= 0) throw new IllegalArgumentException("Requested bytes size must be > 0.");
         try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
             UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, 0L, bytesSize);
-            MemoryScope scope = new MemoryScope(null, unmapperProxy::unmap);
+            MemoryScope scope = MemoryScope.create(null, unmapperProxy::unmap);
             int modes = defaultAccessModes(bytesSize);
             if (mapMode == FileChannel.MapMode.READ_ONLY) {
                 modes &= ~WRITE;
             }
             return new MappedMemorySegmentImpl(unmapperProxy.address(), unmapperProxy, bytesSize,
-                    modes, Thread.currentThread(), scope);
+                    modes, scope);
         }
     }
 
