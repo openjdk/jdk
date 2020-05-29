@@ -267,9 +267,10 @@ public:
       }
     }
 
-    if (heap->is_degenerated_gc_in_progress()) {
-      // Degenerated cycle may bypass concurrent cycle, so code roots might not be scanned,
-      // let's check here.
+    if (heap->is_degenerated_gc_in_progress() || heap->is_full_gc_in_progress()) {
+      // Full GC does not execute concurrent cycle.
+      // Degenerated cycle may bypass concurrent cycle.
+      // So code roots might not be scanned, let's scan here.
       _cm->concurrent_scan_code_roots(worker_id, rp);
     }
 
