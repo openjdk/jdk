@@ -67,15 +67,3 @@ void ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(Shenandoa
     }
   }
 }
-
-const char* ShenandoahStaticHeuristics::name() {
-  return "static";
-}
-
-bool ShenandoahStaticHeuristics::is_diagnostic() {
-  return false;
-}
-
-bool ShenandoahStaticHeuristics::is_experimental() {
-  return false;
-}

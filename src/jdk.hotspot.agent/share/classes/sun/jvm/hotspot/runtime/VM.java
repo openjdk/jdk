@@ -76,7 +76,6 @@ public class VM {
   private boolean      isBigEndian;
   /** This is only present if in a debugging system */
   private JVMDebugger  debugger;
-  private long         stackBias;
   private long         logAddressSize;
   private Universe     universe;
   private ObjectHeap   heap;
@@ -443,7 +442,6 @@ public class VM {
 
     checkVMVersion(vmRelease);
 
-    stackBias    = db.lookupIntConstant("STACK_BIAS").intValue();
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
 
     // We infer the presence of JVMTI from the presence of the InstanceKlass::_breakpoints field.
@@ -670,11 +668,6 @@ public class VM {
 
   public long getIntSize() {
     return db.getJIntType().getSize();
-  }
-
-  /** NOTE: this offset is in BYTES in this system! */
-  public long getStackBias() {
-    return stackBias;
   }
 
   /** Indicates whether the underlying machine supports the LP64 data

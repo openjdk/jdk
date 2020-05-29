@@ -30,8 +30,12 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import sun.invoke.util.Wrapper;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.List;
 
 /**
  * This class defines several factory methods for constructing and combining memory access var handles.
@@ -123,6 +127,27 @@ public final class MemoryHandles {
         //sorry, just the one!
     }
 
+    private static final MethodHandle LONG_TO_ADDRESS;
+    private static final MethodHandle ADDRESS_TO_LONG;
+    private static final MethodHandle ADD_OFFSET;
+    private static final MethodHandle ADD_STRIDE;
+
+    static {
+        try {
+            LONG_TO_ADDRESS = MethodHandles.lookup().findStatic(MemoryHandles.class, "longToAddress",
+                    MethodType.methodType(MemoryAddress.class, long.class));
+            ADDRESS_TO_LONG = MethodHandles.lookup().findStatic(MemoryHandles.class, "addressToLong",
+                    MethodType.methodType(long.class, MemoryAddress.class));
+            ADD_OFFSET = MethodHandles.lookup().findStatic(MemoryHandles.class, "addOffset",
+                    MethodType.methodType(MemoryAddress.class, MemoryAddress.class, long.class));
+
+            ADD_STRIDE = MethodHandles.lookup().findStatic(MemoryHandles.class, "addStride",
+                    MethodType.methodType(MemoryAddress.class, MemoryAddress.class, long.class, long.class));
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
     /**
      * Creates a memory access var handle with the given carrier type and byte order.
      *
@@ -174,85 +199,325 @@ public final class MemoryHandles {
             throw new IllegalArgumentException("Bad alignment: " + alignmentBytes);
         }
 
-        return JLI.memoryAddressViewVarHandle(carrier, alignmentBytes - 1, byteOrder, 0, new long[]{});
+        return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(carrier, alignmentBytes - 1, byteOrder, 0, new long[]{}));
     }
 
     /**
-     * Creates a memory access var handle with a fixed offset added to the accessed offset. That is,
-     * if the target memory access var handle accesses a memory location at offset <em>O</em>, the new memory access var
-     * handle will access a memory location at offset <em>O' + O</em>.
+     * Returns a var handle that adds a <em>fixed</em> offset to the incoming {@link MemoryAddress} coordinate
+     * and then propagates such value to the target var handle. That is,
+     * when the returned var handle receives a memory address coordinate pointing at a memory location at
+     * offset <em>O</em>, a memory address coordinate pointing at a memory location at offset <em>O' + O</em>
+     * is created, and then passed to the target var handle.
      *
-     * The resulting memory access var handle will feature the same access coordinates as the ones in the target memory access var handle.
-     *
-     * @apiNote the resulting var handle features certain <a href="#memaccess-mode">access mode restrictions</a>,
-     * which are common to all memory access var handles.
+     * The returned var handle will feature the same type and access coordinates as the target var handle.
      *
      * @param target the target memory access handle to access after the offset adjustment.
      * @param bytesOffset the offset, in bytes. Must be positive or zero.
-     * @return the new memory access var handle.
-     * @throws IllegalArgumentException when the target var handle is not a memory access var handle,
-     * or when {@code bytesOffset < 0}, or otherwise incompatible with the alignment constraint.
+     * @return the adapted var handle.
+     * @throws IllegalArgumentException if the first access coordinate type is not of type {@link MemoryAddress}.
      */
     public static VarHandle withOffset(VarHandle target, long bytesOffset) {
-        if (bytesOffset < 0) {
-            throw new IllegalArgumentException("Illegal offset: " + bytesOffset);
+        if (bytesOffset == 0) {
+            return target; //nothing to do
         }
 
-        long alignMask = JLI.memoryAddressAlignmentMask(target);
+        checkAddressFirstCoordinate(target);
 
-        if ((bytesOffset & alignMask) != 0) {
-            throw new IllegalArgumentException("Offset " + bytesOffset + " does not conform to alignment " + (alignMask + 1));
+        if (JLI.isMemoryAccessVarHandle(target) &&
+                (bytesOffset & JLI.memoryAddressAlignmentMask(target)) == 0) {
+            //flatten
+            return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(
+                    JLI.memoryAddressCarrier(target),
+                    JLI.memoryAddressAlignmentMask(target),
+                    JLI.memoryAddressByteOrder(target),
+                    JLI.memoryAddressOffset(target) + bytesOffset,
+                    JLI.memoryAddressStrides(target)));
+        } else {
+            //slow path
+            VarHandle res = collectCoordinates(target, 0, ADD_OFFSET);
+            return insertCoordinates(res, 1, bytesOffset);
         }
-
-        return JLI.memoryAddressViewVarHandle(
-                JLI.memoryAddressCarrier(target),
-                alignMask,
-                JLI.memoryAddressByteOrder(target),
-                JLI.memoryAddressOffset(target) + bytesOffset,
-                JLI.memoryAddressStrides(target));
     }
 
     /**
-     * Creates a memory access var handle with a <em>variable</em> offset added to the accessed offset.
-     * That is, if the target memory access var handle accesses a memory location at offset <em>O</em>,
-     * the new memory access var handle will access a memory location at offset <em>(S * X) + O</em>, where <em>S</em>
-     * is a constant <em>stride</em>, whereas <em>X</em> is a dynamic value that will be provided as an additional access
-     * coordinate (of type {@code long}). The new access coordinate will be <em>prepended</em> to the ones available
-     * in the target memory access var handles (if any).
+     * Returns a var handle which adds a <em>variable</em> offset to the incoming {@link MemoryAddress}
+     * access coordinate value and then propagates such value to the target var handle.
+     * That is, when the returned var handle receives a memory address coordinate pointing at a memory location at
+     * offset <em>O</em>, a new memory address coordinate pointing at a memory location at offset <em>(S * X) + O</em>
+     * is created, and then passed to the target var handle,
+     * where <em>S</em> is a constant <em>stride</em>, whereas <em>X</em> is a dynamic value that will be
+     * provided as an additional access coordinate (of type {@code long}).
      *
-     * @apiNote the resulting var handle features certain <a href="#memaccess-mode">access mode restrictions</a>,
-     * which are common to all memory access var handles.
+     * The returned var handle will feature the same type as the target var handle; an additional access coordinate
+     * of type {@code long} will be added to the access coordinate types of the target var handle at the position
+     * immediately following the leading access coordinate of type {@link MemoryAddress}.
      *
      * @param target the target memory access handle to access after the scale adjustment.
-     * @param bytesStride the stride, in bytes, by which to multiply the coordinate value. Must be greater than zero.
-     * @return the new memory access var handle.
-     * @throws IllegalArgumentException when the target var handle is not a memory access var handle,
-     * or if {@code bytesStride <= 0}, or otherwise incompatible with the alignment constraint.
+     * @param bytesStride the stride, in bytes, by which to multiply the coordinate value.
+     * @return the adapted var handle.
+     * @throws IllegalArgumentException if the first access coordinate type is not of type {@link MemoryAddress}.
      */
     public static VarHandle withStride(VarHandle target, long bytesStride) {
         if (bytesStride == 0) {
-            throw new IllegalArgumentException("Stride must be positive: " + bytesStride);
+            return dropCoordinates(target, 1, long.class); // dummy coordinate
         }
 
-        long alignMask = JLI.memoryAddressAlignmentMask(target);
+        checkAddressFirstCoordinate(target);
 
-        if ((bytesStride & alignMask) != 0) {
-            throw new IllegalArgumentException("Stride " + bytesStride + " does not conform to alignment " + (alignMask + 1));
+        if (JLI.isMemoryAccessVarHandle(target) &&
+                (bytesStride & JLI.memoryAddressAlignmentMask(target)) == 0) {
+            //flatten
+            long[] strides = JLI.memoryAddressStrides(target);
+            long[] newStrides = new long[strides.length + 1];
+            System.arraycopy(strides, 0, newStrides, 1, strides.length);
+            newStrides[0] = bytesStride;
+
+            return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(
+                    JLI.memoryAddressCarrier(target),
+                    JLI.memoryAddressAlignmentMask(target),
+                    JLI.memoryAddressByteOrder(target),
+                    JLI.memoryAddressOffset(target),
+                    newStrides));
+        } else {
+            //slow path
+            VarHandle res = collectCoordinates(target, 0, ADD_STRIDE);
+            return insertCoordinates(res, 2, bytesStride);
+        }
+    }
+
+    /**
+     * Adapt an existing var handle into a new var handle whose carrier type is {@link MemoryAddress}.
+     * That is, when calling {@link VarHandle#get(Object...)} on the returned var handle,
+     * the read numeric value will be turned into a memory address (as if by calling {@link MemoryAddress#ofLong(long)});
+     * similarly, when calling {@link VarHandle#set(Object...)}, the memory address to be set will be converted
+     * into a numeric value, and then written into memory. The amount of bytes read (resp. written) from (resp. to)
+     * memory depends on the carrier of the original memory access var handle.
+     *
+     * @param target the memory access var handle to be adapted
+     * @return the adapted var handle.
+     * @throws IllegalArgumentException if the carrier type of {@code varHandle} is either {@code boolean},
+     * {@code float}, or {@code double}, or is not a primitive type.
+     */
+    public static VarHandle asAddressVarHandle(VarHandle target) {
+        Class<?> carrier = target.varType();
+        if (!carrier.isPrimitive() || carrier == boolean.class ||
+                carrier == float.class || carrier == double.class) {
+            throw new IllegalArgumentException("Unsupported carrier type: " + carrier.getName());
         }
 
-        long offset = JLI.memoryAddressOffset(target);
+        if (carrier != long.class) {
+            // slow-path, we need to adapt
+            return filterValue(target,
+                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(carrier, MemoryAddress.class)),
+                    MethodHandles.explicitCastArguments(LONG_TO_ADDRESS, MethodType.methodType(MemoryAddress.class, carrier)));
+        } else {
+            // fast-path
+            return filterValue(target, ADDRESS_TO_LONG, LONG_TO_ADDRESS);
+        }
+    }
 
-        long[] strides = JLI.memoryAddressStrides(target);
-        long[] newStrides = new long[strides.length + 1];
-        System.arraycopy(strides, 0, newStrides, 1, strides.length);
-        newStrides[0] = bytesStride;
+    /**
+     * Adapts a target var handle by pre-processing incoming and outgoing values using a pair of unary filter functions.
+     * <p>
+     * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var handle, the incoming value (of type {@code T}, where
+     * {@code T} is the parameter type of the first filter function) is processed using the first filter and then passed
+     * to the target var handle.
+     * Conversely, when calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, the return value obtained from
+     * the target var handle (of type {@code T}, where {@code T} is the parameter type of the second filter function)
+     * is processed using the second filter and returned to the caller. More advanced access mode types, such as
+     * {@link java.lang.invoke.VarHandle.AccessMode#COMPARE_AND_EXCHANGE} might apply both filters at the same time.
+     * <p>
+     * For the filters to be well formed, their types must be of the form {@code S -> T} and {@code T -> S},
+     * respectively, where {@code T} is the type of the target var handle. If this is the case, the resulting var handle will
+     * have type {@code S}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the target var handle
+     * @param filterToTarget a filter to convert some type {@code S} into the type of {@code target}
+     * @param filterFromTarget a filter to convert the type of {@code target} to some type {@code S}
+     * @return an adapter var handle which accepts a new type, performing the provided boxing/unboxing conversions.
+     * @throws NullPointerException if either {@code target}, {@code filterToTarget} or {@code filterFromTarget} are {@code == null}.
+     * @throws IllegalArgumentException if {@code filterFromTarget} and {@code filterToTarget} are not well-formed, that is, they have types
+     * other than {@code S -> T} and {@code T -> S}, respectively, where {@code T} is the type of the target var handle,
+     * or if either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
+     */
+    public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
+        return JLI.filterValue(target, filterToTarget, filterFromTarget);
+    }
 
-        return JLI.memoryAddressViewVarHandle(
-                JLI.memoryAddressCarrier(target),
-                alignMask,
-                JLI.memoryAddressByteOrder(target),
-                offset,
-                newStrides);
+    /**
+     * Adapts a target var handle by pre-processing incoming coordinate values using unary filter functions.
+     * <p>
+     * When calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, the incoming coordinate values
+     * starting at position {@code pos} (of type {@code C1, C2 ... Cn}, where {@code C1, C2 ... Cn} are the return type
+     * of the unary filter functions) are transformed into new values (of type {@code S1, S2 ... Sn}, where {@code S1, S2 ... Sn} are the
+     * parameter types of the unary filter functions), and then passed (along with any coordinate that was left unaltered
+     * by the adaptation) to the target var handle.
+     * <p>
+     * For the coordinate filters to be well formed, their types must be of the form {@code S1 -> T1, S2 -> T1 ... Sn -> Tn},
+     * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the target var handle
+     * @param pos the position of the first coordinate to be transformed
+     * @param filters the unary functions which are used to transform coordinates starting at position {@code pos}
+     * @return an adapter var handle which accepts new coordinate types, applying the provided transformation
+     * to the new coordinate values.
+     * @throws NullPointerException if either {@code target}, {@code filters} are {@code == null}.
+     * @throws IllegalArgumentException if the handles in {@code filters} are not well-formed, that is, they have types
+     * other than {@code S1 -> T1, S2 -> T2, ... Sn -> Tn} where {@code T1, T2 ... Tn} are the coordinate types starting
+     * at position {@code pos} of the target var handle, if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * or if more filters are provided than the actual number of coordinate types available starting at {@code pos},
+     * or if any of the filters throws any checked exceptions.
+     */
+    public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
+        return JLI.filterCoordinates(target, pos, filters);
+    }
+
+    /**
+     * Provides a target var handle with one or more <em>bound coordinates</em>
+     * in advance of the var handle's invocation. As a consequence, the resulting var handle will feature less
+     * coordinate types than the target var handle.
+     * <p>
+     * When calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, incoming coordinate values
+     * are joined with bound coordinate values, and then passed to the target var handle.
+     * <p>
+     * For the bound coordinates to be well formed, their types must be {@code T1, T2 ... Tn },
+     * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the bound coordinates are inserted
+     * @param pos the position of the first coordinate to be inserted
+     * @param values the series of bound coordinates to insert
+     * @return an adapter var handle which inserts an additional coordinates,
+     *         before calling the target var handle
+     * @throws NullPointerException if either {@code target}, {@code values} are {@code == null}.
+     * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * or if more values are provided than the actual number of coordinate types available starting at {@code pos}.
+     * @throws ClassCastException if the bound coordinates in {@code values} are not well-formed, that is, they have types
+     * other than {@code T1, T2 ... Tn }, where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos}
+     * of the target var handle.
+     */
+    public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
+        return JLI.insertCoordinates(target, pos, values);
+    }
+
+    /**
+     * Provides a var handle which adapts the coordinate values of the target var handle, by re-arranging them
+     * so that the new coordinates match the provided ones.
+     * <p>
+     * The given array controls the reordering.
+     * Call {@code #I} the number of incoming coordinates (the value
+     * {@code newCoordinates.size()}, and call {@code #O} the number
+     * of outgoing coordinates (the number of coordinates associated with the target var handle).
+     * Then the length of the reordering array must be {@code #O},
+     * and each element must be a non-negative number less than {@code #I}.
+     * For every {@code N} less than {@code #O}, the {@code N}-th
+     * outgoing coordinate will be taken from the {@code I}-th incoming
+     * coordinate, where {@code I} is {@code reorder[N]}.
+     * <p>
+     * No coordinate value conversions are applied.
+     * The type of each incoming coordinate, as determined by {@code newCoordinates},
+     * must be identical to the type of the corresponding outgoing coordinate
+     * in the target var handle.
+     * <p>
+     * The reordering array need not specify an actual permutation.
+     * An incoming coordinate will be duplicated if its index appears
+     * more than once in the array, and an incoming coordinate will be dropped
+     * if its index does not appear in the array.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     * @param target the var handle to invoke after the coordinates have been reordered
+     * @param newCoordinates the new coordinate types
+     * @param reorder an index array which controls the reordering
+     * @return an adapter var handle which re-arranges the incoming coordinate values,
+     * before calling the target var handle
+     * @throws NullPointerException if either {@code target}, {@code newCoordinates} or {@code reorder} are {@code == null}.
+     * @throws IllegalArgumentException if the index array length is not equal to
+     * the number of coordinates of the target var handle, or if any index array element is not a valid index for
+     * a coordinate of {@code newCoordinates}, or if two corresponding coordinate types in
+     * the target var handle and in {@code newCoordinates} are not identical.
+     */
+    public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
+        return JLI.permuteCoordinates(target, newCoordinates, reorder);
+    }
+
+    /**
+     * Adapts a target var handle handle by pre-processing
+     * a sub-sequence of its coordinate values with a filter (a method handle).
+     * The pre-processed coordinates are replaced by the result (if any) of the
+     * filter function and the target var handle is then called on the modified (usually shortened)
+     * coordinate list.
+     * <p>
+     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
+     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
+     * any coordinate not passed to the filter.
+     * No coordinates are reordered, and the result returned from the filter
+     * replaces (in order) the whole subsequence of coordinates originally
+     * passed to the adapter.
+     * <p>
+     * The argument types (if any) of the filter
+     * replace zero or one coordinate types of the target var handle, at position {@code pos},
+     * in the resulting adapted var handle.
+     * The return type of the filter must be identical to the
+     * coordinate type of the target var handle at position {@code pos}, and that target var handle
+     * coordinate is supplied by the return value of the filter.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the coordinates have been filtered
+     * @param pos the position of the coordinate to be filtered
+     * @param filter the filter method handle
+     * @return an adapter var handle which filters the incoming coordinate values,
+     * before calling the target var handle
+     * @throws NullPointerException if either {@code target}, {@code filter} are {@code == null}.
+     * @throws IllegalArgumentException if the return type of {@code filter}
+     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
+     * or if {@code filter} throws any checked exceptions.
+     */
+    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
+        return JLI.collectCoordinates(target, pos, filter);
+    }
+
+    /**
+     * Returns a var handle which will discard some dummy coordinates before delegating to the
+     * target var handle. As a consequence, the resulting var handle will feature more
+     * coordinate types than the target var handle.
+     * <p>
+     * The {@code pos} argument may range between zero and <i>N</i>, where <i>N</i> is the arity of the
+     * target var handle's coordinate types. If {@code pos} is zero, the dummy coordinates will precede
+     * the target's real arguments; if {@code pos} is <i>N</i> they will come after.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the dummy coordinates are dropped
+     * @param pos position of first coordinate to drop (zero for the leftmost)
+     * @param valueTypes the type(s) of the coordinate(s) to drop
+     * @return an adapter var handle which drops some dummy coordinates,
+     *         before calling the target var handle
+     * @throws NullPointerException if either {@code target}, {@code valueTypes} are {@code == null}.
+     * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive.
+     */
+    public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
+        return JLI.dropCoordinates(target, pos, valueTypes);
+    }
+
+    private static void checkAddressFirstCoordinate(VarHandle handle) {
+        if (handle.coordinateTypes().size() < 1 ||
+                handle.coordinateTypes().get(0) != MemoryAddress.class) {
+            throw new IllegalArgumentException("Expected var handle with leading coordinate of type MemoryAddress");
+        }
     }
 
     private static void checkCarrier(Class<?> carrier) {
@@ -264,5 +529,21 @@ public final class MemoryHandles {
     private static long carrierSize(Class<?> carrier) {
         long bitsAlignment = Math.max(8, Wrapper.forPrimitiveType(carrier).bitWidth());
         return Utils.bitsToBytesOrThrow(bitsAlignment, IllegalStateException::new);
+    }
+
+    private static MemoryAddress longToAddress(long value) {
+        return MemoryAddress.ofLong(value);
+    }
+
+    private static long addressToLong(MemoryAddress value) {
+        return value.toRawLongValue();
+    }
+
+    private static MemoryAddress addOffset(MemoryAddress address, long offset) {
+        return address.addOffset(offset);
+    }
+
+    private static MemoryAddress addStride(MemoryAddress address, long index, long stride) {
+        return address.addOffset(index * stride);
     }
 }

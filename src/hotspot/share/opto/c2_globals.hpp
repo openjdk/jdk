@@ -357,10 +357,6 @@
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
                                                                             \
-  /* Set BranchOnRegister == false. See 4965987. */                         \
-  product(bool, BranchOnRegister, false,                                    \
-          "Use Sparc V9 branch-on-register opcodes")                        \
-                                                                            \
   product(bool, UseRDPCForConstantTableBase, false,                         \
           "Use Sparc RDPC instruction for the constant table base.")        \
                                                                             \

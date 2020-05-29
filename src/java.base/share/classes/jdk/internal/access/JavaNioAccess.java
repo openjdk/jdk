@@ -26,8 +26,10 @@
 package jdk.internal.access;
 
 import jdk.internal.access.foreign.MemorySegmentProxy;
+import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.VM.BufferPool;
 
+import java.io.FileDescriptor;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
@@ -48,6 +50,16 @@ public interface JavaNioAccess {
     ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, MemorySegmentProxy segment);
 
     /**
+     * Constructs a mapped ByteBuffer referring to the block of memory starting
+     * at the given memory address and extending {@code cap} bytes.
+     * The {@code ob} parameter is an arbitrary object that is attached
+     * to the resulting buffer. The {@code sync} and {@code fd} parameters of the mapped
+     * buffer are derived from the {@code UnmapperProxy}.
+     * Used by {@code jdk.internal.foreignMemorySegmentImpl}.
+     */
+    ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long addr, int cap, Object obj, MemorySegmentProxy segment);
+
+    /**
      * Constructs an heap ByteBuffer with given backing array, offset, capacity and segment.
      * Used by {@code jdk.internal.foreignMemorySegmentImpl}.
      */
@@ -64,7 +76,32 @@ public interface JavaNioAccess {
     long getBufferAddress(ByteBuffer bb);
 
     /**
-     * Used by byte buffer var handle views.
+     * Used by {@code jdk.internal.foreign.Utils}.
      */
-    void checkSegment(Buffer buffer);
+    UnmapperProxy unmapper(ByteBuffer bb);
+
+    /**
+     * Used by {@code jdk.internal.foreign.AbstractMemorySegmentImpl} and byte buffer var handle views.
+     */
+    MemorySegmentProxy bufferSegment(Buffer buffer);
+
+    /**
+     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
+     */
+    void force(FileDescriptor fd, long address, boolean isSync, long offset, long size);
+
+    /**
+     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
+     */
+    void load(long address, boolean isSync, long size);
+
+    /**
+     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl}.
+     */
+    void unload(long address, boolean isSync, long size);
+
+    /**
+     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
+     */
+    boolean isLoaded(long address, boolean isSync, long size);
 }

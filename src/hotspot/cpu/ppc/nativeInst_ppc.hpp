@@ -60,17 +60,12 @@ class NativeInstruction {
     return MacroAssembler::is_trap_null_check(long_at(0));
   }
 
-  // We use a special trap for marking a method as not_entrant or zombie
-  // iff UseSIGTRAP.
-  bool is_sigtrap_zombie_not_entrant() {
-    assert(UseSIGTRAP, "precondition");
-    return MacroAssembler::is_trap_zombie_not_entrant(long_at(0));
+  int get_stop_type() {
+    return MacroAssembler::tdi_get_si16(long_at(0), Assembler::traptoUnconditional, 0);
   }
 
-  // We use an illtrap for marking a method as not_entrant or zombie
-  // iff !UseSIGTRAP.
+  // We use an illtrap for marking a method as not_entrant or zombie.
   bool is_sigill_zombie_not_entrant() {
-    assert(!UseSIGTRAP, "precondition");
     // Work around a C++ compiler bug which changes 'this'.
     return NativeInstruction::is_sigill_zombie_not_entrant_at(addr_at(0));
   }
@@ -83,11 +78,6 @@ class NativeInstruction {
     return MacroAssembler::is_trap_range_check(long_at(0));
   }
 #endif
-
-  // 'should not reach here'.
-  bool is_sigtrap_should_not_reach_here() {
-    return MacroAssembler::is_trap_should_not_reach_here(long_at(0));
-  }
 
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?

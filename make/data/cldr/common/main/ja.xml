@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -49,6 +49,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="arp">アラパホー語</language>
 			<language type="arq">アルジェリア・アラビア語</language>
 			<language type="ars">ナジュド地方・アラビア語</language>
+			<language type="ars" alt="menu">アラビア語（ナジュド地方）</language>
 			<language type="arw">アラワク語</language>
 			<language type="ary">モロッコ・アラビア語</language>
 			<language type="arz">エジプト・アラビア語</language>
@@ -122,6 +123,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">チェロキー語</language>
 			<language type="chy">シャイアン語</language>
 			<language type="ckb">中央クルド語</language>
+			<language type="ckb" alt="menu">クルド語（中央）</language>
+			<language type="ckb" alt="variant">クルド語（ソラニー）</language>
 			<language type="co">コルシカ語</language>
 			<language type="cop">コプト語</language>
 			<language type="cps">カピス語</language>
@@ -179,6 +182,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ewo">エウォンド語</language>
 			<language type="ext">エストレマドゥーラ語</language>
 			<language type="fa">ペルシア語</language>
+			<language type="fa_AF">ダリー語</language>
 			<language type="fan">ファング語</language>
 			<language type="fat">ファンティー語</language>
 			<language type="ff">フラ語</language>
@@ -644,6 +648,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Aghb" draft="contributed">カフカス・アルバニア文字</script>
 			<script type="Arab">アラビア文字</script>
 			<script type="Arab" alt="variant">ペルソ・アラビア文字</script>
+			<script type="Aran" draft="contributed">ナスタアリーク体</script>
 			<script type="Armi">帝国アラム文字</script>
 			<script type="Armn">アルメニア文字</script>
 			<script type="Avst">アヴェスター文字</script>
@@ -1151,7 +1156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="KSCOR" draft="contributed">標準コーンウォール語正書法</variant>
 			<variant type="LAUKIKA" draft="contributed">ラウキカ</variant>
 			<variant type="LIPAW" draft="contributed">レージア方言 リポヴァツ方言</variant>
-			<variant type="LUNA1918" draft="contributed">LUNA1918</variant>
 			<variant type="METELKO" draft="contributed">メテルチッツァ</variant>
 			<variant type="MONOTON">モノトニック</variant>
 			<variant type="NDYUKA" draft="contributed">ンジュカ方言</variant>
@@ -1160,7 +1164,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="NULIK" draft="contributed">現代ヴォラピュク語</variant>
 			<variant type="OSOJS" draft="contributed">オゼアッコ/オソヤネ方言</variant>
 			<variant type="PAMAKA" draft="contributed">パマカ方言</variant>
-			<variant type="PETR1708" draft="contributed">PETR1708</variant>
 			<variant type="PINYIN">ピン音(ローマ字表記法)</variant>
 			<variant type="POLYTON">ポリトニック</variant>
 			<variant type="POSIX">コンピュータ</variant>
@@ -1168,7 +1171,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="REVISED">改訂版</variant>
 			<variant type="RIGIK" draft="contributed">古典ヴォラピュク語</variant>
 			<variant type="ROZAJ">レシア方言</variant>
-			<variant type="RUMGR" draft="contributed">RUMGR</variant>
 			<variant type="SAAHO">サホ語</variant>
 			<variant type="SCOTLAND" draft="contributed">スコットランド標準英語</variant>
 			<variant type="SCOUSE">リバプール方言</variant>
@@ -6817,7 +6819,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>ノーフォーク島時間</standard>
+					<generic draft="contributed">ノーフォーク島時間</generic>
+					<standard draft="contributed">ノーフォーク島標準時</standard>
+					<daylight draft="contributed">ノーフォーク島夏時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -8820,8 +8824,76 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>デシ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>センチ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ミリ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>マイクロ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ナノ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ピコ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>フェムト{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>アト{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ゼプト{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ヨクト{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>デカ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ヘクト{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>キロ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>メガ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ギガ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>テラ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ペタ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>エクサ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ゼタ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ヨタ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}毎{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>平方{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">平方{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>立方{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">立方{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -8830,7 +8902,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>重力加速度</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>メートル毎秒毎秒</displayName>
 				<unitPattern count="other">{0} メートル毎秒毎秒</unitPattern>
 			</unit>
@@ -8911,7 +8983,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ミリモル毎リットル</displayName>
 				<unitPattern count="other">{0} ミリモル毎リットル</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
@@ -8935,7 +9007,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>リットル毎キロメートル</displayName>
 				<unitPattern count="other">{0} リットル毎キロメートル</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>リットル毎100キロメートル</displayName>
 				<unitPattern count="other">{0} リットル毎100キロメートル</unitPattern>
 			</unit>
@@ -9330,15 +9402,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>馬力</displayName>
 				<unitPattern count="other">{0} 馬力</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>水銀柱ミリメートル</displayName>
 				<unitPattern count="other">{0} 水銀柱ミリメートル</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>重量ポンド毎平方インチ</displayName>
 				<unitPattern count="other">{0} 重量ポンド毎平方インチ</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>水銀柱インチ</displayName>
 				<unitPattern count="other">{0} 水銀柱インチ</unitPattern>
 			</unit>
@@ -9402,7 +9474,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ケルビン</displayName>
 				<unitPattern count="other">{0} ケルビン</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ポンドフィート</displayName>
 				<unitPattern count="other">{0} ポンドフィート</unitPattern>
 			</unit>
@@ -9542,7 +9614,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>重力加速度</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -9623,7 +9695,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ミリモル毎リットル</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
@@ -9647,7 +9719,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>L/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
@@ -10043,15 +10115,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>馬力</displayName>
 				<unitPattern count="other">{0} 馬力</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>水銀柱ミリメートル</displayName>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>重量ポンド毎平方インチ</displayName>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>水銀柱インチ</displayName>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
@@ -10115,7 +10187,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ポンドフィート</displayName>
 				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
 			</unit>
@@ -10255,7 +10327,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">重力加速度</displayName>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">m/s²</displayName>
 				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
 			</unit>
@@ -10299,7 +10371,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="other" draft="contributed">{0}L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
@@ -10572,15 +10644,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="contributed">水銀柱ミリメートル</displayName>
 				<unitPattern count="other" draft="contributed">{0}mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">重量ポンド毎平方インチ</displayName>
 				<unitPattern count="other" draft="contributed">{0}psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">水銀柱インチ</displayName>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>

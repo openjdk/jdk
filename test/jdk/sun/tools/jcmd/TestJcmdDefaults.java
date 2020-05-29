@@ -90,7 +90,8 @@ public class TestJcmdDefaults {
      * @param output The generated output from the jcmd.
      */
     private static void matchListedProcesses(OutputAnalyzer output) {
-        output.shouldMatchByLineIgnoreVMWarnings(JCMD_LIST_REGEX);
+        output.stdoutShouldMatchByLine(JCMD_LIST_REGEX);
+        output.stderrShouldBeEmptyIgnoreVMWarnings();
     }
 
     private static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {

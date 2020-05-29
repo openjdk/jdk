@@ -459,7 +459,7 @@ static jboolean counterAvailable = JNI_FALSE;
 static jboolean counterInitialized = JNI_FALSE;
 static LARGE_INTEGER counterFrequency;
 
-jlong CounterGet()
+jlong CurrentTimeMicros()
 {
     LARGE_INTEGER count;
 
@@ -471,16 +471,10 @@ jlong CounterGet()
         return 0;
     }
     QueryPerformanceCounter(&count);
-    return (jlong)(count.QuadPart);
+
+    return (jlong)(count.QuadPart * 1000 * 1000 / counterFrequency.QuadPart);
 }
 
-jlong Counter2Micros(jlong counts)
-{
-    if (!counterAvailable || !counterInitialized) {
-        return 0;
-    }
-    return (counts * 1000 * 1000)/counterFrequency.QuadPart;
-}
 /*
  * windows snprintf does not guarantee a null terminator in the buffer,
  * if the computed size is equal to or greater than the buffer size,

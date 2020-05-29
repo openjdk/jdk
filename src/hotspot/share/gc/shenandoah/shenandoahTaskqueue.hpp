@@ -154,17 +154,8 @@ public:
     assert(decode_pow(encode_pow(pow)) == pow, "pow can be encoded: %d", pow);
     _obj = encode_oop(o) | encode_chunk(chunk) | encode_pow(pow);
   }
-  ObjArrayChunkedTask(const ObjArrayChunkedTask& t): _obj(t._obj) { }
 
-  ObjArrayChunkedTask& operator =(const ObjArrayChunkedTask& t) {
-    _obj = t._obj;
-    return *this;
-  }
-  volatile ObjArrayChunkedTask&
-  operator =(const volatile ObjArrayChunkedTask& t) volatile {
-    (void)const_cast<uintptr_t&>(_obj = t._obj);
-    return *this;
-  }
+  // Trivially copyable.
 
   inline oop decode_oop(uintptr_t val) const {
     return (oop) reinterpret_cast<void*>((val >> oop_shift) & right_n_bits(oop_bits));
@@ -223,21 +214,8 @@ public:
     _chunk = chunk;
     _pow = pow;
   }
-  ObjArrayChunkedTask(const ObjArrayChunkedTask& t): _obj(t._obj), _chunk(t._chunk), _pow(t._pow) { }
 
-  ObjArrayChunkedTask& operator =(const ObjArrayChunkedTask& t) {
-    _obj = t._obj;
-    _chunk = t._chunk;
-    _pow = t._pow;
-    return *this;
-  }
-  volatile ObjArrayChunkedTask&
-  operator =(const volatile ObjArrayChunkedTask& t) volatile {
-    (void)const_cast<oop&>(_obj = t._obj);
-    _chunk = t._chunk;
-    _pow = t._pow;
-    return *this;
-  }
+  // Trivially copyable.
 
   inline oop obj()   const { return _obj; }
   inline int chunk() const { return _chunk; }

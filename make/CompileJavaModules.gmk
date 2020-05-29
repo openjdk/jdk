@@ -315,7 +315,7 @@ jdk.compiler_CLEAN_FILES += $(wildcard \
 
 jdk.hotspot.agent_DISABLED_WARNINGS += rawtypes serial cast static overrides \
     fallthrough
-jdk.hotspot.agent_COPY += .gif .png sa.js .properties
+jdk.hotspot.agent_COPY += .gif .png .properties
 
 ################################################################################
 

@@ -42,23 +42,24 @@ public class TestPeriodicLogMessages {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                                   "-XX:G1PeriodicGCInterval=0",
-                                                                  "-Xlog:gc,gc+periodic=debug",
+                                                                  "-Xlog:gc+init,gc+periodic=debug",
                                                                   "-Xmx10M",
                                                                   GCTest.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Periodic GC disabled");
+        output.shouldContain("Periodic GC: Disabled");
         output.shouldNotContain("Checking for periodic GC");
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                    "-XX:G1PeriodicGCInterval=100",
-                                                   "-Xlog:gc,gc+periodic=debug",
+                                                   "-Xlog:gc+init,gc+periodic=debug",
                                                    "-Xmx10M",
                                                    GCTest.class.getName());
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Periodic GC enabled with interval 100ms");
+        output.shouldContain("Periodic GC: Enabled");
+        output.shouldContain("Periodic GC Interval: 100ms");
         output.shouldContain("Checking for periodic GC");
         output.shouldHaveExitValue(0);
     }

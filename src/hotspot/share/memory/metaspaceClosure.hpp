@@ -264,6 +264,7 @@ public:
   // When you do:
   //     void MyType::metaspace_pointers_do(MetaspaceClosure* it) {
   //       it->push(_my_field)
+  //     }
   //
   // C++ will try to match the "most specific" template function. This one will
   // will be matched if possible (if mpp is an Array<> of any pointer type).

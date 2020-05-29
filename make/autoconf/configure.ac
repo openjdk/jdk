@@ -234,7 +234,6 @@ LIB_SETUP_LIBRARIES
 JVM_FEATURES_PARSE_OPTIONS
 JVM_FEATURES_SETUP
 
-HOTSPOT_ENABLE_DISABLE_GTEST
 HOTSPOT_SETUP_MISC
 
 ###############################################################################

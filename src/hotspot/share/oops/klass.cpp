@@ -774,6 +774,7 @@ void Klass::print_on(outputStream* st) const {
 
 #define BULLET  " - "
 
+// Caller needs ResourceMark
 void Klass::oop_print_on(oop obj, outputStream* st) {
   // print title
   st->print_cr("%s ", internal_name());

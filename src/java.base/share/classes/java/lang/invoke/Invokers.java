@@ -365,6 +365,7 @@ class Invokers {
         final int ARG_LIMIT = ARG_BASE + mtype.parameterCount();
         int nameCursor = ARG_LIMIT;
         final int VAD_ARG      = nameCursor++;
+        final int UNBOUND_VH   = nameCursor++;
         final int CHECK_TYPE   = nameCursor++;
         final int CHECK_CUSTOM = (CUSTOMIZE_THRESHOLD >= 0) ? nameCursor++ : -1;
         final int LINKER_CALL  = nameCursor++;
@@ -376,11 +377,14 @@ class Invokers {
         }
         names[VAD_ARG] = new Name(ARG_LIMIT, BasicType.basicType(Object.class));
 
+        names[UNBOUND_VH] = new Name(getFunction(NF_directVarHandleTarget), names[THIS_VH]);
+
         names[CHECK_TYPE] = new Name(getFunction(NF_checkVarHandleGenericType), names[THIS_VH], names[VAD_ARG]);
 
         Object[] outArgs = new Object[ARG_LIMIT + 1];
         outArgs[0] = names[CHECK_TYPE];
-        for (int i = 0; i < ARG_LIMIT; i++) {
+        outArgs[1] = names[UNBOUND_VH];
+        for (int i = 1; i < ARG_LIMIT; i++) {
             outArgs[i + 1] = names[i];
         }
 
@@ -411,6 +415,7 @@ class Invokers {
         final int ARG_LIMIT = ARG_BASE + mtype.parameterCount();
         int nameCursor = ARG_LIMIT;
         final int VAD_ARG      = nameCursor++;
+        final int UNBOUND_VH   = nameCursor++;
         final int CHECK_TYPE   = nameCursor++;
         final int LINKER_CALL  = nameCursor++;
 
@@ -427,6 +432,8 @@ class Invokers {
         NamedFunction getter = speciesData.getterFunction(0);
         names[VAD_ARG] = new Name(getter, names[THIS_MH]);
 
+        names[UNBOUND_VH] = new Name(getFunction(NF_directVarHandleTarget), names[CALL_VH]);
+
         if (isExact) {
             names[CHECK_TYPE] = new Name(getFunction(NF_checkVarHandleExactType), names[CALL_VH], names[VAD_ARG]);
         } else {
@@ -434,7 +441,8 @@ class Invokers {
         }
         Object[] outArgs = new Object[ARG_LIMIT];
         outArgs[0] = names[CHECK_TYPE];
-        for (int i = 1; i < ARG_LIMIT; i++) {
+        outArgs[1] = names[UNBOUND_VH];
+        for (int i = 2; i < ARG_LIMIT; i++) {
             outArgs[i] = names[i];
         }
 
@@ -520,6 +528,12 @@ class Invokers {
          */
     }
 
+    @ForceInline
+    /*non-public*/
+    static VarHandle directVarHandleTarget(VarHandle handle) {
+        return handle.asDirect();
+    }
+
     static MemberName linkToCallSiteMethod(MethodType mtype) {
         LambdaForm lform = callSiteForm(mtype, false);
         return lform.vmentry;
@@ -600,7 +614,8 @@ class Invokers {
         NF_checkCustomized = 3,
         NF_checkVarHandleGenericType = 4,
         NF_checkVarHandleExactType = 5,
-        NF_LIMIT = 6;
+        NF_directVarHandleTarget = 6,
+        NF_LIMIT = 7;
 
     private static final @Stable NamedFunction[] NFS = new NamedFunction[NF_LIMIT];
 
@@ -630,6 +645,8 @@ class Invokers {
                     return getNamedFunction("checkVarHandleGenericType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
                 case NF_checkVarHandleExactType:
                     return getNamedFunction("checkVarHandleExactType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
+                case NF_directVarHandleTarget:
+                    return getNamedFunction("directVarHandleTarget", MethodType.methodType(VarHandle.class, VarHandle.class));
                 default:
                     throw newInternalError("Unknown function: " + func);
             }

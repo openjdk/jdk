@@ -67,10 +67,6 @@ class UnixUserPrincipals {
             throw new AssertionError();
         }
 
-        boolean isSpecial() {
-            return id == -1;
-        }
-
         @Override
         public String getName() {
             return name;
@@ -113,7 +109,7 @@ class UnixUserPrincipals {
 
     // return UserPrincipal representing given uid
     static User fromUid(int uid) {
-        String name = null;
+        String name;
         try {
             name = Util.toString(getpwuid(uid));
         } catch (UnixException x) {
@@ -124,7 +120,7 @@ class UnixUserPrincipals {
 
     // return GroupPrincipal representing given gid
     static Group fromGid(int gid) {
-        String name = null;
+        String name;
         try {
             name = Util.toString(getgrgid(gid));
         } catch (UnixException x) {
@@ -141,7 +137,7 @@ class UnixUserPrincipals {
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("lookupUserInformation"));
         }
-        int id = -1;
+        int id;
         try {
             id = (isGroup) ? getgrnam(name) : getpwnam(name);
         } catch (UnixException x) {

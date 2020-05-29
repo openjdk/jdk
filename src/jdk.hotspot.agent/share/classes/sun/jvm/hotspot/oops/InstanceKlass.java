@@ -145,6 +145,18 @@ public class InstanceKlass extends Klass {
 
   public InstanceKlass(Address addr) {
     super(addr);
+
+    // If the class hasn't yet reached the "loaded" init state, then don't go any further
+    // or we'll run into problems trying to look at fields that are not yet setup.
+    // Attempted lookups of this InstanceKlass via ClassLoaderDataGraph, ClassLoaderData,
+    // and Dictionary will all refuse to return it. The main purpose of allowing this
+    // InstanceKlass to initialize is so ClassLoaderData.getKlasses() will succeed, allowing
+    // ClassLoaderData.classesDo() to iterate over all Klasses (skipping those that are
+    // not yet fully loaded).
+    if (!isLoaded()) {
+        return;
+    }
+
     if (getJavaFieldsCount() != getAllFieldsCount()) {
       // Exercise the injected field logic
       for (int i = getJavaFieldsCount(); i < getAllFieldsCount(); i++) {

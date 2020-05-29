@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -527,7 +527,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR" draft="contributed">Frankrisch</territory>
 			<territory type="GA" draft="contributed">Jabuhn</territory>
 			<territory type="GB" draft="contributed">Jruußbrettannije</territory>
-			<territory type="GB" alt="short" draft="contributed">Jruußbrettannije</territory>
 			<territory type="GD">Jrenahda</territory>
 			<territory type="GE" draft="contributed">Jeorrjije</territory>
 			<territory type="GF" draft="contributed">Franzüüsesch Jujaana</territory>
@@ -546,7 +545,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GW" draft="contributed">Jinneha_Bißau</territory>
 			<territory type="GY" draft="contributed">Jujaana</territory>
 			<territory type="HK" draft="contributed">Hongkong</territory>
-			<territory type="HK" alt="short" draft="contributed">Hongkong</territory>
 			<territory type="HM" draft="contributed">de Heart Ensel un de McDonald-Enselle</territory>
 			<territory type="HN" draft="contributed">Honduras</territory>
 			<territory type="HR" draft="contributed">Krowazije</territory>
@@ -600,7 +598,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MM" draft="contributed">Birma</territory>
 			<territory type="MN" draft="contributed">Mongjolei</territory>
 			<territory type="MO" draft="contributed">Makau</territory>
-			<territory type="MO" alt="short" draft="contributed">Makau</territory>
 			<territory type="MP" draft="contributed">de nöödlijje Marijanne-Enselle</territory>
 			<territory type="MQ" draft="contributed">Machtinik</territory>
 			<territory type="MR" draft="contributed">Mautitaanije</territory>
@@ -2809,7 +2806,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} Pferdestärke</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} Pferdestärken</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">Dumm Quecksilbersäule</displayName>
 				<unitPattern count="zero" draft="contributed">{0} Dumm Quecksilbersäule</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} Dumm Quecksilbersäule</unitPattern>
@@ -3087,7 +3084,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} PS</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">Dumm Quecksilbersäule</displayName>
 				<unitPattern count="zero">{0} inHg</unitPattern>
 				<unitPattern count="one">{0} inHg</unitPattern>
@@ -3318,7 +3315,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0}PS</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}PS</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="zero">{0} inHg</unitPattern>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>

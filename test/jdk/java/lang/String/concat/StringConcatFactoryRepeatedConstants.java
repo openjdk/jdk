@@ -34,14 +34,8 @@ import java.lang.invoke.StringConcatFactory;
  *
  * @compile StringConcatFactoryRepeatedConstants.java
  *
- * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                  StringConcatFactoryRepeatedConstants
- * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED            StringConcatFactoryRepeatedConstants
- * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED            StringConcatFactoryRepeatedConstants
- * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      StringConcatFactoryRepeatedConstants
- * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      StringConcatFactoryRepeatedConstants
- * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  StringConcatFactoryRepeatedConstants
- *
-*/
+ * @run main/othervm -Xverify:all StringConcatFactoryRepeatedConstants
+ */
 public class StringConcatFactoryRepeatedConstants {
 
     public static void main(String[] args) throws Throwable {

@@ -42,24 +42,27 @@ MemoryPool::MemoryPool(const char* name,
                        size_t init_size,
                        size_t max_size,
                        bool support_usage_threshold,
-                       bool support_gc_threshold) {
-  _name = name;
-  _initial_size = init_size;
-  _max_size = max_size;
-  (void)const_cast<instanceOop&>(_memory_pool_obj = instanceOop(NULL));
-  _available_for_allocation = true;
-  _num_managers = 0;
-  _type = type;
-
-  // initialize the max and init size of collection usage
-  _after_gc_usage = MemoryUsage(_initial_size, 0, 0, _max_size);
-
-  _usage_sensor = NULL;
-  _gc_usage_sensor = NULL;
+                       bool support_gc_threshold) :
+  _name(name),
+  _type(type),
+  _initial_size(init_size),
+  _max_size(max_size),
+  _available_for_allocation(true),
+  _managers(),
+  _num_managers(0),
+  _peak_usage(),
+  _after_gc_usage(init_size, 0, 0, max_size),
   // usage threshold supports both high and low threshold
-  _usage_threshold = new ThresholdSupport(support_usage_threshold, support_usage_threshold);
+  _usage_threshold(new ThresholdSupport(support_usage_threshold, support_usage_threshold)),
   // gc usage threshold supports only high threshold
-  _gc_usage_threshold = new ThresholdSupport(support_gc_threshold, support_gc_threshold);
+  _gc_usage_threshold(new ThresholdSupport(support_gc_threshold, support_gc_threshold)),
+  _usage_sensor(),
+  _gc_usage_sensor(),
+  _memory_pool_obj()
+{}
+
+bool MemoryPool::is_pool(instanceHandle pool) const {
+  return pool() == Atomic::load(&_memory_pool_obj);
 }
 
 void MemoryPool::add_manager(MemoryManager* mgr) {

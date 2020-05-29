@@ -128,18 +128,18 @@ public:
 #ifdef SUPPORTS_CLOCK_MONOTONIC
 
 private:
+  static bool _supports_monotonic_clock;
   // These need to be members so we can access them from inline functions
   static int (*_clock_gettime)(clockid_t, struct timespec *);
   static int (*_clock_getres)(clockid_t, struct timespec *);
 public:
   static bool supports_monotonic_clock();
+  static bool supports_clock_gettime();
   static int clock_gettime(clockid_t clock_id, struct timespec *tp);
   static int clock_getres(clockid_t clock_id, struct timespec *tp);
-
 #else
-
   static bool supports_monotonic_clock() { return false; }
-
+  static bool supports_clock_gettime() { return false; }
 #endif
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);

@@ -438,7 +438,7 @@ public class LinkedHashMap<K,V>
      */
     public V get(Object key) {
         Node<K,V> e;
-        if ((e = getNode(hash(key), key)) == null)
+        if ((e = getNode(key)) == null)
             return null;
         if (accessOrder)
             afterNodeAccess(e);
@@ -450,7 +450,7 @@ public class LinkedHashMap<K,V>
      */
     public V getOrDefault(Object key, V defaultValue) {
        Node<K,V> e;
-       if ((e = getNode(hash(key), key)) == null)
+       if ((e = getNode(key)) == null)
            return defaultValue;
        if (accessOrder)
            afterNodeAccess(e);
@@ -685,7 +685,7 @@ public class LinkedHashMap<K,V>
                 return false;
             Map.Entry<?,?> e = (Map.Entry<?,?>) o;
             Object key = e.getKey();
-            Node<K,V> candidate = getNode(hash(key), key);
+            Node<K,V> candidate = getNode(key);
             return candidate != null && candidate.equals(e);
         }
         public final boolean remove(Object o) {

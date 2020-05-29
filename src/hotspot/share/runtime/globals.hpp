@@ -683,10 +683,6 @@ const size_t minimumSymbolTableSize = 1024;
                "Disable the use of stack guard pages if the JVM is loaded " \
                "on the primordial process thread")                          \
                                                                             \
-  product(bool, UseLWPSynchronization, true,                                \
-          "Use LWP-based instead of libthread-based synchronization "       \
-          "(SPARC only)")                                                   \
-                                                                            \
   experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
                 "Percentage of used monitors before triggering cleanup "    \
                 "safepoint which deflates monitors (0 is off). "            \

@@ -547,7 +547,7 @@ class StubGenerator: public StubCodeGenerator {
     address frame_complete_pc = __ pc();
 
     if (restore_saved_exception_pc) {
-      __ unimplemented("StubGenerator::throw_exception with restore_saved_exception_pc", 74);
+      __ unimplemented("StubGenerator::throw_exception with restore_saved_exception_pc");
     }
 
     // Note that we always have a runtime stub frame on the top of
@@ -921,7 +921,7 @@ class StubGenerator: public StubCodeGenerator {
   inline void assert_positive_int(Register count) {
 #ifdef ASSERT
     __ srdi_(R0, count, 31);
-    __ asm_assert_eq("missing zero extend", 0xAFFE);
+    __ asm_assert_eq("missing zero extend");
 #endif
   }
 
@@ -2181,7 +2181,7 @@ class StubGenerator: public StubCodeGenerator {
     // Overlaps if Src before dst and distance smaller than size.
     // Branch to forward copy routine otherwise.
     __ blt(CCR0, no_overlap);
-    __ stop("overlap in checkcast_copy", 0x9543);
+    __ stop("overlap in checkcast_copy");
     __ bind(no_overlap);
     }
 #endif

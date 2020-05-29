@@ -27,14 +27,22 @@ package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
+import static java.lang.invoke.MethodHandleStatics.VAR_HANDLE_IDENTITY_ADAPT;
+import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
 
 final class VarHandles {
 
@@ -49,49 +57,49 @@ final class VarHandles {
         if (!f.isStatic()) {
             long foffset = MethodHandleNatives.objectFieldOffset(f);
             if (!type.isPrimitive()) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleReferences.FieldInstanceReadOnly(refc, foffset, type)
-                       : new VarHandleReferences.FieldInstanceReadWrite(refc, foffset, type);
+                       : new VarHandleReferences.FieldInstanceReadWrite(refc, foffset, type));
             }
             else if (type == boolean.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleBooleans.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleBooleans.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleBooleans.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == byte.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleBytes.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleBytes.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleBytes.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == short.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleShorts.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleShorts.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleShorts.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == char.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleChars.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleChars.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleChars.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == int.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleInts.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleInts.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleInts.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == long.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleLongs.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleLongs.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleLongs.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == float.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleFloats.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleFloats.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleFloats.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == double.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleDoubles.FieldInstanceReadOnly(refc, foffset)
-                       : new VarHandleDoubles.FieldInstanceReadWrite(refc, foffset);
+                       : new VarHandleDoubles.FieldInstanceReadWrite(refc, foffset));
             }
             else {
                 throw new UnsupportedOperationException();
@@ -110,49 +118,49 @@ final class VarHandles {
             Object base = MethodHandleNatives.staticFieldBase(f);
             long foffset = MethodHandleNatives.staticFieldOffset(f);
             if (!type.isPrimitive()) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleReferences.FieldStaticReadOnly(base, foffset, type)
-                       : new VarHandleReferences.FieldStaticReadWrite(base, foffset, type);
+                       : new VarHandleReferences.FieldStaticReadWrite(base, foffset, type));
             }
             else if (type == boolean.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleBooleans.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleBooleans.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleBooleans.FieldStaticReadWrite(base, foffset));
             }
             else if (type == byte.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleBytes.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleBytes.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleBytes.FieldStaticReadWrite(base, foffset));
             }
             else if (type == short.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleShorts.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleShorts.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleShorts.FieldStaticReadWrite(base, foffset));
             }
             else if (type == char.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleChars.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleChars.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleChars.FieldStaticReadWrite(base, foffset));
             }
             else if (type == int.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleInts.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleInts.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleInts.FieldStaticReadWrite(base, foffset));
             }
             else if (type == long.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleLongs.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleLongs.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleLongs.FieldStaticReadWrite(base, foffset));
             }
             else if (type == float.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleFloats.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleFloats.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleFloats.FieldStaticReadWrite(base, foffset));
             }
             else if (type == double.class) {
-                return f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleDoubles.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleDoubles.FieldStaticReadWrite(base, foffset);
+                       : new VarHandleDoubles.FieldStaticReadWrite(base, foffset));
             }
             else {
                 throw new UnsupportedOperationException();
@@ -203,31 +211,31 @@ final class VarHandles {
         int ashift = 31 - Integer.numberOfLeadingZeros(ascale);
 
         if (!componentType.isPrimitive()) {
-            return new VarHandleReferences.Array(aoffset, ashift, arrayClass);
+            return maybeAdapt(new VarHandleReferences.Array(aoffset, ashift, arrayClass));
         }
         else if (componentType == boolean.class) {
-            return new VarHandleBooleans.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleBooleans.Array(aoffset, ashift));
         }
         else if (componentType == byte.class) {
-            return new VarHandleBytes.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleBytes.Array(aoffset, ashift));
         }
         else if (componentType == short.class) {
-            return new VarHandleShorts.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleShorts.Array(aoffset, ashift));
         }
         else if (componentType == char.class) {
-            return new VarHandleChars.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleChars.Array(aoffset, ashift));
         }
         else if (componentType == int.class) {
-            return new VarHandleInts.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleInts.Array(aoffset, ashift));
         }
         else if (componentType == long.class) {
-            return new VarHandleLongs.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleLongs.Array(aoffset, ashift));
         }
         else if (componentType == float.class) {
-            return new VarHandleFloats.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleFloats.Array(aoffset, ashift));
         }
         else if (componentType == double.class) {
-            return new VarHandleDoubles.Array(aoffset, ashift);
+            return maybeAdapt(new VarHandleDoubles.Array(aoffset, ashift));
         }
         else {
             throw new UnsupportedOperationException();
@@ -242,22 +250,22 @@ final class VarHandles {
         Class<?> viewComponentType = viewArrayClass.getComponentType();
 
         if (viewComponentType == long.class) {
-            return new VarHandleByteArrayAsLongs.ArrayHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsLongs.ArrayHandle(be));
         }
         else if (viewComponentType == int.class) {
-            return new VarHandleByteArrayAsInts.ArrayHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsInts.ArrayHandle(be));
         }
         else if (viewComponentType == short.class) {
-            return new VarHandleByteArrayAsShorts.ArrayHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsShorts.ArrayHandle(be));
         }
         else if (viewComponentType == char.class) {
-            return new VarHandleByteArrayAsChars.ArrayHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsChars.ArrayHandle(be));
         }
         else if (viewComponentType == double.class) {
-            return new VarHandleByteArrayAsDoubles.ArrayHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsDoubles.ArrayHandle(be));
         }
         else if (viewComponentType == float.class) {
-            return new VarHandleByteArrayAsFloats.ArrayHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsFloats.ArrayHandle(be));
         }
 
         throw new UnsupportedOperationException();
@@ -271,22 +279,22 @@ final class VarHandles {
         Class<?> viewComponentType = viewArrayClass.getComponentType();
 
         if (viewComponentType == long.class) {
-            return new VarHandleByteArrayAsLongs.ByteBufferHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsLongs.ByteBufferHandle(be));
         }
         else if (viewComponentType == int.class) {
-            return new VarHandleByteArrayAsInts.ByteBufferHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsInts.ByteBufferHandle(be));
         }
         else if (viewComponentType == short.class) {
-            return new VarHandleByteArrayAsShorts.ByteBufferHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsShorts.ByteBufferHandle(be));
         }
         else if (viewComponentType == char.class) {
-            return new VarHandleByteArrayAsChars.ByteBufferHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsChars.ByteBufferHandle(be));
         }
         else if (viewComponentType == double.class) {
-            return new VarHandleByteArrayAsDoubles.ByteBufferHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsDoubles.ByteBufferHandle(be));
         }
         else if (viewComponentType == float.class) {
-            return new VarHandleByteArrayAsFloats.ByteBufferHandle(be);
+            return maybeAdapt(new VarHandleByteArrayAsFloats.ByteBufferHandle(be));
         }
 
         throw new UnsupportedOperationException();
@@ -319,14 +327,255 @@ final class VarHandles {
 
         Map<Integer, MethodHandle> carrierFactory = ADDRESS_FACTORIES.get(carrier);
         MethodHandle fac = carrierFactory.computeIfAbsent(strides.length,
-                dims -> new AddressVarHandleGenerator(carrier, dims)
+                dims -> new MemoryAccessVarHandleGenerator(carrier, dims)
                             .generateHandleFactory());
 
         try {
-            return (VarHandle)fac.invoke(be, size, offset, alignmentMask, strides);
+            return maybeAdapt((VarHandle)fac.invoke(be, size, offset, alignmentMask, strides));
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private static VarHandle maybeAdapt(VarHandle target) {
+        if (!VAR_HANDLE_IDENTITY_ADAPT) return target;
+        target = filterValue(target,
+                        MethodHandles.identity(target.varType()), MethodHandles.identity(target.varType()));
+        MethodType mtype = target.accessModeType(VarHandle.AccessMode.GET).dropParameterTypes(0, 1);
+        for (int i = 0 ; i < mtype.parameterCount() ; i++) {
+            target = filterCoordinates(target, i, MethodHandles.identity(mtype.parameterType(i)));
+        }
+        return target;
+    }
+
+    public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
+        Objects.nonNull(target);
+        Objects.nonNull(filterToTarget);
+        Objects.nonNull(filterFromTarget);
+        //check that from/to filters do not throw checked exceptions
+        noCheckedExceptions(filterToTarget);
+        noCheckedExceptions(filterFromTarget);
+
+        //check that from/to filters have right signatures
+        if (filterFromTarget.type().parameterCount() != 1) {
+            throw newIllegalArgumentException("filterFromTarget filter type has wrong arity", filterFromTarget.type());
+        } else if (filterToTarget.type().parameterCount() != 1) {
+            throw newIllegalArgumentException("filterToTarget filter type has wrong arity", filterFromTarget.type());
+        } else if (filterFromTarget.type().parameterType(0) != filterToTarget.type().returnType() ||
+                filterToTarget.type().parameterType(0) != filterFromTarget.type().returnType()) {
+            throw newIllegalArgumentException("filterFromTarget and filterToTarget filter types do not match", filterFromTarget.type(), filterToTarget.type());
+        } else if (target.varType() != filterFromTarget.type().parameterType(0)) {
+            throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterFromTarget.type(), target.varType());
+        } else if (target.varType() != filterToTarget.type().returnType()) {
+            throw newIllegalArgumentException("filterFromTarget filter type does not match target var handle type", filterToTarget.type(), target.varType());
+        }
+
+        return new IndirectVarHandle(target, filterFromTarget.type().returnType(), target.coordinateTypes().toArray(new Class<?>[0]),
+                (mode, modeHandle) -> {
+                    int lastParameterPos = modeHandle.type().parameterCount() - 1;
+                    return switch (mode.at) {
+                        case GET -> MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                        case SET -> MethodHandles.filterArgument(modeHandle, lastParameterPos, filterToTarget);
+                        case GET_AND_UPDATE -> {
+                            MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                            yield MethodHandles.filterArgument(adapter, lastParameterPos, filterToTarget);
+                        }
+                        case COMPARE_AND_EXCHANGE -> {
+                            MethodHandle adapter = MethodHandles.filterReturnValue(modeHandle, filterFromTarget);
+                            adapter = MethodHandles.filterArgument(adapter, lastParameterPos, filterToTarget);
+                            yield MethodHandles.filterArgument(adapter, lastParameterPos - 1, filterToTarget);
+                        }
+                        case COMPARE_AND_SET -> {
+                            MethodHandle adapter = MethodHandles.filterArgument(modeHandle, lastParameterPos, filterToTarget);
+                            yield MethodHandles.filterArgument(adapter, lastParameterPos - 1, filterToTarget);
+                        }
+                    };
+                });
+    }
+
+    public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
+        Objects.nonNull(target);
+        Objects.nonNull(filters);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos >= targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        } else if (pos + filters.length > targetCoordinates.size()) {
+            throw new IllegalArgumentException("Too many filters");
+        }
+
+        if (filters.length == 0) return target;
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        for (int i = 0 ; i < filters.length ; i++) {
+            noCheckedExceptions(filters[i]);
+            MethodType filterType = filters[i].type();
+            if (filterType.parameterCount() != 1) {
+                throw newIllegalArgumentException("Invalid filter type " + filterType);
+            } else if (newCoordinates.get(pos + i) != filterType.returnType()) {
+                throw newIllegalArgumentException("Invalid filter type " + filterType + " for coordinate type " + newCoordinates.get(i));
+            }
+            newCoordinates.set(pos + i, filters[i].type().parameterType(0));
+        }
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.filterArguments(modeHandle, 1 + pos, filters));
+    }
+
+    public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
+        Objects.nonNull(target);
+        Objects.nonNull(values);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos >= targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        } else if (pos + values.length > targetCoordinates.size()) {
+            throw new IllegalArgumentException("Too many values");
+        }
+
+        if (values.length == 0) return target;
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        for (int i = 0 ; i < values.length ; i++) {
+            Class<?> pt = newCoordinates.get(pos);
+            if (pt.isPrimitive()) {
+                Wrapper w = Wrapper.forPrimitiveType(pt);
+                w.convert(values[i], pt);
+            } else {
+                pt.cast(values[i]);
+            }
+            newCoordinates.remove(pos);
+        }
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.insertArguments(modeHandle, 1 + pos, values));
+    }
+
+    public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
+        Objects.nonNull(target);
+        Objects.nonNull(newCoordinates);
+        Objects.nonNull(reorder);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        MethodHandles.permuteArgumentChecks(reorder,
+                MethodType.methodType(void.class, newCoordinates),
+                MethodType.methodType(void.class, targetCoordinates));
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) ->
+                        MethodHandles.permuteArguments(modeHandle,
+                                methodTypeFor(mode.at, modeHandle.type(), targetCoordinates, newCoordinates),
+                                reorderArrayFor(mode.at, newCoordinates, reorder)));
+    }
+
+    private static int numTrailingArgs(VarHandle.AccessType at) {
+        return switch (at) {
+            case GET -> 0;
+            case GET_AND_UPDATE, SET -> 1;
+            case COMPARE_AND_SET, COMPARE_AND_EXCHANGE -> 2;
+        };
+    }
+
+    private static int[] reorderArrayFor(VarHandle.AccessType at, List<Class<?>> newCoordinates, int[] reorder) {
+        int numTrailingArgs = numTrailingArgs(at);
+        int[] adjustedReorder = new int[reorder.length + 1 + numTrailingArgs];
+        adjustedReorder[0] = 0;
+        for (int i = 0 ; i < reorder.length ; i++) {
+            adjustedReorder[i + 1] = reorder[i] + 1;
+        }
+        for (int i = 0 ; i < numTrailingArgs ; i++) {
+            adjustedReorder[i + reorder.length + 1] = i + newCoordinates.size() + 1;
+        }
+        return adjustedReorder;
+    }
+
+    private static MethodType methodTypeFor(VarHandle.AccessType at, MethodType oldType, List<Class<?>> oldCoordinates, List<Class<?>> newCoordinates) {
+        int numTrailingArgs = numTrailingArgs(at);
+        MethodType adjustedType = MethodType.methodType(oldType.returnType(), oldType.parameterType(0));
+        adjustedType = adjustedType.appendParameterTypes(newCoordinates);
+        for (int i = 0 ; i < numTrailingArgs ; i++) {
+            adjustedType = adjustedType.appendParameterTypes(oldType.parameterType(1 + oldCoordinates.size() + i));
+        }
+        return adjustedType;
+    }
+
+    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
+        Objects.nonNull(target);
+        Objects.nonNull(filter);
+        noCheckedExceptions(filter);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos >= targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        } else if (filter.type().returnType() == void.class) {
+            throw newIllegalArgumentException("Invalid filter type " + filter.type() + " ; filter cannot be void");
+        } else if (filter.type().returnType() != targetCoordinates.get(pos)) {
+            throw newIllegalArgumentException("Invalid filter type " + filter.type() + " for coordinate type " + targetCoordinates.get(pos));
+        }
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        newCoordinates.remove(pos);
+        newCoordinates.addAll(pos, filter.type().parameterList());
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.collectArguments(modeHandle, 1 + pos, filter));
+    }
+
+    public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
+        Objects.nonNull(target);
+        Objects.nonNull(valueTypes);
+
+        List<Class<?>> targetCoordinates = target.coordinateTypes();
+        if (pos < 0 || pos > targetCoordinates.size()) {
+            throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
+        }
+
+        if (valueTypes.length == 0) return target;
+
+        List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
+        newCoordinates.addAll(pos, List.of(valueTypes));
+
+        return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
+                (mode, modeHandle) -> MethodHandles.dropArguments(modeHandle, 1 + pos, valueTypes));
+    }
+
+    private static void noCheckedExceptions(MethodHandle handle) {
+        if (handle instanceof DirectMethodHandle) {
+            DirectMethodHandle directHandle = (DirectMethodHandle)handle;
+            MethodHandleInfo info = MethodHandles.Lookup.IMPL_LOOKUP.revealDirect(directHandle);
+            Class<?>[] exceptionTypes = switch (info.getReferenceKind()) {
+                case MethodHandleInfo.REF_invokeInterface, MethodHandleInfo.REF_invokeSpecial,
+                        MethodHandleInfo.REF_invokeStatic, MethodHandleInfo.REF_invokeVirtual ->
+                        info.reflectAs(Method.class, MethodHandles.Lookup.IMPL_LOOKUP).getExceptionTypes();
+                case MethodHandleInfo.REF_newInvokeSpecial ->
+                        info.reflectAs(Constructor.class, MethodHandles.Lookup.IMPL_LOOKUP).getExceptionTypes();
+                case MethodHandleInfo.REF_getField, MethodHandleInfo.REF_getStatic,
+                        MethodHandleInfo.REF_putField, MethodHandleInfo.REF_putStatic -> null;
+                default -> throw new AssertionError("Cannot get here");
+            };
+            if (exceptionTypes != null) {
+                if (Stream.of(exceptionTypes).anyMatch(VarHandles::isCheckedException)) {
+                    throw newIllegalArgumentException("Cannot adapt a var handle with a method handle which throws checked exceptions");
+                }
+            }
+        } else if (handle instanceof DelegatingMethodHandle) {
+            noCheckedExceptions(((DelegatingMethodHandle)handle).getTarget());
+        } else {
+            //bound
+            BoundMethodHandle boundHandle = (BoundMethodHandle)handle;
+            for (int i = 0 ; i < boundHandle.fieldCount() ; i++) {
+                Object arg = boundHandle.arg(i);
+                if (arg instanceof MethodHandle){
+                    noCheckedExceptions((MethodHandle) arg);
+                }
+            }
+        }
+    }
+
+    private static boolean isCheckedException(Class<?> clazz) {
+        return Throwable.class.isAssignableFrom(clazz) &&
+                !RuntimeException.class.isAssignableFrom(clazz) &&
+                !Error.class.isAssignableFrom(clazz);
     }
 
 //    /**
@@ -365,7 +614,7 @@ final class VarHandles {
 //                "@ForceInline\n" +
 //                "@LambdaForm.Compiled\n" +
 //                "final static <METHOD> throws Throwable {\n" +
-//                "    if (handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
+//                "    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
 //                "        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>\n" +
 //                "    }\n" +
 //                "    else {\n" +
@@ -378,10 +627,10 @@ final class VarHandles {
 //                "@ForceInline\n" +
 //                "@LambdaForm.Compiled\n" +
 //                "final static <METHOD> throws Throwable {\n" +
-//                "    if (handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
+//                "    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
 //                "        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
 //                "    }\n" +
-//                "    else if (handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodType) {\n" +
+//                "    else if (handle.isDirect() && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodType) {\n" +
 //                "        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
 //                "    }\n" +
 //                "    else {\n" +

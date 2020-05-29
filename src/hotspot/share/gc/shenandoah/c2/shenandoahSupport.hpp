@@ -250,8 +250,6 @@ public:
   virtual uint hash() const;
   virtual bool cmp( const Node &n ) const;
 
-  bool is_redundant();
-
 private:
   bool needs_barrier(PhaseGVN* phase, Node* n);
   bool needs_barrier_impl(PhaseGVN* phase, Node* n, Unique_Node_List &visited);

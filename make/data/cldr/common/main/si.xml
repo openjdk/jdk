@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -120,6 +120,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">බාස්ක්</language>
 			<language type="ewo">එවොන්ඩො</language>
 			<language type="fa">පර්සියානු</language>
+			<language type="fa_AF">ඩාරි</language>
 			<language type="ff">ෆුලාහ්</language>
 			<language type="fi">ෆින්ලන්ත</language>
 			<language type="fil">පිලිපීන</language>
@@ -551,7 +552,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CA">කැනඩාව</territory>
 			<territory type="CC">කොකෝස් දූපත්</territory>
 			<territory type="CD">කොංගෝව (ඩීආර්සී)</territory>
-			<territory type="CD" alt="variant">කොංගෝව (ඩීආර්සී)</territory>
 			<territory type="CF">මධ්‍යම අප්‍රිකානු ජනරජය</territory>
 			<territory type="CG">කොංගො - බ්‍රසාවිල්</territory>
 			<territory type="CG" alt="variant">කොංගෝ (ජනරජය)</territory>
@@ -763,7 +763,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UG">උගන්ඩාව</territory>
 			<territory type="UM">එක්සත් ජනපද ඈත දූපත්</territory>
 			<territory type="UN">එක්සත් ජාතීන්</territory>
-			<territory type="UN" alt="short">එක්සත් ජාතීන්</territory>
 			<territory type="US">එක්සත් ජනපදය</territory>
 			<territory type="US" alt="short">එ.ජ</territory>
 			<territory type="UY">උරුගුවේ</territory>
@@ -4288,7 +4287,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>නොෆොල්ක් දුපත් වේලාව</standard>
+					<generic draft="contributed">නොෆොල්ක් දුපත් වේලාව</generic>
+					<standard draft="contributed">නොෆොල්ක් දුපත් සම්මත වේලාව</standard>
+					<daylight draft="contributed">නොෆොල්ක් දුපත් ග්‍රීෂ්ම වේලාව</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5768,15 +5769,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ඩෙසි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>සෙන්ටි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>මිලි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>මයික්‍රො{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>නැනෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>පිකෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ෆෙම්ටෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ඇටෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>සෙප්ටෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>යොක්ටෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ඩෙකා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>හෙක්ටෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>කිලෝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>මෙගා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ගිගා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ටෙරා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>පෙටා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>එක්සා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>සෙටා{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>යොටා{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{1} ට {0} බැගින්</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>වර්ගය {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">වර්ග {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">වර්ග {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>ඝන {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ඝන {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ඝන {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g-බලය</displayName>
 				<unitPattern count="one">g-බලය {0}</unitPattern>
 				<unitPattern count="other">g-බලය {0}</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>තත්පර වර්ගයට මීටර</displayName>
 				<unitPattern count="one">තත්පර වර්ගයට මීටර {0}</unitPattern>
 				<unitPattern count="other">තත්පර වර්ගයට මීටර {0}</unitPattern>
@@ -5876,7 +5947,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ලීටරයකට මිලිමෝල් {0}</unitPattern>
 				<unitPattern count="other">ලීටරයකට මිලිමෝල් {0}</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>මිලියනයට කොටස්</displayName>
 				<unitPattern count="one">මිලියනයට කොටස් {0}</unitPattern>
 				<unitPattern count="other">මිලියනයට කොටස් {0}</unitPattern>
@@ -5906,7 +5977,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">කිලෝ මීටරයට ලීටරය {0}</unitPattern>
 				<unitPattern count="other">කිලෝ මීටරයට ලීටරය {0}</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>කිලෝ මීටර 100 ට ලීටර</displayName>
 				<unitPattern count="one">කිලෝ මීටර 100 ට ලීටර {0}</unitPattern>
 				<unitPattern count="other">කිලෝ මීටර 100 ට ලීටර {0}</unitPattern>
@@ -6380,17 +6451,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">අශ්වබල {0}</unitPattern>
 				<unitPattern count="other">අශ්වබල {0}</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>රසදිය මිලිමීටර</displayName>
 				<unitPattern count="one">රසදිය මිලිමීටර {0}</unitPattern>
 				<unitPattern count="other">රසදිය මිලිමීටර {0}</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>වර්ග අලඟකට රාත්තල්</displayName>
 				<unitPattern count="one">වර්ග අලඟකට රාත්තල් {0}</unitPattern>
 				<unitPattern count="other">වර්ග අලඟකට රාත්තල් {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>රසදිය අඟල්</displayName>
 				<unitPattern count="one">රසදිය අඟල් {0}</unitPattern>
 				<unitPattern count="other">රසදිය අඟල් {0}</unitPattern>
@@ -6470,7 +6541,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">කෙල්වින් අංශක {0}</unitPattern>
 				<unitPattern count="other">කෙල්වින් අංශක {0}</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>රාත්තල්-පාදය</displayName>
 				<unitPattern count="one">{0} රාත්තල්-පාදය</unitPattern>
 				<unitPattern count="other">{0} රාත්තල්-පාදය</unitPattern>
@@ -6624,8 +6695,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ඩෙස{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>සෙන්{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>මි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>නැ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>පි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ෆෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ඇ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>සෙප්{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>යො{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ඩෙක{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>හෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>කි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>මෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ගි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ටෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>පෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>එ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>සෙට{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>යොට{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -6635,7 +6772,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>මීටර/තත්පර වර්ගයට</displayName>
 				<unitPattern count="one">මී/තව {0}</unitPattern>
 				<unitPattern count="other">මී/තව {0}</unitPattern>
@@ -6735,7 +6872,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} මිමෝල්/ලී</unitPattern>
 				<unitPattern count="other">{0} මිමෝල්/ලී</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>කොටස්/මිලියනය</displayName>
 				<unitPattern count="one">{0} මිලිකො</unitPattern>
 				<unitPattern count="other">{0} මිලිකො</unitPattern>
@@ -6765,7 +6902,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ලී/කිමී {0}</unitPattern>
 				<unitPattern count="other">ලී/කිමී {0}</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ලී/කිමී100</displayName>
 				<unitPattern count="one">ලී/කිමී100 {0}</unitPattern>
 				<unitPattern count="other">ලී/100කිමී {0}</unitPattern>
@@ -7241,17 +7378,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">අබ {0}</unitPattern>
 				<unitPattern count="other">අබ {0}</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>ර මිමී</displayName>
 				<unitPattern count="one">ර මිමී {0}</unitPattern>
 				<unitPattern count="other">ර මිමී {0}</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>වඅ රා</displayName>
 				<unitPattern count="one">වඅ රා {0}</unitPattern>
 				<unitPattern count="other">වඅ රා {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ර අඟ</displayName>
 				<unitPattern count="one">ර අඟ {0}</unitPattern>
 				<unitPattern count="other">ර අඟ {0}</unitPattern>
@@ -7331,7 +7468,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">කෙල්. {0}°</unitPattern>
 				<unitPattern count="other">කෙල්. {0}°</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>රාත්-පාද</displayName>
 				<unitPattern count="one">{0} රාත්-පාද</unitPattern>
 				<unitPattern count="other">{0} රාත්-පාද</unitPattern>
@@ -7485,8 +7622,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ඩෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>සෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>මි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>නැ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>පි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ෆෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ඇ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>සෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>යො{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ඩෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>හෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>කි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>මෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ගි{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ටෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>පෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>එ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>සෙ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>යො{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0} G</unitPattern>
@@ -7533,7 +7736,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ලී/කිමී100</displayName>
 				<unitPattern count="one">ලී/කිමී100 {0}</unitPattern>
 				<unitPattern count="other">ලී/කිමී100 {0}</unitPattern>
@@ -7652,7 +7855,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">රසදිය {0}&quot;</unitPattern>
 				<unitPattern count="other">රසදිය {0}&quot;</unitPattern>
 			</unit>

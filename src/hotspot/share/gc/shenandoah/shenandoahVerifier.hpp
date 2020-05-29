@@ -41,17 +41,7 @@ class ShenandoahVerifierTask {
 public:
   ShenandoahVerifierTask(oop o = NULL, int idx = 0): _obj(o) { }
   ShenandoahVerifierTask(oop o, size_t idx): _obj(o) { }
-  ShenandoahVerifierTask(const ShenandoahVerifierTask& t): _obj(t._obj) { }
-
-  ShenandoahVerifierTask& operator =(const ShenandoahVerifierTask& t) {
-    _obj = t._obj;
-    return *this;
-  }
-  volatile ShenandoahVerifierTask&
-  operator =(const volatile ShenandoahVerifierTask& t) volatile {
-    (void)const_cast<oop&>(_obj = t._obj);
-    return *this;
-  }
+  // Trivially copyable.
 
   inline oop obj()  const { return _obj; }
 

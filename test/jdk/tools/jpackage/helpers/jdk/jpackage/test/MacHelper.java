@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,11 @@ public class MacHelper {
                     cmd.outputBundle(), dmgImage));
             ThrowingConsumer.toConsumer(consumer).accept(dmgImage);
         } finally {
-            Executor.of("/usr/bin/hdiutil", "detach").addArgument(mountPoint).execute();
+            // detach might not work right away due to resource busy error, so
+            // repeat detach several times or fail. Try 10 times with 3 seconds
+            // delay.
+            Executor.of("/usr/bin/hdiutil", "detach").addArgument(mountPoint).
+                    executeAndRepeatUntilExitCode(0, 10, 3);
         }
     }
 
@@ -130,6 +134,20 @@ public class MacHelper {
             .addArgument(cmd.outputBundle())
             .addArguments("-target", "/")
             .execute();
+        };
+        pkg.unpackHandler = (cmd, destinationDir) -> {
+            cmd.verifyIsOfType(PackageType.MAC_PKG);
+            Executor.of("pkgutil", "--expand")
+            .addArgument(cmd.outputBundle())
+            .addArgument(destinationDir.resolve("data")) // We need non-existing folder
+            .execute();
+            Executor.of("tar", "-C")
+            .addArgument(destinationDir)
+            .addArgument("-xvf")
+            .addArgument(Path.of(destinationDir.toString(), "data",
+                                 cmd.name() + "-app.pkg", "Payload"))
+            .execute();
+            return destinationDir.resolve(cmd.name() + ".app");
         };
         pkg.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);

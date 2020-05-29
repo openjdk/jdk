@@ -45,14 +45,16 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
   double _ratio_over_threshold_sum;
   uint _pauses_since_start;
 
+  // Scale "full" gc pause time threshold with heap size as we want to resize more
+  // eagerly at small heap sizes.
+  double scale_with_heap(double pause_time_threshold);
 
-protected:
   G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 public:
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount();
+  size_t expansion_amount();
 
   // Clear ratio tracking data used by expansion_amount().
   void clear_ratio_check_data();

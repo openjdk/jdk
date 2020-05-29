@@ -32,6 +32,8 @@
 #include <limits.h>
 #include <unistd.h>
 #include <sys/param.h>
+#include <dlfcn.h>
+#include <pthread.h>
 #include "manifest_info.h"
 #include "jli_util.h"
 
@@ -61,9 +63,11 @@ static jboolean GetJREPath(char *path, jint pathsize, jboolean speculative);
 #include "java_md_aix.h"
 #endif
 
-#ifdef MACOSX
-#include "java_md_macosx.h"
-#else  /* !MACOSX */
-#include "java_md_solinux.h"
-#endif /* MACOSX */
+#if defined(MACOSX)
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#else
+extern char **environ;
+#endif
+
 #endif /* JAVA_MD_H */

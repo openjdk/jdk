@@ -31,7 +31,7 @@ import java.lang.invoke.VarHandle;
 
 /**
  * This class manages the temporal bounds associated with a memory segment. A scope has a liveness bit, which is updated
- * when the scope is closed (this operation is triggered by {@link MemorySegmentImpl#close()}). Furthermore, a scope is
+ * when the scope is closed (this operation is triggered by {@link AbstractMemorySegmentImpl#close()}). Furthermore, a scope is
  * associated with an <em>atomic</em> counter which can be incremented (upon calling the {@link #acquire()} method),
  * and is decremented (when a previously acquired segment is later closed).
  */
@@ -57,6 +57,8 @@ public final class MemoryScope {
     final static int MAX_ACQUIRE = Integer.MAX_VALUE;
 
     final Runnable cleanupAction;
+
+    final static MemoryScope GLOBAL = new MemoryScope(null, null);
 
     public MemoryScope(Object ref, Runnable cleanupAction) {
         this.ref = ref;
@@ -105,15 +107,20 @@ public final class MemoryScope {
         } while (!COUNT_HANDLE.compareAndSet(this, value, value - 1));
     }
 
-    void close() {
+    void close(boolean doCleanup) {
         if (!COUNT_HANDLE.compareAndSet(this, UNACQUIRED, CLOSED)) {
             //first check if already closed...
             checkAliveConfined();
             //...if not, then we have acquired views that are still active
             throw new IllegalStateException("Cannot close a segment that has active acquired views");
         }
-        if (cleanupAction != null) {
+        if (doCleanup && cleanupAction != null) {
             cleanupAction.run();
         }
+    }
+
+    MemoryScope dup() {
+        close(false);
+        return new MemoryScope(ref, cleanupAction);
     }
 }

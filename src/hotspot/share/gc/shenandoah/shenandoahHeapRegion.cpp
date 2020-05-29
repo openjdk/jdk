@@ -609,13 +609,6 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
   assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
-
-  log_info(gc, init)("Regions: " SIZE_FORMAT " x " SIZE_FORMAT "%s",
-                     RegionCount, byte_size_in_proper_unit(RegionSizeBytes), proper_unit_for_byte_size(RegionSizeBytes));
-  log_info(gc, init)("Humongous object threshold: " SIZE_FORMAT "%s",
-                     byte_size_in_proper_unit(HumongousThresholdBytes), proper_unit_for_byte_size(HumongousThresholdBytes));
-  log_info(gc, init)("Max TLAB size: " SIZE_FORMAT "%s",
-                     byte_size_in_proper_unit(MaxTLABSizeBytes), proper_unit_for_byte_size(MaxTLABSizeBytes));
 }
 
 void ShenandoahHeapRegion::do_commit() {
@@ -625,6 +618,9 @@ void ShenandoahHeapRegion::do_commit() {
   }
   if (!heap->commit_bitmap_slice(this)) {
     report_java_out_of_memory("Unable to commit bitmaps for region");
+  }
+  if (AlwaysPreTouch) {
+    os::pretouch_memory(bottom(), end(), heap->pretouch_heap_page_size());
   }
   heap->increase_committed(ShenandoahHeapRegion::region_size_bytes());
 }

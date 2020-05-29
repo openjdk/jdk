@@ -85,6 +85,14 @@ inline ShenandoahHeapRegion* const ShenandoahHeap::heap_region_containing(const 
   return result;
 }
 
+inline void ShenandoahHeap::enter_evacuation(Thread* t) {
+  _oom_evac_handler.enter_evacuation(t);
+}
+
+inline void ShenandoahHeap::leave_evacuation(Thread* t) {
+  _oom_evac_handler.leave_evacuation(t);
+}
+
 template <class T>
 inline oop ShenandoahHeap::update_with_forwarded_not_null(T* p, oop obj) {
   if (in_collection_set(obj)) {

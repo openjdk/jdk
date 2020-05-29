@@ -214,17 +214,9 @@ public interface VirtualMachine extends Mirror {
      * attempting to add a method will throw this exception.
      * <LI>If {@link #canUnrestrictedlyRedefineClasses()
      *            canUnrestrictedlyRedefineClasses()}
-     * is false, attempting any of the following will throw
-     * this exception
-     *   <UL>
-     *   <LI>changing the schema (the fields)
-     *   <LI>changing the hierarchy (superclasses, interfaces)
-     *   <LI>deleting a method
-     *   <LI>changing class modifiers
-     *   <LI>changing method modifiers
-     *   <LI>changing the {@code NestHost}, {@code NestMembers}, or {@code Record} class attributes
-     *   </UL>
-     * </UL>
+     * is false attempting any of the unsupported class file changes described
+     * in <a href="{@docRoot}/../specs/jvmti.html#RedefineClasses">
+     * JVM TI RedefineClasses</a> will throw this exception.
      *
      * @throws java.lang.NoClassDefFoundError if the bytes
      * don't correspond to the reference type (the names

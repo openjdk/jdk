@@ -490,7 +490,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   sldi(R0, R0, LogBytesPerHeapOop);
   cmpd(CCR0, tmp, R0);
   blt(CCR0, index_ok);
-  stop("resolved reference index out of bounds", 0x09256);
+  stop("resolved reference index out of bounds");
   bind(index_ok);
 #endif
   // Add in the index.
@@ -1143,7 +1143,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
 #ifdef ASSERT
   ld(Rscratch1, _ijava_state_neg(top_frame_sp), Rscratch2); // Rscratch2 contains fp
   cmpd(CCR0, R21_sender_SP, Rscratch1);
-  asm_assert_eq("top_frame_sp incorrect", 0x951);
+  asm_assert_eq("top_frame_sp incorrect");
 #endif
 
   bctr();
@@ -2251,7 +2251,7 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     subf(R0, R1_SP, scratch);
     cmpdi(CCR0, R0, frame::abi_reg_args_size + frame::ijava_state_size);
     bge(CCR0, Lok);
-    stop("frame too small (restore istate)", 0x5432);
+    stop("frame too small (restore istate)");
     bind(Lok);
   }
 #endif

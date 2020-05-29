@@ -1933,11 +1933,21 @@ class Assembler : public AbstractAssembler {
   inline void td(           int tobits, Register a, Register b); // asserts UseSIGTRAP
   inline void tw(           int tobits, Register a, Register b); // asserts UseSIGTRAP
 
+ public:
   static bool is_tdi(int x, int tobits, int ra, int si16) {
      return (TDI_OPCODE == (x & TDI_OPCODE_MASK))
          && (tobits == inv_to_field(x))
          && (ra == -1/*any reg*/ || ra == inv_ra_field(x))
          && (si16 == inv_si_field(x));
+  }
+
+  static int tdi_get_si16(int x, int tobits, int ra) {
+    if (TDI_OPCODE == (x & TDI_OPCODE_MASK)
+        && (tobits == inv_to_field(x))
+        && (ra == -1/*any reg*/ || ra == inv_ra_field(x))) {
+      return inv_si_field(x);
+    }
+    return -1; // No valid tdi instruction.
   }
 
   static bool is_twi(int x, int tobits, int ra, int si16) {
@@ -1967,7 +1977,6 @@ class Assembler : public AbstractAssembler {
          && (rb == -1/*any reg*/ || rb == inv_rb_field(x));
   }
 
- public:
   // PPC floating point instructions
   // PPC 1, section 4.6.2 Floating-Point Load Instructions
   inline void lfs(  FloatRegister d, int si16,   Register a);

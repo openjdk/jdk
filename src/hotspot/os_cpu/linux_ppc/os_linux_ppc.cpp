@@ -401,11 +401,11 @@ JVM_handle_linux_signal(int sig,
       }
 
       CodeBlob *cb = NULL;
+      int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
-      if (( TrapBasedNotEntrantChecks && sig == SIGTRAP && nativeInstruction_at(pc)->is_sigtrap_zombie_not_entrant()) ||
-          (!TrapBasedNotEntrantChecks && sig == SIGILL  && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant())) {
+      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
+          tty->print_cr("trap: zombie_not_entrant");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
@@ -465,6 +465,31 @@ JVM_handle_linux_signal(int sig,
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
 #endif
+
+      // stop on request
+      else if (sig == SIGTRAP && (stop_type = nativeInstruction_at(pc)->get_stop_type()) != -1) {
+        const char *msg = NULL,
+                   *detail_msg = (const char*)(uc->uc_mcontext.regs->gpr[0]);
+        switch (stop_type) {
+          case MacroAssembler::stop_stop              :  msg = "stop"; break;
+          case MacroAssembler::stop_untested          :  msg = "untested"; break;
+          case MacroAssembler::stop_unimplemented     :  msg = "unimplemented"; break;
+          case MacroAssembler::stop_shouldnotreachhere:  msg = "shouldnotreachhere"; detail_msg = NULL; break;
+          default: msg = "unknown"; break;
+        }
+        if (detail_msg == NULL) {
+          detail_msg = "no details provided";
+        }
+
+        if (TraceTraps) {
+          tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
+        }
+
+        va_list detail_args;
+        VMError::report_and_die(t, ucVoid, NULL, 0, msg, detail_msg, detail_args);
+        va_end(detail_args);
+      }
+
       else if (sig == SIGBUS) {
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.

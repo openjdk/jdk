@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/utf8.hpp"
 
 // Complain every extra number of unplanned local refs
 #define CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD 32
@@ -134,6 +135,8 @@ static const char * fatal_wrong_field = "Wrong field ID passed to JNI";
 static const char * fatal_instance_field_not_found = "Instance field not found in JNI get/set field operations";
 static const char * fatal_instance_field_mismatch = "Field type (instance) mismatch in JNI get/set field operations";
 static const char * fatal_non_string = "JNI string operation received a non-string";
+static const char * fatal_non_utf8_class_name1 = "JNI class name is not a valid UTF8 string \"";
+static const char * fatal_non_utf8_class_name2 = "\"";
 
 
 // When in VM state:
@@ -488,6 +491,13 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
     jio_snprintf(msg, JVM_MAXPATHLEN, "%s%s%s",
                  warn_bad_class_descriptor1, name, warn_bad_class_descriptor2);
     ReportJNIWarning(thr, msg);
+  }
+
+  // Verify that the class name given is a valid utf8 string
+  if (!UTF8::is_legal_utf8((const unsigned char*)name, (int)strlen(name), false)) {
+    char msg[JVM_MAXPATHLEN];
+    jio_snprintf(msg, JVM_MAXPATHLEN, "%s%s%s", fatal_non_utf8_class_name1, name, fatal_non_utf8_class_name2);
+    ReportJNIFatalError(thr, msg);
   }
 }
 

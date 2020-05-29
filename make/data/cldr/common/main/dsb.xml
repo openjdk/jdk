@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2793,7 +2793,9 @@ terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>cas kupy Norfolk</standard>
+					<generic draft="contributed">cas kupy Norfolk</generic>
+					<standard draft="contributed">standardny cas kupy Norfolk</standard>
+					<daylight draft="contributed">lěśojski cas kupy Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4603,7 +4605,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} jadnotki zemskego póspěšenja</unitPattern>
 				<unitPattern count="other">{0} jadnotkow zemskego póspěšenja</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>metry na kwadratnu sekundu</displayName>
 				<unitPattern count="one">{0} meter na kwadratnu sekundu</unitPattern>
 				<unitPattern count="two">{0} metra na kwadratnu sekundu</unitPattern>
@@ -5193,21 +5195,21 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kónjece mócy</unitPattern>
 				<unitPattern count="other">{0} kónjecych mócow</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimetry słupika žywego slobra</displayName>
 				<unitPattern count="one">{0} milimeter słupika žywego slobra</unitPattern>
 				<unitPattern count="two">{0} milimetra słupika žywego slobra</unitPattern>
 				<unitPattern count="few">{0} milimetry słupika žywego slobra</unitPattern>
 				<unitPattern count="other">{0} milimetrow słupika žywego slobra</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>punty na kwadratny col</displayName>
 				<unitPattern count="one">{0} punt na kwadratny col</unitPattern>
 				<unitPattern count="two">{0} punta na kwadratny col</unitPattern>
 				<unitPattern count="few">{0} punty na kwadratny col</unitPattern>
 				<unitPattern count="other">{0} puntow na kwadratny col</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>cole žywoslobrowego słupika</displayName>
 				<unitPattern count="one">{0} col słupika žywego slobra</unitPattern>
 				<unitPattern count="two">{0} cola słupika žywego slobra</unitPattern>
@@ -5426,7 +5428,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="two">{0} m/s²</unitPattern>
@@ -6016,21 +6018,21 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="two">{0} mm Hg</unitPattern>
 				<unitPattern count="few">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="two">{0} psi</unitPattern>
 				<unitPattern count="few">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
@@ -6466,7 +6468,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
 				<unitPattern count="few">{0} inHg</unitPattern>

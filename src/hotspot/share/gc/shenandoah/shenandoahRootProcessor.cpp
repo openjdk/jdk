@@ -175,11 +175,76 @@ void ShenandoahConcurrentStringDedupRoots::oops_do(BoolObjectClosure* is_alive, 
   }
 }
 
+ShenandoahCodeCacheRoots::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
+  nmethod::oops_do_marking_prologue();
+}
+
+void ShenandoahCodeCacheRoots::code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id) {
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+  _coderoots_iterator.possibly_parallel_blobs_do(blob_cl);
+}
+
+ShenandoahCodeCacheRoots::~ShenandoahCodeCacheRoots() {
+  nmethod::oops_do_marking_epilogue();
+}
+
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase) :
   _heap(ShenandoahHeap::heap()),
   _phase(phase),
   _worker_phase(phase) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must at safepoint");
+}
+
+ShenandoahRootScanner::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
+  ShenandoahRootProcessor(phase),
+  _serial_roots(phase),
+  _thread_roots(phase, n_workers > 1),
+  _code_roots(phase),
+  _vm_roots(phase),
+  _dedup_roots(phase),
+  _cld_roots(phase) {
+}
+
+void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops) {
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  roots_do(worker_id, oops, &clds_cl, &blobs_cl);
+}
+
+void ShenandoahRootScanner::strong_roots_do(uint worker_id, OopClosure* oops) {
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  strong_roots_do(worker_id, oops, &clds_cl, &blobs_cl);
+}
+
+void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
+  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint() ||
+         !ShenandoahHeap::heap()->unload_classes(),
+          "Expect class unloading when Shenandoah cycle is running");
+  ResourceMark rm;
+
+  _serial_roots.oops_do(oops, worker_id);
+  _vm_roots.oops_do(oops, worker_id);
+
+  assert(clds != NULL, "Only possible with CLD closure");
+  _cld_roots.cld_do(clds, worker_id);
+
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
+  _thread_roots.threads_do(&tc_cl, worker_id);
+
+  AlwaysTrueClosure always_true;
+  _dedup_roots.oops_do(&always_true, oops, worker_id);
+}
+
+void ShenandoahRootScanner::strong_roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc) {
+  assert(ShenandoahHeap::heap()->unload_classes(), "Should be used during class unloading");
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
+  ResourceMark rm;
+
+  _serial_roots.oops_do(oops, worker_id);
+  _vm_roots.oops_do(oops, worker_id);
+  _cld_roots.always_strong_cld_do(clds, worker_id);
+  _thread_roots.threads_do(&tc_cl, worker_id);
 }
 
 ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,

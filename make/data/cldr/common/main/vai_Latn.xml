@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -348,24 +348,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="wide">
-							<month type="1">luukao kemã</month>
-							<month type="2">ɓandaɓu</month>
-							<month type="3">vɔɔ</month>
-							<month type="4">fulu</month>
-							<month type="5">goo</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">kɔnde</month>
-							<month type="9">saah</month>
-							<month type="10">galo</month>
-							<month type="11">kenpkato ɓololɔ</month>
-							<month type="12">luukao lɔma</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="wide">

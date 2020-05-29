@@ -433,9 +433,9 @@ public class WeakAlg {
             // The following 2 commands still have a warning on why not using
             // the -cacerts option directly.
             kt("-list -keystore " + KeyStoreUtil.getCacerts())
-                    .shouldNotContain("risk");
+                    .shouldNotMatch("signature algorithm.*risk");
             kt("-list -v -keystore " + KeyStoreUtil.getCacerts())
-                    .shouldNotContain("risk");
+                    .shouldNotMatch("signature algorithm.*risk");
 
             // -printcert will always show warnings
             kt("-printcert -file ca.cert")
@@ -451,10 +451,10 @@ public class WeakAlg {
             kt("-delete -alias d");
             kt("-importcert -alias d -trustcacerts -file ca.cert", "no")
                     .shouldContain("Certificate already exists in system-wide CA")
-                    .shouldNotContain("risk")
+                    .shouldNotMatch("signature algorithm.*risk")
                     .shouldContain("Do you still want to add it to your own keystore?");
             kt("-importcert -alias d -trustcacerts -file ca.cert -noprompt")
-                    .shouldNotContain("risk")
+                    .shouldNotMatch("signature algorithm.*risk")
                     .shouldNotContain("[no]");
 
             // but not without -trustcacerts

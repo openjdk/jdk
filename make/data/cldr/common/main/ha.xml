@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -194,6 +194,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="rof">Rombo</language>
 			<language type="ru">Rashanci</language>
 			<language type="rw">Kiniyaruwanda</language>
+			<language type="rwk">yaren Rwa</language>
 			<language type="sa">Sanskrit</language>
 			<language type="sah">Sakha</language>
 			<language type="saq">Samburu</language>
@@ -256,12 +257,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hans">Sauƙaƙaƙƙen Sinanci</language>
 			<language type="zh_Hant">Sinanci na gargajiya</language>
 			<language type="zu">Harshen Zulu</language>
+			<language type="zxx">Babu abun-ciki na yare</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Larabci</script>
 			<script type="Armn">Armeniyawa</script>
 			<script type="Beng">Bangla</script>
 			<script type="Bopo">Bopomofo</script>
+			<script type="Brai">Rubutun Makafi</script>
 			<script type="Cyrl">Cyrillic</script>
 			<script type="Deva">Devanagari</script>
 			<script type="Ethi">Ethiopic</script>
@@ -270,14 +273,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Gujr">Gujarati</script>
 			<script type="Guru">Gurmukhi</script>
 			<script type="Hanb">Han with Bopomofo</script>
+			<script type="Hang">Yaren Hangul</script>
+			<script type="Hani">Mutanen Han na ƙasar Sin</script>
 			<script type="Hans">Sauƙaƙaƙƙen</script>
 			<script type="Hans" alt="stand-alone">Sauƙaƙaƙƙen Hans</script>
 			<script type="Hant">Na gargajiya</script>
 			<script type="Hant" alt="stand-alone">Han na gargajiya</script>
 			<script type="Hebr">Ibrananci</script>
+			<script type="Hira">Tsarin Rubutun Hiragana</script>
+			<script type="Hrkt">kalaman Jafananci</script>
+			<script type="Jpan">Jafanis</script>
+			<script type="Kana">Tsarin Rubutun Katakana</script>
+			<script type="Khmr">Yaren Khmer</script>
+			<script type="Knda">Yaren Kannada</script>
+			<script type="Kore">Koriya</script>
+			<script type="Laoo">Mutanen Laos</script>
 			<script type="Latn">Latin</script>
+			<script type="Mlym">Yaren Malayalam</script>
+			<script type="Mong">Na kasar Mongolia</script>
+			<script type="Mymr">Ƙasar Myanmar</script>
+			<script type="Orya">Yaren Odia</script>
+			<script type="Sinh">Yaren Sinhala</script>
+			<script type="Taml">Yaren Tamil</script>
+			<script type="Telu">Yaren Telugu</script>
+			<script type="Thaa">Yaren Thaana</script>
+			<script type="Tibt">Yaren Tibet</script>
+			<script type="Zmth">Alamar Lissafi</script>
+			<script type="Zsye">Alama ta hoto</script>
 			<script type="Zsym">Alamomi</script>
 			<script type="Zxxx">Ba rubutacce ba</script>
+			<script type="Zyyy">Gama-gari</script>
 			<script type="Zzzz">Rubutun da ba sani ba</script>
 		</scripts>
 		<territories>
@@ -299,6 +324,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="034">kudancin Asiya</territory>
 			<territory type="035">Kudu Maso Gabashin Asiya</territory>
 			<territory type="039">Kudancin Turai</territory>
+			<territory type="053">Tsibarai na Austraila da New Zealand da maƙota</territory>
+			<territory type="054">Tsibirai na New Guinea da Fiji da maƙota</territory>
+			<territory type="057">Yankin Micronesia</territory>
+			<territory type="061">tsibiri</territory>
 			<territory type="142">Asiya</territory>
 			<territory type="143">Asiya ta Tsakiya</territory>
 			<territory type="145">Yammacin Asiya</territory>
@@ -308,6 +337,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="155">Yammacin Turai</territory>
 			<territory type="202">Sub-Saharan Africa</territory>
 			<territory type="419">Latin America</territory>
+			<territory type="AC">Tsibirin Ascension</territory>
 			<territory type="AD">Andora</territory>
 			<territory type="AE">Haɗaɗɗiyar Daular Larabawa</territory>
 			<territory type="AF">Afaganistan</territory>
@@ -322,6 +352,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AT">Ostiriya</territory>
 			<territory type="AU">Ostareliya</territory>
 			<territory type="AW">Aruba</territory>
+			<territory type="AX">Tsibirai na Åland</territory>
 			<territory type="AZ">Azarbaijan</territory>
 			<territory type="BA">Bosniya Harzagobina</territory>
 			<territory type="BB">Barbadas</territory>
@@ -340,6 +371,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BR">Birazil</territory>
 			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Butan</territory>
+			<territory type="BV">Tsibirin Bouvet</territory>
 			<territory type="BW">Baswana</territory>
 			<territory type="BY">Belarus</territory>
 			<territory type="BZ">Beliz</territory>
@@ -352,12 +384,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CG" alt="variant">Jamhuriyar Kongo</territory>
 			<territory type="CH">Suwizalan</territory>
 			<territory type="CI">Aibari Kwas</territory>
-			<territory type="CI" alt="variant">Aibari Kwas</territory>
 			<territory type="CK">Tsibiran Kuku</territory>
 			<territory type="CL">Cayile</territory>
 			<territory type="CM">Kamaru</territory>
 			<territory type="CN">Sin</territory>
 			<territory type="CO">Kolambiya</territory>
+			<territory type="CP">Tsibirin Clipperton</territory>
 			<territory type="CR">Kwasta Rika</territory>
 			<territory type="CU">Kyuba</territory>
 			<territory type="CV">Tsibiran Kap Barde</territory>
@@ -366,14 +398,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CY">Sifurus</territory>
 			<territory type="CZ">Jamhuriyar Cak</territory>
 			<territory type="DE">Jamus</territory>
+			<territory type="DG">Tsibirn Diego Garcia</territory>
 			<territory type="DJ">Jibuti</territory>
 			<territory type="DK">Danmark</territory>
 			<territory type="DM">Dominika</territory>
 			<territory type="DO">Jamhuriyar Dominika</territory>
 			<territory type="DZ">Aljeriya</territory>
+			<territory type="EA">Ceuta &amp; Melilla</territory>
 			<territory type="EC">Ekwador</territory>
 			<territory type="EE">Estoniya</territory>
 			<territory type="EG">Misira</territory>
+			<territory type="EH">Yammacin Sahara</territory>
 			<territory type="ER">Eritireya</territory>
 			<territory type="ES">Sipen</territory>
 			<territory type="ET">Habasha</territory>
@@ -383,12 +418,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Tsibiran Falkilan</territory>
 			<territory type="FM">Mikuronesiya</territory>
+			<territory type="FO">Tsibirai na Faroe</territory>
 			<territory type="FR">Faransa</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">Biritaniya</territory>
 			<territory type="GD">Girnada</territory>
 			<territory type="GE">Jiwarjiya</territory>
 			<territory type="GF">Gini Ta Faransa</territory>
+			<territory type="GG">Yankin Guernsey</territory>
 			<territory type="GH">Gana</territory>
 			<territory type="GI">Jibaraltar</territory>
 			<territory type="GL">Grinlan</territory>
@@ -397,23 +434,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GP">Gwadaluf</territory>
 			<territory type="GQ">Gini Ta Ikwaita</territory>
 			<territory type="GR">Girka</territory>
+			<territory type="GS">Kudancin Geogia da Kudancin Tsibirin Sandiwic</territory>
 			<territory type="GT">Gwatamala</territory>
 			<territory type="GU">Gwam</territory>
 			<territory type="GW">Gini Bisau</territory>
 			<territory type="GY">Guyana</territory>
+			<territory type="HK">Hong Kong Babban Birnin Kasar Chana</territory>
+			<territory type="HM">Tsibirin Heard da McDonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Kurowaishiya</territory>
 			<territory type="HT">Haiti</territory>
 			<territory type="HU">Hungari</territory>
+			<territory type="IC">Canary Islands</territory>
 			<territory type="ID">Indunusiya</territory>
 			<territory type="IE">Ayalan</territory>
 			<territory type="IL">Iziraʼila</territory>
+			<territory type="IM">Isle na Mutum</territory>
 			<territory type="IN">Indiya</territory>
 			<territory type="IO">Yankin Birtaniya Na Tekun Indiya</territory>
 			<territory type="IQ">Iraƙi</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Aisalan</territory>
 			<territory type="IT">Italiya</territory>
+			<territory type="JE">Kasar Jersey</territory>
 			<territory type="JM">Jamaika</territory>
 			<territory type="JO">Jordan</territory>
 			<territory type="JP">Jàpân</territory>
@@ -450,6 +493,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Burma, Miyamar</territory>
 			<territory type="MN">Mangoliya</territory>
+			<territory type="MO">Babban Birnin Mulki na Chana</territory>
 			<territory type="MP">Tsibiran Mariyana Na Arewa</territory>
 			<territory type="MQ">Martinik</territory>
 			<territory type="MR">Moritaniya</territory>
@@ -485,11 +529,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PN">Pitakarin</territory>
 			<territory type="PR">Porto Riko</territory>
 			<territory type="PS">Palasɗinu</territory>
-			<territory type="PS" alt="short">Palasɗinu</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Faragwai</territory>
 			<territory type="QA">Katar</territory>
+			<territory type="QO">Bakin Teku</territory>
 			<territory type="RE">Rawuniyan</territory>
 			<territory type="RO">Romaniya</territory>
 			<territory type="RS">Sabiya</territory>
@@ -503,6 +547,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SG">Singapur</territory>
 			<territory type="SH">San Helena</territory>
 			<territory type="SI">Sulobeniya</territory>
+			<territory type="SJ">Svalbard da Jan Mayen</territory>
 			<territory type="SK">Sulobakiya</territory>
 			<territory type="SL">Salewo</territory>
 			<territory type="SM">San Marino</territory>
@@ -534,6 +579,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TZ">Tanzaniya</territory>
 			<territory type="UA">Yukaran</territory>
 			<territory type="UG">Yuganda</territory>
+			<territory type="UM">Rukunin Tsibirin U.S</territory>
 			<territory type="UN">Majalisar Dinkin Duniya</territory>
 			<territory type="US">Amurka</territory>
 			<territory type="UY">Yurigwai</territory>
@@ -547,6 +593,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Banuwatu</territory>
 			<territory type="WF">Walis Da Futuna</territory>
 			<territory type="WS">Samoa</territory>
+			<territory type="XA">Gogewar Kwalwa</territory>
+			<territory type="XB">Gano wani abu ta hanyar amfani da fasaha</territory>
+			<territory type="XK">Kasar Kosovo</territory>
 			<territory type="YE">Yamal</territory>
 			<territory type="YT">Mayoti</territory>
 			<territory type="ZA">Afirka Ta Kudu</territory>
@@ -557,8 +606,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">Kalanda</key>
 			<key type="cf">Yanayin Kudi</key>
+			<key type="collation">Tsarin Rabewa</key>
 			<key type="currency">Kudin Kasa</key>
 			<key type="hc">Zagayen Awowi</key>
+			<key type="lb">Salo na Raba Layi</key>
+			<key type="ms">Tsarin Awo</key>
 			<key type="numbers">Lambobi</key>
 		</keys>
 		<types>
@@ -572,13 +624,57 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="iso8601">Kalanda ISO-8601</type>
 			<type key="calendar" type="japanese">Kalanda Jafan</type>
 			<type key="calendar" type="persian">Kalanda Farisa</type>
+			<type key="calendar" type="roc">Kalandar kasar Sin</type>
+			<type key="cf" type="account">Tsarin Kudi na Kididdiga</type>
+			<type key="cf" type="standard">Tsarin Kudi Nagartacce</type>
+			<type key="collation" type="ducet">Tsarin Rabewa na Dan-maƙalu na Asali</type>
+			<type key="collation" type="search">Bincike na Dalilai-Gamagari</type>
 			<type key="collation" type="standard">Daidai ta ce Kasà</type>
 			<type key="hc" type="h11">Tsarin Awowi 12(0–11)</type>
 			<type key="hc" type="h12">Tsarin Awowi 12(1–12)</type>
 			<type key="hc" type="h23">Tsarin Awowi 24(0–23)</type>
 			<type key="hc" type="h24">Tsarin Awowi 24(1–24)</type>
+			<type key="lb" type="loose">Salo na Raba Layi Sakakke</type>
+			<type key="lb" type="normal">Salo na Raba Layi na Kodayaushe</type>
+			<type key="lb" type="strict">Salo na Raba Layi mai Tsauri</type>
+			<type key="ms" type="metric">Tsarin Awo na Metric</type>
+			<type key="ms" type="uksystem">Tsarin Awo na Imperial</type>
+			<type key="ms" type="ussystem">Tsarin Awo na Amurka</type>
 			<type key="numbers" type="arab">Lambobi na larabawan a gabas</type>
+			<type key="numbers" type="arabext">Fitattun lambobin lissafi na Larabci</type>
+			<type key="numbers" type="armn">Lambobin ƙirga na Armenia</type>
+			<type key="numbers" type="armnlow">Kananan Haruffan Armenia</type>
+			<type key="numbers" type="beng">Lambobin Yaren Bangla</type>
+			<type key="numbers" type="deva">Lambobin Tsarin Rubutu na Devangari</type>
+			<type key="numbers" type="ethi">Lambobin ƙirga na Ethiopia</type>
+			<type key="numbers" type="fullwide">Lambobi masu Cikakken-Faɗi</type>
+			<type key="numbers" type="geor">Lambobin ƙirga na Georgia</type>
+			<type key="numbers" type="grek">Lambobin ƙirga na Girka</type>
+			<type key="numbers" type="greklow">Kananan Haruffa na Girka</type>
+			<type key="numbers" type="gujr">Lambobin Yaren Gujarati</type>
+			<type key="numbers" type="guru">Lambobi na Tsarin Rubutun Gurmukhi</type>
+			<type key="numbers" type="hanidec">Lambobin Gomiya na Yaren ƙasar Sin</type>
+			<type key="numbers" type="hans">Lambobin ƙirga na Yaren ƙasar Sin wanda aka Sauƙaƙa</type>
+			<type key="numbers" type="hansfin">Lambobin Ƙirgan Kudi na Yaren ƙasar Sin wanda aka Sauƙaƙa</type>
+			<type key="numbers" type="hant">Lambobin Ƙirga na Yaren ƙasar Sin na Alʼada</type>
+			<type key="numbers" type="hantfin">Lambobin Ƙirgan Kudi na Yaren ƙasar Sin na Alʼada</type>
+			<type key="numbers" type="hebr">Lambobin ƙirga na Hebrew</type>
+			<type key="numbers" type="jpan">Lambobin ƙirga na Jafananci</type>
+			<type key="numbers" type="jpanfin">Lambobin ƙirgan Kudi na Jafananci</type>
+			<type key="numbers" type="khmr">Lambobin Yaren Khmer</type>
+			<type key="numbers" type="knda">Lambobin Yaren Kannada</type>
+			<type key="numbers" type="laoo">Lambobin Yaren Lao</type>
 			<type key="numbers" type="latn">Lambobi na yammacin</type>
+			<type key="numbers" type="mlym">Lambobin Yaren Malayalam</type>
+			<type key="numbers" type="mymr">Lambobin Myanmar</type>
+			<type key="numbers" type="orya">Lambobin Yaren Odia</type>
+			<type key="numbers" type="roman">Lambobin Rumawa</type>
+			<type key="numbers" type="romanlow">Lambobin Kirga Kanana na Rumawa</type>
+			<type key="numbers" type="taml">Lambobin ƙirga na Tamil na Alʼada</type>
+			<type key="numbers" type="tamldec">Lambobin Tamil</type>
+			<type key="numbers" type="telu">Lambobin yaren Telugu</type>
+			<type key="numbers" type="thai">Lambobin yaren Thai</type>
+			<type key="numbers" type="tibt">Lambobin yaren Tibet</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Tsarin awo</measurementSystemName>
@@ -2011,6 +2107,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Marshall Islands Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Lokacin Mauritius</generic>
+					<standard>TsaTsayayyar Lokacin Mauritius</standard>
+					<daylight>Bazarar Mauritius</daylight>
+				</long>
+			</metazone>
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson Time</standard>
@@ -2087,7 +2190,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolk Island Time</standard>
+					<generic draft="contributed">Norfolk Island Time</generic>
+					<standard draft="contributed">Norfolk Island Standard Time</standard>
+					<daylight draft="contributed">Norfolk Island Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
@@ -2397,12 +2502,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="AED">
 				<displayName>Kuɗin Haɗaɗɗiyar Daular Larabawa</displayName>
 			</currency>
+			<currency type="AFN">
+				<displayName>Afghani na kasar Afghanistan</displayName>
+				<displayName count="one">Afghani na kasar Afghanistan</displayName>
+				<displayName count="other">Afghani na kasar Afghanistan</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Kudin Albanian</displayName>
+				<displayName count="one">Kudin Albanian</displayName>
+				<displayName count="other">Kudin Albanian</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Kudin Armenian</displayName>
+				<displayName count="one">kudin Armenian</displayName>
+				<displayName count="other">Kudin Armenian</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Antillean Guilder na ƙasar Netherlands</displayName>
+				<displayName count="one">Antillean guilder na ƙasar Netherlands</displayName>
+				<displayName count="other">Antillean Guilder na ƙasar Netherlands</displayName>
+			</currency>
 			<currency type="AOA">
 				<displayName>Kuɗin Angola</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Peso na ƙasar Argentina</displayName>
+				<displayName count="one">peso na ƙasar Argentina</displayName>
+				<displayName count="other">Peso na ƙasar Argentina</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>Dalar Ostareliya</displayName>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="AWG">
+				<displayName>Florin na yankin Aruba</displayName>
+				<displayName count="one">florin na yankin Aruba</displayName>
+				<displayName count="other">Florin na yankin Aruba</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Kudin Azerbaijani</displayName>
+				<displayName count="one">kudin Azerbaijani</displayName>
+				<displayName count="other">Kudin Azerbaijani</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Kudaden Bosnia da Harzegovina</displayName>
+				<displayName count="one">Kudaden Bosnia da Herzegovina</displayName>
+				<displayName count="other">Kudaden Bosnia da Harzegovina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Dalar ƙasar Barbados</displayName>
+				<displayName count="one">dalar Barbados</displayName>
+				<displayName count="other">Dalar ƙasar Barbados</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Taka na kasar Bangladesh</displayName>
+				<displayName count="one">taka na kasar Bangladesh</displayName>
+				<displayName count="other">Taka na kasar Bangladesh</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Kudin Bulgeria</displayName>
+				<displayName count="one">Kudin Bulgeria</displayName>
+				<displayName count="other">Kudin Bulgeria</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName>Kuɗin Baharan</displayName>
@@ -2410,13 +2570,48 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BIF">
 				<displayName>Kuɗin Burundi</displayName>
 			</currency>
+			<currency type="BMD">
+				<displayName>Dalar ƙasar Bermuda</displayName>
+				<displayName count="one">dalar Bermuda</displayName>
+				<displayName count="other">Dalar ƙasar Bermuda</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Kudin Brunei</displayName>
+				<displayName count="one">kudin Brunei</displayName>
+				<displayName count="other">Kudin Brunei</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Boloviano na ƙasar Bolivia</displayName>
+				<displayName count="one">boliviano na ƙasar Bolivia</displayName>
+				<displayName count="other">Boloviano na ƙasar Bolivia</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Ril Kudin Birazil</displayName>
 				<displayName count="one">Ril Kudin Birazil</displayName>
 				<displayName count="other">Ril Kudin Birazil</displayName>
 			</currency>
+			<currency type="BSD">
+				<displayName>Dalar ƙasar Bahamas</displayName>
+				<displayName count="one">dalar ƙasar Bahamas</displayName>
+				<displayName count="other">Dalar ƙasar Bahamas</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Ngultrum na kasar Bhutan</displayName>
+				<displayName count="one">ngultrum na kasar Bhutan</displayName>
+				<displayName count="other">Ngultrum na kasar Bhutan</displayName>
+			</currency>
 			<currency type="BWP">
 				<displayName>Kuɗin Baswana</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Kudin Belarusian</displayName>
+				<displayName count="one">Kudin Belarusian</displayName>
+				<displayName count="other">Kudin Belarusian</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Dalar ƙasar Belize</displayName>
+				<displayName count="one">dalar ƙasar Belize</displayName>
+				<displayName count="other">Dalar ƙasar Belize</displayName>
 			</currency>
 			<currency type="CAD">
 				<displayName>Dalar Kanada</displayName>
@@ -2427,16 +2622,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="CHF">
 				<displayName>Kuɗin Suwizalan</displayName>
 			</currency>
+			<currency type="CLP">
+				<displayName>Peso na ƙasar Chile</displayName>
+				<displayName count="one">peso na ƙasar Chile</displayName>
+				<displayName count="other">Peso na ƙasar Chile</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Yuan na ƙasar Sin (na wajen ƙasa)</displayName>
+				<displayName count="one">yuan na ƙasar Sin (na wajen ƙasa)</displayName>
+				<displayName count="other">Yuan na ƙasar Sin (na wajen ƙasa)</displayName>
+			</currency>
 			<currency type="CNY">
 				<displayName>Yuwan kasar Sin</displayName>
 				<displayName count="one">Yuwan kasar Sin</displayName>
 				<displayName count="other">Yuwan kasar Sin</displayName>
 			</currency>
+			<currency type="COP">
+				<displayName>Peso na ƙasar Columbia</displayName>
+				<displayName count="one">peso na ƙasar Columbia</displayName>
+				<displayName count="other">Peso na ƙasar Columbia</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Colón na kasar Costa Rica</displayName>
+				<displayName count="one">colón na kasar Costa Rica</displayName>
+				<displayName count="other">Colón na kasar Costa Rica</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Peso mai fuska biyu na ƙasar Cuba</displayName>
+				<displayName count="one">peso mai fuska biyu na Cuba</displayName>
+				<displayName count="other">Peso mai fuska biyu na ƙasar Cuba</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Peso na ƙasar Cuba</displayName>
+				<displayName count="one">peso na ƙasar Cuba</displayName>
+				<displayName count="other">Peso na ƙasar Cuba</displayName>
+			</currency>
 			<currency type="CVE">
 				<displayName>Kuɗin Tsibiran Kap Barde</displayName>
 			</currency>
+			<currency type="CZK">
+				<displayName>Kudin Czech</displayName>
+				<displayName count="one">kudin Czech</displayName>
+				<displayName count="other">Kudin Czech</displayName>
+			</currency>
 			<currency type="DJF">
 				<displayName>Kuɗin Jibuti</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Krone na ƙasar Denmark</displayName>
+				<displayName count="one">krone na ƙasar Denmark</displayName>
+				<displayName count="other">Krone na ƙasar Denmark</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Peso na jamhuriyar Dominica</displayName>
+				<displayName count="one">peso na jamhuriyar Dominica</displayName>
+				<displayName count="other">Peso na jamhuriyar Dominica</displayName>
 			</currency>
 			<currency type="DZD">
 				<displayName>Kuɗin Aljeriya</displayName>
@@ -2453,22 +2693,122 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EUR">
 				<displayName>Yuro</displayName>
 			</currency>
+			<currency type="FJD">
+				<displayName>Dalar Fiji</displayName>
+				<displayName count="one">dalar Fiji</displayName>
+				<displayName count="other">Dalar Fiji</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Fam na ƙasar Tsibirai na Falkland</displayName>
+				<displayName count="one">fam na Tsibirai na Falkland</displayName>
+				<displayName count="other">Fam na ƙasar Tsibirai na Falkland</displayName>
+			</currency>
 			<currency type="GBP">
 				<displayName>Fam na Ingila</displayName>
 				<displayName count="one">Fam na Ingila</displayName>
 				<displayName count="other">Fam na Ingila</displayName>
 			</currency>
+			<currency type="GEL">
+				<displayName>Kudin Georgian</displayName>
+				<displayName count="one">kudin Georgian</displayName>
+				<displayName count="other">Kudin Georgian</displayName>
+			</currency>
 			<currency type="GHC">
 				<displayName>Cedi</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>Kudin Ghana</displayName>
+				<displayName count="one">kudin Ghanainian</displayName>
+				<displayName count="other">Kudin Ghana</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Kudin Gibraltar</displayName>
+				<displayName count="one">Kudin Gibraltal</displayName>
+				<displayName count="other">Kudin Gibraltar</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName>Kuɗin Gambiya</displayName>
 			</currency>
+			<currency type="GNF">
+				<displayName>Kudin Guinean</displayName>
+				<displayName count="one">Kudin Guinean</displayName>
+				<displayName count="other">Kudin Guinean</displayName>
+			</currency>
 			<currency type="GNS">
 				<displayName>Kuɗin Gini</displayName>
 			</currency>
+			<currency type="GTQ">
+				<displayName>Quetzal na ƙasar Guatemala</displayName>
+				<displayName count="one">quetzal na ƙasar Guatemala</displayName>
+				<displayName count="other">Quetzal na ƙasar Guatemala</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Dalar Guyana</displayName>
+				<displayName count="one">dalar Guyana</displayName>
+				<displayName count="other">Dalar Guyana</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Dalar Hong Kong</displayName>
+				<displayName count="one">dalar Hong Kong</displayName>
+				<displayName count="other">Dalar Hong Kong</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Lempira na ƙasar Honduras</displayName>
+				<displayName count="one">lempira na ƙasar Honduras</displayName>
+				<displayName count="other">Lempira na ƙasar Honduras</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Kudin Croatian</displayName>
+				<displayName count="one">Kudin Croatian</displayName>
+				<displayName count="other">Kudin Croatian</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Gourde na ƙasar Haiti</displayName>
+				<displayName count="one">gourde na ƙasar Haiti</displayName>
+				<displayName count="other">Gourde na ƙasar Haiti</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Kudin Hungarian</displayName>
+				<displayName count="one">kudin Hungarian</displayName>
+				<displayName count="other">Kudin Hungarian</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Rupiah na ƙasar Indonesia</displayName>
+				<displayName count="one">rupiah na ƙasar Indonesia</displayName>
+				<displayName count="other">Rupiah na ƙasar Indonesia</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Sabbin Kudin Shekel</displayName>
+				<displayName count="one">sabbin kudi Israeli</displayName>
+				<displayName count="other">Sabbin Kudin Shekel</displayName>
+			</currency>
 			<currency type="INR">
 				<displayName>Kuɗin Indiya</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Dinarin Iraqi</displayName>
+				<displayName count="one">dinarin Iraqi</displayName>
+				<displayName count="other">Dinarin Iraqi</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Riyal na kasar Iran</displayName>
+				<displayName count="one">Riyal-riyal na kasar Iran</displayName>
+				<displayName count="other">Riyal-riyal na kasar Iran</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Króna na ƙasar Iceland</displayName>
+				<displayName count="one">króna na ƙasar Iceland</displayName>
+				<displayName count="other">Króna na ƙasar Iceland</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Dalar Jamaica</displayName>
+				<displayName count="one">dalar Jamaica</displayName>
+				<displayName count="other">Dalar Jamaica</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Dinarin Jordanian</displayName>
+				<displayName count="one">dinarin Jordanian</displayName>
+				<displayName count="other">Dinarin Jordanian</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yen kasar Japan</displayName>
@@ -2479,8 +2819,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="KES">
 				<displayName>Sulen Kenya</displayName>
 			</currency>
+			<currency type="KGS">
+				<displayName>Som na ƙasar Kyrgystani</displayName>
+				<displayName count="one">som na ƙasar Kyrgystani</displayName>
+				<displayName count="other">Som na ƙasar Kyrgystani</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Riel na ƙasar Cambodia</displayName>
+				<displayName count="one">riel na ƙasar Cambodia</displayName>
+				<displayName count="other">Riel na ƙasar Cambodia</displayName>
+			</currency>
 			<currency type="KMF">
 				<displayName>Kuɗin Kwamoras</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Won na ƙasar Koreya ta Arewa</displayName>
+				<displayName count="one">won na ƙasar Koreya ta Arewa</displayName>
+				<displayName count="other">Won na ƙasar Koreya ta Arewa</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>Won na Koreya ta Kudu</displayName>
+				<displayName count="one">won na Koreya ta Kudu</displayName>
+				<displayName count="other">Won na Koreya ta Kudu</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Dinarin Kuwaiti</displayName>
+				<displayName count="one">dinarin Kuwaiti</displayName>
+				<displayName count="other">Dinarin Kuwaiti</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Dalar ƙasar Tsibirai na Cayman</displayName>
+				<displayName count="one">dalar ƙasar Tsibirai na Cayman</displayName>
+				<displayName count="other">Dalar ƙasar Tsibirai na Cayman</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Tenge na ƙasar Kazkhstan</displayName>
+				<displayName count="one">tenge na ƙasar Kazakhstan</displayName>
+				<displayName count="other">Tenge na ƙasar Kazkhstan</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Kudin Laotian</displayName>
+				<displayName count="one">kudin Laotian</displayName>
+				<displayName count="other">Kudin Laotian</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Kudin Lebanese</displayName>
+				<displayName count="one">kudin Lebanese</displayName>
+				<displayName count="other">Kudin Lebanese</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Rupee na kasar Sri Lanka</displayName>
+				<displayName count="one">rupee na kasar Sri Lanka</displayName>
+				<displayName count="other">Rupee na kasar Sri Lanka</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Dalar Laberiya</displayName>
@@ -2494,8 +2884,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="MAD">
 				<displayName>Kuɗin Maroko</displayName>
 			</currency>
+			<currency type="MDL">
+				<displayName>kudaden Moldova</displayName>
+				<displayName count="one">Kudaden Moldovan</displayName>
+				<displayName count="other">kudaden Moldova</displayName>
+			</currency>
 			<currency type="MGA">
 				<displayName>Kuɗin Madagaskar</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Dinarin Macedonian</displayName>
+				<displayName count="one">Dinarin Macedonian</displayName>
+				<displayName count="other">Dinarin Macedonian</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Kudin Myanmar</displayName>
+				<displayName count="one">kudin Myanmar</displayName>
+				<displayName count="other">Kudin Myanmar</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>Tugrik na Mongolia</displayName>
+				<displayName count="one">tugrik na Mongoliya</displayName>
+				<displayName count="other">Tugrik na Mongolia</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Pataca na ƙasar Macao</displayName>
+				<displayName count="one">pataca na ƙasar Macao</displayName>
+				<displayName count="other">Pataca na ƙasar Macao</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>Kuɗin Moritaniya (1973–2017)</displayName>
@@ -2506,11 +2921,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="MUR">
 				<displayName>Kuɗin Moritus</displayName>
 			</currency>
+			<currency type="MVR">
+				<displayName>Rufiyaa na kasar Maldives</displayName>
+				<displayName count="one">rufiyaa na kasar Maldives</displayName>
+				<displayName count="other">Rufiyaa na kasar Maldives</displayName>
+			</currency>
 			<currency type="MWK">
 				<displayName>Kuɗin Malawi</displayName>
 			</currency>
+			<currency type="MXN">
+				<displayName>Peso na ƙasar Mexico</displayName>
+				<displayName count="one">peso na ƙasar Mexico</displayName>
+				<displayName count="other">Peso na ƙasar Mexico</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Kudin Malaysian</displayName>
+				<displayName count="one">kudin Malaysian</displayName>
+				<displayName count="other">Kudin Malaysian</displayName>
+			</currency>
 			<currency type="MZM">
 				<displayName>Kuɗin Mozambik</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Metical na ƙasar Mozambique</displayName>
+				<displayName count="one">metical na ƙasar Mozambique</displayName>
+				<displayName count="other">Metical na ƙasar Mozambique</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName>Dalar Namibiya</displayName>
@@ -2520,6 +2955,81 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Nairar Najeriya</displayName>
 				<displayName count="other">Nairorin Najeriya</displayName>
 				<symbol>₦</symbol>
+			</currency>
+			<currency type="NIO">
+				<displayName>Córdoba na ƙasar Nicaragua</displayName>
+				<displayName count="one">córdoba na ƙasar Nicaragua</displayName>
+				<displayName count="other">Córdoba na ƙasar Nicaragua</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Krone na ƙasar Norway</displayName>
+				<displayName count="one">krone na ƙasar Norway</displayName>
+				<displayName count="other">Krone na ƙasar Norway</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Rupee na Nepal</displayName>
+				<displayName count="one">rupee na kasar Nepal</displayName>
+				<displayName count="other">Rupee na Nepal</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>Dalar New Zealand</displayName>
+				<displayName count="one">dalar New Zealand</displayName>
+				<displayName count="other">Dalar New Zealand</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Riyal din Omani</displayName>
+				<displayName count="one">Riyal din Omani</displayName>
+				<displayName count="other">Riyal din Omani</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Balboa na ƙasar Panama</displayName>
+				<displayName count="one">balboa na ƙasar Panama</displayName>
+				<displayName count="other">Balboa na ƙasar Panama</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Sol na ƙasar Peru</displayName>
+				<displayName count="one">sol na ƙasar Peru</displayName>
+				<displayName count="other">Sol na ƙasar Peru</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kina na ƙasar Papua Sabon Guinea</displayName>
+				<displayName count="one">kina na ƙasar Papua Sabon Guinea</displayName>
+				<displayName count="other">Kina na ƙasar Papua Sabon Guinea</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Kudin Philippine</displayName>
+				<displayName count="one">kudin Philippine</displayName>
+				<displayName count="other">Kudin Philippine</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Rupee na kasar Pakistan</displayName>
+				<displayName count="one">rupee na kasar Pakistan</displayName>
+				<displayName count="other">Rupee na kasar Pakistan</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Kudaden Polish</displayName>
+				<displayName count="one">kudin Polish</displayName>
+				<displayName count="other">Kudaden Polish</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Guarani na ƙasar Paraguay</displayName>
+				<displayName count="one">guarani na ƙasar Paraguay</displayName>
+				<displayName count="other">Guarani na ƙasar Paraguay</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Riyal din Qatari</displayName>
+				<displayName count="one">riyal Qatari</displayName>
+				<displayName count="other">Riyal din Qatari</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Kudin Romanian</displayName>
+				<displayName count="one">kudin Romanian</displayName>
+				<displayName count="other">Kudin Romanian</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Dinar Serbian</displayName>
+				<displayName count="one">dinarin Serbian</displayName>
+				<displayName count="other">Dinar Serbian</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>Ruble kasar Rasha</displayName>
@@ -2532,11 +3042,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SAR">
 				<displayName>Riyal</displayName>
 			</currency>
+			<currency type="SBD">
+				<displayName>Dalar Tsibirai na Solomon</displayName>
+				<displayName count="one">dalar Tsibirai na Solomon</displayName>
+				<displayName count="other">Dalar Tsibirai na Solomon</displayName>
+			</currency>
 			<currency type="SCR">
 				<displayName>Kuɗin Saishal</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>Fam kin Sudan</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Krona na ƙasar Sweden</displayName>
+				<displayName count="one">krona na ƙasar Sweden</displayName>
+				<displayName count="other">Krona na ƙasar Sweden</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Dilar Singapore</displayName>
+				<displayName count="one">dalar Singapore</displayName>
+				<displayName count="other">Dilar Singapore</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName>Fam kin San Helena</displayName>
@@ -2547,20 +3072,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SOS">
 				<displayName>Sulen Somaliya</displayName>
 			</currency>
+			<currency type="SRD">
+				<displayName>Dalar ƙasar Suriname</displayName>
+				<displayName count="one">dalar ƙasar Suriname</displayName>
+				<displayName count="other">Dalar ƙasar Suriname</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName>Fam na Kudancin Sudan</displayName>
+				<displayName count="one">fam na Kudancin Sudan</displayName>
+				<displayName count="other">Fam na Kudancin Sudan</displayName>
+			</currency>
 			<currency type="STD">
 				<displayName>Kuɗin Sawo Tome da Paransip (1977–2017)</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>Kuɗin Sawo Tome da Paransip</displayName>
 			</currency>
+			<currency type="SYP">
+				<displayName>Kudin Syrian</displayName>
+				<displayName count="one">Kudin Syrian</displayName>
+				<displayName count="other">Kudin Syrian</displayName>
+			</currency>
 			<currency type="SZL">
 				<displayName>Kuɗin Lilangeni</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Baht na ƙasar Thailand</displayName>
+				<displayName count="one">baht na ƙasar Thailand</displayName>
+				<displayName count="other">Baht na ƙasar Thailand</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>Somoni na ƙasar Tajikistan</displayName>
+				<displayName count="one">somoni na ƙasar Tajikistan</displayName>
+				<displayName count="other">Somoni na ƙasar Tajikistan</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>Manat na ƙasar Turkmenistan</displayName>
+				<displayName count="one">manat na ƙasar Turkmenistan</displayName>
+				<displayName count="other">Manat na ƙasar Turkmenistan</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName>Kuɗin Tunisiya</displayName>
 			</currency>
+			<currency type="TOP">
+				<displayName>Paʼanga na ƙasar Tonga</displayName>
+				<displayName count="one">paʼanga na ƙasar Tonga</displayName>
+				<displayName count="other">Paʼanga na ƙasar Tonga</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Kudin Turkish</displayName>
+				<displayName count="one">kudin Turkish</displayName>
+				<displayName count="other">Kudin Turkish</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Dalar ƙasar Trinidad da Tobago</displayName>
+				<displayName count="one">dalar ƙasar Trinidad da Tobago</displayName>
+				<displayName count="other">Dalar ƙasar Trinidad da Tobago</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Sabuwar Dalar Taiwan</displayName>
+				<displayName count="one">Sabuwar dalar Taiwan</displayName>
+				<displayName count="other">Sabuwar Dalar Taiwan</displayName>
+			</currency>
 			<currency type="TZS">
 				<displayName>Sulen Tanzaniya</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Kudin Ukrainian</displayName>
+				<displayName count="one">kudin Ukrainian</displayName>
+				<displayName count="other">Kudin Ukrainian</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>Sule Yuganda</displayName>
@@ -2571,16 +3151,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Dalar Amirka</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
+			<currency type="UYU">
+				<displayName>Peso na ƙasar Uruguay</displayName>
+				<displayName count="one">peso na ƙasar Uruguay</displayName>
+				<displayName count="other">Peso na ƙasar Uruguay</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Som na ƙasar Uzbekistan</displayName>
+				<displayName count="one">som na ƙasar Uzbekistan</displayName>
+				<displayName count="other">Som na ƙasar Uzbekistan</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Bolívar na ƙasar Venezuela</displayName>
+				<displayName count="one">bolívar na ƙasar Venezuela</displayName>
+				<displayName count="other">Bolívar na ƙasar Venezuela</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Kudin Vietnamese</displayName>
+				<displayName count="one">kudin Vietnamese</displayName>
+				<displayName count="other">Kudin Vietnamese</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Vatu da ƙasar Vanuatu</displayName>
+				<displayName count="one">vatu na ƙasar Vanuatu</displayName>
+				<displayName count="other">Vatu da ƙasar Vanuatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Tala na ƙasar Samoa</displayName>
+				<displayName count="one">tala na ƙasar Samoa</displayName>
+				<displayName count="other">Tala na ƙasar Samoa</displayName>
+			</currency>
 			<currency type="XAF">
 				<displayName>Kuɗin Sefa na Afirka Ta Tsakiya</displayName>
 			</currency>
+			<currency type="XCD">
+				<displayName>Dalar Gabashin Caribbean</displayName>
+				<displayName count="one">dalar Gabashin Caribbeaan</displayName>
+				<displayName count="other">Dalar Gabashin Caribbean</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>Kuɗin Sefa na Afirka Ta Yamma</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>kudin CFP Franc</displayName>
+				<displayName count="one">kudin CFP franc</displayName>
+				<displayName count="other">kudin CFP Franc</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>Kudin da ba a sani ba</displayName>
 				<displayName count="one">Kudin sashe da ba a sani ba</displayName>
 				<displayName count="other">(Kudin da ba a sani ba)</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Riyal din Yemeni</displayName>
+				<displayName count="one">riyal din Yemeni</displayName>
+				<displayName count="other">Riyal din Yemeni</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>Kuɗin Afirka Ta Kudu</displayName>
@@ -2632,4 +3257,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>aʼa:a</nostr>
 		</messages>
 	</posix>
+	<typographicNames>
+		<styleName type="wdth" subtype="75" alt="compressed">abnchhhh</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">Fadadawa</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">fadi</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">nauyi</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">matsanancin baki</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">matsanancin nauyi</styleName>
+	</typographicNames>
 </ldml>

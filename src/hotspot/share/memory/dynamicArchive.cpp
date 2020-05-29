@@ -69,7 +69,7 @@ class DynamicArchiveBuilder : ResourceObj {
   DumpRegion* _current_dump_space;
 
   static size_t reserve_alignment() {
-    return Metaspace::reserve_alignment();
+    return os::vm_allocation_granularity();
   }
 
   static const int _total_dump_regions = 3;
@@ -724,7 +724,7 @@ size_t DynamicArchiveBuilder::estimate_archive_size() {
 
 address DynamicArchiveBuilder::reserve_space_and_init_buffer_to_target_delta() {
   size_t total = estimate_archive_size();
-  ReservedSpace rs = MetaspaceShared::reserve_shared_space(total);
+  ReservedSpace rs(total);
   if (!rs.is_reserved()) {
     log_error(cds, dynamic)("Failed to reserve %d bytes of output buffer.", (int)total);
     vm_direct_exit(0);

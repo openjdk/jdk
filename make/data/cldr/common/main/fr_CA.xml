@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -29,6 +29,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chg">tchagatay</language>
 			<language type="chn">chinook</language>
 			<language type="ckb">kurde central</language>
+			<language type="ckb" alt="menu">sorani</language>
 			<language type="cr">cri</language>
 			<language type="de_AT">allemand autrichien</language>
 			<language type="de_CH">allemand suisse</language>
@@ -107,6 +108,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant">idéogrammes han traditionnels</script>
 			<script type="Hant" alt="stand-alone">caractères chinois traditionnels</script>
 			<script type="Hrkt">syllabaires japonais</script>
+			<script type="Olck" draft="contributed">ol chiki</script>
 			<script type="Zsye">zsye</script>
 		</scripts>
 		<territories>
@@ -1675,6 +1677,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>HAT</daylight>
 				</short>
 			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="contributed">heure de l’île Norfolk</generic>
+					<standard draft="contributed">heure normale de l’île Norfolk</standard>
+					<daylight draft="contributed">heure avancée de l’île Norfolk</daylight>
+				</long>
+			</metazone>
 			<metazone type="Noronha">
 				<long>
 					<generic>heure de Fernando de Noronha</generic>
@@ -2085,10 +2094,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0} cubes</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} cube</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} cubes</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">force G</displayName>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="one">{0} mètre par seconde carrée</unitPattern>
 				<unitPattern count="other">{0} mètres par seconde carrée</unitPattern>
 			</unit>
@@ -2147,7 +2165,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} pouce carré</unitPattern>
 				<unitPattern count="other">{0} pouces carrés</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>parties par million</displayName>
 				<unitPattern count="one">{0} partie par million</unitPattern>
 				<unitPattern count="other">{0} parties par million</unitPattern>
@@ -2156,7 +2174,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} pour mille</unitPattern>
 				<unitPattern count="other">{0} pour mille</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litres aux 100 kilomètres</displayName>
 				<unitPattern count="one">{0} litre aux 100 kilomètres</unitPattern>
 				<unitPattern count="other">{0} litres aux 100 kilomètres</unitPattern>
@@ -2449,7 +2467,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} cheval-vapeur</unitPattern>
 				<unitPattern count="other">{0} chevaux-vapeur</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} pouce de mercure</unitPattern>
 				<unitPattern count="other">{0} pouces de mercure</unitPattern>
 			</unit>
@@ -2562,7 +2580,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -2623,7 +2641,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
@@ -2917,17 +2935,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ch</unitPattern>
 				<unitPattern count="other">{0} ch</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>po Hg</displayName>
 				<unitPattern count="one">{0} po Hg</unitPattern>
 				<unitPattern count="other">{0} po Hg</unitPattern>
@@ -2964,7 +2982,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lb-pi</displayName>
 				<unitPattern count="one">{0} lb-pi</unitPattern>
 				<unitPattern count="other">{0} lb-pi</unitPattern>
@@ -3062,7 +3080,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="one" draft="contributed">{0}m/s²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
 			</unit>
@@ -3070,7 +3088,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} %</unitPattern>
 				<unitPattern count="other">{0} %</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
@@ -3170,16 +3188,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0}st</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}st</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<unitPattern count="one" draft="contributed">{0}mmHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">psi</displayName>
 				<unitPattern count="one" draft="contributed">{0}psi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">inHg</displayName>
 			</unit>
 			<unit type="speed-knot">

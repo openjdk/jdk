@@ -63,7 +63,6 @@ define_pd_global(uintx,    InitialCodeCacheSize,         160*K);
 
 define_pd_global(bool,     UseTypeProfile,               false);
 
-define_pd_global(bool,     LIRFillDelaySlots,            false);
 define_pd_global(bool,     OptimizeSinglePrecision,      false);
 define_pd_global(bool,     CSEArrayLength,               true);
 define_pd_global(bool,     TwoOperandLIRForm,            true);

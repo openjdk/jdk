@@ -37,6 +37,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "logging/log.hpp"
@@ -133,6 +134,8 @@ jint ParallelScavengeHeap::initialize() {
 
   // Set up WorkGang
   _workers.initialize_workers();
+
+  GCInitLogger::print();
 
   return JNI_OK;
 }

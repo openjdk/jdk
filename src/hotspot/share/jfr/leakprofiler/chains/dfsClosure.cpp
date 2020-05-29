@@ -37,8 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
- // max dfs depth should not exceed size of stack
-static const size_t max_dfs_depth = 4000;
+UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
                                       BitSet* mark_bits,
@@ -72,11 +71,6 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
 DFSClosure::DFSClosure(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
-  _reference_stack = NEW_C_HEAP_ARRAY(UnifiedOopRef, max_dfs_depth, mtTracing);
-}
-
-DFSClosure::~DFSClosure() {
-  FREE_C_HEAP_ARRAY(UnifiedOopRef, _reference_stack);
 }
 
 void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {

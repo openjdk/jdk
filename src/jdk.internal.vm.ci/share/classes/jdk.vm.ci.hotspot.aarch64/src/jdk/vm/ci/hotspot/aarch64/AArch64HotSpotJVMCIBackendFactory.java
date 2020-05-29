@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,6 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         if ((config.vmVersionFeatures & config.aarch64A53MAC) != 0) {
             features.add(AArch64.CPUFeature.A53MAC);
         }
-        if ((config.vmVersionFeatures & config.aarch64DMB_ATOMICS) != 0) {
-            features.add(AArch64.CPUFeature.DMB_ATOMICS);
-        }
 
         return features;
     }
@@ -90,9 +87,6 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     private static EnumSet<AArch64.Flag> computeFlags(@SuppressWarnings("unused") AArch64HotSpotVMConfig config) {
         EnumSet<AArch64.Flag> flags = EnumSet.noneOf(AArch64.Flag.class);
 
-        if (config.useBarriersForVolatile) {
-            flags.add(AArch64.Flag.UseBarriersForVolatile);
-        }
         if (config.useCRC32) {
             flags.add(AArch64.Flag.UseCRC32);
         }

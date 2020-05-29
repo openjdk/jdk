@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,23 +80,12 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ ldrw(rcounter, safepoint_counter_addr);
   __ tbnz(rcounter, 0, slow);
 
-  if (!UseBarriersForVolatile) {
-    // Field may be volatile. See other usages of this flag.
-    __ membar(MacroAssembler::AnyAny);
-    __ mov(robj, c_rarg1);
-  } else if (JvmtiExport::can_post_field_access()) {
+  // It doesn't need to issue a full barrier here even if the field
+  // is volatile, since it has already used "ldar" for it.
+  if (JvmtiExport::can_post_field_access()) {
     // Using barrier to order wrt. JVMTI check and load of result.
     __ membar(Assembler::LoadLoad);
-    __ mov(robj, c_rarg1);
-  } else {
-    // Using address dependency to order wrt. load of result.
-    __ eor(robj, c_rarg1, rcounter);
-    __ eor(robj, robj, rcounter);         // obj, since
-                                          // robj ^ rcounter ^ rcounter == robj
-                                          // robj is address dependent on rcounter.
-  }
 
-  if (JvmtiExport::can_post_field_access()) {
     // Check to see if a field access watch has been set before we
     // take the fast path.
     unsigned long offset2;
@@ -105,6 +94,14 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
             offset2);
     __ ldrw(result, Address(result, offset2));
     __ cbnzw(result, slow);
+
+    __ mov(robj, c_rarg1);
+  } else {
+    // Using address dependency to order wrt. load of result.
+    __ eor(robj, c_rarg1, rcounter);
+    __ eor(robj, robj, rcounter);         // obj, since
+                                          // robj ^ rcounter ^ rcounter == robj
+                                          // robj is address dependent on rcounter.
   }
 
   // Both robj and rscratch1 are clobbered by try_resolve_jobject_in_native.

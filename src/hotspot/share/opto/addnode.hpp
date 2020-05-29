@@ -217,9 +217,39 @@ public:
 // all the behavior of addition on a ring.  Only new thing is that we allow
 // 2 equal inputs to be equal.
 class MaxNode : public AddNode {
+private:
+  static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
+  static Node* build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn);
+
 public:
   MaxNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
   virtual int Opcode() const = 0;
+
+  static Node* unsigned_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, true, true, t, gvn);
+  }
+
+  static Node* unsigned_min(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, false, true, t, gvn);
+  }
+
+  static Node* signed_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, true, false, t, gvn);
+  }
+
+  static Node* signed_min(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, false, false, t, gvn);
+  }
+
+  // max(a-b, 0)
+  static Node* max_diff_with_zero(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max_diff_with_zero(a, b, true, t, gvn);
+  }
+
+  // min(a-b, 0)
+  static Node* min_diff_with_zero(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max_diff_with_zero(a, b, false, t, gvn);
+  }
 };
 
 //------------------------------MaxINode---------------------------------------

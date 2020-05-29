@@ -229,6 +229,7 @@ module java.base {
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
         jdk.internal.vm.ci,
+        jdk.incubator.foreign,
         jdk.unsupported;
     exports jdk.internal.util.jar to
         jdk.jartool;

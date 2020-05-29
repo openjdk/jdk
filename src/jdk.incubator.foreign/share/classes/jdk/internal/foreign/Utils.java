@@ -26,20 +26,16 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.foreign.UnmapperProxy;
-import jdk.internal.misc.Unsafe;
-import sun.nio.ch.FileChannelImpl;
-import sun.security.action.GetBooleanAction;
+import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemoryHandles;
+import jdk.internal.access.foreign.MemoryAddressProxy;
+import jdk.internal.misc.VM;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -47,15 +43,19 @@ import java.util.function.Supplier;
  */
 public final class Utils {
 
-    private static Unsafe unsafe = Unsafe.getUnsafe();
+    private static final String foreignRestrictedAccess = Optional.ofNullable(VM.getSavedProperty("foreign.restricted"))
+            .orElse("deny");
 
-    // The maximum alignment supported by malloc - typically 16 on
-    // 64-bit platforms and 8 on 32-bit platforms.
-    private final static long MAX_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
+    private static final MethodHandle ADDRESS_FILTER;
 
-    private static final JavaNioAccess javaNioAccess = SharedSecrets.getJavaNioAccess();
-
-    private static final boolean skipZeroMemory = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
+    static {
+        try {
+            ADDRESS_FILTER = MethodHandles.lookup().findStatic(Utils.class, "filterAddress",
+                    MethodType.methodType(MemoryAddressProxy.class, MemoryAddress.class));
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
 
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
@@ -69,90 +69,34 @@ public final class Utils {
         }
     }
 
-    // segment factories
-
-    public static MemorySegment makeNativeSegment(long bytesSize, long alignmentBytes) {
-        long alignedSize = bytesSize;
-
-        if (alignmentBytes > MAX_ALIGN) {
-            alignedSize = bytesSize + (alignmentBytes - 1);
-        }
-
-        long buf = unsafe.allocateMemory(alignedSize);
-        if (!skipZeroMemory) {
-            unsafe.setMemory(buf, alignedSize, (byte)0);
-        }
-        long alignedBuf = Utils.alignUp(buf, alignmentBytes);
-        MemoryScope scope = new MemoryScope(null, () -> unsafe.freeMemory(buf));
-        MemorySegment segment = new MemorySegmentImpl(buf, null, alignedSize, 0, Thread.currentThread(), scope);
-        if (alignedBuf != buf) {
-            long delta = alignedBuf - buf;
-            segment = segment.asSlice(delta, bytesSize);
-        }
-        return segment;
+    public static VarHandle fixUpVarHandle(VarHandle handle) {
+        // This adaptation is required, otherwise the memory access var handle will have type MemoryAddressProxy,
+        // and not MemoryAddress (which the user expects), which causes performance issues with asType() adaptations.
+        return MemoryHandles.filterCoordinates(handle, 0, ADDRESS_FILTER);
     }
 
-    public static MemorySegment makeArraySegment(byte[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);
+    private static MemoryAddressProxy filterAddress(MemoryAddress addr) {
+        return (MemoryAddressImpl)addr;
     }
 
-    public static MemorySegment makeArraySegment(char[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_CHAR_BASE_OFFSET, Unsafe.ARRAY_CHAR_INDEX_SCALE);
-    }
-
-    public static MemorySegment makeArraySegment(short[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_SHORT_BASE_OFFSET, Unsafe.ARRAY_SHORT_INDEX_SCALE);
-    }
-
-    public static MemorySegment makeArraySegment(int[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_INT_BASE_OFFSET, Unsafe.ARRAY_INT_INDEX_SCALE);
-    }
-
-    public static MemorySegment makeArraySegment(float[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_FLOAT_BASE_OFFSET, Unsafe.ARRAY_FLOAT_INDEX_SCALE);
-    }
-
-    public static MemorySegment makeArraySegment(long[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_LONG_BASE_OFFSET, Unsafe.ARRAY_LONG_INDEX_SCALE);
-    }
-
-    public static MemorySegment makeArraySegment(double[] arr) {
-        return makeArraySegment(arr, arr.length, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
-    }
-
-    private static MemorySegment makeArraySegment(Object arr, int size, int base, int scale) {
-        MemoryScope scope = new MemoryScope(null, null);
-        return new MemorySegmentImpl(base, arr, size * scale, 0, Thread.currentThread(), scope);
-    }
-
-    public static MemorySegment makeBufferSegment(ByteBuffer bb) {
-        long bbAddress = javaNioAccess.getBufferAddress(bb);
-        Object base = javaNioAccess.getBufferBase(bb);
-
-        int pos = bb.position();
-        int limit = bb.limit();
-
-        MemoryScope bufferScope = new MemoryScope(bb, null);
-        return new MemorySegmentImpl(bbAddress + pos, base, limit - pos, 0, Thread.currentThread(), bufferScope);
-    }
-
-    // create and map a file into a fresh segment
-    public static MemorySegment makeMappedSegment(Path path, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
-        if (bytesSize <= 0) throw new IllegalArgumentException("Requested bytes size must be > 0.");
-        try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
-            UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, 0L, bytesSize);
-            MemoryScope scope = new MemoryScope(null, unmapperProxy::unmap);
-            return new MemorySegmentImpl(unmapperProxy.address(), null, bytesSize, 0, Thread.currentThread(), scope);
+    public static void checkRestrictedAccess(String method) {
+        switch (foreignRestrictedAccess) {
+            case "deny" -> throwIllegalAccessError(foreignRestrictedAccess, method);
+            case "warn" -> System.err.println("WARNING: Accessing restricted foreign method: " + method);
+            case "debug" -> {
+                StringBuilder sb = new StringBuilder("DEBUG: restricted foreign method: \" + method");
+                StackWalker.getInstance().forEach(f -> sb.append(System.lineSeparator())
+                        .append("\tat ")
+                        .append(f));
+                System.err.println(sb.toString());
+            }
+            case "permit" -> {}
+            default -> throwIllegalAccessError(foreignRestrictedAccess, method);
         }
     }
 
-    private static OpenOption[] openOptions(FileChannel.MapMode mapMode) {
-        if (mapMode == FileChannel.MapMode.READ_ONLY) {
-            return new OpenOption[] { StandardOpenOption.READ };
-        } else if (mapMode == FileChannel.MapMode.READ_WRITE || mapMode == FileChannel.MapMode.PRIVATE) {
-            return new OpenOption[] { StandardOpenOption.READ, StandardOpenOption.WRITE };
-        } else {
-            throw new UnsupportedOperationException("Unsupported map mode: " + mapMode);
-        }
+    private static void throwIllegalAccessError(String value, String method) {
+        throw new IllegalAccessError("Illegal access to restricted foreign method: " + method +
+                " ; system property 'foreign.restricted' is set to '" + value + "'");
     }
 }

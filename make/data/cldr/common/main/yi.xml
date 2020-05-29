@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -48,6 +48,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dyo">זשאלא־פֿאני</language>
 			<language type="el">גריכיש</language>
 			<language type="en">ענגליש</language>
+			<language type="en_GB" alt="short">ענגליש (GB)</language>
 			<language type="en_US" alt="short">ענגליש (US)</language>
 			<language type="enm">מיטל ענגליש</language>
 			<language type="eo">עספּעראַנטא</language>
@@ -139,7 +140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sk">סלאוואַקיש</language>
 			<language type="sl">סלאוועניש</language>
 			<language type="sli">אונטער שלעזיש</language>
-			<language type="sly">sly</language>
 			<language type="sm">סאַמאאַניש</language>
 			<language type="sn">שאנאַ</language>
 			<language type="so">סאמאַליש</language>

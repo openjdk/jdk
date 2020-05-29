@@ -25,20 +25,19 @@
 /*
  * @test
  * @modules java.base/jdk.internal.misc
- *          jdk.incubator.foreign/jdk.incubator.foreign.unsafe
- * @run testng TestNative
+ *          jdk.incubator.foreign/jdk.internal.foreign
+ * @run testng/othervm -Dforeign.restricted=permit TestNative
  */
 
-import jdk.incubator.foreign.MemoryLayouts;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.unsafe.ForeignUnsafe;
-import jdk.internal.misc.Unsafe;
-import org.testng.annotations.*;
-
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.SequenceLayout;
+import jdk.internal.misc.Unsafe;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.nio.Buffer;
@@ -54,7 +53,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
+import static jdk.incubator.foreign.MemorySegment.*;
 import static org.testng.Assert.*;
 
 public class TestNative {
@@ -113,12 +112,12 @@ public class TestNative {
                                               BiFunction<Z, Integer, Object> nativeBufferExtractor,
                                               BiFunction<Long, Integer, Object> nativeRawExtractor) {
         long nelems = layout.elementCount().getAsLong();
-        ByteBuffer bb = base.segment().asSlice(base.offset(), (int)layout.byteSize()).asByteBuffer();
+        ByteBuffer bb = base.segment().asSlice(base.segmentOffset(), (int)layout.byteSize()).asByteBuffer();
         Z z = bufferFactory.apply(bb);
         for (long i = 0 ; i < nelems ; i++) {
             Object handleValue = handleExtractor.apply(base, i);
             Object bufferValue = nativeBufferExtractor.apply(z, (int)i);
-            Object rawValue = nativeRawExtractor.apply(ForeignUnsafe.getUnsafeOffset(base), (int)i);
+            Object rawValue = nativeRawExtractor.apply(base.toRawLongValue(), (int)i);
             if (handleValue instanceof Number) {
                 assertEquals(((Number)handleValue).longValue(), i);
                 assertEquals(((Number)bufferValue).longValue(), i);
@@ -149,6 +148,9 @@ public class TestNative {
 
     public static native long getCapacity(Buffer buffer);
 
+    public static native long allocate(int size);
+    public static native void free(long address);
+
     @Test(dataProvider="nativeAccessOps")
     public void testNativeAccess(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
         try (MemorySegment segment = MemorySegment.allocateNative(seq)) {
@@ -168,6 +170,42 @@ public class TestNative {
             assertEquals(buf.capacity(), expected);
             assertEquals(getCapacity(buf), expected);
         }
+    }
+
+    static final int ALL_ACCESS_MODES = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
+
+    @Test
+    public void testDefaultAccessModes() {
+        MemoryAddress addr = MemoryAddress.ofLong(allocate(12));
+        MemorySegment mallocSegment = MemorySegment.ofNativeRestricted(addr, 12, null,
+                () -> free(addr.toRawLongValue()), null);
+        try (MemorySegment segment = mallocSegment) {
+            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES));
+            assertEquals(segment.accessModes(), ALL_ACCESS_MODES);
+        }
+    }
+
+    @Test
+    public void testMallocSegment() {
+        MemoryAddress addr = MemoryAddress.ofLong(allocate(12));
+        assertNull(addr.segment());
+        MemorySegment mallocSegment = MemorySegment.ofNativeRestricted(addr, 12, null,
+                () -> free(addr.toRawLongValue()), null);
+        assertEquals(mallocSegment.byteSize(), 12);
+        mallocSegment.close(); //free here
+        assertTrue(!mallocSegment.isAlive());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadResize() {
+        try (MemorySegment segment = MemorySegment.allocateNative(4)) {
+            MemorySegment.ofNativeRestricted(segment.baseAddress(), 0, null, null, null);
+        }
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNullUnsafeSegment() {
+        MemorySegment.ofNativeRestricted(null, 10, null, null, null);
     }
 
     static {

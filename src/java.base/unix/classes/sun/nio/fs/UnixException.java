@@ -100,11 +100,6 @@ class UnixException extends Exception {
         return new FileSystemException(file, other, errorString());
     }
 
-    void rethrowAsIOException(String file) throws IOException {
-        IOException x = translateToIOException(file, null);
-        throw x;
-    }
-
     void rethrowAsIOException(UnixPath file, UnixPath other) throws IOException {
         String a = (file == null) ? null : file.getPathForExceptionMessage();
         String b = (other == null) ? null : other.getPathForExceptionMessage();

@@ -168,7 +168,7 @@ TARGETS += $(BUILD_LIBJIMAGE)
 ##########################################################################################
 
 ifeq ($(call isTargetOs, macosx), true)
-  LIBJLI_EXCLUDE_FILES += java_md_solinux.c
+  LIBJLI_EXCLUDE_FILES += java_md.c
 endif
 
 ifeq ($(call isTargetOs, windows), true)

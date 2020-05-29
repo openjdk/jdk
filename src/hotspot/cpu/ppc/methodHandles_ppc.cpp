@@ -483,6 +483,7 @@ void trace_method_handle_stub(const char* adaptername,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
   if (Verbose) {
+    ResourceMark rm;
     tty->print_cr("Registers:");
     const int abi_offset = frame::abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
@@ -503,7 +504,6 @@ void trace_method_handle_stub(const char* adaptername,
 
       JavaThread* p = JavaThread::active();
 
-      ResourceMark rm;
       PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
       FrameValues values;
 
@@ -538,8 +538,9 @@ void trace_method_handle_stub(const char* adaptername,
     if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0)
+        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0) {
           java_lang_invoke_MethodHandle::form(mh)->print();
+        }
       }
     }
   }

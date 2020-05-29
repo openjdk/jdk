@@ -633,18 +633,6 @@ SetExecname(char **argv)
     return exec_path;
 }
 
-/*
- * BSD's implementation of CounterGet()
- */
-int64_t
-CounterGet()
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (tv.tv_sec * 1000000) + tv.tv_usec;
-}
-
-
 /* --- Splash Screen shared library support --- */
 
 static JavaVM* SetJavaVMValue()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,24 @@ TEST_VM(BitMap, resize_same) {
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
   BitMapTest::testResizeSame<CHeapBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+}
+
+// Verify that when growing with clear, all added bits get cleared,
+// even those corresponding to a partial word after the old size.
+TEST_VM(BitMap, resize_grow_clear) {
+  ResourceMark rm;
+  const size_t word_size = sizeof(BitMap::bm_word_t) * BitsPerByte;
+  const size_t size = 4 * word_size;
+  ResourceBitMap bm(size, true /* clear */);
+  bm.set_bit(size - 1);
+  EXPECT_EQ(bm.count_one_bits(), size_t(1));
+  // Discard the only set bit.  But it might still be "set" in the
+  // partial word beyond the new size.
+  bm.resize(size - word_size/2);
+  EXPECT_EQ(bm.count_one_bits(), size_t(0));
+  // Grow to include the previously set bit.  Verify that it ended up cleared.
+  bm.resize(2 * size);
+  EXPECT_EQ(bm.count_one_bits(), size_t(0));
 }
 
 TEST_VM(BitMap, initialize) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -58,7 +58,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="awa">lea fakaʻauati</language>
 			<language type="ay">lea fakaʻaimala</language>
 			<language type="az">lea fakaʻasapaisani</language>
-			<language type="az" alt="short">lea fakaʻasapaisani</language>
 			<language type="ba">lea fakapasikili</language>
 			<language type="bal">lea fakapalusi</language>
 			<language type="ban">lea fakapali</language>
@@ -697,9 +696,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hani">tohinima fakasiaina</script>
 			<script type="Hano">tohinima fakahanunōʻo</script>
 			<script type="Hans">tohinima fakasiaina-fakafaingofua</script>
-			<script type="Hans" alt="stand-alone">tohinima fakasiaina-fakafaingofua</script>
 			<script type="Hant">tohinima fakasiaina-tukufakaholo</script>
-			<script type="Hant" alt="stand-alone">tohinima fakasiaina-tukufakaholo</script>
 			<script type="Hatr" draft="unconfirmed">tohinima fakahatalani</script>
 			<script type="Hebr">tohinima fakahepelū</script>
 			<script type="Hira">tohinima fakasiapani-hilakana</script>
@@ -914,7 +911,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CG" alt="variant">Kongo (Lepupelika)</territory>
 			<territory type="CH">Suisilani</territory>
 			<territory type="CI">Matafonua ʻAivolī</territory>
-			<territory type="CI" alt="variant">Matafonua ʻAivolī</territory>
 			<territory type="CK">ʻOtumotu Kuki</territory>
 			<territory type="CL">Sili</territory>
 			<territory type="CM">Kameluni</territory>
@@ -955,7 +951,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR">Falanisē</territory>
 			<territory type="GA">Kaponi</territory>
 			<territory type="GB">Pilitānia</territory>
-			<territory type="GB" alt="short">Pilitānia</territory>
 			<territory type="GD">Kelenatā</territory>
 			<territory type="GE">Seōsia</territory>
 			<territory type="GF">Kuiana fakafalanisē</territory>
@@ -1107,7 +1102,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TJ">Tasikitani</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timoa fakahahake</territory>
-			<territory type="TL" alt="variant">Timoa fakahahake</territory>
 			<territory type="TM">Tūkimenisitani</territory>
 			<territory type="TN">Tunīsia</territory>
 			<territory type="TO">Tonga</territory>
@@ -1912,9 +1906,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">KM</era>
-						<era type="0" alt="variant" draft="unconfirmed">KM</era>
 						<era type="1">TS</era>
-						<era type="1" alt="variant" draft="unconfirmed">TS</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="unconfirmed">KM</era>
@@ -4740,7 +4732,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>houa fakanoafōki</standard>
+					<generic draft="contributed">houa fakanoafōki</generic>
+					<standard draft="contributed">houa fakanoafōki taimi totonu</standard>
+					<daylight draft="contributed">houa fakanoafōki taimi liliu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -7051,9 +7045,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>AUD$</symbol>
 				<symbol alt="narrow" draft="contributed">AU$</symbol>
 			</currency>
-			<currency type="BRL">
-				<displayName>BRL</displayName>
-			</currency>
 			<currency type="FJD">
 				<displayName>Tola fakafisi</displayName>
 				<displayName count="other">Tola fakafisi</displayName>
@@ -7286,7 +7277,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>k-mālohi</displayName>
 				<unitPattern count="other">k-mālohi ʻe {0}</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>mita he sekoni sikuea</displayName>
 				<unitPattern count="other">mita he sekoni sikuea ʻe {0}</unitPattern>
 			</unit>
@@ -7367,7 +7358,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimole he lita</displayName>
 				<unitPattern count="other">milimole ʻe {0} he lita</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>konga he miliona</displayName>
 				<unitPattern count="other">konga ʻe {0} he miliona</unitPattern>
 			</unit>
@@ -7391,7 +7382,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>lita he kilomita</displayName>
 				<unitPattern count="other">lita ʻe {0} he kilomita</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>lita he kilomita ʻe 100</displayName>
 				<unitPattern count="other">lita ʻe {0} he kilomita ʻe 100</unitPattern>
 			</unit>
@@ -7787,15 +7778,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hoosipaoa</displayName>
 				<unitPattern count="other">hoosipaoa ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimita meakuli</displayName>
 				<unitPattern count="other">milimita meakuli ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pāuni he ʻinisi sikuea</displayName>
 				<unitPattern count="other">pāuni he ʻinisi sikuea ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>ʻinisi meakuli</displayName>
 				<unitPattern count="other">ʻinisi meakuli ʻe {0}</unitPattern>
 			</unit>
@@ -7859,7 +7850,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kelevini</displayName>
 				<unitPattern count="other">kelevini ʻe {0}</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pāunifute</displayName>
 				<unitPattern count="other">pāunifute ʻe {0}</unitPattern>
 			</unit>
@@ -7996,7 +7987,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>k-mā</displayName>
 				<unitPattern count="other">k-mā ʻe {0}</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">m/s² ʻe {0}</unitPattern>
 			</unit>
@@ -8077,7 +8068,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>mmol/l</displayName>
 				<unitPattern count="other">mmol ʻe {0}/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>khm</displayName>
 				<unitPattern count="other">khm ʻe {0}</unitPattern>
 			</unit>
@@ -8100,7 +8091,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>l/km</displayName>
 				<unitPattern count="other">l ʻe {0}/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="other">l ʻe {0}/100km</unitPattern>
 			</unit>
@@ -8494,15 +8485,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hp</displayName>
 				<unitPattern count="other">hp ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm-Hg</displayName>
 				<unitPattern count="other">mm-Hg ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pā/in²</displayName>
 				<unitPattern count="other">pā/in² ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>in-Hg</displayName>
 				<unitPattern count="other">in-Hg ʻe {0}</unitPattern>
 			</unit>
@@ -8563,7 +8554,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>K</displayName>
 				<unitPattern count="other">K ʻe {0}</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>pā⋅ft</displayName>
 				<unitPattern count="other">pā⋅ft ʻe {0}</unitPattern>
 			</unit>
@@ -8699,7 +8690,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>k-mā</displayName>
 				<unitPattern count="other">{0} k-mā</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -8780,7 +8771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">mmol/l</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName draft="unconfirmed">khm</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} khm</unitPattern>
 			</unit>
@@ -8800,7 +8791,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>l/km</displayName>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="other">{0} l/100km</unitPattern>
 			</unit>
@@ -9184,15 +9175,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hp</displayName>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm-Hg</displayName>
 				<unitPattern count="other">{0} mm-Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pā/in²</displayName>
 				<unitPattern count="other">{0} pā/in²</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>in-Hg</displayName>
 				<unitPattern count="other">{0} in-Hg</unitPattern>
 			</unit>
@@ -9244,7 +9235,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName draft="unconfirmed">pā⋅ft</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} pā⋅ft</unitPattern>
 			</unit>

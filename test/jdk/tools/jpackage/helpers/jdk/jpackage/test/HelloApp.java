@@ -137,9 +137,11 @@ public final class HelloApp {
         if (moduleName == null && CLASS_NAME.equals(qualifiedClassName)) {
             // Use Hello.java as is.
             cmd.addPrerequisiteAction((self) -> {
-                Path jarFile = self.inputDir().resolve(appDesc.jarFileName());
-                createJarBuilder().setOutputJar(jarFile).addSourceFile(
-                        HELLO_JAVA).create();
+                if (self.inputDir() != null) {
+                    Path jarFile = self.inputDir().resolve(appDesc.jarFileName());
+                    createJarBuilder().setOutputJar(jarFile).addSourceFile(
+                            HELLO_JAVA).create();
+                }
             });
         } else if (appDesc.jmodFileName() != null) {
             // Modular app in .jmod file
@@ -152,12 +154,15 @@ public final class HelloApp {
                 final Path jarFile;
                 if (moduleName == null) {
                     jarFile = cmd.inputDir().resolve(appDesc.jarFileName());
-                } else {
+                } else if (getModulePath.get() != null) {
                     jarFile = getModulePath.get().resolve(appDesc.jarFileName());
+                } else {
+                    jarFile = null;
                 }
-
-                TKit.withTempDirectory("src",
-                        workDir -> prepareSources(workDir).setOutputJar(jarFile).create());
+                if (jarFile != null) {
+                    TKit.withTempDirectory("src",
+                            workDir -> prepareSources(workDir).setOutputJar(jarFile).create());
+                }
             });
         }
 
@@ -260,21 +265,35 @@ public final class HelloApp {
 
     public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,
             String... args) {
+        AppOutputVerifier av = getVerifier(cmd, args);
+        if (av != null) {
+            av.executeAndVerifyOutput(args);
+        }
+    }
+
+    public static Executor.Result executeLauncher(JPackageCommand cmd,
+            String... args) {
+        AppOutputVerifier av = getVerifier(cmd, args);
+        return av.executeOnly(args);
+    }
+
+    private static AppOutputVerifier getVerifier(JPackageCommand cmd,
+            String... args) {
         final Path launcherPath = cmd.appLauncherPath();
         if (cmd.isFakeRuntime(String.format("Not running [%s] launcher",
                 launcherPath))) {
-            return;
+            return null;
         }
 
-        assertApp(launcherPath)
+        return assertApp(launcherPath)
         .addDefaultArguments(Optional
                 .ofNullable(cmd.getAllArgumentValues("--arguments"))
                 .orElseGet(() -> new String[0]))
         .addJavaOptions(Optional
                 .ofNullable(cmd.getAllArgumentValues("--java-options"))
-                .orElseGet(() -> new String[0]))
-        .executeAndVerifyOutput(args);
+                .orElseGet(() -> new String[0]));
     }
+
 
     public final static class AppOutputVerifier {
         AppOutputVerifier(Path helloAppLauncher) {
@@ -326,7 +345,27 @@ public final class HelloApp {
         }
 
         public void executeAndVerifyOutput(String... args) {
-            // Output file will be created in the current directory.
+            getExecutor(args).dumpOutput().execute();
+
+            final List<String> launcherArgs = List.of(args);
+            final List<String> appArgs;
+            if (launcherArgs.isEmpty()) {
+                appArgs = defaultLauncherArgs;
+            } else {
+                appArgs = launcherArgs;
+            }
+
+            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
+            verifyOutputFile(outputFile, appArgs, params);
+        }
+
+        public Executor.Result executeOnly(String...args) {
+            return getExecutor(args).saveOutput().executeWithoutExitCodeCheck();
+        }
+
+        private Executor getExecutor(String...args) {
+
+            // Output file might be created in the current directory.
             Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
             ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
 
@@ -339,21 +378,10 @@ public final class HelloApp {
             }
 
             final List<String> launcherArgs = List.of(args);
-            new Executor()
+            return new Executor()
                     .setDirectory(outputFile.getParent())
                     .setExecutable(executablePath)
-                    .addArguments(launcherArgs)
-                    .dumpOutput()
-                    .execute();
-
-            final List<String> appArgs;
-            if (launcherArgs.isEmpty()) {
-                appArgs = defaultLauncherArgs;
-            } else {
-                appArgs = launcherArgs;
-            }
-
-            verifyOutputFile(outputFile, appArgs, params);
+                    .addArguments(launcherArgs);
         }
 
         private final Path launcherPath;

@@ -220,7 +220,7 @@ void VM_Version::get_processor_features() {
 
   // ThunderX
   if (_cpu == CPU_CAVIUM && (_model == 0xA1)) {
-    if (_variant == 0) _features |= CPU_DMB_ATOMICS;
+    guarantee(_variant != 0, "Pre-release hardware no longer supported.");
     if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
       FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
     }
@@ -418,10 +418,6 @@ void VM_Version::get_processor_features() {
   // This machine allows unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
-  }
-
-  if (FLAG_IS_DEFAULT(UseBarriersForVolatile)) {
-    UseBarriersForVolatile = (_features & CPU_DMB_ATOMICS) != 0;
   }
 
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {

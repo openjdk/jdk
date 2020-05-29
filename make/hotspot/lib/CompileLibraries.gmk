@@ -33,7 +33,7 @@ include HotspotCommon.gmk
 
 include lib/CompileJvm.gmk
 
-ifeq ($(BUILD_GTEST), true)
+ifneq ($(GTEST_FRAMEWORK_SRC), )
   include lib/CompileGtest.gmk
 endif
 

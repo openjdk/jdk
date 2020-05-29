@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,8 @@
 
 #include "precompiled.hpp"
 
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 
@@ -48,20 +45,8 @@ void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
   ShenandoahThreadLocalData::set_oom_during_evac(Thread::current(), true);
 }
 
-void ShenandoahEvacOOMHandler::enter_evacuation() {
+void ShenandoahEvacOOMHandler::register_thread(Thread* thr) {
   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
-
-  Thread* const thr = Thread::current();
-  uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
-  if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
-    wait_for_no_evac_threads();
-    return;
-  }
-
-  // Nesting case, this thread already registered
-  if (level > 0) {
-     return;
-  }
 
   assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
   while (true) {
@@ -82,14 +67,7 @@ void ShenandoahEvacOOMHandler::enter_evacuation() {
   }
 }
 
-void ShenandoahEvacOOMHandler::leave_evacuation() {
-  Thread* const thr = Thread::current();
-  uint8_t level = ShenandoahThreadLocalData::pop_evac_oom_scope(thr);
-  // Not top level, just return
-  if (level > 1) {
-    return;
-  }
-
+void ShenandoahEvacOOMHandler::unregister_thread(Thread* thr) {
   if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
     assert((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) > 0, "sanity");
     // NOTE: It's ok to simply decrement, even with mask set, because unmasked value is positive.
@@ -125,12 +103,4 @@ void ShenandoahEvacOOMHandler::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   assert((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) == 0, "sanity");
   Atomic::release_store_fence(&_threads_in_evac, (jint)0);
-}
-
-ShenandoahEvacOOMScope::ShenandoahEvacOOMScope() {
-  ShenandoahHeap::heap()->enter_evacuation();
-}
-
-ShenandoahEvacOOMScope::~ShenandoahEvacOOMScope() {
-  ShenandoahHeap::heap()->leave_evacuation();
 }

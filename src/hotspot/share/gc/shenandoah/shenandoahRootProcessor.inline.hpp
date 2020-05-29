@@ -164,22 +164,6 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do(CLDClos
   }
 }
 
-template <typename ITR>
-ShenandoahCodeCacheRoots<ITR>::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
-  nmethod::oops_do_marking_prologue();
-}
-
-template <typename ITR>
-void ShenandoahCodeCacheRoots<ITR>::code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-  _coderoots_iterator.possibly_parallel_blobs_do(blob_cl);
-}
-
-template <typename ITR>
-ShenandoahCodeCacheRoots<ITR>::~ShenandoahCodeCacheRoots() {
-  nmethod::oops_do_marking_epilogue();
-}
-
 class ShenandoahParallelOopsDoThreadClosure : public ThreadClosure {
 private:
   OopClosure* _f;
@@ -196,72 +180,6 @@ public:
     t->oops_do(_f, _cf);
   }
 };
-
-template <typename ITR>
-ShenandoahRootScanner<ITR>::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahRootProcessor(phase),
-  _serial_roots(phase),
-  _thread_roots(phase, n_workers > 1),
-  _code_roots(phase),
-  _vm_roots(phase),
-  _dedup_roots(phase),
-  _cld_roots(phase) {
-}
-
-template <typename ITR>
-void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops) {
-  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
-  roots_do(worker_id, oops, &clds_cl, &blobs_cl);
-}
-
-template <typename ITR>
-void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oops) {
-  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
-  strong_roots_do(worker_id, oops, &clds_cl, &blobs_cl);
-}
-
-template <typename ITR>
-void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
-  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint() ||
-         !ShenandoahHeap::heap()->unload_classes(),
-          "Expect class unloading when Shenandoah cycle is running");
-  ResourceMark rm;
-
-  _serial_roots.oops_do(oops, worker_id);
-  _vm_roots.oops_do(oops, worker_id);
-
-  assert(clds != NULL, "Only possible with CLD closure");
-  _cld_roots.cld_do(clds, worker_id);
-
-  // With ShenandoahConcurrentScanCodeRoots, we avoid scanning the entire code cache here,
-  // and instead do that in concurrent phase under the relevant lock. This saves init mark
-  // pause time.
-  if (code != NULL && !ShenandoahConcurrentScanCodeRoots) {
-    _code_roots.code_blobs_do(code, worker_id);
-    ShenandoahParallelOopsDoThreadClosure tc_cl(oops, NULL, tc);
-    _thread_roots.threads_do(&tc_cl, worker_id);
-  } else {
-    ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-    _thread_roots.threads_do(&tc_cl, worker_id);
-  }
-
-  AlwaysTrueClosure always_true;
-  _dedup_roots.oops_do(&always_true, oops, worker_id);
-}
-
-template <typename ITR>
-void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc) {
-  assert(ShenandoahHeap::heap()->unload_classes(), "Should be used during class unloading");
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-  ResourceMark rm;
-
-  _serial_roots.oops_do(oops, worker_id);
-  _vm_roots.oops_do(oops, worker_id);
-  _cld_roots.always_strong_cld_do(clds, worker_id);
-  _thread_roots.threads_do(&tc_cl, worker_id);
-}
 
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {

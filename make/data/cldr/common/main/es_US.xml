@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -29,7 +29,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gmh" draft="contributed">alemán de la alta edad media</language>
 			<language type="grc" draft="contributed">griego antiguo</language>
 			<language type="gu">gurayatí</language>
-			<language type="hak" draft="contributed">hak</language>
 			<language type="hil" draft="contributed">hiligainón</language>
 			<language type="hsn" draft="contributed">xiang (China)</language>
 			<language type="ht" draft="contributed">criollo haitiano</language>
@@ -39,11 +38,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lo">lao</language>
 			<language type="lus" draft="contributed">lushai</language>
 			<language type="mga" draft="contributed">irlandés medieval</language>
-			<language type="nan" draft="contributed">nan</language>
 			<language type="nl_BE" draft="contributed">flamenco</language>
 			<language type="nr">ndebele meridional</language>
 			<language type="nso" draft="contributed">sotho septentrional</language>
-			<language type="pcm" draft="contributed">pcm</language>
 			<language type="rm">romanche</language>
 			<language type="rn" draft="contributed">kiroundi</language>
 			<language type="shu" draft="contributed">árabe chadiano</language>
@@ -56,7 +53,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tn" draft="contributed">setchwana</language>
 			<language type="tyv">tuviniano</language>
 			<language type="wo" draft="contributed">wolof</language>
-			<language type="wuu" draft="contributed">wuu</language>
 			<language type="xal" draft="contributed">kalmyk</language>
 			<language type="zh_Hans" draft="contributed">chino simplificado</language>
 			<language type="zh_Hant" draft="contributed">chino tradicional</language>
@@ -82,15 +78,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AC">Isla de la Ascensión</territory>
 			<territory type="BA">Bosnia y Herzegovina</territory>
 			<territory type="CI">Côte d’Ivoire</territory>
-			<territory type="CI" alt="variant" draft="contributed">CI</territory>
 			<territory type="EZ">zona euro</territory>
 			<territory type="GB" alt="short">RU</territory>
 			<territory type="GG">Guernsey</territory>
 			<territory type="QO">Territorios alejados de Oceanía</territory>
 			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
-			<territory type="TL" alt="variant" draft="contributed">TL</territory>
 			<territory type="UM">Islas menores alejadas de EE. UU.</territory>
-			<territory type="UN" draft="contributed">UN</territory>
 		</territories>
 		<types>
 			<type key="calendar" type="roc" draft="contributed">calendario minguo</type>
@@ -738,7 +731,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>hora de la isla Norfolk</standard>
+					<generic draft="contributed">hora de la isla Norfolk</generic>
+					<standard draft="contributed">hora estándar de la isla Norfolk</standard>
+					<daylight draft="contributed">hora de verano de la isla Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Phoenix_Islands">
@@ -923,6 +918,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">cuadrado {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">cuadrado {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">cúbico{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">cúbico{0}</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="angle-arc-minute">
 				<displayName draft="contributed">arcominutos</displayName>
 				<unitPattern count="one" draft="contributed">{0} minuto</unitPattern>
@@ -940,7 +943,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName draft="contributed">mmol/L</displayName>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName draft="contributed">ppm</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -327,12 +327,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} فلکي احد</unitPattern>
 				<unitPattern count="other">{0} فلکي احدے</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>د پارے ملي مترز</displayName>
 				<unitPattern count="one">{0} د پارے ملي متر</unitPattern>
 				<unitPattern count="other">{0} د پارے ملي مترز</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>د پارے انچے</displayName>
 				<unitPattern count="one">{0} د پارے انچ</unitPattern>
 				<unitPattern count="other">{0} د پارے انچے</unitPattern>

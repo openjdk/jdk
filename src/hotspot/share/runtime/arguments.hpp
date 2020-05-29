@@ -120,6 +120,11 @@ class SystemProperty : public PathString {
     }
     return false;
   }
+  void append_writeable_value(const char *value) {
+    if (writeable()) {
+      append_value(value);
+    }
+  }
 
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
@@ -389,8 +394,11 @@ class Arguments : AllStatic {
   static bool add_property(const char* prop, PropertyWriteable writeable=WriteableProperty,
                            PropertyInternal internal=ExternalProperty);
 
-  static bool create_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
-  static bool create_numbered_property(const char* prop_base_name, const char* prop_value, unsigned int count);
+  // Used for module system related properties: converted from command-line flags.
+  // Basic properties are writeable as they operate as "last one wins" and will get overwritten.
+  // Numbered properties are never writeable, and always internal.
+  static bool create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
+  static bool create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count);
 
   static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
 

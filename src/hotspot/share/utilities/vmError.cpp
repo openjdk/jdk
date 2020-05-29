@@ -29,6 +29,8 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logConfiguration.hpp"
+#include "memory/metaspace.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -907,15 +909,19 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+#ifdef _LP64
   STEP("printing compressed oops mode")
 
      if (_verbose && UseCompressedOops) {
        CompressedOops::print_mode(st);
        if (UseCompressedClassPointers) {
+         CDS_ONLY(MetaspaceShared::print_on(st);)
          Metaspace::print_compressed_class_space(st);
+         CompressedKlassPointers::print_mode(st);
        }
        st->cr();
      }
+#endif
 
   STEP("printing heap information")
 
@@ -1108,15 +1114,18 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
+#ifdef _LP64
   // STEP("printing compressed oops mode")
-
   if (UseCompressedOops) {
     CompressedOops::print_mode(st);
     if (UseCompressedClassPointers) {
+      CDS_ONLY(MetaspaceShared::print_on(st);)
       Metaspace::print_compressed_class_space(st);
+      CompressedKlassPointers::print_mode(st);
     }
     st->cr();
   }
+#endif
 
   // STEP("printing heap information")
 

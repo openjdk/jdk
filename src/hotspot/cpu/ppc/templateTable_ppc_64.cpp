@@ -2518,7 +2518,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
 #ifdef ASSERT
   __ bind(LFlagInvalid);
-  __ stop("got invalid flag", 0x654);
+  __ stop("got invalid flag");
 #endif
 
   if (!is_static && rc == may_not_rewrite) {
@@ -2533,7 +2533,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   assert(__ pc() - pc_before_fence == (ptrdiff_t)BytesPerInstWord, "must be single instruction");
   assert(branch_table[vtos] == 0, "can't compute twice");
   branch_table[vtos] = __ pc(); // non-volatile_entry point
-  __ stop("vtos unexpected", 0x655);
+  __ stop("vtos unexpected");
 #endif
 
   __ align(32, 28, 28); // Align load.
@@ -2847,7 +2847,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
 #ifdef ASSERT
   __ bind(LFlagInvalid);
-  __ stop("got invalid flag", 0x656);
+  __ stop("got invalid flag");
 
   // __ bind(Lvtos);
   address pc_before_release = __ pc();
@@ -2855,7 +2855,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   assert(__ pc() - pc_before_release == (ptrdiff_t)BytesPerInstWord, "must be single instruction");
   assert(branch_table[vtos] == 0, "can't compute twice");
   branch_table[vtos] = __ pc(); // non-volatile_entry point
-  __ stop("vtos unexpected", 0x657);
+  __ stop("vtos unexpected");
 #endif
 
   __ align(32, 28, 28); // Align pop.

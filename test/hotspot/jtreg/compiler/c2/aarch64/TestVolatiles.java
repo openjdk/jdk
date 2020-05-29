@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,28 +74,28 @@ public class TestVolatiles {
         // i.e. GC type plus GC conifg
         switch(testType) {
         case "G1":
-            argcount = 9;
+            argcount = 8;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseG1GC";
             break;
         case "Parallel":
-            argcount = 9;
+            argcount = 8;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseParallelGC";
             break;
         case "Serial":
-            argcount = 9;
+            argcount = 8;
             procArgs = new String[argcount];
             procArgs[argcount - 2] = "-XX:+UseSerialGC";
             break;
         case "Shenandoah":
-            argcount = 10;
+            argcount = 9;
             procArgs = new String[argcount];
             procArgs[argcount - 3] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
             break;
         case "ShenandoahIU":
-            argcount = 11;
+            argcount = 10;
             procArgs = new String[argcount];
             procArgs[argcount - 4] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 3] = "-XX:+UseShenandoahGC";
@@ -112,35 +112,24 @@ public class TestVolatiles {
         // zero appropriately. this arg is reset in the second run to
         // disable the transform.
 
-        procArgs[0] = "-XX:-UseBarriersForVolatile";
-        procArgs[1] = "-XX:+UseCompressedOops";
-
-        procArgs[2] = "-XX:-TieredCompilation";
-        procArgs[3] = "-XX:+PrintOptoAssembly";
-        procArgs[4] = "-XX:CompileCommand=compileonly," + fullclassname + "::" + "test*";
-        procArgs[5] = "--add-exports";
-        procArgs[6] = "java.base/jdk.internal.misc=ALL-UNNAMED";
+        procArgs[0] = "-XX:+UseCompressedOops";
+        procArgs[1] = "-XX:-TieredCompilation";
+        procArgs[2] = "-XX:+PrintOptoAssembly";
+        procArgs[3] = "-XX:CompileCommand=compileonly," + fullclassname + "::" + "test*";
+        procArgs[4] = "--add-exports";
+        procArgs[5] = "java.base/jdk.internal.misc=ALL-UNNAMED";
         procArgs[argcount - 1] = fullclassname;
 
-        runtest(classname, testType, false, true, procArgs);
-        // rerun the test class without the transform applied and
-        // check the alternative generation is as expected
-
-        procArgs[0] = "-XX:+UseBarriersForVolatile";
-        runtest(classname, testType, true, true, procArgs);
+        runtest(classname, testType, true, procArgs);
 
         if (!classname.equals("TestUnsafeVolatileGAA")) {
-            procArgs[0] = "-XX:-UseBarriersForVolatile";
-            procArgs[1] = "-XX:-UseCompressedOops";
-            runtest(classname, testType, false, false, procArgs);
-
-            procArgs[0] = "-XX:+UseBarriersForVolatile";
-            runtest(classname, testType, true, false, procArgs);
+            procArgs[0] = "-XX:-UseCompressedOops";
+            runtest(classname, testType, false, procArgs);
         }
     }
 
 
-    public void runtest(String classname, String testType, boolean useBarriersForVolatile, boolean useCompressedOops, String[] procArgs) throws Throwable {
+    public void runtest(String classname, String testType, boolean useCompressedOops, String[] procArgs) throws Throwable {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
@@ -152,7 +141,7 @@ public class TestVolatiles {
         // appropriate to test class, test type and whether transform
         // was applied
 
-        checkoutput(output, classname, testType, useBarriersForVolatile, useCompressedOops);
+        checkoutput(output, classname, testType, useCompressedOops);
     }
 
     // skip through output returning a line containing the desireed
@@ -223,7 +212,7 @@ public class TestVolatiles {
 
     // check for expected asm output from a volatile load
 
-    private void checkload(OutputAnalyzer output, String testType, boolean useBarriersForVolatile, boolean useCompressedOops) throws Throwable
+    private void checkload(OutputAnalyzer output, String testType, boolean useCompressedOops) throws Throwable
     {
         Iterator<String> iter = output.asLines().listIterator();
 
@@ -231,198 +220,80 @@ public class TestVolatiles {
         // for both int and Object fields
 
         String[] matches;
-
-        if (!useBarriersForVolatile) {
-            matches = new String[] {
-                "ldarw",
-                "membar_acquire \\(elided\\)",
-                "ret"
-            };
-        } else {
-            matches = new String[] {
-                "ldrw",
-                "membar_acquire",
-                "dmb ish",
-                "ret"
-            };
-        }
-
+        matches = new String[] {
+            "ldarw",
+            "membar_acquire \\(elided\\)",
+            "ret"
+        };
         checkCompile(iter, "testInt", matches, output, true);
 
-        if (!useBarriersForVolatile) {
-            matches = new String[] {
-                useCompressedOops ? "ldarw?" : "ldar",
-                "membar_acquire \\(elided\\)",
-                "ret"
-            };
-        } else {
-            matches = new String[] {
-                useCompressedOops ? "ldrw?" : "ldr",
-                "membar_acquire",
-                "dmb ish",
-                "ret"
-            };
-        }
-
+        matches = new String[] {
+            useCompressedOops ? "ldarw?" : "ldar",
+            "membar_acquire \\(elided\\)",
+            "ret"
+        };
         checkCompile(iter, "testObj", matches, output, true);
 
     }
 
     // check for expected asm output from a volatile store
 
-    private void checkstore(OutputAnalyzer output, String testType, boolean useBarriersForVolatile, boolean useCompressedOops) throws Throwable
+    private void checkstore(OutputAnalyzer output, String testType, boolean useCompressedOops) throws Throwable
     {
         Iterator<String> iter = output.asLines().listIterator();
 
         String[] matches;
 
         // non object stores are straightforward
-        if (!useBarriersForVolatile) {
-            // this is the sequence of instructions for all cases
-            matches = new String[] {
-                "membar_release \\(elided\\)",
-                "stlrw",
-                "membar_volatile \\(elided\\)",
-                "ret"
-            };
-        } else {
-            // this is the alternative sequence of instructions
-            matches = new String[] {
-                "membar_release",
-                "dmb ish",
-                "strw",
-                "membar_volatile",
-                "dmb ish",
-                "ret"
-            };
-        }
-
+        // this is the sequence of instructions for all cases
+        matches = new String[] {
+            "membar_release \\(elided\\)",
+            "stlrw",
+            "membar_volatile \\(elided\\)",
+            "ret"
+        };
         checkCompile(iter, "testInt", matches, output, true);
 
         // object stores will be as above except for when the GC
         // introduces barriers for card marking
-
-        if (!useBarriersForVolatile) {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "stlrw?" : "stlr",
-                    "membar_volatile \\(elided\\)",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar volatile and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "stlrw?" : "stlr",
-                    "membar_volatile \\(elided\\)",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                 // Shenandoah generates normal object graphs for
-                 // volatile stores
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "stlrw?" : "stlr",
-                    "membar_volatile \\(elided\\)",
-                    "ret"
-                };
-                break;
-            }
-        } else {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "strw?" : "str",
-                    "membar_volatile",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar volatile and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "strw?" : "str",
-                    "membar_volatile",
-                    "dmb ish",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "CMSCondMark":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be elided
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "strw?" : "str",
-                    "membar_volatile",
-                    "dmb ish",
-                    "storestore \\(elided\\)",
-                    "strb",
-                    "membar_volatile",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "CMS":
-                // a volatile card mark membar should not be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be generated
-                // as "dmb ishst"
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "strw?" : "str",
-                    "storestore",
-                    "dmb ishst",
-                    "strb",
-                    "membar_volatile",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-
-            case "Shenandoah":
-            case "ShenandoahIU":
-                 // Shenandoah generates normal object graphs for
-                 // volatile stores
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "strw?" : "str",
-                    "membar_volatile",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            }
+        switch (testType) {
+        default:
+            // this is the basic sequence of instructions
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "stlrw?" : "stlr",
+                "membar_volatile \\(elided\\)",
+                "ret"
+            };
+            break;
+        case "G1":
+            // a card mark volatile barrier should be generated
+            // before the card mark strb
+            //
+            // following the fix for 8225776 the G1 barrier is now
+            // scheduled out of line after the membar volatile and
+            // and subsequent return
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "stlrw?" : "stlr",
+                "membar_volatile \\(elided\\)",
+                "ret",
+                "membar_volatile",
+                "dmb ish",
+                "strb"
+            };
+            break;
+        case "Shenandoah":
+        case "ShenandoahIU":
+             // Shenandoah generates normal object graphs for
+             // volatile stores
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "stlrw?" : "stlr",
+                "membar_volatile \\(elided\\)",
+                "ret"
+            };
+            break;
         }
 
         checkCompile(iter, "testObj", matches, output, true);
@@ -430,7 +301,7 @@ public class TestVolatiles {
 
     // check for expected asm output from a volatile cas
 
-    private void checkcas(OutputAnalyzer output, String testType, boolean useBarriersForVolatile, boolean useCompressedOops) throws Throwable
+    private void checkcas(OutputAnalyzer output, String testType, boolean useCompressedOops) throws Throwable
     {
         Iterator<String> iter = output.asLines().listIterator();
 
@@ -444,159 +315,62 @@ public class TestVolatiles {
 
         for (String[] test : tests) {
             // non object stores are straightforward
-            if (!useBarriersForVolatile) {
-                // this is the sequence of instructions for all cases
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    test[1] + "_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-            } else {
-                // this is the alternative sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    test[1] + " ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-            }
-
+            // this is the sequence of instructions for all cases
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                test[1] + "_acq",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
             checkCompile(iter, test[0], matches, output, true);
         }
 
         // object stores will be as above except for when the GC
         // introduces barriers for card marking
-
-        if (!useBarriersForVolatile) {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
-                    "strb",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar acquire and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                // For volatile CAS, Shenanodoah generates normal
-                // graphs with a shenandoah-specific cmpxchg
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "cmpxchgw?_acq_shenandoah" : "cmpxchg_acq_shenandoah",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-                break;
-            }
-        } else {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar acquire and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "CMSCondMark":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be elided
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_volatile",
-                    "dmb ish",
-                    "storestore \\(elided\\)",
-                    "strb",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "CMS":
-                // a volatile card mark membar should not be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be generated
-                // as "dmb ishst"
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "storestore",
-                    "dmb ishst",
-                    "strb",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                // For volatile CAS, Shenanodoah generates normal
-                // graphs with a shenandoah-specific cmpxchg
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw?_shenandoah" : "cmpxchg_shenandoah",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            }
+        switch (testType) {
+        default:
+            // this is the basic sequence of instructions
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
+                "strb",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
+            break;
+        case "G1":
+            // a card mark volatile barrier should be generated
+            // before the card mark strb
+            //
+            // following the fix for 8225776 the G1 barrier is now
+            // scheduled out of line after the membar acquire and
+            // and subsequent return
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
+                "membar_acquire \\(elided\\)",
+                "ret",
+                "membar_volatile",
+                "dmb ish",
+                "strb"
+            };
+            break;
+        case "Shenandoah":
+        case "ShenandoahIU":
+            // For volatile CAS, Shenanodoah generates normal
+            // graphs with a shenandoah-specific cmpxchg
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "cmpxchgw?_acq_shenandoah" : "cmpxchg_acq_shenandoah",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
+            break;
         }
-
         checkCompile(iter, "testObj", matches, output, true);
     }
 
-    private void checkcae(OutputAnalyzer output, String testType, boolean useBarriersForVolatile, boolean useCompressedOops) throws Throwable
+    private void checkcae(OutputAnalyzer output, String testType, boolean useCompressedOops) throws Throwable
     {
         ListIterator<String> iter = output.asLines().listIterator();
 
@@ -610,177 +384,80 @@ public class TestVolatiles {
 
         for (String[] test : tests) {
             // non object stores are straightforward
-            if (!useBarriersForVolatile) {
-                // this is the sequence of instructions for all cases
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    test[1] + "_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-            } else {
-                // this is the alternative sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    test[1] + " ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-            }
-
+            // this is the sequence of instructions for all cases
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                test[1] + "_acq",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
             checkCompile(iter, test[0], matches, output, true);
         }
 
         // object stores will be as above except for when the GC
         // introduces barriers for card marking
+        switch (testType) {
+        default:
+            // this is the basic sequence of instructions
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                "strb",
+                useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
 
-        if (!useBarriersForVolatile) {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    "strb",
-                    useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
+            // card marking store may be scheduled before or after
+            // the cmpxchg so try both sequences.
+            int idx = iter.nextIndex();
+            if (!checkCompile(iter, "testObj", matches, output, false)) {
+                iter = output.asLines().listIterator(idx);
 
-                // card marking store may be scheduled before or after
-                // the cmpxchg so try both sequences.
-                int idx = iter.nextIndex();
-                if (!checkCompile(iter, "testObj", matches, output, false)) {
-                    iter = output.asLines().listIterator(idx);
-
-                    matches = new String[] {
-                        "membar_release \\(elided\\)",
-                        useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
-                        "strb",
-                        "membar_acquire \\(elided\\)",
-                        "ret"
-                    };
-
-                    checkCompile(iter, "testObj", matches, output, true);
-                }
-                return;
-
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar acquire and
-                // and subsequent return
                 matches = new String[] {
                     "membar_release \\(elided\\)",
                     useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                // For volatile CAS, Shenanodoah generates normal
-                // graphs with a shenandoah-specific cmpxchg
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "cmpxchgw?_acq_shenandoah" : "cmpxchg_acq_shenandoah",
+                    "strb",
                     "membar_acquire \\(elided\\)",
                     "ret"
                 };
-                break;
+
+                checkCompile(iter, "testObj", matches, output, true);
             }
-        } else {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar acquire and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "CMSCondMark":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be elided
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_volatile",
-                    "dmb ish",
-                    "storestore \\(elided\\)",
-                    "strb",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "CMS":
-                // a volatile card mark membar should not be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be generated
-                // as "dmb ishst"
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "storestore",
-                    "dmb ishst",
-                    "strb",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                // For volatile CAS, Shenanodoah generates normal
-                // graphs with a shenandoah-specific cmpxchg
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "cmpxchgw?_shenandoah" : "cmpxchg_shenandoah",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            }
+            return;
+
+        case "G1":
+            // a card mark volatile barrier should be generated
+            // before the card mark strb
+            //
+            // following the fix for 8225776 the G1 barrier is now
+            // scheduled out of line after the membar acquire and
+            // and subsequent return
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
+                "membar_acquire \\(elided\\)",
+                "ret",
+                "membar_volatile",
+                "dmb ish",
+                "strb"
+            };
+            break;
+        case "Shenandoah":
+        case "ShenandoahIU":
+            // For volatile CAS, Shenanodoah generates normal
+            // graphs with a shenandoah-specific cmpxchg
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "cmpxchgw?_acq_shenandoah" : "cmpxchg_acq_shenandoah",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
+            break;
         }
-
         checkCompile(iter, "testObj", matches, output, true);
     }
 
-    private void checkgas(OutputAnalyzer output, String testType, boolean useBarriersForVolatile, boolean useCompressedOops) throws Throwable
+    private void checkgas(OutputAnalyzer output, String testType, boolean useCompressedOops) throws Throwable
     {
         Iterator<String> iter = output.asLines().listIterator();
 
@@ -792,155 +469,61 @@ public class TestVolatiles {
 
         for (String[] test : tests) {
             // non object stores are straightforward
-            if (!useBarriersForVolatile) {
-                // this is the sequence of instructions for all cases
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    test[1] + "_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-            } else {
-                // this is the alternative sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    test[1] + " ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-            }
-
+            // this is the sequence of instructions for all cases
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                test[1] + "_acq",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
             checkCompile(iter, test[0], matches, output, true);
         }
 
         // object stores will be as above except for when the GC
         // introduces barriers for card marking
-
-        if (!useBarriersForVolatile) {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
-                    "strb",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar acquire and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-                break;
-            }
-        } else {
-            switch (testType) {
-            default:
-                // this is the basic sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "G1":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb
-                //
-                // following the fix for 8225776 the G1 barrier is now
-                // scheduled out of line after the membar acquire and
-                // and subsequent return
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb"
-                };
-                break;
-            case "CMSCondMark":
-                // a card mark volatile barrier should be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be elided
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
-                    "membar_volatile",
-                    "dmb ish",
-                    "storestore \\(elided\\)",
-                    "strb",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "CMS":
-                // a volatile card mark membar should not be generated
-                // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be generated
-                // as "dmb ishst"
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
-                    "storestore",
-                    "dmb ishst",
-                    "strb",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            case "Shenandoah":
-            case "ShenandoahIU":
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-                break;
-            }
+        switch (testType) {
+        default:
+            // this is the basic sequence of instructions
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
+                "strb",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
+            break;
+        case "G1":
+            // a card mark volatile barrier should be generated
+            // before the card mark strb
+            //
+            // following the fix for 8225776 the G1 barrier is now
+            // scheduled out of line after the membar acquire and
+            // and subsequent return
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
+                "membar_acquire \\(elided\\)",
+                "ret",
+                "membar_volatile",
+                "dmb ish",
+                "strb"
+            };
+            break;
+        case "Shenandoah":
+        case "ShenandoahIU":
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
+            break;
         }
 
         checkCompile(iter, "testObj", matches, output, true);
     }
 
-    private void checkgaa(OutputAnalyzer output, String testType, boolean useBarriersForVolatile) throws Throwable
+    private void checkgaa(OutputAnalyzer output, String testType) throws Throwable
     {
         Iterator<String> iter = output.asLines().listIterator();
 
@@ -952,26 +535,13 @@ public class TestVolatiles {
 
         for (String[] test : tests) {
             // non object stores are straightforward
-            if (!useBarriersForVolatile) {
-                // this is the sequence of instructions for all cases
-                matches = new String[] {
-                    "membar_release \\(elided\\)",
-                    test[1] + "_acq",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
-                };
-            } else {
-                // this is the alternative sequence of instructions
-                matches = new String[] {
-                    "membar_release",
-                    "dmb ish",
-                    test[1] + " ",
-                    "membar_acquire",
-                    "dmb ish",
-                    "ret"
-                };
-            }
-
+            // this is the sequence of instructions for all cases
+            matches = new String[] {
+                "membar_release \\(elided\\)",
+                test[1] + "_acq",
+                "membar_acquire \\(elided\\)",
+                "ret"
+            };
             checkCompile(iter, test[0], matches, output, true);
         }
 
@@ -979,40 +549,39 @@ public class TestVolatiles {
 
     // perform a check appropriate to the classname
 
-    private void checkoutput(OutputAnalyzer output, String classname, String testType, boolean useBarriersForVolatile, boolean useCompressedOops) throws Throwable
+    private void checkoutput(OutputAnalyzer output, String classname, String testType, boolean useCompressedOops) throws Throwable
     {
         // trace call to allow eyeball check of what is being checked
         System.out.println("checkoutput(" +
                            classname + ", " +
-                           testType + ", " +
-                           useBarriersForVolatile + ")\n" +
+                           testType + ")\n" +
                            output.getOutput());
 
         switch (classname) {
         case "TestVolatileLoad":
-            checkload(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkload(output, testType, useCompressedOops);
             break;
         case "TestVolatileStore":
-            checkstore(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkstore(output, testType, useCompressedOops);
             break;
         case "TestUnsafeVolatileLoad":
-            checkload(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkload(output, testType, useCompressedOops);
             break;
         case "TestUnsafeVolatileStore":
-            checkstore(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkstore(output, testType, useCompressedOops);
             break;
         case "TestUnsafeVolatileCAS":
         case "TestUnsafeVolatileWeakCAS":
-            checkcas(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkcas(output, testType, useCompressedOops);
             break;
         case "TestUnsafeVolatileCAE":
-            checkcae(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkcae(output, testType, useCompressedOops);
             break;
         case "TestUnsafeVolatileGAS":
-            checkgas(output, testType, useBarriersForVolatile, useCompressedOops);
+            checkgas(output, testType, useCompressedOops);
             break;
         case "TestUnsafeVolatileGAA":
-            checkgaa(output, testType, useBarriersForVolatile);
+            checkgaa(output, testType);
             break;
         }
     }

@@ -502,6 +502,7 @@ void trace_method_handle_stub(const char* adaptername,
                 p2i(mh), p2i(entry_sp));
 
   if (Verbose) {
+    ResourceMark rm;
     tty->print_cr("Registers:");
     const int saved_regs_count = RegisterImpl::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
@@ -527,12 +528,11 @@ void trace_method_handle_stub(const char* adaptername,
     tty->cr();
 
     {
-     // dumping last frame with frame::describe
+      // dumping last frame with frame::describe
 
       JavaThread* p = JavaThread::active();
 
-      ResourceMark rm;
-      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      PRESERVE_EXCEPTION_MARK; // may not be needed but safer and inexpensive here
       FrameValues values;
 
       // Note: We want to allow trace_method_handle from any call site.
@@ -581,8 +581,9 @@ void trace_method_handle_stub(const char* adaptername,
     if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0)
+        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0) {
           java_lang_invoke_MethodHandle::form(mh)->print();
+        }
       }
     }
   }

@@ -338,6 +338,11 @@ public interface JavaLangAccess {
      */
     long stringConcatInitialCoder();
 
+    /**
+     * Update lengthCoder for constant
+     */
+    long stringConcatMix(long lengthCoder, String constant);
+
     /*
      * Get the class data associated with the given class.
      * @param c the class

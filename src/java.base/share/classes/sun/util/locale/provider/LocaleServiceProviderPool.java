@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.LocaleServiceProvider;
-import sun.util.logging.PlatformLogger;
 
 /**
  * An instance of this class holds a set of the third party implementations of a particular
@@ -119,11 +118,6 @@ public final class LocaleServiceProviderPool {
      */
     private LocaleServiceProviderPool (final Class<? extends LocaleServiceProvider> c) {
         providerClass = c;
-    }
-
-    static void config(Class<? extends Object> caller, String message) {
-        PlatformLogger logger = PlatformLogger.getLogger(caller.getCanonicalName());
-        logger.config(message);
     }
 
     /**
@@ -282,9 +276,10 @@ public final class LocaleServiceProviderPool {
                 if (providersObj != null) {
                     return providersObj;
                 } else if (isObjectProvider) {
-                    config(LocaleServiceProviderPool.class,
-                        "A locale sensitive service object provider returned null, " +
-                        "which should not happen. Provider: " + lsp + " Locale: " + locale);
+                    System.getLogger(LocaleServiceProviderPool.class.getCanonicalName())
+                            .log(System.Logger.Level.INFO,
+                           "A locale sensitive service object provider returned null, " +
+                                "which should not happen. Provider: " + lsp + " Locale: " + locale);
                 }
             }
         }
@@ -341,9 +336,8 @@ public final class LocaleServiceProviderPool {
         // ResourceBundle.Control.getCandidateLocales. The result
         // returned by getCandidateLocales are already normalized
         // (no extensions) for service look up.
-        List<Locale> lookupLocales = Control.getNoFallbackControl(Control.FORMAT_DEFAULT)
+        return Control.getNoFallbackControl(Control.FORMAT_DEFAULT)
                                             .getCandidateLocales("", locale);
-        return lookupLocales;
     }
 
     /**
@@ -370,8 +364,9 @@ public final class LocaleServiceProviderPool {
                 // should have well-formed fields except
                 // for ja_JP_JP and th_TH_TH. Therefore,
                 // it should never enter in this catch clause.
-                config(LocaleServiceProviderPool.class,
-                       "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
+                System.getLogger(LocaleServiceProviderPool.class.getCanonicalName())
+                    .log(System.Logger.Level.INFO,
+                        "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
 
                 // Fallback - script field will be lost.
                 lookupLocale = new Locale(locale.getLanguage(), locale.getCountry(), locale.getVariant());
@@ -402,9 +397,9 @@ public final class LocaleServiceProviderPool {
          * @param params provider specific params
          * @return localized object from the provider
          */
-        public S getObject(P lsp,
-                           Locale locale,
-                           String key,
-                           Object... params);
+        S getObject(P lsp,
+                    Locale locale,
+                    String key,
+                    Object... params);
     }
 }

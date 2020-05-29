@@ -1263,7 +1263,7 @@ XXX Code for transations where no currency is involved
         <group type="034" contains="AF BD BT IN IR LK MV NP PK"/> <!--Southern Asia -->
         <group type="009" contains="053 054 057 061 QO"/> <!--Oceania -->
         <group type="QO" contains="AQ AC CP DG TA"/> <!--Outlying Oceania -->
-        <group type="EU" contains="AT BE CY CZ DE DK EE ES FI FR GB GR HR HU IE IT LT LU LV MT NL PL PT SE SI SK BG RO" grouping="true"/> <!-- European Union, see http://europa.eu/abc/european_countries/index_en.htm -->
+        <group type="EU" contains="AT BE CY CZ DE DK EE ES FI FR GR HR HU IE IT LT LU LV MT NL PL PT SE SI SK BG RO" grouping="true"/> <!-- European Union, see http://europa.eu/abc/european_countries/index_en.htm -->
         <group type="EZ" contains="AT BE CY DE EE ES FI FR GR IE IT LT LU LV MT NL PT SI SK" grouping="true"/> <!-- Eurozone, see https://en.wikipedia.org/wiki/Eurozone -->
         <group type="UN" contains="AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FR GA GB GD GE GH GM GN GQ GR GT GW GY HN HR HT HU ID IE IL IN IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MR MT MU MV MX MW MY MZ NA NE NG NI NL NO NR NP NZ OM PA PE PG PH PK PL PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TZ UA UG US UY UZ VC VE VN VU WS YE ZA ZM ZW" grouping="true"/> <!-- United Nations, see https://en.wikipedia.org/wiki/Member_states_of_the_United_Nations -->
     </territoryContainment>
@@ -1637,7 +1637,7 @@ XXX Code for transations where no currency is involved
 		<language type="haz" territories="AF" alt="secondary"/>
 		<language type="he" scripts="Hebr" territories="IL"/>
 		<language type="hi" scripts="Deva" territories="IN"/>
-		<language type="hi" scripts="Mahj" territories="FJ ZA" alt="secondary"/>
+		<language type="hi" scripts="Latn Mahj" territories="FJ ZA" alt="secondary"/>
 		<language type="hif" scripts="Deva Latn" territories="FJ"/>
 		<language type="hil" scripts="Latn"/>
 		<language type="hil" territories="PH" alt="secondary"/>
@@ -2098,8 +2098,8 @@ XXX Code for transations where no currency is involved
 		<language type="saq" scripts="Latn"/>
 		<language type="sas" scripts="Latn"/>
 		<language type="sas" territories="ID" alt="secondary"/>
-		<language type="sat" scripts="Latn"/>
-		<language type="sat" scripts="Beng Deva Olck Orya" territories="IN" alt="secondary"/>
+		<language type="sat" scripts="Olck"/>
+		<language type="sat" scripts="Beng Deva Latn Orya" territories="IN" alt="secondary"/>
 		<language type="sav" territories="SN" alt="secondary"/>
 		<language type="saz" scripts="Saur"/>
 		<language type="sbp" scripts="Latn"/>
@@ -3091,13 +3091,14 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="jv" literacyPercent="10" populationPercent="34" references="R1294"/>	<!--Javanese-->
 			<languagePopulation type="su" populationPercent="12" references="R1269"/>	<!--Sundanese-->
 			<languagePopulation type="mad" literacyPercent="40" populationPercent="6.3"/>	<!--Madurese-->
-			<languagePopulation type="ms_Arab" populationPercent="4.6"/>	<!--Malay (Arabic)-->
+			<languagePopulation type="ms" populationPercent="3.4"/>	<!--Malay-->
 			<languagePopulation type="min" literacyPercent="10" populationPercent="3"/>	<!--Minangkabau-->
 			<languagePopulation type="bew" populationPercent="2.1"/>	<!--Betawi-->
 			<languagePopulation type="ban" literacyPercent="10" populationPercent="1.8" references="R1144"/>	<!--Balinese-->
 			<languagePopulation type="bug" literacyPercent="10" populationPercent="1.6" references="R1145"/>	<!--Buginese-->
 			<languagePopulation type="bjn" literacyPercent="10" populationPercent="1.5"/>	<!--Banjar-->
 			<languagePopulation type="ace" populationPercent="1.4"/>	<!--Achinese-->
+			<languagePopulation type="ms_Arab" populationPercent="1.2"/>	<!--Malay (Arabic)-->
 			<languagePopulation type="sas" populationPercent="0.97"/>	<!--Sasak-->
 			<languagePopulation type="bbc" populationPercent="0.92"/>	<!--Batak Toba-->
 			<languagePopulation type="zh_Hant" populationPercent="0.92"/>	<!--Chinese (Traditional)-->
@@ -4191,6 +4192,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ik" writingPercent="5" populationPercent="0.0024" references="R1017"/>	<!--Inupiaq-->
 			<languagePopulation type="mus" populationPercent="0.0012"/>	<!--Muscogee-->
 			<languagePopulation type="cic" populationPercent="0"/>	<!--Chickasaw-->
+			<languagePopulation type="cad" populationPercent="0"/>	<!--Caddo-->
 			<languagePopulation type="osa" populationPercent="0" references="R1326"/>	<!--Osage-->
 		</territory>
 		<territory type="UY" gdp="78160000000" literacyPercent="98.1" population="3369300">	<!--Uruguay-->
@@ -4784,7 +4786,8 @@ XXX Code for transations where no currency is involved
 		<hours preferred="h" allowed="hB hb h H" regions="CN HK MO TW ET gu_IN mr_IN pa_IN"/>
     </timeData>
 
-    <measurementData>
+    <measurementData> 
+          <!-- measurementSystem will be deprecated in next release; replaced by enhanced preferences -->
           <measurementSystem type="metric"  territories="001"/>
           <measurementSystem type="US"  territories="LR MM US"/>
           <measurementSystem type="metric" category="temperature" territories="LR MM"/>
@@ -4794,130 +4797,7 @@ XXX Code for transations where no currency is involved
           <paperSize type="US-Letter"  territories="BZ CA CL CO CR GT MX NI PA PH PR SV US VE"/>
     </measurementData>
 
-	<unitPreferenceData>
-		<unitPreferences category="area" usage="land-agricult">
-			<unitPreference regions="001">hectare</unitPreference>
-			<unitPreference regions="GB US">acre</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="area" usage="land-commercl">
-			<unitPreference regions="001">hectare</unitPreference>
-			<unitPreference regions="GB US">acre</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="area" usage="land-residntl">
-			<unitPreference regions="001">hectare</unitPreference>
-			<unitPreference regions="GB US">acre</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="concentr" usage="blood-glucose">
-			<!-- About 60% of regions use mg/dL, the rest mmol/L, some show both; does not follow metric vs imperial -->
-			<unitPreference regions="001">milligram-per-deciliter</unitPreference>
-			<unitPreference regions="AG AI AO AU BA BG BH BM BN BW BY CA CH CM CN CZ DK DM EE FI FJ GB GD HK HR HU IE IM IS KE KN KW KZ LC LI LT LU LV ME MG MK MO MS MT MU MY MZ NA NL NO NZ OM PG RS RU SE SG SI SK TC TO UA UG VC VG VN VU ZA">millimole-per-liter</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="consumption" usage="vehicle-fuel">
-			<unitPreference regions="001">liter-per-100kilometers</unitPreference>
-			<unitPreference regions="BR IT JP KR MX MY TH TR">liter-per-kilometer</unitPreference>
-			<unitPreference regions="CA GB" alt="informal">mile-per-gallon-imperial</unitPreference>
-			<unitPreference regions="NL" alt="informal">liter-per-kilometer</unitPreference>
-			<!--<unitPreference regions="NO SE" alt="informal">liter-per-mile-scandinavian</unitPreference>-->
-			<unitPreference regions="US">mile-per-gallon</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="duration" usage="music-track">
-			<unitPreference regions="001">minute second</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="duration" usage="person-age">
-			<unitPreference regions="001">year-person month-person</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="duration" usage="tv-program">
-			<unitPreference regions="001">minute second</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="energy" usage="food">
-			<unitPreference regions="001">foodcalorie</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="energy" usage="person-usage">
-			<unitPreference regions="001">kilocalorie</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="person">
-			<unitPreference regions="001">centimeter</unitPreference>
-			<unitPreference regions="BR CN DE DK MX NL NO PL PT RU" alt="informal">meter centimeter</unitPreference>
-			<unitPreference regions="AT BE DZ EG ES FR HK ID IL IT JO MY SA SE TR VN">meter centimeter</unitPreference>
-			<unitPreference regions="CA GB IN US" alt="informal">foot inch</unitPreference>
-			<unitPreference regions="US">inch</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="person" scope="small">
-			<unitPreference regions="001">centimeter</unitPreference>
-			<unitPreference regions="CA GB IN" alt="informal">inch</unitPreference>
-			<unitPreference regions="US">inch</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="rainfall">
-			<unitPreference regions="001">millimeter</unitPreference>
-			<unitPreference regions="BR">centimeter</unitPreference>
-			<unitPreference regions="US">inch</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="road">
-			<unitPreference regions="001">kilometer</unitPreference>
-			<unitPreference regions="GB US">mile</unitPreference>
-			<unitPreference regions="SE" alt="informal">mile-scandinavian</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="road" scope="small">
-			<unitPreference regions="001">meter</unitPreference>
-			<unitPreference regions="GB">yard</unitPreference>
-			<unitPreference regions="US">foot</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="snowfall">
-			<unitPreference regions="001">centimeter</unitPreference>
-			<unitPreference regions="US">inch</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="vehicle">
-			<unitPreference regions="001">meter</unitPreference>
-			<unitPreference regions="GB US">foot inch</unitPreference>
-			<unitPreference regions="MX">meter centimeter</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="visiblty">
-			<unitPreference regions="001">kilometer</unitPreference>
-			<unitPreference regions="DE NL">meter</unitPreference>
-			<unitPreference regions="GB US">mile</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="length" usage="visiblty" scope="small">
-			<unitPreference regions="001">meter</unitPreference>
-			<unitPreference regions="GB US">foot</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="mass" usage="person">
-			<unitPreference regions="001">kilogram</unitPreference>
-			<unitPreference regions="GB">stone pound</unitPreference>
-			<unitPreference regions="US">pound</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="mass" usage="person" scope="small">
-			<unitPreference regions="001">gram</unitPreference>
-			<unitPreference regions="DZ EG ES JO SA">kilogram gram</unitPreference>
-			<unitPreference regions="GB HK US">pound ounce</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="pressure" usage="baromtrc">
-			<unitPreference regions="001">hectopascal</unitPreference>
-			<unitPreference regions="BR EG GB IL TH">millibar</unitPreference>
-			<unitPreference regions="MX RU">millimeter-of-mercury</unitPreference>
-			<unitPreference regions="IN US">inch-hg</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="speed" usage="road-travel">
-			<unitPreference regions="001">kilometer-per-hour</unitPreference>
-			<unitPreference regions="GB US">mile-per-hour</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="speed" usage="wind">
-			<unitPreference regions="001">kilometer-per-hour</unitPreference>
-			<unitPreference regions="FI KR NO PL RU SE">meter-per-second</unitPreference>
-			<unitPreference regions="US">mile-per-hour</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="temperature" usage="person">
-			<unitPreference regions="001">celsius</unitPreference>
-			<unitPreference regions="US">fahrenheit</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="temperature" usage="weather">
-			<unitPreference regions="001">celsius</unitPreference>
-			<unitPreference regions="BS BZ KY PR PW US">fahrenheit</unitPreference>
-		</unitPreferences>
-		<unitPreferences category="volume" usage="vehicle-fuel">
-			<unitPreference regions="001">liter</unitPreference>
-			<unitPreference regions="US">gallon</unitPreference>
-		</unitPreferences>
-	</unitPreferenceData>
+	<!-- <unitPreferenceData> moved to units.txt -->
 
     <!-- start of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
     <codeMappings>
@@ -5417,7 +5297,7 @@ XXX Code for transations where no currency is involved
     </codeMappings>
 
 	<parentLocales>
-		<parentLocale parent="root" locales="az_Arab az_Cyrl blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab iu_Latn kk_Arab ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong ms_Arab pa_Arab sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
+		<parentLocale parent="root" locales="az_Arab az_Cyrl blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab hi_Latn iu_Latn kk_Arab ks_Deva ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
 		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CA en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PH en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
 		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>

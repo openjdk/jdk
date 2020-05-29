@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -62,8 +63,9 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
   if (obj == fwd) {
     assert(_heap->is_evacuation_in_progress(),
            "evac should be in progress");
-    ShenandoahEvacOOMScope scope;
-    fwd = _heap->evacuate_object(obj, Thread::current());
+    Thread* const t = Thread::current();
+    ShenandoahEvacOOMScope scope(t);
+    fwd = _heap->evacuate_object(obj, t);
   }
 
   if (load_addr != NULL && fwd != obj) {

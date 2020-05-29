@@ -311,6 +311,59 @@ public class CertUtils {
             "HiXrFkAwBarCQOdSaJFJzB/I4gobxVjZz0a19k4IHbV26nBcau4UfW1yDkg/vAcl\n" +
             "105YIAQjAiEAvP+ZQ7yzUk8rNgk65U/SF++Eyt+i+WR1UBvGxAEEKIQ=";
 
+    /*
+     * Version: 3 (0x2)
+     * Serial Number:
+     *     58:75:88:9a:e1:e0:da:83:da:d0:e7:3f:02:23:4f:74:ce:43:e0:3f
+     * Signature Algorithm: ED25519
+     * Issuer: CN = localhost
+     * Validity
+     *     Not Before: May 25 01:28:49 2020 GMT
+     *     Not After : May 23 01:28:49 2030 GMT
+     * Subject: CN = localhost
+     */
+    public static final String ED25519_CERT =
+            "-----BEGIN CERTIFICATE-----\n" +
+            "MIIBezCCAS2gAwIBAgIUWHWImuHg2oPa0Oc/AiNPdM5D4D8wBQYDK2VwMBQxEjAQ\n" +
+            "BgNVBAMMCWxvY2FsaG9zdDAeFw0yMDA1MjUwMTI4NDlaFw0zMDA1MjMwMTI4NDla\n" +
+            "MBQxEjAQBgNVBAMMCWxvY2FsaG9zdDAqMAUGAytlcAMhADPu3xC31fcrVuWZ6sOC\n" +
+            "85Wap5RqQHiVQIJ1DbQhKgjso4GQMIGNMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0O\n" +
+            "BBYEFPbedM1iNhjOapOtdXXnHezJnnSTMB8GA1UdIwQYMBaAFPbedM1iNhjOapOt\n" +
+            "dXXnHezJnnSTMA4GA1UdDwEB/wQEAwIBhjAqBgNVHSUBAf8EIDAeBggrBgEFBQcD\n" +
+            "AwYIKwYBBQUHAwgGCCsGAQUFBwMJMAUGAytlcANBAOzu4k2pIqplPBx5k+JVcOB7\n" +
+            "K325r21JCAWqME+fa2sdUR1FM8LpQkWD363YOfEFleUkl28Tk6Kccz3oc4yc5AI=\n" +
+            "-----END CERTIFICATE-----";
+    public static final String ED25519_KEY =
+            "MC4CAQAwBQYDK2VwBCIEICyAry1Yd7O4M5ttEERs86vMixQRR71oKi4vzSEBTXag";
+
+    /*
+     * Version: 3 (0x2)
+     * Serial Number:
+     *     76:ea:9f:03:d9:af:dd:6a:d4:23:71:54:fe:9e:af:6a:c2:e3:2b:5d
+     * Signature Algorithm: ED448
+     * Issuer: CN = localhost
+     * Validity
+     *     Not Before: May 25 01:32:42 2020 GMT
+     *     Not After : May 23 01:32:42 2030 GMT
+     * Subject: CN = localhost
+     */
+    public static final String ED448_CERT =
+            "-----BEGIN CERTIFICATE-----\n" +
+            "MIIBxjCCAUagAwIBAgIUduqfA9mv3WrUI3FU/p6vasLjK10wBQYDK2VxMBQxEjAQ\n" +
+            "BgNVBAMMCWxvY2FsaG9zdDAeFw0yMDA1MjUwMTMyNDJaFw0zMDA1MjMwMTMyNDJa\n" +
+            "MBQxEjAQBgNVBAMMCWxvY2FsaG9zdDBDMAUGAytlcQM6AFVSJI1vSXDf9UMNBfNQ\n" +
+            "IUA4lfGSr+7klW//faIVrRphIvD1Mq0SkYQv5b3uyyrkht9FcbVMJjVPAKOBkDCB\n" +
+            "jTAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQ61lrTCnJftliX4a3xBrWlU/XK\n" +
+            "eDAfBgNVHSMEGDAWgBQ61lrTCnJftliX4a3xBrWlU/XKeDAOBgNVHQ8BAf8EBAMC\n" +
+            "AYYwKgYDVR0lAQH/BCAwHgYIKwYBBQUHAwMGCCsGAQUFBwMIBggrBgEFBQcDCTAF\n" +
+            "BgMrZXEDcwD95HY/4XWzrgFNsW2sFha7GWnAZMW9PXcUP243Kt6O1HUsJa/ynKQJ\n" +
+            "c0DDikNF+8wl/lwF7XX4toCh9WyN+wWCAi2Eau9ATDumDsme7r+VniT0UZto8WQ2\n" +
+            "I4B1bAfPIO7JR1zPfpDVu12muwfm+u4pCAA=\n" +
+            "-----END CERTIFICATE-----";
+    public static final String ED448_KEY =
+            "MEcCAQAwBQYDK2VxBDsEOQcoJHPOIS+azOeX2MIEF4TYdfVEaZf/x1OdYpkI0J3m\n" +
+            "//MKpGqR4+s6XL8EQNKKJhjNZlvs34XbQw==";
+
     private static final String TEST_SRC = System.getProperty("test.src", ".");
 
     /**

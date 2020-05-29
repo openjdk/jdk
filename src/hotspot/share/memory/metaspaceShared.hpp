@@ -36,6 +36,7 @@
 
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
+class outputStream;
 class FileMapInfo;
 class CHeapBitMap;
 struct ArchiveHeapOopmapInfo;
@@ -166,6 +167,8 @@ public:
 class MetaspaceShared : AllStatic {
 
   // CDS support
+
+  // Note: _shared_rs and _symbol_rs are only used at dump time.
   static ReservedSpace _shared_rs;
   static VirtualSpace _shared_vs;
   static ReservedSpace _symbol_rs;
@@ -226,6 +229,8 @@ class MetaspaceShared : AllStatic {
   static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
+
+  static void print_on(outputStream* st);
 
   // Delta of this object from SharedBaseAddress
   static uintx object_delta_uintx(void* obj);
@@ -296,7 +301,6 @@ class MetaspaceShared : AllStatic {
   static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
 
 #if INCLUDE_CDS
-  static ReservedSpace reserve_shared_space(size_t size, char* requested_address = NULL);
   static size_t reserved_space_alignment();
   static void init_shared_dump_space(DumpRegion* first_space);
   static DumpRegion* misc_code_dump_space();
@@ -369,16 +373,15 @@ private:
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
+  // use_requested_addr: If true (default), attempt to map at the address the
   static MapArchiveResult map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
                                        bool use_requested_addr);
   static char* reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                   FileMapInfo* dynamic_mapinfo,
-                                                  bool use_requested_addr,
-                                                  ReservedSpace& main_rs,
+                                                  bool use_archive_base_addr,
                                                   ReservedSpace& archive_space_rs,
                                                   ReservedSpace& class_space_rs);
-  static void release_reserved_spaces(ReservedSpace& main_rs,
-                                      ReservedSpace& archive_space_rs,
+  static void release_reserved_spaces(ReservedSpace& archive_space_rs,
                                       ReservedSpace& class_space_rs);
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);

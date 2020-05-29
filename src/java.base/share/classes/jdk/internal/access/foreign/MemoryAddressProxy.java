@@ -39,4 +39,61 @@ public interface MemoryAddressProxy {
     void checkAccess(long offset, long length, boolean readOnly);
     long unsafeGetOffset();
     Object unsafeGetBase();
+    boolean isSmall();
+
+    /* Helper functions for offset computations. These are required so that we can avoid issuing long opcodes
+     * (e.g. LMUL, LADD) when we're operating on 'small' segments (segments whose length can be expressed with an int).
+     * C2 BCE code is very sensitive to the kind of opcode being emitted, and this workaround allows us to rescue
+     * BCE when working with small segments. This workaround should be dropped when JDK-8223051 is resolved.
+     */
+
+    public static long addOffsets(long op1, long op2, MemoryAddressProxy addr) {
+        if (addr.isSmall()) {
+            // force ints for BCE
+            if (op1 > Integer.MAX_VALUE || op2 > Integer.MAX_VALUE
+                    || op1 < Integer.MIN_VALUE || op2 < Integer.MIN_VALUE) {
+                throw overflowException(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            }
+            int i1 = (int)op1;
+            int i2 = (int)op2;
+            try {
+                return Math.addExact(i1, i2);
+            } catch (ArithmeticException ex) {
+                throw overflowException(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            }
+        } else {
+            try {
+                return Math.addExact(op1, op2);
+            } catch (ArithmeticException ex) {
+                throw overflowException(Long.MIN_VALUE, Long.MAX_VALUE);
+            }
+        }
+    }
+
+    public static long multiplyOffsets(long op1, long op2, MemoryAddressProxy addr) {
+        if (addr.isSmall()) {
+            if (op1 > Integer.MAX_VALUE || op2 > Integer.MAX_VALUE
+                    || op1 < Integer.MIN_VALUE || op2 < Integer.MIN_VALUE) {
+                throw overflowException(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            }
+            // force ints for BCE
+            int i1 = (int)op1;
+            int i2 = (int)op2;
+            try {
+                return Math.multiplyExact(i1, i2);
+            } catch (ArithmeticException ex) {
+                throw overflowException(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            }
+        } else {
+            try {
+                return Math.multiplyExact(op1, op2);
+            } catch (ArithmeticException ex) {
+                throw overflowException(Long.MIN_VALUE, Long.MAX_VALUE);
+            }
+        }
+    }
+
+    private static IndexOutOfBoundsException overflowException(long min, long max) {
+        return new IndexOutOfBoundsException(String.format("Overflow occurred during offset computation ; offset exceeded range { %d .. %d }", min, max));
+    }
 }

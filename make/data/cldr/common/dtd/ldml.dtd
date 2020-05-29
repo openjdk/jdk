@@ -46,7 +46,7 @@ $Revision$
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "36" >
+<!ATTLIST version cldrVersion CDATA #FIXED "37" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -67,7 +67,7 @@ $Revision$
 <!ATTLIST language type NMTOKEN #REQUIRED >
     <!--@MATCH:validity/locale-->
 <!ATTLIST language alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/long, secondary, short, variant-->
+    <!--@MATCH:literal/long, secondary, short, variant, menu-->
 <!ATTLIST language draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -213,7 +213,7 @@ $Revision$
 
 <!ELEMENT subdivision ( #PCDATA ) >
 <!ATTLIST subdivision type NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/subdivision-->
+    <!--@MATCH:or/validity/subdivision||literal/AS, AW, AX, BL, CP, CW, GF, GP, GU, HK, IC, MF, MO, MP, MQ, NC, PF, PM, PR, RE, SX, TA, TF, TW, UM, VI, WF, YT, itsd, no50-->
 <!ATTLIST subdivision alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST subdivision draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -251,7 +251,7 @@ $Revision$
 
 <!ELEMENT key ( #PCDATA ) >
 <!ATTLIST key type NMTOKEN #REQUIRED >
-    <!--@MATCH:bcp47/anykey-->
+    <!--@MATCH:or/bcp47/anykey||literal/t-->
 <!ATTLIST key alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST key draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1607,7 +1607,7 @@ $Revision$
 <!ELEMENT intervalFormatItem ( alias | ( greatestDifference*, special* ) ) >
 <!ATTLIST intervalFormatItem id NMTOKEN #REQUIRED >
     <!-- TODO: check to see if this should be minimized -->
-    <!--@MATCH:literal/Bh, Bhm, Gy, GyM, GyMEd, GyMMM, GyMMMEd, GyMMMd, GyMd, H, Hm, Hmv, Hv, M, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEd, MMMMd, MMMd, Md, d, h, hm, hmv, hv, y, yM, yMEd, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMd, yMMMd, yMd-->
+    <!--@MATCH:literal/Bh, Bhm, Gy, GyM, GyMEd, GyMMM, GyMMMEd, GyMMMd, GyMd, H, Hm, Hmv, Hv, M, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEd, MMMMd, MMMd, Md, d, h, hm, hmv, hv, y, yM, yMEd, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMd, yMMMd, yMd, GGGGGyM, GGGGGyMEd, GGGGGyMd, GyMMMM, GyMMMMEd, GyMMMMd-->
 <!ATTLIST intervalFormatItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST intervalFormatItem draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -2541,9 +2541,9 @@ $Revision$
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT compoundUnit ( alias | ( compoundUnitPattern*, special* ) ) >
+<!ELEMENT compoundUnit ( alias | ( compoundUnitPattern1*, compoundUnitPattern*, unitPrefixPattern*, special* ) ) >
 <!ATTLIST compoundUnit type NMTOKEN #REQUIRED >
-    <!--@MATCH:literal/per, times-->
+    <!--@MATCH:or/regex/10p-?[0-9]{1,2}||literal/per, times, power2, power3-->
 <!ATTLIST compoundUnit alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST compoundUnit draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -2555,6 +2555,15 @@ $Revision$
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
+<!ELEMENT compoundUnitPattern1 ( #PCDATA ) >
+<!ATTLIST compoundUnitPattern1 count (0 | 1 | zero | one | two | few | many | other) #IMPLIED >
+<!ATTLIST compoundUnitPattern1 alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST compoundUnitPattern1 draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST compoundUnitPattern1 references CDATA #IMPLIED >
+    <!--@METADATA-->
+
 <!ELEMENT compoundUnitPattern ( #PCDATA ) >
 <!ATTLIST compoundUnitPattern alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
@@ -2565,6 +2574,14 @@ $Revision$
 <!ATTLIST compoundUnitPattern validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT unitPrefixPattern ( #PCDATA ) >
+<!ATTLIST unitPrefixPattern alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST unitPrefixPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST unitPrefixPattern references CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT coordinateUnit ( alias | ( displayName*, coordinateUnitPattern*, special* ) ) >
 <!ATTLIST coordinateUnit alt NMTOKENS #IMPLIED >

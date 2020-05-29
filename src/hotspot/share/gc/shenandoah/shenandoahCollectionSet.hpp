@@ -51,7 +51,7 @@ private:
   shenandoah_padding(1);
 
 public:
-  ShenandoahCollectionSet(ShenandoahHeap* heap, char* heap_base, size_t size);
+  ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base);
 
   // Add region to collection set
   void add_region(ShenandoahHeapRegion* r);

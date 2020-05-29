@@ -103,16 +103,6 @@ class UnixChannelFactory {
         }
     }
 
-
-    /**
-     * Constructs a file channel from an existing (open) file descriptor
-     */
-    static FileChannel newFileChannel(int fd, String path, boolean reading, boolean writing) {
-        FileDescriptor fdObj = new FileDescriptor();
-        fdAccess.set(fdObj, fd);
-        return FileChannelImpl.open(fdObj, path, reading, writing, false, null);
-    }
-
     /**
      * Constructs a file channel by opening a file using a dfd/path pair
      */

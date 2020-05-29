@@ -101,13 +101,6 @@ void G1YoungRemSetSamplingThread::check_for_periodic_gc(){
 void G1YoungRemSetSamplingThread::run_service() {
   double vtime_start = os::elapsedVTime();
 
-  // Print a message about periodic GC configuration.
-  if (G1PeriodicGCInterval != 0) {
-    log_info(gc)("Periodic GC enabled with interval " UINTX_FORMAT "ms", G1PeriodicGCInterval);
-  } else {
-    log_info(gc)("Periodic GC disabled");
-  }
-
   while (!should_terminate()) {
     sample_young_list_rs_length();
 

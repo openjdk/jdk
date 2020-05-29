@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -122,9 +122,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="419">Latin America</territory>
 			<territory type="AC">Ascension Island</territory>
 			<territory type="AD">Andorra</territory>
+			<territory type="AE">Obodo United Arab Emirates</territory>
+			<territory type="AF">Mba Afghanistan</territory>
 			<territory type="AG">Antigua &amp; Barbuda</territory>
 			<territory type="AI">Anguilla</territory>
 			<territory type="AL">Albania</territory>
+			<territory type="AM">Obodo Armenia</territory>
 			<territory type="AO">Angola</territory>
 			<territory type="AQ">Antarctica</territory>
 			<territory type="AR">Argentina</territory>
@@ -133,19 +136,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AU">Australia</territory>
 			<territory type="AW">Aruba</territory>
 			<territory type="AX">Agwaetiti Aland</territory>
+			<territory type="AZ">Obodo Azerbaijan</territory>
 			<territory type="BA">Bosnia &amp; Herzegovina</territory>
 			<territory type="BB">Barbados</territory>
+			<territory type="BD">Obodo Bangladesh</territory>
 			<territory type="BE">Belgium</territory>
 			<territory type="BF">Burkina Faso</territory>
 			<territory type="BG">Bulgaria</territory>
+			<territory type="BH">Obodo Bahrain</territory>
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Binin</territory>
 			<territory type="BL">St. Barthélemy</territory>
 			<territory type="BM">Bemuda</territory>
+			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Caribbean Netherlands</territory>
 			<territory type="BR">Mba Brazil</territory>
 			<territory type="BS">Bahamas</territory>
+			<territory type="BT">Obodo Bhutan</territory>
 			<territory type="BV">Agwaetiti Bouvet</territory>
 			<territory type="BW">Botswana</territory>
 			<territory type="BY">Belarus</territory>
@@ -171,6 +179,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CV">Cape Verde</territory>
 			<territory type="CW">Kurakao</territory>
 			<territory type="CX">Agwaetiti Christmas</territory>
+			<territory type="CY">Obodo Cyprus</territory>
 			<territory type="CZ">Czechia</territory>
 			<territory type="CZ" alt="variant">Czech Republik</territory>
 			<territory type="DE">Mba Germany</territory>
@@ -188,10 +197,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ER">Eritrea</territory>
 			<territory type="ES">Spain</territory>
 			<territory type="ET">Ethiopia</territory>
+			<territory type="EU">Otu nzukọ mba Europe</territory>
+			<territory type="EZ">Gburugburu Euro</territory>
 			<territory type="FI">Finland</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Agwaetiti Falkland</territory>
-			<territory type="FK" alt="variant">Agwaetiti Falkland</territory>
 			<territory type="FM">Micronesia</territory>
 			<territory type="FO">Agwaetiti Faroe</territory>
 			<territory type="FR">Mba France</territory>
@@ -199,6 +209,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GB">Mba United Kingdom</territory>
 			<territory type="GB" alt="short">UK</territory>
 			<territory type="GD">Grenada</territory>
+			<territory type="GE">Obodo Georgia</territory>
 			<territory type="GF">Frenchi Guiana</territory>
 			<territory type="GG">Guernsey</territory>
 			<territory type="GH">Ghana</territory>
@@ -214,28 +225,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bissau</territory>
 			<territory type="GY">Guyana</territory>
+			<territory type="HK">Honk Kong mba nwere ndozi pụrụ iche n’obodo China</territory>
 			<territory type="HM">Agwaetiti Heard na Agwaetiti McDonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Croatia</territory>
 			<territory type="HT">Hati</territory>
 			<territory type="HU">Hungary</territory>
 			<territory type="IC">Agwaetiti Kanarị</territory>
+			<territory type="ID">Indonesia</territory>
 			<territory type="IE">Ireland</territory>
+			<territory type="IL">Obodo Israel</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">Mba India</territory>
 			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IQ">Obodo Iraq</territory>
+			<territory type="IR">Obodo Iran</territory>
 			<territory type="IS">Iceland</territory>
 			<territory type="IT">Mba Italy</territory>
 			<territory type="JE">Jersey</territory>
 			<territory type="JM">Jamaika</territory>
+			<territory type="JO">Obodo Jordan</territory>
 			<territory type="JP">Mba Japan</territory>
 			<territory type="KE">Kenya</territory>
+			<territory type="KG">Obodo Kyrgyzstan</territory>
+			<territory type="KH">Cambodia</territory>
 			<territory type="KI">Kiribati</territory>
 			<territory type="KM">Comorosu</territory>
 			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="KP">Mba Ugwu Korea</territory>
+			<territory type="KR">Mba South Korea</territory>
+			<territory type="KW">Obodo Kuwait</territory>
 			<territory type="KY">Agwaetiti Cayman</territory>
+			<territory type="KZ">Obodo Kazakhstan</territory>
+			<territory type="LA">Laos</territory>
+			<territory type="LB">Obodo Lebanon</territory>
 			<territory type="LC">St. Lucia</territory>
 			<territory type="LI">Liechtenstein</territory>
+			<territory type="LK">Obodo Sri Lanka</territory>
 			<territory type="LR">Liberia</territory>
 			<territory type="LS">Lesotho</territory>
 			<territory type="LT">Lithuania</territory>
@@ -251,6 +277,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MH">Agwaetiti Marshall</territory>
 			<territory type="MK">North Macedonia</territory>
 			<territory type="ML">Mali</territory>
+			<territory type="MM">Myanmar (Burma)</territory>
+			<territory type="MN">Obodo Mongolia</territory>
+			<territory type="MO">Obodo Macao nwere ndozi pụrụ iche na mba China</territory>
 			<territory type="MP">Agwaetiti Northern Mariana</territory>
 			<territory type="MQ">Martinique</territory>
 			<territory type="MR">Mauritania</territory>
@@ -260,6 +289,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MV">Maldivesa</territory>
 			<territory type="MW">Malawi</territory>
 			<territory type="MX">Mexico</territory>
+			<territory type="MY">Malaysia</territory>
 			<territory type="MZ">Mozambik</territory>
 			<territory type="NA">Namibia</territory>
 			<territory type="NC">New Caledonia</territory>
@@ -269,27 +299,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NI">Nicaragua</territory>
 			<territory type="NL">Netherlands</territory>
 			<territory type="NO">Norway</territory>
+			<territory type="NP">Obodo Nepal</territory>
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">New Zealand</territory>
+			<territory type="OM">Obodo Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
 			<territory type="PF">Frenchi Polynesia</territory>
 			<territory type="PG">Papua New Guinea</territory>
 			<territory type="PH">Philippines</territory>
+			<territory type="PK">Obodo Pakistan</territory>
 			<territory type="PL">Poland</territory>
 			<territory type="PM">St. Pierre &amp; Miquelon</territory>
 			<territory type="PN">Agwaetiti Pitcairn</territory>
 			<territory type="PR">Puerto Rico</territory>
+			<territory type="PS">Obodo dị iche iche dị n’okpuru mba Palestine</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paraguay</territory>
+			<territory type="QA">Obodo Qatar</territory>
 			<territory type="QO">Outlying Oceania</territory>
 			<territory type="RE">Réunion</territory>
 			<territory type="RO">Romania</territory>
 			<territory type="RS">Serbia</territory>
 			<territory type="RU">Mba Russia</territory>
 			<territory type="RW">Rwanda</territory>
+			<territory type="SA">Obodo Saudi Arabia</territory>
 			<territory type="SB">Agwaetiti Solomon</territory>
 			<territory type="SC">Seychelles</territory>
 			<territory type="SD">Sudan</territory>
@@ -308,6 +344,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ST">São Tomé &amp; Príncipe</territory>
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
+			<territory type="SY">Obodo Syria</territory>
 			<territory type="SZ">Eswatini</territory>
 			<territory type="SZ" alt="variant">Swaziland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
@@ -316,13 +353,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TF">Ụmụ ngalaba Frenchi Southern</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Thailand</territory>
+			<territory type="TJ">Obodo Tajikistan</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timor-Leste</territory>
 			<territory type="TL" alt="variant">East Timor</territory>
+			<territory type="TM">Obodo Turkmenistan</territory>
 			<territory type="TN">Tunisia</territory>
 			<territory type="TO">Tonga</territory>
+			<territory type="TR">Obodo Turkey</territory>
 			<territory type="TT">Trinidad &amp; Tobago</territory>
 			<territory type="TV">Tuvalu</territory>
+			<territory type="TW">Obodo Taiwan</territory>
 			<territory type="TZ">Tanzania</territory>
 			<territory type="UA">Ukraine</territory>
 			<territory type="UG">Uganda</territory>
@@ -330,6 +371,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UN">Mba Ụwa Jikọrọ Ọnụ</territory>
 			<territory type="US">Mba United States</territory>
 			<territory type="UY">Uruguay</territory>
+			<territory type="UZ">Obodo Uzbekistan</territory>
 			<territory type="VA">Vatican City</territory>
 			<territory type="VC">St. Vincent &amp; Grenadines</territory>
 			<territory type="VE">Venezuela</territory>
@@ -342,6 +384,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="XA">Pseudo-Accents</territory>
 			<territory type="XB">Pseudo-Bidi</territory>
 			<territory type="XK">Kosovo</territory>
+			<territory type="YE">Obodo Yemen</territory>
 			<territory type="YT">Mayotte</territory>
 			<territory type="ZA">South Africa</territory>
 			<territory type="ZM">Zambia</territory>
@@ -1620,7 +1663,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Oge Norfolk Island</standard>
+					<generic draft="contributed">Oge Norfolk Island</generic>
+					<standard draft="contributed">Oge Izugbe Norfolk Island</standard>
+					<daylight draft="contributed">Oge Okpomọkụ Norfolk Island</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -1984,13 +2029,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<displayName>Ego Dirham obodo United Arab Emirates</displayName>
+				<displayName count="other">Ego dirhams obodo UAE</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Ego Afghani Obodo Afghanistan</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Ego Lek Obodo Albania</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Ego Dram obodo Armenia</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Ego Antillean Guilder obodo Netherlands</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Ego Kwanza obodo Angola</displayName>
+				<displayName count="other">Ego kwanzas obodo Angola</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Ego Peso obodo Argentina</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Ego Dollar obodo Australia</displayName>
+				<displayName count="other">Ego dollars obodo Australia</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Ego Florin obodo Aruba</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Ego Manat obodo Azerbaijan</displayName>
+				<displayName count="other">Ego manats obodo Azerbaijan</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Akara mgbanwe ego obodo Bosnia-Herzegovina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Ego Dollar obodo Barbados</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Ego Taka obodo Bangladesh</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Ego Lev mba Bulgaria</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Ego Dinar Obodo Bahrain</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Ego Franc obodo Burundi</displayName>
+			</currency>
 			<currency type="BMD">
 				<displayName>Dollar Bermuda</displayName>
 				<displayName count="other">Dollars Bermuda</displayName>
 			</currency>
+			<currency type="BND">
+				<displayName>Ego Dollar obodo Brunei</displayName>
+				<displayName count="other">Ego dollars obodo Brunei</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Ego Boliviano obodo Bolivia</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Real Brazil</displayName>
 				<displayName count="other">Real Brazil</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Ego Dollar Obodo Bahamas</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Ego Ngultrum obodo Bhutan</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Ego Pula obodo Bostwana</displayName>
+				<displayName count="other">Ego pulas obodo Bostwana</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Ego Ruble mba Belarus</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Dollar Belize</displayName>
@@ -2000,54 +2117,441 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Dollar Canada</displayName>
 				<displayName count="other">Dollars Canada</displayName>
 			</currency>
+			<currency type="CDF">
+				<displayName>Ego Franc obodo Congo</displayName>
+				<displayName count="other">Ego francs mba Congo</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>Ego Franc mba Switzerland</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Ego Peso obodo Chile</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Ego Yuan Obodo China (ndị bi na mmiri)</displayName>
+			</currency>
 			<currency type="CNY">
 				<displayName>Yuan China</displayName>
 				<displayName count="other">Yuan China</displayName>
 			</currency>
+			<currency type="COP">
+				<displayName>Ego Peso obodo Columbia</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Ego Colón obodo Costa Rica</displayName>
+				<displayName count="other">Ego colóns obodo Costa Rica</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Ego Peso e nwere ike ịgbanwe nke obodo Cuba</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Ego Peso obodo Cuba</displayName>
+				<displayName count="other">Ego pesos obodo Cuba</displayName>
+			</currency>
 			<currency type="CVE">
 				<displayName>Escudo Caboverdiano</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Ego Koruna obodo Czech</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Ego Franc obodo Djibouti</displayName>
+				<displayName count="other">ego francs obodo Djibouti</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Ego Krone Obodo Denmark</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Ego Peso Obodo Dominica</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Ego Dinar Obodo Algeria</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Ego Pound obodo Egypt</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>Ego Nakfa obodo Eritrea</displayName>
+				<displayName count="other">Ego nakfas obodo Eritrea</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Ego Birr obodo Ethiopia</displayName>
+				<displayName count="other">Ego birrs obodo Ethiopia</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="other">euro</displayName>
 			</currency>
+			<currency type="FJD">
+				<displayName>Ego Dollar obodo Fiji</displayName>
+				<displayName count="other">Ego dollars obodo Fijian</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Ego Pound obodo Falkland Islands</displayName>
+			</currency>
 			<currency type="GBP">
 				<displayName>Pound British</displayName>
 				<displayName count="other">Pound British</displayName>
 			</currency>
+			<currency type="GEL">
+				<displayName>Ego Lari Obodo Georgia</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>Ego Cedi obodo Ghana</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Ego Pound obodo Gibraltar</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Ego Dalasi obodo Gambia</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Ego Franc obodo Guinea</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Ego Quetzal obodo Guatemala</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Ego Dollar obodo Guyana</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Ego Dollar Obodo Honk Kong</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Ego Lempira obodo Honduras</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Ego Kuna obodo Croatia</displayName>
+				<displayName count="other">Ego kunas obodo Croatia</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Ego Gourde obodo Haiti</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Ego Forint obodo Hungary</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Ego Rupiah Obodo Indonesia</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Ego Shekel ọhụrụ obodo Israel</displayName>
+			</currency>
 			<currency type="INR">
 				<displayName>Rupee India</displayName>
 				<displayName count="other">Rupee India</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Ego Dinar obodo Iraq</displayName>
+				<displayName count="other">Ego dinars obodo Iraq</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Ego Rial obodo Iran</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Ego Króna obodo Iceland</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Ego Dollar obodo Jamaica</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Ego Dinar Obodo Jordan</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yen Japan</displayName>
 				<displayName count="other">Yen Japan</displayName>
 				<symbol draft="contributed">¥</symbol>
 			</currency>
+			<currency type="KES">
+				<displayName>Ego Shilling obodo Kenya</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName>Ego Som Obodo Kyrgyzstan</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Ego Riel obodo Cambodia</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Ego Franc obodo Comoros</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Ego Won Obodo North Korea</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>Ego Won Obodo South Korea</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Ego Dinar Obodo Kuwait</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Ego Dollar obodo Cayman Islands</displayName>
+				<displayName count="other">Ego dollars obodo Cayman Islands</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Ego Tenge obodo Kazakhstani</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Ego Kip Obodo Laos</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Ego Pound obodo Lebanon</displayName>
+				<displayName count="other">Ego Pound Obodo Lebanon</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Ego Rupee obodo Sri Lanka</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName>Ego Dollar obodo Liberia</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>Ego Dinar obodo Libya</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>Ego Dirham obodo Morocco</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>Ego Leu obodo Moldova</displayName>
+				<displayName count="other">Ego leu mba Moldova</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Ego Ariary obodo Madagascar</displayName>
+				<displayName count="other">Ego ariaries obodo Madagascar</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Ego Denar Obodo Macedonia</displayName>
+				<displayName count="other">Ego denari mba Macedonia</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Ego Kyat obodo Myanmar</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>Ego Turgik Obodo Mongolia</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Ego Pataca ndị Obodo Macanese</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName>Ego Ouguiya Obodo Mauritania</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>Ego Rupee obodo Mauritania</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>Ego Rufiyaa obodo Moldova</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>Ego Kwacha obodo Malawi</displayName>
+				<displayName count="other">Ego kwachas obodo Malawi</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>Ego Peso obodo Mexico</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Ego Ringgit obodo Malaysia</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Ego Metical obodo Mozambique</displayName>
+				<displayName count="other">Ego meticals obodo Mozambique</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName>Ego Dollar obodo Namibia</displayName>
+			</currency>
 			<currency type="NGN">
 				<displayName>Naịra</displayName>
 				<symbol>₦</symbol>
+			</currency>
+			<currency type="NIO">
+				<displayName>Ego Córodoba obodo Nicaragua</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Ego Krone Obodo Norway</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Ego Rupee obodo Nepal</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>Ego Dollar obodo New Zealand</displayName>
+				<displayName count="other">Ego dollars obodo New Zealand</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Ego Rial obodo Oman</displayName>
+				<displayName count="other">Ego rials Obodo Oman</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Ego Balboa obodo Panama</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Ego Sol obodo Peru</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Ego Kina obodo Papua New Guinea</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Ego piso obodo Philippine</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Ego Rupee obodo Pakistan</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Ego Zloty mba Poland</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Ego Guarani obodo Paraguay</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Ego Rial obodo Qatar</displayName>
+				<displayName count="other">Ego rials obodo Qatar</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Ego Leu obodo Romania</displayName>
+				<displayName count="other">Ego leu Obodo Romania</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Ego Dinar obodo Serbia</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>Ruble Russia</displayName>
 				<displayName count="other">Ruble Russia</displayName>
 			</currency>
+			<currency type="RWF">
+				<displayName>Ego Franc obodo Rwanda</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Ego Riyal obodo Saudi</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Ego Dollar obodo Solomon Islands</displayName>
+				<displayName count="other">Ego dollars obodo Solomon Islands</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Ego Rupee obodo Seychelles</displayName>
+				<displayName count="other">Ego rupees obodo Seychelles</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>Ego Pound obodo Sudan</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Ego Krona Obodo Sweden</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Ego Dollar obodo Singapore</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Ego Pound obodo St Helena</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Ego Leone obodo Sierra Leone</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>Ego shilling obodo Somali</displayName>
+			</currency>
 			<currency type="SRD">
 				<displayName>Dollar Surinamese</displayName>
 				<displayName count="other">Dollar Surinamese</displayName>
 			</currency>
+			<currency type="SSP">
+				<displayName>Ego Pound obodo South Sudan</displayName>
+				<displayName count="other">Ego pounds mba ọdịda anyanwụ Sudan</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>Ego Dobra nke obodo Sāo Tomé na Principe</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>Ego Pound obodo Syria</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Ego Lilangeni obodo Swaziland</displayName>
+				<displayName count="other">Ego emalangeni obodo Swaziland</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Ego Baht obodo Thai</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>Who Somoni obodo Tajikistan</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>Ego Manat Obodo Turkmenistan</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>Ego Dinar Obodo Tunisia</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName>Ego paʻanga obodo Tonga</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Ego Lira obodo Turkey</displayName>
+			</currency>
 			<currency type="TTD">
 				<displayName>Dollar Trinidad &amp; Tobago</displayName>
 				<displayName count="other">Dollars Trinidad &amp; Tobago</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Dollar obodo New Taiwan</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Ego Shilling Obodo Tanzania</displayName>
+				<displayName count="other">Ego Shillings Obodo Tanzania</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Ego Hryvnia obodo Ukraine</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>Ego Shilling obodo Uganda</displayName>
+				<displayName count="other">Ego shillings obodo Uganda</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>Dollar US</displayName>
 				<displayName count="other">Dollars US</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
+			<currency type="UYU">
+				<displayName>Ego Peso obodo Uruguay</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Ego Som obodo Uzbekistan</displayName>
+				<displayName count="other">Ego som obodo Uzbekistan</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Ego Bolivar obodo Venezuela</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Ego Dong obodo Vietnam</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Ego Vatu obodo Vanuatu</displayName>
+				<displayName count="other">Ego Vanuatu vatus obodo Vanuatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Ego Tala obodo Samoa</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>Ego Franc mba etiti Africa</displayName>
+				<displayName count="other">Ego francs mba etiti Africa</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Ego Dollar obodo East Carribbean</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Ego CFA Franc obodo West Africa</displayName>
+				<displayName count="other">Ego CFA francs mba ọdịda anyanwụ Afrịka</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>Ego Franc obodo CFP</displayName>
+				<displayName count="other">Ego francs obodo CFP</displayName>
+			</currency>
 			<currency type="XXX">
 				<displayName>Ego Amaghị</displayName>
 				<displayName count="other">(ego amaghị)</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Ego Rial obodo Yemeni</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Ego Rand obodo South Africa</displayName>
+				<displayName count="other">Ego rand obodo South Africa</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName>Ego Kwacha Obodo Zambia</displayName>
+				<displayName count="other">Ego kwachas obodo Zambia</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">

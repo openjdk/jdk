@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -575,9 +575,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<script type="Hani" draft="contributed">خەنچە</script>
 			<script type="Hano" draft="contributed">خانۇنۇچە</script>
 			<script type="Hans" draft="contributed">ئاددىي خەنچە</script>
-			<script type="Hans" alt="stand-alone" draft="contributed">ئاددىي خەنچە</script>
 			<script type="Hant" draft="contributed">مۇرەككەپ خەنچە</script>
-			<script type="Hant" alt="stand-alone" draft="contributed">مۇرەككەپ خەنچە</script>
 			<script type="Hebr" draft="contributed">ئىبرانىچە</script>
 			<script type="Hira" draft="contributed">خىراگانا</script>
 			<script type="Hluw" draft="contributed">ئاناتولىيە تەسۋىرىي يېزىق</script>
@@ -2808,7 +2806,9 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard draft="contributed">نورفولك ئاراللىرى ۋاقتى</standard>
+					<generic draft="contributed">نورفولك ئاراللىرى ۋاقتى</generic>
+					<standard draft="contributed">نورفولك ئاراللىرى ئۆلچەملىك ۋاقتى</standard>
+					<daylight draft="contributed">نورفولك ئاراللىرى يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4903,7 +4903,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<unitPattern count="one" draft="contributed">{0} ئات كۈچى</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ئات كۈچى</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="provisional">ديۇيم سىماب تۈۋرۇكى</displayName>
 				<unitPattern count="one" draft="contributed">{0} ديۇيم سىماب تۈۋرۇكى</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ديۇيم سىماب تۈۋرۇكى</unitPattern>
@@ -5128,7 +5128,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<unitPattern count="one" draft="contributed">{0} ئات كۈچى</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ئات كۈچى</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="provisional">ديۇيم سىماب تۈۋرۇكى</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
@@ -5309,7 +5309,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<unitPattern count="one" draft="contributed">{0}hp</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one" draft="contributed">{0}&quot; Hg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}&quot; Hg</unitPattern>
 			</unit>

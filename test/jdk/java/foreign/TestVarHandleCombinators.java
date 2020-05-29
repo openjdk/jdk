@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
@@ -53,16 +54,27 @@ public class TestVarHandleCombinators {
         assertEquals((byte) vh.get(addr, 2), (byte) -1);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testUnalignedElement() {
         VarHandle vh = MemoryHandles.varHandle(byte.class, 4, ByteOrder.nativeOrder());
-        MemoryHandles.withStride(vh, 2);
+        vh = MemoryHandles.withStride(vh, 2);
+        MemorySegment segment = MemorySegment.ofArray(new byte[4]);
+        vh.get(segment.baseAddress(), 1L); //should throw
+    }
+
+    public void testZeroStrideElement() {
+        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
+        VarHandle strided_vh = MemoryHandles.withStride(vh, 0);
+        MemorySegment segment = MemorySegment.ofArray(new int[] { 42 });
+        for (int i = 0 ; i < 100 ; i++) {
+            assertEquals((int)vh.get(segment.baseAddress()), strided_vh.get(segment.baseAddress(), (long)i));
+        }
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadStrideElement() {
-        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
-        MemoryHandles.withStride(vh, 0); //scale factor cant be zero
+    public void testStrideWrongHandle() {
+        VarHandle vh = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
+        MemoryHandles.withStride(vh, 10);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -86,7 +98,7 @@ public class TestVarHandleCombinators {
         assertEquals((byte) vh.get(address), (byte) 10);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testAlignBadAccess() {
         VarHandle vh = MemoryHandles.varHandle(byte.class, 2, ByteOrder.nativeOrder());
         vh = MemoryHandles.withOffset(vh, 1); // offset by 1 byte
@@ -97,16 +109,27 @@ public class TestVarHandleCombinators {
         vh.set(address, (byte) 10); // should be bad align
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testOffsetNegative() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder());
-        MemoryHandles.withOffset(vh, -1);
+    public void testZeroOffsetElement() {
+        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
+        VarHandle offset_vh = MemoryHandles.withOffset(vh, 0);
+        MemorySegment segment = MemorySegment.ofArray(new int[] { 42 });
+        for (int i = 0 ; i < 100 ; i++) {
+            assertEquals((int)vh.get(segment.baseAddress()), offset_vh.get(segment.baseAddress(), (long)i));
+        }
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testOffsetWrongHandle() {
+        VarHandle vh = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
+        MemoryHandles.withOffset(vh, 1);
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testUnalignedOffset() {
         VarHandle vh = MemoryHandles.varHandle(byte.class, 4, ByteOrder.nativeOrder());
-        MemoryHandles.withOffset(vh, 2);
+        vh = MemoryHandles.withOffset(vh, 2);
+        MemorySegment segment = MemorySegment.ofArray(new byte[4]);
+        vh.get(segment.baseAddress()); //should throw
     }
 
     @Test

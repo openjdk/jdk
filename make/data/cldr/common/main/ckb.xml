@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -37,7 +37,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="awa">ئاوادهی</language>
 			<language type="ay">ئایمارا</language>
 			<language type="az">ئازەربایجانی</language>
-			<language type="az" alt="short">ئازەربایجانی</language>
 			<language type="az_Arab">ئازەربایجانی باشووری</language>
 			<language type="ba">باشکیەر</language>
 			<language type="ban">بالی</language>
@@ -567,7 +566,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR">فەڕەنسا</territory>
 			<territory type="GA">گابۆن</territory>
 			<territory type="GB">شانشینی یەکگرتوو</territory>
-			<territory type="GB" alt="short">شانشینی یەکگرتوو</territory>
 			<territory type="GD">گرینادا</territory>
 			<territory type="GE">گورجستان</territory>
 			<territory type="GF">گیانای فەرەنسا</territory>
@@ -586,7 +584,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GW">گینێ بیساو</territory>
 			<territory type="GY">گویانا</territory>
 			<territory type="HK">هۆنگ کۆنگ</territory>
-			<territory type="HK" alt="short">هۆنگ کۆنگ</territory>
 			<territory type="HM">دوورگەکانی هێرد و مەکدانڵد</territory>
 			<territory type="HN">ھۆندووراس</territory>
 			<territory type="HR">کرۆواتیا</territory>
@@ -641,7 +638,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MM">میانمار</territory>
 			<territory type="MN">مەنگۆلیا</territory>
 			<territory type="MO">ماکائۆ</territory>
-			<territory type="MO" alt="short">ماکائۆ</territory>
 			<territory type="MP">دوورگەکانی ماریانای باکوور</territory>
 			<territory type="MQ">مارتینیک</territory>
 			<territory type="MR">مۆریتانیا</territory>
@@ -731,7 +727,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UM">دوورگەکانی دەرەوەی ئەمریکا</territory>
 			<territory type="UN">نەتەوە یەکگرتووەکان</territory>
 			<territory type="US">ویلایەتە یەکگرتووەکان</territory>
-			<territory type="US" alt="short">ویلایەتە یەکگرتووەکان</territory>
 			<territory type="UY">ئوروگوای</territory>
 			<territory type="UZ">ئوزبەکستان</territory>
 			<territory type="VA">ڤاتیکان</territory>
@@ -795,96 +790,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<dates>
 		<calendars>
 			<calendar type="generic">
-				<days>
-					<dayContext type="format">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">یەکشەممە</day>
-							<day type="mon" draft="unconfirmed">دووشەممە</day>
-							<day type="tue" draft="unconfirmed">سێشەممە</day>
-							<day type="wed" draft="unconfirmed">چوارشەممە</day>
-							<day type="thu" draft="unconfirmed">پێنجشەممە</day>
-							<day type="fri" draft="unconfirmed">ھەینی</day>
-							<day type="sat" draft="unconfirmed">شەممە</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">ی</day>
-							<day type="mon" draft="unconfirmed">د</day>
-							<day type="tue" draft="unconfirmed">س</day>
-							<day type="wed" draft="unconfirmed">چ</day>
-							<day type="thu" draft="unconfirmed">پ</day>
-							<day type="fri" draft="unconfirmed">ھ</day>
-							<day type="sat" draft="unconfirmed">ش</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">یەکشەممە</day>
-							<day type="mon" draft="unconfirmed">دووشەممە</day>
-							<day type="tue" draft="unconfirmed">سێشەممە</day>
-							<day type="wed" draft="unconfirmed">چوارشەممە</day>
-							<day type="thu" draft="unconfirmed">پێنجشەممە</day>
-							<day type="fri" draft="unconfirmed">ھەینی</day>
-							<day type="sat" draft="unconfirmed">شەممە</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">یەکشەممە</day>
-							<day type="mon" draft="unconfirmed">دووشەممە</day>
-							<day type="tue" draft="unconfirmed">سێشەممە</day>
-							<day type="wed" draft="unconfirmed">چوارشەممە</day>
-							<day type="thu" draft="unconfirmed">پێنجشەممە</day>
-							<day type="fri" draft="unconfirmed">ھەینی</day>
-							<day type="sat" draft="unconfirmed">شەممە</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">ی</day>
-							<day type="mon" draft="unconfirmed">د</day>
-							<day type="tue" draft="unconfirmed">س</day>
-							<day type="wed" draft="unconfirmed">چ</day>
-							<day type="thu" draft="unconfirmed">پ</day>
-							<day type="fri" draft="unconfirmed">ھ</day>
-							<day type="sat" draft="unconfirmed">ش</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">یەکشەممە</day>
-							<day type="mon" draft="unconfirmed">دووشەممە</day>
-							<day type="tue" draft="unconfirmed">سێشەممە</day>
-							<day type="wed" draft="unconfirmed">چوارشەممە</day>
-							<day type="thu" draft="unconfirmed">پێنجشەممە</day>
-							<day type="fri" draft="unconfirmed">ھەینی</day>
-							<day type="sat" draft="unconfirmed">شەممە</day>
-						</dayWidth>
-					</dayContext>
-				</days>
-				<quarters>
-					<quarterContext type="format">
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">چارەکی یەکەم</quarter>
-							<quarter type="2" draft="unconfirmed">چارەکی دووەم</quarter>
-							<quarter type="3" draft="unconfirmed">چارەکی سێەم</quarter>
-							<quarter type="4" draft="unconfirmed">چارەکی چوارەم</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">چارەکی یەکەم</quarter>
-							<quarter type="2" draft="unconfirmed">چارەکی دووەم</quarter>
-							<quarter type="3" draft="unconfirmed">چارەکی سێەم</quarter>
-							<quarter type="4" draft="unconfirmed">چارەکی چوارەم</quarter>
-						</quarterWidth>
-					</quarterContext>
-				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">ب.ن</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">د.ن</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">ب.ن</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">د.ن</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>

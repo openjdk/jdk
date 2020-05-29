@@ -42,31 +42,24 @@ import java.util.regex.Pattern;
  * This is to avoid confusion with the widespread use of the word "class" in the Java ecosystem,
  * and the potential for clashes with methods called {@code setClass} instead of {@code setStyle}.
  *
+ * @apiNote
+ * The description of some members refer to "elements".
+ * This typically refers to "HTML elements", but may in some cases refer to
+ * or {@link javax.lang.model.element.Element "language model elements"}.
+ * The usage is made explicit when it is not clear fromthe surrounding context.
+ *
  * @see <a href="https://html.spec.whatwg.org/#classes>WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
-    aboutLanguage,
     block,
     blockList,
-    bottomNav,
     circle,
     classUses,
-    constantsSummary,
-    constructorDetails,
-    constructorSummary,
-    constantDetails,
     deprecatedLabel,
-    deprecatedSummary,
     deprecationBlock,
     deprecationComment,
     descfrmTypeLabel,
-    details,
-    detailsList,
-    detail,
     externalLink,
-    fieldDetails,
-    fieldSummary,
-    header,
     helpFootnote,
     helpSection,
     helpSectionList,
@@ -78,55 +71,337 @@ public enum HtmlStyle {
     inheritedList,
     interfaceName,
     legalCopy,
-    memberDetails,
-    memberList,
     memberNameLabel,
     memberNameLink,
-    memberSummary,
-    methodDetails,
-    methodSummary,
-    moduleLabelInPackage,
-    moduleLabelInType,
-    modulesSummary,
     nameValue,
-    navBarCell1Rev,
-    navList,
-    navListSearch,
-    nestedClassSummary,
-    overviewSummary,
     packages,
     packageHierarchyLabel,
-    packageLabelInType,
-    packagesSummary,
     packageUses,
-    propertyDetails,
-    propertySummary,
-    providesSummary,
-    requiresSummary,
     searchTagLink,
     searchTagResult,
     serializedPackageContainer,
-    serializedClassDetails,
-    servicesSummary,
-    skipNav,
     sourceContainer,
     sourceLineNo,
-    subNav,
-    subNavList,
-    subTitle,
-    summary,
-    summaryList,
-    systemPropertiesSummary,
-    title,
-    topNav,
     typeNameLabel,
     typeNameLink,
-    typeSummary,
-    useSummary,
-    usesSummary,
     verticalSeparator,
 
+    //<editor-fold desc="navigation bar">
+    //
+    // The following constants are used for the main navigation bar that appears in the
+    // {@code header} and {@code footer} elements on each page.
+
+    /**
+     * The class for the overall {@code div} element containing the {@code header} element for the page.
+     */
+    topNav,
+
+    /**
+     * The class for the overall {@code div} element containing the {@code footer} element for the page.
+     */
+    bottomNav,
+
+    /**
+     * The class for the element containing the information (such as the product name and version)
+     * provided by the {@code -header} or {@code -footer} command line option.
+     */
+    aboutLanguage,
+
+    /**
+     * The class for the highlighted item in the list of navigation links, indicating
+     * the current page.
+     */
+    // The etymology of the name is a mystery.
+    navBarCell1Rev,
+
+    /**
+     * The class for the primary list of navigation links.
+     */
+    navList,
+
+    /**
+     * The class for the {@code div} element containing the "Search" control.
+     */
+    navListSearch,
+
+    /**
+     * The class for a {@code div} element containing a link to skip the navigation header.
+     * The element is typically invisible, but may be used when navigating the page
+     * with a screen reader.
+     */
+    skipNav,
+
+    /**
+     * The class for a {@code div} element containing a list of subsidiary navigation links.
+     */
+    subNav,
+
+    /**
+     * The class for the list of subsidiary navigation links.
+     */
+    subNavList,
+
+    //</editor-fold>
+
+    //<editor-fold desc="header (title block)">
+    //
+    // The following constants are used for the main "header" ("heading") that
+    // provides the title for the page. This should not be confused with the
+    // {@code header} element that contains the top navigation bar.
+
+    /**
+     * The class for the element that contains all of the main heading for the page.
+     */
+    header,
+
+    /**
+     * The class for the "module" label in the heading for a package declaration.
+     */
+    moduleLabelInPackage,
+
+    /**
+     * The class for the "module" label in the heading for a type declaration.
+     */
+    moduleLabelInType,
+
+    /**
+     * The class for the "package" label in the heading for a type declaration.
+     */
+    packageLabelInType,
+
+    /**
+     * The class for the element containing the label and name for the module
+     * or package that precedes the main title for the declaration of a
+     * package or type.
+     */
+    subTitle,
+
+    /**
+     * The class for the element containing the label and name for
+     * the main title on a page for the declaration of a package or type.
+     */
+    title,
+
+    //</editor-fold>
+
+    //<editor-fold desc="summaries">
+    //
+    // The following constants are used for the HTML elements that provide
+    // summary information, either of the program elements enclosed
+    // by some program element, or in pages providing aggregate information
+    // about similar program elements.
+    // As a general rule, summaries are typically displayed as tables,
+    // with rows containing the name or signature of an element, and the
+    // first sentence of the description of that element. The name or signature
+    // is typically linked to a corresponding "Details" section.
+    //
+    // Note: the "Summary" information on a module declaration page for
+    // "Services" would be better characterized as "Details" information,
+    // since it contains the full text of the descriptions in the
+    // @provides and @uses tags, and not just the first sentence.
+
+    /**
+     * The class for the overall {@code section} element containing all the
+     * different kinds of summary for the parts of the program element
+     * declared on this page.
+     */
+    summary,
+
+    /**
+     * The class for the {@code list} element of all the different kinds of
+     * summary for the parts of the program element declared on this page.
+     */
+    summaryList,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the constructors for a type.
+     */
+    constructorSummary,
+
+    /**
+     * The class for a {@code section} element containing a summary of
+     * the fields of a type.
+     */
+    fieldSummary,
+
+    /**
+     * The class for a {@code section} element containing the members
+     * of a given kind for a type.
+     */
+    memberSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the methods of a type.
+     */
+    methodSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the module dependencies of a module.
+     */
+    modulesSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the nested classes of a type.
+     */
+    nestedClassSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the packages provided by a module,
+     * <i>and</i>
+     * the class for the list of packages on the "All Packages" index page.
+     */
+    packagesSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the properties for a type.
+     */
+    propertySummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the services provided by a module.
+     */
+    providesSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the modules required by a module.
+     */
+    requiresSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the services provided or used by a module.
+     */
+    servicesSummary,
+
+    /**
+     * The class for the {@code section} element containing a summary of
+     * the services used by a module.
+     */
+    usesSummary,
+
+    /**
+     * The class for a {@code section} element on the "Constants Field Values" page,
+     * <i>and</i>
+     * the class for the {@code section} element for the enum constants of an enum class.
+     */
+    constantsSummary,
+
+    /**
+     * The class for a {@code section} element on the "Deprecated"
+     * page.
+     */
+    deprecatedSummary,
+
+    /**
+     * The class for the {@code section} element on the top-level page
+     * summarizing all the modules or packages that are documented.
+     */
+    overviewSummary,
+
+    /**
+     * The class for a {@code section} element on the "System Properties" page.
+     */
+    systemPropertiesSummary,
+
+    /**
+     * The class for the list of packages on the "All Packages" index page,
+     * <i>and</i>
+     * the class for the {@code section} element summarizing the types
+     * in a package.
+     */
+    typeSummary,
+
+    /**
+     * The class for {@code section} elements containing information
+     * about where a package, type or member is used within the API.
+     */
+    useSummary,
+    //</editor-fold>
+
+    //<editor-fold desc="details">
+    //
+    // The following constants are used for the details of the enclosed
+    // (program) elements of an enclosing element, such as a module,
+    // package or type declaration.
+
+    /**
+     * The class for the overall {@code section} element for all the details
+     * about enclosed program elements.
+     */
+    details,
+
+    /**
+     * The class for the list of sublists containing the details for
+     * the different kinds of program elements.
+     */
+    detailsList,
+
+    /**
+     * The class for the {@code section} element containing the details
+     * for a single enclosed element.
+     */
+    detail,
+
+    /**
+     * The class for the list containing the details for the members
+     * of a given element kind.
+     */
+    memberList,
+
+    /**
+     * The class for the {@code section} containing the list of details for
+     * all the constructors declared in a type element.
+     */
+    constructorDetails,
+
+    /**
+     * The class for the {@code section} containing the list of details for
+     * all the enum constants declared in a enum element.
+     */
+    constantDetails,
+
+    /**
+     * The class for the {@code section} containing the list of details for
+     * all the fields declared in a type element.
+     */
+    fieldDetails,
+
+    /**
+     * The class for the {@code section} containing the list of details for
+     * all the members declared in a annotation type element.
+     */
+    memberDetails,
+
+    /**
+     * The class for the {@code section} containing the list of details for
+     * all the methods declared in a type element.
+     */
+    methodDetails,
+
+    /**
+     * The class for the {@code section} containing the list of details for
+     * all the properties declared in a JavaFX type element.
+     */
+    propertyDetails,
+
+    /**
+     * The class for a {@code section} element containing details of the
+     * serialized form of an element, on the "Serialized Form" page.
+     */
+    serializedClassDetails,
+
+    //</editor-fold>
+
     //<editor-fold desc="tables">
+    //
     // The following constants are used for "summary" and "details" tables.
     // Most tables are summary tables, meaning that, in part, they provide links to details elsewhere.
     // A module page has details tables containing the details of the directives.
@@ -214,6 +489,7 @@ public enum HtmlStyle {
     //</editor-fold>
 
     //<editor-fold desc="documentation comments">
+    //
     // The following constants are used for the components used to present the content
     // generated from documentation comments.
 
@@ -247,6 +523,7 @@ public enum HtmlStyle {
     //</editor-fold>
 
     //<editor-fold desc="flex layout">
+    //
     // The following constants are used for the components of the top-level structures for "flex" layout.
 
     /**
@@ -270,6 +547,7 @@ public enum HtmlStyle {
     //</editor-fold>
 
     //<editor-fold desc="member signature">
+    //
     // The following constants are used for the components of a signature of an element
 
     /**
@@ -327,6 +605,7 @@ public enum HtmlStyle {
     //</editor-fold>
 
     //<editor-fold desc="page styles for <body> elements">
+    //
     // The following constants are used for the class of the {@code <body>} element
     // for the corresponding pages.
 

@@ -84,7 +84,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
     _next(NULL), _is_class(is_class), _rs(rs), _top(NULL), _container_count(0), _occupancy_map(NULL) {}
   ~VirtualSpaceNode();
 
-  // Convenience functions for logical bottom and end
+  // Convenience functions for logical bottom and (committed) end
   MetaWord* bottom() const { return (MetaWord*) _virtual_space.low(); }
   MetaWord* end() const { return (MetaWord*) _virtual_space.high(); }
 

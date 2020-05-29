@@ -276,15 +276,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     item.setMnemonic(KeyEvent.VK_D);
     toolsMenu.add(item);
 
-    item = createMenuItem("Find Object by Query",
-                          new ActionListener() {
-                              public void actionPerformed(ActionEvent e) {
-                                showFindByQueryPanel();
-                              }
-                            });
-    item.setMnemonic(KeyEvent.VK_Q);
-    toolsMenu.add(item);
-
 
     item = createMenuItem("Find Pointer",
                           new ActionListener() {
@@ -1529,10 +1520,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           };
 
       showPanel("Command Line", new CommandProcessorPanel(new CommandProcessor(di, null, null, null)));
-  }
-
-  private void showFindByQueryPanel() {
-    showPanel("Find Object by Query", new FindByQueryPanel());
   }
 
   private void showFindPanel() {

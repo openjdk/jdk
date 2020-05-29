@@ -127,9 +127,7 @@ public:
   ShenandoahNMethodTableSnapshot(ShenandoahNMethodTable* table);
   ~ShenandoahNMethodTableSnapshot();
 
-  template<bool CSET_FILTER>
   void parallel_blobs_do(CodeBlobClosure *f);
-
   void concurrent_nmethods_do(NMethodClosure* cl);
 };
 

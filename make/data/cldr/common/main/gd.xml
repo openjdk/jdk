@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -177,6 +177,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ewo">Ewondo</language>
 			<language type="ext">Cànan na h-Extremadura</language>
 			<language type="fa">Peirsis</language>
+			<language type="fa_AF">Dari</language>
 			<language type="fan">Fang</language>
 			<language type="fat">Fanti</language>
 			<language type="ff">Fulah</language>
@@ -749,7 +750,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Phnx">Pheniceach</script>
 			<script type="Plrd">Miao Phollard</script>
 			<script type="Prti">Partais snaidh-sgrìobhte</script>
-			<script type="Qaag">Qaag</script>
+			<script type="Qaag" draft="contributed">Zawgyi</script>
 			<script type="Rjng">Rejang</script>
 			<script type="Rohg">Hanifi Rohingya</script>
 			<script type="Roro">Rongorongo</script>
@@ -1121,13 +1122,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="1694ACAD">Nua-Fhraingis thràth</variant>
 			<variant type="1959ACAD">Bealaruisis Acadamaigeach</variant>
 			<variant type="ABL1943">Gnàthas-litreachaidh 1943</variant>
-			<variant type="AKUAPEM">AKUAPEM</variant>
+			<variant type="AKUAPEM">Akuapem</variant>
 			<variant type="ALALC97">Ròmanachadh ALA-LC 1997</variant>
 			<variant type="ALUKU">Dual-chainnt Aluku</variant>
 			<variant type="AO1990">Aonta litreachadh na Portagailise 1990</variant>
 			<variant type="AREVELA">Airmeinis an Ear</variant>
 			<variant type="AREVMDA">Airmeinis an Iar</variant>
-			<variant type="ASANTE">ASANTE</variant>
+			<variant type="ASANTE">Asante</variant>
 			<variant type="BAKU1926">Abidil Laideann aonaichte na Turcaise</variant>
 			<variant type="BALANKA">Dual-chainnt Balanka de Anii</variant>
 			<variant type="BARLA">Dual-chainntean Barlavento de Kabuverdianu</variant>
@@ -1143,15 +1144,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="EKAVSK">Sèirbhis le fuaimneachadh iarach</variant>
 			<variant type="EMODENG">Nua-Bheurla thràth</variant>
 			<variant type="FONIPA">Comharran fuaim-eòlais an IPA</variant>
-			<variant type="FONNAPA">FONNAPA</variant>
+			<variant type="FONNAPA">Aibidil Fhuaim-eòlach Aimeireaga a Tuath</variant>
 			<variant type="FONUPA">Comharran fuaim-eòlais an UPA</variant>
-			<variant type="FONXSAMP">FONXSAMP</variant>
+			<variant type="FONXSAMP">Tar-sgrìobhadh X-SAMPA</variant>
 			<variant type="HEPBURN">Ròmanachadh Hepburn</variant>
 			<variant type="HOGNORSK">Høgnorsk</variant>
-			<variant type="HSISTEMO">HSISTEMO</variant>
+			<variant type="HSISTEMO">Roghainn-èiginn stannardach litreachadh na h-Esperanto le h</variant>
 			<variant type="IJEKAVSK">Sèirbis le fuaimneachadh Ijekavia</variant>
 			<variant type="ITIHASA">Itihasa</variant>
-			<variant type="IVANCHOV">IVANCHOV</variant>
+			<variant type="IVANCHOV">Bulgarian in 1899 orthography = Bulgairis le litreachadh na bliadhna 1899</variant>
 			<variant type="JAUER">Jauer</variant>
 			<variant type="JYUTPING">Jyutping</variant>
 			<variant type="KKCOR">Litreachadh coitcheann</variant>
@@ -1159,7 +1160,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="KSCOR">Litreachadh stannardach</variant>
 			<variant type="LAUKIKA">Laukika</variant>
 			<variant type="LIPAW">Dual-chainnt Lipovaz Resia</variant>
-			<variant type="LUNA1918">LUNA1918</variant>
+			<variant type="LUNA1918">Litreachadh na Ruisise às dèidh 1917</variant>
 			<variant type="METELKO">Aibidil Metelko</variant>
 			<variant type="MONOTON">Greugais mhonotonach</variant>
 			<variant type="NDYUKA">Dual-chainnt Ndyuka</variant>
@@ -1185,7 +1186,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="SAAHO">Saho</variant>
 			<variant type="SCOTLAND">Beurla Stannardach na h-Alba</variant>
 			<variant type="SCOUSE">Scouse</variant>
-			<variant type="SIMPLE">SIMPLE</variant>
+			<variant type="SIMPLE">Samhlaidhean sìmplichte</variant>
 			<variant type="SOLBA">Dual-chainnt Stolvizza/Solbica</variant>
 			<variant type="SOTAV">Dual-chainntean Sotavento de Kabuverdianu</variant>
 			<variant type="SPANGLIS">Spanglish</variant>
@@ -1201,7 +1202,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="VALENCIA">Valencià</variant>
 			<variant type="VALLADER">Vallader</variant>
 			<variant type="WADEGILE">Ròmanachadh Wade-Giles</variant>
-			<variant type="XSISTEMO">XSISTEMO</variant>
+			<variant type="XSISTEMO">Roghainn-èiginn stannardach litreachadh na h-Esperanto le x</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Mìosachan</key>
@@ -6238,7 +6239,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Àm Eilein Norfolk</standard>
+					<generic draft="contributed">Àm Eilein Norfolk</generic>
+					<standard draft="contributed">Bun-àm Eilein Norfolk</standard>
+					<daylight draft="contributed">Tìde samhraidh Eilein Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -10026,8 +10029,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deicheamh-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ceuda{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>micreo-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>piceo-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atto-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yocto-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deaca-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>heacta-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>cile{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>meaga-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zetta-{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yotta-{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} / {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0} ceàrnagach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} ceàrnagach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0} cheàrnagach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} ceàrnagach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} ceàrnagach</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0} ciùbach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} ciùbach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0} chiùbach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} ciùbach</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} ciùbach</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>forsa-g</displayName>
@@ -10036,7 +10113,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} forsan-g</unitPattern>
 				<unitPattern count="other">{0} forsa-g</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>meatair san diog cheàrnagach</displayName>
 				<unitPattern count="one">{0} mheatair san diog cheàrnagach</unitPattern>
 				<unitPattern count="two">{0} mheatair san diog cheàrnagach</unitPattern>
@@ -10174,7 +10251,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} milimòlaichean san liotair</unitPattern>
 				<unitPattern count="other">{0} milimòl san liotair</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>pàirt sa mhillean</displayName>
 				<unitPattern count="one">{0} phàirt sa mhillean</unitPattern>
 				<unitPattern count="two">{0} phàirt sa mhillean</unitPattern>
@@ -10216,7 +10293,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} liotairean sa chilemeatair</unitPattern>
 				<unitPattern count="other">{0} liotair sa chilemeatair</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>liotair sa 100 chilemeatair</displayName>
 				<unitPattern count="one">{0} liotair sa 100 chilemeatair</unitPattern>
 				<unitPattern count="two">{0} liotair sa 100 chilemeatair</unitPattern>
@@ -10893,21 +10970,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} cumhachdan-eich</unitPattern>
 				<unitPattern count="other">{0} cumhachd-eich</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>milimeatair de dh’airgead-beò</displayName>
 				<unitPattern count="one">{0} mhilimeatair de dh’airgead-beò</unitPattern>
 				<unitPattern count="two">{0} mhilimeatair de dh’airgead-beò</unitPattern>
 				<unitPattern count="few">{0} milimeatairean de dh’airgead-beò</unitPattern>
 				<unitPattern count="other">{0} milimeatair de dh’airgead-beò</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>punnd san òirleach cheàrnagach</displayName>
 				<unitPattern count="one">{0} phunnd san òirleach cheàrnagach</unitPattern>
 				<unitPattern count="two">{0} phunnd san òirleach cheàrnagach</unitPattern>
 				<unitPattern count="few">{0} puinnd san òirleach cheàrnagach</unitPattern>
 				<unitPattern count="other">{0} punnd san òirleach cheàrnagach</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>òirleach de dh’airgead-beò</displayName>
 				<unitPattern count="one">{0} òirleach de dh’airgead-beò</unitPattern>
 				<unitPattern count="two">{0} òirleach de dh’airgead-beò</unitPattern>
@@ -11019,7 +11096,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} ceuman Kelvin</unitPattern>
 				<unitPattern count="other">{0} ceum Kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>troigh-phuinnd</displayName>
 				<unitPattern count="one">{0} troigh-phuinnd</unitPattern>
 				<unitPattern count="two">{0} throigh-phuinnd</unitPattern>
@@ -11236,6 +11313,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -11246,7 +11326,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>meatair/diog²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="two">{0} m/s²</unitPattern>
@@ -11384,7 +11464,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} mmòl/L</unitPattern>
 				<unitPattern count="other">{0} mmòl/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="two">{0} ppm</unitPattern>
@@ -11422,7 +11502,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="two">{0} L/100km</unitPattern>
@@ -12021,21 +12101,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="two">{0} mm Hg</unitPattern>
 				<unitPattern count="few">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="two">{0} psi</unitPattern>
 				<unitPattern count="few">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>in Hg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
@@ -12132,7 +12212,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
 				<unitPattern count="two">{0} lbf⋅ft</unitPattern>
@@ -12338,6 +12418,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -12348,7 +12431,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}G</unitPattern>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0}m/s²</unitPattern>
 				<unitPattern count="two">{0}m/s²</unitPattern>
@@ -12486,7 +12569,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}mmòl/L</unitPattern>
 				<unitPattern count="other">{0}mmòl/L</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="two">{0}ppm</unitPattern>
@@ -12527,7 +12610,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}L/km</unitPattern>
 				<unitPattern count="other">{0}L/km</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="two">{0}L/100km</unitPattern>
@@ -13193,21 +13276,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0}mm Hg</unitPattern>
 				<unitPattern count="two">{0}mm Hg</unitPattern>
 				<unitPattern count="few">{0}mm Hg</unitPattern>
 				<unitPattern count="other">{0}mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0}psi</unitPattern>
 				<unitPattern count="two">{0}psi</unitPattern>
 				<unitPattern count="few">{0}psi</unitPattern>
 				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>″ Hg</displayName>
 				<unitPattern count="one">{0}″ Hg</unitPattern>
 				<unitPattern count="two">{0}″ Hg</unitPattern>
@@ -13316,7 +13399,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}K</unitPattern>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="one">{0}lbf⋅ft</unitPattern>
 				<unitPattern count="two">{0}lbf⋅ft</unitPattern>

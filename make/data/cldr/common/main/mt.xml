@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -3361,359 +3361,148 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
-				<displayName>AED</displayName>
-				<displayName count="one">AED</displayName>
-				<displayName count="few">AED</displayName>
-				<displayName count="many">AED</displayName>
-				<displayName count="other">AED</displayName>
 				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFN">
-				<displayName>AFN</displayName>
-				<displayName count="one">AFN</displayName>
-				<displayName count="few">AFN</displayName>
-				<displayName count="many">AFN</displayName>
-				<displayName count="other">AFN</displayName>
 				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALL">
-				<displayName>ALL</displayName>
-				<displayName count="one">ALL</displayName>
-				<displayName count="few">ALL</displayName>
-				<displayName count="many">ALL</displayName>
-				<displayName count="other">ALL</displayName>
 				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
-				<displayName>AMD</displayName>
-				<displayName count="one">AMD</displayName>
-				<displayName count="few">AMD</displayName>
-				<displayName count="many">AMD</displayName>
-				<displayName count="other">AMD</displayName>
 				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
-				<displayName>ANG</displayName>
-				<displayName count="one">ANG</displayName>
-				<displayName count="few">ANG</displayName>
-				<displayName count="many">ANG</displayName>
-				<displayName count="other">ANG</displayName>
 				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
-				<displayName>AOA</displayName>
-				<displayName count="one">AOA</displayName>
-				<displayName count="few">AOA</displayName>
-				<displayName count="many">AOA</displayName>
-				<displayName count="other">AOA</displayName>
 				<symbol draft="contributed">AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
-				<displayName>ARS</displayName>
-				<displayName count="one">ARS</displayName>
-				<displayName count="few">ARS</displayName>
-				<displayName count="many">ARS</displayName>
-				<displayName count="other">ARS</displayName>
 				<symbol draft="contributed">ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AUD">
-				<displayName>AUD</displayName>
-				<displayName count="one">AUD</displayName>
-				<displayName count="few">AUD</displayName>
-				<displayName count="many">AUD</displayName>
-				<displayName count="other">AUD</displayName>
 				<symbol draft="contributed">A$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
-				<displayName>AWG</displayName>
-				<displayName count="one">AWG</displayName>
-				<displayName count="few">AWG</displayName>
-				<displayName count="many">AWG</displayName>
-				<displayName count="other">AWG</displayName>
 				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZN">
-				<displayName>AZN</displayName>
-				<displayName count="one">AZN</displayName>
-				<displayName count="few">AZN</displayName>
-				<displayName count="many">AZN</displayName>
-				<displayName count="other">AZN</displayName>
 				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAM">
-				<displayName>BAM</displayName>
-				<displayName count="one">BAM</displayName>
-				<displayName count="few">BAM</displayName>
-				<displayName count="many">BAM</displayName>
-				<displayName count="other">BAM</displayName>
 				<symbol draft="contributed">BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
-				<displayName>BBD</displayName>
-				<displayName count="one">BBD</displayName>
-				<displayName count="few">BBD</displayName>
-				<displayName count="many">BBD</displayName>
-				<displayName count="other">BBD</displayName>
 				<symbol draft="contributed">BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
-				<displayName>BDT</displayName>
-				<displayName count="one">BDT</displayName>
-				<displayName count="few">BDT</displayName>
-				<displayName count="many">BDT</displayName>
-				<displayName count="other">BDT</displayName>
 				<symbol draft="contributed">BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BGN">
-				<displayName>BGN</displayName>
-				<displayName count="one">BGN</displayName>
-				<displayName count="few">BGN</displayName>
-				<displayName count="many">BGN</displayName>
-				<displayName count="other">BGN</displayName>
 				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BHD">
-				<displayName>BHD</displayName>
-				<displayName count="one">BHD</displayName>
-				<displayName count="few">BHD</displayName>
-				<displayName count="many">BHD</displayName>
-				<displayName count="other">BHD</displayName>
 				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
-				<displayName>BIF</displayName>
-				<displayName count="one">BIF</displayName>
-				<displayName count="few">BIF</displayName>
-				<displayName count="many">BIF</displayName>
-				<displayName count="other">BIF</displayName>
 				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
-				<displayName>BMD</displayName>
-				<displayName count="one">BMD</displayName>
-				<displayName count="few">BMD</displayName>
-				<displayName count="many">BMD</displayName>
-				<displayName count="other">BMD</displayName>
 				<symbol draft="contributed">BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
-				<displayName>BND</displayName>
-				<displayName count="one">BND</displayName>
-				<displayName count="few">BND</displayName>
-				<displayName count="many">BND</displayName>
-				<displayName count="other">BND</displayName>
 				<symbol draft="contributed">BND</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
-				<displayName>BOB</displayName>
-				<displayName count="one">BOB</displayName>
-				<displayName count="few">BOB</displayName>
-				<displayName count="many">BOB</displayName>
-				<displayName count="other">BOB</displayName>
 				<symbol draft="contributed">BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BRL">
-				<displayName>BRL</displayName>
-				<displayName count="one">BRL</displayName>
-				<displayName count="few">BRL</displayName>
-				<displayName count="many">BRL</displayName>
-				<displayName count="other">BRL</displayName>
 				<symbol draft="contributed">R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
-				<displayName>BSD</displayName>
-				<displayName count="one">BSD</displayName>
-				<displayName count="few">BSD</displayName>
-				<displayName count="many">BSD</displayName>
-				<displayName count="other">BSD</displayName>
 				<symbol draft="contributed">BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
-				<displayName>BTN</displayName>
-				<displayName count="one">BTN</displayName>
-				<displayName count="few">BTN</displayName>
-				<displayName count="many">BTN</displayName>
-				<displayName count="other">BTN</displayName>
 				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BWP">
-				<displayName>BWP</displayName>
-				<displayName count="one">BWP</displayName>
-				<displayName count="few">BWP</displayName>
-				<displayName count="many">BWP</displayName>
-				<displayName count="other">BWP</displayName>
 				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYN">
-				<displayName>BYN</displayName>
-				<displayName count="one">BYN</displayName>
-				<displayName count="few">BYN</displayName>
-				<displayName count="many">BYN</displayName>
-				<displayName count="other">BYN</displayName>
 				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
-				<displayName>BYR</displayName>
-				<displayName count="one">BYR</displayName>
-				<displayName count="few">BYR</displayName>
-				<displayName count="many">BYR</displayName>
-				<displayName count="other">BYR</displayName>
 				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
-				<displayName>BZD</displayName>
-				<displayName count="one">BZD</displayName>
-				<displayName count="few">BZD</displayName>
-				<displayName count="many">BZD</displayName>
-				<displayName count="other">BZD</displayName>
 				<symbol draft="contributed">BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
-			<currency type="CAD">
-				<displayName>CAD</displayName>
-				<displayName count="one">CAD</displayName>
-				<displayName count="few">CAD</displayName>
-				<displayName count="many">CAD</displayName>
-				<displayName count="other">CAD</displayName>
-			</currency>
 			<currency type="CDF">
-				<displayName>CDF</displayName>
-				<displayName count="one">CDF</displayName>
-				<displayName count="few">CDF</displayName>
-				<displayName count="many">CDF</displayName>
-				<displayName count="other">CDF</displayName>
 				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHF">
-				<displayName>CHF</displayName>
-				<displayName count="one">CHF</displayName>
-				<displayName count="few">CHF</displayName>
-				<displayName count="many">CHF</displayName>
-				<displayName count="other">CHF</displayName>
 				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CLP">
-				<displayName>CLP</displayName>
-				<displayName count="one">CLP</displayName>
-				<displayName count="few">CLP</displayName>
-				<displayName count="many">CLP</displayName>
-				<displayName count="other">CLP</displayName>
 				<symbol draft="contributed">CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COP">
-				<displayName>COP</displayName>
-				<displayName count="one">COP</displayName>
-				<displayName count="few">COP</displayName>
-				<displayName count="many">COP</displayName>
-				<displayName count="other">COP</displayName>
 				<symbol draft="contributed">COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
-				<displayName>CRC</displayName>
-				<displayName count="one">CRC</displayName>
-				<displayName count="few">CRC</displayName>
-				<displayName count="many">CRC</displayName>
-				<displayName count="other">CRC</displayName>
 				<symbol draft="contributed">CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
-				<displayName>CUC</displayName>
-				<displayName count="one">CUC</displayName>
-				<displayName count="few">CUC</displayName>
-				<displayName count="many">CUC</displayName>
-				<displayName count="other">CUC</displayName>
 				<symbol draft="contributed">CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
-				<displayName>CUP</displayName>
-				<displayName count="one">CUP</displayName>
-				<displayName count="few">CUP</displayName>
-				<displayName count="many">CUP</displayName>
-				<displayName count="other">CUP</displayName>
 				<symbol draft="contributed">CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
-				<displayName>CVE</displayName>
-				<displayName count="one">CVE</displayName>
-				<displayName count="few">CVE</displayName>
-				<displayName count="many">CVE</displayName>
-				<displayName count="other">CVE</displayName>
 				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CZK">
-				<displayName>CZK</displayName>
-				<displayName count="one">CZK</displayName>
-				<displayName count="few">CZK</displayName>
-				<displayName count="many">CZK</displayName>
-				<displayName count="other">CZK</displayName>
 				<symbol draft="contributed">CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
-				<displayName>DJF</displayName>
-				<displayName count="one">DJF</displayName>
-				<displayName count="few">DJF</displayName>
-				<displayName count="many">DJF</displayName>
-				<displayName count="other">DJF</displayName>
 				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DOP">
-				<displayName>DOP</displayName>
-				<displayName count="one">DOP</displayName>
-				<displayName count="few">DOP</displayName>
-				<displayName count="many">DOP</displayName>
-				<displayName count="other">DOP</displayName>
 				<symbol draft="contributed">DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
-				<displayName>DZD</displayName>
-				<displayName count="one">DZD</displayName>
-				<displayName count="few">DZD</displayName>
-				<displayName count="many">DZD</displayName>
-				<displayName count="other">DZD</displayName>
 				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="EGP">
-				<displayName count="one">EGP</displayName>
-				<displayName count="few">EGP</displayName>
-				<displayName count="many">EGP</displayName>
-				<displayName count="other">EGP</displayName>
 				<symbol draft="contributed">EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
-				<displayName>ERN</displayName>
-				<displayName count="one">ERN</displayName>
-				<displayName count="few">ERN</displayName>
-				<displayName count="many">ERN</displayName>
-				<displayName count="other">ERN</displayName>
 				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
-				<displayName>ETB</displayName>
-				<displayName count="one">ETB</displayName>
-				<displayName count="few">ETB</displayName>
-				<displayName count="many">ETB</displayName>
-				<displayName count="other">ETB</displayName>
 				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
@@ -3726,613 +3515,257 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FJD">
-				<displayName>FJD</displayName>
-				<displayName count="one">FJD</displayName>
-				<displayName count="few">FJD</displayName>
-				<displayName count="many">FJD</displayName>
-				<displayName count="other">FJD</displayName>
 				<symbol draft="contributed">FJD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
-				<displayName>FKP</displayName>
-				<displayName count="one">FKP</displayName>
-				<displayName count="few">FKP</displayName>
-				<displayName count="many">FKP</displayName>
-				<displayName count="other">FKP</displayName>
 				<symbol draft="contributed">FKP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEL">
-				<displayName>GEL</displayName>
-				<displayName count="one">GEL</displayName>
-				<displayName count="few">GEL</displayName>
-				<displayName count="many">GEL</displayName>
-				<displayName count="other">GEL</displayName>
 				<symbol draft="contributed">GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
-				<displayName>GHS</displayName>
-				<displayName count="one">GHS</displayName>
-				<displayName count="few">GHS</displayName>
-				<displayName count="many">GHS</displayName>
-				<displayName count="other">GHS</displayName>
 				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
-				<displayName>GIP</displayName>
-				<displayName count="one">GIP</displayName>
-				<displayName count="few">GIP</displayName>
-				<displayName count="many">GIP</displayName>
-				<displayName count="other">GIP</displayName>
 				<symbol draft="contributed">GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
-				<displayName>GMD</displayName>
-				<displayName count="one">GMD</displayName>
-				<displayName count="few">GMD</displayName>
-				<displayName count="many">GMD</displayName>
-				<displayName count="other">GMD</displayName>
 				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
-				<displayName>GNF</displayName>
-				<displayName count="one">GNF</displayName>
-				<displayName count="few">GNF</displayName>
-				<displayName count="many">GNF</displayName>
-				<displayName count="other">GNF</displayName>
 				<symbol draft="contributed">GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GTQ">
-				<displayName>GTQ</displayName>
-				<displayName count="one">GTQ</displayName>
-				<displayName count="few">GTQ</displayName>
-				<displayName count="many">GTQ</displayName>
-				<displayName count="other">GTQ</displayName>
 				<symbol draft="contributed">GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GYD">
-				<displayName>GYD</displayName>
-				<displayName count="one">GYD</displayName>
-				<displayName count="few">GYD</displayName>
-				<displayName count="many">GYD</displayName>
-				<displayName count="other">GYD</displayName>
 				<symbol draft="contributed">GYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
-				<displayName>HNL</displayName>
-				<displayName count="one">HNL</displayName>
-				<displayName count="few">HNL</displayName>
-				<displayName count="many">HNL</displayName>
-				<displayName count="other">HNL</displayName>
 				<symbol draft="contributed">HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRK">
-				<displayName>HRK</displayName>
-				<displayName count="one">HRK</displayName>
-				<displayName count="few">HRK</displayName>
-				<displayName count="many">HRK</displayName>
-				<displayName count="other">HRK</displayName>
 				<symbol draft="contributed">HRK</symbol>
 				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
-				<displayName>HTG</displayName>
-				<displayName count="one">HTG</displayName>
-				<displayName count="few">HTG</displayName>
-				<displayName count="many">HTG</displayName>
-				<displayName count="other">HTG</displayName>
 				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
-				<displayName>HUF</displayName>
-				<displayName count="one">HUF</displayName>
-				<displayName count="few">HUF</displayName>
-				<displayName count="many">HUF</displayName>
-				<displayName count="other">HUF</displayName>
 				<symbol draft="contributed">HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
-				<displayName>IDR</displayName>
-				<displayName count="one">IDR</displayName>
-				<displayName count="few">IDR</displayName>
-				<displayName count="many">IDR</displayName>
-				<displayName count="other">IDR</displayName>
 				<symbol draft="contributed">IDR</symbol>
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
-				<displayName>ILS</displayName>
-				<displayName count="one">ILS</displayName>
-				<displayName count="few">ILS</displayName>
-				<displayName count="many">ILS</displayName>
-				<displayName count="other">ILS</displayName>
 				<symbol draft="contributed">₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
-				<displayName>INR</displayName>
-				<displayName count="one">INR</displayName>
-				<displayName count="few">INR</displayName>
-				<displayName count="many">INR</displayName>
-				<displayName count="other">INR</displayName>
 				<symbol draft="contributed">₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
-				<displayName>IQD</displayName>
-				<displayName count="one">IQD</displayName>
-				<displayName count="few">IQD</displayName>
-				<displayName count="many">IQD</displayName>
-				<displayName count="other">IQD</displayName>
 				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
-				<displayName>IRR</displayName>
-				<displayName count="one">IRR</displayName>
-				<displayName count="few">IRR</displayName>
-				<displayName count="many">IRR</displayName>
-				<displayName count="other">IRR</displayName>
 				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="JMD">
-				<displayName>JMD</displayName>
-				<displayName count="one">JMD</displayName>
-				<displayName count="few">JMD</displayName>
-				<displayName count="many">JMD</displayName>
-				<displayName count="other">JMD</displayName>
 				<symbol draft="contributed">JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
-				<displayName>JOD</displayName>
-				<displayName count="one">JOD</displayName>
-				<displayName count="few">JOD</displayName>
-				<displayName count="many">JOD</displayName>
-				<displayName count="other">JOD</displayName>
 				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="KES">
-				<displayName>KES</displayName>
-				<displayName count="one">KES</displayName>
-				<displayName count="few">KES</displayName>
-				<displayName count="many">KES</displayName>
-				<displayName count="other">KES</displayName>
 				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
-				<displayName>KGS</displayName>
-				<displayName count="one">KGS</displayName>
-				<displayName count="few">KGS</displayName>
-				<displayName count="many">KGS</displayName>
-				<displayName count="other">KGS</displayName>
 				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
-				<displayName>KHR</displayName>
-				<displayName count="one">KHR</displayName>
-				<displayName count="few">KHR</displayName>
-				<displayName count="many">KHR</displayName>
-				<displayName count="other">KHR</displayName>
 				<symbol draft="contributed">KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
-				<displayName>KMF</displayName>
-				<displayName count="one">KMF</displayName>
-				<displayName count="few">KMF</displayName>
-				<displayName count="many">KMF</displayName>
-				<displayName count="other">KMF</displayName>
 				<symbol draft="contributed">KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
-				<displayName count="one">KPW</displayName>
-				<displayName count="few">KPW</displayName>
-				<displayName count="many">KPW</displayName>
-				<displayName count="other">KPW</displayName>
 				<symbol draft="contributed">KPW</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
-				<displayName>KRW</displayName>
-				<displayName count="one">KRW</displayName>
-				<displayName count="few">KRW</displayName>
-				<displayName count="many">KRW</displayName>
-				<displayName count="other">KRW</displayName>
 				<symbol draft="contributed">₩</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
-				<displayName>KWD</displayName>
-				<displayName count="one">KWD</displayName>
-				<displayName count="few">KWD</displayName>
-				<displayName count="many">KWD</displayName>
-				<displayName count="other">KWD</displayName>
 				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
-				<displayName>KYD</displayName>
-				<displayName count="one">KYD</displayName>
-				<displayName count="few">KYD</displayName>
-				<displayName count="many">KYD</displayName>
-				<displayName count="other">KYD</displayName>
 				<symbol draft="contributed">KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
-				<displayName>KZT</displayName>
-				<displayName count="one">KZT</displayName>
-				<displayName count="few">KZT</displayName>
-				<displayName count="many">KZT</displayName>
-				<displayName count="other">KZT</displayName>
 				<symbol draft="contributed">KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
-				<displayName>LAK</displayName>
-				<displayName count="one">LAK</displayName>
-				<displayName count="few">LAK</displayName>
-				<displayName count="many">LAK</displayName>
-				<displayName count="other">LAK</displayName>
 				<symbol draft="contributed">LAK</symbol>
 				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
-				<displayName>LBP</displayName>
-				<displayName count="one">LBP</displayName>
-				<displayName count="few">LBP</displayName>
-				<displayName count="many">LBP</displayName>
-				<displayName count="other">LBP</displayName>
 				<symbol draft="contributed">LBP</symbol>
 				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
-				<displayName>LKR</displayName>
-				<displayName count="one">LKR</displayName>
-				<displayName count="few">LKR</displayName>
-				<displayName count="many">LKR</displayName>
-				<displayName count="other">LKR</displayName>
 				<symbol draft="contributed">LKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
-				<displayName>LRD</displayName>
-				<displayName count="one">LRD</displayName>
-				<displayName count="few">LRD</displayName>
-				<displayName count="many">LRD</displayName>
-				<displayName count="other">LRD</displayName>
 				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LYD">
-				<displayName>LYD</displayName>
-				<displayName count="one">LYD</displayName>
-				<displayName count="few">LYD</displayName>
-				<displayName count="many">LYD</displayName>
-				<displayName count="other">LYD</displayName>
 				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
-				<displayName>MAD</displayName>
-				<displayName count="one">MAD</displayName>
-				<displayName count="few">MAD</displayName>
-				<displayName count="many">MAD</displayName>
-				<displayName count="other">MAD</displayName>
 				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MDL">
-				<displayName>MDL</displayName>
-				<displayName count="one">MDL</displayName>
-				<displayName count="few">MDL</displayName>
-				<displayName count="many">MDL</displayName>
-				<displayName count="other">MDL</displayName>
 				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
-				<displayName>MGA</displayName>
-				<displayName count="one">MGA</displayName>
-				<displayName count="few">MGA</displayName>
-				<displayName count="many">MGA</displayName>
-				<displayName count="other">MGA</displayName>
 				<symbol draft="contributed">MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MKD">
-				<displayName>MKD</displayName>
-				<displayName count="one">MKD</displayName>
-				<displayName count="few">MKD</displayName>
-				<displayName count="many">MKD</displayName>
-				<displayName count="other">MKD</displayName>
 				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MMK">
-				<displayName>MMK</displayName>
-				<displayName count="one">MMK</displayName>
-				<displayName count="few">MMK</displayName>
-				<displayName count="many">MMK</displayName>
-				<displayName count="other">MMK</displayName>
 				<symbol draft="contributed">MMK</symbol>
 				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
-				<displayName>MNT</displayName>
-				<displayName count="one">MNT</displayName>
-				<displayName count="few">MNT</displayName>
-				<displayName count="many">MNT</displayName>
-				<displayName count="other">MNT</displayName>
 				<symbol draft="contributed">MNT</symbol>
 				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
-				<displayName>MOP</displayName>
-				<displayName count="one">MOP</displayName>
-				<displayName count="few">MOP</displayName>
-				<displayName count="many">MOP</displayName>
-				<displayName count="other">MOP</displayName>
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
-				<displayName>MRO</displayName>
-				<displayName count="one">MRO</displayName>
-				<displayName count="few">MRO</displayName>
-				<displayName count="many">MRO</displayName>
-				<displayName count="other">MRO</displayName>
 				<symbol draft="contributed">MRO</symbol>
-			</currency>
-			<currency type="MRU">
-				<displayName>MRU</displayName>
-				<displayName count="one">MRU</displayName>
-				<displayName count="few">MRU</displayName>
-				<displayName count="many">MRU</displayName>
-				<displayName count="other">MRU</displayName>
 			</currency>
 			<currency type="MTL">
 				<displayName>Lira Maltija</displayName>
 			</currency>
 			<currency type="MUR">
-				<displayName>MUR</displayName>
-				<displayName count="one">MUR</displayName>
-				<displayName count="few">MUR</displayName>
-				<displayName count="many">MUR</displayName>
-				<displayName count="other">MUR</displayName>
 				<symbol draft="contributed">MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
-				<displayName>MVR</displayName>
-				<displayName count="one">MVR</displayName>
-				<displayName count="few">MVR</displayName>
-				<displayName count="many">MVR</displayName>
-				<displayName count="other">MVR</displayName>
 				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
-				<displayName>MWK</displayName>
-				<displayName count="one">MWK</displayName>
-				<displayName count="few">MWK</displayName>
-				<displayName count="many">MWK</displayName>
-				<displayName count="other">MWK</displayName>
 				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
-				<displayName>MXN</displayName>
-				<displayName count="one">MXN</displayName>
-				<displayName count="few">MXN</displayName>
-				<displayName count="many">MXN</displayName>
-				<displayName count="other">MXN</displayName>
 				<symbol draft="contributed">MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MYR">
-				<displayName>MYR</displayName>
-				<displayName count="one">MYR</displayName>
-				<displayName count="few">MYR</displayName>
-				<displayName count="many">MYR</displayName>
-				<displayName count="other">MYR</displayName>
 				<symbol draft="contributed">MYR</symbol>
 				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZN">
-				<displayName>MZN</displayName>
-				<displayName count="one">MZN</displayName>
-				<displayName count="few">MZN</displayName>
-				<displayName count="many">MZN</displayName>
-				<displayName count="other">MZN</displayName>
 				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
-				<displayName>NAD</displayName>
-				<displayName count="one">NAD</displayName>
-				<displayName count="few">NAD</displayName>
-				<displayName count="many">NAD</displayName>
-				<displayName count="other">NAD</displayName>
 				<symbol draft="contributed">NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
-				<displayName>NGN</displayName>
-				<displayName count="one">NGN</displayName>
-				<displayName count="few">NGN</displayName>
-				<displayName count="many">NGN</displayName>
-				<displayName count="other">NGN</displayName>
 				<symbol draft="contributed">NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIO">
-				<displayName>NIO</displayName>
-				<displayName count="one">NIO</displayName>
-				<displayName count="few">NIO</displayName>
-				<displayName count="many">NIO</displayName>
-				<displayName count="other">NIO</displayName>
 				<symbol draft="contributed">NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NPR">
-				<displayName>NPR</displayName>
-				<displayName count="one">NPR</displayName>
-				<displayName count="few">NPR</displayName>
-				<displayName count="many">NPR</displayName>
-				<displayName count="other">NPR</displayName>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
-				<displayName>NZD</displayName>
-				<displayName count="one">NZD</displayName>
-				<displayName count="few">NZD</displayName>
-				<displayName count="many">NZD</displayName>
-				<displayName count="other">NZD</displayName>
 				<symbol draft="contributed">NZ$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
-				<displayName>OMR</displayName>
-				<displayName count="one">OMR</displayName>
-				<displayName count="few">OMR</displayName>
-				<displayName count="many">OMR</displayName>
-				<displayName count="other">OMR</displayName>
 				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
-				<displayName>PAB</displayName>
-				<displayName count="one">PAB</displayName>
-				<displayName count="few">PAB</displayName>
-				<displayName count="many">PAB</displayName>
-				<displayName count="other">PAB</displayName>
 				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>PEN</displayName>
-				<displayName count="one">PEN</displayName>
-				<displayName count="few">PEN</displayName>
-				<displayName count="many">PEN</displayName>
-				<displayName count="other">PEN</displayName>
 				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
-				<displayName>PGK</displayName>
-				<displayName count="one">PGK</displayName>
-				<displayName count="few">PGK</displayName>
-				<displayName count="many">PGK</displayName>
-				<displayName count="other">PGK</displayName>
 				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
-				<displayName>PHP</displayName>
-				<displayName count="one">PHP</displayName>
-				<displayName count="few">PHP</displayName>
-				<displayName count="many">PHP</displayName>
-				<displayName count="other">PHP</displayName>
 				<symbol draft="contributed">PHP</symbol>
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
-				<displayName>PKR</displayName>
-				<displayName count="one">PKR</displayName>
-				<displayName count="few">PKR</displayName>
-				<displayName count="many">PKR</displayName>
-				<displayName count="other">PKR</displayName>
 				<symbol draft="contributed">PKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
-				<displayName>PLN</displayName>
-				<displayName count="one">PLN</displayName>
-				<displayName count="few">PLN</displayName>
-				<displayName count="many">PLN</displayName>
-				<displayName count="other">PLN</displayName>
 				<symbol draft="contributed">PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PYG">
-				<displayName>PYG</displayName>
-				<displayName count="one">PYG</displayName>
-				<displayName count="few">PYG</displayName>
-				<displayName count="many">PYG</displayName>
-				<displayName count="other">PYG</displayName>
 				<symbol draft="contributed">PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
-				<displayName>QAR</displayName>
-				<displayName count="one">QAR</displayName>
-				<displayName count="few">QAR</displayName>
-				<displayName count="many">QAR</displayName>
-				<displayName count="other">QAR</displayName>
 				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RON">
-				<displayName>RON</displayName>
-				<displayName count="one">RON</displayName>
-				<displayName count="few">RON</displayName>
-				<displayName count="many">RON</displayName>
-				<displayName count="other">RON</displayName>
 				<symbol draft="contributed">RON</symbol>
 			</currency>
 			<currency type="RSD">
-				<displayName>RSD</displayName>
-				<displayName count="one">RSD</displayName>
-				<displayName count="few">RSD</displayName>
-				<displayName count="many">RSD</displayName>
-				<displayName count="other">RSD</displayName>
 				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
-				<displayName>RUB</displayName>
-				<displayName count="one">RUB</displayName>
-				<displayName count="few">RUB</displayName>
-				<displayName count="many">RUB</displayName>
-				<displayName count="other">RUB</displayName>
 				<symbol draft="contributed">RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
-				<displayName>RWF</displayName>
-				<displayName count="one">RWF</displayName>
-				<displayName count="few">RWF</displayName>
-				<displayName count="many">RWF</displayName>
-				<displayName count="other">RWF</displayName>
 				<symbol draft="contributed">RWF</symbol>
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
-				<displayName>SAR</displayName>
-				<displayName count="one">SAR</displayName>
-				<displayName count="few">SAR</displayName>
-				<displayName count="many">SAR</displayName>
-				<displayName count="other">SAR</displayName>
 				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
-				<displayName>SBD</displayName>
-				<displayName count="one">SBD</displayName>
-				<displayName count="few">SBD</displayName>
-				<displayName count="many">SBD</displayName>
-				<displayName count="other">SBD</displayName>
 				<symbol draft="contributed">SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
-				<displayName>SCR</displayName>
-				<displayName count="one">SCR</displayName>
-				<displayName count="few">SCR</displayName>
-				<displayName count="many">SCR</displayName>
-				<displayName count="other">SCR</displayName>
 				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDG">
-				<displayName>SDG</displayName>
-				<displayName count="one">SDG</displayName>
-				<displayName count="few">SDG</displayName>
-				<displayName count="many">SDG</displayName>
-				<displayName count="other">SDG</displayName>
 				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SEK">
@@ -4340,283 +3773,116 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
-				<displayName>SGD</displayName>
-				<displayName count="one">SGD</displayName>
-				<displayName count="few">SGD</displayName>
-				<displayName count="many">SGD</displayName>
-				<displayName count="other">SGD</displayName>
 				<symbol draft="contributed">SGD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
-				<displayName>SHP</displayName>
-				<displayName count="one">SHP</displayName>
-				<displayName count="few">SHP</displayName>
-				<displayName count="many">SHP</displayName>
-				<displayName count="other">SHP</displayName>
 				<symbol draft="contributed">SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
-				<displayName>SLL</displayName>
-				<displayName count="one">SLL</displayName>
-				<displayName count="few">SLL</displayName>
-				<displayName count="many">SLL</displayName>
-				<displayName count="other">SLL</displayName>
 				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
-				<displayName>SOS</displayName>
-				<displayName count="one">SOS</displayName>
-				<displayName count="few">SOS</displayName>
-				<displayName count="many">SOS</displayName>
-				<displayName count="other">SOS</displayName>
 				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
-				<displayName>SRD</displayName>
-				<displayName count="one">SRD</displayName>
-				<displayName count="few">SRD</displayName>
-				<displayName count="many">SRD</displayName>
-				<displayName count="other">SRD</displayName>
 				<symbol draft="contributed">SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SSP">
-				<displayName>SSP</displayName>
-				<displayName count="one">SSP</displayName>
-				<displayName count="few">SSP</displayName>
-				<displayName count="many">SSP</displayName>
-				<displayName count="other">SSP</displayName>
 				<symbol draft="contributed">SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
-				<displayName>STD</displayName>
-				<displayName count="one">STD</displayName>
-				<displayName count="few">STD</displayName>
-				<displayName count="many">STD</displayName>
-				<displayName count="other">STD</displayName>
 				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
-				<displayName>STN</displayName>
-				<displayName count="one">STN</displayName>
-				<displayName count="few">STN</displayName>
-				<displayName count="many">STN</displayName>
-				<displayName count="other">STN</displayName>
 				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
-				<displayName>SYP</displayName>
-				<displayName count="one">SYP</displayName>
-				<displayName count="few">SYP</displayName>
-				<displayName count="many">SYP</displayName>
-				<displayName count="other">SYP</displayName>
 				<symbol draft="contributed">SYP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
-				<displayName>SZL</displayName>
-				<displayName count="one">SZL</displayName>
-				<displayName count="few">SZL</displayName>
-				<displayName count="many">SZL</displayName>
-				<displayName count="other">SZL</displayName>
 				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
-				<displayName>THB</displayName>
-				<displayName count="one">THB</displayName>
-				<displayName count="few">THB</displayName>
-				<displayName count="many">THB</displayName>
-				<displayName count="other">THB</displayName>
 				<symbol draft="contributed">THB</symbol>
 				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJS">
-				<displayName>TJS</displayName>
-				<displayName count="one">TJS</displayName>
-				<displayName count="few">TJS</displayName>
-				<displayName count="many">TJS</displayName>
-				<displayName count="other">TJS</displayName>
 				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMT">
-				<displayName>TMT</displayName>
-				<displayName count="one">TMT</displayName>
-				<displayName count="few">TMT</displayName>
-				<displayName count="many">TMT</displayName>
-				<displayName count="other">TMT</displayName>
 				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
-				<displayName>TND</displayName>
-				<displayName count="one">TND</displayName>
-				<displayName count="few">TND</displayName>
-				<displayName count="many">TND</displayName>
-				<displayName count="other">TND</displayName>
 				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
-				<displayName>TOP</displayName>
-				<displayName count="one">TOP</displayName>
-				<displayName count="few">TOP</displayName>
-				<displayName count="many">TOP</displayName>
-				<displayName count="other">TOP</displayName>
 				<symbol draft="contributed">TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRY">
-				<displayName>TRY</displayName>
-				<displayName count="one">TRY</displayName>
-				<displayName count="few">TRY</displayName>
-				<displayName count="many">TRY</displayName>
-				<displayName count="other">TRY</displayName>
 				<symbol draft="contributed">TRY</symbol>
 				<symbol alt="narrow" draft="contributed">₺</symbol>
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
-				<displayName>TTD</displayName>
-				<displayName count="one">TTD</displayName>
-				<displayName count="few">TTD</displayName>
-				<displayName count="many">TTD</displayName>
-				<displayName count="other">TTD</displayName>
 				<symbol draft="contributed">TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
-				<displayName>TWD</displayName>
-				<displayName count="one">TWD</displayName>
-				<displayName count="few">TWD</displayName>
-				<displayName count="many">TWD</displayName>
-				<displayName count="other">TWD</displayName>
 				<symbol draft="contributed">NT$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TZS">
-				<displayName>TZS</displayName>
-				<displayName count="one">TZS</displayName>
-				<displayName count="few">TZS</displayName>
-				<displayName count="many">TZS</displayName>
-				<displayName count="other">TZS</displayName>
 				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
-				<displayName>UAH</displayName>
-				<displayName count="one">UAH</displayName>
-				<displayName count="few">UAH</displayName>
-				<displayName count="many">UAH</displayName>
-				<displayName count="other">UAH</displayName>
 				<symbol draft="contributed">UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGX">
-				<displayName>UGX</displayName>
-				<displayName count="one">UGX</displayName>
-				<displayName count="few">UGX</displayName>
-				<displayName count="many">UGX</displayName>
-				<displayName count="other">UGX</displayName>
 				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
-				<displayName>USD</displayName>
-				<displayName count="one">USD</displayName>
-				<displayName count="few">USD</displayName>
-				<displayName count="many">USD</displayName>
-				<displayName count="other">USD</displayName>
 				<symbol draft="contributed">US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UYU">
-				<displayName>UYU</displayName>
-				<displayName count="one">UYU</displayName>
-				<displayName count="few">UYU</displayName>
-				<displayName count="many">UYU</displayName>
-				<displayName count="other">UYU</displayName>
 				<symbol draft="contributed">UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>UZS</displayName>
-				<displayName count="one">UZS</displayName>
-				<displayName count="few">UZS</displayName>
-				<displayName count="many">UZS</displayName>
-				<displayName count="other">UZS</displayName>
 				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEF">
-				<displayName>VEF</displayName>
-				<displayName count="one">VEF</displayName>
-				<displayName count="few">VEF</displayName>
-				<displayName count="many">VEF</displayName>
-				<displayName count="other">VEF</displayName>
 				<symbol draft="contributed">VEF</symbol>
 			</currency>
-			<currency type="VES">
-				<displayName>VES</displayName>
-				<displayName count="one">VES</displayName>
-				<displayName count="few">VES</displayName>
-				<displayName count="many">VES</displayName>
-				<displayName count="other">VES</displayName>
-			</currency>
 			<currency type="VND">
-				<displayName>VND</displayName>
-				<displayName count="one">VND</displayName>
-				<displayName count="few">VND</displayName>
-				<displayName count="many">VND</displayName>
-				<displayName count="other">VND</displayName>
 				<symbol draft="contributed">₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VUV">
-				<displayName>VUV</displayName>
-				<displayName count="one">VUV</displayName>
-				<displayName count="few">VUV</displayName>
-				<displayName count="many">VUV</displayName>
-				<displayName count="other">VUV</displayName>
 				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
-				<displayName>WST</displayName>
-				<displayName count="one">WST</displayName>
-				<displayName count="few">WST</displayName>
-				<displayName count="many">WST</displayName>
-				<displayName count="other">WST</displayName>
 				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>XAF</displayName>
-				<displayName count="one">XAF</displayName>
-				<displayName count="few">XAF</displayName>
-				<displayName count="many">XAF</displayName>
-				<displayName count="other">XAF</displayName>
 				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XCD">
-				<displayName>XCD</displayName>
-				<displayName count="one">XCD</displayName>
-				<displayName count="few">XCD</displayName>
-				<displayName count="many">XCD</displayName>
-				<displayName count="other">XCD</displayName>
 				<symbol draft="contributed">EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>XOF</displayName>
-				<displayName count="one">XOF</displayName>
-				<displayName count="few">XOF</displayName>
-				<displayName count="many">XOF</displayName>
-				<displayName count="other">XOF</displayName>
 				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPF">
-				<displayName>XPF</displayName>
-				<displayName count="one">XPF</displayName>
-				<displayName count="few">XPF</displayName>
-				<displayName count="many">XPF</displayName>
-				<displayName count="other">XPF</displayName>
 				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XXX">
@@ -4627,27 +3893,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Munita Mhix Magħrufa jew Mhix Valida</displayName>
 			</currency>
 			<currency type="YER">
-				<displayName>YER</displayName>
-				<displayName count="one">YER</displayName>
-				<displayName count="few">YER</displayName>
-				<displayName count="many">YER</displayName>
-				<displayName count="other">YER</displayName>
 				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="ZAR">
-				<displayName>ZAR</displayName>
-				<displayName count="one">ZAR</displayName>
-				<displayName count="few">ZAR</displayName>
-				<displayName count="many">ZAR</displayName>
-				<displayName count="other">ZAR</displayName>
 				<symbol draft="contributed">ZAR</symbol>
 			</currency>
 			<currency type="ZMW">
-				<displayName>ZMW</displayName>
-				<displayName count="one">ZMW</displayName>
-				<displayName count="few">ZMW</displayName>
-				<displayName count="many">ZMW</displayName>
-				<displayName count="other">ZMW</displayName>
 				<symbol draft="contributed">ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -124,7 +124,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU" draft="unconfirmed">Austraalsch Engelsch</language>
 			<language type="en_CA" draft="unconfirmed">Kanaadsch Engelsch</language>
 			<language type="en_GB" draft="unconfirmed">Brietsch Engelsch</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">Engelsch (GB)</language>
 			<language type="en_US" draft="unconfirmed">Amerikaansch Engelsch</language>
+			<language type="en_US" alt="short" draft="unconfirmed">Engelsch (US)</language>
 			<language type="enm" draft="unconfirmed">Middelengelsch</language>
 			<language type="eo" draft="unconfirmed">Esperanto</language>
 			<language type="es" draft="unconfirmed">Spaansch</language>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -152,6 +152,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">பாஸ்க்</language>
 			<language type="ewo">எவோன்டோ</language>
 			<language type="fa">பெர்ஷியன்</language>
+			<language type="fa_AF">தாரி</language>
 			<language type="fan">ஃபேங்க்</language>
 			<language type="fat">ஃபான்டி</language>
 			<language type="ff">ஃபுலா</language>
@@ -950,7 +951,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">சின்ட் மார்டென்</territory>
 			<territory type="SY">சிரியா</territory>
 			<territory type="SZ">எஸ்வாட்டீனி</territory>
-			<territory type="SZ" alt="variant">எஸ்வாட்டீனி</territory>
 			<territory type="TA">டிரிஸ்டன் டா குன்ஹா</territory>
 			<territory type="TC">டர்க்ஸ் &amp; கைகோஸ் தீவுகள்</territory>
 			<territory type="TD">சாட்</territory>
@@ -5155,7 +5155,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>நார்ஃபோக் தீவு நேரம்</standard>
+					<generic draft="contributed">நார்ஃபோக் தீவு நேரம்</generic>
+					<standard draft="contributed">நார்ஃபோக் தீவு நிலையான நேரம்</standard>
+					<daylight draft="contributed">நார்ஃபோக் தீவு கோடை நேரம்</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -6701,15 +6703,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>டெசி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>சென்டி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>மில்லி{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>மைக்ரோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>நானோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>பிக்கோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>பெம்டோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>அட்டோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ஜெப்டோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>யொக்டோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>டெக்கா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ஹெக்டா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>கிலோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>மெகா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ஜிகா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>டெரா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>பெட்டா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>எக்ஸா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ஜெட்டா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>யாட்டா{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>சதுர {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">சதுர {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">சதுர {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>கன {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">கன {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">கன {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ஜி-ஃபோர்ஸ்</displayName>
 				<unitPattern count="one">{0} ஜி-ஃபோர்ஸ்</unitPattern>
 				<unitPattern count="other">{0} ஜி-ஃபோர்ஸ்</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>மீட்டர்/சதுரவிநாடி</displayName>
 				<unitPattern count="one">{0} மீட்டர்/சதுரவிநாடி</unitPattern>
 				<unitPattern count="other">{0} மீட்டர்கள்/சதுரவிநாடி</unitPattern>
@@ -6809,7 +6881,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} மில்லிமோல்/லிட்டர்</unitPattern>
 				<unitPattern count="other">{0} மில்லிமோல்கள்/லிட்டர்</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>பகுதிகள்/மில்லியன்</displayName>
 				<unitPattern count="one">{0} பகுதி/மில்லியன்</unitPattern>
 				<unitPattern count="other">{0} பகுதிகள்/மில்லியன்</unitPattern>
@@ -6839,7 +6911,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} லிட்டர்/கிலோமீட்டர்</unitPattern>
 				<unitPattern count="other">{0} லிட்டர்கள்/கிலோமீட்டர்</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>லிட்டர்/100கி.மீ</displayName>
 				<unitPattern count="one">{0} லிட்டர்/100கி.மீ</unitPattern>
 				<unitPattern count="other">{0} லிட்டர்/100கி.மீ</unitPattern>
@@ -7320,17 +7392,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} குதிரைத்திறன்</unitPattern>
 				<unitPattern count="other">{0} குதிரைத்திறன்</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>பாதரச மில்லிமீட்டர்கள்</displayName>
 				<unitPattern count="one">{0} பாதரச மில்லிமீட்டர்</unitPattern>
 				<unitPattern count="other">{0} பாதரச மில்லிமீட்டர்கள்</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>பவுண்டுகள்/சதுர அங்குலம்</displayName>
 				<unitPattern count="one">{0} பவுண்டு/சதுர அங்குலம்</unitPattern>
 				<unitPattern count="other">{0} பவுண்டுகள்/சதுர அங்குலம்</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>பாதரச அங்குலங்கள்</displayName>
 				<unitPattern count="one">{0} பாதரச அங்குலம்</unitPattern>
 				<unitPattern count="other">{0} பாதரச அங்குலங்கள்</unitPattern>
@@ -7410,7 +7482,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} கெல்வின்</unitPattern>
 				<unitPattern count="other">{0} கெல்வின்</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>பவுண்ட்-அடி</displayName>
 				<unitPattern count="one">{0} பவுண்ட்-அடி</unitPattern>
 				<unitPattern count="other">{0} பவுண்ட்-அடி</unitPattern>
@@ -7564,6 +7636,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>டெ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>செ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>மி.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>நா.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>பி.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>பெ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>அட்.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ஜெப்.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>யொ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>டெக்.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ஹெ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>கி.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>மெ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ஜி.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>டெரா{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>பெட்.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>எ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ஜெ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>யா.{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7572,7 +7701,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ஜி.ஃபோ.</unitPattern>
 				<unitPattern count="other">{0} ஜி.ஃபோ.</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>மீ/வி²</displayName>
 				<unitPattern count="one">{0} மீ/வி²</unitPattern>
 				<unitPattern count="other">{0} மீ/வி²</unitPattern>
@@ -7672,7 +7801,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} மி.மோ./லி.</unitPattern>
 				<unitPattern count="other">{0} மி.மோ./லி.</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ப./மி.</displayName>
 				<unitPattern count="one">{0} ப./மி.</unitPattern>
 				<unitPattern count="other">{0} ப./மி.</unitPattern>
@@ -7700,7 +7829,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} லி./கி.மீ.</unitPattern>
 				<unitPattern count="other">{0} லி./கி.மீ.</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>லி./100கி.மீ</displayName>
 				<unitPattern count="one">{0} லி./100கி.மீ</unitPattern>
 				<unitPattern count="other">{0} லி./100கி.மீ</unitPattern>
@@ -8169,17 +8298,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} கு.தி.</unitPattern>
 				<unitPattern count="other">{0} கு.தி.</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>பாத. மி.மீ.</displayName>
 				<unitPattern count="one">{0} பாத. மி.மீ.</unitPattern>
 				<unitPattern count="other">{0} பாத. மி.மீ.</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>பாத. அங்.</displayName>
 				<unitPattern count="one">{0} பாத. அங்.</unitPattern>
 				<unitPattern count="other">{0} பாத. அங்.</unitPattern>
@@ -8259,7 +8388,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} கெல்.</unitPattern>
 				<unitPattern count="other">{0} கெல்.</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>ப.அடி</displayName>
 				<unitPattern count="one">{0} ப.அடி</unitPattern>
 				<unitPattern count="other">{0} ப.அடி</unitPattern>
@@ -8406,6 +8535,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>மைக்ரோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>டெரா{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8454,7 +8589,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>லி./100கி.மீ</displayName>
 				<unitPattern count="one">{0}லி./100கி.மீ</unitPattern>
 				<unitPattern count="other">{0}லி./100கி.மீ</unitPattern>
@@ -8607,17 +8742,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} கு.வே.</unitPattern>
 				<unitPattern count="other">{0} கு.வே.</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="contributed">பாத. மி.மீ.</displayName>
 				<unitPattern count="one" draft="contributed">{0} பாத. மி.மீ.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} பாத. மி.மீ.</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName draft="contributed">psi</displayName>
 				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="contributed">பா. அங்.</displayName>
 				<unitPattern count="one">{0} பா.அங்.</unitPattern>
 				<unitPattern count="other">{0} பா.அங்.</unitPattern>

@@ -81,7 +81,7 @@ DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
     delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
     ignored-qualifiers  missing-field-initializers implicit-fallthrough \
     empty-body strict-overflow sequence-point maybe-uninitialized \
-    misleading-indentation cast-function-type
+    misleading-indentation cast-function-type shift-negative-value
 
 ifeq ($(call check-jvm-feature, zero), true)
   DISABLED_WARNINGS_gcc += return-type switch clobbered
@@ -90,7 +90,8 @@ endif
 DISABLED_WARNINGS_clang := tautological-compare \
     undefined-var-template sometimes-uninitialized unknown-pragmas \
     delete-non-virtual-dtor missing-braces char-subscripts \
-    ignored-qualifiers missing-field-initializers mismatched-tags
+    ignored-qualifiers missing-field-initializers mismatched-tags \
+    shift-negative-value
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 

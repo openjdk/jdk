@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,8 @@ public class TestClock_System {
                         + formatTime("\n\thighest1", highest1));
             }
 
-            int count=0;
+            int countBetterThanMillisPrecision = 0;
+            int countBetterThanMicrosPrecision = 0;
             // let's preheat the system a bit:
             int lastNanos = 0;
             for (int i = 0; i < 1000 ; i++) {
@@ -191,7 +192,10 @@ public class TestClock_System {
                 lastNanos = nanos;
 
                 if ((nanos % 1000000) > 0) {
-                    count++; // we have micro seconds
+                    countBetterThanMillisPrecision++; // we have microseconds
+                }
+                if ((nanos % 1000) > 0) {
+                    countBetterThanMicrosPrecision++; // we have nanoseconds
                 }
                 if ((sysnan % 1000000) > 0) {
                     throw new RuntimeException("Expected only millisecconds "
@@ -200,13 +204,17 @@ public class TestClock_System {
                 }
             }
             System.out.println("\nNumber of time stamps which had better than"
-                    + " millisecond precision: "+count+"/"+1000);
+                               + " millisecond precision: "
+                               + countBetterThanMillisPrecision + "/" + 1000);
+            System.out.println("\nNumber of time stamps which had better than"
+                               + " microsecond precision: "
+                               + countBetterThanMicrosPrecision + "/" + 1000);
             System.out.println(formatTime("\nsystemUTC            ", system1));
             System.out.println(formatTime("highestResolutionUTC ", highest1));
-            if (count == 0) {
+            if (countBetterThanMillisPrecision == 0) {
                 System.err.println("Something is strange: no microsecond "
-                        + "precision with highestResolutionUTC?");
-                throw new RuntimeException("Micro second preccision not reached");
+                                   + "precision with highestResolutionUTC?");
+                throw new RuntimeException("Micro second precision not reached");
             }
 
             // check again

@@ -33,10 +33,10 @@
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 
-ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, char* heap_base, size_t size) :
+ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
   _map_size(heap->num_regions()),
   _region_size_bytes_shift(ShenandoahHeapRegion::region_size_bytes_shift()),
-  _map_space(align_up(((uintx)heap_base + size) >> _region_size_bytes_shift, os::vm_allocation_granularity())),
+  _map_space(space),
   _cset_map(_map_space.base() + ((uintx)heap_base >> _region_size_bytes_shift)),
   _biased_cset_map(_map_space.base()),
   _heap(heap),

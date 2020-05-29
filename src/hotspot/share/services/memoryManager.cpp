@@ -38,10 +38,8 @@
 #include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
-MemoryManager::MemoryManager(const char* name) : _name(name) {
-  _num_pools = 0;
-  (void)const_cast<instanceOop&>(_memory_mgr_obj = instanceOop(NULL));
-}
+MemoryManager::MemoryManager(const char* name) :
+  _num_pools(0), _name(name), _memory_mgr_obj() {}
 
 int MemoryManager::add_pool(MemoryPool* pool) {
   int index = _num_pools;
@@ -52,6 +50,10 @@ int MemoryManager::add_pool(MemoryPool* pool) {
   }
   pool->add_manager(this);
   return index;
+}
+
+bool MemoryManager::is_manager(instanceHandle mh) const {
+  return mh() == Atomic::load(&_memory_mgr_obj);
 }
 
 MemoryManager* MemoryManager::get_code_cache_memory_manager() {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -45,7 +45,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nr" draft="contributed">ndebele meridional</language>
 			<language type="nso">sotho septentrional</language>
 			<language type="pa">punyabí</language>
-			<language type="pcm">pcm</language>
 			<language type="shu" draft="contributed">árabe chadiano</language>
 			<language type="ss">siswati</language>
 			<language type="sw">suajili</language>
@@ -55,7 +54,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tn">setswana</language>
 			<language type="tyv" draft="contributed">tuviniano</language>
 			<language type="ug" alt="variant" draft="contributed">uyghur</language>
-			<language type="wuu" draft="contributed">wuu</language>
+			<language type="wuu">chino wu</language>
 			<language type="xal" draft="contributed">kalmyk</language>
 			<language type="zgh">tamazight marroquí estándar</language>
 			<language type="zh_Hans">chino simplificado</language>
@@ -770,7 +769,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>hora de la isla Norfolk</standard>
+					<generic draft="contributed">hora de la isla Norfolk</generic>
+					<standard draft="contributed">hora estándar de la isla Norfolk</standard>
+					<daylight draft="contributed">hora de verano de la isla Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
@@ -952,7 +953,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/L</displayName>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="electric-ohm">

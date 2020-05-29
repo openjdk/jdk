@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -294,7 +294,7 @@ void C1_MacroAssembler::initialize_object(
     } else {
       cmpwi(CCR0, t1, con_size_in_bytes);
     }
-    asm_assert_eq("bad size in initialize_object", 0x753);
+    asm_assert_eq("bad size in initialize_object");
   }
 #endif
 
@@ -390,7 +390,7 @@ void C1_MacroAssembler::allocate_array(
 #ifndef PRODUCT
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
-  verify_oop_addr((RegisterOrConstant)(stack_offset + STACK_BIAS), R1_SP, "broken oop in stack slot");
+  verify_oop_addr((RegisterOrConstant)stack_offset, R1_SP, "broken oop in stack slot");
 }
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {

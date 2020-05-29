@@ -58,7 +58,7 @@ public class ClhsdbJstackXcompStress {
         for (int i = 0; i < MAX_ITERATIONS; i++) {
             JDKToolLauncher launcher = JDKToolLauncher
                     .createUsingTestJDK("jhsdb");
-            launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
+            launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion", "-Xcomp"));
             launcher.addToolArg("jstack");
             launcher.addToolArg("--pid");
             launcher.addToolArg(Long.toString(app.getPid()));

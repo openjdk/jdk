@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -398,7 +398,6 @@ terms of use, see http://www.unicode.org/copyright.html
 			<language type="nb">Norwegesch Bokmål</language>
 			<language type="nd">Nord-Ndebele-Sprooch</language>
 			<language type="nds">Nidderdäitsch</language>
-			<language type="nds_NL">nds_NL</language>
 			<language type="ne">Nepalesesch</language>
 			<language type="new">Newari</language>
 			<language type="ng">Ndonga</language>
@@ -632,7 +631,6 @@ terms of use, see http://www.unicode.org/copyright.html
 		</languages>
 		<scripts>
 			<script type="Arab">Arabesch</script>
-			<script type="Armi">Armi</script>
 			<script type="Armn">Armenesch</script>
 			<script type="Avst">Avestesch</script>
 			<script type="Bali">Balinesesch</script>
@@ -646,7 +644,6 @@ terms of use, see http://www.unicode.org/copyright.html
 			<script type="Buhd">Buhid</script>
 			<script type="Cans">UCAS</script>
 			<script type="Cari">Karesch</script>
-			<script type="Cham">Cham</script>
 			<script type="Cher">Cherokee</script>
 			<script type="Cirt">Cirth</script>
 			<script type="Copt">Koptesch</script>
@@ -3299,7 +3296,9 @@ terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolkinselen-Zäit</standard>
+					<generic draft="contributed">Norfolkinselen-Zäit</generic>
+					<standard draft="contributed">Norfolkinselen-Normalzäit</standard>
+					<daylight draft="contributed">Norfolkinselen-Summerzäit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5158,7 +5157,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0}-fach Äerdacceleratioun</unitPattern>
 				<unitPattern count="other">{0}-fach Äerdacceleratioun</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>Meter pro Quadratsekonn</displayName>
 				<unitPattern count="one">{0} Meter pro Quadratsekonn</unitPattern>
 				<unitPattern count="other">{0} Meter pro Quadratsekonn</unitPattern>
@@ -5590,17 +5589,17 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} Päerdsstäerkt</unitPattern>
 				<unitPattern count="other">{0} Päerdsstäerkten</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} Zoll Quecksëlwersail</unitPattern>
 				<unitPattern count="other">{0} Zoll Quecksëlwersail</unitPattern>
@@ -5762,7 +5761,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
@@ -6199,17 +6198,17 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -6370,7 +6369,7 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
@@ -6595,15 +6594,15 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="one">{0} psi</unitPattern>
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>

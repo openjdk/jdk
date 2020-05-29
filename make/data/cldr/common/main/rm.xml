@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -118,7 +118,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU" draft="contributed">englais australian</language>
 			<language type="en_CA" draft="contributed">englais canadais</language>
 			<language type="en_GB" draft="contributed">englais britannic</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">englais (GB)</language>
 			<language type="en_US" draft="contributed">englais american</language>
+			<language type="en_US" alt="short" draft="unconfirmed">englais (US)</language>
 			<language type="enm" draft="contributed">englais mesaun</language>
 			<language type="eo" draft="contributed">esperanto</language>
 			<language type="es" draft="contributed">spagnol</language>

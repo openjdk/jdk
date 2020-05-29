@@ -683,23 +683,11 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   StubCodeMark mark(cgen, "StubRoutines", "shenandoah_lrb");
   address start = __ pc();
 
-  Label work, done;
+  Label slow_path;
   __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
   __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
   __ ldrb(rscratch2, Address(rscratch2, rscratch1));
-  __ tbnz(rscratch2, 0, work);
-  __ ret(lr);
-  __ bind(work);
-
-  Label slow_path;
-  __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-  __ eon(rscratch1, rscratch1, zr);
-  __ ands(zr, rscratch1, markWord::lock_mask_in_place);
-  __ br(Assembler::NE, slow_path);
-
-  // Decode forwarded object.
-  __ orr(rscratch1, rscratch1, markWord::marked_value);
-  __ eon(r0, rscratch1, zr);
+  __ tbnz(rscratch2, 0, slow_path);
   __ ret(lr);
 
   __ bind(slow_path);
@@ -718,7 +706,6 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   __ mov(r0, rscratch1);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ bind(done);
   __ ret(lr);
 
   return start;

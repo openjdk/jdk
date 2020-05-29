@@ -65,6 +65,11 @@ public class Dictionary extends sun.jvm.hotspot.utilities.Hashtable {
       for (DictionaryEntry probe = (DictionaryEntry) bucket(index); probe != null;
                                               probe = (DictionaryEntry) probe.next()) {
         Klass k = probe.klass();
+        // Only visit InstanceKlasses that are at least in the "loaded" init_state. Otherwise
+        // the InstanceKlass won't have some required fields initialized, which can cause problems.
+        if (k instanceof InstanceKlass && !((InstanceKlass)k).isLoaded()) {
+            continue;
+        }
         v.visit(k, loader);
       }
     }

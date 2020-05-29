@@ -22,15 +22,15 @@
 				ja jgo jmc jv
 				ka kab kam kde kea khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh ku kw ky
 				lag lb lg lkt ln lo lrc lt lu luo luy lv
-				mas mer mfe mg mgh mgo mi mk ml mn mr ms mt mua my mzn
+				mai mas mer mfe mg mgh mgo mi mk ml mn mni mr ms mt mua my mzn
 				naq nb nd nds ne nl nmg nn nnh nus nyn
 				om or os
-				pa pl prg ps pt
+				pa pcm pl prg ps pt
 				qu
 				rm rn ro rof
 				und
 				ru rw rwk
-				sah saq sbp sd se seh ses sg shi si sk sl smn sn so sq sr sv sw
+				sah saq sat sbp sd se seh ses sg shi si sk sl smn sn so sq sr su sv sw
 				ta te teo tg th ti tk to tr tt twq tzm
 				ug uk ur uz
 				vai vi vo vun
@@ -46,7 +46,7 @@
 				mul
 				ny
 				root
-				sa sm st su
+				sa sm st
 				zxx
 			</variable>
 			<variable id='$oldLanguages' type='choice'>
@@ -77,7 +77,7 @@
 				ybb
 				zun zza
 			</variable>
-			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kits Kpel Latf Latg Loma Maya Moon
+			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kpel Latf Latg Loma Maya Moon
 				Nkgb Phlv Roro Sara Syre Syrj Syrn Teng Visp Wole
 			</variable>				
 			<!--  <variable id='$language' type='choice'>$languageExceptions|$_language_cldr</variable> -->

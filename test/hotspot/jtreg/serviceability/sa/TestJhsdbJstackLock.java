@@ -46,7 +46,7 @@ public class TestJhsdbJstackLock {
             System.out.println ("Started LingeredApp with pid " + app.getPid());
 
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-            launcher.addVMArgs(Utils.getTestJavaOpts());
+            launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion"));
             launcher.addToolArg("jstack");
             launcher.addToolArg("--pid");
             launcher.addToolArg(Long.toString(app.getPid()));

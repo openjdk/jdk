@@ -77,10 +77,10 @@ printLastError(jdwpTransportEnv *t, jdwpTransportError err)
 
         /* Convert this string to UTF8 */
         len = (int)strlen(msg);
-        maxlen = len+len/2+2; /* Should allow for plenty of room */
-        utf8msg = (jbyte*)jvmtiAllocate(maxlen+1);
+        maxlen = len * 4 + 1;
+        utf8msg = (jbyte*)jvmtiAllocate(maxlen);
         if (utf8msg != NULL) {
-           (void)utf8FromPlatform(msg, len, utf8msg, maxlen+1);
+           (void)utf8FromPlatform(msg, len, utf8msg, maxlen);
         }
     }
     if (rv == JDWPTRANSPORT_ERROR_NONE) {

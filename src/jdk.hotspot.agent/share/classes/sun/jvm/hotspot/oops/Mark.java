@@ -238,10 +238,5 @@ public class Mark extends VMObject {
     }
   }
 
-  // Copy markWord methods for CMS here.
-  public boolean isCmsFreeChunk() {
-    return isUnlocked() &&
-           (Bits.maskBitsLong(value() >> cmsShift, cmsMask) & 0x1L) == 0x1L;
-  }
   public long getSize() { return (long)(value() >> sizeShift); }
 }

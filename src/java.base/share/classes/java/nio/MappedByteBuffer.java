@@ -30,7 +30,7 @@ import java.lang.ref.Reference;
 import java.util.Objects;
 
 import jdk.internal.access.foreign.MemorySegmentProxy;
-import jdk.internal.misc.Unsafe;
+import jdk.internal.access.foreign.UnmapperProxy;
 
 
 /**
@@ -109,58 +109,29 @@ public abstract class MappedByteBuffer
         this.isSync = false;
     }
 
-    // Returns the distance (in bytes) of the buffer start from the
-    // largest page aligned address of the mapping less than or equal
-    // to the start address.
-    private long mappingOffset() {
-        return mappingOffset(0);
-    }
+    UnmapperProxy unmapper() {
+        return fd != null ?
+                new UnmapperProxy() {
+                    @Override
+                    public long address() {
+                        return address;
+                    }
 
-    // Returns the distance (in bytes) of the buffer element
-    // identified by index from the largest page aligned address of
-    // the mapping less than or equal to the element address. Computed
-    // each time to avoid storing in every direct buffer.
-    private long mappingOffset(int index) {
-        int ps = Bits.pageSize();
-        long indexAddress = address + index;
-        long baseAddress = alignDown(indexAddress, ps);
-        return indexAddress - baseAddress;
-    }
+                    @Override
+                    public FileDescriptor fileDescriptor() {
+                        return fd;
+                    }
 
-    // Given an offset previously obtained from calling
-    // mappingOffset() returns the largest page aligned address of the
-    // mapping less than or equal to the buffer start address.
-    private long mappingAddress(long mappingOffset) {
-        return mappingAddress(mappingOffset, 0);
-    }
+                    @Override
+                    public boolean isSync() {
+                        return isSync;
+                    }
 
-    // Given an offset previously otained from calling
-    // mappingOffset(index) returns the largest page aligned address
-    // of the mapping less than or equal to the address of the buffer
-    // element identified by index.
-    private long mappingAddress(long mappingOffset, long index) {
-        long indexAddress = address + index;
-        return indexAddress - mappingOffset;
-    }
-
-    // given a mappingOffset previously otained from calling
-    // mappingOffset() return that offset added to the buffer
-    // capacity.
-    private long mappingLength(long mappingOffset) {
-        return mappingLength(mappingOffset, (long)capacity());
-    }
-
-    // given a mappingOffset previously otained from calling
-    // mappingOffset(index) return that offset added to the supplied
-    // length.
-    private long mappingLength(long mappingOffset, long length) {
-        return length + mappingOffset;
-    }
-
-    // align address down to page size
-    private static long alignDown(long address, int pageSize) {
-        // pageSize must be a power of 2
-        return address & ~(pageSize - 1);
+                    @Override
+                    public void unmap() {
+                        throw new UnsupportedOperationException();
+                    }
+                } : null;
     }
 
     /**
@@ -202,19 +173,8 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return true;
         }
-        // a sync mapped buffer is always loaded
-        if (isSync()) {
-            return true;
-        }
-        if ((address == 0) || (capacity() == 0))
-            return true;
-        long offset = mappingOffset();
-        long length = mappingLength(offset);
-        return isLoaded0(mappingAddress(offset), length, Bits.pageCount(length));
+        return MappedMemoryUtils.isLoaded(address, isSync, capacity());
     }
-
-    // not used, but a potential target for a store, see load() for details.
-    private static byte unused;
 
     /**
      * Loads this buffer's content into physical memory.
@@ -230,37 +190,11 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        // no need to load a sync mapped buffer
-        if (isSync()) {
-            return this;
-        }
-        if ((address == 0) || (capacity() == 0))
-            return this;
-        long offset = mappingOffset();
-        long length = mappingLength(offset);
-        load0(mappingAddress(offset), length);
-
-        // Read a byte from each page to bring it into memory. A checksum
-        // is computed as we go along to prevent the compiler from otherwise
-        // considering the loop as dead code.
-        Unsafe unsafe = Unsafe.getUnsafe();
-        int ps = Bits.pageSize();
-        int count = Bits.pageCount(length);
-        long a = mappingAddress(offset);
-        byte x = 0;
         try {
-            for (int i=0; i<count; i++) {
-                // TODO consider changing to getByteOpaque thus avoiding
-                // dead code elimination and the need to calculate a checksum
-                x ^= unsafe.getByte(a);
-                a += ps;
-            }
+            MappedMemoryUtils.load(address, isSync, capacity());
         } finally {
             Reference.reachabilityFence(this);
         }
-        if (unused != 0)
-            unused = x;
-
         return this;
     }
 
@@ -293,8 +227,7 @@ public abstract class MappedByteBuffer
             return force(0, limit());
         }
         if ((address != 0) && (capacity() != 0)) {
-            long offset = mappingOffset();
-            force0(fd, mappingAddress(offset), mappingLength(offset));
+            return force(0, capacity());
         }
         return this;
     }
@@ -348,21 +281,10 @@ public abstract class MappedByteBuffer
         if ((address != 0) && (limit() != 0)) {
             // check inputs
             Objects.checkFromIndexSize(index, length, limit());
-            if (isSync) {
-                // simply force writeback of associated cache lines
-                Unsafe.getUnsafe().writebackMemory(address + index, length);
-            } else {
-                // force writeback via file descriptor
-                long offset = mappingOffset(index);
-                force0(fd, mappingAddress(offset, index), mappingLength(offset, length));
-            }
+            MappedMemoryUtils.force(fd, address, isSync, index, length);
         }
         return this;
     }
-
-    private native boolean isLoaded0(long address, long length, int pageCount);
-    private native void load0(long address, long length);
-    private native void force0(FileDescriptor fd, long address, long length);
 
     // -- Covariant return type overrides
 

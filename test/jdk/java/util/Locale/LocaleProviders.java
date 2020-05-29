@@ -23,9 +23,15 @@
 import java.text.*;
 import java.text.spi.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
+import java.util.logging.StreamHandler;
 import java.util.spi.*;
 import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
+
+import static java.util.logging.LogManager.*;
 
 public class LocaleProviders {
 
@@ -90,6 +96,10 @@ public class LocaleProviders {
 
             case "bug8232860Test":
                 bug8232860Test();
+                break;
+
+            case "bug8245241Test":
+                bug8245241Test(args[1]);
                 break;
 
             default:
@@ -227,7 +237,7 @@ public class LocaleProviders {
             System.out.println(new SimpleDateFormat("z", new Locale(lang, ctry)).parse("UTC"));
         } catch (ParseException pe) {
             // ParseException is fine in this test, as it's not "UTC"
-}
+        }
     }
 
     static void bug8013903Test() {
@@ -372,6 +382,26 @@ public class LocaleProviders {
                 "Default format locale is not Locale.US: " + defLoc + ", or\n" +
                 "OS is neither macOS/Windows, or\n" +
                 "provider is not HOST: " + type);
+        }
+    }
+
+    static void bug8245241Test(String expected) {
+        LogRecord[] lra = new LogRecord[1];
+        StreamHandler handler = new StreamHandler() {
+            @Override
+            public void publish(LogRecord record) {
+                lra[0] = record;
+            }
+        };
+        getLogManager().getLogger("").addHandler(handler);
+
+        DateFormat.getDateInstance(); // this will init LocaleProviderAdapter
+        handler.flush();
+
+        if (lra[0] == null ||
+            lra[0].getLevel() != Level.INFO ||
+            !lra[0].getMessage().equals(expected)) {
+            throw new RuntimeException("Expected log was not emitted. LogRecord: " + lra[0]);
         }
     }
 }

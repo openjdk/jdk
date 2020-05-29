@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -25,15 +25,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_419">Latin American Spanish</language>
 			<language type="es_ES">European Spanish</language>
 			<language type="es_MX">Mexican Spanish</language>
-			<language type="fa_AF" draft="contributed">Dari</language>
+			<language type="fa_AF">Dari</language>
 			<language type="fr_CA">Canadian French</language>
 			<language type="fr_CH">Swiss French</language>
 			<language type="nds_NL">West Low German</language>
 			<language type="nl_BE">Flemish</language>
 			<language type="pt_BR">Brazilian Portuguese</language>
 			<language type="pt_PT">European Portuguese</language>
-			<language type="ro_MD" draft="contributed">Moldavian</language>
-			<language type="sw_CD" draft="contributed">Congo Swahili</language>
+			<language type="ro_MD">Moldavian</language>
+			<language type="sw_CD">Congo Swahili</language>
 			<language type="zh_Hans">Simplified Chinese</language>
 			<language type="zh_Hans" alt="long" draft="contributed">Simplified Mandarin Chinese</language>
 			<language type="zh_Hant">Traditional Chinese</language>
@@ -1498,6 +1498,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deca{0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>fluid ounces</displayName>
 				<unitPattern count="one">{0} fluid ounce</unitPattern>
@@ -1505,6 +1508,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="duration-microsecond">
+				<displayName>μsecs</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0} fl oz</unitPattern>

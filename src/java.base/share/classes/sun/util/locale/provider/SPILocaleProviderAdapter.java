@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ import java.text.spi.NumberFormatProvider;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.spi.CalendarDataProvider;
 import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
@@ -72,7 +72,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
     @Override
     protected <P extends LocaleServiceProvider> P findInstalledProvider(final Class<P> c) {
         try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<P>() {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
                 @SuppressWarnings(value={"unchecked", "deprecation"})
                 public P run() {
@@ -91,8 +91,8 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
                             }  catch (ClassNotFoundException |
                                       InstantiationException |
                                       IllegalAccessException e) {
-                                LocaleServiceProviderPool.config(SPILocaleProviderAdapter.class, e.toString());
-                                return null;
+                                throw new ServiceConfigurationError(
+                                    "SPI locale provider cannot be instantiated.", e);
                             }
                         }
 
@@ -102,9 +102,9 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
                 }
             });
         }  catch (PrivilegedActionException e) {
-            LocaleServiceProviderPool.config(SPILocaleProviderAdapter.class, e.toString());
+            throw new ServiceConfigurationError(
+                "SPI locale provider cannot be instantiated.", e);
         }
-        return null;
     }
 
     /*
@@ -112,7 +112,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
      * following "<provider class name>Delegate" convention.
      */
     private interface Delegate<P extends LocaleServiceProvider> {
-        default public void addImpl(P impl) {
+        default void addImpl(P impl) {
             for (Locale l : impl.getAvailableLocales()) {
                 getDelegateMap().putIfAbsent(l, impl);
             }
@@ -121,7 +121,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         /*
          * Obtain the real SPI implementation, using locale fallback
          */
-        default public P getImpl(Locale locale) {
+        default P getImpl(Locale locale) {
             for (Locale l : LocaleServiceProviderPool.getLookupLocales(locale.stripExtensions())) {
                 P ret = getDelegateMap().get(l);
                 if (ret != null) {
@@ -131,13 +131,13 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
             return null;
         }
 
-        public Map<Locale, P> getDelegateMap();
+        Map<Locale, P> getDelegateMap();
 
-        default public Locale[] getAvailableLocalesDelegate() {
-            return getDelegateMap().keySet().stream().toArray(Locale[]::new);
+        default Locale[] getAvailableLocalesDelegate() {
+            return getDelegateMap().keySet().toArray(new Locale[0]);
         }
 
-        default public boolean isSupportedLocaleDelegate(Locale locale) {
+        default boolean isSupportedLocaleDelegate(Locale locale) {
             Map<Locale, P> map = getDelegateMap();
             Locale override = CalendarDataUtility.findRegionOverride(locale);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool outgoing) {
     // The calling convention does not count the SharedRuntime::out_preserve_stack_slots() value
     // so we must add it in here.
     int st_off = (r_1->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
-    opr = LIR_OprFact::address(new LIR_Address(SP_opr, st_off + STACK_BIAS, type));
+    opr = LIR_OprFact::address(new LIR_Address(SP_opr, st_off, type));
   } else if (r_1->is_Register()) {
     Register reg = r_1->as_Register();
     //if (outgoing) {
@@ -362,7 +362,7 @@ void FrameMap::initialize() {
 
 
 Address FrameMap::make_new_address(ByteSize sp_offset) const {
-  return Address(R1_SP, STACK_BIAS + in_bytes(sp_offset));
+  return Address(R1_SP, in_bytes(sp_offset));
 }
 
 
@@ -394,5 +394,5 @@ bool FrameMap::validate_frame() {
     }
     java_index += type2size[opr->type()];
   }
-  return Assembler::is_simm16(max_offset + STACK_BIAS);
+  return Assembler::is_simm16(max_offset);
 }

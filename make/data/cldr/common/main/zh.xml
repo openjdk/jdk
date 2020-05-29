@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -44,6 +44,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="arn">马普切语</language>
 			<language type="arp">阿拉帕霍语</language>
 			<language type="ars">纳吉迪阿拉伯语</language>
+			<language type="ars" alt="menu">阿拉伯语（纳吉迪）</language>
 			<language type="arw">阿拉瓦克语</language>
 			<language type="as">阿萨姆语</language>
 			<language type="asa">帕雷语</language>
@@ -106,6 +107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">切罗基语</language>
 			<language type="chy">夏延语</language>
 			<language type="ckb">中库尔德语</language>
+			<language type="ckb" alt="menu" draft="contributed">库尔德语（索拉尼）</language>
 			<language type="co">科西嘉语</language>
 			<language type="cop">科普特语</language>
 			<language type="cr">克里族语</language>
@@ -161,6 +163,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eu">巴斯克语</language>
 			<language type="ewo">旺杜语</language>
 			<language type="fa">波斯语</language>
+			<language type="fa_AF">达里语</language>
 			<language type="fan">芳格语</language>
 			<language type="fat">芳蒂语</language>
 			<language type="ff">富拉语</language>
@@ -565,10 +568,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<scripts>
 			<script type="Adlm">阿德拉姆文</script>
 			<script type="Afak">阿法卡文</script>
-			<script type="Aghb" draft="provisional">Aghb</script>
-			<script type="Ahom" draft="provisional">Ahom</script>
+			<script type="Aghb">高加索阿尔巴尼亚文</script>
+			<script type="Ahom" draft="contributed">Ahom</script>
 			<script type="Arab">阿拉伯文</script>
 			<script type="Arab" alt="variant">波斯阿拉伯文</script>
+			<script type="Aran" draft="contributed">波斯体</script>
 			<script type="Armi">皇室亚拉姆文</script>
 			<script type="Armn">亚美尼亚文</script>
 			<script type="Avst">阿维斯陀文</script>
@@ -589,12 +593,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Cari">卡里亚文</script>
 			<script type="Cham">占文</script>
 			<script type="Cher">切罗基文</script>
+			<script type="Chrs" draft="contributed">花拉子模文</script>
 			<script type="Cirt">色斯文</script>
 			<script type="Copt">克普特文</script>
 			<script type="Cprt">塞浦路斯文</script>
 			<script type="Cyrl">西里尔文</script>
 			<script type="Cyrs">西里尔文字（古教会斯拉夫文的变体）</script>
 			<script type="Deva">天城文</script>
+			<script type="Diak" draft="contributed">迪维西阿库鲁文</script>
 			<script type="Dogr" draft="contributed">多格拉文</script>
 			<script type="Dsrt">德塞莱特文</script>
 			<script type="Dupl">杜普洛伊速记</script>
@@ -602,6 +608,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Egyh">古埃及僧侣书写体</script>
 			<script type="Egyp">古埃及象形文</script>
 			<script type="Elba">爱尔巴桑文</script>
+			<script type="Elym" draft="contributed">埃利迈文</script>
 			<script type="Ethi">埃塞俄比亚文</script>
 			<script type="Geok">格鲁吉亚文（教堂体）</script>
 			<script type="Geor">格鲁吉亚文</script>
@@ -621,7 +628,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hans" alt="stand-alone">简体中文</script>
 			<script type="Hant">繁体</script>
 			<script type="Hant" alt="stand-alone">繁体中文</script>
-			<script type="Hatr" draft="provisional">Hatr</script>
+			<script type="Hatr">哈特兰文</script>
 			<script type="Hebr">希伯来文</script>
 			<script type="Hira">平假名</script>
 			<script type="Hluw">安那托利亚象形文字</script>
@@ -640,6 +647,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Khar">卡罗须提文</script>
 			<script type="Khmr">高棉文</script>
 			<script type="Khoj">克吉奇文字</script>
+			<script type="Kits" draft="contributed">契丹小字</script>
 			<script type="Knda">卡纳达文</script>
 			<script type="Kore">韩文</script>
 			<script type="Kpel">克佩列文</script>
@@ -657,7 +665,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Loma">洛马文</script>
 			<script type="Lyci">利西亚文</script>
 			<script type="Lydi">吕底亚文</script>
-			<script type="Mahj" draft="provisional">Mahj</script>
+			<script type="Mahj">默哈金文</script>
 			<script type="Maka" draft="contributed">望加锡文</script>
 			<script type="Mand">阿拉米文</script>
 			<script type="Mani">摩尼教文</script>
@@ -668,12 +676,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Merc">麦罗埃草书</script>
 			<script type="Mero">麦若提克文</script>
 			<script type="Mlym">马拉雅拉姆文</script>
-			<script type="Modi" draft="provisional">Modi</script>
+			<script type="Modi">莫迪文</script>
 			<script type="Mong">蒙古文</script>
 			<script type="Moon">韩文语系</script>
 			<script type="Mroo">谬文</script>
 			<script type="Mtei">曼尼普尔文</script>
-			<script type="Mult" draft="provisional">Mult</script>
+			<script type="Mult">穆尔坦文</script>
 			<script type="Mymr">缅甸文</script>
 			<script type="Nand" draft="contributed">楠迪梵文</script>
 			<script type="Narb">古北方阿拉伯文</script>
@@ -698,6 +706,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Phnx">腓尼基文</script>
 			<script type="Plrd">波拉德音标文字</script>
 			<script type="Prti">帕提亚文碑铭体</script>
+			<script type="Qaag">Zawgyi</script>
 			<script type="Rjng">拉让文</script>
 			<script type="Rohg" draft="contributed">哈乃斐罗兴亚文</script>
 			<script type="Roro">朗格朗格文</script>
@@ -741,9 +750,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Vaii">瓦依文</script>
 			<script type="Visp">可见语言</script>
 			<script type="Wara">瓦郎奇蒂文字</script>
+			<script type="Wcho" draft="contributed">万秋文</script>
 			<script type="Wole">沃莱艾文</script>
 			<script type="Xpeo">古波斯文</script>
 			<script type="Xsux">苏美尔-阿卡德楔形文字</script>
+			<script type="Yezi" draft="contributed">雅兹迪文</script>
 			<script type="Yiii">彝文</script>
 			<script type="Zanb" draft="contributed">札那巴札尔方块文字</script>
 			<script type="Zinh">遗传学术语</script>
@@ -874,7 +885,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">法国</territory>
 			<territory type="GA">加蓬</territory>
 			<territory type="GB">英国</territory>
-			<territory type="GB" alt="short">英国</territory>
 			<territory type="GD">格林纳达</territory>
 			<territory type="GE">格鲁吉亚</territory>
 			<territory type="GF">法属圭亚那</territory>
@@ -1037,9 +1047,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UG">乌干达</territory>
 			<territory type="UM">美国本土外小岛屿</territory>
 			<territory type="UN">联合国</territory>
-			<territory type="UN" alt="short">联合国</territory>
 			<territory type="US">美国</territory>
-			<territory type="US" alt="short">美国</territory>
 			<territory type="UY">乌拉圭</territory>
 			<territory type="UZ">乌兹别克斯坦</territory>
 			<territory type="VA">梵蒂冈</territory>
@@ -1069,6 +1077,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="1694ACAD">早期现代法文</variant>
 			<variant type="1959ACAD">学术</variant>
 			<variant type="ABL1943" draft="contributed">1943年正写法构想</variant>
+			<variant type="AKUAPEM" draft="contributed">阿夸佩姆方言</variant>
 			<variant type="ALALC97">1997 版 ALA-LC 罗马字</variant>
 			<variant type="ALUKU">阿鲁库方言</variant>
 			<variant type="AO1990" draft="contributed">1990年葡萄牙语正写法协议</variant>
@@ -1076,6 +1085,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="AREVELA">东亚美尼亚文</variant>
 			<variant type="AREVMDA">西亚美尼亚文</variant>
 			<variant type="ASANTE" draft="contributed">阿散蒂方言</variant>
+			<variant type="AUVERN" draft="contributed">自动钻机</variant>
 			<variant type="BAKU1926">统一土耳其拉丁字母</variant>
 			<variant type="BALANKA" draft="contributed">阿尼语Balanka方言</variant>
 			<variant type="BARLA" draft="contributed">佛得角语向风方言组</variant>
@@ -1083,30 +1093,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="BAUDDHA">佛陀梵文</variant>
 			<variant type="BISCAYAN">比斯开方言</variant>
 			<variant type="BISKE">圣乔治/比拉方言</variant>
+			<variant type="BOHORIC" draft="contributed">博霍里奇字母</variant>
 			<variant type="BOONT">布恩特林方言</variant>
+			<variant type="BORNHOLM" draft="contributed">博恩霍尔姆方言</variant>
+			<variant type="CISAUP" draft="contributed">西萨普方言</variant>
 			<variant type="COLB1945" draft="contributed">1945年葡萄牙-巴西正写法协定</variant>
 			<variant type="CORNU" draft="contributed">科尔尼方言</variant>
+			<variant type="CREISS" draft="contributed">克雷桑方言</variant>
 			<variant type="DAJNKO" draft="contributed">达金科字母</variant>
+			<variant type="EKAVSK" draft="contributed">塞尔维亚语伊卡维亚发音</variant>
 			<variant type="EMODENG" draft="contributed">近代英语</variant>
 			<variant type="FONIPA">国际音标</variant>
+			<variant type="FONKIRSH" draft="contributed">丰吉什方言</variant>
+			<variant type="FONNAPA" draft="contributed">福纳帕方言</variant>
 			<variant type="FONUPA">UPA 音标</variant>
 			<variant type="FONXSAMP">X-SAMPA 音标</variant>
 			<variant type="GASCON" draft="contributed">加斯科方言</variant>
+			<variant type="GRCLASS" draft="contributed">粗粒级</variant>
+			<variant type="GRITAL" draft="contributed">格里陶方言</variant>
+			<variant type="GRMISTR" draft="contributed">格米斯特方言</variant>
 			<variant type="HEPBURN">赫伯恩罗马字</variant>
 			<variant type="HOGNORSK">高地挪威文</variant>
+			<variant type="HSISTEMO" draft="contributed">赫西斯特莫方言</variant>
+			<variant type="IJEKAVSK" draft="contributed">塞尔维亚语伊吉卡维亚发音</variant>
 			<variant type="ITIHASA">史诗梵文</variant>
+			<variant type="IVANCHOV" draft="contributed">伊万乔夫方言</variant>
 			<variant type="JAUER">米施泰尔方言</variant>
 			<variant type="JYUTPING">粤语拼音</variant>
 			<variant type="KKCOR">常用拼字</variant>
+			<variant type="KOCIEWIE" draft="contributed">科奇韦方言</variant>
 			<variant type="KSCOR" draft="contributed">标准正写法</variant>
 			<variant type="LAUKIKA">传统梵文</variant>
 			<variant type="LEMOSIN" draft="contributed">利姆赞方言</variant>
 			<variant type="LENGADOC" draft="contributed">隆格多克方言</variant>
 			<variant type="LIPAW">雷西亚 Lipovaz 方言</variant>
 			<variant type="LUNA1918">俄文拼字（1918年起）</variant>
+			<variant type="METELKO" draft="contributed">梅特尔科字母</variant>
 			<variant type="MONOTON">单音字母</variant>
 			<variant type="NDYUKA">Ndyuka 方言</variant>
 			<variant type="NEDIS">Natisone 方言</variant>
+			<variant type="NEWFOUND" draft="contributed">纽芬兰方言</variant>
 			<variant type="NICARD" draft="contributed">尼斯方言</variant>
 			<variant type="NJIVA">Gniva/Njiva 方言</variant>
 			<variant type="NULIK" draft="contributed">现代沃拉普克语</variant>
@@ -1120,6 +1146,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="PINYIN">拼音罗马字</variant>
 			<variant type="POLYTON">多音字母</variant>
 			<variant type="POSIX">电脑</variant>
+			<variant type="PROVENC" draft="contributed">普罗旺斯方言</variant>
 			<variant type="PUTER">瑞士普特尔方言</variant>
 			<variant type="REVISED">修订的拼字</variant>
 			<variant type="RIGIK" draft="contributed">古典沃拉普克语</variant>
@@ -1143,7 +1170,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="VAIDIKA">吠陀梵文</variant>
 			<variant type="VALENCIA">瓦伦西亚文</variant>
 			<variant type="VALLADER">瑞士瓦勒德方言</variant>
+			<variant type="VIVARAUP" draft="contributed">维瓦鲁普方言</variant>
 			<variant type="WADEGILE">WG 威氏拼音法</variant>
+			<variant type="XSISTEMO" draft="contributed">西西斯特莫方言</variant>
 		</variants>
 		<keys>
 			<key type="calendar">日历</key>
@@ -1249,6 +1278,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="cham">占文数字</type>
 			<type key="numbers" type="cyrl">斯拉夫数字</type>
 			<type key="numbers" type="deva">梵文数字</type>
+			<type key="numbers" type="diak" draft="contributed">迪维西阿库鲁数字</type>
 			<type key="numbers" type="ethi">埃塞俄比亚数字</type>
 			<type key="numbers" type="finance">金融数字</type>
 			<type key="numbers" type="fullwide">全角数字</type>
@@ -1291,6 +1321,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="mtei">曼尼普尔数字</type>
 			<type key="numbers" type="mymr">缅甸数字</type>
 			<type key="numbers" type="mymrshan">缅甸掸文数字</type>
+			<type key="numbers" type="mymrtlng" draft="contributed">缅甸泰兰数字</type>
 			<type key="numbers" type="native" draft="contributed">当地数字</type>
 			<type key="numbers" type="nkoo">曼德数字</type>
 			<type key="numbers" type="olck">桑塔利文数字</type>
@@ -1316,6 +1347,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="traditional" draft="contributed">传统数字</type>
 			<type key="numbers" type="vaii">瓦伊文数字</type>
 			<type key="numbers" type="wara" draft="contributed">瓦郎奇蒂数字</type>
+			<type key="numbers" type="wcho" draft="contributed">万秋数字</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">公制</measurementSystemName>
@@ -1404,6 +1436,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d日</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d日E</dateFormatItem>
@@ -7287,7 +7339,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>诺福克岛时间</standard>
+					<generic draft="contributed">诺福克岛时间</generic>
+					<standard draft="contributed">诺福克岛标准时间</standard>
+					<daylight draft="contributed">诺福克岛夏令时间</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -9965,8 +10019,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>分{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>厘{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>毫{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>微{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>纳{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>皮{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>飞{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>阿{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>仄{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>幺{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>十{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>百{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>千{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>兆{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>吉{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>太{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>拍{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>艾{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>泽{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>尧{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>每{1}{0}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>平方{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>立方{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -9975,7 +10095,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>G力</displayName>
 				<unitPattern count="other">{0}G力</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>米/秒²</displayName>
 				<unitPattern count="other">每平方秒{0}米</unitPattern>
 			</unit>
@@ -10056,7 +10176,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>毫摩尔/升</displayName>
 				<unitPattern count="other">每升{0}毫摩尔</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">百万分之{0}</unitPattern>
 			</unit>
@@ -10076,7 +10196,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>升/公里</displayName>
 				<unitPattern count="other">每公里{0}升</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>升/100千米</displayName>
 				<unitPattern count="other">{0}升/100千米</unitPattern>
 			</unit>
@@ -10472,15 +10592,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>马力</displayName>
 				<unitPattern count="other">{0}马力</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>毫米汞柱</displayName>
 				<unitPattern count="other">{0}毫米汞柱</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>磅/平方英寸</displayName>
 				<unitPattern count="other">每平方英寸{0}磅</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>英寸汞柱</displayName>
 				<unitPattern count="other">{0}英寸汞柱</unitPattern>
 			</unit>
@@ -10544,7 +10664,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>开尔文</displayName>
 				<unitPattern count="other">{0}开尔文</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>磅英尺</displayName>
 				<unitPattern count="other">{0}磅英尺</unitPattern>
 			</unit>
@@ -10684,7 +10804,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>G力</displayName>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName>米/秒²</displayName>
 				<unitPattern count="other">{0}米/秒²</unitPattern>
 			</unit>
@@ -10765,7 +10885,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>毫摩尔/升</displayName>
 				<unitPattern count="other">{0}毫摩尔/升</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-million">
+			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -10785,7 +10905,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>升/公里</displayName>
 				<unitPattern count="other">{0}升/公里</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>升/100千米</displayName>
 				<unitPattern count="other">{0}升/100千米</unitPattern>
 			</unit>
@@ -11153,15 +11273,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>马力</displayName>
 				<unitPattern count="other">{0}马力</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-of-mercury">
+			<unit type="pressure-millimeter-ofhg">
 				<displayName>毫米汞柱</displayName>
 				<unitPattern count="other">{0}毫米汞柱</unitPattern>
 			</unit>
-			<unit type="pressure-pound-per-square-inch">
+			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>磅/平方英寸</displayName>
 				<unitPattern count="other">每平方英寸{0}磅</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName>英寸汞柱</displayName>
 				<unitPattern count="other">{0}英寸汞柱</unitPattern>
 			</unit>
@@ -11225,7 +11345,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>开</displayName>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
-			<unit type="torque-pound-foot">
+			<unit type="torque-pound-force-foot">
 				<displayName>磅英尺</displayName>
 				<unitPattern count="other">{0}磅英尺</unitPattern>
 			</unit>
@@ -11355,6 +11475,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -11365,7 +11488,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">G力</displayName>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
-			<unit type="acceleration-meter-per-second-squared">
+			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">米/秒²</displayName>
 				<unitPattern count="other" draft="contributed">{0}米/秒²</unitPattern>
 			</unit>
@@ -11423,7 +11546,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
-			<unit type="consumption-liter-per-100kilometers">
+			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>升/100千米</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
@@ -11531,24 +11654,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-picometer">
 				<displayName draft="contributed">皮米</displayName>
-				<unitPattern count="other" draft="contributed">{0}pm</unitPattern>
+				<unitPattern count="other">{0}pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName draft="contributed">英里</displayName>
-				<unitPattern count="other" draft="contributed">{0}mi</unitPattern>
+				<unitPattern count="other">{0}mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName draft="contributed">码</displayName>
-				<unitPattern count="other" draft="contributed">{0}yd</unitPattern>
+				<unitPattern count="other">{0}yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName draft="contributed">英尺</displayName>
-				<unitPattern count="other" draft="contributed">{0}′</unitPattern>
+				<unitPattern count="other">{0}′</unitPattern>
 				<perUnitPattern draft="contributed">{0}/英尺</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName draft="contributed">英寸</displayName>
-				<unitPattern count="other" draft="contributed">{0}″</unitPattern>
+				<unitPattern count="other">{0}″</unitPattern>
 				<perUnitPattern draft="contributed">{0}/英寸</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
@@ -11557,7 +11680,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-light-year">
 				<displayName draft="contributed">光年</displayName>
-				<unitPattern count="other" draft="contributed">{0}ly</unitPattern>
+				<unitPattern count="other">{0}ly</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName draft="contributed">天文单位</displayName>
@@ -11606,7 +11729,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">

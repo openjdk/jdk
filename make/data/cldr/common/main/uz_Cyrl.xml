@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2019 Unicode, Inc.
+<!-- Copyright © 1991-2020 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -337,9 +337,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hang">Хангул</script>
 			<script type="Hani">Хан</script>
 			<script type="Hans">Соддалаштирилган</script>
-			<script type="Hans" alt="stand-alone">Соддалаштирилган</script>
 			<script type="Hant">Анъанавий</script>
-			<script type="Hant" alt="stand-alone">Анъанавий</script>
 			<script type="Hebr">Иброний</script>
 			<script type="Hira">Хирагана</script>
 			<script type="Jpan">Япон</script>
@@ -482,7 +480,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR">Франция</territory>
 			<territory type="GA">Габон</territory>
 			<territory type="GB">Буюк Британия</territory>
-			<territory type="GB" alt="short">Буюк Британия</territory>
 			<territory type="GD">Гренада</territory>
 			<territory type="GE">Грузия</territory>
 			<territory type="GF">Француз Гвианаси</territory>
@@ -2249,7 +2246,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Норфолк ороли вақти</standard>
+					<generic draft="contributed">Норфолк ороли вақти</generic>
+					<standard draft="contributed">Норфолк ороли стандарт вақти</standard>
+					<daylight draft="contributed">Норфолк ороли ёзги вақти</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -3136,7 +3135,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="provisional">inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -3371,7 +3370,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<displayName draft="provisional">inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -3571,7 +3570,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-inch-hg">
+			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
