@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,14 +170,14 @@ class LibraryCallKit : public GraphKit {
                                       int offset);
   Node* load_klass_from_mirror(Node* mirror, bool never_see_null,
                                RegionNode* region, int null_path) {
-    int offset = java_lang_Class::klass_offset_in_bytes();
+    int offset = java_lang_Class::klass_offset();
     return load_klass_from_mirror_common(mirror, never_see_null,
                                          region, null_path,
                                          offset);
   }
   Node* load_array_klass_from_mirror(Node* mirror, bool never_see_null,
                                      RegionNode* region, int null_path) {
-    int offset = java_lang_Class::array_klass_offset_in_bytes();
+    int offset = java_lang_Class::array_klass_offset();
     return load_klass_from_mirror_common(mirror, never_see_null,
                                          region, null_path,
                                          offset);
@@ -3387,7 +3387,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
 
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;   // memory type of loads
   const TypeKlassPtr* kls_type = TypeKlassPtr::OBJECT_OR_NULL;
-  int class_klass_offset = java_lang_Class::klass_offset_in_bytes();
+  int class_klass_offset = java_lang_Class::klass_offset();
 
   // First null-check both mirrors and load each mirror's klass metaobject.
   int which_arg;
@@ -5680,8 +5680,7 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
 //----------------------------inline_reference_get----------------------------
 // public T java.lang.ref.Reference.get();
 bool LibraryCallKit::inline_reference_get() {
-  const int referent_offset = java_lang_ref_Reference::referent_offset;
-  guarantee(referent_offset > 0, "should have already been set");
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
 
   // Get the argument:
   Node* reference_obj = null_check_receiver();

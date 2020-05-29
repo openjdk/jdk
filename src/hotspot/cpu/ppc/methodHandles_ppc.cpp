@@ -56,7 +56,7 @@ void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_
     verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
                  temp_reg, temp2_reg, "MH argument is a Class");
   }
-  __ ld(klass_reg, java_lang_Class::klass_offset_in_bytes(), klass_reg);
+  __ ld(klass_reg, java_lang_Class::klass_offset(), klass_reg);
 }
 
 #ifdef ASSERT
@@ -98,7 +98,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {
   Label L;
   BLOCK_COMMENT("verify_ref_kind {");
-  __ load_sized_value(temp, NONZERO(java_lang_invoke_MemberName::flags_offset_in_bytes()), member_reg,
+  __ load_sized_value(temp, NONZERO(java_lang_invoke_MemberName::flags_offset()), member_reg,
                       sizeof(u4), /*is_signed*/ false);
   // assert(sizeof(u4) == sizeof(java.lang.invoke.MemberName.flags), "");
   __ srwi( temp, temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT);
@@ -174,16 +174,16 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv, FILE_AND_LINE);
-  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes()), recv,
+  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MethodHandle::form_offset()), recv,
                    temp2, noreg, false, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
-  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes()), method_temp,
+  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset()), method_temp,
                    temp2, noreg, false, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
-  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), method_temp,
+  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset()), method_temp,
                    temp2, noreg, false, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
-  __ ld(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), method_temp);
+  __ ld(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()), method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // Make sure recv is already on stack.
@@ -342,7 +342,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
-        __ load_heap_oop(temp2_defc, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()), member_reg,
+        __ load_heap_oop(temp2_defc, NONZERO(java_lang_invoke_MemberName::clazz_offset()), member_reg,
                          temp3, noreg, false, IS_NOT_NULL);
         load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
         __ verify_klass_ptr(temp2_defc);
@@ -370,18 +370,18 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp2);
       }
-      __ load_heap_oop(R19_method, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), member_reg,
+      __ load_heap_oop(R19_method, NONZERO(java_lang_invoke_MemberName::method_offset()), member_reg,
                        temp3, noreg, false, IS_NOT_NULL);
-      __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), R19_method);
+      __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()), R19_method);
       break;
 
     case vmIntrinsics::_linkToStatic:
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp2);
       }
-      __ load_heap_oop(R19_method, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), member_reg,
+      __ load_heap_oop(R19_method, NONZERO(java_lang_invoke_MemberName::method_offset()), member_reg,
                        temp3, noreg, false, IS_NOT_NULL);
-      __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), R19_method);
+      __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()), R19_method);
       break;
 
     case vmIntrinsics::_linkToVirtual:
@@ -395,7 +395,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       // pick out the vtable index from the MemberName, and then we can discard it:
       Register temp2_index = temp2;
-      __ ld(temp2_index, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()), member_reg);
+      __ ld(temp2_index, NONZERO(java_lang_invoke_MemberName::vmindex_offset()), member_reg);
 
       if (VerifyMethodHandles) {
         Label L_index_ok;
@@ -422,13 +422,13 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       Register temp2_intf = temp2;
-      __ load_heap_oop(temp2_intf, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()), member_reg,
+      __ load_heap_oop(temp2_intf, NONZERO(java_lang_invoke_MemberName::clazz_offset()), member_reg,
                        temp3, noreg, false, IS_NOT_NULL);
       load_klass_from_Class(_masm, temp2_intf, temp3, temp4);
       __ verify_klass_ptr(temp2_intf);
 
       Register vtable_index = R19_method;
-      __ ld(vtable_index, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()), member_reg);
+      __ ld(vtable_index, NONZERO(java_lang_invoke_MemberName::vmindex_offset()), member_reg);
       if (VerifyMethodHandles) {
         Label L_index_ok;
         __ cmpdi(CCR1, vtable_index, 0);
@@ -538,9 +538,7 @@ void trace_method_handle_stub(const char* adaptername,
     if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0) {
-          java_lang_invoke_MethodHandle::form(mh)->print();
-        }
+        java_lang_invoke_MethodHandle::form(mh)->print();
       }
     }
   }

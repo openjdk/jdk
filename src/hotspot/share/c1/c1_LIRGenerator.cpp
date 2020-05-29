@@ -1220,8 +1220,7 @@ void LIRGenerator::do_Return(Return* x) {
 // Combination of LoadField and g1 pre-write barrier
 void LIRGenerator::do_Reference_get(Intrinsic* x) {
 
-  const int referent_offset = java_lang_ref_Reference::referent_offset;
-  guarantee(referent_offset > 0, "referent offset not initialized");
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
 
   assert(x->number_of_arguments() == 1, "wrong type");
 
@@ -1307,7 +1306,7 @@ void LIRGenerator::do_isPrimitive(Intrinsic* x) {
     info = state_for(x);
   }
 
-  __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset_in_bytes(), T_ADDRESS), temp, info);
+  __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
   __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(0));
   __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
 }
@@ -2954,7 +2953,7 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
 
   arg.load_item();
   LIR_Opr klass = new_register(T_METADATA);
-  __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset_in_bytes(), T_ADDRESS), klass, info);
+  __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
   LIR_Opr id = new_register(T_LONG);
   ByteSize offset = KLASS_TRACE_ID_OFFSET;
   LIR_Address* trace_id_addr = new LIR_Address(klass, in_bytes(offset), T_LONG);

@@ -214,7 +214,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
   if (!is_fast_aldc) {
     // Tell the interpreter how to unbox the primitive.
     guarantee(java_lang_boxing_object::is_instance(result, type), "");
-    int offset = java_lang_boxing_object::value_offset_in_bytes(type);
+    int offset = java_lang_boxing_object::value_offset(type);
     intptr_t flags = ((as_TosState(type) << ConstantPoolCacheEntry::tos_state_shift)
                       | (offset & ConstantPoolCacheEntry::field_index_mask));
     thread->set_vm_result_2((Metadata*)flags);

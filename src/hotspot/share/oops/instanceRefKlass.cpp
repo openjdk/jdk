@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,10 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
 
 #ifdef ASSERT
   // Verify fields are in the expected places.
-  int referent_offset = java_lang_ref_Reference::referent_offset;
-  int queue_offset = java_lang_ref_Reference::queue_offset;
-  int next_offset = java_lang_ref_Reference::next_offset;
-  int discovered_offset = java_lang_ref_Reference::discovered_offset;
+  int referent_offset = java_lang_ref_Reference::referent_offset();
+  int queue_offset = java_lang_ref_Reference::queue_offset();
+  int next_offset = java_lang_ref_Reference::next_offset();
+  int discovered_offset = java_lang_ref_Reference::discovered_offset();
   assert(referent_offset < queue_offset, "just checking");
   assert(queue_offset < next_offset, "just checking");
   assert(next_offset < discovered_offset, "just checking");
@@ -58,7 +58,7 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
 #endif // ASSERT
 
   // Updated map starts at "queue", covers "queue" and "next".
-  const int new_offset = java_lang_ref_Reference::queue_offset;
+  const int new_offset = java_lang_ref_Reference::queue_offset();
   const unsigned int new_count = 2; // queue and next
 
   // Verify existing map is as expected, and update if needed.

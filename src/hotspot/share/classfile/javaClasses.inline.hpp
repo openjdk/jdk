@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,19 @@
 #include "oops/oopsHierarchy.hpp"
 
 void java_lang_String::set_coder(oop string, jbyte coder) {
-  assert(initialized && (coder_offset > 0), "Must be initialized");
-  string->byte_field_put(coder_offset, coder);
+  string->byte_field_put(_coder_offset, coder);
 }
 
 void java_lang_String::set_value_raw(oop string, typeArrayOop buffer) {
-  assert(initialized, "Must be initialized");
-  string->obj_field_put_raw(value_offset, buffer);
+  string->obj_field_put_raw(_value_offset, buffer);
 }
 
 void java_lang_String::set_value(oop string, typeArrayOop buffer) {
-  assert(initialized && (value_offset > 0), "Must be initialized");
-  string->obj_field_put(value_offset, (oop)buffer);
+  string->obj_field_put(_value_offset, (oop)buffer);
 }
 
 bool java_lang_String::hash_is_set(oop java_string) {
-  assert(initialized && (hash_offset > 0) && (hashIsZero_offset > 0), "Must be initialized");
-  return java_string->int_field(hash_offset) != 0 || java_string->bool_field(hashIsZero_offset) != 0;
+  return java_string->int_field(_hash_offset) != 0 || java_string->bool_field(_hashIsZero_offset) != 0;
 }
 
 // Accessors
@@ -60,27 +56,24 @@ bool java_lang_String::value_equals(typeArrayOop str_value1, typeArrayOop str_va
 }
 
 typeArrayOop java_lang_String::value(oop java_string) {
-  assert(initialized && (value_offset > 0), "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  return (typeArrayOop) java_string->obj_field(value_offset);
+  return (typeArrayOop) java_string->obj_field(_value_offset);
 }
 
 typeArrayOop java_lang_String::value_no_keepalive(oop java_string) {
-  assert(initialized && (value_offset > 0), "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  return (typeArrayOop) java_string->obj_field_access<AS_NO_KEEPALIVE>(value_offset);
+  return (typeArrayOop) java_string->obj_field_access<AS_NO_KEEPALIVE>(_value_offset);
 }
 
 bool java_lang_String::is_latin1(oop java_string) {
-  assert(initialized && (coder_offset > 0), "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  jbyte coder = java_string->byte_field(coder_offset);
+  jbyte coder = java_string->byte_field(_coder_offset);
   assert(CompactStrings || coder == CODER_UTF16, "Must be UTF16 without CompactStrings");
   return coder == CODER_LATIN1;
 }
 
 int java_lang_String::length(oop java_string, typeArrayOop value) {
-  assert(initialized, "Must be initialized");
+  assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be equal to java_lang_String::value(java_string)");
@@ -96,7 +89,7 @@ int java_lang_String::length(oop java_string, typeArrayOop value) {
 }
 
 int java_lang_String::length(oop java_string) {
-  assert(initialized, "Must be initialized");
+  assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
   typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
   return length(java_string, value);
@@ -108,51 +101,51 @@ bool java_lang_String::is_instance_inlined(oop obj) {
 
 // Accessors
 oop java_lang_ref_Reference::referent(oop ref) {
-  return ref->obj_field(referent_offset);
+  return ref->obj_field(_referent_offset);
 }
 
 void java_lang_ref_Reference::set_referent(oop ref, oop value) {
-  ref->obj_field_put(referent_offset, value);
+  ref->obj_field_put(_referent_offset, value);
 }
 
 void java_lang_ref_Reference::set_referent_raw(oop ref, oop value) {
-  ref->obj_field_put_raw(referent_offset, value);
+  ref->obj_field_put_raw(_referent_offset, value);
 }
 
 HeapWord* java_lang_ref_Reference::referent_addr_raw(oop ref) {
-  return ref->obj_field_addr_raw<HeapWord>(referent_offset);
+  return ref->obj_field_addr_raw<HeapWord>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::next(oop ref) {
-  return ref->obj_field(next_offset);
+  return ref->obj_field(_next_offset);
 }
 
 void java_lang_ref_Reference::set_next(oop ref, oop value) {
-  ref->obj_field_put(next_offset, value);
+  ref->obj_field_put(_next_offset, value);
 }
 
 void java_lang_ref_Reference::set_next_raw(oop ref, oop value) {
-  ref->obj_field_put_raw(next_offset, value);
+  ref->obj_field_put_raw(_next_offset, value);
 }
 
 HeapWord* java_lang_ref_Reference::next_addr_raw(oop ref) {
-  return ref->obj_field_addr_raw<HeapWord>(next_offset);
+  return ref->obj_field_addr_raw<HeapWord>(_next_offset);
 }
 
 oop java_lang_ref_Reference::discovered(oop ref) {
-  return ref->obj_field(discovered_offset);
+  return ref->obj_field(_discovered_offset);
 }
 
 void java_lang_ref_Reference::set_discovered(oop ref, oop value) {
-  ref->obj_field_put(discovered_offset, value);
+  ref->obj_field_put(_discovered_offset, value);
 }
 
 void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
-  ref->obj_field_put_raw(discovered_offset, value);
+  ref->obj_field_put_raw(_discovered_offset, value);
 }
 
 HeapWord* java_lang_ref_Reference::discovered_addr_raw(oop ref) {
-  return ref->obj_field_addr_raw<HeapWord>(discovered_offset);
+  return ref->obj_field_addr_raw<HeapWord>(_discovered_offset);
 }
 
 bool java_lang_ref_Reference::is_final(oop ref) {

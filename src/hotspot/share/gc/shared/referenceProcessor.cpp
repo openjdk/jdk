@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ void DiscoveredListIterator::clear_referent() {
 
 void DiscoveredListIterator::enqueue() {
   HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_current_discovered,
-                                            java_lang_ref_Reference::discovered_offset,
+                                            java_lang_ref_Reference::discovered_offset(),
                                             _next_discovered);
 }
 
@@ -311,7 +311,7 @@ void DiscoveredListIterator::complete_enqueue() {
     // Swap refs_list into pending list and set obj's
     // discovered to what we read from the pending list.
     oop old = Universe::swap_reference_pending_list(_refs_list.head());
-    HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_prev_discovered, java_lang_ref_Reference::discovered_offset, old);
+    HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_prev_discovered, java_lang_ref_Reference::discovered_offset(), old);
   }
 }
 
