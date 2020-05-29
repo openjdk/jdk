@@ -26,6 +26,7 @@
 #include <ctype.h>
 
 #include "util.h"
+#include "utf_util.h"
 #include "transport.h"
 #include "eventHandler.h"
 #include "threadControl.h"
@@ -1652,13 +1653,26 @@ setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue)
     /* Create jstrings for property name and value */
     nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, propertyName);
     if (nameString != NULL) {
-        valueString = JNU_NewStringPlatform(env, propertyValue);
-        if (valueString != NULL) {
-            /* invoke Properties.setProperty */
-            JNI_FUNC_PTR(env,CallObjectMethod)
-                (env, gdata->agent_properties,
-                 gdata->setProperty,
-                 nameString, valueString);
+        /* convert the value to UTF8 */
+        int len;
+        char *utf8value;
+        int utf8maxSize;
+
+        len = (int)strlen(propertyValue);
+        utf8maxSize = len * 4 + 1;
+        utf8value = (char *)jvmtiAllocate(utf8maxSize);
+        if (utf8value != NULL) {
+            utf8FromPlatform(propertyValue, len, (jbyte *)utf8value, utf8maxSize);
+            valueString = JNI_FUNC_PTR(env, NewStringUTF)(env, utf8value);
+            jvmtiDeallocate(utf8value);
+
+            if (valueString != NULL) {
+                /* invoke Properties.setProperty */
+                JNI_FUNC_PTR(env,CallObjectMethod)
+                    (env, gdata->agent_properties,
+                     gdata->setProperty,
+                     nameString, valueString);
+            }
         }
     }
     if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {

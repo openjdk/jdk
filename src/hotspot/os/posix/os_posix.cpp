@@ -1638,6 +1638,8 @@ void os::Posix::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
 int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
 int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
 
+bool os::Posix::_supports_monotonic_clock = false;
+
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
 static bool _use_clock_monotonic_condattr = false;
@@ -1653,7 +1655,7 @@ void os::Posix::init(void) {
 
   void* handle = NULL;
 
-  // For linux we need librt, for other OS we can find
+  // For older linux we need librt, for other OS we can find
   // this function in regular libc.
 #ifdef NEEDS_LIBRT
   // We do dlopen's in this particular order due to bug in linux
@@ -1673,6 +1675,8 @@ void os::Posix::init(void) {
   int (*clock_gettime_func)(clockid_t, struct timespec*) =
     (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
   if (clock_getres_func != NULL && clock_gettime_func != NULL) {
+    _clock_gettime = clock_gettime_func;
+    _clock_getres = clock_getres_func;
     // We assume that if both clock_gettime and clock_getres support
     // CLOCK_MONOTONIC then the OS provides true high-res monotonic clock.
     struct timespec res;
@@ -1680,15 +1684,7 @@ void os::Posix::init(void) {
     if (clock_getres_func(CLOCK_MONOTONIC, &res) == 0 &&
         clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
       // Yes, monotonic clock is supported.
-      _clock_gettime = clock_gettime_func;
-      _clock_getres = clock_getres_func;
-    } else {
-#ifdef NEEDS_LIBRT
-      // Close librt if there is no monotonic clock.
-      if (handle != RTLD_DEFAULT) {
-        dlclose(handle);
-      }
-#endif
+      _supports_monotonic_clock = true;
     }
   }
 

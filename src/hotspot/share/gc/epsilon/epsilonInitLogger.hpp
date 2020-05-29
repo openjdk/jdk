@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  *
  */
 
-package sun.jvm.hotspot.utilities.soql;
+#ifndef SHARE_GC_EPSILON_EPSILONINITLOGGER_HPP
+#define SHARE_GC_EPSILON_EPSILONINITLOGGER_HPP
 
-/**
-   This visitor is supplied to SOQLEngine.executeQuery
-   to receive result set objects one by one.
-*/
+#include "gc/shared/gcInitLogger.hpp"
 
-public interface ObjectVisitor {
-   public void visit(Object o);
-}
+class EpsilonInitLogger : public GCInitLogger {
+protected:
+  virtual void print_gc_specific();
+
+public:
+  static void print();
+};
+
+#endif // SHARE_GC_EPSILON_EPSILONINITLOGGER_HPP

@@ -104,9 +104,6 @@ import sun.jvm.hotspot.utilities.ReversePtrs;
 import sun.jvm.hotspot.utilities.ReversePtrsAnalysis;
 import sun.jvm.hotspot.utilities.RobustOopDeterminator;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
-import sun.jvm.hotspot.utilities.soql.JSJavaFactory;
-import sun.jvm.hotspot.utilities.soql.JSJavaFactoryImpl;
-import sun.jvm.hotspot.utilities.soql.JSJavaScriptEngine;
 
 public class CommandProcessor {
 
@@ -1846,7 +1843,6 @@ public class CommandProcessor {
 
     private DebuggerInterface debugger;
     private HotSpotAgent agent;
-    private JSJavaScriptEngine jsengine;
     private BufferedReader in;
     private PrintStream out;
     private PrintStream err;
@@ -1858,65 +1854,7 @@ public class CommandProcessor {
 
     // called after debuggee attach
     private void postAttach() {
-        /*
-         * JavaScript engine no longer works. For now disable it. Eventually we will remove it.
-        // create JavaScript engine and start it
-        try {
-            jsengine = new JSJavaScriptEngine() {
-                        private ObjectReader reader = new ObjectReader();
-                        private JSJavaFactory factory = new JSJavaFactoryImpl();
-                        public ObjectReader getObjectReader() {
-                            return reader;
-                        }
-                        public JSJavaFactory getJSJavaFactory() {
-                            return factory;
-                        }
-                        protected void quit() {
-                            debugger.detach();
-                            quit = true;
-                        }
-                        protected BufferedReader getInputReader() {
-                            return in;
-                        }
-                        protected PrintStream getOutputStream() {
-                            return out;
-                        }
-                        protected PrintStream getErrorStream() {
-                            return err;
-                        }
-                   };
-            try {
-                jsengine.defineFunction(this,
-                     this.getClass().getMethod("registerCommand",
-                                new Class[] {
-                                     String.class, String.class, String.class
-                                }));
-            } catch (NoSuchMethodException exp) {
-                  // should not happen, see below...!!
-                  exp.printStackTrace();
-            }
-            jsengine.start();
-        }
-        catch (Exception ex) {
-            System.out.println("Warning! JS Engine can't start, some commands will not be available.");
-            if (verboseExceptions) {
-                ex.printStackTrace(out);
-            }
-        }
-        */
-    }
-
-    public void registerCommand(String cmd, String usage, final String func) {
-        commands.put(cmd, new Command(cmd, usage, false) {
-                              public void doit(Tokens t) {
-                                  final int len = t.countTokens();
-                                  Object[] args = new Object[len];
-                                  for (int i = 0; i < len; i++) {
-                                      args[i] = t.nextToken();
-                                  }
-                                  jsengine.call(func, args);
-                              }
-                          });
+        // nothing for now..
     }
 
     public void setOutput(PrintStream o) {

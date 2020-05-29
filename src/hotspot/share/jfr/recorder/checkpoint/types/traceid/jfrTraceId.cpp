@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfrfiles/jfrTypes.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "oops/arrayKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
@@ -52,7 +53,7 @@ static traceid atomic_inc(traceid volatile* const dest) {
 }
 
 static traceid next_class_id() {
-  static volatile traceid class_id_counter = MaxJfrEventId + 100;
+  static volatile traceid class_id_counter = LAST_TYPE_ID + 1;
   return atomic_inc(&class_id_counter) << TRACE_ID_SHIFT;
 }
 

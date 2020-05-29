@@ -25,22 +25,10 @@ ReferenceTest.java:44: error: invalid use of @return
 ReferenceTest.java:49: error: exception not thrown: java.lang.Exception
      * @throws Exception description
                ^
-ReferenceTest.java:60: error: type arguments not allowed here
-     * {@link java.util.List<String>}
-              ^
-ReferenceTest.java:61: error: type arguments not allowed here
-     * {@link java.util.List<String>#equals}
-              ^
-ReferenceTest.java:62: error: type arguments not allowed here
+ReferenceTest.java:62: error: reference not found
      * {@link not.Found<String>}
               ^
-ReferenceTest.java:63: error: type arguments not allowed here
-     * @see java.util.List<String>
-            ^
-ReferenceTest.java:64: error: type arguments not allowed here
-     * @see java.util.List<String>#equals
-            ^
-ReferenceTest.java:65: error: type arguments not allowed here
+ReferenceTest.java:65: error: reference not found
      * @see not.Found<String>
             ^
 ReferenceTest.java:72: error: reference not found
@@ -49,6 +37,6 @@ ReferenceTest.java:72: error: reference not found
 ReferenceTest.java:75: error: reference not found
      * @see not.Found[]
             ^
-16 errors
+12 errors
 1 warning
 

@@ -53,14 +53,14 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     final long min;
 
     @ForceInline
-    NativeMemorySegmentImpl(long min, long length, int mask, Thread owner, MemoryScope scope) {
-        super(length, mask, owner, scope);
+    NativeMemorySegmentImpl(long min, long length, int mask, MemoryScope scope) {
+        super(length, mask, scope);
         this.min = min;
     }
 
     @Override
-    NativeMemorySegmentImpl dup(long offset, long size, int mask, Thread owner, MemoryScope scope) {
-        return new NativeMemorySegmentImpl(min + offset, size, mask, owner, scope);
+    NativeMemorySegmentImpl dup(long offset, long size, int mask, MemoryScope scope) {
+        return new NativeMemorySegmentImpl(min + offset, size, mask, scope);
     }
 
     @Override
@@ -93,9 +93,9 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
             unsafe.setMemory(buf, alignedSize, (byte)0);
         }
         long alignedBuf = Utils.alignUp(buf, alignmentBytes);
-        MemoryScope scope = new MemoryScope(null, () -> unsafe.freeMemory(buf));
-        MemorySegment segment = new NativeMemorySegmentImpl(buf, alignedSize, defaultAccessModes(alignedSize),
-                Thread.currentThread(), scope);
+        MemoryScope scope = MemoryScope.create(null, () -> unsafe.freeMemory(buf));
+        MemorySegment segment = new NativeMemorySegmentImpl(buf, alignedSize,
+                defaultAccessModes(alignedSize), scope);
         if (alignedSize != bytesSize) {
             long delta = alignedBuf - buf;
             segment = segment.asSlice(delta, bytesSize);
@@ -104,7 +104,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     public static MemorySegment makeNativeSegmentUnchecked(MemoryAddress min, long bytesSize, Thread owner, Runnable cleanup, Object attachment) {
-        MemoryScope scope = new MemoryScope(attachment, cleanup);
-        return new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, defaultAccessModes(bytesSize), owner, scope);
+        MemoryScope scope = MemoryScope.createUnchecked(owner, attachment, cleanup);
+        return new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, defaultAccessModes(bytesSize), scope);
     }
 }

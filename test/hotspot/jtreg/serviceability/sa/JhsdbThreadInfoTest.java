@@ -44,7 +44,7 @@ public class JhsdbThreadInfoTest {
             System.out.println("Started LingeredApp with pid " + app.getPid());
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-            jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
+            jhsdbLauncher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion"));
 
             jhsdbLauncher.addToolArg("jstack");
             jhsdbLauncher.addToolArg("--pid");

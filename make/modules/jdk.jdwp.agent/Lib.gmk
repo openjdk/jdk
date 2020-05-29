@@ -64,7 +64,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -liconv, \
     LIBS_aix := -liconv, \
-    LIBS_windows := $(WIN_JAVA_LIB), \
 ))
 
 $(BUILD_LIBJDWP): $(call FindLib, java.base, java)

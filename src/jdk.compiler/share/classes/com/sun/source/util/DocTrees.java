@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -151,6 +152,21 @@ public abstract class DocTrees extends Trees {
      * @return the element
      */
     public abstract Element getElement(DocTreePath path);
+
+    /**
+     * Returns the language model type referred to by the leaf node of the given
+     * {@link DocTreePath}, or {@code null} if unknown. This method usually
+     * returns the same value as {@code getElement(path).asType()} for a
+     * {@code path} argument for which {@link #getElement(DocTreePath)} returns
+     * a non-null value, but may return a type that includes additional
+     * information, such as a parameterized generic type instead of a raw type.
+     *
+     * @param path the path for the tree node
+     * @return the referenced type, or null
+     *
+     * @since 15
+     */
+    public abstract TypeMirror getType(DocTreePath path);
 
     /**
      * Returns the list of {@link DocTree} representing the first sentence of

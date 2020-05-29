@@ -1304,8 +1304,8 @@
   <XmlType name="ClassLoader" parameterType="const ClassLoaderData*" fieldType="const ClassLoaderData*"/>
   <XmlType name="Method" parameterType="const Method*" fieldType="const Method*"/>
   <XmlType name="Thread" javaType="java.lang.Thread" parameterType="u8" fieldType="u8"/>
-  <XmlType name="Tickspan" contentType="tickspan" javaType="long" parameterType="const Tickspan&amp;" fieldType="Tickspan"/>
-  <XmlType name="Ticks" contentType="tickstamp" javaType="long" parameterType="const Ticks&amp;" fieldType="Ticks"/>
+  <XmlType name="Tickspan" contentType="tickspan" unsigned="true" javaType="long" parameterType="const Tickspan&amp;" fieldType="Tickspan"/>
+  <XmlType name="Ticks" contentType="tickstamp" unsigned="true" javaType="long" parameterType="const Ticks&amp;" fieldType="Ticks"/>
   <XmlType name="ulong" javaType="long" unsigned="true" parameterType="u8" fieldType="u8"/>
   <XmlType name="uint" javaType="int" unsigned="true" parameterType="unsigned" fieldType="unsigned"/>
   <XmlType name="ushort" javaType="short" unsigned="true" parameterType="u2" fieldType="u2"/>
@@ -1319,6 +1319,7 @@
   <XmlType name="boolean" javaType="boolean" parameterType="bool" fieldType="bool"/>
   <XmlType name="char" javaType="char" parameterType="char" fieldType="char"/>
   <XmlType name="string" javaType="java.lang.String" parameterType="const char*" fieldType="const char*"/>
+  <XmlType name="StackTrace" javaType="jdk.types.StackTrace" parameterType="u8" fieldType="u8"/>
 
   <XmlContentType name="bytes" annotation="jdk.jfr.DataAmount(BYTES)" />
   <XmlContentType name="tickstamp" annotation="jdk.jfr.Timestamp(TICKS)" />

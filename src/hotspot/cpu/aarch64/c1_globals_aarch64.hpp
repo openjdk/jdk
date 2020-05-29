@@ -61,7 +61,6 @@ define_pd_global(bool, CICompileOSR,                 true );
 #endif // !TIERED
 define_pd_global(bool, UseTypeProfile,               false);
 
-define_pd_global(bool, LIRFillDelaySlots,            false);
 define_pd_global(bool, OptimizeSinglePrecision,      true );
 define_pd_global(bool, CSEArrayLength,               false);
 define_pd_global(bool, TwoOperandLIRForm,            false );

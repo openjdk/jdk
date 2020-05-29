@@ -136,7 +136,7 @@ public class LinkFactoryImpl extends LinkFactory {
             vars.addAll(((DeclaredType) linkInfo.type).getTypeArguments());
         } else if (ctype != null && utils.isDeclaredType(ctype)) {
             vars.addAll(((DeclaredType) ctype).getTypeArguments());
-        } else if (linkInfo.typeElement != null) {
+        } else if (ctype == null && linkInfo.typeElement != null) {
             linkInfo.typeElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
         } else {
             // Nothing to document.

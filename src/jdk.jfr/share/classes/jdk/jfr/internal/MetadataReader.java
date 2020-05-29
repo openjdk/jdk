@@ -261,7 +261,7 @@ final class MetadataReader {
             if (Type.SUPER_TYPE_EVENT.equals(superType)) {
                 t = new PlatformEventType(typeName, id, false, false);
             } else {
-                t = new Type(typeName, superType, id, false, simpleType);
+                t = new Type(typeName, superType, id, simpleType);
             }
             types.put(id, t);
             descriptor.types.add(t);

@@ -32,6 +32,10 @@
 // Exported clock functionality
 
 inline bool os::Posix::supports_monotonic_clock() {
+  return _supports_monotonic_clock;
+}
+
+inline bool os::Posix::supports_clock_gettime() {
   return _clock_gettime != NULL;
 }
 

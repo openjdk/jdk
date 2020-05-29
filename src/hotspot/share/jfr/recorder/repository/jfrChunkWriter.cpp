@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jfrfiles/jfrTypes.hpp"
 #include "jfr/recorder/repository/jfrChunk.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/utilities/jfrTime.hpp"

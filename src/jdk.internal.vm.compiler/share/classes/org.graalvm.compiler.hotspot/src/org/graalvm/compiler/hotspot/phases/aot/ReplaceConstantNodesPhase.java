@@ -28,6 +28,7 @@ import static org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph.stri
 import static org.graalvm.compiler.hotspot.nodes.aot.LoadMethodCountersNode.getLoadMethodCountersNodes;
 import static org.graalvm.compiler.nodes.ConstantNode.getConstantNodes;
 
+import java.lang.ref.Reference;
 import java.util.HashSet;
 import java.util.List;
 
@@ -82,6 +83,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
 
     private final boolean verifyFingerprints;
+    private final boolean allowResolution;
 
     static Class<?> characterCacheClass = Character.class.getDeclaredClasses()[0];
     static Class<?> byteCacheClass = Byte.class.getDeclaredClasses()[0];
@@ -92,6 +94,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
     static class ClassInfo {
 
         private ResolvedJavaType stringType;
+        private ResolvedJavaType referenceType;
         private final HashSet<ResolvedJavaType> builtIns = new HashSet<>();
 
         ClassInfo(MetaAccessProvider metaAccessProvider) {
@@ -113,6 +116,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
             builtIns.add(metaAccessProvider.lookupJavaType(longCacheClass));
 
             stringType = metaAccessProvider.lookupJavaType(String.class);
+            referenceType = metaAccessProvider.lookupJavaType(Reference.class);
         }
     }
 
@@ -313,8 +317,10 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
      * @param graph
      * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
      *            resolution.
+     * @return return true if all usages of the node have been replaced
      */
-    private static void tryToReplaceWithExisting(StructuredGraph graph, ConstantNode node) {
+    private static boolean tryToReplaceWithExisting(StructuredGraph graph, ConstantNode node) {
+        boolean allUsagesReplaced = true;
         ScheduleResult schedule = graph.getLastSchedule();
         NodeMap<Block> nodeToBlock = schedule.getNodeToBlockMap();
         BlockMap<List<Node>> blockToNodes = schedule.getBlockToNodesMap();
@@ -347,16 +353,20 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
                 for (Block d : blockToExisting.getKeys()) {
                     if (strictlyDominates(d, b)) {
                         use.replaceFirstInput(node, blockToExisting.get(d));
+                        replaced = true;
                         break;
                     }
                 }
             }
+            if (!replaced && allUsagesReplaced) {
+                allUsagesReplaced = false;
+            }
         }
+        return allUsagesReplaced;
     }
 
     /**
-     * Replace the uses of a constant with either {@link LoadConstantIndirectlyNode} or
-     * {@link ResolveConstantNode}.
+     * Replace the uses of a constant with {@link ResolveConstantNode}.
      *
      * @param graph
      * @param stateMapper
@@ -366,30 +376,63 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
     private static void replaceWithResolution(StructuredGraph graph, FrameStateMapperClosure stateMapper, ConstantNode node, ClassInfo classInfo) {
         HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
         HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
-        ResolvedJavaType topMethodHolder = graph.method().getDeclaringClass();
-        ValueNode replacement;
 
-        if (type.isArray() && type.getComponentType().isPrimitive()) {
-            // Special case for primitive arrays. The AOT runtime pre-resolves them, so we may
-            // omit the resolution call.
+        FixedWithNextNode fixedReplacement;
+        if (classInfo.builtIns.contains(type)) {
+            // Special case of klass constants that come from {@link BoxingSnippets}.
+            fixedReplacement = graph.add(new ResolveConstantNode(node, HotSpotConstantLoadAction.INITIALIZE));
+        } else {
+            fixedReplacement = graph.add(new ResolveConstantNode(node));
+        }
+        insertReplacement(graph, stateMapper, node, fixedReplacement);
+        node.replaceAtUsages(fixedReplacement, n -> !isReplacementNode(n));
+    }
+
+    /**
+     * Replace the uses of a constant with either {@link LoadConstantIndirectlyNode} if possible.
+     *
+     * @param graph
+     * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
+     *            resolution.
+     * @return return true if all usages of the node have been replaced
+     */
+    private static boolean replaceWithLoad(StructuredGraph graph, ConstantNode node, ClassInfo classInfo) {
+        HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
+        HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
+        ResolvedJavaType topMethodHolder = graph.method().getDeclaringClass();
+        ValueNode replacement = null;
+        if ((type.isArray() && type.getComponentType().isPrimitive()) || type.equals(classInfo.referenceType)) {
+            // Special case for primitive arrays and j.l.ref.Reference.
+            // The AOT runtime pre-resolves them, so we may omit the resolution call.
             replacement = graph.addOrUnique(new LoadConstantIndirectlyNode(node));
         } else if (type.equals(topMethodHolder) || (type.isAssignableFrom(topMethodHolder) && !type.isInterface())) {
             // If it's a supertype of or the same class that declares the top method, we are
             // guaranteed to have it resolved already. If it's an interface, we just test for
             // equality.
             replacement = graph.addOrUnique(new LoadConstantIndirectlyNode(node));
-        } else {
-            FixedWithNextNode fixedReplacement;
-            if (classInfo.builtIns.contains(type)) {
-                // Special case of klass constants that come from {@link BoxingSnippets}.
-                fixedReplacement = graph.add(new ResolveConstantNode(node, HotSpotConstantLoadAction.INITIALIZE));
-            } else {
-                fixedReplacement = graph.add(new ResolveConstantNode(node));
-            }
-            insertReplacement(graph, stateMapper, node, fixedReplacement);
-            replacement = fixedReplacement;
         }
-        node.replaceAtUsages(replacement, n -> !isReplacementNode(n));
+        if (replacement != null) {
+            node.replaceAtUsages(replacement, n -> !isReplacementNode(n));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Verify that {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} has a valid
+     * fingerprint.
+     *
+     * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType}.
+     */
+    private void verifyFingerprint(ConstantNode node) {
+        HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
+        HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
+        if (type != null) {
+            assert !metaspaceConstant.isCompressed() : "No support for replacing compressed metaspace constants";
+            if (verifyFingerprints && checkForBadFingerprint(type)) {
+                throw new GraalError("Type with bad fingerprint: " + type);
+            }
+        }
     }
 
     /**
@@ -400,19 +443,31 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
      * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
      *            resolution.
      */
-    private void handleHotSpotMetaspaceConstant(StructuredGraph graph, FrameStateMapperClosure stateMapper, ConstantNode node, ClassInfo classInfo) {
+    private static void handleHotSpotMetaspaceConstant(StructuredGraph graph, FrameStateMapperClosure stateMapper, ConstantNode node, ClassInfo classInfo) {
         HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
         HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
-
         if (type != null) {
-            if (verifyFingerprints && checkForBadFingerprint(type)) {
-                throw new GraalError("Type with bad fingerprint: " + type);
-            }
-            assert !metaspaceConstant.isCompressed() : "No support for replacing compressed metaspace constants";
-            tryToReplaceWithExisting(graph, node);
-            if (anyUsagesNeedReplacement(node)) {
+            if (!tryToReplaceWithExisting(graph, node) && !replaceWithLoad(graph, node, classInfo)) {
                 replaceWithResolution(graph, stateMapper, node, classInfo);
             }
+        } else {
+            throw new GraalError("Unsupported metaspace constant type: " + type);
+        }
+    }
+
+    /**
+     * Replace {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} with a load. This
+     * variant handles only constants that don't require resolution.
+     *
+     * @param graph
+     * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
+     *            resolution.
+     */
+    private static void handleHotSpotMetaspaceConstantWithoutResolution(StructuredGraph graph, ConstantNode node, ClassInfo classInfo) {
+        HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
+        HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
+        if (type != null) {
+            replaceWithLoad(graph, node, classInfo);
         } else {
             throw new GraalError("Unsupported metaspace constant type: " + type);
         }
@@ -482,6 +537,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
      *
      * @param graph
      * @param stateMapper
+     * @param classInfo
      */
     private void replaceKlassesAndObjects(StructuredGraph graph, FrameStateMapperClosure stateMapper, ClassInfo classInfo) {
         new SchedulePhase(SchedulingStrategy.LATEST_OUT_OF_LOOPS, true).apply(graph, false);
@@ -489,6 +545,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
         for (ConstantNode node : getConstantNodes(graph)) {
             Constant constant = node.asConstant();
             if (constant instanceof HotSpotMetaspaceConstant && anyUsagesNeedReplacement(node)) {
+                verifyFingerprint(node);
                 handleHotSpotMetaspaceConstant(graph, stateMapper, node, classInfo);
             } else if (constant instanceof HotSpotObjectConstant && anyUsagesNeedReplacement(node)) {
                 handleHotSpotObjectConstant(graph, stateMapper, node, classInfo);
@@ -496,18 +553,37 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
         }
     }
 
+    /**
+     * Replace well-known klass constants with indirect loads.
+     *
+     * @param graph
+     * @param classInfo
+     */
+    private static void replaceKlassesWithoutResolution(StructuredGraph graph, ClassInfo classInfo) {
+        for (ConstantNode node : getConstantNodes(graph)) {
+            Constant constant = node.asConstant();
+            if (constant instanceof HotSpotMetaspaceConstant && anyUsagesNeedReplacement(node)) {
+                handleHotSpotMetaspaceConstantWithoutResolution(graph, node, classInfo);
+            }
+        }
+    }
+
     @Override
     protected void run(StructuredGraph graph, CoreProviders context) {
-        FrameStateMapperClosure stateMapper = new FrameStateMapperClosure(graph);
-        ReentrantNodeIterator.apply(stateMapper, graph.start(), null);
+        if (allowResolution) {
+            FrameStateMapperClosure stateMapper = new FrameStateMapperClosure(graph);
+            ReentrantNodeIterator.apply(stateMapper, graph.start(), null);
 
-        // Replace LoadMethodCountersNode with ResolveMethodAndLoadCountersNode, expose klass
-        // constants.
-        replaceLoadMethodCounters(graph, stateMapper, context);
+            // Replace LoadMethodCountersNode with ResolveMethodAndLoadCountersNode, expose klass
+            // constants.
+            replaceLoadMethodCounters(graph, stateMapper, context);
 
-        // Replace object and klass constants (including the ones added in the previous pass) with
-        // resolution nodes.
-        replaceKlassesAndObjects(graph, stateMapper, new ClassInfo(context.getMetaAccess()));
+            // Replace object and klass constants (including the ones added in the previous pass)
+            // with resolution nodes.
+            replaceKlassesAndObjects(graph, stateMapper, new ClassInfo(context.getMetaAccess()));
+        } else {
+            replaceKlassesWithoutResolution(graph, new ClassInfo(context.getMetaAccess()));
+        }
     }
 
     @Override
@@ -515,11 +591,12 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
         return false;
     }
 
-    public ReplaceConstantNodesPhase() {
-        this(true);
+    public ReplaceConstantNodesPhase(boolean allowResolution) {
+        this(allowResolution, true);
     }
 
-    public ReplaceConstantNodesPhase(boolean verifyFingerprints) {
+    public ReplaceConstantNodesPhase(boolean allowResolution, boolean verifyFingerprints) {
+        this.allowResolution = allowResolution;
         this.verifyFingerprints = verifyFingerprints;
     }
 }

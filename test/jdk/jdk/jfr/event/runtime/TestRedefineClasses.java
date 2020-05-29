@@ -24,14 +24,10 @@
  */
 package jdk.jfr.event.runtime;
 
-import java.io.IOException;
 import java.lang.instrument.ClassDefinition;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.ProtectionDomain;
 import java.util.List;
 
 import jdk.jfr.Recording;

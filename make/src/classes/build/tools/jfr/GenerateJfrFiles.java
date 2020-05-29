@@ -7,10 +7,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
 
@@ -43,10 +43,11 @@ public class GenerateJfrFiles {
             metadata.verify();
             metadata.wireUpTypes();
 
+            TypeCounter typeCounter = new TypeCounter();
+            printJfrEventIdsHpp(metadata, typeCounter, outputDirectory);
+            printJfrTypesHpp(metadata, typeCounter, outputDirectory);
             printJfrPeriodicHpp(metadata, outputDirectory);
-            printJfrEventIdsHpp(metadata, outputDirectory);
-            printJfrEventControlHpp(metadata, outputDirectory);
-            printJfrTypesHpp(metadata, outputDirectory);
+            printJfrEventControlHpp(metadata, typeCounter, outputDirectory);
             printJfrEventClassesHpp(metadata, outputDirectory);
 
         } catch (Exception e) {
@@ -55,12 +56,78 @@ public class GenerateJfrFiles {
         }
     }
 
+    static class TypeCounter {
+        final static long RESERVED_EVENT_COUNT = 2;
+        long typeId = -1;
+        long eventId = -1;
+        long eventCount = 0;
+        String firstTypeName;
+        String lastTypeName;
+        String firstEventName;
+        String lastEventname;
+
+        public long nextEventId(String name) {
+            eventCount++;
+            if (eventId == -1) {
+                eventId = firstEventId();
+                firstEventName = lastEventname = name;
+                return eventId;
+            }
+            lastEventname = name;
+            return ++eventId;
+        }
+
+        public long nextTypeId(String typeName) {
+            if (typeId == -1) {
+                lastTypeName = firstTypeName = typeName;
+                typeId = lastEventId();
+            }
+            lastTypeName = typeName;
+            return ++typeId;
+        }
+
+        public long firstEventId() {
+            return RESERVED_EVENT_COUNT;
+        }
+
+        public long lastEventId() {
+            return eventId == -1 ? firstEventId() : eventId;
+        }
+
+        public long eventCount() {
+            return eventCount;
+        }
+
+        public String firstTypeName() {
+            return firstTypeName;
+        }
+
+        public String lastTypeName() {
+            return lastTypeName;
+        }
+
+        public String firstEventName() {
+            return firstEventName;
+        }
+
+        public String lastEventName() {
+            return lastEventname;
+        }
+    }
+
     static class XmlType {
+        final String name;
         final String fieldType;
         final String parameterType;
-        XmlType(String fieldType, String parameterType) {
+        final String javaType;
+        final boolean unsigned;
+
+        XmlType(String name, String fieldType, String parameterType, String javaType, boolean unsigned) {
+            this.name = name;
             this.fieldType = fieldType;
             this.parameterType = parameterType;
+            this.javaType = javaType;
+            this.unsigned = unsigned;
         }
     }
 
@@ -74,7 +141,7 @@ public class GenerateJfrFiles {
 
     static class Metadata {
         final Map<String, TypeElement> types = new LinkedHashMap<>();
-        final Map<String, XmlType> xmlTypes = new HashMap<>();
+        final Map<String, XmlType> xmlTypes = new LinkedHashMap<>();
         Metadata(File metadataXml, File metadataSchema) throws ParserConfigurationException, SAXException, FileNotFoundException, IOException {
             SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -110,12 +177,8 @@ public class GenerateJfrFiles {
             return getList(t -> t.getClass() == EventElement.class && ((EventElement) t).periodic);
         }
 
-        List<TypeElement> getNonEventsAndNonStructs() {
-            return getList(t -> t.getClass() != EventElement.class && !t.supportStruct);
-        }
-
         List<TypeElement> getTypes() {
-            return getList(t -> t.getClass() == TypeElement.class && !t.supportStruct);
+            return getList(t -> t.getClass() == TypeElement.class);
         }
 
         List<TypeElement> getStructs() {
@@ -213,8 +276,11 @@ public class GenerateJfrFiles {
                 String name = attributes.getValue("name");
                 String parameterType = attributes.getValue("parameterType");
                 String fieldType = attributes.getValue("fieldType");
-                metadata.xmlTypes.put(name, new XmlType(fieldType, parameterType));
+                String javaType = attributes.getValue("javaType");
+                boolean unsigned = getBoolean(attributes, "unsigned", false);
+                metadata.xmlTypes.put(name, new XmlType(name, fieldType, parameterType, javaType, unsigned));
                 break;
+            case "Relation":
             case "Type":
                 currentType = new TypeElement();
                 currentType.name = attributes.getValue("name");
@@ -247,6 +313,7 @@ public class GenerateJfrFiles {
         @Override
         public void endElement(String uri, String localName, String qName) {
             switch (qName) {
+            case "Relation":
             case "Type":
             case "Event":
                 metadata.types.put(currentType.name, currentType);
@@ -318,7 +385,7 @@ public class GenerateJfrFiles {
         }
     }
 
-    private static void printJfrEventControlHpp(Metadata metadata, File outputDirectory) throws Exception {
+    private static void printJfrEventControlHpp(Metadata metadata, TypeCounter typeCounter, File outputDirectory) throws Exception {
         try (Printer out = new Printer(outputDirectory, "jfrEventControl.hpp")) {
             out.write("#ifndef JFRFILES_JFR_NATIVE_EVENTSETTING_HPP");
             out.write("#define JFRFILES_JFR_NATIVE_EVENTSETTING_HPP");
@@ -342,11 +409,11 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("union JfrNativeSettings {");
             out.write("  // Array version.");
-            out.write("  jfrNativeEventSetting bits[MaxJfrEventId];");
+            out.write("  jfrNativeEventSetting bits[NUMBER_OF_EVENTS];");
             out.write("  // Then, to make it easy to debug,");
             out.write("  // add named struct members also.");
             out.write("  struct {");
-            out.write("    jfrNativeEventSetting pad[NUM_RESERVED_EVENTS];");
+            out.write("    jfrNativeEventSetting pad[NUMBER_OF_RESERVED_EVENTS];");
             for (TypeElement t : metadata.getEventsAndStructs()) {
                 out.write("    jfrNativeEventSetting " + t.name + ";");
             }
@@ -358,53 +425,34 @@ public class GenerateJfrFiles {
         }
     }
 
-    private static void printJfrEventIdsHpp(Metadata metadata, File outputDirectory) throws Exception {
+    private static void printJfrEventIdsHpp(Metadata metadata, TypeCounter typeCounter, File outputDirectory) throws Exception {
         try (Printer out = new Printer(outputDirectory, "jfrEventIds.hpp")) {
             out.write("#ifndef JFRFILES_JFREVENTIDS_HPP");
             out.write("#define JFRFILES_JFREVENTIDS_HPP");
             out.write("");
             out.write("#include \"utilities/macros.hpp\"");
             out.write("#if INCLUDE_JFR");
-            out.write("#include \"jfrfiles/jfrTypes.hpp\"");
             out.write("");
-            out.write("/**");
-            out.write(" * Enum of the event types in the JVM");
-            out.write(" */");
             out.write("enum JfrEventId {");
-            out.write("  _jfreventbase = (NUM_RESERVED_EVENTS-1), // Make sure we start at right index.");
-            out.write("  ");
-            out.write("  // Events -> enum entry");
-            for (TypeElement t : metadata.getEventsAndStructs()) {
-                out.write("  Jfr" + t.name + "Event,");
+            out.write("  JfrMetadataEvent = 0,");
+            out.write("  JfrCheckpointEvent = 1,");
+            for (TypeElement t : metadata.getEvents()) {
+                String name = "Jfr" + t.name +"Event";
+                out.write("  " + name + " = " + typeCounter.nextEventId(name) + ",");
             }
-            out.write("");
-            out.write("  MaxJfrEventId");
             out.write("};");
-            out.write("");
-            out.write("/**");
-            out.write(" * Struct types in the JVM");
-            out.write(" */");
-            out.write("enum JfrStructId {");
-            for (TypeElement t : metadata.getNonEventsAndNonStructs()) {
-                out.write("  Jfr" + t.name + "Struct,");
-            }
-            for (TypeElement t : metadata.getEventsAndStructs()) {
-                out.write("  Jfr" + t.name + "Struct,");
-            }
-            out.write("");
-            out.write("  MaxJfrStructId");
-            out.write("};");
-            out.write("");
             out.write("typedef enum JfrEventId JfrEventId;");
-            out.write("typedef enum JfrStructId JfrStructId;");
             out.write("");
+            out.write("static const JfrEventId FIRST_EVENT_ID = " + typeCounter.firstEventName() + ";");
+            out.write("static const JfrEventId LAST_EVENT_ID = " + typeCounter.lastEventName() + ";");
+            out.write("static const int NUMBER_OF_EVENTS = " + typeCounter.eventCount() + ";");
+            out.write("static const int NUMBER_OF_RESERVED_EVENTS = " + TypeCounter.RESERVED_EVENT_COUNT + ";");
             out.write("#endif // INCLUDE_JFR");
             out.write("#endif // JFRFILES_JFREVENTIDS_HPP");
         }
     }
 
-    private static void printJfrTypesHpp(Metadata metadata, File outputDirectory) throws Exception {
-        List<String> knownTypes = List.of("Thread", "StackTrace", "Class", "StackFrame");
+    private static void printJfrTypesHpp(Metadata metadata, TypeCounter typeCounter, File outputDirectory) throws Exception {
         try (Printer out = new Printer(outputDirectory, "jfrTypes.hpp")) {
             out.write("#ifndef JFRFILES_JFRTYPES_HPP");
             out.write("#define JFRFILES_JFRTYPES_HPP");
@@ -412,41 +460,54 @@ public class GenerateJfrFiles {
             out.write("#include \"utilities/macros.hpp\"");
             out.write("#if INCLUDE_JFR");
             out.write("");
+            out.write("#include <string.h>");
+            out.write("#include \"memory/allocation.hpp\"");
+            out.write("");
             out.write("enum JfrTypeId {");
-            out.write("  TYPE_NONE             = 0,");
-            out.write("  TYPE_CLASS            = 20,");
-            out.write("  TYPE_STRING           = 21,");
-            out.write("  TYPE_THREAD           = 22,");
-            out.write("  TYPE_STACKTRACE       = 23,");
-            out.write("  TYPE_BYTES            = 24,");
-            out.write("  TYPE_EPOCHMILLIS      = 25,");
-            out.write("  TYPE_MILLIS           = 26,");
-            out.write("  TYPE_NANOS            = 27,");
-            out.write("  TYPE_TICKS            = 28,");
-            out.write("  TYPE_ADDRESS          = 29,");
-            out.write("  TYPE_PERCENTAGE       = 30,");
-            out.write("  TYPE_DUMMY,");
-            out.write("  TYPE_DUMMY_1,");
-            for (TypeElement type : metadata.getTypes()) {
-                if (!knownTypes.contains(type.name)) {
-                    out.write("  TYPE_" + type.name.toUpperCase() + ",");
+            Map<String, XmlType> javaTypes = new LinkedHashMap<>();
+            for (var t : metadata.xmlTypes.entrySet()) {
+                String name = t.getKey();
+                XmlType xmlType = t.getValue();
+                if (xmlType.javaType != null && !xmlType.unsigned) {
+                    String typeName = "TYPE_" + name.toUpperCase();
+                    long typeId = typeCounter.nextTypeId(typeName);
+                    out.write("  " + typeName + " = " + typeId + ",");
+                    javaTypes.put(name, xmlType);
                 }
             }
-            out.write("");
-            out.write("  NUM_JFR_TYPES,");
-            out.write("  TYPES_END             = 255");
+            for (TypeElement type : metadata.getTypes()) {
+                String name = type.name;
+                if (!javaTypes.containsKey(name)) {
+                    String typeName = "TYPE_" + name.toUpperCase();
+                    long typeId = typeCounter.nextTypeId(typeName);
+                    out.write("  " + typeName + " = " + typeId + ",");
+                }
+            }
             out.write("};");
             out.write("");
-            out.write("enum ReservedEvent {");
-            out.write("  EVENT_METADATA,");
-            out.write("  EVENT_CHECKPOINT,");
-            out.write("  EVENT_BUFFERLOST,");
-            out.write("  NUM_RESERVED_EVENTS = TYPES_END");
+            out.write("static const JfrTypeId FIRST_TYPE_ID = " + typeCounter.firstTypeName() + ";");
+            out.write("static const JfrTypeId LAST_TYPE_ID = " + typeCounter.lastTypeName() + ";");
+
+            out.write("");
+            out.write("class JfrType : public AllStatic {");
+            out.write(" public:");
+            out.write("  static jlong name_to_id(const char* type_name) {");
+            for (Entry<String, XmlType> m : javaTypes.entrySet()) {
+                XmlType xmlType = m.getValue();
+                String javaName = xmlType.javaType;
+                String typeName = xmlType.name.toUpperCase();
+                out.write("    if (strcmp(type_name, \"" + javaName + "\") == 0) {");
+                out.write("      return TYPE_" + typeName + ";");
+                out.write("    }");
+            }
+            out.write("    return -1;");
+            out.write("  }");
             out.write("};");
             out.write("");
             out.write("#endif // INCLUDE_JFR");
             out.write("#endif // JFRFILES_JFRTYPES_HPP");
-          };
+        }
+        ;
     }
 
     private static void printJfrEventClassesHpp(Metadata metadata, File outputDirectory) throws Exception {

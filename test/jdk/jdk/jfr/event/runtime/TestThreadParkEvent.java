@@ -25,10 +25,6 @@
 
 package jdk.jfr.event.runtime;
 
-import static jdk.test.lib.Asserts.assertTrue;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

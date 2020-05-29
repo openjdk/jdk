@@ -92,6 +92,10 @@ public class TestEventMetadata {
      */
     public static void main(String[] args) throws Exception {
         Set<String> types = new HashSet<>();
+        // These types contains reserved keywords (unfortunately) so
+        // exclude them from the check.
+        types.add("jdk.types.StackTrace");
+        types.add("java.lang.Class");
         List<EventType> eventTypes = FlightRecorder.getFlightRecorder().getEventTypes();
         Set<String> eventNames= new HashSet<>();
         for (EventType eventType : eventTypes) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.utilities.soql;
+package pkg2;
 
-import sun.jvm.hotspot.oops.TypeArray;
+import java.util.List;
 
 /**
-   This is JavaScript wrapper for Java Primitive Array.
-*/
+ * {@link java.util.Foo<String>}
+ * {@linkplain Baz<Object>}
+ * {@link #b(List<Integer>)}
+ *
+ * @see java.util.List<Bar>
+ * @see Baz<Object, String>
+ * @see B#b(List<Baz>)
+ */
+public class B {
 
-public class JSJavaTypeArray extends JSJavaArray {
-    public JSJavaTypeArray(TypeArray array, JSJavaFactory fac) {
-        super(array, fac);
-    }
-
-    public final TypeArray getTypeArray() {
-        return (TypeArray) getArray();
-    }
+    public static void b(List<? extends CharSequence> l) {}
 }

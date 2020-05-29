@@ -24,7 +24,6 @@
 package jdk.test.lib.security;
 
 import java.util.List;
-import java.security.Security;
 
 public final class JDKSecurityProperties {
 
@@ -45,7 +44,7 @@ public final class JDKSecurityProperties {
         "sun.rmi.registry.registryFilter"
     );
 
-    public static List getKeys() {
+    public static List<String> getKeys() {
         return jdkProps;
     }
 }

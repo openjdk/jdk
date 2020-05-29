@@ -46,7 +46,7 @@ public class DebugdConnectTest {
 
     private static OutputAnalyzer runJHSDB(String command, String id) throws IOException, InterruptedException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-        jhsdbLauncher.addVMArgs(Utils.getFilteredTestJavaOpts("-Xcomp"));
+        jhsdbLauncher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion", "-Xcomp"));
         jhsdbLauncher.addToolArg(command);
         jhsdbLauncher.addToolArg("--connect");
         if (id != null) {

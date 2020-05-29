@@ -211,9 +211,6 @@
   develop(bool, LIRTraceExecution, false,                                   \
           "add LIR code which logs the execution of blocks")                \
                                                                             \
-  product_pd(bool, LIRFillDelaySlots,                                       \
-             "fill delays on on SPARC with LIR")                            \
-                                                                            \
   develop_pd(bool, CSEArrayLength,                                          \
           "Create separate nodes for length in array accesses")             \
                                                                             \

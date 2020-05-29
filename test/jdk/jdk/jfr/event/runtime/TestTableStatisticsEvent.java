@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedClass;
-import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
