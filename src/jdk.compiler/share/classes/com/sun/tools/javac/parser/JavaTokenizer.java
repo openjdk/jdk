@@ -427,10 +427,8 @@ public class JavaTokenizer {
         case 1: // Starting a string literal.
             break;
         case 2: // Starting an empty string literal.
-            // Start again but only consume one quote.
-            reader.reset(pos);
-            openCount = countChar('\"', 1);
-            break;
+            tk = Tokens.TokenKind.STRINGLITERAL;
+            return;
         case 3: // Starting a text block.
             // Check if preview feature is enabled for text blocks.
             checkSourceLevel(pos, Feature.TEXT_BLOCKS);
