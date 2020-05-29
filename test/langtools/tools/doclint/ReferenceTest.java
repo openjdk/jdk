@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832 8020556 8002154 8200432
+ * @bug 8004832 8020556 8002154 8200432 8177280
  * @summary Add new doclint package
  * @modules jdk.compiler/com.sun.tools.doclint
  * @build DocLintTester

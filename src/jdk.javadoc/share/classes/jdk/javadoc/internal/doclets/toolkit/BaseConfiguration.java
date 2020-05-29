@@ -98,11 +98,6 @@ public abstract class BaseConfiguration {
     public static final String DEFAULT_BUILDER_XML = "resources/doclet.xml";
 
     /**
-     * Maintain backward compatibility with previous javadoc version
-     */
-    public boolean backwardCompatibility = true;
-
-    /**
      * The meta tag keywords instance.
      */
     public MetaKeywords metakeywords;
