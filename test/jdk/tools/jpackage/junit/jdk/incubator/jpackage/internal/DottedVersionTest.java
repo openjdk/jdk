@@ -61,7 +61,8 @@ public class DottedVersionTest {
             "2.234.045",
             "2.234.0",
             "0",
-            "0.1"
+            "0.1",
+            "9".repeat(1000)
         );
 
         final List<String> validLazyStrings;
@@ -82,7 +83,7 @@ public class DottedVersionTest {
                 "+1",
                 "-1",
                 "-0",
-                "1234567890123456789012345678901234567890"
+                "+0"
             );
         }
 

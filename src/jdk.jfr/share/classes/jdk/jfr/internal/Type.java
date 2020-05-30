@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,25 +54,37 @@ public class Type implements Comparable<Type> {
     public static final String SETTINGS_PREFIX = "jdk.settings.";
 
 
-    // Initialization of known types
-    private final static Map<Type, Class<?>> knownTypes = new HashMap<>();
-    static final Type BOOLEAN = register(boolean.class, new Type("boolean", null, 4));
-    static final Type CHAR = register(char.class, new Type("char", null, 5));
-    static final Type FLOAT = register(float.class, new Type("float", null, 6));
-    static final Type DOUBLE = register(double.class, new Type("double", null, 7));
-    static final Type BYTE = register(byte.class, new Type("byte", null, 8));
-    static final Type SHORT = register(short.class, new Type("short", null, 9));
-    static final Type INT = register(int.class, new Type("int", null, 10));
-    static final Type LONG = register(long.class, new Type("long", null, 11));
-    static final Type CLASS = register(Class.class, new Type("java.lang.Class", null, 20));
-    static final Type STRING = register(String.class, new Type("java.lang.String", null, 21));
-    static final Type THREAD = register(Thread.class, new Type("java.lang.Thread", null, 22));
-    static final Type STACK_TRACE = register(null, new Type(TYPES_PREFIX + "StackTrace", null, 23));
+    // To bootstrap the type system, the supported Java types
+    // are available here as statics. When metadata.xml is parsed
+    // fields are added to THREAD and STACK_TRACE.
+    private final static Map<Type, Class<?>> knownTypes = new LinkedHashMap<>();
+    static final Type BOOLEAN = createKnownType(boolean.class);
+    static final Type CHAR = createKnownType(char.class);
+    static final Type FLOAT = createKnownType(float.class);
+    static final Type DOUBLE = createKnownType(double.class);
+    static final Type BYTE = createKnownType(byte.class);
+    static final Type SHORT = createKnownType(short.class);
+    static final Type INT = createKnownType(int.class);
+    static final Type LONG = createKnownType(long.class);
+    static final Type CLASS = createKnownType(Class.class);
+    static final Type STRING = createKnownType(String.class);
+    static final Type THREAD = createKnownType(Thread.class);
+    static final Type STACK_TRACE = createKnownType(TYPES_PREFIX + "StackTrace", null);
+
+    private static Type createKnownType(Class<?> clazz) {
+        return createKnownType(clazz.getName(), clazz);
+    }
+
+    private static Type createKnownType(String name, Class<?> clazz) {
+        long id = JVM.getJVM().getTypeId(name);
+        Type t =  new Type(name, null, id);
+        knownTypes.put(t, clazz);
+        return t;
+    }
 
     private final AnnotationConstruct annos = new AnnotationConstruct();
     private final String name;
     private final String superType;
-    private final boolean constantPool;
     private List<ValueDescriptor> fields = new ArrayList<>();
     private Boolean simpleType; // calculated lazy
     private boolean remove = true;
@@ -86,20 +99,15 @@ public class Type implements Comparable<Type> {
      *
      */
     public Type(String javaTypeName, String superType, long typeId) {
-        this(javaTypeName, superType, typeId, false);
+        this(javaTypeName, superType, typeId, null);
     }
 
-    Type(String javaTypeName, String superType, long typeId, boolean constantPool) {
-        this(javaTypeName, superType, typeId, constantPool, null);
-    }
-
-    Type(String javaTypeName, String superType, long typeId, boolean constantPool, Boolean simpleType) {
+    Type(String javaTypeName, String superType, long typeId, Boolean simpleType) {
         Objects.requireNonNull(javaTypeName);
 
         if (!isValidJavaIdentifier(javaTypeName)) {
             throw new IllegalArgumentException(javaTypeName + " is not a valid Java identifier");
         }
-        this.constantPool = constantPool;
         this.superType = superType;
         this.name = javaTypeName;
         this.id = typeId;
@@ -210,11 +218,6 @@ public class Type implements Comparable<Type> {
         return id < JVM.RESERVED_CLASS_ID_LIMIT;
     }
 
-    private static Type register(Class<?> clazz, Type type) {
-        knownTypes.put(type, clazz);
-        return type;
-    }
-
     public void add(ValueDescriptor valueDescriptor) {
         Objects.requireNonNull(valueDescriptor);
         fields.add(valueDescriptor);
@@ -234,10 +237,6 @@ public class Type implements Comparable<Type> {
 
     public long getId() {
         return id;
-    }
-
-    public boolean isConstantPool() {
-        return constantPool;
     }
 
     public String getLabel() {

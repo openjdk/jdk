@@ -193,21 +193,6 @@ HOTSPOT_MODULES := \
     jdk.internal.vm.compiler.management \
     #
 
-# The native dynamic libraries in these modules will also get built into static
-# libraries for consumption by downstream projects that need to statically link
-# the JDK libraries. Those static libraries are not part of the main JDK
-# distribution. 
-STATIC_LIBS_MODULES := \
-    java.base \
-    jdk.crypto.ec \
-    jdk.security.auth \
-    java.prefs \
-    java.security.jgss \
-    java.smartcardio \
-    jdk.crypto.cryptoki \
-    jdk.net \
-    #
-
 ################################################################################
 # Some platforms don't have the serviceability agent
 

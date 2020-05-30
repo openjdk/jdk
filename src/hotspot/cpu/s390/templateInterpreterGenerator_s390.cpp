@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -502,8 +502,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   Label     slow_path;
   address   entry = __ pc();
 
-  const int referent_offset = java_lang_ref_Reference::referent_offset;
-  guarantee(referent_offset > 0, "referent offset not initialized");
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
 
   BLOCK_COMMENT("Reference_get {");
 

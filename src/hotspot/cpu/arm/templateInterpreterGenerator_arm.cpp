@@ -708,8 +708,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   const Register Rret_addr = Rtmp_save1;
   assert_different_registers(Rthis, Rret_addr, Rsender_sp);
 
-  const int referent_offset = java_lang_ref_Reference::referent_offset;
-  guarantee(referent_offset > 0, "referent offset not initialized");
+  const int referent_offset = java_lang_ref_Reference::referent_offset();
 
   // Check if local 0 != NULL
   // If the receiver is null then it is OK to jump to the slow path.

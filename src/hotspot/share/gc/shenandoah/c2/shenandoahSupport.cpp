@@ -298,7 +298,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
           if (trace) {tty->print_cr("Mark load");}
         } else if (adr_type->isa_instptr() &&
                    adr_type->is_instptr()->klass()->is_subtype_of(Compile::current()->env()->Reference_klass()) &&
-                   adr_type->is_instptr()->offset() == java_lang_ref_Reference::referent_offset) {
+                   adr_type->is_instptr()->offset() == java_lang_ref_Reference::referent_offset()) {
           if (trace) {tty->print_cr("Reference.get()");}
         } else if (!verify_helper(n->in(MemNode::Address), phis, visited, ShenandoahLoad, trace, barriers_used)) {
           report_verify_failure("Shenandoah verification: Load should have barriers", n);

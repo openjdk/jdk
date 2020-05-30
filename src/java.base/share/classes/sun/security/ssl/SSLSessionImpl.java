@@ -27,13 +27,11 @@ package sun.security.ssl;
 import sun.security.x509.X509CertImpl;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -520,11 +518,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     // Some situations we cannot provide a stateless ticket, but after it
     // has been negotiated
-    boolean isStatelessable(HandshakeContext hc) {
-        if (!hc.statelessResumption) {
-            return false;
-        }
-
+    boolean isStatelessable() {
         // If there is no getMasterSecret with TLS1.2 or under, do not resume.
         if (!protocolVersion.useTLS13PlusSpec() &&
                 getMasterSecret().getEncoded() == null) {
@@ -534,6 +528,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
             return false;
         }
+
         if (boundValues != null && boundValues.size() > 0) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.finest("There are boundValues, cannot make" +
@@ -541,6 +536,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
             return false;
         }
+
         return true;
     }
 

@@ -26,6 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRTYPES_HPP
 
 #include "jfrfiles/jfrEventIds.hpp"
+#include "jfrfiles/jfrTypes.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 typedef u8 traceid;
@@ -45,6 +46,11 @@ inline int compare_traceid(const traceid& lhs, const traceid& rhs) {
 inline int sort_traceid(traceid* lhs, traceid* rhs) {
   return compare_traceid(*lhs, *rhs);
 }
+
+enum ReservedEvent {
+  EVENT_METADATA = 0,
+  EVENT_CHECKPOINT = 1
+};
 
 enum EventStartTime {
   UNTIMED,

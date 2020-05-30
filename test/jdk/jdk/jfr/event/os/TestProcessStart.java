@@ -30,14 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-import jdk.jfr.EventType;
-import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Platform;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test

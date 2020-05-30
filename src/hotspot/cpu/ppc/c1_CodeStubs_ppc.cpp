@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -361,7 +361,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     assert(_obj != noreg, "must be a valid register");
     assert(_index >= 0, "must have oop index");
     __ mr(R0, _obj); // spill
-    __ ld(_obj, java_lang_Class::klass_offset_in_bytes(), _obj);
+    __ ld(_obj, java_lang_Class::klass_offset(), _obj);
     __ ld(_obj, in_bytes(InstanceKlass::init_thread_offset()), _obj);
     __ cmpd(CCR0, _obj, R16_thread);
     __ mr(_obj, R0); // restore

@@ -157,7 +157,7 @@ class JavaArgumentUnboxer : public SignatureIterator {
       return;
     }
     Handle arg = next_arg(type);
-    int box_offset = java_lang_boxing_object::value_offset_in_bytes(type);
+    int box_offset = java_lang_boxing_object::value_offset(type);
     switch (type) {
     case T_BOOLEAN:     _jca->push_int(arg->bool_field(box_offset));    break;
     case T_CHAR:        _jca->push_int(arg->char_field(box_offset));    break;

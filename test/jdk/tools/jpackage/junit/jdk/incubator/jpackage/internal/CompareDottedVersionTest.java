@@ -53,11 +53,14 @@ public class CompareDottedVersionTest {
         for (var greedy : List.of(true, false)) {
             data.addAll(List.of(new Object[][] {
                 { greedy, "00.0.0", "0", 0 },
+                { greedy, "00.0.0", "0.000", 0 },
                 { greedy, "0.035", "0.0035", 0 },
+                { greedy, "0.035", "0.0035.0", 0 },
                 { greedy, "1", "1", 0 },
                 { greedy, "2", "2.0", 0 },
                 { greedy, "2.00", "2.0", 0 },
                 { greedy, "1.2.3.4", "1.2.3.4.5", -1 },
+                { greedy, "1.2.3.4", "1.2.3.4.0.1", -1 },
                 { greedy, "34", "33", 1 },
                 { greedy, "34.0.78", "34.1.78", -1 }
             }));
@@ -70,7 +73,7 @@ public class CompareDottedVersionTest {
             { false, "7+1", "7+4", 0 },
             { false, "2+14", "2-14", 0 },
             { false, "23.4.RC4", "23.3.RC10", 1 },
-            { false, "77.0", "77.99999999999999999999999999999999999999999999999", 0 },
+            { false, "77."  + "9".repeat(1000), "77." + "9".repeat(1000 -1) + "8", 1 },
         }));
 
         return data;

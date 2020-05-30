@@ -118,7 +118,8 @@ public class BundleTest {
         List<byte[]> memory = new ArrayList<>();
         boolean stop = false;
         System.out.println("Waiting for URL loader to be GC'ed");
-        while ((ref = queue.remove(100)) == null) {
+        long timeout = 100;
+        while ((ref = queue.remove(timeout)) == null) {
             if (stop) break;
             try {
                 // eat memory to trigger cleaning of SoftReference
@@ -126,8 +127,12 @@ public class BundleTest {
                 System.out.printf("Total memory added: %s Mb%n", memory.size());
             } catch (OutOfMemoryError oome) {
                 stop = true;
+                memory = null;
+                timeout = 1000; // give more time for the last GC
             }
+            System.gc();
         }
+        memory = null;
         if (stop) {
             System.out.println("no more memory...");
         }

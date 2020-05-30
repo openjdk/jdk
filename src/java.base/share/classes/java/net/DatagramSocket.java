@@ -188,6 +188,8 @@ public class DatagramSocket implements java.io.Closeable {
      *               or the socket could not bind to the specified local port.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkListen} method doesn't allow the operation.
+     * @throws     IllegalArgumentException  if bindaddr is a
+     *              SocketAddress subclass not supported by this socket.
      *
      * @see SecurityManager#checkListen
      * @since   1.4
@@ -208,11 +210,13 @@ public class DatagramSocket implements java.io.Closeable {
      * as its argument to ensure the operation is allowed.
      * This could result in a SecurityException.
      *
-     * @param      port port to use.
+     * @param      port local port to use in the bind operation.
      * @throws     SocketException  if the socket could not be opened,
      *               or the socket could not bind to the specified local port.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkListen} method doesn't allow the operation.
+     * @throws     IllegalArgumentException  if port is <a href="#PortRange">
+     *              out of range.</a>
      *
      * @see SecurityManager#checkListen
      */
@@ -222,7 +226,11 @@ public class DatagramSocket implements java.io.Closeable {
 
     /**
      * Creates a datagram socket, bound to the specified local
-     * address.  The local port must be between 0 and 65535 inclusive.
+     * address.
+     * <p><a id="PortRange"></a>The local port must be between 0 and
+     * 65535 inclusive. A port number of {@code zero} will let the system pick
+     * up an ephemeral port in a {@code bind} operation.
+     * <p>
      * If the IP address is 0.0.0.0, the socket will be bound to the
      * {@link InetAddress#isAnyLocalAddress wildcard} address,
      * an IP address chosen by the kernel.
@@ -233,13 +241,15 @@ public class DatagramSocket implements java.io.Closeable {
      * as its argument to ensure the operation is allowed.
      * This could result in a SecurityException.
      *
-     * @param port local port to use
+     * @param port local port to use in the bind operation.
      * @param laddr local address to bind
      *
      * @throws     SocketException  if the socket could not be opened,
      *               or the socket could not bind to the specified local port.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkListen} method doesn't allow the operation.
+     * @throws     IllegalArgumentException  if port is <a href="#PortRange">
+     *              out of range.</a>
      *
      * @see SecurityManager#checkListen
      * @since   1.1
@@ -311,7 +321,8 @@ public class DatagramSocket implements java.io.Closeable {
      * @param port the remote port for the socket.
      *
      * @throws IllegalArgumentException
-     *         if the address is null, or the port is out of range.
+     *         if the address is null, or the port is <a href="#PortRange">
+     *         out of range.</a>
      *
      * @throws SecurityException
      *         if a security manager has been installed and it does
@@ -504,7 +515,8 @@ public class DatagramSocket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the socket is connected,
      *             and connected address and packet address differ, or
      *             if the socket is not connected and the packet address
-     *             is not set or if its port is out of range.
+     *             is not set or if its port is <a href="#PortRange">out of
+     *             range.</a>
      *
      * @see        java.net.DatagramPacket
      * @see        SecurityManager#checkMulticast(InetAddress)

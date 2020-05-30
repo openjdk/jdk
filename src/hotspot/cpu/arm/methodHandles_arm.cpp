@@ -53,7 +53,7 @@ void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_
     verify_klass(_masm, klass_reg, temp1, temp2, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
                  "MH argument is a Class");
   }
-  __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset_in_bytes()));
+  __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
 }
 
 #ifdef ASSERT
@@ -95,7 +95,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {
   Label L;
   BLOCK_COMMENT("verify_ref_kind {");
-  __ ldr_u32(temp, Address(member_reg, NONZERO(java_lang_invoke_MemberName::flags_offset_in_bytes())));
+  __ ldr_u32(temp, Address(member_reg, NONZERO(java_lang_invoke_MemberName::flags_offset())));
   __ logical_shift_right(temp, temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT);
   __ andr(temp, temp, (unsigned)java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ cmp(temp, ref_kind);
@@ -148,15 +148,15 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   assert_different_registers(recv, tmp, Rmethod);
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
-  __ load_heap_oop(tmp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes())));
+  __ load_heap_oop(tmp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())));
   __ verify_oop(tmp);
 
-  __ load_heap_oop(tmp, Address(tmp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())));
+  __ load_heap_oop(tmp, Address(tmp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())));
   __ verify_oop(tmp);
 
-  __ load_heap_oop(Rmethod, Address(tmp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())));
+  __ load_heap_oop(Rmethod, Address(tmp, NONZERO(java_lang_invoke_MemberName::method_offset())));
   __ verify_oop(Rmethod);
-  __ access_load_at(T_ADDRESS, IN_HEAP, Address(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())), Rmethod, noreg, noreg, noreg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, Address(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset())), Rmethod, noreg, noreg, noreg);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -305,10 +305,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                    "MemberName required for invokeVirtual etc.");
     }
 
-    Address member_clazz(   member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()));
-    Address member_vmindex( member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()));
-    Address member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()));
-    Address vmtarget_method(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()));
+    Address member_clazz(   member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset()));
+    Address member_vmindex( member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset()));
+    Address member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset()));
+    Address vmtarget_method(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
 
     Register temp1_recv_klass = temp1;
     if (iid != vmIntrinsics::_linkToStatic) {
@@ -532,9 +532,7 @@ void trace_method_handle_stub(const char* adaptername,
     if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0) {
-          java_lang_invoke_MethodHandle::form(mh)->print();
-        }
+        java_lang_invoke_MethodHandle::form(mh)->print();
       }
     }
   }

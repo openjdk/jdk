@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,6 +432,31 @@ public class JavacTrees extends DocTrees {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public TypeMirror getType(DocTreePath path) {
+        DocTree tree = path.getLeaf();
+        if (tree instanceof DCReference) {
+            JCTree qexpr = ((DCReference)tree).qualifierExpression;
+            if (qexpr != null) {
+                Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
+                        new Log.DeferredDiagnosticHandler(log);
+                try {
+                    Env<AttrContext> env = getAttrContext(path.getTreePath());
+                    Type t = attr.attribType(((DCReference) tree).qualifierExpression, env);
+                    if (t != null && !t.isErroneous()) {
+                        return t;
+                    }
+                } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
+                    return null;
+                } finally {
+                    log.popDiagnosticHandler(deferredDiagnosticHandler);
+                }
+            }
+        }
+        Element e = getElement(path);
+        return e == null ? null : e.asType();
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public java.util.List<DocTree> getFirstSentence(java.util.List<? extends DocTree> list) {
         return docTreeMaker.getFirstSentence(list);
     }
@@ -721,77 +746,14 @@ public class JavacTrees extends DocTrees {
         if (method.params().size() != paramTypes.size())
             return false;
 
-        List<Type> methodParamTypes = types.erasureRecursive(method.asType()).getParameterTypes();
+        List<Type> methodParamTypes = method.asType().getParameterTypes();
+        if (!Type.isErroneous(paramTypes) && types.isSubtypes(paramTypes, methodParamTypes)) {
+            return true;
+        }
 
-        return (Type.isErroneous(paramTypes))
-            ? fuzzyMatch(paramTypes, methodParamTypes)
-            : types.isSameTypes(paramTypes, methodParamTypes);
+        methodParamTypes = types.erasureRecursive(methodParamTypes);
+        return types.isSameTypes(paramTypes, methodParamTypes);
     }
-
-    boolean fuzzyMatch(List<Type> paramTypes, List<Type> methodParamTypes) {
-        List<Type> l1 = paramTypes;
-        List<Type> l2 = methodParamTypes;
-        while (l1.nonEmpty()) {
-            if (!fuzzyMatch(l1.head, l2.head))
-                return false;
-            l1 = l1.tail;
-            l2 = l2.tail;
-        }
-        return true;
-    }
-
-    boolean fuzzyMatch(Type paramType, Type methodParamType) {
-        Boolean b = fuzzyMatcher.visit(paramType, methodParamType);
-        return (b == Boolean.TRUE);
-    }
-
-    TypeRelation fuzzyMatcher = new TypeRelation() {
-        @Override
-        public Boolean visitType(Type t, Type s) {
-            if (t == s)
-                return true;
-
-            if (s.isPartial())
-                return visit(s, t);
-
-            switch (t.getTag()) {
-            case BYTE: case CHAR: case SHORT: case INT: case LONG: case FLOAT:
-            case DOUBLE: case BOOLEAN: case VOID: case BOT: case NONE:
-                return t.hasTag(s.getTag());
-            default:
-                throw new AssertionError("fuzzyMatcher " + t.getTag());
-            }
-        }
-
-        @Override
-        public Boolean visitArrayType(ArrayType t, Type s) {
-            if (t == s)
-                return true;
-
-            if (s.isPartial())
-                return visit(s, t);
-
-            return s.hasTag(ARRAY)
-                && visit(t.elemtype, types.elemtype(s));
-        }
-
-        @Override
-        public Boolean visitClassType(ClassType t, Type s) {
-            if (t == s)
-                return true;
-
-            if (s.isPartial())
-                return visit(s, t);
-
-            return t.tsym == s.tsym;
-        }
-
-        @Override
-        public Boolean visitErrorType(ErrorType t, Type s) {
-            return s.hasTag(CLASS)
-                    && t.tsym.name == ((ClassType) s).tsym.name;
-        }
-    };
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getTypeMirror(TreePath path) {

@@ -24,7 +24,6 @@
  */
 package jdk.jfr.event.runtime;
 
-import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;

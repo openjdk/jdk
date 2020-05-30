@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1666,7 +1666,7 @@ jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
   const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
-  jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset_in_bytes()).as_byte();
+  jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset()).as_byte();
   assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
   return coder;
 }
@@ -1680,7 +1680,7 @@ ciTypeArray* PhaseStringOpts::get_constant_value(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
   const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
-  ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset_in_bytes()).as_object();
+  ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset()).as_object();
   return src_array->as_type_array();
 }
 

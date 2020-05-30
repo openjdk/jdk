@@ -980,9 +980,6 @@ public:
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
 
-  // prints msg and continues
-  void warn(const char* msg);
-
   static void debug64(char* msg, int64_t pc, int64_t regs[]);
 
   void untested()                                { stop("untested"); }

@@ -71,7 +71,6 @@ public class TestInheritedAnnotations {
 
     @Enabled(true)
     @StackTrace(true)
-    @Period("10 s")
     @Threshold("0 ns")
     @Category(FAMILY_DOE)
     private static class UncleEvent extends GrandFatherEvent {
@@ -87,15 +86,21 @@ public class TestInheritedAnnotations {
     private static class FatherEvent extends GrandFatherEvent {
     }
 
-    @Enabled(true)
-    @StackTrace(true)
-    @Period("10 s")
-    @Threshold("0 ns")
     @Category(FAMILY_JOHNSON_STRING)
+    @Enabled(true)
+    @Threshold("0 ns")
     private static class SonEvent extends FatherEvent {
     }
 
+    @Enabled(true)
+    @Period("1 s")
+    private static class DaughterEvent extends  FatherEvent {
+    }
+
     public static void main(String... args) throws Exception {
+        FlightRecorder.addPeriodicEvent(DaughterEvent.class, () -> {
+        });
+
         try (Recording r = new Recording()) {
             r.enable(EventNames.ActiveSetting);
             r.start();
@@ -120,7 +125,8 @@ public class TestInheritedAnnotations {
             assertNoAunt();
             assertNoCousine(events);
             assertSon(events);
-            assertSettings(events);
+            assertUncleSettings(events);
+            assertDaughterSettings(events);
         }
     }
 
@@ -132,30 +138,46 @@ public class TestInheritedAnnotations {
         assertMissingEventType(AuntEvent.class.getName());
     }
 
-    private static void assertSettings(List<RecordedEvent> events) throws Exception {
-        Map<Long, String> settings = new HashMap<>();
-        for (RecordedEvent e : events) {
-            if (e.getEventType().getName().equals(EventNames.ActiveSetting)) {
-                Long id = e.getValue("id");
-                String value = e.getValue("value");
-                settings.put(id, value);
-            }
-        }
-        EventType uncle = findEventType(UncleEvent.class.getName());
-        assertSetting(settings, uncle, "enabled", "true");
-        assertSetting(settings, uncle, "stackTrace", "true");
-        assertSetting(settings, uncle, "period", "10 s");
-        assertSetting(settings, uncle, "threshold", "0 ns");
+    private static void assertUncleSettings(List<RecordedEvent> events) throws Exception {
+        Map<String, String> daughterSettings = findEventSettings(events, DaughterEvent.class.getName());
+        assertSetting(daughterSettings,"enabled", "true");
+        assertSetting(daughterSettings, "period", "1 s");
     }
 
-    private static void assertSetting(Map<Long, String> settings, EventType type, String settingName, String expectedValue) throws Exception {
-        String qualifiedSettingName = type.getName() + "#" + settingName;
-        if (settings.containsKey(qualifiedSettingName)) {
-            throw new Exception("Missing setting with name " + qualifiedSettingName);
+    private static void assertDaughterSettings(List<RecordedEvent> events) throws Exception {
+        Map<String, String> uncleSettings = findEventSettings(events, UncleEvent.class.getName());
+        assertSetting(uncleSettings,"enabled", "true");
+        assertSetting(uncleSettings, "threshold", "0 ns");
+        assertSetting(uncleSettings, "stackTrace", "true");
+    }
+
+    private static Map<String, String> findEventSettings(List<RecordedEvent> events, String eventName) throws Exception {
+        Map<String, String> settings = new HashMap<>();
+        EventType targetType = findEventType(eventName);
+        for (RecordedEvent e : events) {
+            EventType type = e.getEventType();
+            if (type.getName().equals(EventNames.ActiveSetting)) {
+                Long id = e.getValue("id");
+                if (targetType.getId() == id) {
+                    String name = e.getValue("name");
+                    String value = e.getValue("value");
+                    settings.put(name, value);
+                }
+            }
         }
-        String value = settings.get(qualifiedSettingName);
-        if (expectedValue.equals(value)) {
-            throw new Exception("Expected setting " + qualifiedSettingName + "to have value " + expectedValue +", but it had " + value);
+        if (settings.isEmpty()) {
+            throw new Exception("Could not find setting for event " + targetType.getName());
+        }
+        return settings;
+    }
+
+    private static void assertSetting(Map<String, String> settings, String settingName, String expectedValue) throws Exception {
+        if (!settings.containsKey(settingName)) {
+            throw new Exception("Missing setting with name " + settingName);
+        }
+        String value = settings.get(settingName);
+        if (!expectedValue.equals(value)) {
+            throw new Exception("Expected setting " + settingName + " to have value " + expectedValue +", but it had " + value);
         }
     }
 

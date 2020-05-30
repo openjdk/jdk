@@ -32,11 +32,13 @@ include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
 
+ALL_MODULES = $(call FindAllModules)
+
 ################################################################################
 
 TARGETS :=
 
-$(foreach m, $(STATIC_LIBS_MODULES), \
+$(foreach m, $(ALL_MODULES), \
   $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_$m, \
       FLATTEN := true, \
       SRC := $(SUPPORT_OUTPUTDIR)/native/$m, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
     private SSLEngineResult writeRecord(
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
+
+        // See note on TransportContext.needHandshakeFinishedStatus.
+        if (conContext.needHandshakeFinishedStatus) {
+            conContext.needHandshakeFinishedStatus = false;
+            return new SSLEngineResult(
+                    Status.OK, HandshakeStatus.FINISHED, 0, 0);
+        }
 
         // May need to deliver cached records.
         if (isOutboundDone()) {
@@ -418,7 +425,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 SSLLogger.finest("trigger NST");
             }
             conContext.conSession.updateNST = false;
-            NewSessionTicket.kickstartProducer.produce(
+            NewSessionTicket.t13PosthandshakeProducer.produce(
                     new PostHandshakeContext(conContext));
             return conContext.getHandshakeStatus();
         }

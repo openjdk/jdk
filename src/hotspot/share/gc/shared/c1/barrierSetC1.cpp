@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
   //
   // We need to generate code similar to the following...
   //
-  // if (offset == java_lang_ref_Reference::referent_offset) {
+  // if (offset == java_lang_ref_Reference::referent_offset()) {
   //   if (src != NULL) {
   //     if (klass(src)->reference_type() != REF_NONE) {
   //       pre_barrier(..., value, ...);
@@ -247,7 +247,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
                      constant->as_jlong());
 
 
-    if (off_con != (jlong) java_lang_ref_Reference::referent_offset) {
+    if (off_con != (jlong) java_lang_ref_Reference::referent_offset()) {
       // The constant offset is something other than referent_offset.
       // We can skip generating/checking the remaining guards and
       // skip generation of the code stub.
@@ -314,11 +314,11 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
       LIR_Opr referent_off;
 
       if (offset->type() == T_INT) {
-        referent_off = LIR_OprFact::intConst(java_lang_ref_Reference::referent_offset);
+        referent_off = LIR_OprFact::intConst(java_lang_ref_Reference::referent_offset());
       } else {
         assert(offset->type() == T_LONG, "what else?");
         referent_off = gen->new_register(T_LONG);
-        __ move(LIR_OprFact::longConst(java_lang_ref_Reference::referent_offset), referent_off);
+        __ move(LIR_OprFact::longConst(java_lang_ref_Reference::referent_offset()), referent_off);
       }
       __ cmp(lir_cond_notEqual, offset, referent_off);
       __ branch(lir_cond_notEqual, offset->type(), cont->label());

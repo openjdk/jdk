@@ -3010,8 +3010,8 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
         assert(this->isa_instptr(), "must be an instance ptr.");
 
         if (klass() == ciEnv::current()->Class_klass() &&
-            (_offset == java_lang_Class::klass_offset_in_bytes() ||
-             _offset == java_lang_Class::array_klass_offset_in_bytes())) {
+            (_offset == java_lang_Class::klass_offset() ||
+             _offset == java_lang_Class::array_klass_offset())) {
           // Special hidden fields from the Class.
           assert(this->isa_instptr(), "must be an instance ptr.");
           _is_ptr_to_narrowoop = false;

@@ -274,7 +274,7 @@ bool ciInstanceKlass::is_box_klass() const {
 bool ciInstanceKlass::is_boxed_value_offset(int offset) const {
   BasicType bt = box_klass_type();
   return is_java_primitive(bt) &&
-         (offset == java_lang_boxing_object::value_offset_in_bytes(bt));
+         (offset == java_lang_boxing_object::value_offset(bt));
 }
 
 // ------------------------------------------------------------------

@@ -1537,7 +1537,7 @@ public final class SSLSocketImpl
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest("trigger new session ticket");
             }
-            NewSessionTicket.kickstartProducer.produce(
+            NewSessionTicket.t13PosthandshakeProducer.produce(
                     new PostHandshakeContext(conContext));
         }
     }

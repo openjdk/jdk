@@ -60,12 +60,10 @@
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
-#define STOP(error) stop(error)
 #else
 #define BLOCK_COMMENT(str) block_comment(str)
-#define STOP(error) block_comment(error); stop(error)
 #endif
-
+#define STOP(str) stop(str);
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 // Patch any kind of instruction; there may be several instructions.
@@ -2223,22 +2221,9 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 }
 
 void MacroAssembler::stop(const char* msg) {
-  address ip = pc();
-  pusha();
-  mov(c_rarg0, (address)msg);
-  mov(c_rarg1, (address)ip);
-  mov(c_rarg2, sp);
-  mov(c_rarg3, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
-  blr(c_rarg3);
-  hlt(0);
-}
-
-void MacroAssembler::warn(const char* msg) {
-  pusha();
-  mov(c_rarg0, (address)msg);
-  mov(lr, CAST_FROM_FN_PTR(address, warning));
-  blr(lr);
-  popa();
+  BLOCK_COMMENT(msg);
+  dcps1(0xdeae);
+  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {

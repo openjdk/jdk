@@ -482,7 +482,8 @@ final class Finished {
                 shc.conContext.inputRecord.expectingFinishFlight();
             } else {
                 // Set the session's context based on stateless/cache status
-                if (shc.handshakeSession.isStatelessable(shc)) {
+                if (shc.statelessResumption &&
+                        shc.handshakeSession.isStatelessable()) {
                     shc.handshakeSession.setContext((SSLSessionContextImpl)
                             shc.sslContext.engineGetServerSessionContext());
                 } else {
@@ -1140,12 +1141,7 @@ final class Finished {
 
             //
             // produce
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine(
-                "Sending new session ticket");
-            }
-
-            NewSessionTicket.kickstartProducer.produce(shc);
+            NewSessionTicket.t13PosthandshakeProducer.produce(shc);
         }
     }
 

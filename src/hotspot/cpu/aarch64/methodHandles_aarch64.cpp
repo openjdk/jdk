@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +47,7 @@ void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_
   if (VerifyMethodHandles)
     verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
                  "MH argument is a Class");
-  __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset_in_bytes()));
+  __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
 }
 
 #ifdef ASSERT
@@ -135,13 +135,13 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
-  __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes())), temp2);
+  __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())), temp2);
+  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())), temp2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())), temp2);
+  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset())), temp2);
   __ verify_oop(method_temp);
-  __ access_load_at(T_ADDRESS, IN_HEAP, method_temp, Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())), noreg, noreg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, method_temp, Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset())), noreg, noreg);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -283,10 +283,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                    "MemberName required for invokeVirtual etc.");
     }
 
-    Address member_clazz(    member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()));
-    Address member_vmindex(  member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()));
-    Address member_vmtarget( member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()));
-    Address vmtarget_method( rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()));
+    Address member_clazz(    member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset()));
+    Address member_vmindex(  member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset()));
+    Address member_vmtarget( member_reg, NONZERO(java_lang_invoke_MemberName::method_offset()));
+    Address vmtarget_method( rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
 
     Register temp1_recv_klass = temp1;
     if (iid != vmIntrinsics::_linkToStatic) {

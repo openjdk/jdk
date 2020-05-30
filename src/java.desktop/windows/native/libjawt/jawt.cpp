@@ -39,7 +39,7 @@ DEF_STATIC_JNI_OnLoad
  * Get the AWT native structure.  This function returns JNI_FALSE if
  * an error occurs.
  */
-extern "C" JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
+extern "C" _JNI_IMPORT_OR_EXPORT_ jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
 {
     if (awt == NULL) {
         return JNI_FALSE;

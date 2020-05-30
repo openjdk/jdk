@@ -24,7 +24,6 @@
 
 package jdk.jfr.event.gc.detailed;
 
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 

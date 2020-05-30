@@ -462,6 +462,10 @@ void NativeIllegalInstruction::insert(address code_pos) {
   *(juint*)code_pos = 0xd4bbd5a1; // dcps1 #0xdead
 }
 
+bool NativeInstruction::is_stop() {
+  return uint_at(0) == 0xd4bbd5c1; // dcps1 #0xdeae
+}
+
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
