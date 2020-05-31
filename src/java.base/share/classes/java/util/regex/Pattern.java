@@ -760,7 +760,7 @@ import jdk.internal.util.ArraysSupport;
  *
  * <p> For a more precise description of the behavior of regular expression
  * constructs, please see <a href="http://www.oreilly.com/catalog/regex3/">
- * <i>Mastering Regular Expressions, 3nd Edition</i>, Jeffrey E. F. Friedl,
+ * <i>Mastering Regular Expressions, 3rd Edition</i>, Jeffrey E. F. Friedl,
  * O'Reilly and Associates, 2006.</a>
  * </p>
  *
