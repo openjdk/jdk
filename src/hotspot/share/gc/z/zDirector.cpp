@@ -186,7 +186,7 @@ bool ZDirector::rule_high_usage() const {
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t max_reserve = ZHeap::heap()->max_reserve();
   const size_t used = ZHeap::heap()->used();
-  const size_t free_with_reserve = soft_max_capacity - used;
+  const size_t free_with_reserve = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
   const double free_percent = percent_of(free, soft_max_capacity);
 
