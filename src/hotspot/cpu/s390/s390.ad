@@ -9889,7 +9889,7 @@ instruct ShouldNotReachHere() %{
   format %{ "ILLTRAP; ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ z_illtrap();
+      __ stop(_halt_reason);
     }
   %}
   ins_pipe(pipe_class_dummy);
