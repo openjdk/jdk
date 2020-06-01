@@ -36,20 +36,15 @@ import jdk.jfr.internal.Type;
 @Description("Statistics of direct buffer")
 public final class DirectBufferStatisticsEvent extends AbstractBufferStatisticsEvent {
 
-    private static final BufferPool DIRECT_BUFFER_POOL = VM.getBufferPools().stream()
-                                                           .filter(p -> "direct".equals(p.getName()))
-                                                           .findFirst().get();
+    private static final BufferPool DIRECT_BUFFER_POOL = findPoolByName("direct");
 
     public DirectBufferStatisticsEvent() {
+        super(DIRECT_BUFFER_POOL);
         this.maxCapacity = VM.maxDirectMemory();
     }
 
     @Label("Maximum Capacity")
     @Description("Maximum direct buffer capacity the process can use")
     @DataAmount
-    public long maxCapacity;
-
-    BufferPool getBufferPool() {
-        return DIRECT_BUFFER_POOL;
-    }
+    final long maxCapacity;
 }
