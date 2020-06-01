@@ -69,10 +69,12 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	    -Duser.language=en -Duser.country=US \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist $(LOG_DEBUG)
-	$(GREP) -v HelloClasslist $@.raw > $(INTERIM_IMAGE_DIR)/lib/classlist
+	$(GREP) -v HelloClasslist $@.raw > $@.interim
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -Xshare:dump \
+	    -XX:SharedClassListFile=$@.interim -XX:SharedArchiveFile=$@.jsa \
 	    -Xmx128M -Xms128M $(LOG_INFO)
-	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
+	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw.2 \
+	    -XX:SharedClassListFile=$@.interim -XX:SharedArchiveFile=$@.jsa \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    -Duser.language=en -Duser.country=US \
 	    --module-path $(SUPPORT_OUTPUTDIR)/classlist.jar \
@@ -86,7 +88,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	        $(CAT) $(LINK_OPT_DIR)/stderr $(JLI_TRACE_FILE) ; \
 	        exit $$exitcode \
 	    )
-	$(GREP) -v HelloClasslist $@.raw > $@
+	$(GREP) -v HelloClasslist $@.raw.2 > $@
 
 # The jli trace is created by the same recipe as classlist. By declaring these
 # dependencies, make will correctly rebuild both jli trace and classlist
