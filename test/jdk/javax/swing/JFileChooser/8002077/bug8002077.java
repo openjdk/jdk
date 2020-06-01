@@ -61,20 +61,25 @@ public class bug8002077 {
         SwingUtilities.invokeLater(() ->
                 fileChooserState = new JFileChooser().showSaveDialog(null));
         robot.waitForIdle();
+        robot.delay(100);
 
         Util.hitMnemonics(robot, KeyEvent.VK_N);
         robot.waitForIdle();
+        robot.delay(100);
 
         Util.hitKeys(robot, KeyEvent.VK_A);
         robot.waitForIdle();
+        robot.delay(100);
 
         Util.hitMnemonics(robot, KeyEvent.VK_S);
         robot.waitForIdle();
+        robot.delay(100);
 
         if (fileChooserState != JFileChooser.APPROVE_OPTION) {
             // Close the dialog
             Util.hitKeys(robot, KeyEvent.VK_ESCAPE);
             robot.waitForIdle();
+            robot.delay(100);
 
             throw new RuntimeException("Save button is not pressed!");
         }
