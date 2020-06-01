@@ -61,7 +61,7 @@ package jdk.internal.org.objectweb.asm;
 /**
  * A visitor to visit a Java class. The methods of this class must be called in the following order:
  * {@code visit} [ {@code visitSource} ] [ {@code visitModule} ][ {@code visitNestHost} ][ {@code
- * visitPermittedSubtype} ][ {@code visitOuterClass} ] ( {@code visitAnnotation} | {@code
+ * visitPermittedSubclass} ][ {@code visitOuterClass} ] ( {@code visitAnnotation} | {@code
  * visitTypeAnnotation} | {@code visitAttribute} )* ( {@code visitNestMember} | {@code
  * visitInnerClass} | {@code visitField} | {@code visitMethod} )* {@code visitEnd}.
  *
@@ -287,19 +287,19 @@ public abstract class ClassVisitor {
 
     /**
       * <b>Experimental, use at your own risk. This method will be renamed when it becomes stable, this
-      * will break existing code using it</b>. Visits a permitted subtypes. A permitted subtypes is one
-      * of the allowed subtypes of the current class.
+      * will break existing code using it</b>. Visits a permitted subclass. A permitted subclass is one
+      * of the allowed subclasses of the current class.
       *
-      * @param permittedSubtype the internal name of a permitted subtype.
+      * @param permittedSubclass the internal name of a permitted subclass.
       * @deprecated this API is experimental.
       */
     @Deprecated
-    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
+    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
         if (api != Opcodes.ASM9_EXPERIMENTAL) {
             throw new UnsupportedOperationException("This feature requires ASM9_EXPERIMENTAL");
         }
         if (cv != null) {
-            cv.visitPermittedSubtypeExperimental(permittedSubtype);
+            cv.visitPermittedSubclassExperimental(permittedSubclass);
         }
     }
 

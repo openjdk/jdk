@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,7 +730,7 @@ public class Types {
          */
         public FunctionDescriptor findDescriptorInternal(TypeSymbol origin,
                 CompoundScope membersCache) throws FunctionDescriptorLookupError {
-            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0) {
+            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0 || origin.isSealed()) {
                 //t must be an interface
                 throw failure("not.a.functional.intf", origin);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,5 +64,6 @@ class AttributeVisitor<R, P> implements Attribute.Visitor<R, P> {
     public R visitStackMap(StackMap_attribute attr, P p) { return null; }
     public R visitStackMapTable(StackMapTable_attribute attr, P p) { return null; }
     public R visitSynthetic(Synthetic_attribute attr, P p) { return null; }
+    public R visitPermittedSubclasses(PermittedSubclasses_attribute attr, P p) { return null; }
     public R visitRecord(Record_attribute attr, P p) { return null; }
 }

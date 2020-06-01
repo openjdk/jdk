@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import com.sun.tools.classfile.RuntimeParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.Signature;
+import com.sun.tools.classfile.PermittedSubclasses_attribute;
 import com.sun.tools.classfile.Signature_attribute;
 import com.sun.tools.classfile.SourceDebugExtension_attribute;
 import com.sun.tools.classfile.SourceFile_attribute;
@@ -82,10 +82,6 @@ import static com.sun.tools.classfile.AccessFlags.*;
 
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.StringUtils;
-
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /*
  *  A writer for writing Attributes as text.
@@ -882,6 +878,22 @@ public class AttributeWriter extends BasicWriter
     @Override
     public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr, Void ignore) {
         visitParameterAnnotations("RuntimeInvisibleParameterAnnotations:", (RuntimeParameterAnnotations_attribute) attr);
+        return null;
+    }
+
+    @Override
+    public Void visitPermittedSubclasses(PermittedSubclasses_attribute attr, Void ignore) {
+        println("PermittedSubclasses:");
+        indent(+1);
+        try {
+            CONSTANT_Class_info[] subtypes = attr.getSubtypes(constant_pool);
+            for (int i = 0; i < subtypes.length; i++) {
+                println(constantWriter.stringValue(subtypes[i]));
+            }
+            indent(-1);
+        } catch (ConstantPoolException ex) {
+            throw new AssertionError(ex);
+        }
         return null;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_bootstrapmethod_attribute();
   void write_nest_host_attribute();
   void write_nest_members_attribute();
+  void write_permitted_subclasses_attribute();
   void write_record_attribute();
 
   address writeable_address(size_t size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,11 +161,23 @@ public class TreeMaker implements JCTree.Factory {
                                 List<JCExpression> implementing,
                                 List<JCTree> defs)
     {
+        return ClassDef(mods, name, typarams, extending, implementing, List.nil(), defs);
+    }
+
+    public JCClassDecl ClassDef(JCModifiers mods,
+                                Name name,
+                                List<JCTypeParameter> typarams,
+                                JCExpression extending,
+                                List<JCExpression> implementing,
+                                List<JCExpression> permitting,
+                                List<JCTree> defs)
+    {
         JCClassDecl tree = new JCClassDecl(mods,
                                      name,
                                      typarams,
                                      extending,
                                      implementing,
+                                     permitting,
                                      defs,
                                      null);
         tree.pos = pos;

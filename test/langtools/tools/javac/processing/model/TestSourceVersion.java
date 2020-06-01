@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,8 @@ public class TestSourceVersion {
         Set<String> restrictedKeywords =
             Set.of("open", "module", "requires", "transitive", "exports",
                    "opens", "to", "uses", "provides", "with",
-                   // Assume "record" will be a restricted keyword.
-                   "record");
+                   // Assume "record" and "sealed" will be restricted keywords.
+                   "record", "sealed");
 
         for (String key : restrictedKeywords) {
             for (SourceVersion version : SourceVersion.values()) {

@@ -504,8 +504,18 @@ public class Utils {
                 }
             }
 
+            void addSealed(TypeElement e) {
+                if (e.getModifiers().contains(Modifier.SEALED)) {
+                    append("sealed");
+                } else if (e.getModifiers().contains(Modifier.NON_SEALED)) {
+                    append("non-sealed");
+                }
+            }
+
             void addModifiers(Set<Modifier> modifiers) {
-                modifiers.stream().map(Modifier::toString).forEachOrdered(this::append);
+                modifiers.stream()
+                        .map(Modifier::toString)
+                        .forEachOrdered(this::append);
             }
 
             void append(String s) {
@@ -527,6 +537,7 @@ public class Utils {
             public String visitTypeAsInterface(TypeElement e, SortedSet<Modifier> mods) {
                 addVisibilityModifier(mods);
                 addStatic(mods);
+                addSealed(e);
                 return finalString("interface");
             }
 

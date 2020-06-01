@@ -356,15 +356,15 @@ public class CheckClassAdapter extends ClassVisitor {
     /**
       * <b>Experimental, use at your own risk.</b>.
       *
-      * @param permittedSubtype the internal name of a permitted subtype.
+      * @param permittedSubclass the internal name of a permitted subclass.
       * @deprecated this API is experimental.
       */
     @Override
     @Deprecated
-    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
+    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
         checkState();
-        CheckMethodAdapter.checkInternalName(version, permittedSubtype, "permittedSubtype");
-        super.visitPermittedSubtypeExperimental(permittedSubtype);
+        CheckMethodAdapter.checkInternalName(version, permittedSubclass, "permittedSubclass");
+        super.visitPermittedSubclassExperimental(permittedSubclass);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,6 +564,10 @@ public class Pretty extends JCTree.Visitor {
                     print(" extends ");
                     printExprs(tree.implementing);
                 }
+                if (tree.permitting.nonEmpty()) {
+                    print(" permits ");
+                    printExprs(tree.permitting);
+                }
             } else {
                 if ((tree.mods.flags & ENUM) != 0)
                     print("enum " + tree.name);
@@ -577,6 +581,10 @@ public class Pretty extends JCTree.Visitor {
                 if (tree.implementing.nonEmpty()) {
                     print(" implements ");
                     printExprs(tree.implementing);
+                }
+                if (tree.permitting.nonEmpty()) {
+                    print(" permits ");
+                    printExprs(tree.permitting);
                 }
             }
             print(" ");

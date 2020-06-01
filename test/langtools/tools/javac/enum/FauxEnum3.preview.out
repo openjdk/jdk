@@ -1,0 +1,2 @@
+FauxEnum3.java:11:8: compiler.err.cant.inherit.from.sealed: SpecializedEnum
+1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,4 +183,9 @@ public enum Target {
         return compareTo(JDK1_11) >= 0;
     }
 
+    /** Does the target VM support sealed types
+     */
+    public boolean hasSealedClasses() {
+        return compareTo(JDK1_15) >= 0;
+    }
 }

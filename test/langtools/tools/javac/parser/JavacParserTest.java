@@ -1492,6 +1492,26 @@ public class JavacParserTest extends TestCase {
                      expectedAST);
     }
 
+    @Test
+    void testStartAndEndPositionForClassesInPermitsClause() throws IOException {
+        String code = "package t; sealed class Test permits Sub1, Sub2 {} final class Sub1 extends Test {} final class Sub2 extends Test {}";
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        List<? extends Tree> permitsList = clazz.getPermitsClause();
+        assertEquals("testStartAndEndPositionForClassesInPermitsClause", 2, permitsList.size());
+        Trees t = Trees.instance(ct);
+        List<String> expected = List.of("Sub1", "Sub2");
+        int i = 0;
+        for (Tree permitted: permitsList) {
+            int start = (int) t.getSourcePositions().getStartPosition(cut, permitted);
+            int end = (int) t.getSourcePositions().getEndPosition(cut, permitted);
+            assertEquals("testStartAndEndPositionForClassesInPermitsClause", expected.get(i++), code.substring(start, end));
+        }
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)

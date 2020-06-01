@@ -854,6 +854,65 @@ static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass
 }
 
 
+static jvmtiError check_permitted_subclasses_attribute(InstanceKlass* the_class,
+                                                       InstanceKlass* scratch_class) {
+  // Check whether the class PermittedSubclasses attribute has been changed.
+  Thread* thread = Thread::current();
+  ResourceMark rm(thread);
+  Array<u2>* the_permitted_subclasses = the_class->permitted_subclasses();
+  Array<u2>* scr_permitted_subclasses = scratch_class->permitted_subclasses();
+  bool the_subclasses_exist = the_permitted_subclasses != Universe::the_empty_short_array();
+  bool scr_subclasses_exist = scr_permitted_subclasses != Universe::the_empty_short_array();
+  int subclasses_len = the_permitted_subclasses->length();
+  if (the_subclasses_exist && scr_subclasses_exist) {
+    if (subclasses_len != scr_permitted_subclasses->length()) {
+      log_trace(redefine, class, sealed)
+        ("redefined class %s attribute change error: PermittedSubclasses len=%d changed to len=%d",
+         the_class->external_name(), subclasses_len, scr_permitted_subclasses->length());
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+    }
+
+    // The order of entries in the PermittedSubclasses array is not specified so
+    // we have to explicitly check for the same contents. We do this by copying
+    // the referenced symbols into their own arrays, sorting them and then
+    // comparing each element pair.
+
+    Symbol** the_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, subclasses_len);
+    Symbol** scr_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, subclasses_len);
+
+    if (the_syms == NULL || scr_syms == NULL) {
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < subclasses_len; i++) {
+      int the_cp_index = the_permitted_subclasses->at(i);
+      int scr_cp_index = scr_permitted_subclasses->at(i);
+      the_syms[i] = the_class->constants()->klass_name_at(the_cp_index);
+      scr_syms[i] = scratch_class->constants()->klass_name_at(scr_cp_index);
+    }
+
+    qsort(the_syms, subclasses_len, sizeof(Symbol*), symcmp);
+    qsort(scr_syms, subclasses_len, sizeof(Symbol*), symcmp);
+
+    for (int i = 0; i < subclasses_len; i++) {
+      if (the_syms[i] != scr_syms[i]) {
+        log_trace(redefine, class, sealed)
+          ("redefined class %s attribute change error: PermittedSubclasses[%d]: %s changed to %s",
+           the_class->external_name(), i, the_syms[i]->as_C_string(), scr_syms[i]->as_C_string());
+        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+      }
+    }
+  } else if (the_subclasses_exist ^ scr_subclasses_exist) {
+    const char* action_str = (the_subclasses_exist) ? "removed" : "added";
+    log_trace(redefine, class, sealed)
+      ("redefined class %s attribute change error: PermittedSubclasses attribute %s",
+       the_class->external_name(), action_str);
+    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+  }
+
+  return JVMTI_ERROR_NONE;
+}
+
 static bool can_add_or_delete(Method* m) {
       // Compatibility mode
   return (AllowRedefinitionToAddDeleteMethods &&
@@ -909,6 +968,12 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
   // Check whether the Record attribute has been changed.
   err = check_record_attribute(the_class, scratch_class);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+
+  // Check whether the PermittedSubclasses attribute has been changed.
+  err = check_permitted_subclasses_attribute(the_class, scratch_class);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
@@ -1792,6 +1857,12 @@ bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class,
     return false;
   }
 
+  // rewrite constant pool references in the PermittedSubclasses attribute:
+  if (!rewrite_cp_refs_in_permitted_subclasses_attribute(scratch_class)) {
+    // propagate failure back to caller
+    return false;
+  }
+
   // rewrite constant pool references in the methods:
   if (!rewrite_cp_refs_in_methods(scratch_class, THREAD)) {
     // propagate failure back to caller
@@ -1926,6 +1997,19 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_record_attribute(
         }
       }
     }
+  }
+  return true;
+}
+
+// Rewrite constant pool references in the PermittedSubclasses attribute.
+bool VM_RedefineClasses::rewrite_cp_refs_in_permitted_subclasses_attribute(
+       InstanceKlass* scratch_class) {
+
+  Array<u2>* permitted_subclasses = scratch_class->permitted_subclasses();
+  assert(permitted_subclasses != NULL, "unexpected null permitted_subclasses");
+  for (int i = 0; i < permitted_subclasses->length(); i++) {
+    u2 cp_index = permitted_subclasses->at(i);
+    permitted_subclasses->at_put(i, find_new_index(cp_index));
   }
   return true;
 }

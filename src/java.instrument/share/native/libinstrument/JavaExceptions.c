@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,7 @@ createThrowableFromJVMTIErrorCode(JNIEnv * jnienv, jvmtiError errorCode) {
 
         case JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED:
                 throwableClassName = "java/lang/UnsupportedOperationException";
-                message = "class redefinition failed: attempted to change the class NestHost, NestMembers, or Record attribute";
+                message = "class redefinition failed: attempted to change the class NestHost, NestMembers, Record, or PermittedSubclasses attribute";
                 break;
 
         case JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_MODIFIERS_CHANGED:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,7 @@ public enum Source {
         PATTERN_MATCHING_IN_INSTANCEOF(JDK15, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
         REIFIABLE_TYPES_INSTANCEOF(JDK15, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
         RECORDS(JDK15, Fragments.FeatureRecords, DiagKind.PLURAL),
+        SEALED_CLASSES(JDK15, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
         ;
 
         enum DiagKind {

@@ -2101,6 +2101,33 @@ JVM_ENTRY(jobjectArray, JVM_GetNestMembers(JNIEnv* env, jclass current))
 }
 JVM_END
 
+JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
+{
+  JVMWrapper("JVM_GetPermittedSubclasses");
+  assert(!java_lang_Class::is_primitive(JNIHandles::resolve_non_null(current)), "should not be");
+  Klass* c = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(current));
+  assert(c->is_instance_klass(), "must be");
+  InstanceKlass* ik = InstanceKlass::cast(c);
+  {
+    JvmtiVMObjectAllocEventCollector oam;
+    Array<u2>* subclasses = ik->permitted_subclasses();
+    int length = subclasses == NULL ? 0 : subclasses->length();
+    objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
+                                             length, CHECK_NULL);
+    objArrayHandle result(THREAD, r);
+    for (int i = 0; i < length; i++) {
+      int cp_index = subclasses->at(i);
+      // This returns <package-name>/<class-name>.
+      Symbol* klass_name = ik->constants()->klass_name_at(cp_index);
+      assert(klass_name != NULL, "Unexpected null klass_name");
+      Handle perm_subtype_h = java_lang_String::create_from_symbol(klass_name, CHECK_NULL);
+      result->obj_at_put(i, perm_subtype_h());
+    }
+    return (jobjectArray)JNIHandles::make_local(THREAD, result());
+  }
+}
+JVM_END
+
 // Constant pool access //////////////////////////////////////////////////////////
 
 JVM_ENTRY(jobject, JVM_GetClassConstantPool(JNIEnv *env, jclass cls))
