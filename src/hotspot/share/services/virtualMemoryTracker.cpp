@@ -539,15 +539,21 @@ public:
       address committed_start;
       size_t  committed_size;
       size_t stack_size = rgn->base() + rgn->size() - stack_bottom;
+      // Align the size to work with full pages (Alpine and AIX stack top is not page aligned)
+      size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
 
       ReservedMemoryRegion* region = const_cast<ReservedMemoryRegion*>(rgn);
       NativeCallStack ncs; // empty stack
 
-      RegionIterator itr(stack_bottom, stack_size);
+      RegionIterator itr(stack_bottom, aligned_stack_size);
       DEBUG_ONLY(bool found_stack = false;)
       while (itr.next_committed(committed_start, committed_size)) {
         assert(committed_start != NULL, "Should not be null");
         assert(committed_size > 0, "Should not be 0");
+        // unaligned stack_size case: correct the region to fit the actual stack_size
+        if (stack_bottom + stack_size < committed_start + committed_size) {
+          committed_size = stack_bottom + stack_size - committed_start;
+        }
         region->add_committed_region(committed_start, committed_size, ncs);
         DEBUG_ONLY(found_stack = true;)
       }
