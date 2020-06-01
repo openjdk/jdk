@@ -2004,23 +2004,22 @@ void nmethod::oops_do_marking_epilogue() {
 
   nmethod* next = _oops_do_mark_nmethods;
   _oops_do_mark_nmethods = NULL;
-  if (next == NULL) {
-    return;
-  }
-  nmethod* cur;
-  do {
-    cur = next;
-    next = extract_nmethod(cur->_oops_do_mark_link);
-    cur->_oops_do_mark_link = NULL;
-    DEBUG_ONLY(cur->verify_oop_relocations());
+  if (next != NULL) {
+    nmethod* cur;
+    do {
+      cur = next;
+      next = extract_nmethod(cur->_oops_do_mark_link);
+      cur->_oops_do_mark_link = NULL;
+      DEBUG_ONLY(cur->verify_oop_relocations());
 
-    LogTarget(Trace, gc, nmethod) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      CompileTask::print(&ls, cur, "oops_do, unmark", /*short_form:*/ true);
-    }
-    // End if self-loop has been detected.
-  } while (cur != next);
+      LogTarget(Trace, gc, nmethod) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        CompileTask::print(&ls, cur, "oops_do, unmark", /*short_form:*/ true);
+      }
+      // End if self-loop has been detected.
+    } while (cur != next);
+  }
   log_trace(gc, nmethod)("oops_do_marking_epilogue");
 }
 
