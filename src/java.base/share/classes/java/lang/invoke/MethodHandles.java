@@ -31,6 +31,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -1661,8 +1662,9 @@ public class MethodHandles {
          * @return the {@code Class} object for the class
          * @throws IllegalAccessException if this lookup does not have {@code PACKAGE} access
          * @throws ClassFormatError if {@code bytes} is not a {@code ClassFile} structure
-         * @throws IllegalArgumentException the bytes are for a class in a different package
-         * to the lookup class
+         * @throws IllegalArgumentException if {@code bytes} denotes a class in a different package
+         * than the lookup class or {@code bytes} is not a class or interface
+         * ({@code ACC_MODULE} flag is set in the value of the {@code access_flags} item)
          * @throws VerifyError if the newly created class cannot be verified
          * @throws LinkageError if the newly created class cannot be linked for any other reason
          * @throws SecurityException if a security manager is present and it
@@ -1923,8 +1925,9 @@ public class MethodHandles {
          * <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws ClassFormatError if {@code bytes} is not a {@code ClassFile} structure
          * @throws UnsupportedClassVersionError if {@code bytes} is not of a supported major or minor version
-         * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * @throws IllegalArgumentException if {@code bytes} denotes a class in a different package
+         * than the lookup class or {@code bytes} is not a class or interface
+         * ({@code ACC_MODULE} flag is set in the value of the {@code access_flags} item)
          * @throws IncompatibleClassChangeError if the class or interface named as
          * the direct superclass of {@code C} is in fact an interface, or if any of the classes
          * or interfaces named as direct superinterfaces of {@code C} are not in fact interfaces
@@ -1987,8 +1990,9 @@ public class MethodHandles {
          * <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws ClassFormatError if {@code bytes} is not a {@code ClassFile} structure
          * @throws UnsupportedClassVersionError if {@code bytes} is not of a supported major or minor version
-         * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * @throws IllegalArgumentException if {@code bytes} denotes a class in a different package
+         * than the lookup class or {@code bytes} is not a class or interface
+         * ({@code ACC_MODULE} flag is set in the value of the {@code access_flags} item)
          * @throws IncompatibleClassChangeError if the class or interface named as
          * the direct superclass of {@code C} is in fact an interface, or if any of the classes
          * or interfaces named as direct superinterfaces of {@code C} are not in fact interfaces
@@ -2018,36 +2022,95 @@ public class MethodHandles {
                        .defineClassAsLookup(true, classData);
         }
 
-        /*
-         * Validates the given bytes to be a class or interface and the class name
-         * is in the same package as the lookup class.
-         *
-         * This method returns the class name.
-         */
-        private String validateAndGetClassName(byte[] bytes) {
-            try {
-                ClassReader reader = new ClassReader(bytes);
-                if ((reader.getAccess() & Opcodes.ACC_MODULE) != 0) {
+        static class ClassFile {
+            final String name;
+            final int accessFlags;
+            final byte[] bytes;
+            ClassFile(String name, int accessFlags, byte[] bytes) {
+                this.name = name;
+                this.accessFlags = accessFlags;
+                this.bytes = bytes;
+            }
+
+            static ClassFile newInstanceNoCheck(String name, byte[] bytes) {
+                return new ClassFile(name, 0, bytes);
+            }
+
+            /**
+             * This method checks the class file version and the structure of `this_class`.
+             * and checks if the bytes is a class or interface (ACC_MODULE flag not set)
+             * that is in the named package.
+             *
+             * @throws IllegalArgumentException if ACC_MODULE flag is set in access flags
+             * or the class is not in the given package name.
+             */
+            static ClassFile newInstance(byte[] bytes, String pkgName) {
+                int magic = readInt(bytes, 0);
+                if (magic != 0xCAFEBABE) {
+                    throw new ClassFormatError("Incompatible magic value: " + magic);
+                }
+                int minor = readUnsignedShort(bytes, 4);
+                int major = readUnsignedShort(bytes, 6);
+                if (!VM.isSupportedClassFileVersion(major, minor)) {
+                    throw new UnsupportedClassVersionError("Unsupported class file version " + major + "." + minor);
+                }
+
+                String name;
+                int accessFlags;
+                try {
+                    ClassReader reader = new ClassReader(bytes);
+                    // ClassReader::getClassName does not check if `this_class` is CONSTANT_Class_info
+                    // workaround to read `this_class` using readConst and validate the value
+                    int thisClass = reader.readUnsignedShort(reader.header + 2);
+                    Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
+                    if (!(constant instanceof Type)) {
+                        throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
+                    }
+                    Type type = ((Type) constant);
+                    if (!type.getDescriptor().startsWith("L")) {
+                        throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
+                    }
+                    name = type.getClassName();
+                    accessFlags = reader.readUnsignedShort(reader.header);
+                } catch (RuntimeException e) {
+                    // ASM exceptions are poorly specified
+                    ClassFormatError cfe = new ClassFormatError();
+                    cfe.initCause(e);
+                    throw cfe;
+                }
+
+                // must be a class or interface
+                if ((accessFlags & Opcodes.ACC_MODULE) != 0) {
                     throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
                 }
-                String name = reader.getClassName().replace('/', '.');
+
+                // check if it's in the named package
                 int index = name.lastIndexOf('.');
                 String pn = (index == -1) ? "" : name.substring(0, index);
-                if (!pn.equals(lookupClass.getPackageName())) {
-                    throw newIllegalArgumentException(name + " not in same package as lookup class: " +
-                            lookupClass.getName());
+                if (!pn.equals(pkgName)) {
+                    throw newIllegalArgumentException(name + " not in same package as lookup class");
                 }
-                return name;
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                // ASM exceptions are poorly specified
-                ClassFormatError cfe = new ClassFormatError();
-                cfe.initCause(e);
-                throw cfe;
+
+                return new ClassFile(name, accessFlags, bytes);
+            }
+
+            private static int readInt(byte[] bytes, int offset) {
+                if ((offset+4) > bytes.length) {
+                    throw new ClassFormatError("Invalid ClassFile structure");
+                }
+                return ((bytes[offset] & 0xFF) << 24)
+                        | ((bytes[offset + 1] & 0xFF) << 16)
+                        | ((bytes[offset + 2] & 0xFF) << 8)
+                        | (bytes[offset + 3] & 0xFF);
+            }
+
+            private static int readUnsignedShort(byte[] bytes, int offset) {
+                if ((offset+2) > bytes.length) {
+                    throw new ClassFormatError("Invalid ClassFile structure");
+                }
+                return ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
             }
         }
-
 
         /*
          * Returns a ClassDefiner that creates a {@code Class} object of a normal class
@@ -2060,7 +2123,8 @@ public class MethodHandles {
          * {@bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
-            return new ClassDefiner(this, validateAndGetClassName(bytes), bytes, STRONG_LOADER_LINK);
+            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
+            return new ClassDefiner(this, cf, STRONG_LOADER_LINK);
         }
 
         /**
@@ -2077,7 +2141,8 @@ public class MethodHandles {
          * {@bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes) {
-            return makeHiddenClassDefiner(validateAndGetClassName(bytes), bytes, Set.of(), false);
+            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
+            return makeHiddenClassDefiner(cf, Set.of(), false);
         }
 
         /**
@@ -2099,7 +2164,8 @@ public class MethodHandles {
         ClassDefiner makeHiddenClassDefiner(byte[] bytes,
                                             Set<ClassOption> options,
                                             boolean accessVmAnnotations) {
-            return makeHiddenClassDefiner(validateAndGetClassName(bytes), bytes, options, accessVmAnnotations);
+            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
+            return makeHiddenClassDefiner(cf, options, accessVmAnnotations);
         }
 
         /**
@@ -2111,22 +2177,21 @@ public class MethodHandles {
          * @return ClassDefiner that defines a hidden class of the given bytes.
          */
         ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes) {
-            return makeHiddenClassDefiner(name, bytes, Set.of(), false);
+            // skip name and access flags validation
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), Set.of(), false);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes and options.  No package name check on the given name.
+         * from the given class file and options.
          *
-         * @param name the name of the class and the name in the class bytes is ignored.
-         * @param bytes class bytes
+         * @param cf ClassFile
          * @param options class options
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
          */
-        ClassDefiner makeHiddenClassDefiner(String name,
-                                            byte[] bytes,
-                                            Set<ClassOption> options,
-                                            boolean accessVmAnnotations) {
+        private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
+                                                    Set<ClassOption> options,
+                                                    boolean accessVmAnnotations) {
             int flags = HIDDEN_CLASS | ClassOption.optionsToFlag(options);
             if (accessVmAnnotations | VM.isSystemDomainLoader(lookupClass.getClassLoader())) {
                 // jdk.internal.vm.annotations are permitted for classes
@@ -2134,7 +2199,7 @@ public class MethodHandles {
                 flags |= ACCESS_VM_ANNOTATIONS;
             }
 
-            return new ClassDefiner(this, name, bytes, flags);
+            return new ClassDefiner(this, cf, flags);
         }
 
         static class ClassDefiner {
@@ -2143,12 +2208,12 @@ public class MethodHandles {
             private final byte[] bytes;
             private final int classFlags;
 
-            private ClassDefiner(Lookup lookup, String name, byte[] bytes, int flags) {
+            private ClassDefiner(Lookup lookup, ClassFile cf, int flags) {
                 assert ((flags & HIDDEN_CLASS) != 0 || (flags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
                 this.lookup = lookup;
-                this.bytes = bytes;
+                this.bytes = cf.bytes;
+                this.name = cf.name;
                 this.classFlags = flags;
-                this.name = name;
             }
 
             String className() {
