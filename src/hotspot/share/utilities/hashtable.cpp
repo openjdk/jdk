@@ -61,7 +61,8 @@ template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsig
 
   if (entry == NULL) {
     if (_first_free_entry + _entry_size >= _end_block) {
-      int block_size = MIN2(512, MAX3(2, (int)_table_size / 2, (int)_number_of_entries));
+      int block_size = MAX2((int)_table_size / 2, (int)_number_of_entries); // pick a reasonable value
+      block_size = clamp(block_size, 2, 512); // but never go out of this range
       int len = _entry_size * block_size;
       len = 1 << log2_int(len); // round down to power of 2
       assert(len >= _entry_size, "");
