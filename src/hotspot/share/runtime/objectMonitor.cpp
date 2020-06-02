@@ -526,12 +526,17 @@ void ObjectMonitor::EnterI(TRAPS) {
 
   if (AsyncDeflateIdleMonitors &&
       try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
-    // Cancelled the in-progress async deflation. We bump contentions an
-    // extra time to prevent the async deflater thread from temporarily
-    // changing it to -max_jint and back to zero (no flicker to confuse
-    // is_being_async_deflated()). The async deflater thread will
-    // decrement contentions after it recognizes that the async
-    // deflation was cancelled.
+    // Cancelled the in-progress async deflation by changing owner from
+    // DEFLATER_MARKER to Self. As part of the contended enter protocol,
+    // contentions was incremented to a positive value before EnterI()
+    // was called and that prevents the deflater thread from winning the
+    // last part of the 2-part async deflation protocol. After EnterI()
+    // returns to enter(), contentions is decremented because the caller
+    // now owns the monitor. We bump contentions an extra time here to
+    // prevent the deflater thread from winning the last part of the
+    // 2-part async deflation protocol after the regular decrement
+    // occurs in enter(). The deflater thread will decrement contentions
+    // after it recognizes that the async deflation was cancelled.
     add_to_contentions(1);
     assert(_succ != Self, "invariant");
     assert(_Responsible != Self, "invariant");
@@ -656,12 +661,17 @@ void ObjectMonitor::EnterI(TRAPS) {
 
     if (AsyncDeflateIdleMonitors &&
         try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
-      // Cancelled the in-progress async deflation. We bump contentions an
-      // extra time to prevent the async deflater thread from temporarily
-      // changing it to -max_jint and back to zero (no flicker to confuse
-      // is_being_async_deflated()). The async deflater thread will
-      // decrement contentions after it recognizes that the async
-      // deflation was cancelled.
+      // Cancelled the in-progress async deflation by changing owner from
+      // DEFLATER_MARKER to Self. As part of the contended enter protocol,
+      // contentions was incremented to a positive value before EnterI()
+      // was called and that prevents the deflater thread from winning the
+      // last part of the 2-part async deflation protocol. After EnterI()
+      // returns to enter(), contentions is decremented because the caller
+      // now owns the monitor. We bump contentions an extra time here to
+      // prevent the deflater thread from winning the last part of the
+      // 2-part async deflation protocol after the regular decrement
+      // occurs in enter(). The deflater thread will decrement contentions
+      // after it recognizes that the async deflation was cancelled.
       add_to_contentions(1);
       break;
     }
