@@ -1429,21 +1429,25 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         errorStatus = errorStatus || (compiler.errorCount() > 0);
 
-        round.finalCompiler();
 
         if (newSourceFiles.size() > 0)
             roots = roots.appendList(compiler.parseFiles(newSourceFiles));
 
         errorStatus = errorStatus || (compiler.errorCount() > 0);
 
-        // Free resources
-        this.close();
-
         if (errorStatus && compiler.errorCount() == 0) {
             compiler.log.nerrors++;
         }
 
-        compiler.enterTreesIfNeeded(roots);
+        if (compiler.continueAfterProcessAnnotations()) {
+            round.finalCompiler();
+            compiler.enterTrees(compiler.initModules(roots));
+        } else {
+            compiler.todo.clear();
+        }
+
+        // Free resources
+        this.close();
 
         if (!taskListener.isEmpty())
             taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
