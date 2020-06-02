@@ -143,7 +143,10 @@ void CollectedHeap::print_on_error(outputStream* st) const {
   print_extended_on(st);
   st->cr();
 
-  BarrierSet::barrier_set()->print_on(st);
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != NULL) {
+    bs->print_on(st);
+  }
 }
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {

@@ -931,9 +931,12 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose) {
        GCLogPrecious::print_on_error(st);
 
-       if (Universe::is_fully_initialized()) {
+       if (Universe::heap() != NULL) {
          Universe::heap()->print_on_error(st);
          st->cr();
+       }
+
+       if (Universe::is_fully_initialized()) {
          st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
          st->cr();
        }

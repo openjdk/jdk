@@ -2507,11 +2507,13 @@ void G1CollectedHeap::print_heap_regions() const {
 
 void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-            capacity()/K, used_unlocked()/K);
-  st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-            p2i(_hrm->reserved().start()),
-            p2i(_hrm->reserved().end()));
+  if (_hrm != NULL) {
+    st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+              capacity()/K, used_unlocked()/K);
+    st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
+              p2i(_hrm->reserved().start()),
+              p2i(_hrm->reserved().end()));
+  }
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
   uint young_regions = young_regions_count();
@@ -2526,7 +2528,8 @@ void G1CollectedHeap::print_on(outputStream* st) const {
     st->print("  remaining free region(s) on each NUMA node: ");
     const int* node_ids = _numa->node_ids();
     for (uint node_index = 0; node_index < num_nodes; node_index++) {
-      st->print("%d=%u ", node_ids[node_index], _hrm->num_free_regions(node_index));
+      uint num_free_regions = (_hrm != NULL ? _hrm->num_free_regions(node_index) : 0);
+      st->print("%d=%u ", node_ids[node_index], num_free_regions);
     }
     st->cr();
   }
@@ -2534,6 +2537,10 @@ void G1CollectedHeap::print_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_regions_on(outputStream* st) const {
+  if (_hrm == NULL) {
+    return;
+  }
+
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, "

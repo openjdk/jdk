@@ -595,8 +595,12 @@ bool ParallelScavengeHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void ParallelScavengeHeap::print_on(outputStream* st) const {
-  young_gen()->print_on(st);
-  old_gen()->print_on(st);
+  if (young_gen() != NULL) {
+    young_gen()->print_on(st);
+  }
+  if (old_gen() != NULL) {
+    old_gen()->print_on(st);
+  }
   MetaspaceUtils::print_on(st);
 }
 

@@ -52,7 +52,8 @@ public:
   static EpsilonHeap* heap();
 
   EpsilonHeap() :
-          _memory_manager("Epsilon Heap", "") {};
+          _memory_manager("Epsilon Heap", ""),
+          _space(NULL) {};
 
   virtual Name kind() const {
     return CollectedHeap::Epsilon;
