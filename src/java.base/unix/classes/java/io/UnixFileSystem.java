@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,17 @@ class UnixFileSystem extends FileSystem {
     /* A normal Unix pathname contains no duplicate slashes and does not end
        with a slash.  It may be the empty string. */
 
-    /* Normalize the given pathname, whose length is len, starting at the given
-       offset; everything before this offset is already normal. */
-    private String normalize(String pathname, int len, int off) {
-        if (len == 0) return pathname;
-        int n = len;
+    /**
+     * Normalize the given pathname, starting at the given
+     * offset; everything before off is already normal, and there's at least
+     * one duplicate or trailing slash to be removed
+     */
+    private String normalize(String pathname, int off) {
+        int n = pathname.length();
         while ((n > 0) && (pathname.charAt(n - 1) == '/')) n--;
         if (n == 0) return "/";
-        StringBuilder sb = new StringBuilder(pathname.length());
+
+        StringBuilder sb = new StringBuilder(n);
         if (off > 0) sb.append(pathname, 0, off);
         char prevChar = 0;
         for (int i = off; i < n; i++) {
@@ -88,22 +91,19 @@ class UnixFileSystem extends FileSystem {
        This way we iterate through the whole pathname string only once. */
     @Override
     public String normalize(String pathname) {
-        int n = pathname.length();
-        char prevChar = 0;
-        for (int i = 0; i < n; i++) {
-            char c = pathname.charAt(i);
-            if ((prevChar == '/') && (c == '/'))
-                return normalize(pathname, n, i - 1);
-            prevChar = c;
+        int doubleSlash = pathname.indexOf("//");
+        if (doubleSlash >= 0) {
+            return normalize(pathname, doubleSlash);
         }
-        if (prevChar == '/') return normalize(pathname, n, n - 1);
+        if (pathname.endsWith("/")) {
+            return normalize(pathname, pathname.length() - 1);
+        }
         return pathname;
     }
 
     @Override
     public int prefixLength(String pathname) {
-        if (pathname.isEmpty()) return 0;
-        return (pathname.charAt(0) == '/') ? 1 : 0;
+        return pathname.startsWith("/") ? 1 : 0;
     }
 
     @Override
