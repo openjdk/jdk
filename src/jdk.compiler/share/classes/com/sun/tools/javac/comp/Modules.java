@@ -630,15 +630,19 @@ public class Modules extends JCTree.Visitor {
 
             if (msym.kind == ERR) {
                 //make sure the module is initialized:
-                msym.directives = List.nil();
-                msym.exports = List.nil();
-                msym.provides = List.nil();
-                msym.requires = List.nil();
-                msym.uses = List.nil();
+                initErrModule(msym);
             } else if ((msym.flags_field & Flags.AUTOMATIC_MODULE) != 0) {
                 setupAutomaticModule(msym);
             } else {
-                msym.module_info.complete();
+                try {
+                    msym.module_info.complete();
+                } catch (CompletionFailure cf) {
+                    msym.kind = ERR;
+                    //make sure the module is initialized:
+                    initErrModule(msym);
+                    completeModule(msym);
+                    throw cf;
+                }
             }
 
             // If module-info comes from a .java file, the underlying
@@ -651,6 +655,14 @@ public class Modules extends JCTree.Visitor {
             if (msym.module_info.classfile == null || msym.module_info.classfile.getKind() == Kind.CLASS) {
                 completeModule(msym);
             }
+        }
+
+        private void initErrModule(ModuleSymbol msym) {
+            msym.directives = List.nil();
+            msym.exports = List.nil();
+            msym.provides = List.nil();
+            msym.requires = List.nil();
+            msym.uses = List.nil();
         }
 
         @Override

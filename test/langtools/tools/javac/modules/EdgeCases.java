@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311
+ * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311 8241519
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -994,6 +994,47 @@ public class EdgeCases extends ModuleTestBase {
             .files(findJavaFiles(src))
             .run()
             .writeAll();
+    }
+
+    @Test
+    public void testMisnamedModuleInfoClass(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path a = src.resolve("a");
+        tb.writeJavaFiles(a,
+                          "module a {}");
+        Path b = src.resolve("b");
+        tb.writeJavaFiles(b,
+                          "module b { uses com.example.c; }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+        Path aClasses = classes.resolve("x");
+        tb.createDirectories(aClasses);
+
+        new JavacTask(tb)
+                .outdir(aClasses)
+                .files(findJavaFiles(a))
+                .run()
+                .writeAll();
+
+        Path bClasses = classes.resolve("b");
+        tb.createDirectories(bClasses);
+
+        List<String> log;
+
+        log = new JavacTask(tb)
+                .outdir(bClasses)
+                .options("-p", classes.toString(),
+                         "-XDrawDiagnostics")
+                .files(findJavaFiles(b))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = List.of("module-info.java:1:28: compiler.err.doesnt.exist: com.example",
+                                        "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
     }
 
 }
