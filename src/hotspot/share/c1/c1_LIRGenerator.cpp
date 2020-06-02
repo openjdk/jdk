@@ -2975,16 +2975,18 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {
   LabelObj* L_end = new LabelObj();
 
+  // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
+  // meaning of these two is mixed up (see JDK-8026837).
   LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
                                            in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
-                                           T_OBJECT);
+                                           T_ADDRESS);
   LIR_Opr result = rlock_result(x);
-  __ move_wide(jobj_addr, result);
-  __ cmp(lir_cond_equal, result, LIR_OprFact::oopConst(NULL));
+  __ move(LIR_OprFact::oopConst(NULL), result);
+  LIR_Opr jobj = new_register(T_METADATA);
+  __ move_wide(jobj_addr, jobj);
+  __ cmp(lir_cond_equal, jobj, LIR_OprFact::metadataConst(0));
   __ branch(lir_cond_equal, L_end->label());
 
-  LIR_Opr jobj = new_register(T_OBJECT);
-  __ move(result, jobj);
   access_load(IN_NATIVE, T_OBJECT, LIR_OprFact::address(new LIR_Address(jobj, T_OBJECT)), result);
 
   __ branch_destination(L_end->label());
