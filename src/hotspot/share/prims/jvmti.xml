@@ -12283,7 +12283,7 @@ myInit() {
       function are not reported.
       <p/>
       The location reported by <functionlink id="GetFrameLocation"></functionlink>
-      identifies the executable location in the returning method,
+      for the depth 0 identifies the executable location in the returning method,
       immediately prior to the return.
     </description>
     <origin>jvmdi</origin>
@@ -12334,8 +12334,7 @@ myInit() {
       programming language methods (including native methods).
       <p/>
       The location reported by <functionlink id="GetFrameLocation"></functionlink>
-      identifies the initial executable location in
-      the method.
+      for the depth 0 identifies the initial executable location in the method.
       <p/>
       Enabling method
       entry or exit events will significantly degrade performance on many platforms and is thus
@@ -12387,12 +12386,8 @@ myInit() {
       or by throwing an exception to its caller
       (see <paramlink id="was_popped_by_exception"></paramlink>).
       <p/>
-      The <code>method</code> field uniquely identifies the
-      method being entered or exited. The <code>frame</code> field provides
-      access to the stack frame for the method.
-      <p/>
       The location reported by <functionlink id="GetFrameLocation"></functionlink>
-      identifies the executable location in the returning method
+      for the depth 0 identifies the executable location in the returning method
       immediately prior to the return.
       <p/>
         Enabling method
