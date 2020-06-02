@@ -111,7 +111,9 @@ public enum Modifier {
      * The modifier name is the {@linkplain #name() name of the enum
      * constant} in lowercase and with any underscores ("{@code _}")
      * replaced with hyphens ("{@code -}").
+     * @return the modifier's name
      */
+    @Override
     public String toString() {
         return name().toLowerCase(java.util.Locale.US);
     }
