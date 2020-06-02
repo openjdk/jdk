@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,15 +253,8 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         ZonedDateTime expected = ZonedDateTime.now(Clock.system(zone));
         ZonedDateTime test = ZonedDateTime.now(zone);
-        for (int i = 0; i < 100; i++) {
-            if (expected.equals(test)) {
-                return;
-            }
-            expected = ZonedDateTime.now(Clock.system(zone));
-            test = ZonedDateTime.now(zone);
-        }
-        assertEquals(test.truncatedTo(ChronoUnit.SECONDS),
-                     expected.truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS),
+                Duration.ZERO);
     }
 
     //-----------------------------------------------------------------------
