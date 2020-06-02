@@ -398,6 +398,19 @@ static bool setImageAndSymbolPath(JNIEnv* env, jobject obj) {
   return true;
 }
 
+static HRESULT WaitForEvent(IDebugControl *ptrIDebugControl) {
+  HRESULT hr = ptrIDebugControl->WaitForEvent(DEBUG_WAIT_DEFAULT, INFINITE);
+  // see JDK-8204994: sometimes WaitForEvent fails with E_ACCESSDENIED,
+  // but succeeds on 2nd call.
+  // To minimize possible noise retry 3 times.
+  for (int i = 0; hr == E_ACCESSDENIED && i < 3; i++) {
+    // yield current thread use of a processor (short delay).
+    SwitchToThread();
+    hr = ptrIDebugControl->WaitForEvent(DEBUG_WAIT_DEFAULT, INFINITE);
+  }
+  return hr;
+}
+
 static bool openDumpFile(JNIEnv* env, jobject obj, jstring coreFileName) {
   // open the dump file
   AutoJavaString coreFile(env, coreFileName);
@@ -413,7 +426,7 @@ static bool openDumpFile(JNIEnv* env, jobject obj, jstring coreFileName) {
 
   IDebugControl* ptrIDebugControl = (IDebugControl*)env->GetLongField(obj, ptrIDebugControl_ID);
   CHECK_EXCEPTION_(false);
-  COM_VERIFY_OK_(ptrIDebugControl->WaitForEvent(DEBUG_WAIT_DEFAULT, INFINITE),
+  COM_VERIFY_OK_(WaitForEvent(ptrIDebugControl),
                  "Windbg Error: WaitForEvent failed!", false);
 
   return true;
@@ -450,7 +463,7 @@ static bool attachToProcess(JNIEnv* env, jobject obj, jint pid) {
   IDebugControl* ptrIDebugControl = (IDebugControl*) env->GetLongField(obj,
                                                      ptrIDebugControl_ID);
   CHECK_EXCEPTION_(false);
-  COM_VERIFY_OK_(ptrIDebugControl->WaitForEvent(DEBUG_WAIT_DEFAULT, INFINITE),
+  COM_VERIFY_OK_(WaitForEvent(ptrIDebugControl),
                  "Windbg Error: WaitForEvent failed!", false);
 
   return true;
