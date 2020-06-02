@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -615,7 +615,7 @@ void SuperWord::find_adjacent_refs() {
     // alignment is set and vectors will be aligned.
     bool create_pack = true;
     if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
-      if (!Matcher::misaligned_vectors_ok() || AlignVector) {
+      if (vectors_should_be_aligned()) {
         int vw = vector_width(mem_ref);
         int vw_best = vector_width(best_align_to_mem_ref);
         if (vw > vw_best) {
@@ -640,7 +640,7 @@ void SuperWord::find_adjacent_refs() {
       } else {
         // Allow independent (different type) unaligned memory operations
         // if HW supports them.
-        if (!Matcher::misaligned_vectors_ok() || AlignVector) {
+        if (vectors_should_be_aligned()) {
           create_pack = false;
         } else {
           // Check if packs of the same memory type but
@@ -776,8 +776,9 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
     SWPointer p1(s1, this, NULL, false);
-    // Discard if pre loop can't align this reference
-    if (!ref_is_alignable(p1)) {
+    // Only discard unalignable memory references if vector memory references
+    // should be aligned on this platform.
+    if (vectors_should_be_aligned() && !ref_is_alignable(p1)) {
       *cmp_ct.adr_at(i) = 0;
       continue;
     }
@@ -998,7 +999,9 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
     // several iterations are needed to align memory operations in main-loop even
     // if offset is 0.
     int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
-    assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
+    // iv_adjustment_in_bytes must be a multiple of elt_size if vector memory
+    // references should be aligned on this platform.
+    assert((ABS(iv_adjustment_in_bytes) % elt_size) == 0 || !vectors_should_be_aligned(),
            "(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size);
     iv_adjustment = iv_adjustment_in_bytes/elt_size;
   } else {

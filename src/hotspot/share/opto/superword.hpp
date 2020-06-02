@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,9 @@ class SuperWord : public ResourceObj {
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
+
+  // should we align vector memory references on this platform?
+  bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
   // memory alignment for a node
   int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
