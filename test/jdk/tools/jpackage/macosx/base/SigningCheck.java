@@ -87,7 +87,7 @@ public class SigningCheck {
         List<String> result = new Executor()
                 .setExecutable("security")
                 .addArguments("dump-trust-settings")
-                .executeAndGetOutput();
+                .executeWithoutExitCodeCheckAndGetOutput();
         result.stream().forEachOrdered(TKit::trace);
         TKit.assertTextStream(name)
                 .predicate((line, what) -> line.trim().endsWith(what))
