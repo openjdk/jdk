@@ -91,16 +91,6 @@ private:
 public:
   void preclean_weak_refs();
 
-// ---------- Concurrent code cache
-//
-private:
-  ShenandoahSharedFlag _claimed_codecache;
-
-public:
-  void concurrent_scan_code_roots(uint worker_id, ReferenceProcessor* rp);
-  bool claim_codecache();
-  void clear_claim_codecache();
-
 // ---------- Helpers
 // Used from closures, need to be public
 //

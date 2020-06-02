@@ -184,6 +184,51 @@ public:
   }
 };
 
+template <bool CONCURRENT>
+ShenandoahConcurrentRootScanner<CONCURRENT>::ShenandoahConcurrentRootScanner(uint n_workers,
+                                                                             ShenandoahPhaseTimings::Phase phase) :
+  _vm_roots(phase),
+  _cld_roots(phase, n_workers),
+  _codecache_snapshot(NULL),
+  _phase(phase) {
+  if (!ShenandoahHeap::heap()->unload_classes()) {
+    if (CONCURRENT) {
+      CodeCache_lock->lock_without_safepoint_check();
+    } else {
+      assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+    }
+    _codecache_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
+  }
+  assert(!CONCURRENT || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expecting forwarded pointers during concurrent marking");
+}
+
+template <bool CONCURRENT>
+ShenandoahConcurrentRootScanner<CONCURRENT>::~ShenandoahConcurrentRootScanner() {
+  if (!ShenandoahHeap::heap()->unload_classes()) {
+    ShenandoahCodeRoots::table()->finish_iteration(_codecache_snapshot);
+    if (CONCURRENT) {
+      CodeCache_lock->unlock();
+    }
+  }
+}
+
+template <bool CONCURRENT>
+void ShenandoahConcurrentRootScanner<CONCURRENT>::oops_do(OopClosure* oops, uint worker_id) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  CLDToOopClosure clds_cl(oops, CONCURRENT ? ClassLoaderData::_claim_strong : ClassLoaderData::_claim_none);
+  _vm_roots.oops_do(oops, worker_id);
+
+  if (!heap->unload_classes()) {
+    _cld_roots.cld_do(&clds_cl, worker_id);
+
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+    CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+    _codecache_snapshot->parallel_blobs_do(&blobs);
+  } else {
+    _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
+  }
+}
+
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
