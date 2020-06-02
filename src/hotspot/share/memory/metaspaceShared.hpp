@@ -183,6 +183,7 @@ class MetaspaceShared : AllStatic {
   static size_t  _core_spaces_size;
   static void* _shared_metaspace_static_top;
   static intx _relocation_delta;
+  static char* _requested_base_address;
  public:
   enum {
     // core archive spaces
@@ -352,6 +353,12 @@ class MetaspaceShared : AllStatic {
   static void allocate_cloned_cpp_vtptrs();
   static intptr_t* fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj);
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
+
+  // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.
+  // Both the base/top archives are written using this as their base address.
+  static char* requested_base_address() {
+    return _requested_base_address;
+  }
 
   // Non-zero if the archive(s) need to be mapped a non-default location due to ASLR.
   static intx relocation_delta() { return _relocation_delta; }

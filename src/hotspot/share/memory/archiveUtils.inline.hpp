@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ inline bool SharedDataRelocator<COMPACTING>::do_bit(size_t offset) {
   }
 
   address new_ptr = old_ptr + _delta;
+  assert(new_ptr != NULL, "don't point to the bottom of the archive"); // See ArchivePtrMarker::mark_pointer().
   assert(_valid_new_base <= new_ptr && new_ptr < _valid_new_end, "must be");
 
   DEBUG_ONLY(log_trace(cds, reloc)("Patch2: @%8d [" PTR_FORMAT "] " PTR_FORMAT " -> " PTR_FORMAT,
