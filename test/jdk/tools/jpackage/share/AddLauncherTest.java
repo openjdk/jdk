@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.jpackage.test.Annotations.*;
 
 /**
  * Test --add-launcher parameter. Output of the test should be
- * additionallauncherstest*.* installer. The output installer should provide the
+ * AddLauncherTest*.* installer. The output installer should provide the
  * same functionality as the default installer (see description of the default
  * installer in SimplePackageTest.java) plus install three extra application
  * launchers.
@@ -46,9 +46,9 @@ import jdk.jpackage.test.Annotations.*;
  * @library ../helpers
  * @build jdk.jpackage.test.*
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
- * @compile AdditionalLaunchersTest.java
+ * @compile AddLauncherTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=AdditionalLaunchersTest.test
+ *  --jpt-run=AddLauncherTest.test
  */
 
 /*
@@ -58,13 +58,13 @@ import jdk.jpackage.test.Annotations.*;
  * @requires (jpackage.test.SQETest == null)
  * @library ../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile AdditionalLaunchersTest.java
+ * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @compile AddLauncherTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=AdditionalLaunchersTest
+ *  --jpt-run=AddLauncherTest
  */
 
-public class AdditionalLaunchersTest {
+public class AddLauncherTest {
 
     @Test
     public void test() {
