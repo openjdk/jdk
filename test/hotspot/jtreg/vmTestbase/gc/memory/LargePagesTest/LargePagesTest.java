@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress gc
+ * @key stress gc randomness
  *
  * @summary converted from VM Testbase gc/memory/LargePagesTest.
  * VM Testbase keywords: [gc, stress, stressopt]
@@ -37,7 +37,7 @@
 package gc.memory.LargePagesTest;
 
 import java.io.PrintStream;
-import java.util.Random;
+import nsk.share.test.LocalRandom;
 
 /*
  * Allocators purpose is to create pressure on the garbage collector
@@ -158,10 +158,7 @@ final public class LargePagesTest extends Thread {
     }
 
     private void allocate() {
-
-        Random r = new Random();
         for (int j = 0; j < 1000; j++) {
-            r = new Random();
             int i = 0;
 
             switch (myType) {
@@ -172,10 +169,10 @@ final public class LargePagesTest extends Thread {
                 i = 1;
                 break;
             case ANY_OBJECT_ALLOCATER:
-                i = r.nextInt(100);
+                i = LocalRandom.nextInt(100);
                 break;
             case ANY_NO_MULTIARRAYS_ALLOCATER:
-                i = r.nextInt(100);
+                i = LocalRandom.nextInt(100);
                 if ((i >= 2) && (i <= 4)) {
                     i = 5;
                 }

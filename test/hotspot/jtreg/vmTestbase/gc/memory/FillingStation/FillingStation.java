@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress gc
+ * @key stress gc randomness
  *
  * @summary converted from VM Testbase gc/memory/FillingStation.
  * VM Testbase keywords: [gc, stress, nonconcurrent]
@@ -35,6 +35,9 @@
  */
 
 package gc.memory.FillingStation;
+
+import jdk.test.lib.Utils;
+import java.util.Random;
 
 public class FillingStation {
 
@@ -77,7 +80,7 @@ public class FillingStation {
     public static void fill() {
         boolean _overflow = false;
         Runtime rt = java.lang.Runtime.getRuntime();
-        java.util.Random stream = new java.util.Random();
+        Random stream = Utils.getRandomInstance();
         Space next = null;
         try {
             for (long available = rt.freeMemory();

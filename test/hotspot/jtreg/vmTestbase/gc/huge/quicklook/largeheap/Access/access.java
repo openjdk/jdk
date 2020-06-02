@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@
 
 package gc.huge.quicklook.largeheap.Access;
 
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.ArrayList;
 import nsk.share.TestFailure;
 import nsk.share.gc.*;
+import nsk.share.test.LocalRandom;
 
 public class access extends ThreadedGCTest {
 
@@ -165,6 +165,8 @@ public class access extends ThreadedGCTest {
 
         @Override
         public void run() {
+            // ensure LocalRandom is loaded and has enough memory
+            LocalRandom.init();
             synchronized (lock) {
                 for (int i = 0; i < STORAGE_SIZE_DIM1; i++) {
                     if (!getExecutionController().continueExecution()) {
@@ -178,11 +180,10 @@ public class access extends ThreadedGCTest {
                 is4GAllocated = true;
                 lock.notifyAll();
             }
-            ThreadLocalRandom random = ThreadLocalRandom.current();
             while (getExecutionController().continueExecution()) {
-                int i = random.nextInt(STORAGE_SIZE_DIM1);
-                int j = random.nextInt(STORAGE_SIZE_DIM2);
-                long value = random.nextLong(Long.MAX_VALUE);
+                int i = LocalRandom.nextInt(STORAGE_SIZE_DIM1);
+                int j = LocalRandom.nextInt(STORAGE_SIZE_DIM2);
+                long value = LocalRandom.nextLong();
                 storage[i][j] = value;
                 if (storage[i][j] != value) {
                     throw new TestFailure("The value = "

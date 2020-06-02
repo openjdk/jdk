@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package vm.gc.concurrent;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -41,7 +40,7 @@ import nsk.share.gc.gp.MemoryStrategyAware;
 import nsk.share.gc.tree.*;
 import nsk.share.log.Log;
 import nsk.share.test.ExecutionController;
-
+import nsk.share.test.LocalRandom;
 
 class Forest {
 
@@ -62,7 +61,6 @@ class Forest {
     private static Forest instance = new Forest();
     private Tree[] trees;
     private Lock[] locks;
-    private static Random rnd = new Random();
 
     private int nodeGarbageSize;
 
@@ -177,10 +175,10 @@ class Forest {
     // Interchanges two randomly selected subtrees (of same size and depth) several times
     void swapSubtrees(long count) {
         for (int i = 0; i < count; i++) {
-            int index1 = rnd.nextInt(trees.length);
-            int index2 = rnd.nextInt(trees.length);
-            int depth = rnd.nextInt(treeHeight);
-            int path = rnd.nextInt();
+            int index1 = LocalRandom.nextInt(trees.length);
+            int index2 = LocalRandom.nextInt(trees.length);
+            int depth = LocalRandom.nextInt(treeHeight);
+            int path = LocalRandom.nextInt();
             locks[index1].lock();
             // Skip the round to avoid deadlocks
             if (locks[index2].tryLock()) {
