@@ -440,7 +440,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
     if (divisor->is_register()) {
       CodeEmitInfo* null_check_info = state_for(x);
       __ cmp(lir_cond_equal, divisor, LIR_OprFact::longConst(0));
-      __ branch(lir_cond_equal, T_LONG, new DivByZeroStub(null_check_info));
+      __ branch(lir_cond_equal, new DivByZeroStub(null_check_info));
     } else {
       jlong const_divisor = divisor->as_constant_ptr()->as_jlong();
       if (const_divisor == 0) {
@@ -494,7 +494,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     if (divisor->is_register()) {
       CodeEmitInfo* null_check_info = state_for(x);
       __ cmp(lir_cond_equal, divisor, LIR_OprFact::intConst(0));
-      __ branch(lir_cond_equal, T_INT, new DivByZeroStub(null_check_info));
+      __ branch(lir_cond_equal, new DivByZeroStub(null_check_info));
     } else {
       jint const_divisor = divisor->as_constant_ptr()->as_jint();
       if (const_divisor == 0) {
@@ -1171,9 +1171,9 @@ void LIRGenerator::do_If(If* x) {
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {
-    __ branch(lir_cond(cond), right->type(), x->tsux(), x->usux());
+    __ branch(lir_cond(cond), x->tsux(), x->usux());
   } else {
-    __ branch(lir_cond(cond), right->type(), x->tsux());
+    __ branch(lir_cond(cond), x->tsux());
   }
   assert(x->default_sux() == x->fsux(), "wrong destination above");
   __ jump(x->default_sux());

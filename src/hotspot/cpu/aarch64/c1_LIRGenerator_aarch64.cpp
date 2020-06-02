@@ -459,7 +459,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
     if (need_zero_check) {
       CodeEmitInfo* info = state_for(x);
       __ cmp(lir_cond_equal, right.result(), LIR_OprFact::longConst(0));
-      __ branch(lir_cond_equal, T_LONG, new DivByZeroStub(info));
+      __ branch(lir_cond_equal, new DivByZeroStub(info));
     }
 
     rlock_result(x);
@@ -534,7 +534,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     if (need_zero_check) {
       CodeEmitInfo* info = state_for(x);
       __ cmp(lir_cond_equal, right_arg->result(), LIR_OprFact::longConst(0));
-      __ branch(lir_cond_equal, T_INT, new DivByZeroStub(info));
+      __ branch(lir_cond_equal, new DivByZeroStub(info));
     }
 
     LIR_Opr ill = LIR_OprFact::illegalOpr;
@@ -1384,9 +1384,9 @@ void LIRGenerator::do_If(If* x) {
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {
-    __ branch(lir_cond(cond), right->type(), x->tsux(), x->usux());
+    __ branch(lir_cond(cond), x->tsux(), x->usux());
   } else {
-    __ branch(lir_cond(cond), right->type(), x->tsux());
+    __ branch(lir_cond(cond), x->tsux());
   }
   assert(x->default_sux() == x->fsux(), "wrong destination above");
   __ jump(x->default_sux());
