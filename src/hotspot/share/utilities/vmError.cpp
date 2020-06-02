@@ -776,7 +776,8 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing register info")
 
      // decode register contents if possible
-     if (_verbose && _context && Universe::is_fully_initialized()) {
+     if (_verbose && _context && _thread && Universe::is_fully_initialized()) {
+       ResourceMark rm(_thread);
        os::print_register_info(st, _context);
        st->cr();
      }
@@ -792,7 +793,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("inspecting top of stack")
 
      // decode stack contents if possible
-     if (_verbose && _context && Universe::is_fully_initialized()) {
+     if (_verbose && _context && _thread && Universe::is_fully_initialized()) {
        frame fr = os::fetch_frame_from_context(_context);
        const int slots = 8;
        const intptr_t *start = fr.sp();
@@ -801,6 +802,7 @@ void VMError::report(outputStream* st, bool _verbose) {
          st->print_cr("Stack slot to memory mapping:");
          for (int i = 0; i < slots; ++i) {
            st->print("stack at sp + %d slots: ", i);
+           ResourceMark rm(_thread);
            os::print_location(st, *(start + i));
          }
        }
