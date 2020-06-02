@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,19 +208,27 @@ Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
   assert(thread != NULL, "should be non-NULL");
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
+  // This function can be called on a target JavaThread that is not
+  // the caller and we are not at a safepoint. So it is possible for
+  // the waiting or pending condition to be over/stale and for the
+  // first stage of async deflation to clear the object field in
+  // the ObjectMonitor. It is also possible for the object to be
+  // inflated again and to be associated with a completely different
+  // ObjectMonitor by the time this object reference is processed
+  // by the caller.
   ObjectMonitor *wait_obj = thread->current_waiting_monitor();
 
   oop obj = NULL;
   if (wait_obj != NULL) {
     // thread is doing an Object.wait() call
     obj = (oop) wait_obj->object();
-    assert(obj != NULL, "Object.wait() should have an object");
+    assert(AsyncDeflateIdleMonitors || obj != NULL, "Object.wait() should have an object");
   } else {
     ObjectMonitor *enter_obj = thread->current_pending_monitor();
     if (enter_obj != NULL) {
       // thread is trying to enter() an ObjectMonitor.
       obj = (oop) enter_obj->object();
-      assert(obj != NULL, "ObjectMonitor should have an associated object!");
+      assert(AsyncDeflateIdleMonitors || obj != NULL, "ObjectMonitor should have an associated object!");
     }
   }
 
@@ -391,6 +399,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
 
     cycle->reset();
 
+    // The ObjectMonitor* can't be async deflated since we are at a safepoint.
     // When there is a deadlock, all the monitors involved in the dependency
     // cycle must be contended and heavyweight. So we only care about the
     // heavyweight monitor a thread is waiting to lock.
@@ -967,13 +976,13 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
   st->print("=============================");
 
   JavaThread* currentThread;
-  ObjectMonitor* waitingToLockMonitor;
   JvmtiRawMonitor* waitingToLockRawMonitor;
   oop waitingToLockBlocker;
   int len = _threads->length();
   for (int i = 0; i < len; i++) {
     currentThread = _threads->at(i);
-    waitingToLockMonitor = currentThread->current_pending_monitor();
+    // The ObjectMonitor* can't be async deflated since we are at a safepoint.
+    ObjectMonitor* waitingToLockMonitor = currentThread->current_pending_monitor();
     waitingToLockRawMonitor = currentThread->current_pending_raw_monitor();
     waitingToLockBlocker = currentThread->current_park_blocker();
     st->cr();

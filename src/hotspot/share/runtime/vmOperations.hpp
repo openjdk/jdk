@@ -420,6 +420,7 @@ class VM_Exit: public VM_Operation {
     }
   }
   VMOp_Type type() const { return VMOp_Exit; }
+  bool doit_prologue();
   void doit();
 };
 

@@ -4692,6 +4692,8 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   DO_JAVA_THREADS(t_list, p) {
     if (!p->can_call_java()) continue;
 
+    // The first stage of async deflation does not affect any field
+    // used by this comparison so the ObjectMonitor* is usable here.
     address pending = (address)p->current_pending_monitor();
     if (pending == monitor) {             // found a match
       if (i < count) result->append(p);   // save the first count matches

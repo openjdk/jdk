@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,24 +36,24 @@ void BasicLock::print_on(outputStream* st) const {
 void BasicLock::move_to(oop obj, BasicLock* dest) {
   // Check to see if we need to inflate the lock. This is only needed
   // if an object is locked using "this" lightweight monitor. In that
-  // case, the displaced_header() is unlocked, because the
+  // case, the displaced_header() is unlocked/is_neutral, because the
   // displaced_header() contains the header for the originally unlocked
-  // object. However the object could have already been inflated. But it
-  // does not matter, the inflation will just a no-op. For other cases,
+  // object. However the lock could have already been inflated. But it
+  // does not matter, this inflation will just a no-op. For other cases,
   // the displaced header will be either 0x0 or 0x3, which are location
   // independent, therefore the BasicLock is free to move.
   //
   // During OSR we may need to relocate a BasicLock (which contains a
   // displaced word) from a location in an interpreter frame to a
   // new location in a compiled frame.  "this" refers to the source
-  // basiclock in the interpreter frame.  "dest" refers to the destination
-  // basiclock in the new compiled frame.  We *always* inflate in move_to().
-  // The always-Inflate policy works properly, but in 1.5.0 it can sometimes
-  // cause performance problems in code that makes heavy use of a small # of
-  // uncontended locks.   (We'd inflate during OSR, and then sync performance
-  // would subsequently plummet because the thread would be forced thru the slow-path).
-  // This problem has been made largely moot on IA32 by inlining the inflated fast-path
-  // operations in Fast_Lock and Fast_Unlock in i486.ad.
+  // BasicLock in the interpreter frame.  "dest" refers to the destination
+  // BasicLock in the new compiled frame.  We *always* inflate in move_to()
+  // when the object is locked using "this" lightweight monitor.
+  //
+  // The always-Inflate policy works properly, but it depends on the
+  // inflated fast-path operations in fast_lock and fast_unlock to avoid
+  // performance problems. See x86/macroAssembler_x86.cpp: fast_lock()
+  // and fast_unlock() for examples.
   //
   // Note that there is a way to safely swing the object's markword from
   // one stack location to another.  This avoids inflation.  Obviously,
@@ -63,8 +63,10 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // we'll leave that optimization for another time.
 
   if (displaced_header().is_neutral()) {
+    // The object is locked and the resulting ObjectMonitor* will also be
+    // locked so it can't be async deflated until ownership is dropped.
     ObjectSynchronizer::inflate_helper(obj);
-    // WARNING: We can not put check here, because the inflation
+    // WARNING: We cannot put a check here, because the inflation
     // will not update the displaced header. Once BasicLock is inflated,
     // no one should ever look at its content.
   } else {

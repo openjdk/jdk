@@ -490,8 +490,9 @@ void SafepointSynchronize::end() {
 }
 
 bool SafepointSynchronize::is_cleanup_needed() {
-  // Need a safepoint if there are many monitors to deflate.
-  if (ObjectSynchronizer::is_cleanup_needed()) return true;
+  // Need a cleanup safepoint if there are too many monitors in use
+  // and the monitor deflation needs to be done at a safepoint.
+  if (ObjectSynchronizer::is_safepoint_deflation_needed()) return true;
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
   if (StringTable::needs_rehashing()) return true;
@@ -510,6 +511,10 @@ public:
     _counters(counters) {}
 
   void do_thread(Thread* thread) {
+    // deflate_thread_local_monitors() handles or requests deflation of
+    // this thread's idle monitors. If !AsyncDeflateIdleMonitors or if
+    // there is a special cleanup request, deflation is handled now.
+    // Otherwise, async deflation is requested via a flag.
     ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);
     if (_nmethod_cl != NULL && thread->is_Java_thread() &&
         ! thread->is_Code_cache_sweeper_thread()) {
@@ -542,7 +547,11 @@ public:
       const char* name = "deflating global idle monitors";
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-      ObjectSynchronizer::deflate_idle_monitors(_counters);
+      // AsyncDeflateIdleMonitors only uses DeflateMonitorCounters
+      // when a special cleanup has been requested.
+      // Note: This logging output will include global idle monitor
+      // elapsed times, but not global idle monitor deflation count.
+      ObjectSynchronizer::do_safepoint_work(_counters);
 
       post_safepoint_cleanup_task_event(event, safepoint_id, name);
     }

@@ -73,6 +73,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
@@ -477,6 +478,12 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
+    if (AsyncDeflateIdleMonitors) {
+      // AsyncDeflateIdleMonitors needs to know when System.gc() or
+      // the equivalent is called so any special clean up can be done
+      // at a safepoint, e.g., TestHumongousClassLoader.java.
+      ObjectSynchronizer::set_is_special_deflation_requested(true);
+    }
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
       g1h->collect(GCCause::_wb_conc_mark);
@@ -1448,6 +1455,12 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
 WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
+  if (AsyncDeflateIdleMonitors) {
+    // AsyncDeflateIdleMonitors needs to know when System.gc() or
+    // the equivalent is called so any special clean up can be done
+    // at a safepoint, e.g., TestHumongousClassLoader.java.
+    ObjectSynchronizer::set_is_special_deflation_requested(true);
+  }
   Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
 #if INCLUDE_G1GC
@@ -1797,6 +1810,13 @@ WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
 WB_END
 
 WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
+  if (AsyncDeflateIdleMonitors) {
+    // AsyncDeflateIdleMonitors needs to know when System.gc() or
+    // the equivalent is called so any special clean up can be done
+    // at a safepoint, e.g., TestRTMTotalCountIncrRate.java or
+    // TestUseRTMForStackLocks.java.
+    ObjectSynchronizer::set_is_special_deflation_requested(true);
+  }
   VM_ForceSafepoint force_safepoint_op;
   VMThread::execute(&force_safepoint_op);
 WB_END
