@@ -38,6 +38,12 @@ package javax.lang.model.element;
  * <p>Note that it is possible additional modifiers will be added in
  * future versions of the platform.
  *
+ * @jls 8.1.1 Class Modifiers
+ * @jls 8.3.1 Field Modifiers
+ * @jls 8.4.3 Method Modifiers
+ * @jls 8.8.3 Constructor Modifiers
+ * @jls 9.1.1 Interface Modifiers
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
@@ -46,8 +52,7 @@ package javax.lang.model.element;
 
 public enum Modifier {
 
-    // See JLS sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1.
-    // java.lang.reflect.Modifier includes INTERFACE, but that's a VMism.
+    // Note java.lang.reflect.Modifier includes INTERFACE, but that's a VMism.
 
     /** The modifier {@code public} */          PUBLIC,
     /** The modifier {@code protected} */       PROTECTED,
@@ -101,7 +106,11 @@ public enum Modifier {
     /** The modifier {@code strictfp} */        STRICTFP;
 
     /**
-     * Returns this modifier's name in lowercase.
+     * Returns this modifier's name as defined in <cite>The
+     * Java&trade; Language Specification</cite>.
+     * The modifier name is the {@linkplain #name() name of the enum
+     * constant} in lowercase and with any underscores ("{@code _}")
+     * replaced with hyphens ("{@code -}").
      */
     public String toString() {
         return name().toLowerCase(java.util.Locale.US);
