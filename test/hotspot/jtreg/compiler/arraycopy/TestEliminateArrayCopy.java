@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,17 @@
 
 /*
  * @test
- * @bug 8076188
+ * @bug 8076188 8246153
  * @summary arraycopy to non escaping destination may be eliminated
  * @library /
  *
  * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestEliminateArrayCopy*::m*
  *                   compiler.arraycopy.TestEliminateArrayCopy
- *
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestEliminateArrayCopy*::m*
+ *                   compiler.arraycopy.TestEliminateArrayCopy
  */
 
 package compiler.arraycopy;
