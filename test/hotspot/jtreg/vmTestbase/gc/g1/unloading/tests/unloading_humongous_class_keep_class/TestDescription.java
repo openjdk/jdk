@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc
+ * @key stress gc randomness
  *
  * @summary converted from VM Testbase gc/g1/unloading/tests/unloading_humongous_class_keep_class.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, javac]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /*
  *  This class is compiled and invoke due the build to produce
@@ -59,6 +61,7 @@ public static void addFileTop(List<String> records) {
 }
 
 public static void addIteration(int itNum, List<String> records) {
+    Random rng = Utils.getRandomInstance();
     records.add("    public static Object public_static_object_" + itNum
             + " = new Object();\n");
     records.add("    protected static Object protected_static_object_" + itNum
@@ -68,7 +71,7 @@ public static void addIteration(int itNum, List<String> records) {
     records.add("\n");
     records.add("    public static long public_static_long_" + itNum + ";\n");
     records.add("    protected static long protected_static_long_" + itNum
-            + " = new Random().nextLong();\n");
+            + " = " + rng.nextLong() + "L;\n");
     records.add("    private static long private_static_long_" + itNum
             + " = 42;\n");
     records.add("\n");
@@ -82,7 +85,7 @@ public static void addIteration(int itNum, List<String> records) {
     records.add("    public long public_long_" + itNum + " = 43;\n");
     records.add("    protected long protected_long_" + itNum + " = 44;\n");
     records.add("    private long private_long_" + itNum
-            + " = new Random().nextLong();\n");
+            + " = " + rng.nextLong() + "L;\n");
 }
 public static void main(String[] args) throws Exception {
     if (args.length < 1) {
