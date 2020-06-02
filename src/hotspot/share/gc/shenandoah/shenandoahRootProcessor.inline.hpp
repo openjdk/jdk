@@ -122,7 +122,8 @@ void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
-ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase) :
+ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers) :
+  _semaphore(worker_count(n_workers)),
   _phase(phase) {
   if (!SINGLE_THREADED) {
     ClassLoaderDataGraph::clear_claimed_marks();
@@ -146,9 +147,10 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::always_strong_
     assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::always_strong_cld_do(clds);
-  } else {
+  } else if (_semaphore.try_acquire()) {
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
     ClassLoaderDataGraph::always_strong_cld_do(clds);
+    _semaphore.claim_all();
   }
 }
 
@@ -158,9 +160,10 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do(CLDClos
     assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
     ClassLoaderDataGraph::cld_do(clds);
-  } else {
+  } else if (_semaphore.try_acquire()) {
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
     ClassLoaderDataGraph::cld_do(clds);
+    _semaphore.claim_all();
   }
 }
 
