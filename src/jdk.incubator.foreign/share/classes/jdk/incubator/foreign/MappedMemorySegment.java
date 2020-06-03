@@ -31,7 +31,7 @@ import java.nio.file.Path;
 /**
  * A mapped memory segment, that is, a memory segment backed by memory-mapped file.
  *
- * <p> Mapped memory segments are created via the {@link MemorySegment#mapFromPath(Path, long, FileChannel.MapMode)}.
+ * <p> Mapped memory segments are created via the {@link MemorySegment#mapFromPath(Path, long, long, FileChannel.MapMode)}.
  * Mapped memory segments behave like ordinary segments, but provide additional capabilities to manipulate memory-mapped
  * memory regions, such as {@link #force()} and {@link #load()}.
  * <p>

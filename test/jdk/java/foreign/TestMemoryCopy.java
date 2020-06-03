@@ -57,7 +57,7 @@ public class TestMemoryCopy {
             BYTE_HANDLE.set(addr1.addOffset(i), (byte) i);
         }
         //perform copy
-        MemoryAddress.copy(addr1, addr2, size);
+        s2.segment.copyFrom(s1.segment.asSlice(0, size));
         //check that copy actually worked
         for (int i = 0 ; i < size ; i++) {
             assertEquals((byte)i, BYTE_HANDLE.get(addr2.addOffset(i)));

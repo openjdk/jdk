@@ -143,17 +143,20 @@ public class TestByteBuffer {
     static VarHandle doubleHandle = doubles.varHandle(double.class, PathElement.sequenceElement());
 
 
-    static void initTuples(MemoryAddress base) {
-        for (long i = 0; i < tuples.elementCount().getAsLong() ; i++) {
+    static void initTuples(MemoryAddress base, long count) {
+        for (long i = 0; i < count ; i++) {
             indexHandle.set(base, i, (int)i);
             valueHandle.set(base, i, (float)(i / 500f));
         }
     }
 
-    static void checkTuples(MemoryAddress base, ByteBuffer bb) {
-        for (long i = 0; i < tuples.elementCount().getAsLong() ; i++) {
-            assertEquals(bb.getInt(), (int)indexHandle.get(base, i));
-            assertEquals(bb.getFloat(), (float)valueHandle.get(base, i));
+    static void checkTuples(MemoryAddress base, ByteBuffer bb, long count) {
+        for (long i = 0; i < count ; i++) {
+            int index;
+            float value;
+            assertEquals(index = bb.getInt(), (int)indexHandle.get(base, i));
+            assertEquals(value = bb.getFloat(), (float)valueHandle.get(base, i));
+            assertEquals(value, index / 500f);
         }
     }
 
@@ -192,10 +195,10 @@ public class TestByteBuffer {
     public void testOffheap() {
         try (MemorySegment segment = MemorySegment.allocateNative(tuples)) {
             MemoryAddress base = segment.baseAddress();
-            initTuples(base);
+            initTuples(base, tuples.elementCount().getAsLong());
 
             ByteBuffer bb = segment.asByteBuffer();
-            checkTuples(base, bb);
+            checkTuples(base, bb, tuples.elementCount().getAsLong());
         }
     }
 
@@ -204,10 +207,10 @@ public class TestByteBuffer {
         byte[] arr = new byte[(int) tuples.byteSize()];
         MemorySegment region = MemorySegment.ofArray(arr);
         MemoryAddress base = region.baseAddress();
-        initTuples(base);
+        initTuples(base, tuples.elementCount().getAsLong());
 
         ByteBuffer bb = region.asByteBuffer();
-        checkTuples(base, bb);
+        checkTuples(base, bb, tuples.elementCount().getAsLong());
     }
 
     @Test
@@ -221,7 +224,7 @@ public class TestByteBuffer {
             withMappedBuffer(channel, FileChannel.MapMode.READ_WRITE, 0, tuples.byteSize(), mbb -> {
                 MemorySegment segment = MemorySegment.ofByteBuffer(mbb);
                 MemoryAddress base = segment.baseAddress();
-                initTuples(base);
+                initTuples(base, tuples.elementCount().getAsLong());
                 mbb.force();
             });
         }
@@ -231,23 +234,21 @@ public class TestByteBuffer {
             withMappedBuffer(channel, FileChannel.MapMode.READ_ONLY, 0, tuples.byteSize(), mbb -> {
                 MemorySegment segment = MemorySegment.ofByteBuffer(mbb);
                 MemoryAddress base = segment.baseAddress();
-                checkTuples(base, mbb);
+                checkTuples(base, mbb, tuples.elementCount().getAsLong());
             });
         }
     }
 
-    static final int ALL_ACCESS_MODES = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
-
     @Test
     public void testDefaultAccessModesMappedSegment() throws Throwable {
-        try (MappedMemorySegment segment = MemorySegment.mapFromPath(tempPath, 8, FileChannel.MapMode.READ_WRITE)) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES));
-            assertEquals(segment.accessModes(), ALL_ACCESS_MODES);
+        try (MappedMemorySegment segment = MemorySegment.mapFromPath(tempPath, 0L, 8, FileChannel.MapMode.READ_WRITE)) {
+            assertTrue(segment.hasAccessModes(ALL_ACCESS));
+            assertEquals(segment.accessModes(), ALL_ACCESS);
         }
 
-        try (MappedMemorySegment segment = MemorySegment.mapFromPath(tempPath, 8, FileChannel.MapMode.READ_ONLY)) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES & ~WRITE));
-            assertEquals(segment.accessModes(), ALL_ACCESS_MODES& ~WRITE);
+        try (MappedMemorySegment segment = MemorySegment.mapFromPath(tempPath, 0L, 8, FileChannel.MapMode.READ_ONLY)) {
+            assertTrue(segment.hasAccessModes(ALL_ACCESS & ~WRITE));
+            assertEquals(segment.accessModes(), ALL_ACCESS & ~WRITE);
         }
     }
 
@@ -258,16 +259,44 @@ public class TestByteBuffer {
         f.deleteOnExit();
 
         //write to channel
-        try (MappedMemorySegment segment = MemorySegment.mapFromPath(f.toPath(), tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
+        try (MappedMemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
             MemoryAddress base = segment.baseAddress();
-            initTuples(base);
+            initTuples(base, tuples.elementCount().getAsLong());
             segment.force();
         }
 
         //read from channel
-        try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
+        try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
             MemoryAddress base = segment.baseAddress();
-            checkTuples(base, segment.asByteBuffer());
+            checkTuples(base, segment.asByteBuffer(), tuples.elementCount().getAsLong());
+        }
+    }
+
+    @Test
+    public void testMappedSegmentOffset() throws Throwable {
+        File f = new File("test3.out");
+        f.createNewFile();
+        f.deleteOnExit();
+
+        MemoryLayout tupleLayout = tuples.elementLayout();
+
+        // write one at a time
+        for (int i = 0 ; i < tuples.byteSize() ; i += tupleLayout.byteSize()) {
+            //write to channel
+            try (MappedMemorySegment segment = MemorySegment.mapFromPath(f.toPath(), i, tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
+                MemoryAddress base = segment.baseAddress();
+                initTuples(base, 1);
+                segment.force();
+            }
+        }
+
+        // check one at a time
+        for (int i = 0 ; i < tuples.byteSize() ; i += tupleLayout.byteSize()) {
+            //read from channel
+            try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
+                MemoryAddress base = segment.baseAddress();
+                checkTuples(base, segment.asByteBuffer(), 1);
+            }
         }
     }
 
@@ -437,6 +466,31 @@ public class TestByteBuffer {
         }
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadMapNegativeSize() throws IOException {
+        File f = new File("testNeg1.out");
+        f.createNewFile();
+        f.deleteOnExit();
+        MemorySegment.mapFromPath(f.toPath(), 0L, -1, FileChannel.MapMode.READ_WRITE);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadMapNegativeOffset() throws IOException {
+        File f = new File("testNeg2.out");
+        f.createNewFile();
+        f.deleteOnExit();
+        MemorySegment.mapFromPath(f.toPath(), -1, 1, FileChannel.MapMode.READ_WRITE);
+    }
+
+    public void testMapZeroSize() throws IOException {
+        File f = new File("testPos1.out");
+        f.createNewFile();
+        f.deleteOnExit();
+        try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_WRITE)) {
+            assertEquals(segment.byteSize(), 0);
+        }
+    }
+
     @Test(dataProvider="resizeOps")
     public void testCopyHeapToNative(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
         checkByteArrayAlignment(seq.elementLayout());
@@ -444,7 +498,7 @@ public class TestByteBuffer {
         try (MemorySegment nativeArray = MemorySegment.allocateNative(bytes);
              MemorySegment heapArray = MemorySegment.ofArray(new byte[bytes])) {
             initializer.accept(heapArray.baseAddress());
-            MemoryAddress.copy(heapArray.baseAddress(), nativeArray.baseAddress(), bytes);
+            nativeArray.copyFrom(heapArray);
             checker.accept(nativeArray.baseAddress());
         }
     }
@@ -456,7 +510,7 @@ public class TestByteBuffer {
         try (MemorySegment nativeArray = MemorySegment.allocateNative(seq);
              MemorySegment heapArray = MemorySegment.ofArray(new byte[bytes])) {
             initializer.accept(nativeArray.baseAddress());
-            MemoryAddress.copy(nativeArray.baseAddress(), heapArray.baseAddress(), bytes);
+            heapArray.copyFrom(nativeArray);
             checker.accept(heapArray.baseAddress());
         }
     }
@@ -465,14 +519,14 @@ public class TestByteBuffer {
     public void testDefaultAccessModesOfBuffer() {
         ByteBuffer rwBuffer = ByteBuffer.wrap(new byte[4]);
         try (MemorySegment segment = MemorySegment.ofByteBuffer(rwBuffer)) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES));
-            assertEquals(segment.accessModes(), ALL_ACCESS_MODES);
+            assertTrue(segment.hasAccessModes(ALL_ACCESS));
+            assertEquals(segment.accessModes(), ALL_ACCESS);
         }
 
         ByteBuffer roBuffer = rwBuffer.asReadOnlyBuffer();
         try (MemorySegment segment = MemorySegment.ofByteBuffer(roBuffer)) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES & ~WRITE));
-            assertEquals(segment.accessModes(), ALL_ACCESS_MODES & ~WRITE);
+            assertTrue(segment.hasAccessModes(ALL_ACCESS & ~WRITE));
+            assertEquals(segment.accessModes(), ALL_ACCESS & ~WRITE);
         }
     }
 

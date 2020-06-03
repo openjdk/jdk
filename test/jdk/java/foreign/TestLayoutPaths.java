@@ -36,64 +36,126 @@ import jdk.incubator.foreign.SequenceLayout;
 import org.testng.annotations.*;
 
 import java.util.List;
-import java.util.function.Function;
 
 import static org.testng.Assert.*;
 
 public class TestLayoutPaths {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadSelectFromSeq() {
+    public void testBadBitSelectFromSeq() {
         SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
-        seq.offset(PathElement.groupElement("foo"));
+        seq.bitOffset(PathElement.groupElement("foo"));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadSelectFromStruct() {
-        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
-        g.offset(PathElement.sequenceElement());
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadSelectFromValue() {
+    public void testBadByteSelectFromSeq() {
         SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
-        seq.offset(PathElement.sequenceElement(), PathElement.sequenceElement());
+        seq.byteOffset(PathElement.groupElement("foo"));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testUnknownStructField() {
+    public void testBadBitSelectFromStruct() {
         GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
-        g.offset(PathElement.groupElement("foo"));
+        g.bitOffset(PathElement.sequenceElement());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadByteSelectFromStruct() {
+        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
+        g.byteOffset(PathElement.sequenceElement());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadBitSelectFromValue() {
+        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
+        seq.bitOffset(PathElement.sequenceElement(), PathElement.sequenceElement());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadByteSelectFromValue() {
+        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
+        seq.byteOffset(PathElement.sequenceElement(), PathElement.sequenceElement());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testUnknownBitStructField() {
+        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
+        g.bitOffset(PathElement.groupElement("foo"));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testUnknownByteStructField() {
+        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
+        g.byteOffset(PathElement.groupElement("foo"));
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullGroupElementName() {
+        PathElement.groupElement(null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testBitNullGroupElementName() {
         GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
-        g.offset(PathElement.groupElement(null));
+        g.bitOffset(PathElement.groupElement(null));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testByteNullGroupElementName() {
+        GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT);
+        g.byteOffset(PathElement.groupElement(null));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testOutOfBoundsSeqIndex() {
+    public void testBitOutOfBoundsSeqIndex() {
         SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
-        seq.offset(PathElement.sequenceElement(6));
+        seq.bitOffset(PathElement.sequenceElement(6));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testByteOutOfBoundsSeqIndex() {
+        SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
+        seq.byteOffset(PathElement.sequenceElement(6));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNegativeSeqIndex() {
+       PathElement.sequenceElement(-2);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBitNegativeSeqIndex() {
         SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
-        seq.offset(PathElement.sequenceElement(-2));
+        seq.bitOffset(PathElement.sequenceElement(-2));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testByteNegativeSeqIndex() {
+        SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
+        seq.byteOffset(PathElement.sequenceElement(-2));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testOutOfBoundsSeqRange() {
         SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
-        seq.offset(PathElement.sequenceElement(6, 2));
+        seq.bitOffset(PathElement.sequenceElement(6, 2));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNegativeSeqRange() {
+        PathElement.sequenceElement(-2, 2);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBitNegativeSeqRange() {
         SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
-        seq.offset(PathElement.sequenceElement(-2, 2));
+        seq.bitOffset(PathElement.sequenceElement(-2, 2));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testByteNegativeSeqRange() {
+        SequenceLayout seq = MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT);
+        seq.byteOffset(PathElement.sequenceElement(-2, 2));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -102,11 +164,18 @@ public class TestLayoutPaths {
         seq.varHandle(int.class, PathElement.sequenceElement());
     }
 
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void testBadMultiple() {
+        GroupLayout g = MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(3), MemoryLayouts.JAVA_INT.withName("foo"));
+        g.byteOffset(PathElement.groupElement("foo"));
+    }
+
     @Test
     public void testBadContainerAlign() {
         GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.JAVA_INT.withBitAlignment(16).withName("foo")).withBitAlignment(8);
         try {
-            g.offset(PathElement.groupElement("foo"));
+            g.bitOffset(PathElement.groupElement("foo"));
+            g.byteOffset(PathElement.groupElement("foo"));
         } catch (Throwable ex) {
             throw new AssertionError(ex); // should be ok!
         }
@@ -124,7 +193,8 @@ public class TestLayoutPaths {
     public void testBadAlignOffset() {
         GroupLayout g = MemoryLayout.ofStruct(MemoryLayouts.PAD_8, MemoryLayouts.JAVA_INT.withBitAlignment(16).withName("foo"));
         try {
-            g.offset(PathElement.groupElement("foo"));
+            g.bitOffset(PathElement.groupElement("foo"));
+            g.byteOffset(PathElement.groupElement("foo"));
         } catch (Throwable ex) {
             throw new AssertionError(ex); // should be ok!
         }
@@ -144,7 +214,13 @@ public class TestLayoutPaths {
         // bad path elements
         for (PathElement e : List.of( PathElement.sequenceElement(), PathElement.sequenceElement(0, 2) )) {
             try {
-                seq.offset(e);
+                seq.bitOffset(e);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                assertTrue(true);
+            }
+            try {
+                seq.byteOffset(e);
                 fail();
             } catch (IllegalArgumentException ex) {
                 assertTrue(true);
@@ -198,8 +274,10 @@ public class TestLayoutPaths {
         // test offset
 
         for (int i = 1 ; i <= 4 ; i++) {
-            long offset = g.offset(PathElement.groupElement(String.valueOf(i)));
-            assertEquals(offsets[i - 1], offset);
+            long bitOffset = g.bitOffset(PathElement.groupElement(String.valueOf(i)));
+            assertEquals(offsets[i - 1], bitOffset);
+            long byteOffset = g.byteOffset(PathElement.groupElement(String.valueOf(i)));
+            assertEquals((offsets[i - 1]) >>> 3, byteOffset);
         }
 
         // test map
@@ -237,8 +315,10 @@ public class TestLayoutPaths {
         // test offset
 
         for (int i = 1 ; i <= 4 ; i++) {
-            long offset = g.offset(PathElement.groupElement(String.valueOf(i)));
-            assertEquals(offsets[i - 1], offset);
+            long bitOffset = g.bitOffset(PathElement.groupElement(String.valueOf(i)));
+            assertEquals(offsets[i - 1], bitOffset);
+            long byteOffset = g.byteOffset(PathElement.groupElement(String.valueOf(i)));
+            assertEquals((offsets[i - 1]) >>> 3, byteOffset);
         }
 
         // test map
@@ -269,8 +349,10 @@ public class TestLayoutPaths {
         // test offset
 
         for (int i = 0 ; i < 4 ; i++) {
-            long offset = g.offset(PathElement.sequenceElement(i));
-            assertEquals(offsets[i], offset);
+            long bitOffset = g.bitOffset(PathElement.sequenceElement(i));
+            assertEquals(offsets[i], bitOffset);
+            long byteOffset = g.byteOffset(PathElement.sequenceElement(i));
+            assertEquals((offsets[i]) >>> 3, byteOffset);
         }
 
         // test map

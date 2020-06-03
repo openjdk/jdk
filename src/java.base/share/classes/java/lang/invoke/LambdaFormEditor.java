@@ -989,6 +989,57 @@ class LambdaFormEditor {
         return putInCache(key, form);
     }
 
+    LambdaForm collectReturnValueForm(MethodType combinerType) {
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+        int combinerArity = combinerType.parameterCount();
+        int argPos = lambdaForm.arity();
+        int exprPos = lambdaForm.names.length;
+
+        BoundMethodHandle.SpeciesData oldData = oldSpeciesData();
+        BoundMethodHandle.SpeciesData newData = newSpeciesData(L_TYPE);
+
+        // The newly created LF will run with a different BMH.
+        // Switch over any pre-existing BMH field references to the new BMH class.
+        Name oldBaseAddress = lambdaForm.parameter(0);  // BMH holding the values
+        buf.replaceFunctions(oldData.getterFunctions(), newData.getterFunctions(), oldBaseAddress);
+        Name newBaseAddress = oldBaseAddress.withConstraint(newData);
+        buf.renameParameter(0, newBaseAddress);
+
+        // Now we set up the call to the filter
+        Name getCombiner = new Name(newData.getterFunction(oldData.fieldCount()), newBaseAddress);
+
+        Object[] combinerArgs = new Object[combinerArity + 1];
+        combinerArgs[0] = getCombiner; // first (synthetic) argument should be the MH that acts as a target of the invoke
+
+        // set up additional adapter parameters (in case the combiner is not a unary function)
+        Name[] newParams = new Name[combinerArity - 1]; // last combiner parameter is the return adapter
+        for (int i = 0; i < newParams.length; i++) {
+            newParams[i] = new Name(argPos + i, basicType(combinerType.parameterType(i)));
+        }
+
+        // set up remaining filter parameters to point to the corresponding adapter parameters (see above)
+        System.arraycopy(newParams, 0,
+                combinerArgs, 1, combinerArity - 1);
+
+        // the last filter argument is set to point at the result of the target method handle
+        combinerArgs[combinerArity] = buf.name(lambdaForm.names.length - 1);
+        Name callCombiner = new Name(combinerType, combinerArgs);
+
+        // insert the two new expressions
+        buf.insertExpression(exprPos, getCombiner);
+        buf.insertExpression(exprPos + 1, callCombiner);
+
+        // insert additional arguments
+        int insPos = argPos;
+        for (Name newParam : newParams) {
+            buf.insertParameter(insPos++, newParam);
+        }
+
+        buf.setResult(callCombiner);
+        return buf.endEdit();
+    }
+
     LambdaForm foldArgumentsForm(int foldPos, boolean dropResult, MethodType combinerType) {
         int combinerArity = combinerType.parameterCount();
         byte kind = (dropResult ? FOLD_ARGS_TO_VOID : FOLD_ARGS);

@@ -36,6 +36,7 @@ import org.testng.annotations.Test;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
@@ -145,30 +146,11 @@ public class TestSegments {
         }
     }
 
-    static final int ALL_ACCESS_MODES = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
-
-    @DataProvider(name = "segmentFactories")
-    public Object[][] segmentFactories() {
-        List<Supplier<MemorySegment>> l = List.of(
-                () -> MemorySegment.ofArray(new byte[1]),
-                () -> MemorySegment.ofArray(new char[1]),
-                () -> MemorySegment.ofArray(new double[1]),
-                () -> MemorySegment.ofArray(new float[1]),
-                () -> MemorySegment.ofArray(new int[1]),
-                () -> MemorySegment.ofArray(new long[1]),
-                () -> MemorySegment.ofArray(new short[1]),
-                () -> MemorySegment.ofArray(new int[1]),
-                () -> MemorySegment.allocateNative(1),
-                () -> MemorySegment.allocateNative(1, 2),
-                () -> MemorySegment.allocateNative(MemoryLayout.ofValueBits(8, ByteOrder.LITTLE_ENDIAN))
-        );
-        return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
-    }
     @Test(dataProvider = "segmentFactories")
     public void testAccessModesOfFactories(Supplier<MemorySegment> memorySegmentSupplier) {
         try (MemorySegment segment = memorySegmentSupplier.get()) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES));
-            assertEquals(segment.accessModes(), ALL_ACCESS_MODES);
+            assertTrue(segment.hasAccessModes(ALL_ACCESS));
+            assertEquals(segment.accessModes(), ALL_ACCESS);
         }
     }
 
@@ -187,6 +169,93 @@ public class TestSegments {
                 assertTrue(shouldFail);
             }
         }
+    }
+
+    @DataProvider(name = "segmentFactories")
+    public Object[][] segmentFactories() {
+        List<Supplier<MemorySegment>> l = List.of(
+                () -> MemorySegment.ofArray(new byte[] { 0x00, 0x01, 0x02, 0x03 }),
+                () -> MemorySegment.ofArray(new char[] {'a', 'b', 'c', 'd' }),
+                () -> MemorySegment.ofArray(new double[] { 1d, 2d, 3d, 4d} ),
+                () -> MemorySegment.ofArray(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }),
+                () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
+                () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
+                () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
+                () -> MemorySegment.allocateNative(4),
+                () -> MemorySegment.allocateNative(4, 8),
+                () -> MemorySegment.allocateNative(MemoryLayout.ofValueBits(32, ByteOrder.nativeOrder()))
+        );
+        return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "segmentFactories")
+    public void testFill(Supplier<MemorySegment> memorySegmentSupplier) {
+        VarHandle byteHandle = MemoryLayout.ofSequence(MemoryLayouts.JAVA_BYTE)
+                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+
+        for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
+            try (MemorySegment segment = memorySegmentSupplier.get()) {
+                segment.fill(value);
+                for (long l = 0; l < segment.byteSize(); l++) {
+                    assertEquals((byte) byteHandle.get(segment.baseAddress(), l), value);
+                }
+
+                // fill a slice
+                var sliceSegment = segment.asSlice(1, segment.byteSize() - 2).fill((byte) ~value);
+                for (long l = 0; l < sliceSegment.byteSize(); l++) {
+                    assertEquals((byte) byteHandle.get(sliceSegment.baseAddress(), l), ~value);
+                }
+                // assert enclosing slice
+                assertEquals((byte) byteHandle.get(segment.baseAddress(), 0L), value);
+                for (long l = 1; l < segment.byteSize() - 2; l++) {
+                    assertEquals((byte) byteHandle.get(segment.baseAddress(), l), (byte) ~value);
+                }
+                assertEquals((byte) byteHandle.get(segment.baseAddress(), segment.byteSize() - 1L), value);
+            }
+        }
+    }
+
+    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalStateException.class)
+    public void testFillClosed(Supplier<MemorySegment> memorySegmentSupplier) {
+        MemorySegment segment = memorySegmentSupplier.get();
+        segment.close();
+        segment.fill((byte) 0xFF);
+    }
+
+    @Test(dataProvider = "segmentFactories", expectedExceptions = UnsupportedOperationException.class)
+    public void testFillIllegalAccessMode(Supplier<MemorySegment> memorySegmentSupplier) {
+        try (MemorySegment segment = memorySegmentSupplier.get()) {
+            segment.withAccessModes(segment.accessModes() & ~WRITE).fill((byte) 0xFF);
+        }
+    }
+
+    @Test(dataProvider = "segmentFactories")
+    public void testFillThread(Supplier<MemorySegment> memorySegmentSupplier) throws Exception {
+        try (MemorySegment segment = memorySegmentSupplier.get()) {
+            AtomicReference<RuntimeException> exception = new AtomicReference<>();
+            Runnable action = () -> {
+                try {
+                    segment.fill((byte) 0xBA);
+                } catch (RuntimeException e) {
+                    exception.set(e);
+                }
+            };
+            Thread thread = new Thread(action);
+            thread.start();
+            thread.join();
+
+            RuntimeException e = exception.get();
+            if (!(e instanceof IllegalStateException)) {
+                throw e;
+            }
+        }
+    }
+
+    @Test
+    public void testFillEmpty() {
+        MemorySegment.ofArray(new byte[] { }).fill((byte) 0xFF);
+        MemorySegment.ofArray(new byte[2]).asSlice(0, 0).fill((byte) 0xFF);
+        MemorySegment.ofByteBuffer(ByteBuffer.allocateDirect(0)).fill((byte) 0xFF);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -267,6 +336,9 @@ public class TestSegments {
 
         final static List<String> CONFINED_NAMES = List.of(
                 "close",
+                "fill",
+                "copyFrom",
+                "mismatch",
                 "toByteArray",
                 "withOwnerThread"
         );
