@@ -275,7 +275,7 @@ void NMethodSweeper::report_allocation(int code_blob_type) {
 bool NMethodSweeper::should_start_aggressive_sweep(int code_blob_type) {
   // Makes sure that we do not invoke the sweeper too often during startup.
   double start_threshold = 100.0 / (double)StartAggressiveSweepingAt;
-  double aggressive_sweep_threshold = MIN2(start_threshold, 1.1);
+  double aggressive_sweep_threshold = MAX2(start_threshold, 1.1);
   return (CodeCache::reverse_free_ratio(code_blob_type) >= aggressive_sweep_threshold);
 }
 
