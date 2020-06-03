@@ -71,8 +71,9 @@ class UnixFileSystem extends FileSystem {
      */
     private String normalize(String pathname, int off) {
         int n = pathname.length();
-        while ((n > 0) && (pathname.charAt(n - 1) == '/')) n--;
+        while ((n > off) && (pathname.charAt(n - 1) == '/')) n--;
         if (n == 0) return "/";
+        if (n == off) return pathname.substring(0, off);
 
         StringBuilder sb = new StringBuilder(n);
         if (off > 0) sb.append(pathname, 0, off);

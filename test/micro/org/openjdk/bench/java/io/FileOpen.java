@@ -41,7 +41,7 @@ public class FileOpen {
 
     public String normalFile = "/test/dir/file/name.txt";
     public String root = "/";
-    public String trailingSlash = "/test/dir/file//name.txt";
+    public String trailingSlash = "/test/dir/file/name.txt/";
     public String notNormalizedFile = "/test/dir/file//name.txt";
 
     @Benchmark
