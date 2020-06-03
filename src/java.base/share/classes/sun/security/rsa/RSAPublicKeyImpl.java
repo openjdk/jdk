@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,8 @@ import java.security.interfaces.*;
 
 import sun.security.util.*;
 import sun.security.x509.X509Key;
-import sun.security.x509.AlgorithmId;
 
-import static sun.security.rsa.RSAUtil.KeyType;
+import sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * RSA public key implementation for "RSA", "RSASSA-PSS" algorithms.
@@ -59,11 +58,12 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     private BigInteger n;       // modulus
     private BigInteger e;       // public exponent
 
+    private transient KeyType type;
+
     // optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId
     // must be null for "RSA" keys.
-    @SuppressWarnings("serial") // Not statically typed as Serializable
-    private AlgorithmParameterSpec keyParams;
+    private transient AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new RSAPublicKey from the specified encoding.
@@ -81,26 +81,34 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     public static RSAPublicKey newKey(KeyType type,
             AlgorithmParameterSpec params, BigInteger n, BigInteger e)
             throws InvalidKeyException {
-        AlgorithmId rsaId = RSAUtil.createAlgorithmId(type, params);
-        return new RSAPublicKeyImpl(rsaId, n, e);
+        return new RSAPublicKeyImpl(type, params, n, e);
     }
 
     /**
-     * Construct a RSA key from AlgorithmId and its components. Used by
+     * Construct a RSA key from the specified type and components. Used by
      * RSAKeyFactory and RSAKeyPairGenerator.
      */
-    RSAPublicKeyImpl(AlgorithmId rsaId, BigInteger n, BigInteger e)
-            throws InvalidKeyException {
+    RSAPublicKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,
+            BigInteger n, BigInteger e) throws InvalidKeyException {
+
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
         checkExponentRange(n, e);
 
         this.n = n;
         this.e = e;
-        this.keyParams = RSAUtil.getParamSpec(rsaId);
 
-        // generate the encoding
-        algid = rsaId;
         try {
+            // validate and generate algid encoding
+            algid = RSAUtil.createAlgorithmId(type, keyParams);
+        } catch (ProviderException pe) {
+            throw new InvalidKeyException(pe);
+        }
+
+        this.type = type;
+        this.keyParams = keyParams;
+
+        try {
+            // generate the key encoding
             DerOutputStream out = new DerOutputStream();
             out.putInteger(n);
             out.putInteger(e);
@@ -126,8 +134,10 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
         checkExponentRange(n, e);
 
         try {
-            // this will check the validity of params
-            this.keyParams = RSAUtil.getParamSpec(algid);
+            // check the validity of oid and params
+            Object[] o = RSAUtil.getTypeAndParamSpec(algid);
+            this.type = (KeyType) o[0];
+            this.keyParams = (AlgorithmParameterSpec) o[1];
         } catch (ProviderException e) {
             throw new InvalidKeyException(e);
         }
@@ -150,7 +160,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     // see JCA doc
     @Override
     public String getAlgorithm() {
-        return algid.getName();
+        return type.keyAlgo;
     }
 
     // see JCA doc
@@ -195,7 +205,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     // return a string representation of this key for debugging
     @Override
     public String toString() {
-        return "Sun " + getAlgorithm() + " public key, " + n.bitLength()
+        return "Sun " + type.keyAlgo + " public key, " + n.bitLength()
                + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
                + "\n  public exponent: " + e;
     }
