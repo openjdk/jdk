@@ -37,6 +37,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
@@ -650,6 +651,8 @@ jint universe_init() {
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
   initialize_global_behaviours();
+
+  GCLogPrecious::initialize();
 
   GCConfig::arguments()->initialize_heap_sizes();
 

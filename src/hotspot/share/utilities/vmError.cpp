@@ -28,6 +28,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -927,11 +928,15 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing heap information")
 
-     if (_verbose && Universe::is_fully_initialized()) {
-       Universe::heap()->print_on_error(st);
-       st->cr();
-       st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-       st->cr();
+     if (_verbose) {
+       GCLogPrecious::print_on_error(st);
+
+       if (Universe::is_fully_initialized()) {
+         Universe::heap()->print_on_error(st);
+         st->cr();
+         st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+         st->cr();
+       }
      }
 
   STEP("printing metaspace information")
@@ -1133,6 +1138,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   if (Universe::is_fully_initialized()) {
     MutexLocker hl(Heap_lock);
+    GCLogPrecious::print_on_error(st);
     Universe::heap()->print_on_error(st);
     st->cr();
     st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
