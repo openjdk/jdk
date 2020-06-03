@@ -885,6 +885,9 @@ JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queu
 
 
 void CompileBroker::init_compiler_sweeper_threads() {
+  NMethodSweeper::set_sweep_threshold_bytes(static_cast<size_t>(SweeperThreshold * ReservedCodeCacheSize / 100.0));
+  log_info(codecache, sweep)("Sweeper threshold: " SIZE_FORMAT " bytes", NMethodSweeper::sweep_threshold_bytes());
+
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
 #if !defined(ZERO)

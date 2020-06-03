@@ -617,6 +617,7 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   EventCodeSweeperConfiguration event;
   event.set_sweeperEnabled(MethodFlushing);
   event.set_flushingEnabled(UseCodeCacheFlushing);
+  event.set_sweepThreshold(NMethodSweeper::sweep_threshold_bytes());
   event.commit();
 }
 

@@ -890,6 +890,7 @@
   <Event name="CodeSweeperConfiguration" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="boolean" name="sweeperEnabled" label="Code Sweeper Enabled" />
     <Field type="boolean" name="flushingEnabled" label="Code Cache Flushing Enabled" />
+    <Field type="ulong" contentType="bytes" name="sweepThreshold" label="Sweep Threshold" />
   </Event>
 
   <Event name="IntFlag" category="Java Virtual Machine, Flag" period="endChunk" label="Int Flag">
