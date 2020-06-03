@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zCPU.inline.hpp"
-#include "logging/log.hpp"
 #include "memory/padded.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -46,9 +46,9 @@ void ZCPU::initialize() {
     _affinity[i]._thread = ZCPU_UNKNOWN_AFFINITY;
   }
 
-  log_info(gc, init)("CPUs: %u total, %u available",
-                     os::processor_count(),
-                     os::initial_active_processor_count());
+  log_info_p(gc, init)("CPUs: %u total, %u available",
+                       os::processor_count(),
+                       os::initial_active_processor_count());
 }
 
 uint32_t ZCPU::id_slow() {

@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -127,11 +128,11 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
     return;
   }
 
-  log_info(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
-  log_info(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
-  log_info(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
-  log_info(gc, init)("Max Reserve: " SIZE_FORMAT "M", max_reserve / M);
-  log_info(gc, init)("Pre-touch: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
+  log_info_p(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
+  log_info_p(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
+  log_info_p(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
+  log_info_p(gc, init)("Max Reserve: " SIZE_FORMAT "M", max_reserve / M);
+  log_info_p(gc, init)("Pre-touch: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
 
   // Warn if system limits could stop us from reaching max capacity
   _physical.warn_commit_limits(max_capacity);
@@ -139,7 +140,7 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
   // Commit initial capacity
   _capacity = _physical.commit(initial_capacity);
   if (_capacity != initial_capacity) {
-    log_error(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", initial_capacity / M);
+    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", initial_capacity / M);
     return;
   }
 
@@ -380,10 +381,10 @@ bool ZPageAllocator::ensure_available(size_t size, bool no_reserve) {
     if (committed != commit) {
       // Failed, or partly failed, to increase capacity. Adjust current
       // max capacity to avoid further attempts to increase capacity.
-      log_error(gc)("Forced to lower max Java heap size from "
-                    SIZE_FORMAT "M(%.0f%%) to " SIZE_FORMAT "M(%.0f%%)",
-                    _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
-                    _capacity / M, percent_of(_capacity, _max_capacity));
+      log_error_p(gc)("Forced to lower max Java heap size from "
+                      SIZE_FORMAT "M(%.0f%%) to " SIZE_FORMAT "M(%.0f%%)",
+                      _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
+                      _capacity / M, percent_of(_capacity, _max_capacity));
 
       _current_max_capacity = _capacity;
     }

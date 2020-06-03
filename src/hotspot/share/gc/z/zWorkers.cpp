@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
@@ -69,7 +70,7 @@ ZWorkers::ZWorkers() :
              true /* are_GC_task_threads */,
              true /* are_ConcurrentGC_threads */) {
 
-  log_info(gc, init)("Workers: %u parallel, %u concurrent", nparallel(), nconcurrent());
+  log_info_p(gc, init)("Workers: %u parallel, %u concurrent", nparallel(), nconcurrent());
 
   // Initialize worker threads
   _workers.initialize_workers();

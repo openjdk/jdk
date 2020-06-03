@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
-#include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -50,9 +50,9 @@ void ZHeuristics::set_medium_page_size() {
     ZObjectAlignmentMediumShift = (int)ZPageSizeMediumShift - 13;
     ZObjectAlignmentMedium      = 1 << ZObjectAlignmentMediumShift;
 
-    log_info(gc, init)("Medium Page Size: " SIZE_FORMAT "M", ZPageSizeMedium / M);
+    log_info_p(gc, init)("Medium Page Size: " SIZE_FORMAT "M", ZPageSizeMedium / M);
   } else {
-    log_info(gc, init)("Medium Page Size: N/A");
+    log_info_p(gc, init)("Medium Page Size: N/A");
   }
 }
 

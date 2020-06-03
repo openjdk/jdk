@@ -22,11 +22,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
 #include "runtime/globals.hpp"
-#include "logging/log.hpp"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -73,7 +73,7 @@ void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpo
   FILE* fd = fopen(PROC_SELF_MOUNTINFO, "r");
   if (fd == NULL) {
     ZErrno err;
-    log_error(gc)("Failed to open %s: %s", PROC_SELF_MOUNTINFO, err.to_string());
+    log_error_p(gc)("Failed to open %s: %s", PROC_SELF_MOUNTINFO, err.to_string());
     return;
   }
 
@@ -114,10 +114,10 @@ char* ZMountPoint::find_preferred_mountpoint(const char* filesystem,
   }
 
   // Preferred mount point not found
-  log_error(gc)("More than one %s filesystem found:", filesystem);
+  log_error_p(gc)("More than one %s filesystem found:", filesystem);
   ZArrayIterator<char*> iter2(mountpoints);
   for (char* mountpoint; iter2.next(&mountpoint);) {
-    log_error(gc)("  %s", mountpoint);
+    log_error_p(gc)("  %s", mountpoint);
   }
 
   return NULL;
@@ -131,7 +131,7 @@ char* ZMountPoint::find_mountpoint(const char* filesystem, const char** preferre
 
   if (mountpoints.size() == 0) {
     // No mount point found
-    log_error(gc)("Failed to find an accessible %s filesystem", filesystem);
+    log_error_p(gc)("Failed to find an accessible %s filesystem", filesystem);
   } else if (mountpoints.size() == 1) {
     // One mount point found
     path = strdup(mountpoints.at(0));

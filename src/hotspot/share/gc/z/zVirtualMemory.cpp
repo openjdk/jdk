@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "logging/log.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/align.hpp"
@@ -36,14 +36,14 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
 
   // Check max supported heap size
   if (max_capacity > ZAddressOffsetMax) {
-    log_error(gc)("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
-                  ZAddressOffsetMax / G);
+    log_error_p(gc)("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
+                    ZAddressOffsetMax / G);
     return;
   }
 
   // Reserve address space
   if (!reserve(max_capacity)) {
-    log_error(gc)("Failed to reserve enough address space for Java heap");
+    log_error_p(gc)("Failed to reserve enough address space for Java heap");
     return;
   }
 
@@ -132,12 +132,12 @@ bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
     contiguous = false;
   }
 
-  log_info(gc, init)("Address Space Type: %s/%s/%s",
-                     (contiguous ? "Contiguous" : "Discontiguous"),
-                     (limit == ZAddressOffsetMax ? "Unrestricted" : "Restricted"),
-                     (reserved == size ? "Complete" : "Degraded"));
-  log_info(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
-                     reserved / M, ZHeapViews, (reserved * ZHeapViews) / M);
+  log_info_p(gc, init)("Address Space Type: %s/%s/%s",
+                       (contiguous ? "Contiguous" : "Discontiguous"),
+                       (limit == ZAddressOffsetMax ? "Unrestricted" : "Restricted"),
+                       (reserved == size ? "Complete" : "Degraded"));
+  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
+                       reserved / M, ZHeapViews, (reserved * ZHeapViews) / M);
 
   return reserved >= max_capacity;
 }

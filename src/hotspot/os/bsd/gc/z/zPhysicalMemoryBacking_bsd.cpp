@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
@@ -81,7 +82,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
   _base = (uintptr_t)os::reserve_memory(MaxHeapSize);
   if (_base == 0) {
     // Failed
-    log_error(gc)("Failed to reserve address space for backing memory");
+    log_error_p(gc)("Failed to reserve address space for backing memory");
     return;
   }
 
