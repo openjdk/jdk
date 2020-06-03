@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ inline EventWriterHost<BE, IE, WriterPolicyImpl>::
 EventWriterHost(StorageType* storage, Thread* thread) : WriterHost<BE, IE, WriterPolicyImpl>(storage, thread) {}
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
-inline EventWriterHost<BE, IE, WriterPolicyImpl>::EventWriterHost(Thread* thread) : WriterHost<BE, IE, WriterPolicyImpl>(thread) {
+inline EventWriterHost<BE, IE, WriterPolicyImpl>::EventWriterHost(Thread* thread)  : WriterHost<BE, IE, WriterPolicyImpl>(thread) {
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
@@ -53,45 +53,47 @@ inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_write(void) {
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
-inline void EventWriterHost<BE, IE, WriterPolicyImpl>::begin_event_write() {
+inline void EventWriterHost<BE, IE, WriterPolicyImpl>::begin_event_write(bool large) {
   assert(this->is_valid(), "invariant");
   assert(!this->is_acquired(), "calling begin with writer already in acquired state!");
   this->begin_write();
-  this->reserve(sizeof(u4)); // reserve the event size slot
+  // reserve the event size slot
+  if (large) {
+    this->reserve(sizeof(u4));
+  } else {
+    this->reserve(sizeof(u1));
+  }
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
-inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_event_write() {
+inline intptr_t EventWriterHost<BE, IE, WriterPolicyImpl>::end_event_write(bool large) {
   assert(this->is_acquired(), "invariant");
   if (!this->is_valid()) {
     this->release();
     return 0;
   }
-  const u4 written = (u4)end_write();
-  if (written > sizeof(u4)) { // larger than header reserve
-    this->write_padded_at_offset(written, 0);
-    this->commit();
+  u4 written = (u4)end_write();
+  if (large) {
+    // size written is larger than header reserve, so commit
+    if (written > sizeof(u4)) {
+      this->write_padded_at_offset(written, 0);
+      this->commit();
+    }
+  } else {
+    // abort if event size will not fit in one byte (compressed)
+    if (written > 127) {
+      this->reset();
+      written = 0;
+    } else {
+      // size written is larger than header reserve, so commit
+      if (written > sizeof(u1)) {
+        this->write_at_offset(written, 0);
+        this->commit();
+      }
+    }
   }
   this->release();
   assert(!this->is_acquired(), "invariant");
   return written;
 }
-
-template <typename BE, typename IE, typename WriterPolicyImpl>
-template <typename StorageType>
-inline StackEventWriterHost<BE, IE, WriterPolicyImpl>::
-StackEventWriterHost(StorageType* storage, Thread* thread) : EventWriterHost<BE, IE, WriterPolicyImpl>(storage, thread) {
-  this->begin_event_write();
-}
-
-template <typename BE, typename IE, typename WriterPolicyImpl>
-inline StackEventWriterHost<BE, IE, WriterPolicyImpl>::StackEventWriterHost(Thread* thread) : EventWriterHost<BE, IE, WriterPolicyImpl>(thread) {
-  this->begin_event_write();
-}
-
-template <typename BE, typename IE, typename WriterPolicyImpl>
-inline StackEventWriterHost<BE, IE, WriterPolicyImpl>::~StackEventWriterHost() {
-  this->end_event_write();
-}
-
 #endif // SHARE_JFR_WRITERS_JFREVENTWRITERHOST_INLINE_HPP

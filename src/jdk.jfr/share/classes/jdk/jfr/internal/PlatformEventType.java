@@ -46,6 +46,7 @@ public final class PlatformEventType extends Type {
     private final int stackTraceOffset;
 
     // default values
+    private boolean largeSize = false;
     private boolean enabled = false;
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
@@ -277,5 +278,13 @@ public final class PlatformEventType extends Type {
 
     public int getStackTraceOffset() {
         return stackTraceOffset;
+    }
+
+    public boolean isLargeSize() {
+        return largeSize;
+    }
+
+    public void setLargeSize() {
+        largeSize = true;
     }
 }

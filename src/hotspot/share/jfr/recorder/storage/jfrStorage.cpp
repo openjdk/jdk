@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,10 +224,12 @@ static void write_data_loss_event(JfrBuffer* buffer, u8 unflushed_size, Thread* 
   const u8 total_data_loss = thread->jfr_thread_local()->add_data_lost(unflushed_size);
   if (EventDataLoss::is_enabled()) {
     JfrNativeEventWriter writer(buffer, thread);
+    writer.begin_event_write(false);
     writer.write<u8>(EventDataLoss::eventId);
     writer.write(JfrTicks::now());
     writer.write(unflushed_size);
     writer.write(total_data_loss);
+    writer.end_event_write(false);
   }
 }
 
