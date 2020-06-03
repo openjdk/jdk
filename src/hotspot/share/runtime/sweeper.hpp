@@ -108,11 +108,8 @@ class NMethodSweeper : public AllStatic {
 #ifdef ASSERT
   // Keep track of sweeper activity in the ring buffer
   static void record_sweep(CompiledMethod* nm, int line);
-  static void report_events(int id, address entry);
-  static void report_events();
 #endif
 
-  static void mark_active_nmethods();      // Invoked at the end of each safepoint
   static CodeBlobClosure* prepare_mark_active_nmethods();
   static CodeBlobClosure* prepare_reset_hotness_counters();
   static void sweeper_loop();

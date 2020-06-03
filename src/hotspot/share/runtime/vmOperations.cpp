@@ -94,10 +94,6 @@ void VM_ClearICs::doit() {
   }
 }
 
-void VM_MarkActiveNMethods::doit() {
-  NMethodSweeper::mark_active_nmethods();
-}
-
 VM_DeoptimizeFrame::VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id, int reason) {
   _thread = thread;
   _id     = id;

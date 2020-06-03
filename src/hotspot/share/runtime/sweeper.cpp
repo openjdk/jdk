@@ -81,40 +81,6 @@ class SweeperRecord {
 static int _sweep_index = 0;
 static SweeperRecord* _records = NULL;
 
-void NMethodSweeper::report_events(int id, address entry) {
-  if (_records != NULL) {
-    for (int i = _sweep_index; i < SweeperLogEntries; i++) {
-      if (_records[i].uep == entry ||
-          _records[i].vep == entry ||
-          _records[i].compile_id == id) {
-        _records[i].print();
-      }
-    }
-    for (int i = 0; i < _sweep_index; i++) {
-      if (_records[i].uep == entry ||
-          _records[i].vep == entry ||
-          _records[i].compile_id == id) {
-        _records[i].print();
-      }
-    }
-  }
-}
-
-void NMethodSweeper::report_events() {
-  if (_records != NULL) {
-    for (int i = _sweep_index; i < SweeperLogEntries; i++) {
-      // skip empty records
-      if (_records[i].vep == NULL) continue;
-      _records[i].print();
-    }
-    for (int i = 0; i < _sweep_index; i++) {
-      // skip empty records
-      if (_records[i].vep == NULL) continue;
-      _records[i].print();
-    }
-  }
-}
-
 void NMethodSweeper::record_sweep(CompiledMethod* nm, int line) {
   if (_records != NULL) {
     _records[_sweep_index].traversal = _traversals;
@@ -209,44 +175,6 @@ public:
     }
   }
 };
-
-class NMethodMarkingTask : public AbstractGangTask {
-private:
-  NMethodMarkingClosure* _cl;
-public:
-  NMethodMarkingTask(NMethodMarkingClosure* cl) :
-    AbstractGangTask("Parallel NMethod Marking"),
-    _cl(cl) {
-    Threads::change_thread_claim_token();
-  }
-
-  ~NMethodMarkingTask() {
-    Threads::assert_all_threads_claimed();
-  }
-
-  void work(uint worker_id) {
-    Threads::possibly_parallel_threads_do(true, _cl);
-  }
-};
-
-/**
-  * Scans the stacks of all Java threads and marks activations of not-entrant methods.
-  * No need to synchronize access, since 'mark_active_nmethods' is always executed at a
-  * safepoint.
-  */
-void NMethodSweeper::mark_active_nmethods() {
-  CodeBlobClosure* cl = prepare_mark_active_nmethods();
-  if (cl != NULL) {
-    WorkGang* workers = Universe::heap()->get_safepoint_workers();
-    if (workers != NULL) {
-      NMethodMarkingClosure tcl(cl);
-      NMethodMarkingTask task(&tcl);
-      workers->run_task(&task);
-    } else {
-      Threads::nmethods_do(cl);
-    }
-  }
-}
 
 CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
 #ifdef ASSERT
