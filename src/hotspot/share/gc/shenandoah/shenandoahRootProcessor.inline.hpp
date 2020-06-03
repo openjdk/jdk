@@ -239,16 +239,19 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
+  // Process serial-claiming roots first
   _serial_roots.oops_do(keep_alive, worker_id);
-  _vm_roots.oops_do(keep_alive, worker_id);
-
-  _cld_roots.cld_do(&clds, worker_id);
-  _code_roots.code_blobs_do(codes_cl, worker_id);
-  _thread_roots.oops_do(keep_alive, NULL, worker_id);
-
   _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
+
+  // Process light-weight/limited parallel roots then
+  _vm_roots.oops_do(keep_alive, worker_id);
   _weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
   _dedup_roots.oops_do(is_alive, keep_alive, worker_id);
+  _cld_roots.cld_do(&clds, worker_id);
+
+  // Process heavy-weight/fully parallel roots the last
+  _code_roots.code_blobs_do(codes_cl, worker_id);
+  _thread_roots.oops_do(keep_alive, NULL, worker_id);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
