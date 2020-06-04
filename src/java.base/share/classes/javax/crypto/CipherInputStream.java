@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class CipherInputStream extends FilterInputStream {
 
     /* the buffer holding data that have been processed by the cipher
        engine, but have not been read out */
-    private byte[] obuffer;
+    private byte[] obuffer = null;
     // the offset pointing to the next "new" byte
     private int ostart = 0;
     // the offset pointing to the last "new" byte
@@ -100,18 +100,36 @@ public class CipherInputStream extends FilterInputStream {
     // stream status
     private boolean closed = false;
 
-    /*
-     * private convenience function.
+    /**
+     * Ensure obuffer is big enough for the next update or doFinal
+     * operation, given the input length <code>inLen</code> (in bytes)
+     * The ostart and ofinish indices are reset to 0.
+     *
+     * @param inLen the input length (in bytes)
+     */
+    private void ensureCapacity(int inLen) {
+        int minLen = cipher.getOutputSize(inLen);
+        if (obuffer == null || obuffer.length < minLen) {
+            obuffer = new byte[minLen];
+        }
+        ostart = 0;
+        ofinish = 0;
+    }
+
+    /**
+     * Private convenience function, read in data from the underlying
+     * input stream and process them with cipher. This method is called
+     * when the processed bytes inside obuffer has been exhausted.
      *
      * Entry condition: ostart = ofinish
      *
-     * Exit condition: ostart <= ofinish
+     * Exit condition: ostart = 0 AND ostart <= ofinish
      *
      * return (ofinish-ostart) (we have this many bytes for you)
      * return 0 (no data now, but could have more later)
      * return -1 (absolutely no more data)
      *
-     * Note:  Exceptions are only thrown after the stream is completely read.
+     * Note: Exceptions are only thrown after the stream is completely read.
      * For AEAD ciphers a read() of any length will internally cause the
      * whole stream to be read fully and verify the authentication tag before
      * returning decrypted data or exceptions.
@@ -119,32 +137,30 @@ public class CipherInputStream extends FilterInputStream {
     private int getMoreData() throws IOException {
         if (done) return -1;
         int readin = input.read(ibuffer);
+
         if (readin == -1) {
             done = true;
+            ensureCapacity(0);
             try {
-                obuffer = cipher.doFinal();
-            } catch (IllegalBlockSizeException | BadPaddingException e) {
-                obuffer = null;
+                ofinish = cipher.doFinal(obuffer, 0);
+            } catch (IllegalBlockSizeException | BadPaddingException
+                    | ShortBufferException e) {
                 throw new IOException(e);
             }
-            if (obuffer == null)
+            if (ofinish == 0) {
                 return -1;
-            else {
-                ostart = 0;
-                ofinish = obuffer.length;
+            } else {
                 return ofinish;
             }
         }
+        ensureCapacity(readin);
         try {
-            obuffer = cipher.update(ibuffer, 0, readin);
+            ofinish = cipher.update(ibuffer, 0, readin, obuffer, ostart);
         } catch (IllegalStateException e) {
-            obuffer = null;
             throw e;
+        } catch (ShortBufferException e) {
+            throw new IOException(e);
         }
-        ostart = 0;
-        if (obuffer == null)
-            ofinish = 0;
-        else ofinish = obuffer.length;
         return ofinish;
     }
 
@@ -190,6 +206,7 @@ public class CipherInputStream extends FilterInputStream {
      *          stream is reached.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public int read() throws IOException {
         if (ostart >= ofinish) {
             // we loop for new data as the spec says we are blocking
@@ -215,6 +232,7 @@ public class CipherInputStream extends FilterInputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.InputStream#read(byte[], int, int)
      */
+    @Override
     public int read(byte b[]) throws IOException {
         return read(b, 0, b.length);
     }
@@ -235,6 +253,7 @@ public class CipherInputStream extends FilterInputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.InputStream#read()
      */
+    @Override
     public int read(byte b[], int off, int len) throws IOException {
         if (ostart >= ofinish) {
             // we loop for new data as the spec says we are blocking
@@ -271,6 +290,7 @@ public class CipherInputStream extends FilterInputStream {
      * @return     the actual number of bytes skipped.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public long skip(long n) throws IOException {
         int available = ofinish - ostart;
         if (n > available) {
@@ -293,6 +313,7 @@ public class CipherInputStream extends FilterInputStream {
      *             without blocking.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public int available() throws IOException {
         return (ofinish - ostart);
     }
@@ -307,11 +328,11 @@ public class CipherInputStream extends FilterInputStream {
      *
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void close() throws IOException {
         if (closed) {
             return;
         }
-
         closed = true;
         input.close();
 
@@ -319,15 +340,15 @@ public class CipherInputStream extends FilterInputStream {
         // AEAD ciphers are fully readed before closing.  Any authentication
         // exceptions would occur while reading.
         if (!done) {
+            ensureCapacity(0);
             try {
-                cipher.doFinal();
-            }
-            catch (BadPaddingException | IllegalBlockSizeException ex) {
+                cipher.doFinal(obuffer, 0);
+            } catch (BadPaddingException | IllegalBlockSizeException
+                    | ShortBufferException ex) {
                 // Catch exceptions as the rest of the stream is unused.
             }
         }
-        ostart = 0;
-        ofinish = 0;
+        obuffer = null;
     }
 
     /**
@@ -339,6 +360,7 @@ public class CipherInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
      */
+    @Override
     public boolean markSupported() {
         return false;
     }
