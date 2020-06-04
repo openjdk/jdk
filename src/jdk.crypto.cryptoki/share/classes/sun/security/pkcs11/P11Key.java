@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -807,13 +807,9 @@ abstract class P11Key implements Key, Length {
             token.ensureValid();
             if (encoded == null) {
                 fetchValues();
-                try {
-                    Key key = new sun.security.provider.DSAPrivateKey
-                            (x, params.getP(), params.getQ(), params.getG());
-                    encoded = key.getEncoded();
-                } catch (InvalidKeyException e) {
-                    throw new ProviderException(e);
-                }
+                Key key = new sun.security.provider.DSAPrivateKey
+                        (x, params.getP(), params.getQ(), params.getG());
+                encoded = key.getEncoded();
             }
             return encoded;
         }

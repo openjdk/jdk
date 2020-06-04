@@ -79,6 +79,9 @@ public final class RSAPrivateCrtKeyImpl
      */
     public static RSAPrivateKey newKey(byte[] encoded)
             throws InvalidKeyException {
+        if (encoded == null || encoded.length == 0) {
+            throw new InvalidKeyException("Missing key encoding");
+        }
         RSAPrivateCrtKeyImpl key = new RSAPrivateCrtKeyImpl(encoded);
         // check all CRT-specific components are available, if any one
         // missing, return a non-CRT key instead
@@ -124,11 +127,8 @@ public final class RSAPrivateCrtKeyImpl
      * Construct a key from its encoding. Called from newKey above.
      */
     RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
-        if (encoded == null || encoded.length == 0) {
-            throw new InvalidKeyException("Missing key encoding");
-        }
-
-        decode(encoded);
+        super(encoded);
+        parseKeyBits();
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
         try {
             // check the validity of oid and params
@@ -258,10 +258,7 @@ public final class RSAPrivateCrtKeyImpl
                + "\n  modulus: " + n + "\n  private exponent: " + d;
     }
 
-    /**
-     * Parse the key. Called by PKCS8Key.
-     */
-    protected void parseKeyBits() throws InvalidKeyException {
+    private void parseKeyBits() throws InvalidKeyException {
         try {
             DerInputStream in = new DerInputStream(key);
             DerValue derValue = in.getDerValue();
