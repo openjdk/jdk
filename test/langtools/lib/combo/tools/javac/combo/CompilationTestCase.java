@@ -65,6 +65,10 @@ public class CompilationTestCase extends JavacTemplateTestBase {
         compileOptions = options.clone();
     }
 
+    protected String[] getCompileOptions() {
+        return compileOptions.clone();
+    }
+
     protected void appendCompileOptions(String... additionalOptions) {
         String[] moreOptions = additionalOptions.clone();
         String[] newCompileOptions = Arrays.copyOf(compileOptions, compileOptions.length + additionalOptions.length);

@@ -1645,6 +1645,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         List<JCAnnotation> originalAnnos = rc.getOriginalAnnos();
                         originalAnnos.stream().forEach(a -> visitAnnotation(a));
                     }
+                    // we should empty the list of permitted subclasses for next round
+                    node.sym.permitted = List.nil();
                 }
                 node.sym = null;
             }

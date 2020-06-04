@@ -717,7 +717,6 @@ public class TypeEnter implements Completer {
             ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
             List<JCExpression> permittedTrees = tree.permitting;
             for (JCExpression permitted : permittedTrees) {
-                permitted = clearTypeParams(permitted);
                 Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
                 permittedSubtypeSymbols.append(pt.tsym);
             }
@@ -731,7 +730,13 @@ public class TypeEnter implements Completer {
                         ? ct.interfaces_field : all_interfaces.toList();
             }
 
-            sym.permitted = permittedSubtypeSymbols.toList();
+            /* it could be that there are already some symbols in the permitted list, for the case
+             * where there are subtypes in the same compilation unit but the permits list is empty
+             * so don't overwrite the permitted list if it is not empty
+             */
+            if (!permittedSubtypeSymbols.isEmpty()) {
+                sym.permitted = permittedSubtypeSymbols.toList();
+            }
             sym.isPermittedExplicit = !permittedSubtypeSymbols.isEmpty();
         }
             //where:
