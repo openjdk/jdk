@@ -205,8 +205,11 @@ public:
 };
 
 class ShenandoahConcurrentStringDedupRoots {
+private:
+  ShenandoahPhaseTimings::Phase _phase;
+
 public:
-  ShenandoahConcurrentStringDedupRoots();
+  ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahConcurrentStringDedupRoots();
 
   void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);

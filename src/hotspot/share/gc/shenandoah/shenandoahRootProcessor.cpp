@@ -149,7 +149,8 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
   }
 }
 
-ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots() {
+ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase) :
+  _phase(phase) {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedupTable_lock->lock_without_safepoint_check();
     StringDedupQueue_lock->lock_without_safepoint_check();
@@ -171,8 +172,15 @@ void ShenandoahConcurrentStringDedupRoots::oops_do(BoolObjectClosure* is_alive, 
     assert_locked_or_safepoint_weak(StringDedupTable_lock);
 
     StringDedupUnlinkOrOopsDoClosure sd_cl(is_alive, keep_alive);
-    StringDedupQueue::unlink_or_oops_do(&sd_cl);
-    StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
+    {
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
+      StringDedupQueue::unlink_or_oops_do(&sd_cl);
+    }
+
+    {
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
+      StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
+    }
   }
 }
 
@@ -360,6 +368,7 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, 1),
    _serial_weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
+   _dedup_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
  }
 
