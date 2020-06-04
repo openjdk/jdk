@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
@@ -38,6 +37,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 import sun.security.util.Debug;
+import sun.security.util.KnownOIDs;
 import sun.security.x509.CertificatePoliciesExtension;
 import sun.security.x509.PolicyConstraintsExtension;
 import sun.security.x509.PolicyMappingsExtension;
@@ -72,7 +72,7 @@ class PolicyChecker extends PKIXCertPathChecker {
     private Set<String> supportedExts;
 
     private static final Debug debug = Debug.getInstance("certpath");
-    static final String ANY_POLICY = "2.5.29.32.0";
+    static final String ANY_POLICY = KnownOIDs.CE_CERT_POLICIES_ANY.value();
 
     /**
      * Constructs a Policy Checker.

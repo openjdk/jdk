@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.function.Function;
 
+import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 
@@ -116,7 +117,7 @@ public class XECParameters {
         try {
             BigInteger p = TWO.pow(255).subtract(BigInteger.valueOf(19));
             addParameters(255, p, 121665, (byte)0x09, 3,
-                "1.3.101.110", NamedParameterSpec.X25519.getName(),
+                KnownOIDs.X25519.value(), NamedParameterSpec.X25519.getName(),
                 bySize, byOid, byName);
 
         } catch (IOException ex) {
@@ -128,7 +129,7 @@ public class XECParameters {
             BigInteger p = TWO.pow(448).subtract(TWO.pow(224))
                 .subtract(BigInteger.ONE);
             addParameters(448, p, 39081, (byte)0x05, 2,
-                "1.3.101.111", NamedParameterSpec.X448.getName(),
+                KnownOIDs.X448.value(), NamedParameterSpec.X448.getName(),
                 bySize, byOid, byName);
 
         } catch (IOException ex) {

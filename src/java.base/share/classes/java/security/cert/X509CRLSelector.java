@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
 import sun.security.util.DerInputStream;
+import sun.security.util.KnownOIDs;
 import sun.security.x509.CRLNumberExtension;
 import sun.security.x509.X500Name;
 
@@ -620,7 +621,7 @@ public class X509CRLSelector implements CRLSelector {
 
         if ((minCRL != null) || (maxCRL != null)) {
             /* Get CRL number extension from CRL */
-            byte[] crlNumExtVal = xcrl.getExtensionValue("2.5.29.20");
+            byte[] crlNumExtVal = xcrl.getExtensionValue(KnownOIDs.CRLNumber.value());
             if (crlNumExtVal == null) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: no CRLNumber");

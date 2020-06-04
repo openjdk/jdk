@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.security.provider.certpath;
+
+import sun.security.util.KnownOIDs;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,7 +52,8 @@ final class PolicyNodeImpl implements PolicyNode {
     /**
      * Use to specify the special policy "Any Policy"
      */
-    private static final String ANY_POLICY = "2.5.29.32.0";
+    private static final String ANY_POLICY
+            = KnownOIDs.CE_CERT_POLICIES_ANY.value();
 
     // every node has one parent, and zero or more children
     private PolicyNodeImpl mParent;

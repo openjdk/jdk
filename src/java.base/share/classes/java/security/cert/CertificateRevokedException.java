@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.IOUtils;
+import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.InvalidityDateExtension;
 
@@ -149,7 +150,7 @@ public class CertificateRevokedException extends CertificateException {
      * @return the invalidity date, or {@code null} if not specified
      */
     public Date getInvalidityDate() {
-        Extension ext = getExtensions().get("2.5.29.24");
+        Extension ext = getExtensions().get(KnownOIDs.InvalidityDate.value());
         if (ext == null) {
             return null;
         } else {

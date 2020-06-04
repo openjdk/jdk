@@ -2233,7 +2233,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         X500Principal issuerPrinc = input.getIssuerX500Principal();
 
         // AuthorityKeyIdentifier value encoded as an OCTET STRING
-        byte[] issuerIdExtension = input.getExtensionValue("2.5.29.35");
+        byte[] issuerIdExtension = input.getExtensionValue(
+                KnownOIDs.AuthorityKeyID.value());
         byte[] issuerId = null;
 
         if (issuerIdExtension != null) {
@@ -2251,7 +2252,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             if (cert.getSubjectX500Principal().equals(issuerPrinc)) {
                 if (issuerId != null) {
                     // SubjectKeyIdentifier value encoded as an OCTET STRING
-                    byte[] subjectIdExtension = cert.getExtensionValue("2.5.29.14");
+                    byte[] subjectIdExtension = cert.getExtensionValue(
+                            KnownOIDs.SubjectKeyID.value());
                     byte[] subjectId = null;
                     if (subjectIdExtension != null) {
                         try {
