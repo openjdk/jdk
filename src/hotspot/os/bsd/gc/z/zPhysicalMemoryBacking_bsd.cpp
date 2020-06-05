@@ -82,7 +82,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
   _base = (uintptr_t)os::reserve_memory(MaxHeapSize);
   if (_base == 0) {
     // Failed
-    log_error_p(gc)("Failed to reserve address space for backing memory");
+    log_error_pd(gc)("Failed to reserve address space for backing memory");
     return;
   }
 

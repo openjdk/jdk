@@ -43,7 +43,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
 
   // Reserve address space
   if (!reserve(max_capacity)) {
-    log_error_p(gc)("Failed to reserve enough address space for Java heap");
+    log_error_pd(gc)("Failed to reserve enough address space for Java heap");
     return;
   }
 

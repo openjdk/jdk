@@ -237,7 +237,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
     struct stat stat_buf;
     if (fstat(fd_anon, &stat_buf) == -1) {
       ZErrno err;
-      log_error_p(gc)("Failed to determine inode number for anonymous file (%s)", err.to_string());
+      log_error_pd(gc)("Failed to determine inode number for anonymous file (%s)", err.to_string());
       return -1;
     }
 
