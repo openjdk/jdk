@@ -883,6 +883,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 # jdk_util
 
 java/util/ServiceLoader/ReloadTest.java                     8242935 generic-all
+java/util/StringJoiner/StringJoinerTest.java                8246697 generic-all
 
 ############################################################################
 
