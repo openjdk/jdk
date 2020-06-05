@@ -159,7 +159,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_mixed_with_good_req_addr) {
   char* const mapping = (char*) ::mmap(NULL, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
-  ASSERT_TRUE(mapping != NULL) << " mmap failed, mapping_size = " << mapping_size;
+  ASSERT_TRUE(mapping != MAP_FAILED) << " mmap failed, mapping_size = " << mapping_size;
   // Unmap the mapping, it will serve as a value for a "good" req_addr
   ::munmap(mapping, mapping_size);
 
@@ -199,7 +199,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_mixed_with_bad_req_addr) {
   char* const mapping = (char*) ::mmap(NULL, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
-  ASSERT_TRUE(mapping != NULL) << " mmap failed, mapping_size = " << mapping_size;
+  ASSERT_TRUE(mapping != MAP_FAILED) << " mmap failed, mapping_size = " << mapping_size;
   // Leave the mapping intact, it will server as "bad" req_addr
 
   class MappingHolder {
