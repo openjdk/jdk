@@ -27,6 +27,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "logging/logHandle.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 
 class Mutex;
 class stringStream;
@@ -34,14 +35,21 @@ class stringStream;
 // Log lines to both unified logging and save them to a buffer.
 // The lines will be printed when hs_err files are created.
 
-#define log_level_p(level, ...) \
-  GCLogPreciousHandle(LogTargetHandle::create<LogLevel::level, LOG_TAGS(__VA_ARGS__)>())
+#define log_level_p(level, ...)                                          \
+  GCLogPreciousHandle(                                                   \
+      LogTargetHandle::create<LogLevel::level, LOG_TAGS(__VA_ARGS__)>()  \
+      DEBUG_ONLY(COMMA __FILE__ COMMA __LINE__))
 
 #define log_info_p(...)    log_level_p(Info, __VA_ARGS__).write
 #define log_debug_p(...)   log_level_p(Debug, __VA_ARGS__).write
 #define log_trace_p(...)   log_level_p(Trace, __VA_ARGS__).write
 #define log_warning_p(...) log_level_p(Warning, __VA_ARGS__).write
 #define log_error_p(...)   log_level_p(Error, __VA_ARGS__).write
+
+// ... and report error in debug builds
+#define log_error_pd(...)                          \
+  DEBUG_ONLY(TOUCH_ASSERT_POISON;)                 \
+  log_level_p(Error, __VA_ARGS__).write_and_debug
 
 class GCLogPrecious : public AllStatic {
 private:
@@ -63,19 +71,40 @@ public:
                      const char* format,
                      va_list args) ATTRIBUTE_PRINTF(2, 0);
 
+  static void vwrite_and_debug(LogTargetHandle log,
+                               const char* format,
+                               va_list args
+                               DEBUG_ONLY(COMMA const char* file)
+                               DEBUG_ONLY(COMMA int line)) ATTRIBUTE_PRINTF(2, 0);
+
   static void print_on_error(outputStream* st);
 };
 
 class GCLogPreciousHandle {
   LogTargetHandle _log;
+  DEBUG_ONLY(const char* _file);
+  DEBUG_ONLY(int _line);
 
-public:
-  GCLogPreciousHandle(LogTargetHandle log) : _log(log) {}
+ public:
+  GCLogPreciousHandle(LogTargetHandle log
+                      DEBUG_ONLY(COMMA const char* file)
+                      DEBUG_ONLY(COMMA int line)) :
+      _log(log)
+      DEBUG_ONLY(COMMA _file(file))
+      DEBUG_ONLY(COMMA _line(line))
+ {}
 
   void write(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
     va_list args;
     va_start(args, format);
     GCLogPrecious::vwrite(_log, format, args);
+    va_end(args);
+  }
+
+  void write_and_debug(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
+    va_list args;
+    va_start(args, format);
+    GCLogPrecious::vwrite_and_debug(_log, format, args DEBUG_ONLY(COMMA _file COMMA _line));
     va_end(args);
   }
 };

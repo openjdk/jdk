@@ -49,11 +49,31 @@ void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_lis
 
   // Log it to UL
   log.print("%s", _temp->base());
+
+  // Leave _temp buffer to be used by vwrite_and_debug
 }
 
 void GCLogPrecious::vwrite(LogTargetHandle log, const char* format, va_list args) {
   MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
   vwrite_inner(log, format, args);
+}
+
+void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
+                                     const char* format,
+                                     va_list args
+                                     DEBUG_ONLY(COMMA const char* file)
+                                     DEBUG_ONLY(COMMA int line)) {
+  DEBUG_ONLY(const char* debug_message;)
+
+  {
+    MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
+    vwrite_inner(log, format, args);
+    DEBUG_ONLY(debug_message = strdup(_temp->base()));
+  }
+
+  // report error outside lock scope, since report_vm_error will call print_on_error
+  DEBUG_ONLY(report_vm_error(file, line, debug_message);)
+  DEBUG_ONLY(BREAKPOINT;)
 }
 
 void GCLogPrecious::print_on_error(outputStream* st) {
