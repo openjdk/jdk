@@ -35,29 +35,30 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.AbstractStateSplit;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.DeoptBciSupplier;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.JavaConstant;
 
 @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
-public class IdentityHashCodeNode extends FixedWithNextNode implements Canonicalizable, Lowerable, SingleMemoryKill {
+public class IdentityHashCodeNode extends AbstractStateSplit implements Canonicalizable, Lowerable, SingleMemoryKill, DeoptBciSupplier {
 
     public static final NodeClass<IdentityHashCodeNode> TYPE = NodeClass.create(IdentityHashCodeNode.class);
 
     @Input ValueNode object;
+    private int bci;
 
-    public IdentityHashCodeNode(ValueNode object) {
+    public IdentityHashCodeNode(ValueNode object, int bci) {
         super(TYPE, StampFactory.forInteger(32));
         this.object = object;
-
+        this.bci = bci;
     }
 
     @Override
@@ -67,6 +68,16 @@ public class IdentityHashCodeNode extends FixedWithNextNode implements Canonical
 
     public ValueNode object() {
         return object;
+    }
+
+    @Override
+    public int bci() {
+        return bci;
+    }
+
+    @Override
+    public void setBci(int bci) {
+        this.bci = bci;
     }
 
     @Override
@@ -88,13 +99,4 @@ public class IdentityHashCodeNode extends FixedWithNextNode implements Canonical
         }
         return this;
     }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
-    }
-
-    @NodeIntrinsic
-    public static native int identityHashCode(Object object);
-
 }

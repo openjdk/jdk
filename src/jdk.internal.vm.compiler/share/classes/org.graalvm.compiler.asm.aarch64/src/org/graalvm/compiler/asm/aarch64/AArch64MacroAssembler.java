@@ -2139,6 +2139,14 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
+     * Ensures current execution state is committed before continuing.
+     */
+    public void fullSystemBarrier() {
+        super.dsb(BarrierKind.SYSTEM);
+        super.isb();
+    }
+
+    /**
      * Same as {@link #nop()}.
      */
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.graph.ScheduledNodeIterator;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
-import org.graalvm.compiler.phases.tiers.MidTierContext;
 
 /**
  * This phase lowers {@link GuardNode GuardNodes} into corresponding control-flow structure and
@@ -55,7 +55,7 @@ import org.graalvm.compiler.phases.tiers.MidTierContext;
  * null checks performed by access to the objects that need to be null checked. The second phase
  * does the actual control-flow expansion of the remaining {@link GuardNode GuardNodes}.
  */
-public class GuardLoweringPhase extends BasePhase<MidTierContext> {
+public class GuardLoweringPhase extends BasePhase<CoreProviders> {
 
     private static class LowerGuards extends ScheduledNodeIterator {
 
@@ -105,7 +105,7 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, MidTierContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         if (graph.getGuardsStage().allowsFloatingGuards()) {
             SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST_WITH_GUARD_ORDER);
             schedulePhase.apply(graph);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public class LoadIndexedNode extends AccessIndexedNode implements Virtualizable,
             int idx = indexValue.isConstant() ? indexValue.asJavaConstant().asInt() : -1;
             if (idx >= 0 && idx < virtual.entryCount()) {
                 ValueNode entry = tool.getEntry(virtual, idx);
-                if (virtual.isVirtualByteArrayAccess(elementKind())) {
+                if (virtual.isVirtualByteArrayAccess(tool.getMetaAccessExtensionProvider(), elementKind())) {
                     if (virtual.canVirtualizeLargeByteArrayUnsafeRead(entry, idx, elementKind(), tool)) {
                         tool.replaceWith(VirtualArrayNode.virtualizeByteArrayRead(entry, elementKind(), stamp));
                     }

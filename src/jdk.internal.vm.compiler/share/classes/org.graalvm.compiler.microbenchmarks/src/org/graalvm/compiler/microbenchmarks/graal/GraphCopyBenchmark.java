@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package org.graalvm.compiler.microbenchmarks.graal;
 
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Warmup;
 
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.microbenchmarks.graal.util.GraalState;
@@ -76,7 +75,6 @@ public class GraphCopyBenchmark extends GraalBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 20)
     public StructuredGraph nullness(Nullness s, GraalState g) {
         return (StructuredGraph) s.graph.copy(g.debug);
     }
@@ -128,7 +126,6 @@ public class GraphCopyBenchmark extends GraalBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 20)
     public StructuredGraph search(Search s, GraalState g) {
         return (StructuredGraph) s.graph.copy(g.debug);
     }

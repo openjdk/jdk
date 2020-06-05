@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.EconomicSet;
@@ -68,7 +69,9 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.graphio.GraphOutput;
 
+import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * A facility for logging and dumping as well as a container for values associated with
@@ -85,8 +88,6 @@ public final class DebugContext implements AutoCloseable {
     public static final Description NO_DESCRIPTION = new Description(null, "NO_DESCRIPTION");
     public static final GlobalMetrics NO_GLOBAL_METRIC_VALUES = null;
     public static final Iterable<DebugHandlersFactory> NO_CONFIG_CUSTOMIZERS = Collections.emptyList();
-
-    public static final PrintStream DEFAULT_LOG_STREAM = TTY.out;
 
     /**
      * Contains the immutable parts of a debug context. This separation allows the immutable parts
@@ -114,6 +115,10 @@ public final class DebugContext implements AutoCloseable {
      */
     private long[] metricValues;
 
+    public static PrintStream getDefaultLogStream() {
+        return TTY.out;
+    }
+
     /**
      * Determines if dynamic scopes are enabled.
      */
@@ -128,6 +133,7 @@ public final class DebugContext implements AutoCloseable {
             if (sharedChannel == null) {
                 sharedChannel = new IgvDumpChannel(() -> getDumpPath(".bgv", false), immutable.options);
             }
+            builder.attr(GraphOutput.ATTR_VM_ID, GraalServices.getExecutionID());
             final GraphOutput<G, M> output = builder.build(sharedChannel);
             parentOutput = output;
             return output;
@@ -315,7 +321,7 @@ public final class DebugContext implements AutoCloseable {
     /**
      * Singleton used to represent a disabled debug context.
      */
-    private static final DebugContext DISABLED = new DebugContext(NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, new Immutable(), NO_CONFIG_CUSTOMIZERS);
+    private static final DebugContext DISABLED = new DebugContext(NO_DESCRIPTION, null, NO_GLOBAL_METRIC_VALUES, getDefaultLogStream(), new Immutable(), NO_CONFIG_CUSTOMIZERS);
 
     /**
      * Create a DebugContext with debugging disabled.
@@ -324,7 +330,7 @@ public final class DebugContext implements AutoCloseable {
         if (options == null || options.getMap().isEmpty()) {
             return DISABLED;
         }
-        return new DebugContext(NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, Immutable.create(options), NO_CONFIG_CUSTOMIZERS);
+        return new DebugContext(NO_DESCRIPTION, null, NO_GLOBAL_METRIC_VALUES, getDefaultLogStream(), Immutable.create(options), NO_CONFIG_CUSTOMIZERS);
     }
 
     /**
@@ -377,6 +383,8 @@ public final class DebugContext implements AutoCloseable {
 
     private final Description description;
 
+    private final CompilationListener compilationListener;
+
     /**
      * Gets a description of the computation associated with this debug context.
      *
@@ -384,6 +392,89 @@ public final class DebugContext implements AutoCloseable {
      */
     public Description getDescription() {
         return description;
+    }
+
+    /**
+     * Determines if {@link #enterCompilerPhase} and {@link #notifyInlining} do anything.
+     *
+     * @return {@code true} if there is a listener for compiler phase and inlining events attached
+     *         to this object, {@code false} otherwise
+     */
+    public boolean hasCompilationListener() {
+        return compilationListener != null;
+    }
+
+    private int compilerPhaseNesting = 0;
+
+    /**
+     * Scope for a compiler phase event.
+     */
+    public interface CompilerPhaseScope extends AutoCloseable {
+        /**
+         * Notifies the listener that the phase has ended.
+         */
+        @Override
+        void close();
+    }
+
+    /**
+     * Notifies this object that the compiler is entering a phase.
+     *
+     * It is recommended to use this method in a try-with-resource statement.
+     *
+     * @param phaseName name of the phase being entered
+     * @return {@code null} if {@link #hasCompilationListener()} returns {@code false} otherwise an
+     *         object whose {@link CompilerPhaseScope#close()} method must be called when the phase
+     *         ends
+     */
+    public CompilerPhaseScope enterCompilerPhase(CharSequence phaseName) {
+        if (compilationListener != null) {
+            return enterCompilerPhase(() -> phaseName);
+        }
+        return null;
+    }
+
+    /**
+     * Notifies this object that the compiler is entering a phase.
+     *
+     * It is recommended to use this method in a try-with-resource statement.
+     *
+     * @param phaseName name of the phase being entered
+     * @return {@code null} if {@link #hasCompilationListener()} returns {@code false} otherwise an
+     *         object whose {@link CompilerPhaseScope#close()} method must be called when the phase
+     *         ends
+     */
+    public CompilerPhaseScope enterCompilerPhase(Supplier<CharSequence> phaseName) {
+        CompilationListener l = compilationListener;
+        if (l != null) {
+            CompilerPhaseScope scope = l.enterPhase(phaseName.get(), compilerPhaseNesting++);
+            return new CompilerPhaseScope() {
+
+                @Override
+                public void close() {
+                    --compilerPhaseNesting;
+                    scope.close();
+                }
+            };
+        }
+        return null;
+    }
+
+    /**
+     * Notifies this object when the compiler considers inlining {@code callee} into {@code caller}.
+     * A call to this method should be guarded with {@link #hasCompilationListener()} if
+     * {@code message} is not a string literal or pre-computed value
+     *
+     * @param caller caller method
+     * @param callee callee method considered for inlining into {@code caller}
+     * @param succeeded true if {@code callee} was inlined into {@code caller}
+     * @param message extra information about inlining decision
+     * @param bci byte code index of call site
+     */
+    public void notifyInlining(ResolvedJavaMethod caller, ResolvedJavaMethod callee, boolean succeeded, CharSequence message, int bci) {
+        if (compilationListener != null) {
+            compilationListener.notifyInlining(caller, callee, succeeded, message, bci);
+        }
     }
 
     /**
@@ -396,43 +487,91 @@ public final class DebugContext implements AutoCloseable {
     }
 
     /**
-     * Creates a {@link DebugContext} based on a given set of option values and {@code factory}.
+     * Object used to create a {@link DebugContext}.
      */
-    public static DebugContext create(OptionValues options, DebugHandlersFactory factory) {
-        return new DebugContext(NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, Immutable.create(options), Collections.singletonList(factory));
+    public static class Builder {
+        private final OptionValues options;
+        private Description description = NO_DESCRIPTION;
+        private CompilationListener compilationListener;
+        private GlobalMetrics globalMetrics = NO_GLOBAL_METRIC_VALUES;
+        private PrintStream logStream = getDefaultLogStream();
+        private final Iterable<DebugHandlersFactory> factories;
+
+        /**
+         * Builder for a {@link DebugContext} based on {@code options} and
+         * {@link DebugHandlersFactory#LOADER}.
+         */
+        public Builder(OptionValues options) {
+            this.options = options;
+            this.factories = DebugHandlersFactory.LOADER;
+        }
+
+        /**
+         * Builder for a {@link DebugContext} based on {@code options} and {@code factories}. The
+         * {@link DebugHandlersFactory#LOADER} value can be used for the latter.
+         */
+        public Builder(OptionValues options, Iterable<DebugHandlersFactory> factories) {
+            this.options = options;
+            this.factories = factories;
+        }
+
+        /**
+         * Builder for a {@link DebugContext} based {@code options} and {@code factory}. The latter
+         * can be null in which case {@link DebugContext#NO_CONFIG_CUSTOMIZERS} is used.
+         */
+        public Builder(OptionValues options, DebugHandlersFactory factory) {
+            this.options = options;
+            this.factories = factory == null ? NO_CONFIG_CUSTOMIZERS : Collections.singletonList(factory);
+        }
+
+        /**
+         * Sets the description for the debug context. The default is for a context to have no
+         * description.
+         */
+        public Builder description(Description desc) {
+            this.description = desc;
+            return this;
+        }
+
+        /**
+         * Sets the compilation listener for the debug context. The default is for a context to have
+         * no compilation listener.
+         */
+        public Builder compilationListener(CompilationListener listener) {
+            this.compilationListener = listener;
+            return this;
+        }
+
+        public Builder globalMetrics(GlobalMetrics metrics) {
+            this.globalMetrics = metrics;
+            return this;
+        }
+
+        public Builder logStream(PrintStream stream) {
+            this.logStream = stream;
+            return this;
+        }
+
+        public DebugContext build() {
+            return new DebugContext(description,
+                            compilationListener,
+                            globalMetrics,
+                            logStream,
+                            Immutable.create(options),
+                            factories);
+        }
     }
 
-    /**
-     * Creates a {@link DebugContext} based on a given set of option values and {@code factories}.
-     * The {@link DebugHandlersFactory#LOADER} can be used for the latter.
-     */
-    public static DebugContext create(OptionValues options, Iterable<DebugHandlersFactory> factories) {
-        return new DebugContext(NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, Immutable.create(options), factories);
-    }
-
-    public static DebugContext create(OptionValues options, PrintStream logStream, DebugHandlersFactory factory) {
-        return new DebugContext(NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, logStream, Immutable.create(options), Collections.singletonList(factory));
-    }
-
-    /**
-     * Creates a {@link DebugContext} based on a given set of option values and {@code factories}.
-     * The {@link DebugHandlersFactory#LOADER} can be used for the latter.
-     */
-    public static DebugContext create(OptionValues options, Description description, Iterable<DebugHandlersFactory> factories) {
-        return new DebugContext(description, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, Immutable.create(options), factories);
-    }
-
-    /**
-     * Creates a {@link DebugContext}.
-     */
-    public static DebugContext create(OptionValues options, Description description, GlobalMetrics globalMetrics, PrintStream logStream, Iterable<DebugHandlersFactory> factories) {
-        return new DebugContext(description, globalMetrics, logStream, Immutable.create(options), factories);
-    }
-
-    private DebugContext(Description description, GlobalMetrics globalMetrics, PrintStream logStream, Immutable immutable, Iterable<DebugHandlersFactory> factories) {
+    private DebugContext(Description description,
+                    CompilationListener compilationListener,
+                    GlobalMetrics globalMetrics,
+                    PrintStream logStream,
+                    Immutable immutable,
+                    Iterable<DebugHandlersFactory> factories) {
         this.immutable = immutable;
         this.description = description;
         this.globalMetrics = globalMetrics;
+        this.compilationListener = compilationListener;
         if (immutable.scopesEnabled) {
             OptionValues options = immutable.options;
             List<DebugDumpHandler> dumpHandlers = new ArrayList<>();
@@ -653,7 +792,11 @@ public final class DebugContext implements AutoCloseable {
         }
     }
 
-    private final Invariants invariants = Assertions.assertionsEnabled() ? new Invariants() : null;
+    /**
+     * Arbitrary threads cannot be in the image so null out {@code DebugContext.invariants} which
+     * holds onto a thread and is only used for assertions.
+     */
+    @NativeImageReinitialize private final Invariants invariants = Assertions.assertionsEnabled() ? new Invariants() : null;
 
     static StackTraceElement[] getStackTrace(Thread thread) {
         return thread.getStackTrace();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package org.graalvm.compiler.hotspot.stubs;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_OPTIONVALUES;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.SAFEPOINT;
 import static org.graalvm.compiler.hotspot.nodes.JumpToExceptionHandlerInCallerNode.jumpToExceptionHandlerInCaller;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
 import static org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub.checkExceptionNotNull;
@@ -34,6 +36,7 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.cAssertionsEnabled;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.decipher;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
+import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -45,6 +48,7 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.nodes.UnwindNode;
@@ -112,8 +116,8 @@ public class UnwindExceptionToCallerStub extends SnippetStub {
         return Assertions.assertionsEnabled() || cAssertionsEnabled(config);
     }
 
-    public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_RETURN_ADDRESS = newDescriptor(UnwindExceptionToCallerStub.class, "exceptionHandlerForReturnAddress", Word.class, Word.class,
-                    Word.class);
+    public static final HotSpotForeignCallDescriptor EXCEPTION_HANDLER_FOR_RETURN_ADDRESS = newDescriptor(SAFEPOINT, REEXECUTABLE, any(), UnwindExceptionToCallerStub.class,
+                    "exceptionHandlerForReturnAddress", Word.class, Word.class, Word.class);
 
     @NodeIntrinsic(value = StubForeignCallNode.class)
     public static native Word exceptionHandlerForReturnAddress(@ConstantNodeParameter ForeignCallDescriptor exceptionHandlerForReturnAddress, Word thread, Word returnAddress);

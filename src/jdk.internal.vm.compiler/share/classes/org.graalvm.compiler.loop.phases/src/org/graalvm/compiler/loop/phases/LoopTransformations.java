@@ -97,8 +97,7 @@ public abstract class LoopTransformations {
         LoopBeginNode loopBegin = loop.loopBegin();
         StructuredGraph graph = loopBegin.graph();
         int initialNodeCount = graph.getNodeCount();
-        SimplifierTool defaultSimplifier = GraphUtil.getDefaultSimplifier(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(),
-                        canonicalizer.getCanonicalizeReads(), graph.getAssumptions(), graph.getOptions());
+        SimplifierTool defaultSimplifier = GraphUtil.getDefaultSimplifier(context, canonicalizer.getCanonicalizeReads(), graph.getAssumptions(), graph.getOptions());
         /*
          * IMPORTANT: Canonicalizations inside the body of the remaining loop can introduce new
          * control flow that is not automatically picked up by the control flow graph computation of
@@ -178,7 +177,7 @@ public abstract class LoopTransformations {
                 ControlSplitNode duplicatedControlSplit = duplicateLoop.getDuplicatedNode(controlSplitNode);
                 if (duplicatedControlSplit.isAlive()) {
                     AbstractBeginNode survivingSuccessor = (AbstractBeginNode) position.get(duplicatedControlSplit);
-                    survivingSuccessor.replaceAtUsages(InputType.Guard, newBegin);
+                    survivingSuccessor.replaceAtUsages(newBegin, InputType.Guard);
                     graph.removeSplitPropagate(duplicatedControlSplit, survivingSuccessor);
                 }
             }
@@ -187,7 +186,7 @@ public abstract class LoopTransformations {
         for (ControlSplitNode controlSplitNode : controlSplitNodeSet) {
             if (controlSplitNode.isAlive()) {
                 AbstractBeginNode survivingSuccessor = (AbstractBeginNode) firstPosition.get(controlSplitNode);
-                survivingSuccessor.replaceAtUsages(InputType.Guard, originalLoopBegin);
+                survivingSuccessor.replaceAtUsages(originalLoopBegin, InputType.Guard);
                 graph.removeSplitPropagate(controlSplitNode, survivingSuccessor);
             }
         }

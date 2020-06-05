@@ -24,12 +24,7 @@
 
 package org.graalvm.compiler.core.test;
 
-import jdk.vm.ci.meta.JavaConstant;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
-import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -40,6 +35,10 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Assert;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.JavaConstant;
 
 public class LongNodeChainTest extends GraalCompilerTest {
 
@@ -56,7 +55,7 @@ public class LongNodeChainTest extends GraalCompilerTest {
     private void longAddChain(boolean reverse) {
         HighTierContext context = getDefaultHighTierContext();
         OptionValues options = getInitialOptions();
-        StructuredGraph graph = new StructuredGraph.Builder(options, DebugContext.create(options, DebugHandlersFactory.LOADER)).build();
+        StructuredGraph graph = new StructuredGraph.Builder(options, new Builder(options).build()).build();
         ValueNode constant = graph.unique(ConstantNode.forPrimitive(JavaConstant.INT_1));
         ValueNode value = null;
         if (reverse) {

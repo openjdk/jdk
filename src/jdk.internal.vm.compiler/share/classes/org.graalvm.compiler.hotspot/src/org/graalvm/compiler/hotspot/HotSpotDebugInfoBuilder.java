@@ -29,8 +29,6 @@ import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
@@ -38,6 +36,8 @@ import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.hotspot.meta.DefaultHotSpotLoweringProvider;
 import org.graalvm.compiler.lir.VirtualStackSlot;
+import org.graalvm.compiler.nodeinfo.Verbosity;
+import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.FullInfopointNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -65,7 +65,7 @@ public class HotSpotDebugInfoBuilder extends DebugInfoBuilder {
     private HotSpotCodeCacheProvider codeCacheProvider;
 
     public HotSpotDebugInfoBuilder(NodeValueMap nodeValueMap, HotSpotLockStack lockStack, HotSpotLIRGenerator gen) {
-        super(nodeValueMap, gen.getResult().getLIR().getDebug());
+        super(nodeValueMap, gen.getProviders().getMetaAccessExtensionProvider(), gen.getResult().getLIR().getDebug());
         this.lockStack = lockStack;
         this.codeCacheProvider = gen.getProviders().getCodeCache();
     }
@@ -100,7 +100,7 @@ public class HotSpotDebugInfoBuilder extends DebugInfoBuilder {
         if (node instanceof ForeignCallNode) {
             ForeignCallNode call = (ForeignCallNode) node;
             ForeignCallDescriptor descriptor = call.getDescriptor();
-            if (DefaultHotSpotLoweringProvider.RuntimeCalls.runtimeCalls.containsValue(descriptor)) {
+            if (DefaultHotSpotLoweringProvider.RuntimeCalls.runtimeCalls.containsValue(descriptor.getSignature())) {
                 return true;
             }
         }
@@ -119,6 +119,9 @@ public class HotSpotDebugInfoBuilder extends DebugInfoBuilder {
                     assert topState.stackSize() >= -stackEffect : "expected at least " + (-stackEffect) + " stack depth : " + topState;
                 }
             }
+        }
+        if (node instanceof DeoptimizeNode) {
+            assert !topState.duringCall() : topState.toString(Verbosity.Debugger);
         }
         return true;
     }
@@ -144,8 +147,7 @@ public class HotSpotDebugInfoBuilder extends DebugInfoBuilder {
                 StringBuilder sb = new StringBuilder("parsing ");
                 ResolvedJavaMethod method = pos.getMethod();
                 MetaUtil.appendLocation(sb, method, pos.getBCI());
-                if (method.getAnnotation(MethodSubstitution.class) != null ||
-                                method.getAnnotation(Snippet.class) != null) {
+                if (pos.isSubstitution()) {
                     replacementMethodWithProblematicSideEffect = method;
                 }
                 context.add(sb.toString());

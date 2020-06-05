@@ -31,6 +31,7 @@ import org.graalvm.compiler.core.common.util.CompilationAlarm;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.CompilerPhaseScope;
 import org.graalvm.compiler.debug.MethodFilter;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
@@ -208,9 +209,11 @@ public class GraalCompiler {
         try (DebugContext.Scope s = debug.scope("FrontEnd"); DebugCloseable a = FrontEnd.start(debug)) {
             HighTierContext highTierContext = new HighTierContext(providers, graphBuilderSuite, optimisticOpts);
             if (graph.start().next() == null) {
-                graphBuilderSuite.apply(graph, highTierContext);
-                new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Optional).apply(graph);
-                debug.dump(DebugContext.BASIC_LEVEL, graph, "After parsing");
+                try (CompilerPhaseScope cps = debug.enterCompilerPhase("Parsing")) {
+                    graphBuilderSuite.apply(graph, highTierContext);
+                    new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Optional).apply(graph);
+                    debug.dump(DebugContext.BASIC_LEVEL, graph, "After parsing");
+                }
             } else {
                 debug.dump(DebugContext.INFO_LEVEL, graph, "initial state");
             }

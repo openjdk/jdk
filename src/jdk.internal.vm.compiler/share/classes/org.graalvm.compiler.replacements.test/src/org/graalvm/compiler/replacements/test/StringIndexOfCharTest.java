@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,9 @@ public class StringIndexOfCharTest extends GraalCompilerTest {
         return tests;
     }
 
-    private final String sourceString;
-    private final int constantChar;
-    private final int fromIndex;
+    protected final String sourceString;
+    protected final int constantChar;
+    protected final int fromIndex;
 
     public StringIndexOfCharTest(String sourceString, int constantChar, int fromIndex) {
         this.sourceString = sourceString;

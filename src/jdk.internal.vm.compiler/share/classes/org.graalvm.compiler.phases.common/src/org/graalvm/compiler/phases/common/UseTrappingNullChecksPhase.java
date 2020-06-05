@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
          * BeginNode as a guard input, so replace guard users of the Begin with the NullCheck and
          * then remove the Begin from the graph.
          */
-        nonTrappingContinuation.replaceAtUsages(InputType.Guard, trappingNullCheck);
+        nonTrappingContinuation.replaceAtUsages(trappingNullCheck, InputType.Guard);
 
         if (nonTrappingContinuation instanceof BeginNode) {
             GraphUtil.unlinkFixedNode(nonTrappingContinuation);

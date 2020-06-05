@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,10 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Tests the ReservedStackAccess annotation. This test is derived from
+ * https://github.com/openjdk/jdk/blob/master/test/hotspot/jtreg/runtime/ReservedStack/ReservedStackTest.java
+ */
 public class ReservedStackAccessTest extends HotSpotGraalCompilerTest {
     @Before
     public void check() {
@@ -72,6 +76,8 @@ public class ReservedStackAccessTest extends HotSpotGraalCompilerTest {
         List<String> vmArgs = SubprocessUtil.withoutDebuggerArguments(SubprocessUtil.getVMCommandLine());
         vmArgs.add("-XX:+UseJVMCICompiler");
         vmArgs.add("-Dgraal.Inline=false");
+        vmArgs.add("-XX:MaxInlineLevel=2");
+        vmArgs.add("-XX:CompileCommand=exclude,java/util/concurrent/locks/ReentrantLock,lock");
         vmArgs.add("-XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread");
         vmArgs.add(SubprocessUtil.PACKAGE_OPENING_OPTIONS);
 

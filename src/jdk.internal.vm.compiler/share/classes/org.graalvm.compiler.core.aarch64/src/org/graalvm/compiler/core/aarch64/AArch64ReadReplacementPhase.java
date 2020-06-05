@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.VolatileReadNode;
 import org.graalvm.compiler.phases.Phase;
 
 /**
@@ -46,7 +47,7 @@ public class AArch64ReadReplacementPhase extends Phase {
             if (node instanceof AArch64ReadNode) {
                 continue;
             }
-            if (node instanceof ReadNode) {
+            if (node instanceof ReadNode && !(node instanceof VolatileReadNode)) {
                 ReadNode readNode = (ReadNode) node;
                 if (readNode.hasExactlyOneUsage()) {
                     Node usage = readNode.usages().first();

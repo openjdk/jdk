@@ -24,11 +24,9 @@
 
 package org.graalvm.compiler.hotspot.stubs;
 
-import static java.util.Collections.singletonList;
 import static org.graalvm.compiler.core.GraalCompiler.emitFrontEnd;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.RegisterPressure;
-import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 import static org.graalvm.compiler.debug.DebugOptions.DebugStubsAndSnippets;
 import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNCOMMON_TRAP;
 import static org.graalvm.util.CollectionsUtil.allMatch;
@@ -42,6 +40,7 @@ import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.debug.DebugContext.Description;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
@@ -162,7 +161,7 @@ public abstract class Stub {
 
     @Override
     public String toString() {
-        return "Stub<" + linkage.getDescriptor() + ">";
+        return "Stub<" + linkage.getDescriptor().getSignature() + ">";
     }
 
     /**
@@ -180,7 +179,8 @@ public abstract class Stub {
     private DebugContext openDebugContext(DebugContext outer) {
         if (DebugStubsAndSnippets.getValue(options)) {
             Description description = new Description(linkage, "Stub_" + nextStubId.incrementAndGet());
-            return DebugContext.create(options, description, outer.getGlobalMetrics(), DEFAULT_LOG_STREAM, singletonList(new GraalDebugHandlersFactory(providers.getSnippetReflection())));
+            GraalDebugHandlersFactory factory = new GraalDebugHandlersFactory(providers.getSnippetReflection());
+            return new Builder(options, factory).globalMetrics(outer.getGlobalMetrics()).description(description).build();
         }
         return DebugContext.disabled(options);
     }

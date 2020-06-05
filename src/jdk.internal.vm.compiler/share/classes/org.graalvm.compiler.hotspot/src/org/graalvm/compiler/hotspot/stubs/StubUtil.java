@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.hotspot.stubs;
 
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.SAFEPOINT;
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 
 import java.lang.reflect.Method;
@@ -37,10 +39,12 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.hotspot.nodes.VMErrorNode;
 import org.graalvm.compiler.hotspot.replacements.Log;
 import org.graalvm.compiler.word.Word;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 import jdk.internal.vm.compiler.word.WordFactory;
 
 //JaCoCo Exclude
@@ -50,11 +54,14 @@ import jdk.internal.vm.compiler.word.WordFactory;
  */
 public class StubUtil {
 
-    public static final ForeignCallDescriptor VM_MESSAGE_C = newDescriptor(StubUtil.class, "vmMessageC", void.class, boolean.class, Word.class, long.class, long.class, long.class);
+    public static final HotSpotForeignCallDescriptor VM_MESSAGE_C = newDescriptor(SAFEPOINT, REEXECUTABLE, null, StubUtil.class, "vmMessageC", void.class, boolean.class, Word.class, long.class,
+                    long.class, long.class);
 
-    public static ForeignCallDescriptor newDescriptor(Class<?> stubClass, String name, Class<?> resultType, Class<?>... argumentTypes) {
-        ForeignCallDescriptor d = new ForeignCallDescriptor(name, resultType, argumentTypes);
-        assert descriptorFor(stubClass, name).equals(d) : descriptorFor(stubClass, name) + " != " + d;
+    public static HotSpotForeignCallDescriptor newDescriptor(HotSpotForeignCallDescriptor.Transition safepoint, HotSpotForeignCallDescriptor.Reexecutability reexecutable,
+                    LocationIdentity killLocation,
+                    Class<?> stubClass, String name, Class<?> resultType, Class<?>... argumentTypes) {
+        HotSpotForeignCallDescriptor d = new HotSpotForeignCallDescriptor(safepoint, reexecutable, killLocation, name, resultType, argumentTypes);
+        assert descriptorFor(stubClass, name, resultType, argumentTypes);
         return d;
     }
 
@@ -63,14 +70,14 @@ public class StubUtil {
      * {@code stubClass} and returns a {@link ForeignCallDescriptor} based on its signature and the
      * value of {@code hasSideEffect}.
      */
-    private static ForeignCallDescriptor descriptorFor(Class<?> stubClass, String name) {
+    private static boolean descriptorFor(Class<?> stubClass, String name, Class<?> resultType, Class<?>[] argumentTypes) {
         Method found = null;
         for (Method method : stubClass.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers()) && method.getAnnotation(NodeIntrinsic.class) != null && method.getName().equals(name)) {
                 if (method.getAnnotation(NodeIntrinsic.class).value().equals(StubForeignCallNode.class)) {
                     assert found == null : "found more than one foreign call named " + name + " in " + stubClass;
-                    assert method.getParameterTypes().length != 0 && method.getParameterTypes()[0] == ForeignCallDescriptor.class : "first parameter of foreign call '" + name + "' in " + stubClass +
-                                    " must be of type " + ForeignCallDescriptor.class.getSimpleName();
+                    assert method.getParameterTypes().length != 0 && method.getParameterTypes()[0] == ForeignCallDescriptor.class : "first parameter of foreign call '" + name + "' in " +
+                                    stubClass + " must be of type " + ForeignCallDescriptor.class.getSimpleName();
                     found = method;
                 }
             }
@@ -78,7 +85,9 @@ public class StubUtil {
         assert found != null : "could not find foreign call named " + name + " in " + stubClass;
         List<Class<?>> paramList = Arrays.asList(found.getParameterTypes());
         Class<?>[] cCallTypes = paramList.subList(1, paramList.size()).toArray(new Class<?>[paramList.size() - 1]);
-        return new ForeignCallDescriptor(name, found.getReturnType(), cCallTypes);
+        assert resultType.equals(found.getReturnType()) : found;
+        assert Arrays.equals(cCallTypes, argumentTypes) : found;
+        return true;
     }
 
     /**

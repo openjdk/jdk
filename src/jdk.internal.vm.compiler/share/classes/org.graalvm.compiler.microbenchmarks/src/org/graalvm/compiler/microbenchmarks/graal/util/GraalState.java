@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@ package org.graalvm.compiler.microbenchmarks.graal.util;
 
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
@@ -51,7 +51,7 @@ public class GraalState {
 
     public GraalState() {
         options = Graal.getRequiredCapability(OptionValues.class);
-        debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        debug = new Builder(options).build();
         backend = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend();
         providers = backend.getProviders();
         metaAccess = providers.getMetaAccess();

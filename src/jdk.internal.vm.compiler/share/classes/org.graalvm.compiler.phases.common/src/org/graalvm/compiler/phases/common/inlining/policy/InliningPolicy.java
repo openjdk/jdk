@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,17 @@ public interface InliningPolicy {
 
         public String getReason() {
             return reason;
+        }
+
+        /**
+         * This constructor avoids the need to box arguments when the message is a simple string.
+         */
+        public Decision withReason(boolean isTracing, String newReason) {
+            if (isTracing) {
+                return new Decision(shouldInline, newReason);
+            } else {
+                return this;
+            }
         }
 
         public Decision withReason(boolean isTracing, String newReason, Object... args) {

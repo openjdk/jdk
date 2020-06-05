@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,12 @@ import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.core.common.type.DataPointerConstant;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.SnippetStub;
@@ -200,7 +201,7 @@ public class StubAVXTest extends LIRTest {
         }
     }
 
-    public static final ForeignCallDescriptor TEST_STUB = new ForeignCallDescriptor("test_stub", void.class);
+    public static final ForeignCallSignature TEST_STUB = new ForeignCallSignature("test_stub", void.class);
 
     @LIRIntrinsic
     public static int compareAVXRegister(@SuppressWarnings("unused") LIRTestSpecification spec, Object left, Object right) {
@@ -235,7 +236,8 @@ public class StubAVXTest extends LIRTest {
     public void test() {
         HotSpotProviders providers = (HotSpotProviders) getProviders();
         HotSpotForeignCallsProviderImpl foreignCalls = (HotSpotForeignCallsProviderImpl) providers.getForeignCalls();
-        HotSpotForeignCallLinkage linkage = foreignCalls.registerStubCall(TEST_STUB, HotSpotForeignCallLinkage.Transition.LEAF_NO_VZERO, HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE,
+        HotSpotForeignCallLinkage linkage = foreignCalls.registerStubCall(TEST_STUB, HotSpotForeignCallDescriptor.Transition.LEAF_NO_VZERO,
+                        HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE,
                         COMPUTES_REGISTERS_KILLED);
         linkage.setCompiledStub(new TestStub(getInitialOptions(), providers, linkage));
         runTest("testStub");

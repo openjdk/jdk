@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,4 @@ public final class VirtualObjectState extends EscapeObjectState implements Node.
         return graph().addWithoutUnique(new VirtualObjectState(object(), values));
     }
 
-    @Override
-    public void applyToNonVirtual(NodeClosure<? super ValueNode> closure) {
-        for (ValueNode value : values) {
-            if (value != null) {
-                closure.apply(this, value);
-            }
-        }
-    }
 }

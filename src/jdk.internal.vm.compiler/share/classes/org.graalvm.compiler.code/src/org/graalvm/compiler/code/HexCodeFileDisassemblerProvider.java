@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
+import org.graalvm.compiler.serviceprovider.ServiceProvider;
+
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.CodeUtil.DefaultRefMapFormatter;
@@ -40,9 +42,6 @@ import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.ExceptionHandler;
 import jdk.vm.ci.code.site.Infopoint;
-import jdk.vm.ci.code.site.Mark;
-
-import org.graalvm.compiler.serviceprovider.ServiceProvider;
 
 /**
  * {@link HexCodeFile} based implementation of {@link DisassemblerProvider}.
@@ -99,8 +98,8 @@ public class HexCodeFileDisassemblerProvider implements DisassemblerProvider {
             for (DataPatch site : compResult.getDataPatches()) {
                 hcf.addOperandComment(site.pcOffset, "{" + site.reference.toString() + "}");
             }
-            for (Mark mark : compResult.getMarks()) {
-                hcf.addComment(mark.pcOffset, codeCache.getMarkName(mark));
+            for (CompilationResult.CodeMark mark : compResult.getMarks()) {
+                hcf.addComment(mark.pcOffset, mark.id.getName());
             }
         }
         String hcfEmbeddedString = hcf.toEmbeddedString();

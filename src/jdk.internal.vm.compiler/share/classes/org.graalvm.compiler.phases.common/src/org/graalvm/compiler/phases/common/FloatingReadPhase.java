@@ -43,7 +43,6 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
@@ -53,6 +52,7 @@ import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNodeUtil;
+import org.graalvm.compiler.nodes.WithExceptionNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
@@ -413,16 +413,16 @@ public class FloatingReadPhase extends Phase {
         @Override
         protected MemoryMapImpl afterSplit(AbstractBeginNode node, MemoryMapImpl oldState) {
             MemoryMapImpl result = new MemoryMapImpl(oldState);
-            if (node.predecessor() instanceof InvokeWithExceptionNode) {
+            if (node.predecessor() instanceof WithExceptionNode && node.predecessor() instanceof MemoryKill) {
                 /*
-                 * InvokeWithException cannot be the lastLocationAccess for a FloatingReadNode.
-                 * Since it is both the invoke and a control flow split, the scheduler cannot
-                 * schedule anything immediately after the invoke. It can only schedule in the
-                 * normal or exceptional successor - and we have to tell the scheduler here which
-                 * side it needs to choose by putting in the location identity on both successors.
+                 * This WithExceptionNode cannot be the lastLocationAccess for a FloatingReadNode.
+                 * Since it is both a memory kill and a control flow split, the scheduler cannot
+                 * schedule anything immediately after the kill. It can only schedule in the normal
+                 * or exceptional successor - and we have to tell the scheduler here which side it
+                 * needs to choose by putting in the location identity on both successors.
                  */
-                InvokeWithExceptionNode invoke = (InvokeWithExceptionNode) node.predecessor();
-                result.getMap().put(invoke.getKilledLocationIdentity(), (MemoryKill) node);
+                LocationIdentity killedLocationIdentity = node.predecessor() instanceof SingleMemoryKill ? ((SingleMemoryKill) node.predecessor()).getKilledLocationIdentity() : LocationIdentity.any();
+                result.getMap().put(killedLocationIdentity, (MemoryKill) node);
             }
             return result;
         }

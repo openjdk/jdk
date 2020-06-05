@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,7 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.test.Graal;
-import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
@@ -60,7 +57,9 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class MethodSubstitutionForeignCallTest extends GraalCompilerTest {
-    public static final ForeignCallDescriptor TEST_CALL = new ForeignCallDescriptor("test", int.class, int.class);
+    public static final ForeignCallDescriptor TEST_CALL_DEOPT = new ForeignCallDescriptor("test", int.class, new Class<?>[]{int.class}, false, new LocationIdentity[0], true, true);
+    public static final ForeignCallDescriptor TEST_CALL_REEXECUTABLE = new ForeignCallDescriptor("test", int.class, new Class<?>[]{int.class}, true, new LocationIdentity[0], false, false);
+    public static final ForeignCallDescriptor TEST_CALL_NON_DEOPT = new ForeignCallDescriptor("test", int.class, new Class<?>[]{int.class}, false, new LocationIdentity[0], false, false);
 
     public static class A {
         static void invalidConsecutiveForeignCall1(@SuppressWarnings("unused") int phi) {
@@ -135,44 +134,8 @@ public class MethodSubstitutionForeignCallTest extends GraalCompilerTest {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
-                ForeignCallsProvider foreignCalls = new ForeignCallsProvider() {
 
-                    @Override
-                    public LIRKind getValueKind(JavaKind javaKind) {
-                        return LIRKind.fromJavaKind(getTarget().arch, javaKind);
-                    }
-
-                    @Override
-                    public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor) {
-                        throw GraalError.shouldNotReachHere("Test code must not need this method");
-                    }
-
-                    @Override
-                    public boolean isReexecutable(ForeignCallDescriptor descriptor) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isGuaranteedSafepoint(ForeignCallDescriptor descriptor) {
-                        return true;
-                    }
-
-                    @Override
-                    public boolean isAvailable(ForeignCallDescriptor descriptor) {
-                        return true;
-                    }
-
-                    @Override
-                    public LocationIdentity[] getKilledLocations(ForeignCallDescriptor descriptor) {
-                        return new LocationIdentity[]{LocationIdentity.any()};
-                    }
-
-                    @Override
-                    public boolean canDeoptimize(ForeignCallDescriptor descriptor) {
-                        return true;
-                    }
-                };
-                ForeignCallNode node = new ForeignCallNode(foreignCalls, TEST_CALL, arg);
+                ForeignCallNode node = new ForeignCallNode(TEST_CALL_DEOPT, arg);
                 node.setBci(b.bci());
                 b.addPush(JavaKind.Int, node);
                 return true;
@@ -182,44 +145,7 @@ public class MethodSubstitutionForeignCallTest extends GraalCompilerTest {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
-                ForeignCallsProvider foreignCalls = new ForeignCallsProvider() {
-
-                    @Override
-                    public LIRKind getValueKind(JavaKind javaKind) {
-                        return LIRKind.fromJavaKind(getTarget().arch, javaKind);
-                    }
-
-                    @Override
-                    public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor) {
-                        throw GraalError.shouldNotReachHere("Test code must not need this method");
-                    }
-
-                    @Override
-                    public boolean isReexecutable(ForeignCallDescriptor descriptor) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isGuaranteedSafepoint(ForeignCallDescriptor descriptor) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isAvailable(ForeignCallDescriptor descriptor) {
-                        return true;
-                    }
-
-                    @Override
-                    public LocationIdentity[] getKilledLocations(ForeignCallDescriptor descriptor) {
-                        return new LocationIdentity[]{LocationIdentity.any()};
-                    }
-
-                    @Override
-                    public boolean canDeoptimize(ForeignCallDescriptor descriptor) {
-                        return false;
-                    }
-                };
-                ForeignCallNode node = new ForeignCallNode(foreignCalls, TEST_CALL, arg);
+                ForeignCallNode node = new ForeignCallNode(TEST_CALL_NON_DEOPT, arg);
                 node.setBci(b.bci());
                 b.addPush(JavaKind.Int, node);
                 return true;
@@ -229,44 +155,7 @@ public class MethodSubstitutionForeignCallTest extends GraalCompilerTest {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
-                ForeignCallsProvider foreignCalls = new ForeignCallsProvider() {
-
-                    @Override
-                    public LIRKind getValueKind(JavaKind javaKind) {
-                        return LIRKind.fromJavaKind(getTarget().arch, javaKind);
-                    }
-
-                    @Override
-                    public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor) {
-                        throw GraalError.shouldNotReachHere("Test code must not need this method");
-                    }
-
-                    @Override
-                    public boolean isReexecutable(ForeignCallDescriptor descriptor) {
-                        return true;
-                    }
-
-                    @Override
-                    public boolean isGuaranteedSafepoint(ForeignCallDescriptor descriptor) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isAvailable(ForeignCallDescriptor descriptor) {
-                        return true;
-                    }
-
-                    @Override
-                    public LocationIdentity[] getKilledLocations(ForeignCallDescriptor descriptor) {
-                        return new LocationIdentity[]{LocationIdentity.any()};
-                    }
-
-                    @Override
-                    public boolean canDeoptimize(ForeignCallDescriptor descriptor) {
-                        return false;
-                    }
-                };
-                ForeignCallNode node = new ForeignCallNode(foreignCalls, TEST_CALL, arg);
+                ForeignCallNode node = new ForeignCallNode(TEST_CALL_REEXECUTABLE, arg);
                 node.setBci(b.bci());
                 b.addPush(JavaKind.Int, node);
                 return true;

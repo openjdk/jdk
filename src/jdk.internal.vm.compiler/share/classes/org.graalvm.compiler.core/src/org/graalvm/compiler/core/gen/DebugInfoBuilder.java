@@ -30,6 +30,7 @@ import java.util.Queue;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
@@ -66,10 +67,12 @@ import jdk.vm.ci.meta.Value;
 public class DebugInfoBuilder {
 
     protected final NodeValueMap nodeValueMap;
+    protected final MetaAccessExtensionProvider metaAccessExtensionProvider;
     protected final DebugContext debug;
 
-    public DebugInfoBuilder(NodeValueMap nodeValueMap, DebugContext debug) {
+    public DebugInfoBuilder(NodeValueMap nodeValueMap, MetaAccessExtensionProvider metaAccessExtensionProvider, DebugContext debug) {
         this.nodeValueMap = nodeValueMap;
+        this.metaAccessExtensionProvider = metaAccessExtensionProvider;
         this.debug = debug;
     }
 
@@ -129,7 +132,7 @@ public class DebugInfoBuilder {
                     for (int i = 0; i < entryCount; i++) {
                         ValueNode value = currentField.values().get(i);
                         if (value == null) {
-                            JavaKind entryKind = vobjNode.entryKind(i);
+                            JavaKind entryKind = vobjNode.entryKind(metaAccessExtensionProvider, i);
                             values[pos] = JavaConstant.defaultForKind(entryKind.getStackKind());
                             slotKinds[pos] = entryKind.getStackKind();
                             pos++;
@@ -140,9 +143,9 @@ public class DebugInfoBuilder {
                         } else {
                             assert value.getStackKind() == JavaKind.Illegal;
                             ValueNode previousValue = currentField.values().get(i - 1);
-                            assert (previousValue != null && (previousValue.getStackKind().needsTwoSlots()) || vobjNode.isVirtualByteArray()) : vobjNode + " " + i +
+                            assert (previousValue != null && (previousValue.getStackKind().needsTwoSlots()) || vobjNode.isVirtualByteArray(metaAccessExtensionProvider)) : vobjNode + " " + i +
                                             " " + previousValue + " " + currentField.values().snapshot();
-                            if (vobjNode.isVirtualByteArray()) {
+                            if (vobjNode.isVirtualByteArray(metaAccessExtensionProvider)) {
                                 /*
                                  * Let Illegals pass through to help knowing the number of bytes to
                                  * write. For example, writing a short to index 2 of a byte array of
@@ -158,7 +161,7 @@ public class DebugInfoBuilder {
                                 pos++;
                             } else if (previousValue == null || !previousValue.getStackKind().needsTwoSlots()) {
                                 // Don't allow the IllegalConstant to leak into the debug info
-                                JavaKind entryKind = vobjNode.entryKind(i);
+                                JavaKind entryKind = vobjNode.entryKind(metaAccessExtensionProvider, i);
                                 values[pos] = JavaConstant.defaultForKind(entryKind.getStackKind());
                                 slotKinds[pos] = entryKind.getStackKind();
                                 pos++;

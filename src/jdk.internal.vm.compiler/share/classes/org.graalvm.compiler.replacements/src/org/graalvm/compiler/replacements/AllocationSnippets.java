@@ -85,7 +85,7 @@ public abstract class AllocationSnippets implements Snippets {
         Word thread = getTLABInfo();
         Word top = readTlabTop(thread);
         Word end = readTlabEnd(thread);
-        ReplacementsUtil.runtimeAssert(end.subtract(top).belowOrEqual(Integer.MAX_VALUE), "TLAB is too large");
+        ReplacementsUtil.dynamicAssert(end.subtract(top).belowOrEqual(Integer.MAX_VALUE), "TLAB is too large");
 
         // A negative array length will result in an array size larger than the largest possible
         // TLAB. Therefore, this case will always end up in the stub call.
@@ -166,13 +166,13 @@ public abstract class AllocationSnippets implements Snippets {
                     boolean manualUnroll,
                     boolean supportsBulkZeroing,
                     AllocationSnippetCounters snippetCounters) {
-        ReplacementsUtil.runtimeAssert(endOffset.and(0x7).equal(0), "unaligned object size");
+        ReplacementsUtil.dynamicAssert(endOffset.and(0x7).equal(0), "unaligned object size");
         UnsignedWord offset = WordFactory.unsigned(startOffset);
         if (offset.and(0x7).notEqual(0)) {
             memory.writeInt(offset, (int) value, LocationIdentity.init());
             offset = offset.add(4);
         }
-        ReplacementsUtil.runtimeAssert(offset.and(0x7).equal(0), "unaligned offset");
+        ReplacementsUtil.dynamicAssert(offset.and(0x7).equal(0), "unaligned offset");
         UnsignedWord remainingSize = endOffset.subtract(offset);
         if (manualUnroll && remainingSize.unsignedDivide(8).belowOrEqual(MAX_UNROLLED_OBJECT_ZEROING_STORES)) {
             ReplacementsUtil.staticAssert(!isEndOffsetConstant, "size shouldn't be constant at instantiation time");

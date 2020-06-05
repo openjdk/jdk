@@ -277,8 +277,6 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "jdk/jfr/internal/JVM.getClassId(Ljava/lang/Class;)J");
 
             add(toBeInvestigated,
-                            // Just check if the argument is a compile time constant
-                            "java/lang/invoke/MethodHandleImpl.isCompileConstant(Ljava/lang/Object;)Z",
                             // Only used as a marker for vectorization?
                             "java/util/stream/Streams$RangeIntSpliterator.forEachRemaining(Ljava/util/function/IntConsumer;)V",
                             // Only implemented on non-AMD64 platforms (some logic and runtime call)
@@ -370,6 +368,10 @@ public class CheckGraalIntrinsics extends GraalTest {
             }
             if (!config.useFMAIntrinsics) {
                 add(ignore,
+                                "java/lang/Math.fma(DDD)D",
+                                "java/lang/Math.fma(FFF)F");
+            } else if (isSPARC(arch)) {
+                add(toBeInvestigated,
                                 "java/lang/Math.fma(DDD)D",
                                 "java/lang/Math.fma(FFF)F");
             }

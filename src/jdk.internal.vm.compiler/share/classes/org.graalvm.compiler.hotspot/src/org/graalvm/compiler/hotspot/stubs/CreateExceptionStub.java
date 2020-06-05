@@ -25,9 +25,9 @@
 package org.graalvm.compiler.hotspot.stubs;
 
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_OPTIONVALUES;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.SAFEPOINT;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_OPTIONVALUES;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.SAFEPOINT;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.clearPendingException;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
 import static jdk.internal.vm.compiler.word.LocationIdentity.any;
@@ -37,8 +37,8 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.DeoptimizeWithExceptionInCallerNode;
@@ -116,17 +116,18 @@ public class CreateExceptionStub extends SnippetStub {
         // keep both the deopt and return paths, so include a test against the exception which we
         // know should always succeed.
         if ((alwayDeoptimize(INJECTED_OPTIONVALUES) && clearPendingException != null) ||
-                        (reportsDeoptimization(GraalHotSpotVMConfigBase.INJECTED_VMCONFIG) && deoptimized != 0)) {
+                        (reportsDeoptimization(GraalHotSpotVMConfig.INJECTED_VMCONFIG) && deoptimized != 0)) {
             DeoptimizeWithExceptionInCallerNode.deopt(clearPendingException);
         }
         return clearPendingException;
     }
 
-    private static final ForeignCallDescriptor THROW_AND_POST_JVMTI_EXCEPTION = new ForeignCallDescriptor("throw_and_post_jvmti_exception", int.class, Word.class, Word.class, Word.class);
-    private static final ForeignCallDescriptor THROW_KLASS_EXTERNAL_NAME_EXCEPTION = new ForeignCallDescriptor("throw_klass_external_name_exception", int.class, Word.class, Word.class,
-                    KlassPointer.class);
-    private static final ForeignCallDescriptor THROW_CLASS_CAST_EXCEPTION = new ForeignCallDescriptor("throw_class_cast_exception", int.class, Word.class, Word.class, KlassPointer.class,
-                    KlassPointer.class);
+    private static final HotSpotForeignCallDescriptor THROW_AND_POST_JVMTI_EXCEPTION = new HotSpotForeignCallDescriptor(SAFEPOINT, REEXECUTABLE, any(), "throw_and_post_jvmti_exception", int.class,
+                    Word.class, Word.class, Word.class);
+    private static final HotSpotForeignCallDescriptor THROW_KLASS_EXTERNAL_NAME_EXCEPTION = new HotSpotForeignCallDescriptor(SAFEPOINT, REEXECUTABLE, any(), "throw_klass_external_name_exception",
+                    int.class, Word.class, Word.class, KlassPointer.class);
+    private static final HotSpotForeignCallDescriptor THROW_CLASS_CAST_EXCEPTION = new HotSpotForeignCallDescriptor(SAFEPOINT, REEXECUTABLE, any(), "throw_class_cast_exception", int.class, Word.class,
+                    Word.class, KlassPointer.class, KlassPointer.class);
 
     @NodeIntrinsic(StubForeignCallNode.class)
     private static native int throwAndPostJvmtiException(@ConstantNodeParameter ForeignCallDescriptor d, Word thread, Word type, Word message);
@@ -138,8 +139,8 @@ public class CreateExceptionStub extends SnippetStub {
     private static native int throwClassCastException(@ConstantNodeParameter ForeignCallDescriptor d, Word thread, Word type, KlassPointer objKlass, KlassPointer targetKlass);
 
     public static void registerForeignCalls(GraalHotSpotVMConfig c, HotSpotForeignCallsProviderImpl foreignCalls) {
-        foreignCalls.registerForeignCall(THROW_AND_POST_JVMTI_EXCEPTION, c.throwAndPostJvmtiExceptionAddress, NativeCall, SAFEPOINT, REEXECUTABLE, any());
-        foreignCalls.registerForeignCall(THROW_KLASS_EXTERNAL_NAME_EXCEPTION, c.throwKlassExternalNameExceptionAddress, NativeCall, SAFEPOINT, REEXECUTABLE, any());
-        foreignCalls.registerForeignCall(THROW_CLASS_CAST_EXCEPTION, c.throwClassCastExceptionAddress, NativeCall, SAFEPOINT, REEXECUTABLE, any());
+        foreignCalls.registerForeignCall(THROW_AND_POST_JVMTI_EXCEPTION, c.throwAndPostJvmtiExceptionAddress, NativeCall);
+        foreignCalls.registerForeignCall(THROW_KLASS_EXTERNAL_NAME_EXCEPTION, c.throwKlassExternalNameExceptionAddress, NativeCall);
+        foreignCalls.registerForeignCall(THROW_CLASS_CAST_EXCEPTION, c.throwClassCastExceptionAddress, NativeCall);
     }
 }

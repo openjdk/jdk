@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,11 @@ public final class FrameStateBuilder implements SideEffectsState {
         monitorIds = other.monitorIds.length == 0 ? other.monitorIds : other.monitorIds.clone();
 
         assert lockedObjects.length == monitorIds.length;
+
+        if (other.sideEffects != null) {
+            sideEffects = new ArrayList<>();
+            sideEffects.addAll(other.sideEffects);
+        }
     }
 
     private static ValueNode[] allocateArray(int length) {

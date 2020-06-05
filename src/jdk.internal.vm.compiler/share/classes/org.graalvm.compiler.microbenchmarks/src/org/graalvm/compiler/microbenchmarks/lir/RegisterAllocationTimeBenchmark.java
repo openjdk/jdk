@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,8 @@ package org.graalvm.compiler.microbenchmarks.lir;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Warmup;
 
-@Warmup(iterations = 10)
-@Measurement(iterations = 10)
 public class RegisterAllocationTimeBenchmark extends GraalBenchmark {
 
     public static class State extends GraalCompilerState.AllocationStage {

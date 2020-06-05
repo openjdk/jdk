@@ -427,10 +427,28 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     /**
-     * Checks whether this node has exactly one usgae.
+     * Checks whether this node has exactly one usage.
      */
     public final boolean hasExactlyOneUsage() {
         return hasUsages() && !hasMoreThanOneUsage();
+    }
+
+    /**
+     * Checks whether this node has only usages of that type.
+     *
+     * @param type the type of usages to look for
+     */
+    public final boolean hasOnlyUsagesOfType(InputType type) {
+        for (Node usage : usages()) {
+            for (Position pos : usage.inputPositions()) {
+                if (pos.get(usage) == this) {
+                    if (pos.getInputType() != type) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -858,7 +876,7 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         }
     }
 
-    public void replaceAtUsages(InputType type, Node other) {
+    public void replaceAtUsages(Node other, InputType type) {
         checkReplaceWith(other);
         int i = 0;
         int usageCount = this.getUsageCount();
@@ -873,6 +891,32 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
                     this.movUsageFromEndTo(i);
                     usageCount--;
                     continue usages;
+                }
+            }
+            i++;
+        }
+        if (hasNoUsages()) {
+            maybeNotifyZeroUsages(this);
+        }
+    }
+
+    public void replaceAtUsages(Node other, InputType... inputTypes) {
+        checkReplaceWith(other);
+        int i = 0;
+        int usageCount = this.getUsageCount();
+        if (usageCount == 0) {
+            return;
+        }
+        usages: while (i < usageCount) {
+            Node usage = this.getUsageAt(i);
+            for (Position pos : usage.inputPositions()) {
+                for (InputType type : inputTypes) {
+                    if (pos.getInputType() == type && pos.get(usage) == this) {
+                        replaceAtUsagePos(other, usage, pos);
+                        this.movUsageFromEndTo(i);
+                        usageCount--;
+                        continue usages;
+                    }
                 }
             }
             i++;

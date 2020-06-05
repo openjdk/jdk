@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Formatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,6 +42,7 @@ import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.debug.DebugDumpHandler;
 import org.graalvm.compiler.debug.DebugHandler;
@@ -80,7 +80,7 @@ public class DebugContextTest {
         };
 
         DebugContext openDebugContext(OptionValues options) {
-            return DebugContext.create(options, NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, new PrintStream(logOutput), Collections.singletonList(handlers));
+            return new Builder(options, handlers).logStream(new PrintStream(logOutput)).build();
 
         }
     }
@@ -203,7 +203,7 @@ public class DebugContextTest {
         map.put(DebugOptions.DumpOnError, true);
         OptionValues options = new OptionValues(map);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DebugContext debug = DebugContext.create(options, NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, new PrintStream(baos), DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).globalMetrics(NO_GLOBAL_METRIC_VALUES).description(NO_DESCRIPTION).logStream(new PrintStream(baos)).build();
         Exception e = new Exception("testEnabledSandbox");
         String scopeName = "";
         try {
@@ -233,7 +233,7 @@ public class DebugContextTest {
         map.put(DebugOptions.DumpOnError, true);
         OptionValues options = new OptionValues(map);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DebugContext debug = DebugContext.create(options, NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, new PrintStream(baos), DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).globalMetrics(NO_GLOBAL_METRIC_VALUES).description(NO_DESCRIPTION).logStream(new PrintStream(baos)).build();
         Exception e = new Exception("testDisabledSandbox");
         try {
             // Test a disabled sandbox scope
@@ -263,7 +263,7 @@ public class DebugContextTest {
         // Configure with an option that enables counters
         map.put(DebugOptions.Counters, "");
         OptionValues options = new OptionValues(map);
-        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).build();
         CounterKey counter = DebugContext.counter("DebugContextTestCounter");
         AssertionError[] result = {null};
         Thread thread = new Thread() {
@@ -291,7 +291,7 @@ public class DebugContextTest {
         map.put(DebugOptions.DumpOnError, true);
         OptionValues options = new OptionValues(map);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DebugContext debug = DebugContext.create(options, NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, new PrintStream(baos), DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).globalMetrics(NO_GLOBAL_METRIC_VALUES).description(NO_DESCRIPTION).logStream(new PrintStream(baos)).build();
         Exception e = new Exception();
         try {
             try (DebugCloseable disabled = debug.disableIntercept(); Scope s1 = debug.scope("ScopeWithDisabledIntercept")) {

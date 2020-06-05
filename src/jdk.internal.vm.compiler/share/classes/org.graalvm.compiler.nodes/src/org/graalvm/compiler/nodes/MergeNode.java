@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,6 @@ public final class MergeNode extends AbstractMergeNode {
     @Override
     public boolean verify() {
         assertTrue(this.forwardEndCount() > 1, "Must merge more than one end.");
-        return true;
+        return super.verify();
     }
 }

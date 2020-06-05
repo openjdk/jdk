@@ -1177,6 +1177,16 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
         return result;
     }
 
+    @Override
+    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
+        throw GraalError.shouldNotReachHere();
+    }
+
+    @Override
+    public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+        throw GraalError.shouldNotReachHere();
+    }
+
     protected void emitStoreConst(AMD64Kind kind, AMD64AddressValue address, ConstantValue value, LIRFrameState state) {
         Constant c = value.getConstant();
         if (JavaConstant.isNull(c)) {

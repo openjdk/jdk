@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
+import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -80,8 +81,9 @@ public class HotSpotResolvedJavaFieldTest extends HotSpotGraalCompilerTest {
      */
     private int jvmFieldModifiers() {
         GraalHotSpotVMConfig config = runtime().getVMConfig();
-        int accEnum = config.getConstant("JVM_ACC_ENUM", Integer.class, 0x4000);
-        int accSynthetic = config.getConstant("JVM_ACC_SYNTHETIC", Integer.class, 0x1000);
+        HotSpotVMConfigAccess access = new HotSpotVMConfigAccess(config.getStore());
+        int accEnum = access.getConstant("JVM_ACC_ENUM", Integer.class, 0x4000);
+        int accSynthetic = access.getConstant("JVM_ACC_SYNTHETIC", Integer.class, 0x1000);
         return PUBLIC | PRIVATE | PROTECTED | STATIC | FINAL | VOLATILE | TRANSIENT | accEnum | accSynthetic;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class AArch64TestBitAndBranchTest extends LIRTest {
 
     public static long testBit42Snippet(long a, long b, long c) {
         if ((a & (1L << 42)) == 0) {
-            return b;
+            return b + c;
         } else {
             return c;
         }

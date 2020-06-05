@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class DynamicNewArrayNode extends AbstractNewArrayNode implements Canonic
                 return this;
             }
             ResolvedJavaType type = tool.getConstantReflection().asJavaType(elementType.asConstant());
-            if (type != null && type.getArrayClass() != null && !throwsIllegalArgumentException(type)) {
+            if (type != null && !throwsIllegalArgumentException(type) && tool.getMetaAccessExtensionProvider().canConstantFoldDynamicAllocation(type)) {
                 return createNewArrayNode(type);
             }
         }

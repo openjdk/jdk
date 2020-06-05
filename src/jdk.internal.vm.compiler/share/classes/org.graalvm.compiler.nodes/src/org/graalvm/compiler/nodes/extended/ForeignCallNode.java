@@ -32,7 +32,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -40,21 +40,15 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
-import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
-import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
 
 /**
  * Node for a {@linkplain ForeignCallDescriptor foreign} call.
@@ -67,27 +61,33 @@ import jdk.vm.ci.meta.Value;
           size = SIZE_2,
           sizeRationale = "Rough estimation of the call operation itself.")
 // @formatter:on
-public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowerable, DeoptimizingNode.DeoptDuring, MultiMemoryKill {
+public class ForeignCallNode extends AbstractMemoryCheckpoint implements ForeignCall {
     public static final NodeClass<ForeignCallNode> TYPE = NodeClass.create(ForeignCallNode.class);
 
     @Input protected NodeInputList<ValueNode> arguments;
     @OptionalInput(State) protected FrameState stateDuring;
-    protected final ForeignCallsProvider foreignCalls;
 
     protected final ForeignCallDescriptor descriptor;
     protected int bci = BytecodeFrame.UNKNOWN_BCI;
 
     public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, @InjectedNodeParameter Stamp returnStamp, @InjectedNodeParameter ForeignCallsProvider foreignCalls,
-                    ForeignCallDescriptor descriptor, ValueNode... arguments) {
-        if (!foreignCalls.isAvailable(descriptor)) {
-            // When using encoded snippets a graph main contain a reference to a foreign call that's
-            // not actually available in the current configuration. It's assumed that further
-            // simplification of the graph will eliminate this call completely.
-            return false;
-        }
+                    ForeignCallSignature signature, ValueNode... arguments) {
+        ForeignCallDescriptor descriptor = foreignCalls.getDescriptor(signature);
+        return doIntrinsify(b, targetMethod, returnStamp, descriptor, arguments, false);
+    }
 
-        ForeignCallNode node = new ForeignCallNode(foreignCalls, descriptor, arguments);
-        node.setStamp(returnStamp);
+    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, @InjectedNodeParameter Stamp returnStamp, ForeignCallDescriptor descriptor, ValueNode... arguments) {
+        return doIntrinsify(b, targetMethod, returnStamp, descriptor, arguments, false);
+    }
+
+    static boolean doIntrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Stamp returnStamp, ForeignCallDescriptor descriptor, ValueNode[] arguments, boolean withException) {
+        ForeignCall node;
+        if (withException) {
+            node = new ForeignCallWithExceptionNode(descriptor, arguments);
+        } else {
+            node = new ForeignCallNode(descriptor, arguments);
+        }
+        node.asNode().setStamp(returnStamp);
 
         assert verifyDescriptor(b, targetMethod, descriptor);
 
@@ -103,9 +103,9 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowe
 
         JavaKind returnKind = targetMethod.getSignature().getReturnKind();
         if (returnKind == JavaKind.Void) {
-            b.add(node);
+            b.add(node.asNode());
         } else {
-            b.addPush(returnKind, node);
+            b.addPush(returnKind, node.asNode());
         }
 
         return true;
@@ -122,63 +122,42 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowe
         return true;
     }
 
-    public ForeignCallNode(ForeignCallsProvider foreignCalls, ForeignCallDescriptor descriptor, ValueNode... arguments) {
-        this(TYPE, foreignCalls, descriptor, arguments);
+    public ForeignCallNode(ForeignCallsProvider foreignCalls, ForeignCallSignature signature, ValueNode... arguments) {
+        this(TYPE, foreignCalls.getDescriptor(signature), arguments);
     }
 
-    public ForeignCallNode(ForeignCallsProvider foreignCalls, ForeignCallDescriptor descriptor, Stamp stamp, List<ValueNode> arguments) {
+    public ForeignCallNode(ForeignCallDescriptor descriptor, ValueNode... arguments) {
+        this(TYPE, descriptor, arguments);
+    }
+
+    public ForeignCallNode(ForeignCallDescriptor descriptor, Stamp stamp, List<ValueNode> arguments) {
         super(TYPE, stamp);
         this.arguments = new NodeInputList<>(this, arguments);
         this.descriptor = descriptor;
-        this.foreignCalls = foreignCalls;
         assert descriptor.getArgumentTypes().length == this.arguments.size() : "wrong number of arguments to " + this;
     }
 
-    public ForeignCallNode(ForeignCallsProvider foreignCalls, ForeignCallDescriptor descriptor, Stamp stamp) {
+    public ForeignCallNode(ForeignCallDescriptor descriptor, Stamp stamp) {
         super(TYPE, stamp);
         this.arguments = new NodeInputList<>(this);
         this.descriptor = descriptor;
-        this.foreignCalls = foreignCalls;
     }
 
-    protected ForeignCallNode(NodeClass<? extends ForeignCallNode> c, ForeignCallsProvider foreignCalls, ForeignCallDescriptor descriptor, ValueNode... arguments) {
+    protected ForeignCallNode(NodeClass<? extends ForeignCallNode> c, ForeignCallDescriptor descriptor, ValueNode... arguments) {
         super(c, StampFactory.forKind(JavaKind.fromJavaClass(descriptor.getResultType())));
         this.arguments = new NodeInputList<>(this, arguments);
         this.descriptor = descriptor;
-        this.foreignCalls = foreignCalls;
         assert descriptor.getArgumentTypes().length == this.arguments.size() : "wrong number of arguments to " + this;
     }
 
     @Override
     public boolean hasSideEffect() {
-        return !foreignCalls.isReexecutable(descriptor);
+        return !descriptor.isReexecutable();
     }
 
+    @Override
     public ForeignCallDescriptor getDescriptor() {
         return descriptor;
-    }
-
-    @Override
-    public LocationIdentity[] getKilledLocationIdentities() {
-        return foreignCalls.getKilledLocations(descriptor);
-    }
-
-    protected Value[] operands(NodeLIRBuilderTool gen) {
-        Value[] operands = new Value[arguments.size()];
-        for (int i = 0; i < operands.length; i++) {
-            operands[i] = gen.operand(arguments.get(i));
-        }
-        return operands;
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool gen) {
-        ForeignCallLinkage linkage = gen.getLIRGeneratorTool().getForeignCalls().lookupForeignCall(descriptor);
-        Value[] operands = operands(gen);
-        Value result = gen.getLIRGeneratorTool().emitForeignCall(linkage, gen.state(this), operands);
-        if (result != null) {
-            gen.setResult(this, result);
-        }
     }
 
     @Override
@@ -198,31 +177,20 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowe
         this.stateDuring = stateDuring;
     }
 
-    public int getBci() {
+    @Override
+    public int bci() {
         return bci;
     }
 
-    /**
-     * Set the {@code bci} of the invoke bytecode for use when converting a stateAfter into a
-     * stateDuring.
-     */
+    @Override
     public void setBci(int bci) {
         assert this.bci == BytecodeFrame.UNKNOWN_BCI || this.bci == bci;
         this.bci = bci;
     }
 
     @Override
-    public void computeStateDuring(FrameState currentStateAfter) {
-        FrameState newStateDuring;
-        if ((currentStateAfter.stackSize() > 0 && currentStateAfter.stackAt(currentStateAfter.stackSize() - 1) == this) ||
-                        (currentStateAfter.stackSize() > 1 && currentStateAfter.stackAt(currentStateAfter.stackSize() - 2) == this)) {
-            // The result of this call is on the top of stack, so roll back to the previous bci.
-            assert bci != BytecodeFrame.UNKNOWN_BCI : this;
-            newStateDuring = currentStateAfter.duplicateModified(currentStateAfter.graph(), bci, false, true, this.getStackKind(), null, null);
-        } else {
-            newStateDuring = currentStateAfter;
-        }
-        setStateDuring(newStateDuring);
+    public NodeInputList<ValueNode> getArguments() {
+        return arguments;
     }
 
     @Override
@@ -231,18 +199,5 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowe
             return super.toString(verbosity) + "#" + descriptor;
         }
         return super.toString(verbosity);
-    }
-
-    @Override
-    public boolean canDeoptimize() {
-        return foreignCalls.canDeoptimize(descriptor);
-    }
-
-    public boolean isGuaranteedSafepoint() {
-        return foreignCalls.isGuaranteedSafepoint(descriptor);
-    }
-
-    public NodeInputList<ValueNode> getArguments() {
-        return arguments;
     }
 }

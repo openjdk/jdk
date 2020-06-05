@@ -26,6 +26,7 @@
 package jdk.tools.jaotc;
 
 import org.graalvm.compiler.bytecode.Bytecodes;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 
 import jdk.vm.ci.code.BytecodePosition;
 import jdk.vm.ci.code.site.Call;
@@ -67,11 +68,11 @@ final class CallInfo {
     }
 
     static boolean isVirtualCall(CompiledMethodInfo methodInfo, Call call) {
-        return isInvokeVirtual(call) && !methodInfo.hasMark(call, MarkId.INVOKESPECIAL) && !isStaticTarget(call);
+        return isInvokeVirtual(call) && !methodInfo.hasMark(call, HotSpotMarkId.INVOKESPECIAL) && !isStaticTarget(call);
     }
 
     static boolean isOptVirtualCall(CompiledMethodInfo methodInfo, Call call) {
-        return isInvokeVirtual(call) && methodInfo.hasMark(call, MarkId.INVOKESPECIAL);
+        return isInvokeVirtual(call) && methodInfo.hasMark(call, HotSpotMarkId.INVOKESPECIAL);
     }
 
     private static boolean isJavaCall(Call call) {

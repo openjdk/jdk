@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -62,11 +61,6 @@ public final class JavaReadNode extends FixedAccessNode implements Lowerable, Gu
         super(TYPE, address, location, stamp, barrierType);
         this.readKind = readKind;
         this.compressible = compressible;
-    }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
     }
 
     @Override

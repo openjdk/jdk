@@ -56,6 +56,7 @@ import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.CSIN
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.CSNEG;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.DC;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.DMB;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.DSB;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.EON;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.EOR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.EXTR;
@@ -673,6 +674,7 @@ public abstract class AArch64Assembler extends Assembler {
         CLREX(0xd5033f5f),
         HINT(0xD503201F),
         DMB(0x000000A0),
+        DSB(0x00000080),
 
         MRS(0xD5300000),
         MSR(0xD5100000),
@@ -1402,7 +1404,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param rt general purpose register. May not be null or stackpointer.
      * @param rn general purpose register.
      */
-    protected void ldar(int size, Register rt, Register rn) {
+    public void ldar(int size, Register rt, Register rn) {
         assert size == 8 || size == 16 || size == 32 || size == 64;
         int transferSize = NumUtil.log2Ceil(size / 8);
         exclusiveLoadInstruction(LDAR, rt, rn, transferSize);
@@ -1415,7 +1417,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param rt general purpose register. May not be null or stackpointer.
      * @param rn general purpose register.
      */
-    protected void stlr(int size, Register rt, Register rn) {
+    public void stlr(int size, Register rt, Register rn) {
         assert size == 8 || size == 16 || size == 32 || size == 64;
         int transferSize = NumUtil.log2Ceil(size / 8);
         // Hack: Passing the zero-register means it is ignored when building the encoding.
@@ -1471,7 +1473,7 @@ public abstract class AArch64Assembler extends Assembler {
      */
     private void exclusiveStoreInstruction(Instruction instr, Register rs, Register rt, Register rn, int log2TransferSize) {
         assert log2TransferSize >= 0 && log2TransferSize < 4;
-        assert rt.getRegisterCategory().equals(CPU) && rs.getRegisterCategory().equals(CPU) && !rs.equals(rt);
+        assert rt.getRegisterCategory().equals(CPU) && rs.getRegisterCategory().equals(CPU) && (instr == STLR || !rs.equals(rt));
         int transferSizeEncoding = log2TransferSize << LoadStoreTransferSizeOffset;
         emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt));
     }
@@ -1992,7 +1994,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param extendType defines how src2 is extended to the same size as src1.
      * @param shiftAmt must be in range 0 to 4.
      */
-    protected void sub(int size, Register dst, Register src1, Register src2, ExtendType extendType, int shiftAmt) {
+    public void sub(int size, Register dst, Register src1, Register src2, ExtendType extendType, int shiftAmt) {
         assert !dst.equals(zr);
         assert !src1.equals(zr);
         assert !src2.equals(sp);
@@ -3010,6 +3012,15 @@ public abstract class AArch64Assembler extends Assembler {
      */
     public void dmb(BarrierKind barrierKind) {
         emitInt(DMB.encoding | BarrierOp | barrierKind.encoding << BarrierKindOffset);
+    }
+
+    /**
+     * Data Synchronization Barrier.
+     *
+     * @param barrierKind barrier that is issued. May not be null.
+     */
+    public void dsb(BarrierKind barrierKind) {
+        emitInt(DSB.encoding | BarrierOp | barrierKind.encoding << BarrierKindOffset);
     }
 
     /**

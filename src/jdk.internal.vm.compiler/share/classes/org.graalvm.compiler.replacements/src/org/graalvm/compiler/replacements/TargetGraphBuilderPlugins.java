@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,6 @@ import org.graalvm.compiler.nodes.spi.Replacements;
 import jdk.vm.ci.code.Architecture;
 
 public interface TargetGraphBuilderPlugins {
-    void register(Plugins plugins, Replacements replacements, Architecture arch, boolean explicitUnsafeNullChecks, boolean registerMathPlugins, boolean emitJDK9StringSubstitutions,
+    void register(Plugins plugins, Replacements replacements, Architecture arch, boolean explicitUnsafeNullChecks, boolean registerForeignCallMath, boolean emitJDK9StringSubstitutions,
                     boolean useFMAIntrinsics);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
-import org.graalvm.compiler.nodes.java.RawMonitorEnterNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
@@ -71,7 +71,7 @@ public class LockEliminationTest extends GraalCompilerTest {
         StructuredGraph graph = getGraph("testSynchronizedSnippet", false);
         createCanonicalizerPhase().apply(graph, getProviders());
         new LockEliminationPhase().apply(graph);
-        assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(MonitorEnterNode.class).count());
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
     }
 
@@ -89,7 +89,7 @@ public class LockEliminationTest extends GraalCompilerTest {
         StructuredGraph graph = getGraph("testSynchronizedMethodSnippet", false);
         createCanonicalizerPhase().apply(graph, getProviders());
         new LockEliminationPhase().apply(graph);
-        assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(MonitorEnterNode.class).count());
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
     }
 
@@ -109,7 +109,7 @@ public class LockEliminationTest extends GraalCompilerTest {
         HighTierContext context = getDefaultHighTierContext();
         new LoopFullUnrollPhase(canonicalizer, new DefaultLoopPolicies()).apply(graph, context);
         new LockEliminationPhase().apply(graph);
-        assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(MonitorEnterNode.class).count());
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
     }
 
@@ -157,12 +157,12 @@ public class LockEliminationTest extends GraalCompilerTest {
     public void testEscapeAnalysis() {
         StructuredGraph graph = getGraph("testEscapeAnalysisSnippet", true);
 
-        assertDeepEquals(3, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(3, graph.getNodes().filter(MonitorEnterNode.class).count());
         assertDeepEquals(3, graph.getNodes().filter(MonitorExitNode.class).count());
 
         new LockEliminationPhase().apply(graph);
 
-        assertDeepEquals(2, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(2, graph.getNodes().filter(MonitorEnterNode.class).count());
         assertDeepEquals(2, graph.getNodes().filter(MonitorExitNode.class).count());
     }
 }

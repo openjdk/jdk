@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package micro.benchmarks;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
 
 /**
  * Benchmarks cost of hashing a character array.
@@ -40,7 +39,6 @@ public class HashBenchmark extends BenchmarkBase {
     }
 
     @Benchmark
-    @Warmup(iterations = 20)
     public int hash(ThreadState state) {
         int value = 0;
         char[] array = state.characters;

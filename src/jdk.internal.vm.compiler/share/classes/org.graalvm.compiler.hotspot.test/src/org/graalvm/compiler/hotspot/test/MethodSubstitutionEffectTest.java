@@ -391,14 +391,14 @@ public class MethodSubstitutionEffectTest extends GraalCompilerTest {
         intrinisicsErrors.add(getResolvedJavaMethod(Substitutee.class, "multiSplitEffectNoMergeInvalid"));
 
         for (ResolvedJavaMethod method : intrinisicsWithoutErrors) {
-            StructuredGraph graph = getProviders().getReplacements().getIntrinsicGraph(method, INVALID_COMPILATION_ID, getDebugContext(method), null);
+            StructuredGraph graph = getProviders().getReplacements().getIntrinsicGraph(method, INVALID_COMPILATION_ID, getDebugContext(method), AllowAssumptions.YES, null);
             getCode(method, graph);
         }
         for (ResolvedJavaMethod method : intrinisicsErrors) {
             try (AutoCloseable c = new TTY.Filter();
                             DebugContext debug = getDebugContext(method);
                             DebugCloseable s = debug.disableIntercept()) {
-                StructuredGraph graph = getProviders().getReplacements().getIntrinsicGraph(method, INVALID_COMPILATION_ID, debug, null);
+                StructuredGraph graph = getProviders().getReplacements().getIntrinsicGraph(method, INVALID_COMPILATION_ID, debug, AllowAssumptions.YES, null);
                 getCode(method, graph);
                 Assert.fail("Compilation should not reach this point, must throw an exception before");
             } catch (Throwable t) {

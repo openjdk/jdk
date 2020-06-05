@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -187,6 +188,15 @@ public class GraphKit implements GraphBuilderTool {
         return node;
     }
 
+    public Stamp wordStamp(ResolvedJavaType type) {
+        assert wordTypes != null && wordTypes.isWord(type);
+        return wordTypes.getWordStamp(type);
+    }
+
+    public final JavaKind asKind(JavaType type) {
+        return wordTypes != null ? wordTypes.asKind(type) : type.getJavaKind();
+    }
+
     @Override
     public <T extends ValueNode> T append(T node) {
         T result = graph.addOrUniqueWithInputs(changeToWord(node));
@@ -307,10 +317,6 @@ public class GraphKit implements GraphBuilderTool {
         return new MethodCallTargetNode(invokeKind, targetMethod, args, returnStamp, null);
     }
 
-    protected final JavaKind asKind(JavaType type) {
-        return wordTypes != null ? wordTypes.asKind(type) : type.getJavaKind();
-    }
-
     /**
      * Determines if a given set of arguments is compatible with the signature of a given method.
      *
@@ -374,9 +380,6 @@ public class GraphKit implements GraphBuilderTool {
             GraphBuilderPhase.Instance instance = createGraphBuilderInstance(providers, config, OptimisticOptimizations.NONE, initialReplacementContext);
             instance.apply(calleeGraph);
         }
-
-        // Remove all frame states from inlinee
-        calleeGraph.clearAllStateAfter();
         new DeadCodeEliminationPhase(Optionality.Required).apply(calleeGraph);
 
         InliningUtil.inline(invoke, calleeGraph, false, method, reason, phase);
@@ -541,14 +544,7 @@ public class GraphKit implements GraphBuilderTool {
     }
 
     public InvokeWithExceptionNode startInvokeWithException(MethodCallTargetNode callTarget, FrameStateBuilder frameStateBuilder, int invokeBci, int exceptionEdgeBci) {
-        ExceptionObjectNode exceptionObject = add(new ExceptionObjectNode(getMetaAccess()));
-        if (frameStateBuilder != null) {
-            FrameStateBuilder exceptionState = frameStateBuilder.copy();
-            exceptionState.clearStack();
-            exceptionState.push(JavaKind.Object, exceptionObject);
-            exceptionState.setRethrowException(false);
-            exceptionObject.setStateAfter(exceptionState.create(exceptionEdgeBci, exceptionObject));
-        }
+        ExceptionObjectNode exceptionObject = createExceptionObjectNode(frameStateBuilder, exceptionEdgeBci);
         InvokeWithExceptionNode invoke = append(new InvokeWithExceptionNode(callTarget, exceptionObject, invokeBci));
         AbstractBeginNode noExceptionEdge = graph.add(KillingBeginNode.create(LocationIdentity.any()));
         invoke.setNext(noExceptionEdge);
@@ -571,6 +567,18 @@ public class GraphKit implements GraphBuilderTool {
         pushStructure(s);
 
         return invoke;
+    }
+
+    protected ExceptionObjectNode createExceptionObjectNode(FrameStateBuilder frameStateBuilder, int exceptionEdgeBci) {
+        ExceptionObjectNode exceptionObject = add(new ExceptionObjectNode(getMetaAccess()));
+        if (frameStateBuilder != null) {
+            FrameStateBuilder exceptionState = frameStateBuilder.copy();
+            exceptionState.clearStack();
+            exceptionState.push(JavaKind.Object, exceptionObject);
+            exceptionState.setRethrowException(false);
+            exceptionObject.setStateAfter(exceptionState.create(exceptionEdgeBci, exceptionObject));
+        }
+        return exceptionObject;
     }
 
     private InvokeWithExceptionStructure saveLastInvokeWithExceptionNode() {

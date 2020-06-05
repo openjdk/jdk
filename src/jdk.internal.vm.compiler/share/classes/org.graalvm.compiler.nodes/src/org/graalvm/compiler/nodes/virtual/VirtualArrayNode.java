@@ -26,6 +26,7 @@ package org.graalvm.compiler.nodes.virtual;
 
 import java.nio.ByteOrder;
 
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
@@ -36,12 +37,12 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 
 @NodeInfo(nameTemplate = "VirtualArray({p#objectId}) {p#componentType/s}[{p#length}]")
 public class VirtualArrayNode extends VirtualObjectNode implements ArrayLengthProvider {
@@ -122,9 +123,9 @@ public class VirtualArrayNode extends VirtualObjectNode implements ArrayLengthPr
     }
 
     @Override
-    public JavaKind entryKind(int index) {
+    public JavaKind entryKind(MetaAccessExtensionProvider metaAccessExtensionProvider, int index) {
         assert index >= 0 && index < length;
-        return componentType.getJavaKind();
+        return metaAccessExtensionProvider.getStorageKind(componentType);
     }
 
     @Override

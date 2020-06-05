@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,7 +548,7 @@ public class MatchProcessor extends AbstractProcessor {
                 }
                 out.printf("    private static final String[] %s = new String[] {%s};\n", invoker.argumentsListName(), args);
                 out.printf("    private static final class %s implements MatchGenerator {\n", invoker.wrapperClass());
-                out.printf("        static MatchGenerator instance = new %s();\n", invoker.wrapperClass());
+                out.printf("        static final MatchGenerator instance = new %s();\n", invoker.wrapperClass());
                 out.printf("        @Override\n");
                 out.printf("        public ComplexMatchResult match(NodeMatchRules nodeMatchRules, Object...args) {\n");
                 out.printf("            return ((%s) nodeMatchRules).%s(%s);\n", invoker.nodeLIRBuilderClass, invoker.methodName, types);

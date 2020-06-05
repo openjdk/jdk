@@ -252,6 +252,21 @@ public class BoxingEliminationTest extends GraalCompilerTest {
         test("materializeTest1Snippet", 1);
     }
 
+    public static Float materializeTest2Snippet(float a) {
+        Float v = a;
+
+        if (v == a) {
+            return v;
+        } else {
+            return null;
+        }
+    }
+
+    @Test
+    public void materializeTest2() {
+        test("materializeTest2Snippet", 1f);
+    }
+
     public static int intTest1Snippet() {
         return Integer.valueOf(1);
     }

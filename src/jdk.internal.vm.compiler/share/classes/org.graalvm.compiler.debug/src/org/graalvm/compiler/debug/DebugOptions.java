@@ -115,13 +115,16 @@ public class DebugOptions {
     @Option(help = "file:doc-files/MetricsFileHelp.txt", type = OptionType.Debug)
      public static final OptionKey<String> MetricsFile = new OptionKey<>(null);
     @Option(help = "File to which aggregated metrics are dumped at shutdown. A CSV format is used if the file ends with .csv " +
-                    "otherwise a more human readable format is used. If not specified, metrics are dumped to the console.", type = OptionType.Debug)
+                   "otherwise a more human readable format is used. If not specified, metrics are dumped to the console.", type = OptionType.Debug)
     public static final OptionKey<String> AggregatedMetricsFile = new OptionKey<>(null);
 
     @Option(help = "Enable debug output for stub code generation and snippet preparation.", type = OptionType.Debug)
     public static final OptionKey<Boolean> DebugStubsAndSnippets = new OptionKey<>(false);
     @Option(help = "Send compiler IR to dump handlers on error.", type = OptionType.Debug)
     public static final OptionKey<Boolean> DumpOnError = new OptionKey<>(false);
+    @Option(help = "Specify the DumpLevel if CompilationFailureAction#Diagnose is used." +
+                    "See CompilationFailureAction for details. file:doc-files/CompilationFailureActionHelp.txt", type = OptionType.Debug)
+    public static final OptionKey<Integer> DiagnoseDumpLevel = new OptionKey<>(DebugContext.VERBOSE_LEVEL);
     @Option(help = "Disable intercepting exceptions in debug scopes.", type = OptionType.Debug)
     public static final OptionKey<Boolean> DisableIntercept = new OptionKey<>(false);
     @Option(help = "Intercept also bailout exceptions", type = OptionType.Debug)
@@ -137,7 +140,9 @@ public class DebugOptions {
     @Option(help = "Enable dumping to the C1Visualizer. Enabling this option implies PrintBackendCFG.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintCFG = new OptionKey<>(false);
     @Option(help = "Enable dumping LIR, register allocation and code generation info to the C1Visualizer.", type = OptionType.Debug)
-    public static final OptionKey<Boolean> PrintBackendCFG = new OptionKey<>(true);
+    public static final OptionKey<Boolean> PrintBackendCFG = new OptionKey<>(false);
+    @Option(help = "Enable dumping CFG built during initial BciBlockMapping", type = OptionType.Debug)
+    public static final OptionKey<Boolean> PrintBlockMapping = new OptionKey<>(false);
 
     @Option(help = "file:doc-files/PrintGraphHelp.txt", type = OptionType.Debug)
     public static final EnumOptionKey<PrintGraphTarget> PrintGraph = new EnumOptionKey<>(PrintGraphTarget.File);

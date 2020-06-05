@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.RandomAccess;
 
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 
 public abstract class NodeList<T extends Node> extends AbstractList<T> implements NodeIterable<T>, RandomAccess {
+
+    /**
+     * This constant limits the maximum number of entries in a node list. The reason for the
+     * limitations is the constraints of the code iterating over a node's inputs and successors. It
+     * uses a bit data structure where only 16 bits are available for the current index into the
+     * list. See the methods {@link NodeClass#getSuccessorIterable(Node)} and
+     * {@link NodeClass#getInputIterable(Node)}.
+     */
+    private static final int MAX_ENTRIES = 65536;
 
     protected static final Node[] EMPTY_NODE_ARRAY = new Node[0];
 
@@ -50,6 +60,7 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
 
     protected NodeList(Node self, int initialSize) {
         this.self = self;
+        checkMaxSize(initialSize);
         this.size = initialSize;
         this.initialSize = initialSize;
         this.nodes = new Node[initialSize];
@@ -62,8 +73,9 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
             this.nodes = EMPTY_NODE_ARRAY;
             this.initialSize = 0;
         } else {
+            checkMaxSize(elements.length);
             this.size = elements.length;
-            this.initialSize = elements.length;
+            this.initialSize = this.size;
             this.nodes = new Node[elements.length];
             for (int i = 0; i < elements.length; i++) {
                 this.nodes[i] = elements[i];
@@ -79,13 +91,21 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
             this.nodes = EMPTY_NODE_ARRAY;
             this.initialSize = 0;
         } else {
-            this.size = elements.size();
-            this.initialSize = elements.size();
+            int newSize = elements.size();
+            checkMaxSize(newSize);
+            this.size = newSize;
+            this.initialSize = newSize;
             this.nodes = new Node[elements.size()];
             for (int i = 0; i < elements.size(); i++) {
                 this.nodes[i] = elements.get(i);
                 assert this.nodes[i] == null || !this.nodes[i].isDeleted();
             }
+        }
+    }
+
+    private static void checkMaxSize(int value) {
+        if (value > MAX_ENTRIES) {
+            throw new PermanentBailoutException("Number of elements in a node list too high: %d", value);
         }
     }
 
@@ -96,8 +116,10 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
             this.nodes = EMPTY_NODE_ARRAY;
             this.initialSize = 0;
         } else {
-            this.size = elements.size();
-            this.initialSize = elements.size();
+            int newSize = elements.size();
+            checkMaxSize(newSize);
+            this.size = newSize;
+            this.initialSize = newSize;
             this.nodes = new Node[elements.size()];
             int i = 0;
             for (NodeInterface n : elements) {
@@ -109,7 +131,7 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
     }
 
     /**
-     * Removes null values from the list.
+     * Removes {@code null} values from the list.
      */
     public void trim() {
         int newSize = 0;
@@ -150,10 +172,15 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
         modCount++;
     }
 
+    /**
+     * Adds a new node to the list. The total number of nodes in the list must not exceed
+     * {@link #MAX_ENTRIES}, otherwise a {@link PermanentBailoutException} is thrown.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public boolean add(Node node) {
         assert node == null || !node.isDeleted() : node;
+        checkMaxSize(size + 1);
         self.incModCount();
         incModCount();
         int length = nodes.length;
@@ -169,6 +196,9 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
         return true;
     }
 
+    /**
+     * Get a node from the list given an {@code index}.
+     */
     @Override
     @SuppressWarnings("unchecked")
     public T get(int index) {
@@ -185,6 +215,9 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
         return get(size() - 1);
     }
 
+    /**
+     * Set the node of the list at the given {@code index} to a new value.
+     */
     @Override
     @SuppressWarnings("unchecked")
     public T set(int index, Node node) {

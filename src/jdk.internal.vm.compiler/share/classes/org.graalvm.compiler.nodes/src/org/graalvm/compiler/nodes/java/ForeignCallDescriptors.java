@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.nodes.java;
 
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 
 /**
  * The foreign call descriptors used by nodes in this package.
@@ -37,6 +37,6 @@ public class ForeignCallDescriptors {
     /**
      * @see RegisterFinalizerNode
      */
-    public static final ForeignCallDescriptor REGISTER_FINALIZER = new ForeignCallDescriptor("registerFinalizer", void.class, Object.class);
+    public static final ForeignCallSignature REGISTER_FINALIZER = new ForeignCallSignature("registerFinalizer", void.class, Object.class);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,10 @@ package org.graalvm.compiler.microbenchmarks.graal;
 import java.util.StringTokenizer;
 
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Warmup;
 
 import org.graalvm.compiler.microbenchmarks.graal.util.FrameStateAssignmentState;
 import org.graalvm.compiler.microbenchmarks.graal.util.MethodSpec;
 
-@Warmup(iterations = 15)
 public class FrameStateAssigmentPhaseBenchmark extends GraalBenchmark {
 
     @MethodSpec(declaringClass = StringTokenizer.class, name = "nextToken", parameters = {String.class})

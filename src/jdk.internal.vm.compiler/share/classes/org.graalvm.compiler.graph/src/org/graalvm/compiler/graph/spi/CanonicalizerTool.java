@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 
 package org.graalvm.compiler.graph.spi;
 
+import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.options.OptionValues;
+
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
-
-import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.options.OptionValues;
 
 public interface CanonicalizerTool {
 
@@ -41,6 +42,8 @@ public interface CanonicalizerTool {
     ConstantReflectionProvider getConstantReflection();
 
     ConstantFieldProvider getConstantFieldProvider();
+
+    MetaAccessExtensionProvider getMetaAccessExtensionProvider();
 
     boolean canonicalizeReads();
 

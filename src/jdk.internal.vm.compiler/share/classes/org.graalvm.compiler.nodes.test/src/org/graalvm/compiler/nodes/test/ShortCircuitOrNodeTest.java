@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package org.graalvm.compiler.nodes.test;
 
 import java.util.function.Function;
 
+import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
@@ -39,12 +40,8 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.spi.CoreProviders;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FloatingReadPhase;
-import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
-import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.tiers.Suites;
+import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -377,11 +374,9 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
         for (int i = 1; i <= 64; ++i) {
             String snippet = "testCascadeSnippet" + i;
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-            CoreProviders context = getProviders();
-            CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
-            canonicalizer.apply(graph, context);
-            new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
-            new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()).apply(graph, context);
+            Suites s = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend().getSuites().getDefaultSuites(getInitialOptions());
+            s.getHighTier().apply(graph, getDefaultHighTierContext());
+            s.getMidTier().apply(graph, getDefaultMidTierContext());
             int shortCircuitCount = graph.getNodes(ShortCircuitOrNode.TYPE).count();
 
             int trueCount = testInputCombinations(snippet);

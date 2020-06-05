@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,12 @@ package org.graalvm.compiler.nodes.virtual;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
+import java.util.Iterator;
+
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.VirtualState;
 
@@ -58,5 +62,16 @@ public abstract class EscapeObjectState extends VirtualState implements ValueNum
     @Override
     public void applyToVirtual(VirtualClosure closure) {
         closure.apply(this);
+    }
+
+    @Override
+    public void applyToNonVirtual(NodePositionClosure<? super Node> closure) {
+        Iterator<Position> iter = inputPositions().iterator();
+        while (iter.hasNext()) {
+            Position pos = iter.next();
+            if (pos.get(this) != null) {
+                closure.apply(this, pos);
+            }
+        }
     }
 }

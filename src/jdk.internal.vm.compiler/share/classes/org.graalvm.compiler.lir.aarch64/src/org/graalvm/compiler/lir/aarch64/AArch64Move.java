@@ -307,6 +307,45 @@ public class AArch64Move {
         }
     }
 
+    public static final class VolatileLoadOp extends AArch64LIRInstruction {
+        public static final LIRInstructionClass<VolatileLoadOp> TYPE = LIRInstructionClass.create(VolatileLoadOp.class);
+        protected final AArch64Kind kind;
+        @State protected LIRFrameState state;
+        @Def protected AllocatableValue result;
+        @Use protected AllocatableValue address;
+
+        public VolatileLoadOp(AArch64Kind kind, AllocatableValue result, AllocatableValue address, LIRFrameState state) {
+            super(TYPE);
+            this.kind = kind;
+            this.result = result;
+            this.address = address;
+            this.state = state;
+            if (state != null) {
+                throw GraalError.shouldNotReachHere("Can't handle implicit null check");
+            }
+        }
+
+        @Override
+        protected void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
+            int srcSize = kind.getSizeInBytes() * Byte.SIZE;
+            int destSize = result.getPlatformKind().getSizeInBytes() * Byte.SIZE;
+            if (kind.isInteger()) {
+                masm.ldar(srcSize, asRegister(result), asRegister(address));
+            } else {
+                assert srcSize == destSize;
+                try (ScratchRegister r1 = masm.getScratchRegister()) {
+                    Register rscratch1 = r1.getRegister();
+                    masm.ldar(srcSize, rscratch1, asRegister(address));
+                    masm.fmov(destSize, asRegister(result), rscratch1);
+                }
+            }
+        }
+
+        public AArch64Kind getKind() {
+            return kind;
+        }
+    }
+
     public static class StoreOp extends MemOp {
         public static final LIRInstructionClass<StoreOp> TYPE = LIRInstructionClass.create(StoreOp.class);
         @Use protected AllocatableValue input;
@@ -338,6 +377,43 @@ public class AArch64Move {
         @Override
         public void emitMemAccess(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             emitStore(crb, masm, kind, addressValue.toAddress(), zr.asValue(LIRKind.combine(addressValue)));
+        }
+    }
+
+    public static class VolatileStoreOp extends AArch64LIRInstruction {
+        public static final LIRInstructionClass<VolatileStoreOp> TYPE = LIRInstructionClass.create(VolatileStoreOp.class);
+        protected final AArch64Kind kind;
+        @State protected LIRFrameState state;
+        @Use protected AllocatableValue input;
+        @Use protected AllocatableValue address;
+
+        public VolatileStoreOp(AArch64Kind kind, AllocatableValue address, AllocatableValue input, LIRFrameState state) {
+            super(TYPE);
+            this.kind = kind;
+            this.address = address;
+            this.input = input;
+            this.state = state;
+            if (state != null) {
+                throw GraalError.shouldNotReachHere("Can't handle implicit null check");
+            }
+        }
+
+        @Override
+        protected void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
+            int destSize = kind.getSizeInBytes() * Byte.SIZE;
+            if (kind.isInteger()) {
+                masm.stlr(destSize, asRegister(input), asRegister(address));
+            } else {
+                try (ScratchRegister r1 = masm.getScratchRegister()) {
+                    Register rscratch1 = r1.getRegister();
+                    masm.fmov(destSize, rscratch1, asRegister(input));
+                    masm.stlr(destSize, rscratch1, asRegister(address));
+                }
+            }
+        }
+
+        public AArch64Kind getKind() {
+            return kind;
         }
     }
 

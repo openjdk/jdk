@@ -62,7 +62,7 @@ import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.StandardOp.ZapRegistersOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.hashing.Hasher;
+import org.graalvm.compiler.lir.hashing.IntHasher;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
@@ -482,8 +482,8 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
         int keyCount = keyConstants.length;
         double minDensity = 1 / Math.sqrt(strategy.getAverageEffort());
-        Optional<Hasher> hasher = hasherFor(keyConstants, minDensity);
-        double hashTableSwitchDensity = hasher.map(h -> keyCount / (double) h.cardinality()).orElse(0d);
+        Optional<IntHasher> hasher = hasherFor(keyConstants, minDensity);
+        double hashTableSwitchDensity = hasher.map(h -> (double) keyCount / h.cardinality).orElse(0d);
         // The value range computation below may overflow, so compute it as a long.
         long valueRange = (long) keyConstants[keyCount - 1].asInt() - (long) keyConstants[0].asInt() + 1;
         double tableSwitchDensity = keyCount / (double) valueRange;
@@ -498,11 +498,10 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
             emitStrategySwitch(strategy, value, keyTargets, defaultTarget);
         } else {
             if (hashTableSwitchDensity > tableSwitchDensity) {
-                Hasher h = hasher.get();
-                int cardinality = h.cardinality();
-                LabelRef[] targets = new LabelRef[cardinality];
-                JavaConstant[] keys = new JavaConstant[cardinality];
-                for (int i = 0; i < cardinality; i++) {
+                IntHasher h = hasher.get();
+                LabelRef[] targets = new LabelRef[h.cardinality];
+                JavaConstant[] keys = new JavaConstant[h.cardinality];
+                for (int i = 0; i < h.cardinality; i++) {
                     keys[i] = JavaConstant.INT_0;
                     targets[i] = defaultTarget;
                 }
@@ -532,12 +531,12 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     protected abstract void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key);
 
     @SuppressWarnings("unused")
-    protected Optional<Hasher> hasherFor(JavaConstant[] keyConstants, double minDensity) {
+    protected Optional<IntHasher> hasherFor(JavaConstant[] keyConstants, double minDensity) {
         return Optional.empty();
     }
 
     @SuppressWarnings("unused")
-    protected void emitHashTableSwitch(Hasher hasher, JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, Value value) {
+    protected void emitHashTableSwitch(IntHasher hasher, JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, Value value) {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " doesn't support hash table switches");
     }
 

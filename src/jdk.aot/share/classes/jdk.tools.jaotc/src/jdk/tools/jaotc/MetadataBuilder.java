@@ -236,7 +236,7 @@ final class MetadataBuilder {
                 infopointProcessor.process(methodInfo, infoPoint);
             }
 
-            for (Mark mark : compilationResult.getMarks()) {
+            for (CompilationResult.CodeMark mark : compilationResult.getMarks()) {
                 markProcessor.process(methodInfo, mark);
             }
 

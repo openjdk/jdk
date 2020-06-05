@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.gen.LIRCompilerBackend;
 import org.graalvm.compiler.debug.DebugContext;
@@ -63,8 +63,8 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
     private final Providers providers;
     private final ArrayList<CodeInstallationTaskFactory> codeInstallationTaskFactories;
 
-    public static final ForeignCallDescriptor ARITHMETIC_FREM = new ForeignCallDescriptor("arithmeticFrem", float.class, float.class, float.class);
-    public static final ForeignCallDescriptor ARITHMETIC_DREM = new ForeignCallDescriptor("arithmeticDrem", double.class, double.class, double.class);
+    public static final ForeignCallSignature ARITHMETIC_FREM = new ForeignCallSignature("arithmeticFrem", float.class, float.class, float.class);
+    public static final ForeignCallSignature ARITHMETIC_DREM = new ForeignCallSignature("arithmeticDrem", double.class, double.class, double.class);
 
     protected Backend(Providers providers) {
         this.providers = providers;

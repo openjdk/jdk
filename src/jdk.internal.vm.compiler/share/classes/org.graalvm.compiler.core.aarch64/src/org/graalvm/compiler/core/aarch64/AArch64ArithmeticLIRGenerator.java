@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
 import org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp;
+import org.graalvm.compiler.lir.aarch64.AArch64Move;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.LoadOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.StoreConstantOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.StoreOp;
@@ -237,7 +238,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
             result = getLIRGen().newVariable(LIRKind.combine(c));
         } else {
             assert a.getPlatformKind() == c.getPlatformKind();
-            if (op == AArch64ArithmeticOp.FADD) {
+            if (op == AArch64ArithmeticOp.FMADD) {
                 // For floating-point Math.fma intrinsic.
                 assert a.getPlatformKind() == AArch64Kind.SINGLE || a.getPlatformKind() == AArch64Kind.DOUBLE;
             } else {
@@ -507,6 +508,14 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
     }
 
     @Override
+    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
+        AllocatableValue loadAddress = asAllocatable(address);
+        Variable result = getLIRGen().newVariable(getLIRGen().toRegisterKind(kind));
+        getLIRGen().append(new AArch64Move.VolatileLoadOp((AArch64Kind) kind.getPlatformKind(), result, loadAddress, state));
+        return result;
+    }
+
+    @Override
     public void emitStore(ValueKind<?> lirKind, Value address, Value inputVal, LIRFrameState state) {
         AArch64AddressValue storeAddress = getLIRGen().asAddressValue(address);
         AArch64Kind kind = (AArch64Kind) lirKind.getPlatformKind();
@@ -521,6 +530,14 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         }
         AllocatableValue input = asAllocatable(inputVal);
         getLIRGen().append(new StoreOp(kind, storeAddress, input, state));
+    }
+
+    @Override
+    public void emitVolatileStore(ValueKind<?> lirKind, Value addressVal, Value inputVal, LIRFrameState state) {
+        AArch64Kind kind = (AArch64Kind) lirKind.getPlatformKind();
+        AllocatableValue input = asAllocatable(inputVal);
+        AllocatableValue address = asAllocatable(addressVal);
+        getLIRGen().append(new AArch64Move.VolatileStoreOp(kind, address, input, state));
     }
 
     @Override

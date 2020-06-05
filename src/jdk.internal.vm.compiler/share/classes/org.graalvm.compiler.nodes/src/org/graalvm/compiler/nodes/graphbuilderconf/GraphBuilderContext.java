@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,13 @@ import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DynamicPiNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
@@ -54,6 +56,7 @@ import org.graalvm.compiler.nodes.calc.NarrowNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode.BytecodeExceptionKind;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.InstanceOfDynamicNode;
 import org.graalvm.compiler.nodes.type.StampTool;
 
@@ -283,8 +286,17 @@ public interface GraphBuilderContext extends GraphBuilderTool {
     default ValueNode nullCheckedValue(ValueNode value, DeoptimizationAction action) {
         if (!StampTool.isPointerNonNull(value)) {
             LogicNode condition = getGraph().unique(IsNullNode.create(value));
-            FixedGuardNode fixedGuard = append(new FixedGuardNode(condition, NullCheckException, action, true));
-            ValueNode nonNullReceiver = getGraph().addOrUniqueWithInputs(PiNode.create(value, objectNonNull(), fixedGuard));
+            GuardingNode guardingNode;
+            if (needsExplicitException()) {
+                AbstractBeginNode exceptionPath = genExplicitExceptionEdge(BytecodeExceptionKind.NULL_POINTER);
+                IfNode ifNode = append(new IfNode(condition, exceptionPath, null, 0.01));
+                BeginNode nonNullPath = append(new BeginNode());
+                ifNode.setFalseSuccessor(nonNullPath);
+                guardingNode = nonNullPath;
+            } else {
+                guardingNode = append(new FixedGuardNode(condition, NullCheckException, action, true));
+            }
+            ValueNode nonNullReceiver = getGraph().addOrUniqueWithInputs(PiNode.create(value, objectNonNull(), guardingNode.asNode()));
             // TODO: Propogating the non-null into the frame state would
             // remove subsequent null-checks on the same value. However,
             // it currently causes an assertion failure when merging states.

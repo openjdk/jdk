@@ -25,10 +25,8 @@
 package micro.benchmarks;
 
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
@@ -64,22 +62,16 @@ public class GroupAllocationBenchmark extends BenchmarkBase {
     }
 
     @Benchmark
-    @Warmup(iterations = 5)
-    @Measurement(iterations = 5)
     public void groupAllocate3(Blackhole bh) {
         bh.consume(new Node(new Node(bh, bh), new Node(bh, bh)));
     }
 
     @Benchmark
-    @Warmup(iterations = 5)
-    @Measurement(iterations = 5)
     public void groupAllocate2(Blackhole bh) {
         bh.consume(new Node(new Node(bh, bh), null));
     }
 
     @Benchmark
-    @Warmup(iterations = 5)
-    @Measurement(iterations = 5)
     public void groupAllocate1(Blackhole bh) {
         bh.consume(new Node(null, null));
     }
@@ -98,8 +90,6 @@ public class GroupAllocationBenchmark extends BenchmarkBase {
 
     // object(145)=Buf$ByteArray[int begin=116,int end=324,byte[] bytes=294]
     @Benchmark
-    @Warmup(iterations = 5)
-    @Measurement(iterations = 5)
     public void bufDecode(Blackhole bh, BenchState state) {
         Object a = new BufByteArray(state.bytes);
         Object b = new BufByteArray(state.bytes);
@@ -142,8 +132,6 @@ public class GroupAllocationBenchmark extends BenchmarkBase {
     }
 
     @Benchmark
-    @Warmup(iterations = 5)
-    @Measurement(iterations = 5)
     public void rangeTxnLevelImpl(Blackhole bh, BenchState state) {
         TxnLevelImpl o = new TxnLevelImpl(state.a, state.b, state.c);
         bh.consume(o);

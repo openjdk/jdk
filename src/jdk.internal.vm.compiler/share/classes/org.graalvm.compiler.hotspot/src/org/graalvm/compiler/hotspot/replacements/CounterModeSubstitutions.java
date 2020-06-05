@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_INTRINSIC_CONTEXT;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_METAACCESS;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_INTRINSIC_CONTEXT;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_METAACCESS;
 import static org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions.aesCryptType;
 import static org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions.embeddedCipherOffset;
 import static org.graalvm.compiler.nodes.PiNode.piCastNonNull;
+import static org.graalvm.compiler.nodes.java.InstanceOfNode.doInstanceof;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
@@ -53,23 +54,27 @@ public class CounterModeSubstitutions {
     static int implCrypt(Object receiver, byte[] in, int inOff, int len, byte[] out, int outOff) {
         Object realReceiver = piCastNonNull(receiver, HotSpotReplacementsUtil.methodHolderClass(INJECTED_INTRINSIC_CONTEXT));
         Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset(INJECTED_INTRINSIC_CONTEXT), JavaKind.Object, LocationIdentity.any());
-        Object aesCipher = piCastNonNull(embeddedCipher, aesCryptType(INJECTED_INTRINSIC_CONTEXT));
+        if (doInstanceof(aesCryptType(INJECTED_INTRINSIC_CONTEXT), embeddedCipher)) {
+            Object aesCipher = piCastNonNull(embeddedCipher, aesCryptType(INJECTED_INTRINSIC_CONTEXT));
 
-        Word srcAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(in, ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte) + inOff));
-        Word dstAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(out, ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte) + outOff));
-        Word usedPtr = WordFactory.unsigned(ComputeObjectAddressNode.get(realReceiver, usedOffset(INJECTED_INTRINSIC_CONTEXT)));
+            Word srcAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(in, ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte) + inOff));
+            Word dstAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(out, ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte) + outOff));
+            Word usedPtr = WordFactory.unsigned(ComputeObjectAddressNode.get(realReceiver, usedOffset(INJECTED_INTRINSIC_CONTEXT)));
 
-        int cntOffset = counterOffset(INJECTED_INTRINSIC_CONTEXT);
-        int encCntOffset = encCounterOffset(INJECTED_INTRINSIC_CONTEXT);
-        Object kObject = RawLoadNode.load(aesCipher, AESCryptSubstitutions.kOffset(INJECTED_INTRINSIC_CONTEXT), JavaKind.Object, LocationIdentity.any());
-        Object cntObj = RawLoadNode.load(realReceiver, cntOffset, JavaKind.Object, LocationIdentity.any());
-        Object encCntObj = RawLoadNode.load(realReceiver, encCntOffset, JavaKind.Object, LocationIdentity.any());
+            int cntOffset = counterOffset(INJECTED_INTRINSIC_CONTEXT);
+            int encCntOffset = encCounterOffset(INJECTED_INTRINSIC_CONTEXT);
+            Object kObject = RawLoadNode.load(aesCipher, AESCryptSubstitutions.kOffset(INJECTED_INTRINSIC_CONTEXT), JavaKind.Object, LocationIdentity.any());
+            Object cntObj = RawLoadNode.load(realReceiver, cntOffset, JavaKind.Object, LocationIdentity.any());
+            Object encCntObj = RawLoadNode.load(realReceiver, encCntOffset, JavaKind.Object, LocationIdentity.any());
 
-        Word kPtr = Word.objectToTrackedPointer(kObject).add(ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Int));
-        Word cntPtr = Word.objectToTrackedPointer(cntObj).add(ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte));
-        Word encCntPtr = Word.objectToTrackedPointer(encCntObj).add(ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte));
+            Word kPtr = Word.objectToTrackedPointer(kObject).add(ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Int));
+            Word cntPtr = Word.objectToTrackedPointer(cntObj).add(ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte));
+            Word encCntPtr = Word.objectToTrackedPointer(encCntObj).add(ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Byte));
 
-        return HotSpotBackend.counterModeAESCrypt(srcAddr, dstAddr, kPtr, cntPtr, len, encCntPtr, usedPtr);
+            return HotSpotBackend.counterModeAESCrypt(srcAddr, dstAddr, kPtr, cntPtr, len, encCntPtr, usedPtr);
+        } else {
+            return implCrypt(realReceiver, in, inOff, len, out, outOff);
+        }
     }
 
     static ResolvedJavaType counterModeType(IntrinsicContext context) {

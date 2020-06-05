@@ -24,6 +24,11 @@
 
 package org.graalvm.compiler.replacements.amd64;
 
+import static org.graalvm.compiler.api.directives.GraalDirectives.LIKELY_PROBABILITY;
+import static org.graalvm.compiler.api.directives.GraalDirectives.UNLIKELY_PROBABILITY;
+import static org.graalvm.compiler.api.directives.GraalDirectives.SLOWPATH_PROBABILITY;
+import static org.graalvm.compiler.api.directives.GraalDirectives.injectBranchProbability;
+
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -101,14 +106,14 @@ public class AMD64StringLatin1Substitutions {
     @MethodSubstitution
     public static int indexOf(byte[] value, int ch, int origFromIndex) {
         int fromIndex = origFromIndex;
-        if (ch >>> 8 != 0) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, ch >>> 8 != 0)) {
             // search value must be a byte value
             return -1;
         }
         int length = value.length;
-        if (fromIndex < 0) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, fromIndex < 0)) {
             fromIndex = 0;
-        } else if (fromIndex >= length) {
+        } else if (injectBranchProbability(UNLIKELY_PROBABILITY, fromIndex >= length)) {
             // Note: fromIndex might be near -1>>>1.
             return -1;
         }
@@ -118,35 +123,39 @@ public class AMD64StringLatin1Substitutions {
     @MethodSubstitution
     public static int indexOf(byte[] source, int sourceCount, byte[] target, int targetCount, int origFromIndex) {
         int fromIndex = origFromIndex;
-        if (fromIndex >= sourceCount) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, fromIndex >= sourceCount)) {
             return (targetCount == 0 ? sourceCount : -1);
         }
-        if (fromIndex < 0) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, fromIndex < 0)) {
             fromIndex = 0;
         }
-        if (targetCount == 0) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, targetCount == 0)) {
             // The empty string is in every string.
             return fromIndex;
         }
-        if (sourceCount - fromIndex < targetCount) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, sourceCount - fromIndex < targetCount)) {
             // The empty string contains nothing except the empty string.
             return -1;
         }
-        if (targetCount == 1) {
+        if (injectBranchProbability(UNLIKELY_PROBABILITY, targetCount == 1)) {
             return AMD64ArrayIndexOf.indexOf1Byte(source, sourceCount, fromIndex, target[0]);
         } else {
             int haystackLength = sourceCount - (targetCount - 2);
             int offset = fromIndex;
-            while (offset < haystackLength) {
+            while (injectBranchProbability(LIKELY_PROBABILITY, offset < haystackLength)) {
                 int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(source, haystackLength, offset, target[0], target[1]);
-                if (indexOfResult < 0) {
+                if (injectBranchProbability(UNLIKELY_PROBABILITY, indexOfResult < 0)) {
                     return -1;
                 }
                 offset = indexOfResult;
-                Pointer cmpSourcePointer = byteOffsetPointer(source, offset);
-                Pointer targetPointer = pointer(target);
-                if (targetCount == 2 || ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Byte)) {
+                if (injectBranchProbability(UNLIKELY_PROBABILITY, targetCount == 2)) {
                     return offset;
+                } else {
+                    Pointer cmpSourcePointer = byteOffsetPointer(source, offset);
+                    Pointer targetPointer = pointer(target);
+                    if (injectBranchProbability(UNLIKELY_PROBABILITY, ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Byte))) {
+                        return offset;
+                    }
                 }
                 offset++;
             }
@@ -164,7 +173,11 @@ public class AMD64StringLatin1Substitutions {
      */
     @MethodSubstitution
     public static void inflate(byte[] src, int srcIndex, char[] dest, int destIndex, int len) {
-        if (len < 0 || srcIndex < 0 || (srcIndex + len > src.length) || destIndex < 0 || (destIndex + len > dest.length)) {
+        if (injectBranchProbability(SLOWPATH_PROBABILITY, len < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, srcIndex < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, srcIndex + len > src.length) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, destIndex < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, destIndex + len > dest.length)) {
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
 
@@ -188,7 +201,11 @@ public class AMD64StringLatin1Substitutions {
      */
     @MethodSubstitution
     public static void inflate(byte[] src, int srcIndex, byte[] dest, int destIndex, int len) {
-        if (len < 0 || srcIndex < 0 || (srcIndex + len > src.length) || destIndex < 0 || (destIndex * 2 + len * 2 > dest.length)) {
+        if (injectBranchProbability(SLOWPATH_PROBABILITY, len < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, srcIndex < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, srcIndex + len > src.length) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, destIndex < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, destIndex * 2 + len * 2 > dest.length)) {
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
 

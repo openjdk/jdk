@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,28 +30,30 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import java.util.List;
 
-import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.graph.Edges;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
+import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.extended.AnchoringNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.nodes.spi.CoreProvidersDelegate;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
 
 /**
  * Graph decoder that simplifies nodes during decoding. The standard
@@ -65,12 +67,13 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
     protected final boolean canonicalizeReads;
     protected final CanonicalizerTool canonicalizerTool;
 
-    protected class PECanonicalizerTool implements CanonicalizerTool {
+    protected class PECanonicalizerTool extends CoreProvidersDelegate implements CanonicalizerTool {
 
         private final Assumptions assumptions;
         private final OptionValues options;
 
         public PECanonicalizerTool(Assumptions assumptions, OptionValues options) {
+            super(providers);
             this.assumptions = assumptions;
             this.options = options;
         }
@@ -78,21 +81,6 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
         @Override
         public OptionValues getOptions() {
             return options;
-        }
-
-        @Override
-        public MetaAccessProvider getMetaAccess() {
-            return providers.getMetaAccess();
-        }
-
-        @Override
-        public ConstantReflectionProvider getConstantReflection() {
-            return providers.getConstantReflection();
-        }
-
-        @Override
-        public ConstantFieldProvider getConstantFieldProvider() {
-            return providers.getConstantFieldProvider();
         }
 
         @Override
@@ -118,8 +106,8 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
         }
     }
 
-    @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED, allowedUsageTypes = {Guard})
-    static class CanonicalizeToNullNode extends FloatingNode implements Canonicalizable, GuardingNode {
+    @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED, allowedUsageTypes = {Guard, InputType.Anchor})
+    static class CanonicalizeToNullNode extends FloatingNode implements Canonicalizable, GuardingNode, AnchoringNode {
         public static final NodeClass<CanonicalizeToNullNode> TYPE = NodeClass.create(CanonicalizeToNullNode.class);
 
         protected CanonicalizeToNullNode(Stamp stamp) {
@@ -150,7 +138,7 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
                 if (mergeNode.forwardEndCount() == 1) {
                     graph.reduceTrivialMerge(mergeNode);
                 }
-            } else if (node instanceof BeginNode || node instanceof KillingBeginNode) {
+            } else if (node instanceof BeginNode || node instanceof KillingBeginNode || node instanceof MultiKillingBeginNode) {
                 if (!(node.predecessor() instanceof ControlSplitNode) && node.hasNoUsages()) {
                     GraphUtil.unlinkFixedNode((AbstractBeginNode) node);
                     node.safeDelete();
@@ -199,6 +187,10 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
      * @param node The node to be canonicalized.
      */
     protected Node canonicalizeFixedNode(MethodScope methodScope, Node node) {
+        /*
+         * Duplicate cases for frequent classes (LoadFieldNode, LoadIndexedNode and ArrayLengthNode)
+         * to improve performance (Haeubl, 2017).
+         */
         if (node instanceof LoadFieldNode) {
             LoadFieldNode loadFieldNode = (LoadFieldNode) node;
             return loadFieldNode.canonical(canonicalizerTool);
@@ -222,40 +214,77 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
             if (ifNode.condition() instanceof LogicNegationNode) {
                 ifNode.eliminateNegation();
             }
-            if (ifNode.condition() instanceof LogicConstantNode) {
-                boolean condition = ((LogicConstantNode) ifNode.condition()).getValue();
-                AbstractBeginNode survivingSuccessor = ifNode.getSuccessor(condition);
-                AbstractBeginNode deadSuccessor = ifNode.getSuccessor(!condition);
-
-                graph.removeSplit(ifNode, survivingSuccessor);
-                assert deadSuccessor.next() == null : "must not be parsed yet";
-                deadSuccessor.safeDelete();
-            }
-            return node;
+            return ifNode;
         } else if (node instanceof LoadIndexedNode) {
             LoadIndexedNode loadIndexedNode = (LoadIndexedNode) node;
             return loadIndexedNode.canonical(canonicalizerTool);
         } else if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLengthNode = (ArrayLengthNode) node;
             return arrayLengthNode.canonical(canonicalizerTool);
-        } else if (node instanceof IntegerSwitchNode && ((IntegerSwitchNode) node).value().isConstant()) {
-            IntegerSwitchNode switchNode = (IntegerSwitchNode) node;
-            int value = switchNode.value().asJavaConstant().asInt();
-            AbstractBeginNode survivingSuccessor = switchNode.successorAtKey(value);
-            List<Node> allSuccessors = switchNode.successors().snapshot();
-
-            graph.removeSplit(switchNode, survivingSuccessor);
-            for (Node successor : allSuccessors) {
-                if (successor != survivingSuccessor) {
-                    assert ((AbstractBeginNode) successor).next() == null : "must not be parsed yet";
-                    successor.safeDelete();
-                }
-            }
-            return node;
         } else if (node instanceof Canonicalizable) {
             return ((Canonicalizable) node).canonical(canonicalizerTool);
         } else {
             return node;
+        }
+    }
+
+    @Override
+    protected boolean earlyCanonicalization(MethodScope methodScope, LoopScope loopScope, int nodeOrderId, FixedNode node) {
+        if (node instanceof IfNode && ((IfNode) node).condition() instanceof LogicConstantNode) {
+            IfNode ifNode = (IfNode) node;
+
+            assert !(ifNode.condition() instanceof LogicNegationNode) : "Negation of a constant must have been canonicalized before";
+
+            int survivingIndex = ((LogicConstantNode) ifNode.condition()).getValue() ? 0 : 1;
+
+            /* Check that the node has the expected encoding. */
+            if (Assertions.assertionsEnabled()) {
+                Edges edges = ifNode.getNodeClass().getSuccessorEdges();
+                assert edges.getDirectCount() == 2 : "IfNode expected to have 2 direct successors";
+                assert edges.getName(0).equals("trueSuccessor") : "Unexpected IfNode encoding";
+                assert edges.getName(1).equals("falseSuccessor") : "Unexpected IfNode encoding";
+                assert edges.getCount() == 2 : "IntegerSwitchNode expected to have 0 indirect successor";
+            }
+
+            /* Read the surviving successor order id. */
+            long successorsByteIndex = methodScope.reader.getByteIndex();
+            methodScope.reader.setByteIndex(successorsByteIndex + survivingIndex * methodScope.orderIdWidth);
+            int survivingOrderId = readOrderId(methodScope);
+            methodScope.reader.setByteIndex(successorsByteIndex + 2 * methodScope.orderIdWidth);
+
+            AbstractBeginNode survivingSuccessor = (AbstractBeginNode) makeStubNode(methodScope, loopScope, survivingOrderId);
+            graph.removeSplit(ifNode, survivingSuccessor);
+            return true;
+        } else if (node instanceof IntegerSwitchNode && ((IntegerSwitchNode) node).value().isConstant()) {
+            /*
+             * Avoid spawning all successors for trivially canonicalizable switches, this ensures
+             * that bytecode interpreters with huge switches do not allocate nodes that are removed
+             * straight away during PE.
+             */
+            IntegerSwitchNode switchNode = (IntegerSwitchNode) node;
+            int value = switchNode.value().asJavaConstant().asInt();
+            int survivingIndex = switchNode.successorIndexAtKey(value);
+
+            /* Check that the node has the expected encoding. */
+            if (Assertions.assertionsEnabled()) {
+                Edges edges = switchNode.getNodeClass().getSuccessorEdges();
+                assert edges.getDirectCount() == 0 : "IntegerSwitchNode expected to have 0 direct successor";
+                assert edges.getCount() == 1 : "IntegerSwitchNode expected to have 1 indirect successor";
+                assert edges.getName(0).equals("successors") : "Unexpected IntegerSwitchNode encoding";
+            }
+
+            /* Read the surviving successor order id. */
+            int size = methodScope.reader.getSVInt();
+            long successorsByteIndex = methodScope.reader.getByteIndex();
+            methodScope.reader.setByteIndex(successorsByteIndex + survivingIndex * methodScope.orderIdWidth);
+            int survivingOrderId = readOrderId(methodScope);
+            methodScope.reader.setByteIndex(successorsByteIndex + size * methodScope.orderIdWidth);
+
+            AbstractBeginNode survivingSuccessor = (AbstractBeginNode) makeStubNode(methodScope, loopScope, survivingOrderId);
+            graph.removeSplit(switchNode, survivingSuccessor);
+            return true;
+        } else {
+            return false;
         }
     }
 

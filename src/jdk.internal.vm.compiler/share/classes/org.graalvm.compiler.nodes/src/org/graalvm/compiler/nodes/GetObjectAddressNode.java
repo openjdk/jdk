@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -67,7 +66,7 @@ public final class GetObjectAddressNode extends FixedWithNextNode implements LIR
 
     @Override
     public boolean verify() {
-        assert graph().getGuardsStage().areFrameStatesAtDeopts() || graph().method().getAnnotation(Snippet.class) != null : "GetObjectAddressNode can't be used directly until frame states are fixed";
+        assert graph().getGuardsStage().areFrameStatesAtDeopts() || graph().isSubstitution() : "GetObjectAddressNode can't be used directly until frame states are fixed";
         return super.verify();
     }
 }

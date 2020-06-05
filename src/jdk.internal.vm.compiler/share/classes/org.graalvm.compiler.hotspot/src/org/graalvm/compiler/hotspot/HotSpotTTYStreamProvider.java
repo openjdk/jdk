@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@ package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.hotspot.HotSpotGraalOptionValues.GRAAL_OPTION_PROPERTY_PREFIX;
 import static org.graalvm.compiler.hotspot.HotSpotGraalOptionValues.defaultOptions;
+import static jdk.internal.vm.compiler.word.LocationIdentity.ANY_LOCATION;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,7 +42,11 @@ import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.IsolateUtil;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
+import org.graalvm.compiler.word.Word;
+import jdk.internal.vm.compiler.word.Pointer;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -53,7 +59,10 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
 
         // @formatter:off
         @Option(help = "File to which logging is sent.  A %p in the name will be replaced with a string identifying " +
-                       "the process, usually the process id and %t will be replaced by System.currentTimeMillis().  " +
+                       "the process, usually the process id and %t will be replaced by System.currentTimeMillis(). " +
+                       "If the current runtime is in an isolate, then %i will be replaced by '<isolate id>' " +
+                       "otherwise %i is removed. An %I is the same as %i except that the replacement is " +
+                       "'<isolate id>@<isolate address>'. " +
                        "Using %o as filename sends logging to System.out whereas %e sends logging to System.err.", type = OptionType.Expert)
         public static final LogStreamOptionKey LogFile = new LogStreamOptionKey();
         // @formatter:on
@@ -62,6 +71,55 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
     @Override
     public PrintStream getStream() {
         return Options.LogFile.getStream();
+    }
+
+    static {
+        Word.ensureInitialized();
+    }
+
+    /**
+     * Gets a pointer to a global word initialized to 0.
+     */
+    private static Pointer getBarrierPointer() {
+        // Substituted by Target_org_graalvm_compiler_hotspot_HotSpotTTYStreamProvider
+        return WordFactory.nullPointer();
+    }
+
+    /**
+     * Executes {@code action}. If {@code barrier.isNonNull()}, then {@code barrier} is used to
+     * ensure the action is executed exactly once in the process (i.e. synchronized across all
+     * threads and isolates) and that threads will block here until the action is guaranteed to have
+     * been executed. Note that each {@code barrier} is specific to a specific {@code action} and
+     * cannot be used for any other action.
+     */
+    private static boolean execute(Runnable action, Pointer barrier) {
+        if (barrier.isNull()) {
+            action.run();
+            return true;
+        }
+        final long initial = 0L;
+        final long executing = 1L;
+        final long executed = 2L;
+
+        while (true) {
+            long value = barrier.readLong(0);
+            if (value == initial) {
+                if (barrier.compareAndSwapLong(0, value, executing, ANY_LOCATION) == value) {
+                    action.run();
+                    barrier.writeLong(0, executed);
+                    return true;
+                }
+            } else {
+                if (value == executed) {
+                    return false;
+                }
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                }
+                value = barrier.readLong(0);
+            }
+        }
     }
 
     /**
@@ -84,10 +142,16 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
         private static String makeFilename(String nameTemplate) {
             String name = nameTemplate;
             if (name.contains("%p")) {
-                name = name.replaceAll("%p", GraalServices.getExecutionID());
+                name = name.replace("%p", GraalServices.getExecutionID());
+            }
+            if (name.contains("%i")) {
+                name = name.replace("%i", IsolateUtil.getIsolateID(false));
+            }
+            if (name.contains("%I")) {
+                name = name.replace("%I", IsolateUtil.getIsolateID(true));
             }
             if (name.contains("%t")) {
-                name = name.replaceAll("%t", String.valueOf(System.currentTimeMillis()));
+                name = name.replace("%t", String.valueOf(System.currentTimeMillis()));
             }
 
             for (String subst : new String[]{"%o", "%e"}) {
@@ -108,7 +172,7 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
         class DelayedOutputStream extends OutputStream {
             @NativeImageReinitialize private volatile OutputStream lazy;
 
-            private OutputStream lazy() {
+            private OutputStream lazy() throws FileNotFoundException {
                 if (lazy == null) {
                     synchronized (this) {
                         if (lazy == null) {
@@ -123,27 +187,29 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
                                         lazy = System.err;
                                         break;
                                     default:
-                                        try {
-                                            final boolean enableAutoflush = true;
-                                            FileOutputStream result = new FileOutputStream(name);
-                                            if (!Services.IS_IN_NATIVE_IMAGE) {
-                                                printVMConfig(enableAutoflush, result);
-                                            } else {
-                                                // There are no VM arguments for the libgraal
-                                                // library.
+                                        boolean executed = execute(() -> {
+                                            File file = new File(name);
+                                            if (file.exists()) {
+                                                file.delete();
                                             }
-                                            lazy = result;
-                                        } catch (FileNotFoundException e) {
-                                            throw new RuntimeException("couldn't open file: " + name, e);
+                                        }, getBarrierPointer());
+                                        final boolean enableAutoflush = true;
+                                        FileOutputStream result = new FileOutputStream(name, true);
+                                        if (executed) {
+                                            printVMConfig(enableAutoflush, result);
                                         }
+                                        lazy = result;
                                 }
                                 return lazy;
                             }
 
                             lazy = HotSpotJVMCIRuntime.runtime().getLogStream();
-                            PrintStream ps = new PrintStream(lazy);
-                            ps.printf("[Use -D%sLogFile=<path> to redirect Graal log output to a file.]%n", GRAAL_OPTION_PROPERTY_PREFIX);
-                            ps.flush();
+                            execute(() -> {
+                                PrintStream ps = new PrintStream(lazy);
+                                ps.printf("[Use -D%sLogFile=<path> to redirect Graal log output to a file.]%n", GRAAL_OPTION_PROPERTY_PREFIX);
+                                ps.flush();
+
+                            }, getBarrierPointer());
                         }
                     }
                 }
@@ -195,5 +261,4 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
             return new PrintStream(new DelayedOutputStream());
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static jdk.vm.ci.amd64.AMD64.rbp;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.amd64.AMD64NodeLIRBuilder;
 import org.graalvm.compiler.core.amd64.AMD64NodeMatchRules;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -58,6 +57,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeValueMap;
 import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
 import org.graalvm.compiler.replacements.nodes.ArrayEqualsNode;
+import org.graalvm.compiler.replacements.nodes.ArrayRegionEqualsNode;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;
@@ -72,9 +72,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.replacements.nodes.ArrayRegionEqualsNode;
 
 /**
  * LIR generator specialized for AMD64 HotSpot.
@@ -144,7 +142,7 @@ public class AMD64HotSpotNodeLIRBuilder extends AMD64NodeLIRBuilder implements H
             assert invokeKind.isDirect();
             HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) callTarget.targetMethod();
             assert resolvedMethod.isConcrete() : "Cannot make direct call to abstract method.";
-            append(new AMD64HotSpotDirectStaticCallOp(callTarget.targetMethod(), result, parameters, temps, callState, invokeKind, getGen().config));
+            append(new AMD64HotSpotDirectStaticCallOp(callTarget.targetMethod(), result, parameters, temps, callState, invokeKind));
         }
     }
 
@@ -157,7 +155,7 @@ public class AMD64HotSpotNodeLIRBuilder extends AMD64NodeLIRBuilder implements H
             AllocatableValue targetAddressDst = AMD64.rax.asValue(targetAddressSrc.getValueKind());
             gen.emitMove(metaspaceMethodDst, metaspaceMethodSrc);
             gen.emitMove(targetAddressDst, targetAddressSrc);
-            append(new AMD64IndirectCallOp(callTarget.targetMethod(), result, parameters, temps, metaspaceMethodDst, targetAddressDst, callState, getGen().config));
+            append(new AMD64IndirectCallOp(callTarget.targetMethod(), result, parameters, temps, metaspaceMethodDst, targetAddressDst, callState));
         } else {
             super.emitIndirectCall(callTarget, result, parameters, temps, callState);
         }
@@ -210,8 +208,7 @@ public class AMD64HotSpotNodeLIRBuilder extends AMD64NodeLIRBuilder implements H
 
     @Override
     public ForeignCallLinkage lookupGraalStub(ValueNode valueNode) {
-        ResolvedJavaMethod method = valueNode.graph().method();
-        if (method == null || method.getAnnotation(Snippet.class) != null) {
+        if (getGen().getResult().getStub() != null) {
             // Emit assembly for snippet stubs
             return null;
         }

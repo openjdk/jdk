@@ -29,15 +29,18 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BeginStateSplitNode;
-import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.KillingBeginNode;
+import org.graalvm.compiler.nodes.MultiKillingBeginNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -80,12 +83,22 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
              * Now the lowering to BeginNode+LoadExceptionNode can be performed, since no more
              * deopts can float in between the begin node and the load exception node.
              */
-            LocationIdentity locationsKilledByInvoke = ((InvokeWithExceptionNode) predecessor()).getKilledLocationIdentity();
-            AbstractBeginNode entry = graph().add(KillingBeginNode.create(locationsKilledByInvoke));
+            Node predecessor = predecessor();
+            AbstractBeginNode entry;
+            if (predecessor instanceof SingleMemoryKill) {
+                LocationIdentity locationsKilledByPredecessor = ((SingleMemoryKill) predecessor).getKilledLocationIdentity();
+                entry = graph().add(KillingBeginNode.create(locationsKilledByPredecessor));
+            } else if (predecessor instanceof MultiMemoryKill) {
+                LocationIdentity[] locationsKilledByPredecessor = ((MultiMemoryKill) predecessor).getKilledLocationIdentities();
+                entry = graph().add(MultiKillingBeginNode.create(locationsKilledByPredecessor));
+            } else {
+                entry = graph().add(new BeginNode());
+            }
+
             LoadExceptionObjectNode loadException = graph().add(new LoadExceptionObjectNode(stamp(NodeView.DEFAULT)));
 
             loadException.setStateAfter(stateAfter());
-            replaceAtUsages(InputType.Value, loadException);
+            replaceAtUsages(loadException, InputType.Value);
             graph().replaceFixedWithFixed(this, entry);
             entry.graph().addAfterFixed(entry, loadException);
 

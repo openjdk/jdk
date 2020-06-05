@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 package org.graalvm.compiler.replacements.nodes;
 
 import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
-import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
@@ -48,6 +46,7 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -89,19 +88,71 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
     @Input protected NodeInputList<ValueNode> arguments;
 
     protected final int bci;
+    protected final ResolvedJavaMethod callerMethod;
     protected final ResolvedJavaMethod targetMethod;
     protected final InvokeKind invokeKind;
     protected final StampPair returnStamp;
 
-    protected MacroNode(NodeClass<? extends MacroNode> c, InvokeKind invokeKind, ResolvedJavaMethod targetMethod, int bci, StampPair returnStamp, ValueNode... arguments) {
-        super(c, returnStamp != null ? returnStamp.getTrustedStamp() : null);
-        assertArgumentCount(targetMethod, arguments);
-        this.arguments = new NodeInputList<>(this, arguments);
-        this.bci = bci;
-        this.targetMethod = targetMethod;
-        this.returnStamp = returnStamp;
-        this.invokeKind = invokeKind;
-        assert !isPlaceholderBci(bci);
+    /**
+     * Encapsulates the parameters for constructing a {@link MacroNode} that are the same for all
+     * leaf constructor call sites. Collecting the parameters in an object simplifies passing the
+     * parameters through the many chained constructor calls.
+     */
+    public static class MacroParams {
+        public final InvokeKind invokeKind;
+        public final ResolvedJavaMethod callerMethod;
+        public final ResolvedJavaMethod targetMethod;
+        public final int bci;
+        public final StampPair returnStamp;
+        public final ValueNode[] arguments;
+
+        public MacroParams(InvokeKind invokeKind,
+                        ResolvedJavaMethod callerMethod,
+                        ResolvedJavaMethod targetMethod,
+                        int bci,
+                        StampPair returnStamp,
+                        ValueNode... arguments) {
+            this.invokeKind = invokeKind;
+            this.callerMethod = callerMethod;
+            this.targetMethod = targetMethod;
+            this.bci = bci;
+            this.returnStamp = returnStamp;
+            this.arguments = arguments;
+        }
+
+        public static MacroParams of(GraphBuilderContext b, ResolvedJavaMethod targetMethod, ValueNode... arguments) {
+            return new MacroParams(b.getInvokeKind(), b.getMethod(), targetMethod, b.bci(), b.getInvokeReturnStamp(b.getAssumptions()), arguments);
+        }
+
+        public static MacroParams of(GraphBuilderContext b, InvokeKind invokeKind, ResolvedJavaMethod targetMethod, ValueNode... arguments) {
+            return new MacroParams(invokeKind, b.getMethod(), targetMethod, b.bci(), b.getInvokeReturnStamp(b.getAssumptions()), arguments);
+        }
+
+        public static MacroParams of(InvokeKind invokeKind,
+                        ResolvedJavaMethod callerMethod,
+                        ResolvedJavaMethod targetMethod,
+                        int bci,
+                        StampPair returnStamp,
+                        ValueNode... arguments) {
+            return new MacroParams(invokeKind, callerMethod, targetMethod, bci, returnStamp, arguments);
+        }
+    }
+
+    protected MacroNode(NodeClass<? extends MacroNode> c, MacroParams p) {
+        super(c, p.returnStamp != null ? p.returnStamp.getTrustedStamp() : null);
+        assertArgumentCount(p.targetMethod, p.arguments);
+        this.arguments = new NodeInputList<>(this, p.arguments);
+        this.bci = p.bci;
+        this.callerMethod = p.callerMethod;
+        this.targetMethod = p.targetMethod;
+        this.returnStamp = p.returnStamp;
+        this.invokeKind = p.invokeKind;
+        assert !isPlaceholderBci(p.bci);
+    }
+
+    @Override
+    public ResolvedJavaMethod getContextMethod() {
+        return callerMethod;
     }
 
     protected void assertArgumentCount(ResolvedJavaMethod method, ValueNode... args) {
@@ -126,8 +177,17 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
     }
 
     @Override
+    public void setBci(int bci) {
+        // nothing to do here, macro nodes get bci during construction
+    }
+
+    @Override
     public ResolvedJavaMethod getTargetMethod() {
         return targetMethod;
+    }
+
+    public InvokeKind getInvokeKind() {
+        return invokeKind;
     }
 
     protected FrameState stateAfter() {
@@ -204,17 +264,6 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
             }
 
             if (invoke.stateAfter() == null) {
-                ResolvedJavaMethod method = graph().method();
-                if (!IS_IN_NATIVE_IMAGE) {
-                    if (method.getAnnotation(MethodSubstitution.class) != null || method.getAnnotation(Snippet.class) != null) {
-                        // One cause for this is that a MacroNode is created for a method that
-                        // no longer needs a MacroNode. For example, Class.getComponentType()
-                        // only needs a MacroNode prior to JDK9 as it was given a non-native
-                        // implementation in JDK9.
-                        throw new GraalError("%s macro created for call to %s in %s must be lowerable to a snippet or intrinsic graph. " +
-                                        "Maybe a macro node is not needed for this method in the current JDK?", getClass().getSimpleName(), targetMethod.format("%h.%n(%p)"), graph());
-                    }
-                }
                 throw new GraalError("%s: cannot lower to invoke without state: %s", graph(), this);
             }
             invoke.lower(tool);

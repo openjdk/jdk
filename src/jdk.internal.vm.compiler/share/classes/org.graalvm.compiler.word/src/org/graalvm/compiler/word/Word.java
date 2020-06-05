@@ -104,6 +104,7 @@ public abstract class Word implements SignedWord, UnsignedWord, Pointer {
         READ_BARRIERED,
         READ_HEAP,
         WRITE_POINTER,
+        WRITE_POINTER_SIDE_EFFECT_FREE,
         WRITE_OBJECT,
         WRITE_BARRIERED,
         CAS_POINTER,

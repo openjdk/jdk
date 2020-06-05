@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.invocationCounterIncrement;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.invocationCounterOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.invocationCounterShift;
+import static org.graalvm.compiler.hotspot.replacements.profiling.ProfileSnippets.METHOD_COUNTERS;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
@@ -82,8 +83,8 @@ public class ProbabilisticProfileSnippets implements Snippets {
     @Snippet
     public static void profileMethodEntryWithProbability(MethodCountersPointer counters, int random, int step, int stepLog, @ConstantParameter int freqLog, @ConstantParameter int probLog) {
         if (probability(1.0 / (1 << probLog), shouldProfile(probLog, random))) {
-            int counterValue = counters.readInt(invocationCounterOffset(INJECTED_VMCONFIG)) + ((invocationCounterIncrement(INJECTED_VMCONFIG) * step) << probLog);
-            counters.writeInt(invocationCounterOffset(INJECTED_VMCONFIG), counterValue);
+            int counterValue = counters.readInt(invocationCounterOffset(INJECTED_VMCONFIG), METHOD_COUNTERS) + ((invocationCounterIncrement(INJECTED_VMCONFIG) * step) << probLog);
+            counters.writeIntSideEffectFree(invocationCounterOffset(INJECTED_VMCONFIG), counterValue, METHOD_COUNTERS);
             if (freqLog >= 0) {
                 int mask = notificationMask(freqLog, probLog, stepLog);
                 if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << invocationCounterShift(INJECTED_VMCONFIG))) == 0)) {
@@ -100,8 +101,8 @@ public class ProbabilisticProfileSnippets implements Snippets {
     public static void profileBackedgeWithProbability(MethodCountersPointer counters, int random, int step, int stepLog, @ConstantParameter int freqLog, @ConstantParameter int probLog, int bci,
                     int targetBci) {
         if (probability(1.0 / (1 << probLog), shouldProfile(probLog, random))) {
-            int counterValue = counters.readInt(backedgeCounterOffset(INJECTED_VMCONFIG)) + ((invocationCounterIncrement(INJECTED_VMCONFIG) * step) << probLog);
-            counters.writeInt(backedgeCounterOffset(INJECTED_VMCONFIG), counterValue);
+            int counterValue = counters.readInt(backedgeCounterOffset(INJECTED_VMCONFIG), METHOD_COUNTERS) + ((invocationCounterIncrement(INJECTED_VMCONFIG) * step) << probLog);
+            counters.writeIntSideEffectFree(backedgeCounterOffset(INJECTED_VMCONFIG), counterValue, METHOD_COUNTERS);
             int mask = notificationMask(freqLog, probLog, stepLog);
             if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << invocationCounterShift(INJECTED_VMCONFIG))) == 0)) {
                 methodBackedgeEvent(HotSpotBackend.BACKEDGE_EVENT, counters, bci, targetBci);

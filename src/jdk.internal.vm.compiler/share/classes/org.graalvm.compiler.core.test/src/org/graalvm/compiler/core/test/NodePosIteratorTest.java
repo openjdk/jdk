@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,8 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import java.util.Iterator;
 
-import org.junit.Assert;
-import org.junit.Test;
-
+import org.graalvm.compiler.core.common.PermanentBailoutException;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -39,10 +38,15 @@ import org.graalvm.compiler.graph.NodeSuccessorList;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class NodePosIteratorTest extends GraalCompilerTest {
 
@@ -61,6 +65,27 @@ public class NodePosIteratorTest extends GraalCompilerTest {
             super(TYPE);
         }
 
+    }
+
+    @Test
+    public void testNodeInputIteratorLimit() {
+        DebugContext debug = getDebugContext();
+        StructuredGraph graph = new StructuredGraph.Builder(debug.getOptions(), debug,
+                        StructuredGraph.AllowAssumptions.YES).build();
+
+        AbstractMergeNode merge = graph.add(new MergeNode());
+        for (int i = 0; i < 65536; i++) {
+            EndNode end = graph.add(new EndNode());
+            merge.addForwardEnd(end);
+        }
+        merge.inputs().count();
+        EndNode end = graph.add(new EndNode());
+        try {
+            merge.addForwardEnd(end);
+        } catch (PermanentBailoutException e) {
+            return;
+        }
+        Assert.fail("Expected a permanent bailout exception due to too high number of inputs");
     }
 
     @Test

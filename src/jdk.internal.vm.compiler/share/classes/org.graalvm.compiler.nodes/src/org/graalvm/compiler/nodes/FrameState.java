@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,21 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.IterableNodeType;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.NodeSourcePosition;
+import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -581,7 +583,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
          * when it's a substitution or it's null.
          */
         assertTrue(outerFrameState != null || graph() == null || graph().method() == null || code == null || Objects.equals(graph().method(), code.getMethod()) ||
-                        graph().method().getAnnotation(MethodSubstitution.class) != null, "wrong outerFrameState %s != %s", code == null ? "null" : code.getMethod(), graph().method());
+                        graph().isSubstitution(), "wrong outerFrameState %s != %s", code == null ? "null" : code.getMethod(), graph().method());
         if (monitorIds() != null && monitorIds().size() > 0) {
             int depth = outerLockDepth();
             for (MonitorIdNode monitor : monitorIds()) {
@@ -608,33 +610,6 @@ public final class FrameState extends VirtualState implements IterableNodeType {
     }
 
     @Override
-    public void applyToNonVirtual(NodeClosure<? super ValueNode> closure) {
-        for (ValueNode value : values) {
-            if (value != null) {
-                closure.apply(this, value);
-            }
-        }
-
-        if (monitorIds != null) {
-            for (MonitorIdNode monitorId : monitorIds) {
-                if (monitorId != null) {
-                    closure.apply(this, monitorId);
-                }
-            }
-        }
-
-        if (virtualObjectMappings != null) {
-            for (EscapeObjectState state : virtualObjectMappings) {
-                state.applyToNonVirtual(closure);
-            }
-        }
-
-        if (outerFrameState() != null) {
-            outerFrameState().applyToNonVirtual(closure);
-        }
-    }
-
-    @Override
     public void applyToVirtual(VirtualClosure closure) {
         closure.apply(this);
         if (virtualObjectMappings != null) {
@@ -644,6 +619,27 @@ public final class FrameState extends VirtualState implements IterableNodeType {
         }
         if (outerFrameState() != null) {
             outerFrameState().applyToVirtual(closure);
+        }
+    }
+
+    @Override
+    public void applyToNonVirtual(NodePositionClosure<? super Node> closure) {
+        Iterator<Position> iter = inputPositions().iterator();
+        while (iter.hasNext()) {
+            Position pos = iter.next();
+            if (pos.get(this) != null) {
+                if (pos.getInputType() == InputType.Value || pos.getInputType() == Association) {
+                    closure.apply(this, pos);
+                }
+            }
+        }
+        if (virtualObjectMappings != null) {
+            for (EscapeObjectState state : virtualObjectMappings) {
+                state.applyToNonVirtual(closure);
+            }
+        }
+        if (outerFrameState() != null) {
+            outerFrameState().applyToNonVirtual(closure);
         }
     }
 
@@ -668,4 +664,5 @@ public final class FrameState extends VirtualState implements IterableNodeType {
     public boolean isExceptionHandlingBCI() {
         return bci == BytecodeFrame.AFTER_EXCEPTION_BCI || bci == BytecodeFrame.UNWIND_BCI;
     }
+
 }

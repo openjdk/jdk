@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@ package org.graalvm.compiler.hotspot.aarch64;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -81,7 +82,7 @@ public class AArch64HotSpotSafepointOp extends AArch64LIRInstruction {
     }
 
     public static void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm, GraalHotSpotVMConfig config, boolean onReturn, Register thread, Register scratch, LIRFrameState state) {
-        if (config.threadLocalHandshakes) {
+        if (config.useThreadLocalPolling) {
             emitThreadLocalPoll(crb, masm, config, onReturn, thread, scratch, state);
         } else {
             emitGlobalPoll(crb, masm, config, onReturn, scratch, state);
@@ -90,15 +91,15 @@ public class AArch64HotSpotSafepointOp extends AArch64LIRInstruction {
 
     private static void emitGlobalPoll(CompilationResultBuilder crb, AArch64MacroAssembler masm, GraalHotSpotVMConfig config, boolean onReturn, Register scratch, LIRFrameState state) {
         if (isPollingPageFar(config)) {
-            crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
+            crb.recordMark(onReturn ? HotSpotMarkId.POLL_RETURN_FAR : HotSpotMarkId.POLL_FAR);
             masm.movNativeAddress(scratch, config.safepointPollingAddress);
-            crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
+            crb.recordMark(onReturn ? HotSpotMarkId.POLL_RETURN_FAR : HotSpotMarkId.POLL_FAR);
             if (state != null) {
                 crb.recordInfopoint(masm.position(), state, InfopointReason.SAFEPOINT);
             }
             masm.ldr(32, zr, AArch64Address.createBaseRegisterOnlyAddress(scratch));
         } else {
-            crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_NEAR : config.MARKID_POLL_NEAR);
+            crb.recordMark(onReturn ? HotSpotMarkId.POLL_RETURN_NEAR : HotSpotMarkId.POLL_NEAR);
             if (state != null) {
                 crb.recordInfopoint(masm.position(), state, InfopointReason.SAFEPOINT);
             }
@@ -110,7 +111,7 @@ public class AArch64HotSpotSafepointOp extends AArch64LIRInstruction {
                     LIRFrameState state) {
         assert config.threadPollingPageOffset >= 0;
         masm.ldr(64, scratch, masm.makeAddress(thread, config.threadPollingPageOffset, 8));
-        crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
+        crb.recordMark(onReturn ? HotSpotMarkId.POLL_RETURN_FAR : HotSpotMarkId.POLL_FAR);
         if (state != null) {
             crb.recordInfopoint(masm.position(), state, InfopointReason.SAFEPOINT);
         }

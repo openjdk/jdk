@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,17 @@ import java.util.regex.Pattern;
  */
 public final class JVMCIVersionCheck {
 
-    private static final Version JVMCI_MIN_VERSION = new Version3(19, 3, 4);
+    private static final Version JVMCI_MIN_VERSION = new Version3(20, 1, 2);
 
     public interface Version {
         boolean isLessThan(Version other);
+
+        default boolean isGreaterThan(Version other) {
+            if (!isLessThan(other)) {
+                return !equals(other);
+            }
+            return false;
+        }
 
         static Version parse(String vmVersion) {
             Matcher m = Pattern.compile(".*-jvmci-(\\d+)\\.(\\d+)-b(\\d+).*").matcher(vmVersion);
@@ -99,6 +106,20 @@ public final class JVMCIVersionCheck {
         }
 
         @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Version2) {
+                Version2 that = (Version2) obj;
+                return this.major == that.major && this.minor == that.minor;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return this.major ^ this.minor;
+        }
+
+        @Override
         public String toString() {
             if (major >= 19) {
                 return String.format("%d-b%02d", major, minor);
@@ -137,6 +158,20 @@ public final class JVMCIVersionCheck {
                 }
             }
             return false;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Version3) {
+                Version3 that = (Version3) obj;
+                return this.major == that.major && this.minor == that.minor && this.build == that.build;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return this.major ^ this.minor ^ this.build;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 
 package org.graalvm.compiler.hotspot.replacements;
 
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.LEAF;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.NO_LOCATIONS;
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 
 import java.io.PrintStream;
@@ -31,6 +34,7 @@ import java.io.PrintStream;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.word.Word;
 
@@ -43,9 +47,12 @@ import jdk.vm.ci.meta.JavaKind;
  */
 public final class Log {
 
-    public static final ForeignCallDescriptor LOG_PRIMITIVE = new ForeignCallDescriptor("logPrimitive", void.class, int.class, long.class, boolean.class);
-    public static final ForeignCallDescriptor LOG_OBJECT = new ForeignCallDescriptor("logObject", void.class, Object.class, boolean.class, boolean.class);
-    public static final ForeignCallDescriptor LOG_PRINTF = new ForeignCallDescriptor("logPrintf", void.class, Word.class, long.class, long.class, long.class);
+    public static final HotSpotForeignCallDescriptor LOG_PRIMITIVE = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS, "logPrimitive", void.class, int.class, long.class,
+                    boolean.class);
+    public static final HotSpotForeignCallDescriptor LOG_OBJECT = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS, "logObject", void.class, Object.class, boolean.class,
+                    boolean.class);
+    public static final HotSpotForeignCallDescriptor LOG_PRINTF = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS, "logPrintf", void.class, Word.class, long.class, long.class,
+                    long.class);
 
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void log(@ConstantNodeParameter ForeignCallDescriptor logObject, Object object, boolean asString, boolean newline);

@@ -26,9 +26,6 @@ package org.graalvm.compiler.replacements.arraycopy;
 
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
-import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FREQUENT_PROBABILITY;
-import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.LIKELY_PROBABILITY;
-import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.DEOPT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
@@ -50,12 +47,7 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.SnippetAnchorNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.extended.GuardedUnsafeLoadNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.extended.RawStoreNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.type.StampTool;
@@ -72,10 +64,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.replacements.nodes.BasicArrayCopyNode;
-import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.LocationIdentity;
-import jdk.internal.vm.compiler.word.Pointer;
-
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -100,15 +89,15 @@ public abstract class ArrayCopySnippets implements Snippets {
     /** Marker value for the {@link InjectedParameter} injected parameter. */
     static final MetaAccessProvider INJECTED_META_ACCESS = null;
 
-    public abstract Pointer loadHub(Object nonNullSrc);
+    public abstract boolean hubsEqual(Object nonNullSrc, Object nonNullDest);
 
-    public abstract Pointer getDestElemClass(Pointer destKlass);
-
-    public abstract Word getSuperCheckOffset(Pointer destElemKlass);
-
-    public abstract int getReadLayoutHelper(Pointer srcHub);
+    public abstract boolean layoutHelpersEqual(Object nonNullSrc, Object nonNullDest);
 
     protected abstract int heapWordSize();
+
+    protected boolean useOriginalArraycopy() {
+        return true;
+    }
 
     @SuppressWarnings("unused")
     @Snippet
@@ -182,52 +171,20 @@ public abstract class ArrayCopySnippets implements Snippets {
     @Snippet(allowPartialIntrinsicArgumentMismatch = true)
     public void exactArraycopyWithSlowPathWork(Object src, int srcPos, Object dest, int destPos, int length, @ConstantParameter JavaKind elementKind, @ConstantParameter LocationIdentity arrayLocation,
                     @ConstantParameter Counters counters) {
-        int scale = ReplacementsUtil.arrayIndexScale(INJECTED_META_ACCESS, elementKind);
-        int arrayBaseOffset = ReplacementsUtil.getArrayBaseOffset(INJECTED_META_ACCESS, elementKind);
-        long sourceOffset = arrayBaseOffset + (long) srcPos * scale;
-        long destOffset = arrayBaseOffset + (long) destPos * scale;
-
-        GuardingNode anchor = SnippetAnchorNode.anchor();
-        if (probability(NOT_FREQUENT_PROBABILITY, src == dest && srcPos < destPos)) {
-            // bad aliased case so we need to copy the array from back to front
-            for (int position = length - 1; position >= 0; position--) {
-                Object value = GuardedUnsafeLoadNode.guardedLoad(src, sourceOffset + ((long) position) * scale, elementKind, arrayLocation, anchor);
-                RawStoreNode.storeObject(dest, destOffset + ((long) position) * scale, value, elementKind, arrayLocation, true);
-            }
-        } else {
-            for (int position = 0; position < length; position++) {
-                Object value = GuardedUnsafeLoadNode.guardedLoad(src, sourceOffset + ((long) position) * scale, elementKind, arrayLocation, anchor);
-                RawStoreNode.storeObject(dest, destOffset + ((long) position) * scale, value, elementKind, arrayLocation, true);
-            }
-        }
+        doExactArraycopyWithSlowPathWork(src, srcPos, dest, destPos, length, elementKind, arrayLocation, counters, INJECTED_META_ACCESS);
     }
 
-    @SuppressWarnings("unused")
+    protected abstract void doExactArraycopyWithSlowPathWork(Object src, int srcPos, Object dest, int destPos, int length, JavaKind elementKind, LocationIdentity arrayLocation, Counters counters,
+                    MetaAccessProvider metaAccess);
+
     @Snippet(allowPartialIntrinsicArgumentMismatch = true)
     public void checkcastArraycopyWithSlowPathWork(Object src, int srcPos, Object dest, int destPos, int length, @ConstantParameter JavaKind elementKind,
                     @ConstantParameter LocationIdentity arrayLocation,
                     @ConstantParameter Counters counters) {
-        if (probability(FREQUENT_PROBABILITY, length > 0)) {
-            Object nonNullSrc = PiNode.asNonNullObject(src);
-            Object nonNullDest = PiNode.asNonNullObject(dest);
-            Pointer srcKlass = loadHub(nonNullSrc);
-            Pointer destKlass = loadHub(nonNullDest);
-            if (probability(LIKELY_PROBABILITY, srcKlass == destKlass) || probability(LIKELY_PROBABILITY, nonNullDest.getClass() == Object[].class)) {
-                // no storecheck required.
-                counters.objectCheckcastSameTypeCounter.inc();
-                counters.objectCheckcastSameTypeCopiedCounter.add(length);
-                ArrayCopyCallNode.arraycopyObjectKillsAny(nonNullSrc, srcPos, nonNullDest, destPos, length, heapWordSize());
-            } else {
-                Pointer destElemKlass = getDestElemClass(destKlass);
-                Word superCheckOffset = getSuperCheckOffset(destElemKlass);
-
-                counters.objectCheckcastDifferentTypeCounter.inc();
-                counters.objectCheckcastDifferentTypeCopiedCounter.add(length);
-
-                System.arraycopy(nonNullSrc, srcPos, nonNullDest, destPos, length);
-            }
-        }
+        doCheckcastArraycopyWithSlowPathWork(src, srcPos, dest, destPos, length, elementKind, arrayLocation, counters);
     }
+
+    protected abstract void doCheckcastArraycopyWithSlowPathWork(Object src, int srcPos, Object dest, int destPos, int length, JavaKind elementKind, LocationIdentity arrayLocation, Counters counters);
 
     @SuppressWarnings("unused")
     @Snippet(allowPartialIntrinsicArgumentMismatch = true)
@@ -261,23 +218,23 @@ public abstract class ArrayCopySnippets implements Snippets {
     private static void checkLimits(Object src, int srcPos, Object dest, int destPos, int length, Counters counters) {
         if (probability(DEOPT_PROBABILITY, srcPos < 0)) {
             counters.checkAIOOBECounter.inc();
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
         if (probability(DEOPT_PROBABILITY, destPos < 0)) {
             counters.checkAIOOBECounter.inc();
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
         if (probability(DEOPT_PROBABILITY, length < 0)) {
             counters.checkAIOOBECounter.inc();
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
         if (probability(DEOPT_PROBABILITY, srcPos > ArrayLengthNode.arrayLength(src) - length)) {
             counters.checkAIOOBECounter.inc();
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
         if (probability(DEOPT_PROBABILITY, destPos > ArrayLengthNode.arrayLength(dest) - length)) {
             counters.checkAIOOBECounter.inc();
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
         counters.checkSuccessCounter.inc();
     }
@@ -286,15 +243,11 @@ public abstract class ArrayCopySnippets implements Snippets {
         if (arrayTypeCheck == ArrayCopyTypeCheck.NO_ARRAY_TYPE_CHECK) {
             // nothing to do
         } else if (arrayTypeCheck == ArrayCopyTypeCheck.HUB_BASED_ARRAY_TYPE_CHECK) {
-            Pointer srcHub = loadHub(nonNullSrc);
-            Pointer destHub = loadHub(nonNullDest);
-            if (probability(DEOPT_PROBABILITY, srcHub != destHub)) {
+            if (probability(DEOPT_PROBABILITY, !hubsEqual(nonNullSrc, nonNullDest))) {
                 DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
             }
         } else if (arrayTypeCheck == ArrayCopyTypeCheck.LAYOUT_HELPER_BASED_ARRAY_TYPE_CHECK) {
-            Pointer srcHub = loadHub(nonNullSrc);
-            Pointer destHub = loadHub(nonNullDest);
-            if (probability(DEOPT_PROBABILITY, getReadLayoutHelper(srcHub) != getReadLayoutHelper(destHub))) {
+            if (probability(DEOPT_PROBABILITY, !layoutHelpersEqual(nonNullSrc, nonNullDest))) {
                 DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
             }
         } else {
@@ -302,26 +255,26 @@ public abstract class ArrayCopySnippets implements Snippets {
         }
     }
 
-    static class Counters {
-        final SnippetCounter checkSuccessCounter;
-        final SnippetCounter checkAIOOBECounter;
+    protected static class Counters {
+        public final SnippetCounter checkSuccessCounter;
+        public final SnippetCounter checkAIOOBECounter;
 
-        final SnippetCounter zeroLengthStaticCounter;
-        final SnippetIntegerHistogram lengthHistogram;
+        public final SnippetCounter zeroLengthStaticCounter;
+        public final SnippetIntegerHistogram lengthHistogram;
 
-        final SnippetCounter systemArraycopyCounter;
-        final SnippetCounter systemArraycopyCopiedCounter;
+        public final SnippetCounter systemArraycopyCounter;
+        public final SnippetCounter systemArraycopyCopiedCounter;
 
-        final SnippetCounter genericArraycopyDifferentTypeCopiedCounter;
-        final SnippetCounter genericArraycopyDifferentTypeCounter;
+        public final SnippetCounter genericArraycopyDifferentTypeCopiedCounter;
+        public final SnippetCounter genericArraycopyDifferentTypeCounter;
 
-        final SnippetCounter objectCheckcastSameTypeCopiedCounter;
-        final SnippetCounter objectCheckcastSameTypeCounter;
-        final SnippetCounter objectCheckcastDifferentTypeCopiedCounter;
-        final SnippetCounter objectCheckcastDifferentTypeCounter;
+        public final SnippetCounter objectCheckcastSameTypeCopiedCounter;
+        public final SnippetCounter objectCheckcastSameTypeCounter;
+        public final SnippetCounter objectCheckcastDifferentTypeCopiedCounter;
+        public final SnippetCounter objectCheckcastDifferentTypeCounter;
 
-        final EnumMap<JavaKind, SnippetCounter> arraycopyCallCounters = new EnumMap<>(JavaKind.class);
-        final EnumMap<JavaKind, SnippetCounter> arraycopyCallCopiedCounters = new EnumMap<>(JavaKind.class);
+        public final EnumMap<JavaKind, SnippetCounter> arraycopyCallCounters = new EnumMap<>(JavaKind.class);
+        public final EnumMap<JavaKind, SnippetCounter> arraycopyCallCopiedCounters = new EnumMap<>(JavaKind.class);
 
         Counters(SnippetCounter.Group.Factory factory) {
             final Group checkCounters = factory.createSnippetCounterGroup("System.arraycopy checkInputs");
@@ -373,6 +326,7 @@ public abstract class ArrayCopySnippets implements Snippets {
         private final SnippetInfo genericArraycopyWithSlowPathWork;
         private final SnippetInfo exactArraycopyWithSlowPathWork;
 
+        private final boolean useOriginalArraycopy;
         private ResolvedJavaMethod originalArraycopy;
         private final Counters counters;
 
@@ -381,6 +335,7 @@ public abstract class ArrayCopySnippets implements Snippets {
             super(options, factories, providers, snippetReflection, target);
             this.counters = new Counters(factory);
 
+            useOriginalArraycopy = receiver.useOriginalArraycopy();
             arraycopyGenericSnippet = snippet(receiver, "arraycopyGenericSnippet");
             arraycopyExactSnippet = snippet(receiver, "arraycopyExactSnippet");
             arraycopyExactStubCallSnippet = snippet(receiver, "arraycopyExactStubCallSnippet");
@@ -401,7 +356,7 @@ public abstract class ArrayCopySnippets implements Snippets {
         }
 
         public void lower(ArrayCopyNode arraycopy, boolean mayExpandThisArraycopy, LoweringTool tool) {
-            JavaKind elementKind = selectComponentKind(arraycopy);
+            JavaKind elementKind = ArrayCopy.selectComponentKind(arraycopy);
             SnippetInfo snippetInfo;
             ArrayCopyTypeCheck arrayTypeCheck;
 
@@ -536,22 +491,6 @@ public abstract class ArrayCopySnippets implements Snippets {
             return type == null || type.isJavaLangObject() || type.isArray();
         }
 
-        public static JavaKind selectComponentKind(BasicArrayCopyNode arraycopy) {
-            ResolvedJavaType srcType = StampTool.typeOrNull(arraycopy.getSource().stamp(NodeView.DEFAULT));
-            ResolvedJavaType destType = StampTool.typeOrNull(arraycopy.getDestination().stamp(NodeView.DEFAULT));
-
-            if (srcType == null || !srcType.isArray() || destType == null || !destType.isArray()) {
-                return null;
-            }
-            if (!destType.getComponentType().isAssignableFrom(srcType.getComponentType())) {
-                return null;
-            }
-            if (!arraycopy.isExact()) {
-                return null;
-            }
-            return srcType.getComponentType().getJavaKind();
-        }
-
         /**
          * Instantiate the snippet template and fix up the FrameState of any Invokes of
          * System.arraycopy and propagate the captured bci in the ArrayCopySlowPathNode.
@@ -573,7 +512,7 @@ public abstract class ArrayCopySnippets implements Snippets {
                         throw new GraalError("unexpected invoke %s in snippet", call.targetMethod());
                     }
                     // Here we need to fix the bci of the invoke
-                    invoke.replaceBci(arraycopy.getBci());
+                    invoke.setBci(arraycopy.getBci());
                     invoke.setStateDuring(null);
                     invoke.setStateAfter(null);
                     if (arraycopy.stateDuring() != null) {
@@ -587,7 +526,8 @@ public abstract class ArrayCopySnippets implements Snippets {
                 } else if (originalNode instanceof ArrayCopyWithDelayedLoweringNode) {
                     ArrayCopyWithDelayedLoweringNode slowPath = (ArrayCopyWithDelayedLoweringNode) replacements.get(originalNode);
                     assert arraycopy.stateAfter() != null : arraycopy;
-                    assert slowPath.stateAfter() == arraycopy.stateAfter();
+                    assert slowPath.stateAfter() == arraycopy.stateAfter() : "States do not match for slowpath=" + slowPath + " and array copy=" + arraycopy + " slowPathState=" +
+                                    slowPath.stateAfter() + " and arraycopyState=" + arraycopy.stateAfter();
                     slowPath.setBci(arraycopy.getBci());
                 }
             }
@@ -595,6 +535,9 @@ public abstract class ArrayCopySnippets implements Snippets {
         }
 
         private ResolvedJavaMethod originalArraycopy() throws GraalError {
+            if (!useOriginalArraycopy) {
+                return null;
+            }
             if (originalArraycopy == null) {
                 try {
                     originalArraycopy = findMethod(providers.getMetaAccess(), System.class, "arraycopy");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,17 @@
 
 package jdk.tools.jaotc;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
+
+import jdk.tools.jaotc.AOTCompiledClass.AOTKlassData;
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ReadOnlyDataContainer;
-import jdk.tools.jaotc.AOTCompiledClass.AOTKlassData;
-import org.graalvm.compiler.code.CompilationResult;
-
-import jdk.vm.ci.code.site.Mark;
-import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 
@@ -306,23 +306,11 @@ final class CompiledMethodInfo {
         return null;
     }
 
-    boolean hasMark(Site call, MarkId id) {
-        for (Mark m : compilationResult.getMarks()) {
-            int adjOffset = m.pcOffset;
-            if (archStr.equals("aarch64")) {
-                // The mark is at the end of a group of three instructions:
-                // adrp; add; ldr
-                adjOffset += 12;
-            } else {
-                // X64-specific code.
-                // Call instructions are aligned to 8
-                // bytes - 1 on x86 to patch address atomically,
-                adjOffset = (adjOffset & (-8)) + 7;
-            }
-            // Mark points before aligning nops.
-            if ((call.pcOffset == adjOffset) && MarkId.getEnum((int) m.id) == id) {
-                return true;
-            }
+    boolean hasMark(Call call, HotSpotMarkId id) {
+        assert id == HotSpotMarkId.INVOKESTATIC || id == HotSpotMarkId.INVOKESPECIAL;
+        CompilationResult.CodeMark mark = compilationResult.getAssociatedMark(call);
+        if (mark != null) {
+            return mark.id == id;
         }
         return false;
     }

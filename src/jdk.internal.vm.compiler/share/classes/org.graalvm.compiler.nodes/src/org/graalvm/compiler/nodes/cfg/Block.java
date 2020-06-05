@@ -35,9 +35,9 @@ import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
+import org.graalvm.compiler.nodes.WithExceptionNode;
 import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -95,7 +95,7 @@ public final class Block extends AbstractBlockBase<Block> {
     @Override
     public boolean isExceptionEntry() {
         Node predecessor = getBeginNode().predecessor();
-        return predecessor != null && predecessor instanceof InvokeWithExceptionNode && getBeginNode() == ((InvokeWithExceptionNode) predecessor).exceptionEdge();
+        return predecessor != null && predecessor instanceof WithExceptionNode && getBeginNode() == ((WithExceptionNode) predecessor).exceptionEdge();
     }
 
     public Block getFirstPredecessor() {

@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(cycles = CYCLES_2, size = SIZE_0, allowedUsageTypes = Memory)
@@ -58,11 +57,6 @@ public class FastNotifyNode extends AbstractMemoryCheckpoint implements Lowerabl
         this.object = object;
         this.notifyAll = notifyAll;
         this.bci = bci;
-    }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
     }
 
     public boolean isNotifyAll() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,16 +49,16 @@ public class GraalServiceThread extends Thread {
 
     /**
      * Substituted by {@code com.oracle.svm.graal.hotspot.libgraal.
-     * Target_org_graalvm_compiler_truffle_common_TruffleCompilerRuntimeInstance} to attach to the
-     * peer runtime if required.
+     * Target_org_graalvm_compiler_core_GraalServiceThread} to attach to the peer runtime if
+     * required.
      */
     private void afterRun() {
     }
 
     /**
      * Substituted by {@code com.oracle.svm.graal.hotspot.libgraal.
-     * Target_org_graalvm_compiler_truffle_common_TruffleCompilerRuntimeInstance} to attach to the
-     * peer runtime if required.
+     * Target_org_graalvm_compiler_core_GraalServiceThread} to attach to the peer runtime if
+     * required.
      */
     private void beforeRun() {
     }

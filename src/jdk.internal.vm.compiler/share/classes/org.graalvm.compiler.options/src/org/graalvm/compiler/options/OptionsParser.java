@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ public class OptionsParser {
      *
      * Ported from str_similar() in globals.cpp.
      */
-    static float stringSimiliarity(String str1, String str2) {
+    public static float stringSimilarity(String str1, String str2) {
         int hit = 0;
         for (int i = 0; i < str1.length() - 1; ++i) {
             for (int j = 0; j < str2.length() - 1; ++j) {
@@ -224,7 +224,7 @@ public class OptionsParser {
         return 2.0f * hit / (str1.length() + str2.length());
     }
 
-    private static final float FUZZY_MATCH_THRESHOLD = 0.7F;
+    public static final float FUZZY_MATCH_THRESHOLD = 0.7F;
 
     /**
      * Returns the set of options that fuzzy match a given option name.
@@ -249,7 +249,7 @@ public class OptionsParser {
     public static boolean collectFuzzyMatches(Iterable<OptionDescriptor> toSearch, String name, Collection<OptionDescriptor> matches) {
         boolean found = false;
         for (OptionDescriptor option : toSearch) {
-            float score = stringSimiliarity(option.getName(), name);
+            float score = stringSimilarity(option.getName(), name);
             if (score >= FUZZY_MATCH_THRESHOLD) {
                 found = true;
                 matches.add(option);

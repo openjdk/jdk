@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,15 @@ import org.openjdk.jmh.annotations.Warmup;
 /**
  * Base class for JMH benchmarks.
  */
-@Warmup(iterations = BenchmarkBase.Defaults.WARMUP_ITERATIONS)
-@Measurement(iterations = BenchmarkBase.Defaults.MEASUREMENT_ITERATIONS)
+@Warmup(iterations = BenchmarkBase.Defaults.WARMUP_ITERATIONS, time = BenchmarkBase.Defaults.ITERATIONS_DURATION)
+@Measurement(iterations = BenchmarkBase.Defaults.MEASUREMENT_ITERATIONS, time = BenchmarkBase.Defaults.ITERATIONS_DURATION)
 @Fork(BenchmarkBase.Defaults.FORKS)
 public class BenchmarkBase {
 
     public static class Defaults {
         public static final int MEASUREMENT_ITERATIONS = 5;
         public static final int WARMUP_ITERATIONS = 5;
-        public static final int FORKS = 1;
+        public static final int ITERATIONS_DURATION = 5;
+        public static final int FORKS = 3;
     }
 }

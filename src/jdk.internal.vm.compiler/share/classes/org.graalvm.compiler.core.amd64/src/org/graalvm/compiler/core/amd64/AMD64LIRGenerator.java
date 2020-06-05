@@ -107,7 +107,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ZeroMemoryOp;
 import org.graalvm.compiler.lir.amd64.vector.AMD64VectorCompareOp;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
-import org.graalvm.compiler.lir.hashing.Hasher;
+import org.graalvm.compiler.lir.hashing.IntHasher;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.amd64.AMD64;
@@ -317,8 +317,9 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueLabel, LabelRef falseLabel, double trueLabelProbability) {
         if (cmpKind == AMD64Kind.SINGLE || cmpKind == AMD64Kind.DOUBLE) {
+            boolean isSelfEqualsCheck = cond == Condition.EQ && !unorderedIsTrue && left.equals(right);
             Condition finalCondition = emitCompare(cmpKind, left, right, cond);
-            append(new FloatBranchOp(finalCondition, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability));
+            append(new FloatBranchOp(finalCondition, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability, isSelfEqualsCheck));
             return;
         }
 
@@ -459,10 +460,15 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
             finalCondition = emitCompare(cmpKind, left, right, cond);
         }
 
-        return emitCondMoveOp(finalCondition, finalTrueValue, finalFalseValue, isFloatComparison, unorderedIsTrue);
+        boolean isSelfEqualsCheck = isFloatComparison && finalCondition == Condition.EQ && left.equals(right);
+        return emitCondMoveOp(finalCondition, finalTrueValue, finalFalseValue, isFloatComparison, unorderedIsTrue, isSelfEqualsCheck);
     }
 
     private Variable emitCondMoveOp(Condition condition, Value trueValue, Value falseValue, boolean isFloatComparison, boolean unorderedIsTrue) {
+        return emitCondMoveOp(condition, trueValue, falseValue, isFloatComparison, unorderedIsTrue, false);
+    }
+
+    private Variable emitCondMoveOp(Condition condition, Value trueValue, Value falseValue, boolean isFloatComparison, boolean unorderedIsTrue, boolean isSelfEqualsCheck) {
         boolean isParityCheckNecessary = isFloatComparison && unorderedIsTrue != AMD64ControlFlow.trueOnUnordered(condition);
         Variable result = newVariable(trueValue.getValueKind());
         if (!isParityCheckNecessary && isIntConstant(trueValue, 1) && isIntConstant(falseValue, 0)) {
@@ -485,7 +491,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
                 append(new CondSetOp(result, condition.negate()));
             }
         } else if (isFloatComparison) {
-            append(new FloatCondMoveOp(result, condition, unorderedIsTrue, load(trueValue), load(falseValue)));
+            append(new FloatCondMoveOp(result, condition, unorderedIsTrue, load(trueValue), load(falseValue), isSelfEqualsCheck));
         } else {
             append(new CondMoveOp(result, condition, load(trueValue), loadNonConst(falseValue)));
         }
@@ -686,16 +692,31 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected Optional<Hasher> hasherFor(JavaConstant[] keyConstants, double minDensity) {
-        return Hasher.forKeys(keyConstants, minDensity);
+    protected Optional<IntHasher> hasherFor(JavaConstant[] keyConstants, double minDensity) {
+        int[] keys = new int[keyConstants.length];
+        for (int i = 0; i < keyConstants.length; i++) {
+            keys[i] = keyConstants[i].asInt();
+        }
+        return IntHasher.forKeys(keys);
     }
 
     @Override
-    protected void emitHashTableSwitch(Hasher hasher, JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, Value value) {
-        Value index = hasher.hash(value, arithmeticLIRGen);
+    protected void emitHashTableSwitch(IntHasher hasher, JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, Value value) {
+        Value hash = value;
+        if (hasher.factor > 1) {
+            Value factor = emitJavaConstant(JavaConstant.forShort(hasher.factor));
+            hash = arithmeticLIRGen.emitMul(hash, factor, false);
+        }
+        if (hasher.shift > 0) {
+            Value shift = emitJavaConstant(JavaConstant.forByte(hasher.shift));
+            hash = arithmeticLIRGen.emitShr(hash, shift);
+        }
+        Value cardinalityAnd = emitJavaConstant(JavaConstant.forInt(hasher.cardinality - 1));
+        hash = arithmeticLIRGen.emitAnd(hash, cardinalityAnd);
+
         Variable scratch = newVariable(LIRKind.value(target().arch.getWordKind()));
         Variable entryScratch = newVariable(LIRKind.value(target().arch.getWordKind()));
-        append(new HashTableSwitchOp(keys, defaultTarget, targets, value, index, scratch, entryScratch));
+        append(new HashTableSwitchOp(keys, defaultTarget, targets, value, hash, scratch, entryScratch));
     }
 
     @Override

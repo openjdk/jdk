@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 
 package jdk.tools.jaotc;
+
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.Symbol;
@@ -136,7 +138,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
     private static String getResolveSymbolName(CompiledMethodInfo mi, Call call) {
         String resolveSymbolName;
         if (CallInfo.isStaticCall(call)) {
-            assert mi.hasMark(call, MarkId.INVOKESTATIC);
+            assert mi.hasMark(call, HotSpotMarkId.INVOKESTATIC);
             resolveSymbolName = BinaryContainer.getResolveStaticEntrySymbolName();
         } else if (CallInfo.isSpecialCall(call)) {
             resolveSymbolName = BinaryContainer.getResolveOptVirtualEntrySymbolName();

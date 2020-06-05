@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class AheadOfTimeCompilationTest extends HotSpotGraalCompilerTest {
 
     @Before
     public void setUp() {
-        // Ignore on AArch64
+        // Ignore on SPARC
         Assume.assumeFalse("skipping on AArch64", getTarget().arch instanceof AArch64);
     }
 

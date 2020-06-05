@@ -29,6 +29,8 @@ import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
+import java.util.Arrays;
+
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -49,7 +51,6 @@ import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
@@ -66,7 +67,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 
 @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_UNKNOWN, size = SIZE_UNKNOWN)
-public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements Lowerable, SingleMemoryKill, MemoryAccess, Canonicalizable {
+public final class ArrayCopyCallNode extends FixedWithNextNode implements Lowerable, SingleMemoryKill, MemoryAccess, Canonicalizable {
 
     public static final NodeClass<ArrayCopyCallNode> TYPE = NodeClass.create(ArrayCopyCallNode.class);
     @Input protected ValueNode src;
@@ -79,6 +80,7 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
 
     private final JavaKind elementKind;
     private final LocationIdentity locationIdentity;
+    private final LocationIdentity killedLocationIdentity;
     private final ArrayCopyForeignCalls foreignCalls;
     private final JavaKind wordJavaKind;
     private final int heapWordSize;
@@ -93,13 +95,27 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
     public ArrayCopyCallNode(@InjectedNodeParameter ArrayCopyForeignCalls foreignCalls, @InjectedNodeParameter WordTypes wordTypes,
                     ValueNode src, ValueNode srcPos, ValueNode dest, ValueNode destPos,
                     ValueNode length, JavaKind elementKind, boolean aligned, boolean disjoint, boolean uninitialized, int heapWordSize) {
-        this(foreignCalls, wordTypes, src, srcPos, dest, destPos, length, elementKind, null, aligned, disjoint, uninitialized, heapWordSize);
+        this(foreignCalls, wordTypes, src, srcPos, dest, destPos, length, elementKind, (LocationIdentity) null, null, aligned, disjoint, uninitialized, heapWordSize);
+    }
+
+    public ArrayCopyCallNode(@InjectedNodeParameter ArrayCopyForeignCalls foreignCalls, @InjectedNodeParameter WordTypes wordTypes,
+                    ValueNode src, ValueNode srcPos, ValueNode dest, ValueNode destPos,
+                    ValueNode length, JavaKind copyKind, JavaKind srcKind, JavaKind destKind, boolean aligned, boolean disjoint, boolean uninitialized, int heapWordSize) {
+        this(foreignCalls, wordTypes, src, srcPos, dest, destPos, length, copyKind, NamedLocationIdentity.getArrayLocation(srcKind), NamedLocationIdentity.getArrayLocation(destKind), aligned,
+                        disjoint, uninitialized, heapWordSize);
     }
 
     protected ArrayCopyCallNode(@InjectedNodeParameter ArrayCopyForeignCalls foreignCalls, @InjectedNodeParameter WordTypes wordTypes,
                     ValueNode src, ValueNode srcPos, ValueNode dest,
                     ValueNode destPos, ValueNode length, JavaKind elementKind,
-                    LocationIdentity locationIdentity, boolean aligned, boolean disjoint, boolean uninitialized, int heapWordSize) {
+                    LocationIdentity killedLocationIdentity, boolean aligned, boolean disjoint, boolean uninitialized, int heapWordSize) {
+        this(foreignCalls, wordTypes, src, srcPos, dest, destPos, length, elementKind, null, killedLocationIdentity, aligned, disjoint, uninitialized, heapWordSize);
+    }
+
+    protected ArrayCopyCallNode(@InjectedNodeParameter ArrayCopyForeignCalls foreignCalls, @InjectedNodeParameter WordTypes wordTypes,
+                    ValueNode src, ValueNode srcPos, ValueNode dest,
+                    ValueNode destPos, ValueNode length, JavaKind elementKind,
+                    LocationIdentity locationIdentity, LocationIdentity killedLocationIdentity, boolean aligned, boolean disjoint, boolean uninitialized, int heapWordSize) {
         super(TYPE, StampFactory.forVoid());
         assert elementKind != null;
         this.src = src;
@@ -109,6 +125,7 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
         this.length = length;
         this.elementKind = elementKind;
         this.locationIdentity = (locationIdentity != null ? locationIdentity : NamedLocationIdentity.getArrayLocation(elementKind));
+        this.killedLocationIdentity = (killedLocationIdentity != null ? killedLocationIdentity : this.locationIdentity);
         this.aligned = aligned;
         this.disjoint = disjoint;
         this.uninitialized = uninitialized;
@@ -116,6 +133,7 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
         this.wordJavaKind = wordTypes.getWordKind();
         this.heapWordSize = heapWordSize;
 
+        assert !getKilledLocationIdentity().equals(LocationIdentity.any()) || this.elementKind.isObject();
     }
 
     public ValueNode getSource() {
@@ -157,8 +175,9 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
     public void lower(LoweringTool tool) {
         if (graph().getGuardsStage().areFrameStatesAtDeopts()) {
             updateAlignedDisjoint(tool.getMetaAccess());
-            ForeignCallDescriptor desc = foreignCalls.lookupArraycopyDescriptor(elementKind, isAligned(), isDisjoint(), isUninitialized(),
-                            locationIdentity.equals(LocationIdentity.any()));
+            ForeignCallDescriptor desc = foreignCalls.lookupArraycopyDescriptor(elementKind, isAligned(), isDisjoint(), isUninitialized(), killedLocationIdentity);
+            assert desc != null : "no descriptor for arraycopy " + elementKind + ", aligned " + isAligned() + ", disjoint " + isDisjoint() + ", uninit " + isUninitialized() + ", killing " +
+                            killedLocationIdentity;
             StructuredGraph graph = graph();
             ValueNode srcAddr = computeBase(tool, getSource(), getSourcePosition());
             ValueNode destAddr = computeBase(tool, getDestination(), getDestinationPosition());
@@ -166,8 +185,10 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
             if (len.stamp(NodeView.DEFAULT).getStackKind() != JavaKind.Long) {
                 len = IntegerConvertNode.convert(len, StampFactory.forKind(JavaKind.Long), graph(), NodeView.DEFAULT);
             }
-            ForeignCallNode call = graph.add(new ForeignCallNode(foreignCalls, desc, srcAddr, destAddr, len));
-            call.setStateAfter(stateAfter());
+            ForeignCallNode call = graph.add(new ForeignCallNode(desc, srcAddr, destAddr, len));
+            LocationIdentity[] callKills = call.getKilledLocationIdentities();
+            assert callKills.length == 1 && callKills[0].equals(getKilledLocationIdentity()) : String.format("%s: copy of %s from %s should kill %s, unexpected kills: %s", call, elementKind,
+                            getLocationIdentity(), getKilledLocationIdentity(), Arrays.toString(callKills));
             graph.replaceFixedWithFixed(this, call);
         }
     }
@@ -190,7 +211,7 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
 
     @Override
     public LocationIdentity getKilledLocationIdentity() {
-        return getLocationIdentity();
+        return killedLocationIdentity;
     }
 
     @NodeIntrinsic(hasSideEffect = true)
@@ -198,25 +219,45 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
                     @ConstantNodeParameter boolean disjoint, @ConstantNodeParameter boolean uninitialized, @ConstantNodeParameter int heapWordSize);
 
     @NodeIntrinsic(hasSideEffect = true)
+    private static native void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind copyKind, @ConstantNodeParameter JavaKind srcKind,
+                    @ConstantNodeParameter JavaKind destKind, @ConstantNodeParameter boolean aligned, @ConstantNodeParameter boolean disjoint, @ConstantNodeParameter boolean uninitialized,
+                    @ConstantNodeParameter int heapWordSize);
+
+    @NodeIntrinsic(hasSideEffect = true)
     private static native void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind,
-                    @ConstantNodeParameter LocationIdentity locationIdentity, @ConstantNodeParameter boolean aligned, @ConstantNodeParameter boolean disjoint,
-                    @ConstantNodeParameter boolean uninitialized, @ConstantNodeParameter int heapWordSize);
+                    @ConstantNodeParameter LocationIdentity killedLocationIdentity, @ConstantNodeParameter boolean aligned,
+                    @ConstantNodeParameter boolean disjoint, @ConstantNodeParameter boolean uninitialized, @ConstantNodeParameter int heapWordSize);
 
     public static void arraycopyObjectKillsAny(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter int heapWordSize) {
         arraycopy(src, srcPos, dest, destPos, length, JavaKind.Object, LocationIdentity.any(), false, false, false, heapWordSize);
     }
 
-    public static void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter LocationIdentity locationIdentity,
+    public static void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind,
+                    @ConstantNodeParameter LocationIdentity killedLocationIdentity,
                     @ConstantNodeParameter int heapWordSize) {
-        arraycopy(src, srcPos, dest, destPos, length, elementKind, locationIdentity, false, false, false, heapWordSize);
+        arraycopy(src, srcPos, dest, destPos, length, elementKind, killedLocationIdentity, false, false, false, heapWordSize);
     }
 
     public static void disjointArraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter int heapWordSize) {
         arraycopy(src, srcPos, dest, destPos, length, elementKind, false, true, false, heapWordSize);
     }
 
-    public static void disjointArraycopyKillsAny(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter int heapWordSize) {
-        arraycopy(src, srcPos, dest, destPos, length, elementKind, LocationIdentity.any(), false, true, false, heapWordSize);
+    public static void disjointArraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind,
+                    @ConstantNodeParameter LocationIdentity killedLocationIdentity, @ConstantNodeParameter int heapWordSize) {
+        arraycopy(src, srcPos, dest, destPos, length, elementKind, killedLocationIdentity, false, true, false, heapWordSize);
+    }
+
+    /**
+     * Type punned copy of {@code length} elements of kind {@code copyKind} from an array with
+     * {@code srcKind} elements to an array with {@code destKind} elements.
+     */
+    public static void disjointArraycopyDifferentKinds(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind copyKind, @ConstantNodeParameter JavaKind srcKind,
+                    @ConstantNodeParameter JavaKind destKind, @ConstantNodeParameter int heapWordSize) {
+        arraycopy(src, srcPos, dest, destPos, length, copyKind, srcKind, destKind, false, true, false, heapWordSize);
+    }
+
+    public static void disjointArraycopyKillsInit(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter int heapWordSize) {
+        arraycopy(src, srcPos, dest, destPos, length, elementKind, LocationIdentity.init(), false, true, false, heapWordSize);
     }
 
     public static void disjointUninitializedArraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind,
@@ -263,7 +304,7 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
     public Node canonical(CanonicalizerTool tool) {
         if (getLength().isConstant() && getLength().asConstant().isDefaultForKind()) {
             if (lastLocationAccess != null) {
-                replaceAtUsages(InputType.Memory, lastLocationAccess.asNode());
+                replaceAtUsages(lastLocationAccess.asNode(), InputType.Memory);
             }
             return null;
         }

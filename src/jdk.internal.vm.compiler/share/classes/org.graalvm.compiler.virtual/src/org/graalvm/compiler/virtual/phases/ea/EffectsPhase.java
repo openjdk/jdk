@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 
 public abstract class EffectsPhase<CoreProvidersT extends CoreProviders> extends BasePhase<CoreProvidersT> {
 
@@ -56,15 +57,21 @@ public abstract class EffectsPhase<CoreProvidersT extends CoreProviders> extends
     private final int maxIterations;
     protected final CanonicalizerPhase canonicalizer;
     private final boolean unscheduled;
+    private final SchedulePhase.SchedulingStrategy strategy;
 
     protected EffectsPhase(int maxIterations, CanonicalizerPhase canonicalizer) {
-        this(maxIterations, canonicalizer, false);
+        this(maxIterations, canonicalizer, false, SchedulingStrategy.EARLIEST);
     }
 
-    protected EffectsPhase(int maxIterations, CanonicalizerPhase canonicalizer, boolean unscheduled) {
+    protected EffectsPhase(int maxIterations, CanonicalizerPhase canonicalizer, boolean unscheduled, SchedulingStrategy strategy) {
+        this.strategy = strategy;
         this.maxIterations = maxIterations;
         this.canonicalizer = canonicalizer;
         this.unscheduled = unscheduled;
+    }
+
+    protected EffectsPhase(int maxIterations, CanonicalizerPhase canonicalizer, boolean unscheduled) {
+        this(maxIterations, canonicalizer, unscheduled, unscheduled ? null : SchedulingStrategy.EARLIEST);
     }
 
     @Override
@@ -74,6 +81,7 @@ public abstract class EffectsPhase<CoreProvidersT extends CoreProviders> extends
 
     @SuppressWarnings("try")
     public boolean runAnalysis(StructuredGraph graph, CoreProvidersT context) {
+        assert unscheduled || strategy != null;
         boolean changed = false;
         CompilationAlarm compilationAlarm = CompilationAlarm.current();
         DebugContext debug = graph.getDebug();
@@ -85,7 +93,7 @@ public abstract class EffectsPhase<CoreProvidersT extends CoreProviders> extends
                     schedule = null;
                     cfg = ControlFlowGraph.compute(graph, true, true, false, false);
                 } else {
-                    new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST).apply(graph, false);
+                    new SchedulePhase(strategy).apply(graph, false);
                     schedule = graph.getLastSchedule();
                     cfg = schedule.getCFG();
                 }

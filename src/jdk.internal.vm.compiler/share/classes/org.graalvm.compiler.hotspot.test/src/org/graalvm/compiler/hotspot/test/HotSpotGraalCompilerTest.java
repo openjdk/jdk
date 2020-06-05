@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.junit.Assume;
@@ -73,7 +74,7 @@ public abstract class HotSpotGraalCompilerTest extends GraalCompilerTest {
         HotSpotProviders providers = rt.getHostBackend().getProviders();
         CompilationIdentifier compilationId = runtime().getHostBackend().getCompilationIdentifier(method);
         OptionValues options = getInitialOptions();
-        StructuredGraph graph = providers.getReplacements().getIntrinsicGraph(method, compilationId, getDebugContext(options), null);
+        StructuredGraph graph = providers.getReplacements().getIntrinsicGraph(method, compilationId, getDebugContext(options), AllowAssumptions.YES, null);
         if (graph != null) {
             return getCode(method, graph, true, true, graph.getOptions());
         }

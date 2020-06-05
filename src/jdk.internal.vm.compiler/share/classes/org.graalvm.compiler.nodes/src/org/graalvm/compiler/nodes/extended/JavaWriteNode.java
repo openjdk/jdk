@@ -35,7 +35,6 @@ import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -50,16 +49,20 @@ public final class JavaWriteNode extends AbstractWriteNode implements Lowerable,
     public static final NodeClass<JavaWriteNode> TYPE = NodeClass.create(JavaWriteNode.class);
     protected final JavaKind writeKind;
     protected final boolean compressible;
+    protected final boolean hasSideEffect;
+
+    public JavaWriteNode(JavaKind writeKind, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, boolean compressible, boolean hasSideEffect) {
+        super(TYPE, address, location, value, barrierType);
+        this.writeKind = writeKind;
+        this.compressible = compressible;
+        this.hasSideEffect = hasSideEffect;
+    }
 
     public JavaWriteNode(JavaKind writeKind, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, boolean compressible) {
         super(TYPE, address, location, value, barrierType);
         this.writeKind = writeKind;
         this.compressible = compressible;
-    }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
+        this.hasSideEffect = true;
     }
 
     @Override
@@ -83,5 +86,10 @@ public final class JavaWriteNode extends AbstractWriteNode implements Lowerable,
     @Override
     public Stamp getAccessStamp(NodeView view) {
         return value().stamp(view);
+    }
+
+    @Override
+    public boolean hasSideEffect() {
+        return hasSideEffect;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 package jdk.internal.vm.compiler.collections;
 
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
@@ -240,7 +239,7 @@ final class EconomicMapImpl<K, V> implements EconomicMap<K, V>, EconomicSet<K> {
     @SuppressWarnings("unchecked")
     @Override
     public V get(K key) {
-        Objects.requireNonNull(key);
+        checkKeyNonNull(key);
 
         int index = find(key);
         if (index != -1) {
@@ -420,9 +419,7 @@ final class EconomicMapImpl<K, V> implements EconomicMap<K, V>, EconomicSet<K> {
     @SuppressWarnings("unchecked")
     @Override
     public V put(K key, V value) {
-        if (key == null) {
-            throw new UnsupportedOperationException("null not supported as key!");
-        }
+        checkKeyNonNull(key);
         int index = find(key);
         if (index != -1) {
             Object oldValue = getValue(index);
@@ -622,9 +619,7 @@ final class EconomicMapImpl<K, V> implements EconomicMap<K, V>, EconomicSet<K> {
     @SuppressWarnings("unchecked")
     @Override
     public V removeKey(K key) {
-        if (key == null) {
-            throw new UnsupportedOperationException("null not supported as key!");
-        }
+        checkKeyNonNull(key);
         int index;
         if (hasHashArray()) {
             index = this.findAndRemoveHash(key);
@@ -638,6 +633,12 @@ final class EconomicMapImpl<K, V> implements EconomicMap<K, V>, EconomicSet<K> {
             return (V) value;
         }
         return null;
+    }
+
+    private void checkKeyNonNull(K key) {
+        if (key == null) {
+            throw new UnsupportedOperationException("null not supported as key!");
+        }
     }
 
     /**
