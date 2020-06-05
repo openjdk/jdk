@@ -1094,12 +1094,10 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     log_debug(gc, verify)("SystemDictionary");
     SystemDictionary::verify();
   }
-#ifndef PRODUCT
   if (should_verify_subset(Verify_ClassLoaderDataGraph)) {
     log_debug(gc, verify)("ClassLoaderDataGraph");
     ClassLoaderDataGraph::verify();
   }
-#endif
   if (should_verify_subset(Verify_MetaspaceUtils)) {
     log_debug(gc, verify)("MetaspaceUtils");
     MetaspaceUtils::verify_free_chunks();

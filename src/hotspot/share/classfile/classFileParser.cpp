@@ -3949,12 +3949,12 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_inner_classes(_inner_classes);
   this_klass->set_nest_members(_nest_members);
   this_klass->set_nest_host_index(_nest_host);
-  this_klass->set_local_interfaces(_local_interfaces);
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
-  // Delay the setting of _transitive_interfaces until after initialize_supers() in
-  // fill_instance_klass(). It is because the _transitive_interfaces may be shared with
+  // Delay the setting of _local_interfaces and _transitive_interfaces until after
+  // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
+  // be shared with _transitive_interfaces and _transitive_interfaces may be shared with
   // its _super. If an OOM occurs while loading the current klass, its _super field
   // may not have been set. When GC tries to free the klass, the _transitive_interfaces
   // may be deallocated mistakenly in InstanceKlass::deallocate_interfaces(). Subsequent
@@ -5788,7 +5788,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(NULL == _methods, "invariant");
   assert(NULL == _inner_classes, "invariant");
   assert(NULL == _nest_members, "invariant");
-  assert(NULL == _local_interfaces, "invariant");
   assert(NULL == _combined_annotations, "invariant");
   assert(NULL == _record_components, "invariant");
   assert(NULL == _permitted_subclasses, "invariant");
@@ -5862,7 +5861,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // Fill in information needed to compute superclasses.
   ik->initialize_supers(const_cast<InstanceKlass*>(_super_klass), _transitive_interfaces, CHECK);
   ik->set_transitive_interfaces(_transitive_interfaces);
+  ik->set_local_interfaces(_local_interfaces);
   _transitive_interfaces = NULL;
+  _local_interfaces = NULL;
 
   // Initialize itable offset tables
   klassItable::setup_itable_offset_table(ik);
@@ -6190,7 +6191,6 @@ void ClassFileParser::clear_class_metadata() {
   _inner_classes = NULL;
   _nest_members = NULL;
   _permitted_subclasses = NULL;
-  _local_interfaces = NULL;
   _combined_annotations = NULL;
   _class_annotations = _class_type_annotations = NULL;
   _fields_annotations = _fields_type_annotations = NULL;
@@ -6258,6 +6258,7 @@ ClassFileParser::~ClassFileParser() {
 
   clear_class_metadata();
   _transitive_interfaces = NULL;
+  _local_interfaces = NULL;
 
   // deallocate the klass if already created.  Don't directly deallocate, but add
   // to the deallocate list so that the klass is removed from the CLD::_klasses list
