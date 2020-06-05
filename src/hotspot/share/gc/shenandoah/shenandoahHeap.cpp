@@ -1657,14 +1657,12 @@ class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
-  ShenandoahConcurrentStringDedupRoots          _dedup_roots;
 
 public:
   ShenandoahConcurrentRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Strong Roots Task"),
     _vm_roots(phase),
-    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
-    _dedup_roots(phase) {}
+    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()) {}
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
@@ -1680,12 +1678,6 @@ public:
       ShenandoahEvacuateUpdateRootsClosure<> cl;
       CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
       _cld_roots.cld_do(&clds, worker_id);
-    }
-
-    {
-      ShenandoahForwardedIsAliveClosure is_alive;
-      ShenandoahEvacuateUpdateRootsClosure<MO_RELEASE> keep_alive;
-      _dedup_roots.oops_do(&is_alive, &keep_alive, worker_id);
     }
   }
 };
@@ -1776,6 +1768,7 @@ private:
   ShenandoahClassLoaderDataRoots<true /* concurrent */, false /* single thread*/>
                                            _cld_roots;
   ShenandoahConcurrentNMethodIterator      _nmethod_itr;
+  ShenandoahConcurrentStringDedupRoots     _dedup_roots;
   bool                                     _concurrent_class_unloading;
 
 public:
@@ -1787,6 +1780,7 @@ public:
     _vm_roots(OopStorageSet::vm_weak(), phase, ShenandoahPhaseTimings::VMWeakRoots),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
     _nmethod_itr(ShenandoahCodeRoots::table()),
+    _dedup_roots(phase),
     _concurrent_class_unloading(ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
     StringTable::reset_dead_counter();
     ResolvedMethodTable::reset_dead_counter();
@@ -1822,6 +1816,11 @@ public:
       cl.reset_dead_counter();
       _resolved_method_table_roots.oops_do(&cl, worker_id);
       ResolvedMethodTable::inc_dead_counter(cl.dead_counter());
+
+      // String dedup weak roots
+      ShenandoahForwardedIsAliveClosure is_alive;
+      ShenandoahEvacuateUpdateRootsClosure<MO_RELEASE> keep_alive;
+      _dedup_roots.oops_do(&is_alive, &keep_alive, worker_id);
     }
 
     // If we are going to perform concurrent class unloading later on, we need to
