@@ -93,7 +93,7 @@ class JfrStorage : public JfrCHeapObj {
 
   friend class JfrRecorder;
   friend class JfrRecorderService;
-  template <typename, template <typename> class, typename, typename>
+  template <typename, template <typename> class, typename, typename, bool>
   friend class JfrMemorySpace;
 };
 

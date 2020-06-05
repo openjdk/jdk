@@ -33,8 +33,18 @@ template <typename Mspace>
 class JfrMspaceRetrieval {
  public:
   typedef typename Mspace::Node Node;
-  static Node* acquire(Mspace* mspace, Thread* thread, size_t size) {
-    StopOnNullCondition<typename Mspace::FreeList> iterator(mspace->free_list());
+  static Node* acquire(Mspace* mspace, bool free_list, Thread* thread, size_t size, bool previous_epoch) {
+    if (free_list) {
+      StopOnNullCondition<typename Mspace::FreeList> iterator(mspace->free_list());
+      return acquire(mspace, iterator, thread, size);
+    }
+    StopOnNullCondition<typename Mspace::LiveList> iterator(mspace->live_list(previous_epoch));
+    return acquire(mspace, iterator, thread, size);
+  }
+ private:
+  template <typename Iterator>
+  static Node* acquire(Mspace* mspace, Iterator& iterator, Thread* thread, size_t size) {
+    assert(mspace != NULL, "invariant");
     while (iterator.has_next()) {
       Node* const node = iterator.next();
       if (node->retired()) continue;
@@ -55,13 +65,25 @@ template <typename Mspace>
 class JfrMspaceRemoveRetrieval : AllStatic {
  public:
   typedef typename Mspace::Node Node;
-  static Node* acquire(Mspace* mspace, Thread* thread, size_t size) {
-    StopOnNullConditionRemoval<typename Mspace::FreeList> iterator(mspace->free_list());
+  static Node* acquire(Mspace* mspace, bool free_list, Thread* thread, size_t size, bool previous_epoch) {
     // it is the iterator that removes the nodes
+    if (free_list) {
+      StopOnNullConditionRemoval<typename Mspace::FreeList> iterator(mspace->free_list());
+      Node* const node = acquire(iterator, thread, size);
+      if (node != NULL) {
+        mspace->decrement_free_list_count();
+      }
+      return node;
+    }
+    StopOnNullConditionRemoval<typename Mspace::LiveList> iterator(mspace->live_list(previous_epoch));
+    return acquire(iterator, thread, size);
+  }
+ private:
+  template <typename Iterator>
+  static Node* acquire(Iterator& iterator, Thread* thread, size_t size) {
     while (iterator.has_next()) {
       Node* const node = iterator.next();
       if (node == NULL) return NULL;
-      mspace->decrement_free_list_count();
       assert(node->free_size() >= size, "invariant");
       assert(!node->retired(), "invariant");
       assert(node->identity() == NULL, "invariant");

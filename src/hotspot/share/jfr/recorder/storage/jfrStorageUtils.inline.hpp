@@ -136,4 +136,30 @@ inline bool ExclusiveDiscardOp<Operation>::process(typename Operation::Type* t) 
   return DiscardOp<Operation>::process(t);
 }
 
+template <typename Operation>
+inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
+  assert(t != NULL, "invariant");
+  const u1* const current_top = _previous_epoch ? t->start() : t->top();
+  const size_t unflushed_size = Atomic::load_acquire(t->pos_address()) - current_top;
+  if (unflushed_size == 0) {
+    return true;
+  }
+  _elements = dispatch(_previous_epoch, current_top, unflushed_size);
+  t->set_top(current_top + unflushed_size);
+  return true;
+}
+
+template <typename Operation>
+size_t EpochDispatchOp<Operation>::dispatch(bool previous_epoch, const u1* element, size_t size) {
+  assert(element != NULL, "invariant");
+  const u1* const limit = element + size;
+  size_t elements = 0;
+  while (element < limit) {
+    element += _operation(element, previous_epoch);
+    ++elements;
+  }
+  assert(element == limit, "invariant");
+  return elements;
+}
+
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_INLINE_HPP

@@ -74,7 +74,7 @@ class JfrStringPool : public JfrCHeapObj {
   friend class JfrRecorderService;
   friend class JfrStringPoolFlush;
   friend class JfrStringPoolWriter;
-  template <typename, template <typename> class, typename, typename>
+  template <typename, template <typename> class, typename, typename, bool>
   friend class JfrMemorySpace;
 };
 

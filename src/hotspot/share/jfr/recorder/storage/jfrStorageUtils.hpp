@@ -191,13 +191,27 @@ class DiscardOp {
 
 template <typename Operation>
 class ExclusiveDiscardOp : private DiscardOp<Operation> {
-public:
+ public:
   typedef typename Operation::Type Type;
   ExclusiveDiscardOp(jfr_operation_mode mode = concurrent) : DiscardOp<Operation>(mode) {}
   bool process(Type* t);
   size_t processed() const { return DiscardOp<Operation>::processed(); }
   size_t elements() const { return DiscardOp<Operation>::elements(); }
   size_t size() const { return DiscardOp<Operation>::size(); }
+};
+
+template <typename Operation>
+class EpochDispatchOp {
+  Operation& _operation;
+  size_t _elements;
+  bool _previous_epoch;
+  size_t dispatch(bool previous_epoch, const u1* data, size_t size);
+ public:
+  typedef typename Operation::Type Type;
+  EpochDispatchOp(Operation& operation, bool previous_epoch) :
+    _operation(operation), _elements(0), _previous_epoch(previous_epoch) {}
+  bool process(Type* t);
+  size_t elements() const { return _elements; }
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP

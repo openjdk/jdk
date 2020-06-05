@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,41 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_JFRMETADATAEVENT_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_JFRMETADATAEVENT_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRPREDICATE_HPP
+#define SHARE_JFR_UTILITIES_JFRPREDICATE_HPP
 
-#include "jni.h"
 #include "memory/allocation.hpp"
+#include "utilities/growableArray.hpp"
 
-class JfrChunkWriter;
-
-//
-// Metadata is continuously updated in Java as event classes are loaded / unloaded.
-// Using update(), Java stores a binary representation back to native.
-//
-class JfrMetadataEvent : AllStatic {
+/*
+ * Premise is that the set is sorted.
+ */
+template <typename T, int cmp(const T&, const T&)>
+class JfrPredicate : AllStatic {
  public:
-  static bool write(JfrChunkWriter& writer);
-  static void update(jbyteArray metadata);
+  static bool test(GrowableArray<T>* set, T value) {
+    assert(set != NULL, "invariant");
+    bool found = false;
+    set->template find_sorted<T, cmp>(value, found);
+    return found;
+  }
 };
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_JFRMETADATAEVENT_HPP
+/*
+ * Premise is that the set is sorted.
+ */
+template <typename T, int cmp(const T&, const T&)>
+class JfrMutablePredicate : AllStatic {
+ public:
+  static bool test(GrowableArray<T>* set, T value) {
+    assert(set != NULL, "invariant");
+    bool found = false;
+    const int location = set->template find_sorted<T, cmp>(value, found);
+    if (!found) {
+      set->insert_before(location, value);
+    }
+    return found;
+  }
+};
+
+#endif // SHARE_JFR_UTILITIES_JFRPREDICATE_HPP

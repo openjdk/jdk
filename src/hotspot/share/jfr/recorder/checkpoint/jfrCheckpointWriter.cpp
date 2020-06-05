@@ -45,8 +45,8 @@ JfrCheckpointWriter::JfrCheckpointWriter(JfrCheckpointType type /* GENERIC */) :
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(Thread* t, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(JfrCheckpointManager::lease(t), t),
+JfrCheckpointWriter::JfrCheckpointWriter(Thread* thread, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
+  JfrCheckpointWriterBase(JfrCheckpointManager::lease(thread), thread),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),
@@ -59,8 +59,8 @@ JfrCheckpointWriter::JfrCheckpointWriter(Thread* t, bool header /* true */, JfrC
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(Thread* t, JfrBuffer* buffer, JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(buffer, t),
+JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type /* GENERIC */) :
+  JfrCheckpointWriterBase(JfrCheckpointManager::lease(thread, previous_epoch), thread),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),

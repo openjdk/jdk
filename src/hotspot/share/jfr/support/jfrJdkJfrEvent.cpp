@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,15 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "jfr/jni/jfrGetAllEventClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/support/jfrEventClass.hpp"
-#include "oops/instanceKlass.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/stack.inline.hpp"
-
- // incremented during class unloading for each unloaded event class
-static jlong unloaded_event_classes = 0;
-
-jlong JfrEventClasses::unloaded_event_classes_count() {
-  return unloaded_event_classes;
-}
-
-void JfrEventClasses::increment_unloaded_event_class() {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  ++unloaded_event_classes;
-}
 
 static jobject empty_java_util_arraylist = NULL;
 
@@ -59,10 +45,16 @@ static oop new_java_util_arraylist(TRAPS) {
   return (oop)result.get_jobject();
 }
 
+static const int initial_array_size = 64;
+
+template <typename T>
+static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
+  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, true, mtTracing);
+}
+
 static bool initialize(TRAPS) {
   static bool initialized = false;
   if (!initialized) {
-    unloaded_event_classes = 0;
     assert(NULL == empty_java_util_arraylist, "invariant");
     const oop array_list = new_java_util_arraylist(CHECK_false);
     empty_java_util_arraylist = JfrJavaSupport::global_jni_handle(array_list, THREAD);
@@ -88,7 +80,6 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
   Stack<const Klass*, mtTracing> mark_stack;
-  MutexLocker ml(thread, Compile_lock);
   mark_stack.push(event_klass->subklass());
 
   while (!mark_stack.is_empty()) {
@@ -114,7 +105,7 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
   assert(mark_stack.is_empty(), "invariant");
 }
 
- static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, Thread* thread) {
+static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, Thread* thread) {
   assert(event_subklasses.is_nonempty(), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
@@ -125,9 +116,7 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
   }
 }
 
-static const int initial_size_growable_array = 64;
-
-jobject JfrEventClasses::get_all_event_classes(TRAPS) {
+jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   initialize(THREAD);
   assert(empty_java_util_arraylist != NULL, "should have been setup already!");
@@ -148,7 +137,7 @@ jobject JfrEventClasses::get_all_event_classes(TRAPS) {
   }
 
   ResourceMark rm(THREAD);
-  GrowableArray<const void*> event_subklasses(THREAD, initial_size_growable_array);
+  GrowableArray<const void*> event_subklasses(THREAD, initial_array_size);
   fill_klasses(event_subklasses, klass, THREAD);
 
   if (event_subklasses.is_empty()) {
@@ -184,4 +173,64 @@ jobject JfrEventClasses::get_all_event_classes(TRAPS) {
     }
   }
   return JfrJavaSupport::local_jni_handle(h_array_list(), THREAD);
+}
+
+bool JdkJfrEvent::is(const Klass* k) {
+  return JfrTraceId::is_jdk_jfr_event(k);
+}
+
+bool JdkJfrEvent::is(const jclass jc) {
+  return JfrTraceId::is_jdk_jfr_event(jc);
+}
+
+void JdkJfrEvent::tag_as(const Klass* k) {
+  JfrTraceId::tag_as_jdk_jfr_event(k);
+}
+
+bool JdkJfrEvent::is_subklass(const Klass* k) {
+  return JfrTraceId::is_jdk_jfr_event_sub(k);
+}
+
+bool JdkJfrEvent::is_subklass(const jclass jc) {
+  return JfrTraceId::is_jdk_jfr_event_sub(jc);
+}
+
+void JdkJfrEvent::tag_as_subklass(const Klass* k) {
+  JfrTraceId::tag_as_jdk_jfr_event_sub(k);
+}
+
+void JdkJfrEvent::tag_as_subklass(const jclass jc) {
+  JfrTraceId::tag_as_jdk_jfr_event_sub(jc);
+}
+
+bool JdkJfrEvent::is_a(const Klass* k) {
+  return JfrTraceId::in_jdk_jfr_event_hierarchy(k);
+}
+
+bool JdkJfrEvent::is_a(const jclass jc) {
+  return JfrTraceId::in_jdk_jfr_event_hierarchy(jc);
+}
+
+bool JdkJfrEvent::is_host(const Klass* k) {
+  return JfrTraceId::is_event_host(k);
+}
+
+bool JdkJfrEvent::is_host(const jclass jc) {
+  return JfrTraceId::is_event_host(jc);
+}
+
+void JdkJfrEvent::tag_as_host(const Klass* k) {
+  JfrTraceId::tag_as_event_host(k);
+}
+
+void JdkJfrEvent::tag_as_host(const jclass jc) {
+  JfrTraceId::tag_as_event_host(jc);
+}
+
+bool JdkJfrEvent::is_visible(const Klass* k) {
+  return JfrTraceId::in_visible_set(k);
+}
+
+bool JdkJfrEvent::is_visible(const jclass jc) {
+  return JfrTraceId::in_visible_set(jc);
 }

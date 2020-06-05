@@ -26,6 +26,25 @@
 #define SHARE_JFR_UTILITIES_JFRRELATION_HPP
 
 #include "jfr/utilities/jfrNode.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+
+inline int compare_traceid(const traceid& lhs, const traceid& rhs) {
+  return lhs > rhs ? 1 : (lhs < rhs) ? -1 : 0;
+}
+
+inline int sort_traceid(traceid* lhs, traceid* rhs) {
+  return compare_traceid(*lhs, *rhs);
+}
+
+class Klass;
+
+inline int compare_klasses(const Klass*const& lhs, const Klass*const& rhs) {
+  return lhs > rhs ? 1 : (lhs < rhs) ? -1 : 0;
+}
+
+inline int sort_klasses(const Klass* lhs, const Klass* rhs) {
+  return compare_klasses(lhs, rhs);
+}
 
 template <typename Node>
 class LessThan {

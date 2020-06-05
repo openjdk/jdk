@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ class JfrThreadLocal {
   mutable JfrBuffer* _java_buffer;
   mutable JfrBuffer* _native_buffer;
   JfrBuffer* _shelved_buffer;
+  JfrBuffer* _load_barrier_buffer_epoch_0;
+  JfrBuffer* _load_barrier_buffer_epoch_1;
   mutable JfrStackFrame* _stackframes;
   mutable traceid _trace_id;
   JfrBlobHandle _thread;
@@ -230,6 +232,9 @@ class JfrThreadLocal {
   // Code generation
   static ByteSize trace_id_offset();
   static ByteSize java_event_writer_offset();
+
+  template <typename>
+  friend class JfrEpochQueueKlassPolicy;
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP

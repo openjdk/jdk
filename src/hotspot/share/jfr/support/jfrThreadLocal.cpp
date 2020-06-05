@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -38,12 +38,13 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/sizes.hpp"
 
-/* This data structure is per thread and only accessed by the thread itself, no locking required */
 JfrThreadLocal::JfrThreadLocal() :
   _java_event_writer(NULL),
   _java_buffer(NULL),
   _native_buffer(NULL),
   _shelved_buffer(NULL),
+  _load_barrier_buffer_epoch_0(NULL),
+  _load_barrier_buffer_epoch_1(NULL),
   _stackframes(NULL),
   _trace_id(JfrTraceId::assign_thread_id()),
   _thread(),
@@ -57,7 +58,6 @@ JfrThreadLocal::JfrThreadLocal() :
   _entering_suspend_flag(0),
   _excluded(false),
   _dead(false) {
-
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != NULL ? thread->jfr_thread_local()->trace_id() : (traceid)0;
 }
@@ -133,6 +133,14 @@ void JfrThreadLocal::release(Thread* t) {
   if (_stackframes != NULL) {
     FREE_C_HEAP_ARRAY(JfrStackFrame, _stackframes);
     _stackframes = NULL;
+  }
+  if (_load_barrier_buffer_epoch_0 != NULL) {
+    _load_barrier_buffer_epoch_0->set_retired();
+    _load_barrier_buffer_epoch_0 = NULL;
+  }
+  if (_load_barrier_buffer_epoch_1 != NULL) {
+    _load_barrier_buffer_epoch_1->set_retired();
+    _load_barrier_buffer_epoch_1 = NULL;
   }
 }
 

@@ -37,7 +37,8 @@
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
-#include "jfr/support/jfrEventClass.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/utilities/jfrBigEndian.hpp"
 #include "jfr/writers/jfrBigEndianWriter.hpp"
 #include "logging/log.hpp"
@@ -1408,7 +1409,7 @@ static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, c
     jint size_instrumented_data = 0;
     unsigned char* instrumented_data = NULL;
     const jclass super = (jclass)JNIHandles::make_local(ik->super()->java_mirror());
-    JfrUpcalls::new_bytes_eager_instrumentation(TRACE_ID(ik),
+    JfrUpcalls::new_bytes_eager_instrumentation(JfrTraceId::load_raw(ik),
                                                 force_instrumentation,
                                                 super,
                                                 size_of_new_bytes,

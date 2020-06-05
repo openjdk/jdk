@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSetUtils.hpp"
+#include "jfr/utilities/jfrPredicate.hpp"
+#include "jfr/utilities/jfrRelation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -255,7 +257,8 @@ JfrArtifactSet::JfrArtifactSet(bool class_unload) : _symbol_id(new JfrSymbolId()
   assert(_klass_list != NULL, "invariant");
 }
 
-static const size_t initial_class_list_size = 200;
+static const size_t initial_klass_list_size = 256;
+const int initial_klass_loader_set_size = 64;
 
 void JfrArtifactSet::initialize(bool class_unload, bool clear /* false */) {
   assert(_symbol_id != NULL, "invariant");
@@ -265,13 +268,14 @@ void JfrArtifactSet::initialize(bool class_unload, bool clear /* false */) {
   _symbol_id->set_class_unload(class_unload);
   _total_count = 0;
   // resource allocation
-  _klass_list = new GrowableArray<const Klass*>(initial_class_list_size, false, mtTracing);
+  _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size, false, mtTracing);
+  _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size, false, mtTracing);
 }
 
 JfrArtifactSet::~JfrArtifactSet() {
   _symbol_id->clear();
   delete _symbol_id;
-  // _klass_list will be cleared by a ResourceMark
+  // _klass_list and _klass_loader_list will be cleared by a ResourceMark
 }
 
 traceid JfrArtifactSet::bootstrap_name(bool leakp) {
@@ -307,10 +311,15 @@ int JfrArtifactSet::entries() const {
   return _klass_list->length();
 }
 
+bool JfrArtifactSet::should_do_loader_klass(const Klass* k) {
+  assert(k != NULL, "invariant");
+  assert(_klass_loader_set != NULL, "invariant");
+  return !JfrMutablePredicate<const Klass*, compare_klasses>::test(_klass_loader_set, k);
+}
+
 void JfrArtifactSet::register_klass(const Klass* k) {
   assert(k != NULL, "invariant");
   assert(_klass_list != NULL, "invariant");
-  assert(_klass_list->find(k) == -1, "invariant");
   _klass_list->append(k);
 }
 

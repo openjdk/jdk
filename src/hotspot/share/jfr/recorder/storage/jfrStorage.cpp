@@ -91,11 +91,9 @@ JfrStorage::~JfrStorage() {
   _instance = NULL;
 }
 
-static const size_t in_memory_discard_threshold_delta = 2; // start to discard data when the only this number of free buffers are left
-static const size_t unlimited_mspace_size = 0;
 static const size_t thread_local_cache_count = 8;
-static const size_t thread_local_scavenge_threshold = thread_local_cache_count / 2;
-static const size_t transient_buffer_size_multiplier = 8; // against thread local buffer size
+// start to discard data when the only this number of free buffers are left
+static const size_t in_memory_discard_threshold_delta = 2;
 
 bool JfrStorage::initialize() {
   assert(_control == NULL, "invariant");
@@ -104,7 +102,6 @@ bool JfrStorage::initialize() {
 
   const size_t num_global_buffers = (size_t)JfrOptionSet::num_global_buffers();
   assert(num_global_buffers >= in_memory_discard_threshold_delta, "invariant");
-  const size_t memory_size = (size_t)JfrOptionSet::memory_size();
   const size_t global_buffer_size = (size_t)JfrOptionSet::global_buffer_size();
   const size_t thread_buffer_size = (size_t)JfrOptionSet::thread_buffer_size();
 
@@ -112,14 +109,24 @@ bool JfrStorage::initialize() {
   if (_control == NULL) {
     return false;
   }
-  _global_mspace = create_mspace<JfrStorageMspace>(global_buffer_size, memory_size, num_global_buffers, this);
+  _global_mspace = create_mspace<JfrStorageMspace>(global_buffer_size,
+                                                   num_global_buffers, // cache count limit
+                                                   num_global_buffers, // cache_preallocate count
+                                                   false, // preallocate_to_free_list (== preallocate directly to live list)
+                                                   this);
   if (_global_mspace == NULL) {
     return false;
   }
-  _thread_local_mspace = create_mspace<JfrThreadLocalMspace>(thread_buffer_size, unlimited_mspace_size, thread_local_cache_count, this);
+  assert(_global_mspace->live_list_is_nonempty(), "invariant");
+  _thread_local_mspace = create_mspace<JfrThreadLocalMspace>(thread_buffer_size,
+                                                             thread_local_cache_count, // cache count limit
+                                                             thread_local_cache_count, // cache preallocate count
+                                                             true,  // preallocate_to_free_list
+                                                             this);
   if (_thread_local_mspace == NULL) {
     return false;
   }
+  assert(_thread_local_mspace->free_list_is_nonempty(), "invariant");
   // The full list will contain nodes pointing to retired global and transient buffers.
   _full_list = new JfrFullList(*_control);
   return _full_list != NULL && _full_list->initialize(num_global_buffers * 2);
@@ -134,7 +141,7 @@ static void log_allocation_failure(const char* msg, size_t size) {
 }
 
 BufferPtr JfrStorage::acquire_thread_local(Thread* thread, size_t size /* 0 */) {
-  BufferPtr buffer = mspace_get_to_full(size, instance()._thread_local_mspace, thread);
+  BufferPtr buffer = mspace_acquire_to_live_list(size, instance()._thread_local_mspace, thread);
   if (buffer == NULL) {
     log_allocation_failure("thread local_memory", size);
     return NULL;
@@ -155,10 +162,10 @@ BufferPtr JfrStorage::acquire_transient(size_t size, Thread* thread) {
   return buffer;
 }
 
-static BufferPtr get_lease(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
-  assert(size <= mspace->min_elem_size(), "invariant");
+static BufferPtr acquire_lease(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
+  assert(size <= mspace->min_element_size(), "invariant");
   while (true) {
-    BufferPtr buffer = mspace_get_free_lease_with_retry(size, mspace, retry_count, thread);
+    BufferPtr buffer = mspace_acquire_lease_with_retry(size, mspace, retry_count, thread);
     if (buffer == NULL && storage_instance.control().should_discard()) {
       storage_instance.discard_oldest(thread);
       continue;
@@ -167,10 +174,10 @@ static BufferPtr get_lease(size_t size, JfrStorageMspace* mspace, JfrStorage& st
   }
 }
 
-static BufferPtr get_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
-  assert(size <= mspace->min_elem_size(), "invariant");
+static BufferPtr acquire_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
+  assert(size <= mspace->min_element_size(), "invariant");
   while (true) {
-    BufferPtr buffer= mspace_get_free_with_retry(size, mspace, retry_count, thread);
+    BufferPtr buffer= mspace_acquire_live_with_retry(size, mspace, retry_count, thread);
     if (buffer == NULL && storage_instance.control().should_discard()) {
       storage_instance.discard_oldest(thread);
       continue;
@@ -183,10 +190,10 @@ static const size_t lease_retry = 10;
 
 BufferPtr JfrStorage::acquire_large(size_t size, Thread* thread) {
   JfrStorage& storage_instance = instance();
-  const size_t max_elem_size = storage_instance._global_mspace->min_elem_size(); // min is also max
+  const size_t max_elem_size = storage_instance._global_mspace->min_element_size(); // min is also max
   // if not too large and capacity is still available, ask for a lease from the global system
   if (size < max_elem_size && storage_instance.control().is_global_lease_allowed()) {
-    BufferPtr const buffer = get_lease(size, storage_instance._global_mspace, storage_instance, lease_retry, thread);
+    BufferPtr const buffer = acquire_lease(size, storage_instance._global_mspace, storage_instance, lease_retry, thread);
     if (buffer != NULL) {
       assert(buffer->acquired_by_self(), "invariant");
       assert(!buffer->transient(), "invariant");
@@ -247,7 +254,7 @@ bool JfrStorage::flush_regular_buffer(BufferPtr buffer, Thread* thread) {
     return true;
   }
 
-  BufferPtr const promotion_buffer = get_promotion_buffer(unflushed_size, _global_mspace, *this, promotion_retry, thread);
+  BufferPtr const promotion_buffer = acquire_promotion_buffer(unflushed_size, _global_mspace, *this, promotion_retry, thread);
   if (promotion_buffer == NULL) {
     write_data_loss(buffer, thread);
     return false;
@@ -497,47 +504,50 @@ typedef MutexedWriteOp<WriteOperation> MutexedWriteOperation;
 typedef ConcurrentWriteOp<WriteOperation> ConcurrentWriteOperation;
 
 typedef Excluded<JfrBuffer, true> NonExcluded;
-typedef PredicatedConcurrentWriteOp<WriteOperation, NonExcluded>  ConcurrentWriteOperationNonExcluded;
+typedef PredicatedConcurrentWriteOp<WriteOperation, NonExcluded>  ConcurrentNonExcludedWriteOperation;
 
-typedef ReleaseOp<JfrThreadLocalMspace> ReleaseFullOperation;
-typedef ScavengingReleaseOp<JfrThreadLocalMspace> ReleaseThreadLocalOperation;
-typedef CompositeOperation<ConcurrentWriteOperationNonExcluded, ReleaseThreadLocalOperation> ConcurrentWriteThreadLocalOperationWithRelease;
+typedef ScavengingReleaseOp<JfrThreadLocalMspace, JfrThreadLocalMspace::LiveList> ReleaseThreadLocalOperation;
+typedef CompositeOperation<ConcurrentNonExcludedWriteOperation, ReleaseThreadLocalOperation> ConcurrentWriteReleaseThreadLocalOperation;
 
 size_t JfrStorage::write() {
   const size_t full_elements = write_full();
   WriteOperation wo(_chunkwriter);
   NonExcluded ne;
-  ConcurrentWriteOperationNonExcluded cwone(wo, ne);
-  ReleaseThreadLocalOperation rtlo(_thread_local_mspace);
-  ConcurrentWriteThreadLocalOperationWithRelease tl_op(&cwone, &rtlo);
-  process_full_list(tl_op, _thread_local_mspace);
-  assert(_global_mspace->full_list_is_empty(), "invariant");
-  process_free_list(cwone, _global_mspace);
+  ConcurrentNonExcludedWriteOperation cnewo(wo, ne);
+  ReleaseThreadLocalOperation rtlo(_thread_local_mspace, _thread_local_mspace->live_list());
+  ConcurrentWriteReleaseThreadLocalOperation tlop(&cnewo, &rtlo);
+  process_live_list(tlop, _thread_local_mspace);
+  assert(_global_mspace->free_list_is_empty(), "invariant");
+  assert(_global_mspace->live_list_is_nonempty(), "invariant");
+  process_live_list(cnewo, _global_mspace);
   return full_elements + wo.elements();
 }
 
 size_t JfrStorage::write_at_safepoint() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  const size_t full_elements = write_full();
   WriteOperation wo(_chunkwriter);
   NonExcluded ne;
-  ConcurrentWriteOperationNonExcluded cwone(wo, ne); // concurrent because of gc's
-  process_full_list(cwone, _thread_local_mspace);
-  assert(_global_mspace->full_list_is_empty(), "invariant");
-  process_free_list(cwone, _global_mspace);
-  return wo.elements();
+  ConcurrentNonExcludedWriteOperation cnewo(wo, ne); // concurrent because of gc's
+  process_live_list(cnewo, _thread_local_mspace);
+  assert(_global_mspace->free_list_is_empty(), "invariant");
+  assert(_global_mspace->live_list_is_nonempty(), "invariant");
+  process_live_list(cnewo, _global_mspace);
+  return full_elements + wo.elements();
 }
 
 typedef DiscardOp<DefaultDiscarder<JfrStorage::Buffer> > DiscardOperation;
-typedef CompositeOperation<DiscardOperation, ReleaseThreadLocalOperation> ThreadLocalDiscardOperation;
+typedef CompositeOperation<DiscardOperation, ReleaseThreadLocalOperation> DiscardReleaseThreadLocalOperation;
 
 size_t JfrStorage::clear() {
   const size_t full_elements = clear_full();
   DiscardOperation discarder(concurrent); // concurrent discard mode
-  ReleaseThreadLocalOperation rtlo(_thread_local_mspace);
-  ThreadLocalDiscardOperation tldo(&discarder, &rtlo);
-  process_full_list(tldo, _thread_local_mspace);
-  assert(_global_mspace->full_list_is_empty(), "invariant");
-  process_free_list(discarder, _global_mspace);
+  ReleaseThreadLocalOperation rtlo(_thread_local_mspace, _thread_local_mspace->live_list());
+  DiscardReleaseThreadLocalOperation tldo(&discarder, &rtlo);
+  process_live_list(tldo, _thread_local_mspace);
+  assert(_global_mspace->free_list_is_empty(), "invariant");
+  assert(_global_mspace->live_list_is_nonempty(), "invariant");
+  process_live_list(discarder, _global_mspace);
   return full_elements + discarder.elements();
 }
 
@@ -566,7 +576,8 @@ static void log(size_t count, size_t amount, bool clear = false) {
   }
 }
 
-typedef CompositeOperation<MutexedWriteOperation, ReleaseFullOperation> FullOperation;
+typedef ReleaseOp<JfrThreadLocalMspace> ReleaseFullOperation;
+typedef CompositeOperation<MutexedWriteOperation, ReleaseFullOperation> WriteFullOperation;
 
 // full writer
 // Assumption is retired only; exclusive access
@@ -580,8 +591,8 @@ size_t JfrStorage::write_full() {
   WriteOperation wo(_chunkwriter);
   MutexedWriteOperation writer(wo); // a retired buffer implies mutexed access
   ReleaseFullOperation rfo(_thread_local_mspace);
-  FullOperation cmd(&writer, &rfo);
-  const size_t count = process_full(cmd, _full_list, control());
+  WriteFullOperation wfo(&writer, &rfo);
+  const size_t count = process_full(wfo, _full_list, control());
   if (count != 0) {
     log(count, writer.size());
   }

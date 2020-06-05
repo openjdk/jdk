@@ -40,10 +40,13 @@ JfrFullStorage<ValueType, NodeType, AllocPolicy>::~JfrFullStorage() {
     node = _free_node_list->remove();
     delete node;
   }
+  delete _free_node_list;
+
   while (_queue->is_nonempty()) {
     node = _queue->remove();
     delete node;
   }
+  delete _queue;
 }
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>

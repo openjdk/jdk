@@ -34,7 +34,6 @@ class JfrCheckpointManager;
 class JfrChunkWriter;
 class JfrSerializer;
 class JfrTypeManager;
-class Mutex;
 class Thread;
 
 struct JfrCheckpointEntry {
@@ -45,7 +44,7 @@ struct JfrCheckpointEntry {
   juint nof_segments;
 };
 
-typedef JfrMemorySpace<JfrCheckpointManager, JfrMspaceRetrieval, JfrLinkedList<JfrBuffer> > JfrCheckpointMspace;
+typedef JfrMemorySpace<JfrCheckpointManager, JfrMspaceRetrieval, JfrLinkedList<JfrBuffer>, JfrLinkedList<JfrBuffer>, true > JfrCheckpointMspace;
 
 //
 // Responsible for maintaining checkpoints and by implication types.
@@ -54,58 +53,48 @@ typedef JfrMemorySpace<JfrCheckpointManager, JfrMspaceRetrieval, JfrLinkedList<J
 //
 class JfrCheckpointManager : public JfrCHeapObj {
  public:
-  size_t flush_type_set();
-  static void create_thread_blob(Thread* thread);
-  static void write_thread_checkpoint(Thread* thread);
-  void register_service_thread(const Thread* thread);
   typedef JfrCheckpointMspace::Node Buffer;
   typedef JfrCheckpointMspace::NodePtr BufferPtr;
-
  private:
-  JfrCheckpointMspace* _free_list_mspace;
-  JfrCheckpointMspace* _epoch_transition_mspace;
-  const Thread* _service_thread;
+  JfrCheckpointMspace* _mspace;
   JfrChunkWriter& _chunkwriter;
-  bool _checkpoint_epoch_state;
 
-  JfrCheckpointMspace* lookup(BufferPtr old) const;
-  bool use_epoch_transition_mspace(const Thread* thread) const;
-  size_t write_epoch_transition_mspace();
-  BufferPtr epoch_transition_buffer(Thread* thread);
+  JfrCheckpointManager(JfrChunkWriter& cw);
+  ~JfrCheckpointManager();
+  static JfrCheckpointManager& instance();
+  static JfrCheckpointManager* create(JfrChunkWriter& cw);
+  bool initialize();
+  static void destroy();
 
-  static BufferPtr lease(Thread* thread, size_t size = 0);
+  bool lookup(Buffer* old) const;
+  static BufferPtr lease(Thread* thread, bool previous_epoch = false, size_t size = 0);
   static BufferPtr lease(BufferPtr old, Thread* thread, size_t size = 0);
-  static BufferPtr lease(JfrCheckpointMspace* mspace, Thread* thread, size_t size = 0);
   static BufferPtr flush(BufferPtr old, size_t used, size_t requested, Thread* thread);
 
   size_t clear();
   size_t write();
   size_t flush();
+  void notify_threads();
 
-  size_t write_static_type_set();
-  size_t write_threads();
+  size_t write_static_type_set(Thread* thread);
+  size_t write_threads(Thread* thread);
   size_t write_static_type_set_and_threads();
   void clear_type_set();
   void write_type_set();
-  static void write_type_set_for_unloaded_classes();
 
   void begin_epoch_shift();
   void end_epoch_shift();
-  void synchronize_checkpoint_manager_with_current_epoch();
 
-  void notify_threads();
-
-  JfrCheckpointManager(JfrChunkWriter& cw);
-  ~JfrCheckpointManager();
-
-  static JfrCheckpointManager& instance();
-  static JfrCheckpointManager* create(JfrChunkWriter& cw);
-  bool initialize();
+  static void on_unloading_classes();
   void on_rotation();
-  static void destroy();
 
   // mspace callback
   void register_full(BufferPtr buffer, Thread* thread);
+
+ public:
+  size_t flush_type_set();
+  static void create_thread_blob(Thread* thread);
+  static void write_thread_checkpoint(Thread* thread);
 
   friend class Jfr;
   friend class JfrRecorder;
@@ -114,7 +103,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   friend class JfrCheckpointWriter;
   friend class JfrSerializer;
   friend class JfrStackTraceRepository;
-  template <typename, template <typename> class, typename, typename>
+  template <typename, template <typename> class, typename, typename, bool>
   friend class JfrMemorySpace;
 };
 

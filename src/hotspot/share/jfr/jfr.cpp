@@ -66,7 +66,7 @@ void Jfr::on_create_vm_3() {
 
 void Jfr::on_unloading_classes() {
   if (JfrRecorder::is_created()) {
-    JfrCheckpointManager::write_type_set_for_unloaded_classes();
+    JfrCheckpointManager::on_unloading_classes();
   }
 }
 

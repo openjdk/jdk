@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,21 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
-#define SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
+#ifndef SHARE_JFR_SUPPORT_JFRKLASSUNLOADING_HPP
+#define SHARE_JFR_SUPPORT_JFRKLASSUNLOADING_HPP
 
-#include "jfr/recorder/storage/jfrBuffer.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allocation.hpp"
 
-class JfrStringPoolBuffer : public JfrBuffer {
- private:
-  uint64_t _string_count_pos;
-  uint64_t _string_count_top;
+class Klass;
 
+class JfrKlassUnloading : AllStatic {
  public:
-  JfrStringPoolBuffer();
-  void reinitialize();
-  uint64_t string_pos() const;
-  uint64_t string_top() const;
-  uint64_t string_count() const;
-  void increment(uint64_t value);
-  void set_string_pos(uint64_t value);
-  void set_string_top(uint64_t value);
+  static bool on_unload(const Klass* k);
+  static int64_t event_class_count();
+  static bool is_unloaded(traceid klass_id, bool previous_epoch = false);
+  static void sort(bool previous_epoch = false);
+  static void clear();
 };
 
-#endif // SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
+#endif // SHARE_JFR_SUPPORT_JFRKLASSUNLOADING_HPP

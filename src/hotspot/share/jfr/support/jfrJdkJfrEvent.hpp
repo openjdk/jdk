@@ -22,16 +22,26 @@
  *
  */
 
-#ifndef SHARE_JFR_SUPPORT_JFREVENTCLASS_HPP
-#define SHARE_JFR_SUPPORT_JFREVENTCLASS_HPP
+#ifndef SHARE_JFR_SUPPORT_JFRJDKJFREVENT_HPP
+#define SHARE_JFR_SUPPORT_JFRJDKJFREVENT_HPP
 
 #include "jni.h"
 #include "memory/allocation.hpp"
+#include "utilities/exceptions.hpp"
 
 class Klass;
 
 //
-// For convenient access to the jdk.jfr.Event klass hierarchy.
+// For convenient access to the event klass hierarchy:
+//
+//  - jdk.internal.event.Event (java.base)
+//    - jdk.jfr.Event (jdk.jfr)
+//      - sub klasses (...)
+//
+//  Although the top level klass is really jdk.internal.event.Event,
+//  its role is primarily to allow event programming in module java.base.
+//  We still call it the jdk.jfr.Event klass hierarchy, including
+//  jdk.internal.event.Event.
 //
 class JdkJfrEvent : AllStatic {
  public:
@@ -59,6 +69,9 @@ class JdkJfrEvent : AllStatic {
   // in the set of classes made visible to java
   static bool is_visible(const Klass* k);
   static bool is_visible(const jclass jc);
+
+  // all klasses in the hierarchy
+  static jobject get_all_klasses(TRAPS);
 };
 
-#endif // SHARE_JFR_SUPPORT_JFREVENTCLASS_HPP
+#endif // SHARE_JFR_SUPPORT_JFRJDKJFREVENT_HPP
