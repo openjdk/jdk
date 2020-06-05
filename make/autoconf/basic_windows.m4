@@ -48,6 +48,8 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     fi
   else
     WINENV_ROOT=`$CYGPATH -m /`
+    # msys2 has a trailing slash; strip it
+    WINENV_ROOT=${WINENV_ROOT%/}
   fi
   AC_MSG_RESULT([$WINENV_ROOT])
 
