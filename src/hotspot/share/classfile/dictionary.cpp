@@ -33,6 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -400,6 +401,20 @@ void Dictionary::clean_cached_protection_domains() {
   }
 }
 
+oop SymbolPropertyEntry::method_type() const {
+  return _method_type.resolve();
+}
+
+void SymbolPropertyEntry::set_method_type(oop p) {
+  _method_type = OopHandle::create(p);
+}
+
+void SymbolPropertyEntry::free_entry() {
+  // decrement Symbol refcount here because hashtable doesn't.
+  literal()->decrement_refcount();
+  // Free OopHandle
+  _method_type.release();
+}
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)
   : Hashtable<Symbol*, mtSymbol>(table_size, sizeof(SymbolPropertyEntry))
@@ -436,16 +451,6 @@ SymbolPropertyEntry* SymbolPropertyTable::add_entry(int index, unsigned int hash
   return p;
 }
 
-void SymbolPropertyTable::oops_do(OopClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
-      if (p->method_type() != NULL) {
-        f->do_oop(p->method_type_addr());
-      }
-    }
-  }
-}
-
 void SymbolPropertyTable::methods_do(void f(Method*)) {
   for (int index = 0; index < table_size(); index++) {
     for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
@@ -455,6 +460,11 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
       }
     }
   }
+}
+
+void SymbolPropertyTable::free_entry(SymbolPropertyEntry* entry) {
+  entry->free_entry();
+  Hashtable<Symbol*, mtSymbol>::free_entry(entry);
 }
 
 void DictionaryEntry::verify_protection_domain_set() {

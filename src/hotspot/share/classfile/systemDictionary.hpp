@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/objArrayOop.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -381,13 +382,8 @@ public:
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(GCTimer* gc_timer);
 
-  // Applies "f->do_oop" to all root oops in the system dictionary.
-  // If include_handles is true (the default), then the handles in the
-  // vm_global OopStorage object are included.
-  static void oops_do(OopClosure* f, bool include_handles = true);
-
   // System loader lock
-  static oop system_loader_lock()           { return _system_loader_lock_obj; }
+  static oop system_loader_lock();
 
   // Protection Domain Table
   static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
@@ -585,7 +581,7 @@ public:
   static PlaceholderTable*       _placeholders;
 
   // Lock object for system class loader
-  static oop                     _system_loader_lock_obj;
+  static OopHandle               _system_loader_lock_obj;
 
   // Constraints on class loaders
   static LoaderConstraintTable*  _loader_constraints;
@@ -703,8 +699,8 @@ protected:
   static InstanceKlass* _box_klasses[T_VOID+1];
 
 private:
-  static oop  _java_system_loader;
-  static oop  _java_platform_loader;
+  static OopHandle  _java_system_loader;
+  static OopHandle  _java_platform_loader;
 
 public:
   static TableStatistics placeholders_statistics();

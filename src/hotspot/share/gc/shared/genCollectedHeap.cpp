@@ -27,7 +27,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -49,6 +48,8 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
@@ -843,8 +844,8 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
     AOTLoader::oops_do(strong_roots);
   }
 #endif
-  if (_process_strong_tasks->try_claim_task(GCH_PS_SystemDictionary_oops_do)) {
-    SystemDictionary::oops_do(strong_roots);
+  if (_process_strong_tasks->try_claim_task(GCH_PS_VMGlobal_oops_do)) {
+    OopStorageSet::vm_global()->oops_do(strong_roots);
   }
 
   if (_process_strong_tasks->try_claim_task(GCH_PS_CodeCache_oops_do)) {

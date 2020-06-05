@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class G1RootProcessor : public StackObj {
     G1RP_PS_JNIHandles_oops_do,
     G1RP_PS_ObjectSynchronizer_oops_do,
     G1RP_PS_Management_oops_do,
-    G1RP_PS_SystemDictionary_oops_do,
+    G1RP_PS_VMGlobal_oops_do,
     G1RP_PS_ClassLoaderDataGraph_oops_do,
     G1RP_PS_jvmti_oops_do,
     G1RP_PS_CodeCache_oops_do,

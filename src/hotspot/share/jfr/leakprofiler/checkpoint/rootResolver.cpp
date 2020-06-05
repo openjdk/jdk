@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
@@ -98,7 +100,7 @@ class ReferenceToRootClosure : public StackObj {
   bool do_universe_roots();
   bool do_jni_handle_roots();
   bool do_jvmti_roots();
-  bool do_system_dictionary_roots();
+  bool do_vm_global_roots();
   bool do_management_roots();
   bool do_string_table_roots();
   bool do_aot_loader_roots();
@@ -160,10 +162,10 @@ bool ReferenceToRootClosure::do_jvmti_roots() {
   return rlc.complete();
 }
 
-bool ReferenceToRootClosure::do_system_dictionary_roots() {
+bool ReferenceToRootClosure::do_vm_global_roots() {
   assert(!complete(), "invariant");
-  ReferenceLocateClosure rlc(_callback, OldObjectRoot::_system_dictionary, OldObjectRoot::_type_undetermined, NULL);
-  SystemDictionary::oops_do(&rlc);
+  ReferenceLocateClosure rlc(_callback, OldObjectRoot::_vm_global, OldObjectRoot::_type_undetermined, NULL);
+  OopStorageSet::vm_global()->oops_do(&rlc);
   return rlc.complete();
 }
 
@@ -211,7 +213,7 @@ bool ReferenceToRootClosure::do_roots() {
     return true;
   }
 
-  if (do_system_dictionary_roots()) {
+  if (do_vm_global_roots()) {
    _complete = true;
     return true;
   }

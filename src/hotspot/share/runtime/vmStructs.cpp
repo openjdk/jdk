@@ -470,7 +470,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-     static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                   \
      static_field(SystemDictionary,            WK_KLASS(Object_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(String_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Class_klass),                         InstanceKlass*)                        \
@@ -479,7 +478,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  InstanceKlass*)                        \
-     static_field(SystemDictionary,            _java_system_loader,                           oop)                                   \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* vmSymbols */                                                                                                                    \

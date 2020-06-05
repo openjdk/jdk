@@ -54,7 +54,6 @@ private:
   ShenandoahSerialRoot  _universe_root;
   ShenandoahSerialRoot  _object_synchronizer_root;
   ShenandoahSerialRoot  _management_root;
-  ShenandoahSerialRoot  _system_dictionary_root;
   ShenandoahSerialRoot  _jvmti_root;
 public:
   ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase);

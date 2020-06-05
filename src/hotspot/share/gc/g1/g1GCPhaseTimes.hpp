@@ -51,7 +51,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     JNIRoots,
     ObjectSynchronizerRoots,
     ManagementRoots,
-    SystemDictionaryRoots,
+    VMGlobalRoots,
     CLDGRoots,
     JVMTIRoots,
     AOT_ONLY(AOTCodeRoots COMMA)

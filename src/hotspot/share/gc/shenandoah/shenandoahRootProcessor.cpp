@@ -26,7 +26,6 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -55,16 +54,10 @@ void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
   }
 }
 
-// Overwrite the second argument for SD::oops_do, don't include vm global oop storage.
-static void system_dictionary_oops_do(OopClosure* cl) {
-  SystemDictionary::oops_do(cl, false);
-}
-
 ShenandoahSerialRoots::ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase) :
   _universe_root(&Universe::oops_do, phase, ShenandoahPhaseTimings::UniverseRoots),
   _object_synchronizer_root(&ObjectSynchronizer::oops_do, phase, ShenandoahPhaseTimings::ObjectSynchronizerRoots),
   _management_root(&Management::oops_do, phase, ShenandoahPhaseTimings::ManagementRoots),
-  _system_dictionary_root(&system_dictionary_oops_do, phase, ShenandoahPhaseTimings::SystemDictionaryRoots),
   _jvmti_root(&JvmtiExport::oops_do, phase, ShenandoahPhaseTimings::JVMTIRoots) {
 }
 
@@ -72,7 +65,6 @@ void ShenandoahSerialRoots::oops_do(OopClosure* cl, uint worker_id) {
   _universe_root.oops_do(cl, worker_id);
   _object_synchronizer_root.oops_do(cl, worker_id);
   _management_root.oops_do(cl, worker_id);
-  _system_dictionary_root.oops_do(cl, worker_id);
   _jvmti_root.oops_do(cl, worker_id);
 }
 

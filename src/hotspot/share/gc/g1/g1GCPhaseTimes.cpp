@@ -62,7 +62,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[JNIRoots] = new WorkerDataArray<double>("JNI Handles Roots (ms):", max_gc_threads);
   _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>("ObjectSynchronizer Roots (ms):", max_gc_threads);
   _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>("Management Roots (ms):", max_gc_threads);
-  _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>("SystemDictionary Roots (ms):", max_gc_threads);
+  _gc_par_phases[VMGlobalRoots] = new WorkerDataArray<double>("VM Global Roots (ms):", max_gc_threads);
   _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>("CLDG Roots (ms):", max_gc_threads);
   _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>("JVMTI Roots (ms):", max_gc_threads);
   AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>("AOT Root Scan (ms):", max_gc_threads);)
@@ -561,7 +561,7 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "JNIRoots",
       "ObjectSynchronizerRoots",
       "ManagementRoots",
-      "SystemDictionaryRoots",
+      "VMGlobalRoots",
       "CLDGRoots",
       "JVMTIRoots",
       AOT_ONLY("AOTCodeRoots" COMMA)

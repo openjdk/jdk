@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class OldObjectRoot : public AllStatic {
     _global_jni_handles,
     _threads,
     _object_synchronizer,
-    _system_dictionary,
+    _vm_global,
     _class_loader_data,
     _management,
     _jvmti,
@@ -67,8 +67,8 @@ class OldObjectRoot : public AllStatic {
         return "Threads";
       case _object_synchronizer:
         return "Object Monitor";
-      case _system_dictionary:
-        return "System Dictionary";
+      case _vm_global:
+        return "VM Global";
       case _class_loader_data:
         return "Class Loader Data";
       case _management:
