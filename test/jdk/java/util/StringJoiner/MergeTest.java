@@ -26,7 +26,8 @@
  * @bug 8017231 8020977 8054221
  * @summary test  StringJoiner::merge
  * @modules java.base/jdk.internal.util
- * @run testng MergeTest
+ * @requires os.maxMemory > 4G
+ * @run testng/othervm -Xmx4g MergeTest
  */
 
 import java.util.StringJoiner;
