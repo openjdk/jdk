@@ -38,8 +38,12 @@ import java.rmi.server.RemoteStub;
  * that are exported as a {@code java.rmi.server.UnicastRemoteObject}.
  *
  * @since 1.2
+ * @deprecated
+ * See the <a href="{@docRoot}/java.rmi/java/rmi/activation/package-summary.html">
+ * {@code java.rmi.activation}</a> package specification for further information.
  */
-@SuppressWarnings({"rawtypes", "unchecked", "deprecation"})
+@Deprecated(forRemoval=true, since="15")
+@SuppressWarnings({"rawtypes", "removal", "unchecked"})
 public final class ActivationGroup_Stub
         extends RemoteStub
         implements ActivationInstantiator, Remote {

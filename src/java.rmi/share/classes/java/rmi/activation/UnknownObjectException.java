@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,20 @@ package java.rmi.activation;
  * An <code>ActivationID</code> is also obtained during the
  * <code>Activatable.register</code> call.
  *
- * @author  Ann Wollrath
- * @since   1.2
- * @see     java.rmi.activation.Activatable
- * @see     java.rmi.activation.ActivationGroup
- * @see     java.rmi.activation.ActivationID
- * @see     java.rmi.activation.ActivationMonitor
- * @see     java.rmi.activation.ActivationSystem
- * @see     java.rmi.activation.Activator
+ * @author      Ann Wollrath
+ * @since       1.2
+ * @see         java.rmi.activation.Activatable
+ * @see         java.rmi.activation.ActivationGroup
+ * @see         java.rmi.activation.ActivationID
+ * @see         java.rmi.activation.ActivationMonitor
+ * @see         java.rmi.activation.ActivationSystem
+ * @see         java.rmi.activation.Activator
+ * @deprecated
+ * See the <a href="{@docRoot}/java.rmi/java/rmi/activation/package-summary.html">
+ * {@code java.rmi.activation}</a> package specification for further information.
  */
+@Deprecated(forRemoval=true, since="15")
+@SuppressWarnings("removal")
 public class UnknownObjectException extends ActivationException {
 
     /** indicate compatibility with the Java 2 SDK v1.2 version of class */

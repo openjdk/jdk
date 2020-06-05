@@ -30,7 +30,7 @@ package sun.rmi.server;
 /**
  * Activation$ActivationSystemImpl_Stub.
  */
-@SuppressWarnings({"deprecation", "rawtypes", "unchecked"})
+@SuppressWarnings({"deprecation", "rawtypes", "removal", "unchecked"})
 public final class Activation$ActivationSystemImpl_Stub
         extends java.rmi.server.RemoteStub
         implements java.rmi.activation.ActivationSystem, java.rmi.Remote {
