@@ -657,10 +657,6 @@ void JfrRecorderService::process_full_buffers() {
   }
 }
 
-void JfrRecorderService::scavenge() {
-  _storage.scavenge();
-}
-
 void JfrRecorderService::evaluate_chunk_size_for_rotation() {
   JfrChunkRotation::evaluate(_chunkwriter);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 static const u1* const TOP_CRITICAL_SECTION = NULL;
 
 JfrBuffer::JfrBuffer() : _next(NULL),
-                         _prev(NULL),
                          _identity(NULL),
                          _pos(NULL),
                          _top(NULL),
@@ -54,7 +53,6 @@ bool JfrBuffer::initialize(size_t header_size, size_t size) {
 void JfrBuffer::reinitialize(bool exclusion /* false */) {
   acquire_critical_section_top();
   assert(!lease(), "invariant");
-  assert(!transient(), "invariant");
   if (exclusion != excluded()) {
     // update
     if (exclusion) {
@@ -122,6 +120,13 @@ bool JfrBuffer::try_acquire(const void* id) {
   assert(id != NULL, "invariant");
   const void* const current_id = identity();
   return current_id == NULL && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
+}
+
+void JfrBuffer::set_identity(const void* id) {
+  assert(id != NULL, "invariant");
+  assert(_identity == NULL, "invariant");
+  OrderAccess::storestore();
+  _identity = id;
 }
 
 void JfrBuffer::release() {
@@ -260,13 +265,11 @@ bool JfrBuffer::retired() const {
 }
 
 void JfrBuffer::set_retired() {
-  assert(acquired_by_self(), "invariant");
   set(&_flags, RETIRED);
 }
 
 void JfrBuffer::clear_retired() {
   if (retired()) {
-    assert(identity() != NULL, "invariant");
     clear(&_flags, RETIRED);
   }
 }

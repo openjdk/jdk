@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
   #define ROTATE (msgs & (MSGBIT(MSG_ROTATE)|MSGBIT(MSG_STOP)))
   #define FLUSHPOINT (msgs & (MSGBIT(MSG_FLUSHPOINT)))
   #define PROCESS_FULL_BUFFERS (msgs & (MSGBIT(MSG_ROTATE)|MSGBIT(MSG_STOP)|MSGBIT(MSG_FULLBUFFER)))
-  #define SCAVENGE (msgs & (MSGBIT(MSG_DEADBUFFER)))
 
   JfrPostBox& post_box = JfrRecorderThread::post_box();
   log_debug(jfr, system)("Recorder thread STARTED");
@@ -62,9 +61,6 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
       JfrMsg_lock->unlock();
       if (PROCESS_FULL_BUFFERS) {
         service.process_full_buffers();
-      }
-      if (SCAVENGE) {
-        service.scavenge();
       }
       // Check amount of data written to chunk already
       // if it warrants asking for a new chunk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,82 +25,68 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrDoublyLinkedList.hpp"
-#include "jfr/utilities/jfrIterator.hpp"
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType = FreeListType>
 class JfrMemorySpace : public JfrCHeapObj {
  public:
-  typedef T Type;
-  typedef RetrievalType<JfrMemorySpace<T, RetrievalType, Callback> > Retrieval;
-  typedef JfrDoublyLinkedList<Type> List;
-  typedef StopOnNullIterator<List> Iterator;
+  typedef FreeListType FreeList;
+  typedef FullListType FullList;
+  typedef typename FreeListType::Node Node;
+  typedef typename FreeListType::NodePtr NodePtr;
  private:
-  List _free;
-  List _full;
-  size_t _min_elem_size;
-  size_t _limit_size;
-  size_t _cache_count;
+  FreeList _free_list;
+  FullList _full_list;
+  const size_t _min_elem_size;
+  const size_t _limit_size;
+  const size_t _free_list_cache_count;
+  size_t _free_list_count;
   Callback* _callback;
 
-  bool should_populate_cache() const { return _free.count() < _cache_count; }
+  bool should_populate_free_list() const;
 
  public:
-  JfrMemorySpace(size_t min_elem_size, size_t limit_size, size_t cache_count, Callback* callback);
+  JfrMemorySpace(size_t min_elem_size, size_t limit_size, size_t free_list_cache_count, Callback* callback);
   ~JfrMemorySpace();
   bool initialize();
 
-  size_t min_elem_size() const { return _min_elem_size; }
-  size_t limit_size() const { return _limit_size; }
+  size_t min_elem_size() const;
+  size_t limit_size() const;
 
-  bool has_full() const { return _full.head() != NULL; }
-  bool has_free() const { return _free.head() != NULL; }
-  bool is_full_empty() const { return !has_full(); }
-  bool is_free_empty() const { return !has_free(); }
+  NodePtr allocate(size_t size);
+  void deallocate(NodePtr node);
 
-  size_t full_count() const { return _full.count(); }
-  size_t free_count() const { return _free.count(); }
+  NodePtr acquire(Thread* thread, size_t size = 0);
+  void release(NodePtr node);
 
-  List& full() { return _full; }
-  const List& full() const { return _full; }
-  List& free() { return _free; }
-  const List& free() const { return _free; }
+  FreeList& free_list();
+  const FreeList& free_list() const;
 
-  Type* full_head() { return _full.head(); }
-  Type* full_tail() { return _full.tail(); }
-  Type* free_head() { return _free.head(); }
-  Type* free_tail() { return _free.tail(); }
+  FullList& full_list();
+  const FullList& full_list() const;
 
-  void insert_free_head(Type* t) { _free.prepend(t); }
-  void insert_free_tail(Type* t) { _free.append(t); }
-  void insert_free_tail(Type* t, Type* tail, size_t count) { _free.append_list(t, tail, count); }
-  void insert_full_head(Type* t) { _full.prepend(t); }
-  void insert_full_tail(Type* t) { _full.append(t); }
-  void insert_full_tail(Type* t, Type* tail, size_t count) { _full.append_list(t, tail, count); }
+  bool free_list_is_empty() const;
+  bool full_list_is_empty() const;
+  bool free_list_is_nonempty() const;
+  bool full_list_is_nonempty() const;
+  bool in_free_list(const Node* node) const;
+  bool in_full_list(const Node* node) const;
+  bool in_mspace(const Node* node) const;
 
-  Type* remove_free(Type* t) { return _free.remove(t); }
-  Type* remove_full(Type* t) { return _full.remove(t); }
-  Type* remove_free_tail() { _free.remove(_free.tail()); }
-  Type* remove_full_tail() { return _full.remove(_full.tail()); }
-  Type* clear_full(bool return_tail = false) { return _full.clear(return_tail); }
-  Type* clear_free(bool return_tail = false) { return _free.clear(return_tail); }
-  void release_full(Type* t);
-  void release_free(Type* t);
+  void add_to_free_list(NodePtr node);
+  void add_to_full_list(NodePtr node);
 
-  void register_full(Type* t, Thread* thread) { _callback->register_full(t, thread); }
-  void lock() { _callback->lock(); }
-  void unlock() { _callback->unlock(); }
-  DEBUG_ONLY(bool is_locked() const { return _callback->is_locked(); })
+  NodePtr remove_from_free_list();
+  NodePtr remove_from_full_list();
 
-  Type* allocate(size_t size);
-  void deallocate(Type* t);
-  Type* get(size_t size, Thread* thread) { return Retrieval::get(size, this, thread); }
+  NodePtr clear_free_list();
+  NodePtr clear_full_list();
 
-  template <typename IteratorCallback, typename IteratorType>
-  void iterate(IteratorCallback& callback, bool full = true, jfr_iter_direction direction = forward);
+  template <typename Processor>
+  void iterate(Processor& processor, bool full_list = true);
 
-  bool in_full_list(const Type* t) const { return _full.in_list(t); }
-  bool in_free_list(const Type* t) const { return _free.in_list(t); }
+  void decrement_free_list_count();
+
+  void register_full(NodePtr node, Thread* thread);
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_HPP

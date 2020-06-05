@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,26 @@
 #ifndef SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACERETRIEVAL_HPP
 #define SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACERETRIEVAL_HPP
 
-#include "memory/allocation.hpp"
-#include "jfr/recorder/repository/jfrChunkWriter.hpp"
-#include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrTypes.hpp"
+#include "jfr/utilities/jfrIterator.hpp"
 
-/*
-* Some policy classes for getting mspace memory
-*/
+/* Some policy classes for getting mspace memory. */
 
 template <typename Mspace>
-class JfrMspaceRetrieval : AllStatic {
+class JfrMspaceRetrieval {
  public:
-  typedef typename Mspace::Type Type;
-  static Type* get(size_t size, Mspace* mspace, typename Mspace::Iterator& iterator, Thread* thread) {
+  typedef typename Mspace::Node Node;
+  static Node* acquire(Mspace* mspace, Thread* thread, size_t size) {
+    StopOnNullCondition<typename Mspace::FreeList> iterator(mspace->free_list());
     while (iterator.has_next()) {
-      Type* const t = iterator.next();
-      if (t->retired()) continue;
-      if (t->try_acquire(thread)) {
-        assert(!t->retired(), "invariant");
-        if (t->free_size() >= size) {
-          return t;
+      Node* const node = iterator.next();
+      if (node->retired()) continue;
+      if (node->try_acquire(thread)) {
+        assert(!node->retired(), "invariant");
+        if (node->free_size() >= size) {
+          return node;
         }
-        t->set_retired();
-        mspace->register_full(t, thread);
+        node->set_retired();
+        mspace->register_full(node, thread);
       }
     }
     return NULL;
@@ -57,56 +52,23 @@ class JfrMspaceRetrieval : AllStatic {
 };
 
 template <typename Mspace>
-class JfrMspaceAlternatingRetrieval {
- private:
-   // provides stochastic distribution over "deque" endpoints; racy is ok here
-  static bool _last_access;
+class JfrMspaceRemoveRetrieval : AllStatic {
  public:
-  typedef typename Mspace::Type Type;
-  static Type* get(size_t size, Mspace* mspace, Thread* thread) {
-    typename Mspace::Iterator iterator(mspace->free(), (_last_access = !_last_access) ? forward : backward);
-    return JfrMspaceRetrieval<Mspace>::get(size, mspace, iterator, thread);
-  }
-};
-
-template <typename Mspace>
-bool JfrMspaceAlternatingRetrieval<Mspace>::_last_access = false;
-
-template <typename Mspace>
-class JfrMspaceSequentialRetrieval {
- public:
-  typedef typename Mspace::Type Type;
-  static Type* get(size_t size, Mspace* mspace, Thread* thread) {
-    typename Mspace::Iterator iterator(mspace->free());
-    return JfrMspaceRetrieval<Mspace>::get(size, mspace, iterator, thread);
-  }
-};
-
-template <typename Mspace>
-class JfrExclusiveRetrieval : AllStatic {
-public:
-  typedef typename Mspace::Type Type;
-  static Type* get(size_t size, Mspace* mspace, typename Mspace::Iterator& iterator, Thread* thread) {
-    assert(mspace->is_locked(), "invariant");
-    if (iterator.has_next()) {
-      Type* const t = iterator.next();
-      assert(!t->retired(), "invariant");
-      assert(t->identity() == NULL, "invariant");
-      assert(t->free_size() >= size, "invariant");
-      t->acquire(thread);
-      return t;
+  typedef typename Mspace::Node Node;
+  static Node* acquire(Mspace* mspace, Thread* thread, size_t size) {
+    StopOnNullConditionRemoval<typename Mspace::FreeList> iterator(mspace->free_list());
+    // it is the iterator that removes the nodes
+    while (iterator.has_next()) {
+      Node* const node = iterator.next();
+      if (node == NULL) return NULL;
+      mspace->decrement_free_list_count();
+      assert(node->free_size() >= size, "invariant");
+      assert(!node->retired(), "invariant");
+      assert(node->identity() == NULL, "invariant");
+      node->set_identity(thread);
+      return node;
     }
     return NULL;
-  }
-};
-
-template <typename Mspace>
-class JfrThreadLocalRetrieval {
-public:
-  typedef typename Mspace::Type Type;
-  static Type* get(size_t size, Mspace* mspace, Thread* thread) {
-    typename Mspace::Iterator iterator(mspace->free(), forward);
-    return JfrExclusiveRetrieval<Mspace>::get(size, mspace, iterator, thread);
   }
 };
 

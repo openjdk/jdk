@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,35 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
-#define SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRLINKEDLIST_HPP
+#define SHARE_JFR_UTILITIES_JFRLINKEDLIST_HPP
 
-#include "jfr/recorder/storage/jfrBuffer.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
 
-class JfrStringPoolBuffer : public JfrBuffer {
- private:
-  uint64_t _string_count_pos;
-  uint64_t _string_count_top;
+/*
+ * This linked-list is thread-safe only for add,
+ * not for remove, iterate, excise and in_list.
+ * For multiple producers, single consumer.
+ */
 
+template <typename NodeType, typename AllocPolicy = JfrCHeapObj>
+class JfrLinkedList : public AllocPolicy {
  public:
-  JfrStringPoolBuffer();
-  void reinitialize();
-  uint64_t string_pos() const;
-  uint64_t string_top() const;
-  uint64_t string_count() const;
-  void increment(uint64_t value);
-  void set_string_pos(uint64_t value);
-  void set_string_top(uint64_t value);
-
-  template <typename, typename>
-  friend class JfrLinkedList;
-  template <typename, typename>
-  friend class JfrConcurrentLinkedList;
+  typedef NodeType Node;
+  typedef NodeType* NodePtr;
+  JfrLinkedList();
+  bool initialize();
+  bool is_empty() const;
+  bool is_nonempty() const;
+  void add(NodePtr node);
+  NodePtr remove();
+  template <typename Callback>
+  void iterate(Callback& cb);
+  NodePtr head() const;
+  NodePtr excise(NodePtr prev, NodePtr node);
+  bool in_list(const NodeType* node) const;
+ private:
+  NodePtr _head;
 };
 
-#endif // SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
+#endif // SHARE_JFR_UTILITIES_JFRLINKEDLIST_HPP

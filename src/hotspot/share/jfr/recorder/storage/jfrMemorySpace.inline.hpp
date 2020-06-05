@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,46 +28,115 @@
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 #include "runtime/os.hpp"
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-JfrMemorySpace<T, RetrievalType, Callback>::
-JfrMemorySpace(size_t min_elem_size, size_t limit_size, size_t cache_count, Callback* callback) :
-  _free(),
-  _full(),
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::
+JfrMemorySpace(size_t min_elem_size, size_t limit_size, size_t free_list_cache_count, Callback* callback) :
+  _free_list(),
+  _full_list(),
   _min_elem_size(min_elem_size),
   _limit_size(limit_size),
-  _cache_count(cache_count),
+  _free_list_cache_count(free_list_cache_count),
+  _free_list_count(0),
   _callback(callback) {}
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-JfrMemorySpace<T, RetrievalType, Callback>::~JfrMemorySpace() {
-  Iterator full_iter(_full);
-  while (full_iter.has_next()) {
-    Type* t = full_iter.next();
-    _full.remove(t);
-    deallocate(t);
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::~JfrMemorySpace() {
+  while (full_list_is_nonempty()) {
+    NodePtr node = remove_from_full_list();
+    deallocate(node);
   }
-  Iterator free_iter(_free);
-  while (free_iter.has_next()) {
-    Type* t = free_iter.next();
-    _free.remove(t);
-    deallocate(t);
+  while (free_list_is_nonempty()) {
+    NodePtr node = remove_from_free_list();
+    deallocate(node);
   }
 }
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-bool JfrMemorySpace<T, RetrievalType, Callback>::initialize() {
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::initialize() {
+  if (!(_free_list.initialize() && _full_list.initialize())) {
+    return false;
+  }
   assert(_min_elem_size % os::vm_page_size() == 0, "invariant");
   assert(_limit_size % os::vm_page_size() == 0, "invariant");
-  // pre-allocate cache elements
-  for (size_t i = 0; i < _cache_count; ++i) {
-    Type* const t = allocate(_min_elem_size);
-    if (t == NULL) {
+  // pre-allocate free list cache elements
+  for (size_t i = 0; i < _free_list_cache_count; ++i) {
+    NodePtr const node = allocate(_min_elem_size);
+    if (node == NULL) {
       return false;
     }
-    insert_free_head(t);
+    add_to_free_list(node);
   }
-  assert(_free.count() == _cache_count, "invariant");
   return true;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::should_populate_free_list() const {
+  return _free_list_count < _free_list_cache_count;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline size_t JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::min_elem_size() const {
+  return _min_elem_size;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline size_t JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::limit_size() const {
+  return _limit_size;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline FreeListType& JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::free_list() {
+  return _free_list;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline const FreeListType& JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::free_list() const {
+  return _free_list;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline FullListType& JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::full_list() {
+  return _full_list;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline const FullListType& JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::full_list() const {
+  return _full_list;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::free_list_is_empty() const {
+  return _free_list.is_empty();
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::free_list_is_nonempty() const {
+  return !free_list_is_empty();
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::full_list_is_empty() const {
+  return _full_list.is_empty();
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::full_list_is_nonempty() const {
+  return !full_list_is_empty();
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::in_free_list(const typename FreeListType::Node* node) const {
+  return _free_list.in_list(node);
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::in_full_list(const typename FreeListType::Node* node) const {
+  return _full_list.in_list(node);
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+bool JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::in_mspace(const typename FreeListType::Node* node) const {
+  return in_full_list(node) || in_free_list(node);
 }
 
 // allocations are even multiples of the mspace min size
@@ -81,88 +150,120 @@ static inline size_t align_allocation_size(size_t requested_size, size_t min_ele
   return (size_t)alloc_size_bytes;
 }
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-inline T* JfrMemorySpace<T, RetrievalType, Callback>::allocate(size_t size) {
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline typename FreeListType::NodePtr JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::allocate(size_t size) {
   const size_t aligned_size_bytes = align_allocation_size(size, _min_elem_size);
-  void* const allocation = JfrCHeapObj::new_array<u1>(aligned_size_bytes + sizeof(T));
+  void* const allocation = JfrCHeapObj::new_array<u1>(aligned_size_bytes + sizeof(Node));
   if (allocation == NULL) {
     return NULL;
   }
-  T* const t = new (allocation) T;
-  assert(t != NULL, "invariant");
-  if (!t->initialize(sizeof(T), aligned_size_bytes)) {
-    JfrCHeapObj::free(t, aligned_size_bytes + sizeof(T));
+  NodePtr node = new (allocation) Node();
+  assert(node != NULL, "invariant");
+  if (!node->initialize(sizeof(Node), aligned_size_bytes)) {
+    JfrCHeapObj::free(node, aligned_size_bytes + sizeof(Node));
     return NULL;
   }
-  return t;
+  return node;
 }
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-inline void JfrMemorySpace<T, RetrievalType, Callback>::deallocate(T* t) {
-  assert(t != NULL, "invariant");
-  assert(!_free.in_list(t), "invariant");
-  assert(!_full.in_list(t), "invariant");
-  assert(t != NULL, "invariant");
-  JfrCHeapObj::free(t, t->total_size());
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::deallocate(typename FreeListType::NodePtr node) {
+  assert(node != NULL, "invariant");
+  assert(!in_free_list(node), "invariant");
+  assert(!in_full_list(node), "invariant");
+  assert(node != NULL, "invariant");
+  JfrCHeapObj::free(node, node->total_size());
 }
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-inline void JfrMemorySpace<T, RetrievalType, Callback>::release_full(T* t) {
-  assert(is_locked(), "invariant");
-  assert(t != NULL, "invariant");
-  assert(_full.in_list(t), "invariant");
-  remove_full(t);
-  assert(!_full.in_list(t), "invariant");
-  if (t->transient()) {
-    deallocate(t);
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline typename FreeListType::NodePtr JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::acquire(Thread* thread, size_t size /* 0 */) {
+  return RetrievalPolicy<JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType> >::acquire(this, thread, size);
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::release(typename FreeListType::NodePtr node) {
+  assert(node != NULL, "invariant");
+  if (node->transient()) {
+    deallocate(node);
     return;
   }
-  assert(t->empty(), "invariant");
-  assert(!t->retired(), "invariant");
-  assert(t->identity() == NULL, "invariant");
-  if (should_populate_cache()) {
-    assert(!_free.in_list(t), "invariant");
-    insert_free_head(t);
+  assert(node->empty(), "invariant");
+  assert(!node->retired(), "invariant");
+  assert(node->identity() == NULL, "invariant");
+  if (should_populate_free_list()) {
+    add_to_free_list(node);
   } else {
-    deallocate(t);
+    deallocate(node);
   }
 }
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-inline void JfrMemorySpace<T, RetrievalType, Callback>::release_free(T* t) {
-  assert(is_locked(), "invariant");
-  assert(t != NULL, "invariant");
-  assert(_free.in_list(t), "invariant");
-  if (t->transient()) {
-    remove_free(t);
-    assert(!_free.in_list(t), "invariant");
-    deallocate(t);
-    return;
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::add_to_free_list(typename FreeListType::NodePtr node) {
+  assert(node != NULL, "invariant");
+  assert(!in_free_list(node), "invariant");
+  _free_list.add(node);
+  Atomic::inc(&_free_list_count);
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::add_to_full_list(typename FreeListType::NodePtr node) {
+  assert(node != NULL, "invariant");
+  _full_list.add(node);
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline typename FreeListType::NodePtr JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::remove_from_free_list() {
+  NodePtr node = _free_list.remove();
+  if (node != NULL) {
+    decrement_free_list_count();
   }
-  assert(t->empty(), "invariant");
-  assert(!t->retired(), "invariant");
-  assert(!t->excluded(), "invariant");
-  assert(t->identity() == NULL, "invariant");
-  if (!should_populate_cache()) {
-    remove_free(t);
-    assert(!_free.in_list(t), "invariant");
-    deallocate(t);
+  return node;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline typename FreeListType::NodePtr JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::remove_from_full_list() {
+  return _full_list.remove();
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::decrement_free_list_count() {
+  Atomic::dec(&_free_list_count);
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline typename FreeListType::NodePtr JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::clear_free_list() {
+  NodePtr node = _free_list.clear();
+  NodePtr temp = node;
+  while (temp != NULL) {
+    decrement_free_list_count();
+    temp = temp->next();
+  }
+  return node;
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline typename FreeListType::NodePtr JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::clear_full_list() {
+  return _full_list.clear();
+}
+
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+template <typename Processor>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::iterate(Processor& processor, bool full_list /* true */) {
+  if (full_list) {
+    _full_list.iterate(processor);
+  } else {
+    _free_list.iterate(processor);
   }
 }
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
-template <typename IteratorCallback, typename IteratorType>
-inline void JfrMemorySpace<T, RetrievalType, Callback>
-::iterate(IteratorCallback& callback, bool full, jfr_iter_direction direction) {
-  IteratorType iterator(full ? _full : _free, direction);
-  while (iterator.has_next()) {
-    callback.process(iterator.next());
-  }
+template <typename Callback, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType>
+inline void JfrMemorySpace<Callback, RetrievalPolicy, FreeListType, FullListType>::register_full(typename FreeListType::NodePtr node, Thread* thread) {
+  _callback->register_full(node, thread);
 }
 
 template <typename Mspace, typename Callback>
-static inline Mspace* create_mspace(size_t buffer_size, size_t limit, size_t cache_count, Callback* cb) {
-  Mspace* const mspace = new Mspace(buffer_size, limit, cache_count, cb);
+static inline Mspace* create_mspace(size_t min_elem_size, size_t limit, size_t free_list_cache_count, Callback* cb) {
+  Mspace* const mspace = new Mspace(min_elem_size, limit, free_list_cache_count, cb);
   if (mspace != NULL) {
     mspace->initialize();
   }
@@ -170,286 +271,231 @@ static inline Mspace* create_mspace(size_t buffer_size, size_t limit, size_t cac
 }
 
 template <typename Mspace>
-inline size_t size_adjustment(size_t size, Mspace* mspace) {
-  assert(mspace != NULL, "invariant");
-  static const size_t min_elem_size = mspace->min_elem_size();
-  if (size < min_elem_size) {
-    size = min_elem_size;
-  }
-  return size;
+inline typename Mspace::NodePtr mspace_allocate(size_t size, Mspace* mspace) {
+  return mspace->allocate(size);
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate(size_t size, Mspace* mspace) {
-  return mspace->allocate(size_adjustment(size, mspace));
+inline typename Mspace::NodePtr mspace_allocate_acquired(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate(size, mspace);
+  if (node == NULL) return NULL;
+  node->set_identity(thread);
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_acquired(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* const t = mspace_allocate(size, mspace);
-  if (t == NULL) return NULL;
-  t->acquire(thread);
-  return t;
+inline typename Mspace::NodePtr mspace_allocate_transient(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate_acquired(size, mspace, thread);
+  if (node == NULL) return NULL;
+  assert(node->acquired_by_self(), "invariant");
+  node->set_transient();
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_transient(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* const t = mspace_allocate_acquired(size, mspace, thread);
-  if (t == NULL) return NULL;
-  assert(t->acquired_by_self(), "invariant");
-  t->set_transient();
-  return t;
+inline typename Mspace::NodePtr mspace_allocate_transient_lease(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate_transient(size, mspace, thread);
+  if (node == NULL) return NULL;
+  assert(node->transient(), "invariant");
+  node->set_lease();
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_transient_lease(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* const t = mspace_allocate_transient(size, mspace, thread);
-  if (t == NULL) return NULL;
-  assert(t->acquired_by_self(), "invariant");
-  assert(t->transient(), "invaiant");
-  t->set_lease();
-  return t;
+inline typename Mspace::NodePtr mspace_allocate_to_full(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate_acquired(size, mspace, thread);
+  if (node == NULL) return NULL;
+  assert(node->acquired_by_self(), "invariant");
+  mspace->add_to_full_list(node);
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_to_full(size_t size, Mspace* mspace, Thread* thread) {
-  assert(mspace->is_locked(), "invariant");
-  typename Mspace::Type* const t = mspace_allocate_acquired(size, mspace, thread);
-  if (t == NULL) return NULL;
-  mspace->insert_full_head(t);
-  return t;
+inline typename Mspace::NodePtr mspace_allocate_transient_to_full(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate_transient(size, mspace, thread);
+  if (node == NULL) return NULL;
+  assert(node->transient(), "invariant");
+  mspace->add_to_full_list(node);
+  return node;
 }
 
 template <typename Mspace>
-class MspaceLock {
- private:
-  Mspace* _mspace;
- public:
-  MspaceLock(Mspace* mspace) : _mspace(mspace) { _mspace->lock(); }
-  ~MspaceLock() { _mspace->unlock(); }
-};
-
-template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_transient_to_full(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* const t = mspace_allocate_transient(size, mspace, thread);
-  if (t == NULL) return NULL;
-  MspaceLock<Mspace> lock(mspace);
-  mspace->insert_full_head(t);
-  return t;
+inline typename Mspace::NodePtr mspace_allocate_transient_lease_to_full(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate_transient_lease(size, mspace, thread);
+  if (node == NULL) return NULL;
+  assert(node->lease(), "invariant");
+  mspace->add_to_full_list(node);
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_transient_lease_to_full(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* const t = mspace_allocate_transient_lease(size, mspace, thread);
-  if (t == NULL) return NULL;
-  assert(t->acquired_by_self(), "invariant");
-  assert(t->transient(), "invaiant");
-  assert(t->lease(), "invariant");
-  MspaceLock<Mspace> lock(mspace);
-  mspace->insert_full_head(t);
-  return t;
+inline typename Mspace::NodePtr mspace_allocate_transient_lease_to_free(size_t size, Mspace* mspace, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_allocate_transient_lease(size, mspace, thread);
+  if (node == NULL) return NULL;
+  assert(node->lease(), "invariant");
+  mspace->add_to_free_list(node);
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_allocate_transient_lease_to_free(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* const t = mspace_allocate_transient_lease(size, mspace, thread);
-  if (t == NULL) return NULL;
-  assert(t->acquired_by_self(), "invariant");
-  assert(t->transient(), "invaiant");
-  assert(t->lease(), "invariant");
-  MspaceLock<Mspace> lock(mspace);
-  mspace->insert_free_head(t);
-  return t;
+inline typename Mspace::NodePtr mspace_get_free(size_t size, Mspace* mspace, Thread* thread) {
+  return mspace->acquire(thread, size);
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_get_free(size_t size, Mspace* mspace, Thread* thread) {
-  return mspace->get(size, thread);
-}
-
-template <typename Mspace>
-inline typename Mspace::Type* mspace_get_free_with_retry(size_t size, Mspace* mspace, size_t retry_count, Thread* thread) {
+inline typename Mspace::NodePtr mspace_get_free_with_retry(size_t size, Mspace* mspace, size_t retry_count, Thread* thread) {
   assert(size <= mspace->min_elem_size(), "invariant");
   for (size_t i = 0; i < retry_count; ++i) {
-    typename Mspace::Type* const t = mspace_get_free(size, mspace, thread);
-    if (t != NULL) {
-      return t;
+    typename Mspace::NodePtr node = mspace_get_free(size, mspace, thread);
+    if (node != NULL) {
+      return node;
     }
   }
   return NULL;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_get_free_with_detach(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* t = mspace_get_free(size, mspace, thread);
-  if (t != NULL) {
-    mspace->remove_free(t);
+inline typename Mspace::NodePtr mspace_get_free_lease_with_retry(size_t size, Mspace* mspace, size_t retry_count, Thread* thread) {
+  typename Mspace::NodePtr node = mspace_get_free_with_retry(size, mspace, retry_count, thread);
+  if (node != NULL) {
+    node->set_lease();
   }
-  return t;
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_get_free_to_full(size_t size, Mspace* mspace, Thread* thread) {
+inline typename Mspace::NodePtr mspace_get_free_to_full(size_t size, Mspace* mspace, Thread* thread) {
   assert(size <= mspace->min_elem_size(), "invariant");
-  assert(mspace->is_locked(), "invariant");
-  typename Mspace::Type* t = mspace_get_free(size, mspace, thread);
-  if (t == NULL) {
+  typename Mspace::NodePtr node = mspace_get_free(size, mspace, thread);
+  if (node == NULL) {
     return NULL;
   }
-  assert(t->acquired_by_self(), "invariant");
-  move_to_head(t, mspace->free(), mspace->full());
-  return t;
+  assert(node->acquired_by_self(), "invariant");
+  assert(!mspace->in_free_list(node), "invariant");
+  mspace->add_to_full_list(node);
+  return node;
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_get_to_full(size_t size, Mspace* mspace, Thread* thread) {
-  size = size_adjustment(size, mspace);
-  MspaceLock<Mspace> lock(mspace);
+inline typename Mspace::NodePtr mspace_get_to_full(size_t size, Mspace* mspace, Thread* thread) {
   if (size <= mspace->min_elem_size()) {
-    typename Mspace::Type* const t = mspace_get_free_to_full(size, mspace, thread);
-    if (t != NULL) {
-      return t;
+    typename Mspace::NodePtr node = mspace_get_free_to_full(size, mspace, thread);
+    if (node != NULL) {
+      return node;
     }
   }
   return mspace_allocate_to_full(size, mspace, thread);
 }
 
 template <typename Mspace>
-inline typename Mspace::Type* mspace_get_free_lease_with_retry(size_t size, Mspace* mspace, size_t retry_count, Thread* thread) {
-  typename Mspace::Type* t = mspace_get_free_with_retry(size, mspace, retry_count, thread);
-  if (t != NULL) {
-    t->set_lease();
-  }
-  return t;
-}
-
-template <typename Mspace>
-inline typename Mspace::Type* mspace_get_lease(size_t size, Mspace* mspace, Thread* thread) {
-  typename Mspace::Type* t;
-  t = mspace_get_free_lease(size, mspace, thread);
-  if (t != NULL) {
-    assert(t->acquired_by_self(), "invariant");
-    assert(t->lease(), "invariant");
-    return t;
-  }
-  t = mspace_allocate_transient_to_full(size, mspace, thread);
-  if (t != NULL) {
-    t->set_lease();
-  }
-  return t;
-}
-
-template <typename Mspace>
-inline void mspace_release_full(typename Mspace::Type* t, Mspace* mspace) {
-  assert(t != NULL, "invariant");
-  assert(t->unflushed_size() == 0, "invariant");
+inline void mspace_release(typename Mspace::NodePtr node, Mspace* mspace) {
+  assert(node != NULL, "invariant");
+  assert(node->unflushed_size() == 0, "invariant");
   assert(mspace != NULL, "invariant");
-  assert(mspace->is_locked(), "invariant");
-  mspace->release_full(t);
-}
-
-template <typename Mspace>
-inline void mspace_release_free(typename Mspace::Type* t, Mspace* mspace) {
-  assert(t != NULL, "invariant");
-  assert(t->unflushed_size() == 0, "invariant");
-  assert(mspace != NULL, "invariant");
-  assert(mspace->is_locked(), "invariant");
-  mspace->release_free(t);
-}
-
-template <typename Mspace>
-inline void mspace_release_full_critical(typename Mspace::Type* t, Mspace* mspace) {
-  MspaceLock<Mspace> lock(mspace);
-  mspace_release_full(t, mspace);
-}
-
-template <typename Mspace>
-inline void mspace_release_free_critical(typename Mspace::Type* t, Mspace* mspace) {
-  MspaceLock<Mspace> lock(mspace);
-  mspace_release_free(t, mspace);
-}
-
-template <typename List>
-inline void move_to_head(typename List::Node* t, List& from, List& to) {
-  assert(from.in_list(t), "invariant");
-  to.prepend(from.remove(t));
-}
-
-template <typename Processor, typename Mspace, typename Iterator>
-inline void process_free_list_iterator_control(Processor& processor, Mspace* mspace, jfr_iter_direction direction = forward) {
-  mspace->template iterate<Processor, Iterator>(processor, false, direction);
-}
-
-template <typename Processor, typename Mspace, typename Iterator>
-inline void process_full_list_iterator_control(Processor& processor, Mspace* mspace, jfr_iter_direction direction = forward) {
-  mspace->template iterate<Processor, Iterator>(processor, true, direction);
+  mspace->release(node);
 }
 
 template <typename Processor, typename Mspace>
-inline void process_full_list(Processor& processor, Mspace* mspace, jfr_iter_direction direction = forward) {
+inline void process_full_list(Processor& processor, Mspace* mspace) {
   assert(mspace != NULL, "invariant");
-  if (mspace->is_full_empty()) return;
-  process_full_list_iterator_control<Processor, Mspace, typename Mspace::Iterator>(processor, mspace, direction);
+  if (mspace->full_list_is_nonempty()) {
+    mspace->iterate(processor);
+  }
 }
 
 template <typename Processor, typename Mspace>
-inline void process_free_list(Processor& processor, Mspace* mspace, jfr_iter_direction direction = forward) {
+inline void process_free_list(Processor& processor, Mspace* mspace) {
   assert(mspace != NULL, "invariant");
-  assert(mspace->has_free(), "invariant");
-  process_free_list_iterator_control<Processor, Mspace, typename Mspace::Iterator>(processor, mspace, direction);
+  assert(mspace->free_list_is_nonempty(), "invariant");
+  mspace->iterate(processor, false);
 }
 
 template <typename Mspace>
 class ReleaseOp : public StackObj {
  private:
   Mspace* _mspace;
-  Thread* _thread;
-  bool _release_full;
  public:
-  typedef typename Mspace::Type Type;
-  ReleaseOp(Mspace* mspace, Thread* thread, bool release_full = true) :
-    _mspace(mspace), _thread(thread), _release_full(release_full) {}
-  bool process(Type* t);
+  typedef typename Mspace::Node Node;
+  ReleaseOp(Mspace* mspace) : _mspace(mspace) {}
+  bool process(typename Mspace::NodePtr node);
   size_t processed() const { return 0; }
 };
 
 template <typename Mspace>
-inline bool ReleaseOp<Mspace>::process(typename Mspace::Type* t) {
-  assert(t != NULL, "invariant");
-  // assumes some means of exclusive access to t
-  if (t->transient()) {
-    if (_release_full) {
-      mspace_release_full_critical(t, _mspace);
-    } else {
-      mspace_release_free_critical(t, _mspace);
-    }
+inline bool ReleaseOp<Mspace>::process(typename Mspace::NodePtr node) {
+  assert(node != NULL, "invariant");
+  // assumes some means of exclusive access to the node
+  if (node->transient()) {
+    // make sure the transient node is already detached
+    _mspace->release(node);
     return true;
   }
-  t->reinitialize();
-  if (t->identity() != NULL) {
-    assert(t->empty(), "invariant");
-    assert(!t->retired(), "invariant");
-    t->release(); // publish
+  node->reinitialize();
+  if (node->identity() != NULL) {
+    assert(node->empty(), "invariant");
+    assert(!node->retired(), "invariant");
+    node->release(); // publish
   }
   return true;
 }
 
+template <typename Mspace>
+class ScavengingReleaseOp : public StackObj {
+ private:
+  Mspace* _mspace;
+  typename Mspace::FullList& _full_list;
+  typename Mspace::NodePtr _prev;
+  size_t _count;
+  size_t _amount;
+ public:
+  typedef typename Mspace::Node Node;
+  ScavengingReleaseOp(Mspace* mspace) :
+    _mspace(mspace), _full_list(mspace->full_list()), _prev(NULL), _count(0), _amount(0) {}
+  bool process(typename Mspace::NodePtr node);
+  size_t processed() const { return _count; }
+  size_t amount() const { return _amount; }
+};
+
+template <typename Mspace>
+inline bool ScavengingReleaseOp<Mspace>::process(typename Mspace::NodePtr node) {
+  assert(node != NULL, "invariant");
+  if (node->retired()) {
+    _prev = _full_list.excise(_prev, node);
+    if (node->transient()) {
+      _mspace->deallocate(node);
+      return true;
+    }
+    assert(node->identity() != NULL, "invariant");
+    assert(node->empty(), "invariant");
+    assert(!node->lease(), "invariant");
+    assert(!node->excluded(), "invariant");
+    ++_count;
+    _amount += node->total_size();
+    node->clear_retired();
+    node->release();
+    mspace_release(node, _mspace);
+    return true;
+  }
+  _prev = node;
+  return true;
+}
+
 #ifdef ASSERT
-template <typename T>
-inline void assert_migration_state(const T* old, const T* new_buffer, size_t used, size_t requested) {
+template <typename Node>
+inline void assert_migration_state(const Node* old, const Node* new_node, size_t used, size_t requested) {
   assert(old != NULL, "invariant");
-  assert(new_buffer != NULL, "invariant");
+  assert(new_node != NULL, "invariant");
   assert(old->pos() >= old->start(), "invariant");
   assert(old->pos() + used <= old->end(), "invariant");
-  assert(new_buffer->free_size() >= (used + requested), "invariant");
+  assert(new_node->free_size() >= (used + requested), "invariant");
 }
 #endif // ASSERT
 
-template <typename T>
-inline void migrate_outstanding_writes(const T* old, T* new_buffer, size_t used, size_t requested) {
-  DEBUG_ONLY(assert_migration_state(old, new_buffer, used, requested);)
+template <typename Node>
+inline void migrate_outstanding_writes(const Node* old, Node* new_node, size_t used, size_t requested) {
+  DEBUG_ONLY(assert_migration_state(old, new_node, used, requested);)
   if (used > 0) {
-    memcpy(new_buffer->pos(), old->pos(), used);
+    memcpy(new_node->pos(), old->pos(), used);
   }
 }
 

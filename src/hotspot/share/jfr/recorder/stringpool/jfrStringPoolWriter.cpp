@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #include "jfr/writers/jfrEventWriterHost.inline.hpp"
 #include "jfr/writers/jfrMemoryWriterHost.inline.hpp"
 
-JfrStringPoolFlush::JfrStringPoolFlush(Type* old, size_t used, size_t requested, Thread* t) :
-  _result(JfrStringPool::flush(old, used, requested, t)) {}
+JfrStringPoolFlush::JfrStringPoolFlush(Type* old, size_t used, size_t requested, Thread* thread) :
+  _result(JfrStringPool::flush(old, used, requested, thread)) {}
 
 JfrStringPoolWriter::JfrStringPoolWriter(Thread* thread) :
-  JfrStringPoolWriterBase(JfrStringPool::lease_buffer(thread), thread), _nof_strings(0) {}
+  JfrStringPoolWriterBase(JfrStringPool::lease(thread), thread), _nof_strings(0) {}
 
 JfrStringPoolWriter::~JfrStringPoolWriter() {
   assert(this->is_acquired(), "invariant");

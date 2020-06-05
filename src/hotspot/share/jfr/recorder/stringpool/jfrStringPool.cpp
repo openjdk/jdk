@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,14 @@
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolWriter.hpp"
+#include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
-typedef JfrStringPool::Buffer* BufferPtr;
+typedef JfrStringPool::BufferPtr BufferPtr;
 
 static JfrStringPool* _instance = NULL;
 static uint64_t store_generation = 0;
@@ -48,6 +48,7 @@ inline void set_generation(uint64_t value, uint64_t* const dest) {
   assert(dest != NULL, "invariant");
   Atomic::release_store(dest, value);
 }
+
 static void increment_store_generation() {
   const uint64_t current_serialized = Atomic::load_acquire(&serialized_generation);
   const uint64_t current_stored = Atomic::load_acquire(&store_generation);
@@ -88,14 +89,11 @@ void JfrStringPool::destroy() {
   _instance = NULL;
 }
 
-JfrStringPool::JfrStringPool(JfrChunkWriter& cw) : _free_list_mspace(NULL), _lock(NULL), _chunkwriter(cw) {}
+JfrStringPool::JfrStringPool(JfrChunkWriter& cw) : _mspace(NULL), _chunkwriter(cw) {}
 
 JfrStringPool::~JfrStringPool() {
-  if (_free_list_mspace != NULL) {
-    delete _free_list_mspace;
-  }
-  if (_lock != NULL) {
-    delete _lock;
+  if (_mspace != NULL) {
+    delete _mspace;
   }
 }
 
@@ -104,14 +102,9 @@ static const size_t string_pool_cache_count = 2;
 static const size_t string_pool_buffer_size = 512 * K;
 
 bool JfrStringPool::initialize() {
-  assert(_free_list_mspace == NULL, "invariant");
-  _free_list_mspace = new JfrStringPoolMspace(string_pool_buffer_size, unlimited_mspace_size, string_pool_cache_count, this);
-  if (_free_list_mspace == NULL || !_free_list_mspace->initialize()) {
-    return false;
-  }
-  assert(_lock == NULL, "invariant");
-  _lock = new Mutex(Monitor::leaf - 1, "Checkpoint mutex", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never);
-  return _lock != NULL;
+  assert(_mspace == NULL, "invariant");
+  _mspace = create_mspace<JfrStringPoolMspace>(string_pool_buffer_size, unlimited_mspace_size, string_pool_cache_count, this);
+  return _mspace != NULL;
 }
 
 /*
@@ -125,7 +118,11 @@ static void release(BufferPtr buffer, Thread* thread) {
   assert(buffer->lease(), "invariant");
   assert(buffer->acquired_by_self(), "invariant");
   buffer->clear_lease();
-  buffer->release();
+  if (buffer->transient()) {
+    buffer->set_retired();
+  } else {
+    buffer->release();
+  }
 }
 
 BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thread* thread) {
@@ -137,7 +134,7 @@ BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thr
     return NULL;
   }
   // migration of in-flight information
-  BufferPtr const new_buffer = lease_buffer(thread, used + requested);
+  BufferPtr const new_buffer = lease(thread, used + requested);
   if (new_buffer != NULL) {
     migrate_outstanding_writes(old, new_buffer, used, requested);
   }
@@ -147,10 +144,10 @@ BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thr
 
 static const size_t lease_retry = 10;
 
-BufferPtr JfrStringPool::lease_buffer(Thread* thread, size_t size /* 0 */) {
-  BufferPtr buffer = mspace_get_free_lease_with_retry(size, instance()._free_list_mspace, lease_retry, thread);
+BufferPtr JfrStringPool::lease(Thread* thread, size_t size /* 0 */) {
+  BufferPtr buffer = mspace_get_free_lease_with_retry(size, instance()._mspace, lease_retry, thread);
   if (buffer == NULL) {
-    buffer = mspace_allocate_transient_lease_to_free(size,  instance()._free_list_mspace, thread);
+    buffer = mspace_allocate_transient_lease_to_full(size,  instance()._mspace, thread);
   }
   assert(buffer->acquired_by_self(), "invariant");
   assert(buffer->lease(), "invariant");
@@ -210,18 +207,23 @@ typedef StringPoolOp<UnBufferedWriteToChunk> WriteOperation;
 typedef StringPoolOp<StringPoolDiscarderStub> DiscardOperation;
 typedef ExclusiveOp<WriteOperation> ExclusiveWriteOperation;
 typedef ExclusiveOp<DiscardOperation> ExclusiveDiscardOperation;
-typedef ReleaseOp<JfrStringPoolMspace> StringPoolReleaseOperation;
-typedef CompositeOperation<ExclusiveWriteOperation, StringPoolReleaseOperation> StringPoolWriteOperation;
-typedef CompositeOperation<ExclusiveDiscardOperation, StringPoolReleaseOperation> StringPoolDiscardOperation;
+typedef ReleaseOp<JfrStringPoolMspace> StringPoolReleaseFreeOperation;
+typedef ScavengingReleaseOp<JfrStringPoolMspace> StringPoolReleaseFullOperation;
+typedef CompositeOperation<ExclusiveWriteOperation, StringPoolReleaseFreeOperation> StringPoolWriteFreeOperation;
+typedef CompositeOperation<ExclusiveWriteOperation, StringPoolReleaseFullOperation> StringPoolWriteFullOperation;
+typedef CompositeOperation<ExclusiveDiscardOperation, StringPoolReleaseFreeOperation> StringPoolDiscardFreeOperation;
+typedef CompositeOperation<ExclusiveDiscardOperation, StringPoolReleaseFullOperation> StringPoolDiscardFullOperation;
 
 size_t JfrStringPool::write() {
   Thread* const thread = Thread::current();
   WriteOperation wo(_chunkwriter, thread);
   ExclusiveWriteOperation ewo(wo);
-  StringPoolReleaseOperation spro(_free_list_mspace, thread, false);
-  StringPoolWriteOperation spwo(&ewo, &spro);
-  assert(_free_list_mspace->is_full_empty(), "invariant");
-  process_free_list(spwo, _free_list_mspace);
+  StringPoolReleaseFreeOperation free_release_op(_mspace);
+  StringPoolWriteFreeOperation free_op(&ewo, &free_release_op);
+  process_free_list(free_op, _mspace);
+  StringPoolReleaseFullOperation full_release_op(_mspace);
+  StringPoolWriteFullOperation full_op(&ewo, &full_release_op);
+  process_full_list(full_op, _mspace);
   return wo.processed();
 }
 
@@ -234,31 +236,18 @@ size_t JfrStringPool::clear() {
   increment_serialized_generation();
   DiscardOperation discard_operation;
   ExclusiveDiscardOperation edo(discard_operation);
-  StringPoolReleaseOperation spro(_free_list_mspace, Thread::current(), false);
-  StringPoolDiscardOperation spdo(&edo, &spro);
-  assert(_free_list_mspace->is_full_empty(), "invariant");
-  process_free_list(spdo, _free_list_mspace);
+  StringPoolReleaseFreeOperation free_release_op(_mspace);
+  StringPoolDiscardFreeOperation free_op(&edo, &free_release_op);
+  process_free_list(free_op, _mspace);
+  StringPoolReleaseFullOperation full_release_op(_mspace);
+  StringPoolDiscardFullOperation full_op(&edo, &full_release_op);
+  process_full_list(full_op, _mspace);
   return discard_operation.processed();
 }
 
-void JfrStringPool::register_full(BufferPtr t, Thread* thread) {
+void JfrStringPool::register_full(BufferPtr buffer, Thread* thread) {
   // nothing here at the moment
-  assert(t != NULL, "invariant");
-  assert(t->acquired_by(thread), "invariant");
-  assert(t->retired(), "invariant");
+  assert(buffer != NULL, "invariant");
+  assert(buffer->acquired_by(thread), "invariant");
+  assert(buffer->retired(), "invariant");
 }
-
-void JfrStringPool::lock() {
-  assert(!_lock->owned_by_self(), "invariant");
-  _lock->lock_without_safepoint_check();
-}
-
-void JfrStringPool::unlock() {
-  _lock->unlock();
-}
-
-#ifdef ASSERT
-bool JfrStringPool::is_locked() const {
-  return _lock->owned_by_self();
-}
-#endif

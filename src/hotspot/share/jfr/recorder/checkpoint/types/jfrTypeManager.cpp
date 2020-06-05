@@ -28,8 +28,8 @@
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeManager.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/utilities/jfrDoublyLinkedList.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
+#include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -38,36 +38,18 @@
 #include "utilities/exceptions.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {
+ public:
+  JfrSerializerRegistration* _next; // list support
  private:
-  JfrSerializerRegistration* _next;
-  JfrSerializerRegistration* _prev;
   JfrSerializer* _serializer;
   mutable JfrBlobHandle _cache;
   JfrTypeId _id;
   bool _permit_cache;
-
  public:
   JfrSerializerRegistration(JfrTypeId id, bool permit_cache, JfrSerializer* serializer) :
-    _next(NULL), _prev(NULL), _serializer(serializer), _cache(), _id(id), _permit_cache(permit_cache) {}
-
+    _next(NULL), _serializer(serializer), _cache(), _id(id), _permit_cache(permit_cache) {}
   ~JfrSerializerRegistration() {
     delete _serializer;
-  }
-
-  JfrSerializerRegistration* next() const {
-    return _next;
-  }
-
-  void set_next(JfrSerializerRegistration* next) {
-    _next = next;
-  }
-
-  JfrSerializerRegistration* prev() const {
-    return _prev;
-  }
-
-  void set_prev(JfrSerializerRegistration* prev) {
-    _prev = prev;
   }
 
   JfrTypeId id() const {
@@ -155,34 +137,50 @@ class SerializerRegistrationGuard : public StackObj {
 
 Semaphore SerializerRegistrationGuard::_mutex_semaphore(1);
 
-typedef JfrDoublyLinkedList<JfrSerializerRegistration> List;
-typedef StopOnNullIterator<const List> Iterator;
+typedef JfrLinkedList<JfrSerializerRegistration> List;
 static List types;
 
 void JfrTypeManager::destroy() {
   SerializerRegistrationGuard guard;
-  Iterator iter(types);
   JfrSerializerRegistration* registration;
-  while (iter.has_next()) {
-    registration = types.remove(iter.next());
+  while (types.is_nonempty()) {
+    registration = types.remove();
     assert(registration != NULL, "invariant");
     delete registration;
   }
 }
 
-void JfrTypeManager::on_rotation() {
-  const Iterator iter(types);
-  while (iter.has_next()) {
-    iter.next()->on_rotation();
+class InvokeOnRotation {
+ public:
+  bool process(const JfrSerializerRegistration* r) {
+    assert(r != NULL, "invariant");
+    r->on_rotation();
+    return true;
   }
+};
+
+void JfrTypeManager::on_rotation() {
+  InvokeOnRotation ior;
+  types.iterate(ior);
 }
 
 #ifdef ASSERT
-static void assert_not_registered_twice(JfrTypeId id, List& list) {
-  const Iterator iter(list);
-  while (iter.has_next()) {
-    assert(iter.next()->id() != id, "invariant");
+
+class Diversity {
+ private:
+  const JfrTypeId _id;
+ public:
+  Diversity(JfrTypeId id) : _id(id) {}
+  bool process(const JfrSerializerRegistration* r) {
+    assert(r != NULL, "invariant");
+    assert(r->id() != _id, "invariant");
+    return true;
   }
+};
+
+static void assert_not_registered_twice(JfrTypeId id, List& list) {
+  Diversity d(id);
+  types.iterate(d);
 }
 #endif
 
@@ -199,7 +197,7 @@ static bool register_static_type(JfrTypeId id, bool permit_cache, JfrSerializer*
     JfrCheckpointWriter writer(STATICS);
     registration->invoke(writer);
   }
-  types.prepend(registration);
+  types.add(registration);
   return true;
 }
 
@@ -229,11 +227,20 @@ bool JfrSerializer::register_serializer(JfrTypeId id, bool permit_cache, JfrSeri
   return register_static_type(id, permit_cache, serializer);
 }
 
+class InvokeSerializer {
+ private:
+   JfrCheckpointWriter& _writer;
+ public:
+  InvokeSerializer(JfrCheckpointWriter& writer) : _writer(writer) {}
+  bool process(const JfrSerializerRegistration* r) {
+    assert(r != NULL, "invariant");
+    r->invoke(_writer);
+    return true;
+  }
+};
 
 void JfrTypeManager::write_static_types(JfrCheckpointWriter& writer) {
+  InvokeSerializer is(writer);
   SerializerRegistrationGuard guard;
-  const Iterator iter(types);
-  while (iter.has_next()) {
-    iter.next()->invoke(writer);
-  }
+  types.iterate(is);
 }

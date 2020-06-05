@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,17 @@ class DiscardOp {
   bool process(Type* t);
   size_t elements() const { return _operation.elements(); }
   size_t size() const { return _operation.size(); }
+};
+
+template <typename Operation>
+class ExclusiveDiscardOp : private DiscardOp<Operation> {
+public:
+  typedef typename Operation::Type Type;
+  ExclusiveDiscardOp(jfr_operation_mode mode = concurrent) : DiscardOp<Operation>(mode) {}
+  bool process(Type* t);
+  size_t processed() const { return DiscardOp<Operation>::processed(); }
+  size_t elements() const { return DiscardOp<Operation>::elements(); }
+  size_t size() const { return DiscardOp<Operation>::size(); }
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP

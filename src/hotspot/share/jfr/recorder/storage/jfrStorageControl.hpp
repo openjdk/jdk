@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,9 @@ class JfrStorageControl : public JfrCHeapObj {
   size_t _global_count_total;
   size_t _full_count;
   volatile size_t _global_lease_count;
-  volatile size_t _dead_count;
   size_t _to_disk_threshold;
   size_t _in_memory_discard_threshold;
   size_t _global_lease_threshold;
-  size_t _scavenge_threshold;
   bool _to_disk;
 
  public:
@@ -46,7 +44,7 @@ class JfrStorageControl : public JfrCHeapObj {
   bool to_disk() const;
 
   size_t full_count() const;
-  size_t increment_full();
+  bool increment_full();
   size_t decrement_full();
   void   reset_full();
   bool should_post_buffer_full_message() const;
@@ -56,13 +54,6 @@ class JfrStorageControl : public JfrCHeapObj {
   size_t increment_leased();
   size_t decrement_leased();
   bool is_global_lease_allowed() const;
-
-  size_t dead_count() const;
-  size_t increment_dead();
-  size_t decrement_dead();
-
-  void set_scavenge_threshold(size_t number_of_dead_buffers);
-  bool should_scavenge() const;
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGECONTROL_HPP
