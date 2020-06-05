@@ -710,6 +710,63 @@ static int symcmp(const void* a, const void* b) {
   return strcmp(astr, bstr);
 }
 
+// The caller must have an active ResourceMark.
+static jvmtiError check_attribute_arrays(const char* attr_name,
+           InstanceKlass* the_class, InstanceKlass* scratch_class,
+           Array<u2>* the_array, Array<u2>* scr_array) {
+  bool the_array_exists = the_array != Universe::the_empty_short_array();
+  bool scr_array_exists = scr_array != Universe::the_empty_short_array();
+
+  int array_len = the_array->length();
+  if (the_array_exists && scr_array_exists) {
+    if (array_len != scr_array->length()) {
+      log_trace(redefine, class)
+        ("redefined class %s attribute change error: %s len=%d changed to len=%d",
+         the_class->external_name(), attr_name, array_len, scr_array->length());
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+    }
+
+    // The order of entries in the attribute array is not specified so we
+    // have to explicitly check for the same contents. We do this by copying
+    // the referenced symbols into their own arrays, sorting them and then
+    // comparing each element pair.
+
+    Symbol** the_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, array_len);
+    Symbol** scr_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, array_len);
+
+    if (the_syms == NULL || scr_syms == NULL) {
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < array_len; i++) {
+      int the_cp_index = the_array->at(i);
+      int scr_cp_index = scr_array->at(i);
+      the_syms[i] = the_class->constants()->klass_name_at(the_cp_index);
+      scr_syms[i] = scratch_class->constants()->klass_name_at(scr_cp_index);
+    }
+
+    qsort(the_syms, array_len, sizeof(Symbol*), symcmp);
+    qsort(scr_syms, array_len, sizeof(Symbol*), symcmp);
+
+    for (int i = 0; i < array_len; i++) {
+      if (the_syms[i] != scr_syms[i]) {
+        log_trace(redefine, class)
+          ("redefined class %s attribute change error: %s[%d]: %s changed to %s",
+           the_class->external_name(), attr_name, i,
+           the_syms[i]->as_C_string(), scr_syms[i]->as_C_string());
+        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+      }
+    }
+  } else if (the_array_exists ^ scr_array_exists) {
+    const char* action_str = (the_array_exists) ? "removed" : "added";
+    log_trace(redefine, class)
+      ("redefined class %s attribute change error: %s attribute %s",
+       the_class->external_name(), attr_name, action_str);
+    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
 static jvmtiError check_nest_attributes(InstanceKlass* the_class,
                                         InstanceKlass* scratch_class) {
   // Check whether the class NestHost attribute has been changed.
@@ -736,59 +793,10 @@ static jvmtiError check_nest_attributes(InstanceKlass* the_class,
   }
 
   // Check whether the class NestMembers attribute has been changed.
-  Array<u2>* the_nest_members = the_class->nest_members();
-  Array<u2>* scr_nest_members = scratch_class->nest_members();
-  bool the_members_exists = the_nest_members != Universe::the_empty_short_array();
-  bool scr_members_exists = scr_nest_members != Universe::the_empty_short_array();
-
-  int members_len = the_nest_members->length();
-  if (the_members_exists && scr_members_exists) {
-    if (members_len != scr_nest_members->length()) {
-      log_trace(redefine, class, nestmates)
-        ("redefined class %s attribute change error: NestMember len=%d changed to len=%d",
-         the_class->external_name(), members_len, scr_nest_members->length());
-      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
-    }
-
-    // The order of entries in the NestMembers array is not specified so we
-    // have to explicitly check for the same contents. We do this by copying
-    // the referenced symbols into their own arrays, sorting them and then
-    // comparing each element pair.
-
-    Symbol** the_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, members_len);
-    Symbol** scr_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, members_len);
-
-    if (the_syms == NULL || scr_syms == NULL) {
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-
-    for (int i = 0; i < members_len; i++) {
-      int the_cp_index = the_nest_members->at(i);
-      int scr_cp_index = scr_nest_members->at(i);
-      the_syms[i] = the_class->constants()->klass_name_at(the_cp_index);
-      scr_syms[i] = scratch_class->constants()->klass_name_at(scr_cp_index);
-    }
-
-    qsort(the_syms, members_len, sizeof(Symbol*), symcmp);
-    qsort(scr_syms, members_len, sizeof(Symbol*), symcmp);
-
-    for (int i = 0; i < members_len; i++) {
-      if (the_syms[i] != scr_syms[i]) {
-        log_trace(redefine, class, nestmates)
-          ("redefined class %s attribute change error: NestMembers[%d]: %s changed to %s",
-           the_class->external_name(), i, the_syms[i]->as_C_string(), scr_syms[i]->as_C_string());
-        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
-      }
-    }
-  } else if (the_members_exists ^ scr_members_exists) {
-    const char* action_str = (the_members_exists) ? "removed" : "added";
-    log_trace(redefine, class, nestmates)
-      ("redefined class %s attribute change error: NestMembers attribute %s",
-       the_class->external_name(), action_str);
-    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
-  }
-
-  return JVMTI_ERROR_NONE;
+  return check_attribute_arrays("NestMembers",
+                                the_class, scratch_class,
+                                the_class->nest_members(),
+                                scratch_class->nest_members());
 }
 
 // Return an error status if the class Record attribute was changed.
@@ -856,61 +864,14 @@ static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass
 
 static jvmtiError check_permitted_subclasses_attribute(InstanceKlass* the_class,
                                                        InstanceKlass* scratch_class) {
-  // Check whether the class PermittedSubclasses attribute has been changed.
   Thread* thread = Thread::current();
   ResourceMark rm(thread);
-  Array<u2>* the_permitted_subclasses = the_class->permitted_subclasses();
-  Array<u2>* scr_permitted_subclasses = scratch_class->permitted_subclasses();
-  bool the_subclasses_exist = the_permitted_subclasses != Universe::the_empty_short_array();
-  bool scr_subclasses_exist = scr_permitted_subclasses != Universe::the_empty_short_array();
-  int subclasses_len = the_permitted_subclasses->length();
-  if (the_subclasses_exist && scr_subclasses_exist) {
-    if (subclasses_len != scr_permitted_subclasses->length()) {
-      log_trace(redefine, class, sealed)
-        ("redefined class %s attribute change error: PermittedSubclasses len=%d changed to len=%d",
-         the_class->external_name(), subclasses_len, scr_permitted_subclasses->length());
-      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
-    }
 
-    // The order of entries in the PermittedSubclasses array is not specified so
-    // we have to explicitly check for the same contents. We do this by copying
-    // the referenced symbols into their own arrays, sorting them and then
-    // comparing each element pair.
-
-    Symbol** the_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, subclasses_len);
-    Symbol** scr_syms = NEW_RESOURCE_ARRAY_RETURN_NULL(Symbol*, subclasses_len);
-
-    if (the_syms == NULL || scr_syms == NULL) {
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-
-    for (int i = 0; i < subclasses_len; i++) {
-      int the_cp_index = the_permitted_subclasses->at(i);
-      int scr_cp_index = scr_permitted_subclasses->at(i);
-      the_syms[i] = the_class->constants()->klass_name_at(the_cp_index);
-      scr_syms[i] = scratch_class->constants()->klass_name_at(scr_cp_index);
-    }
-
-    qsort(the_syms, subclasses_len, sizeof(Symbol*), symcmp);
-    qsort(scr_syms, subclasses_len, sizeof(Symbol*), symcmp);
-
-    for (int i = 0; i < subclasses_len; i++) {
-      if (the_syms[i] != scr_syms[i]) {
-        log_trace(redefine, class, sealed)
-          ("redefined class %s attribute change error: PermittedSubclasses[%d]: %s changed to %s",
-           the_class->external_name(), i, the_syms[i]->as_C_string(), scr_syms[i]->as_C_string());
-        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
-      }
-    }
-  } else if (the_subclasses_exist ^ scr_subclasses_exist) {
-    const char* action_str = (the_subclasses_exist) ? "removed" : "added";
-    log_trace(redefine, class, sealed)
-      ("redefined class %s attribute change error: PermittedSubclasses attribute %s",
-       the_class->external_name(), action_str);
-    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
-  }
-
-  return JVMTI_ERROR_NONE;
+  // Check whether the class PermittedSubclasses attribute has been changed.
+  return check_attribute_arrays("PermittedSubclasses",
+                                the_class, scratch_class,
+                                the_class->permitted_subclasses(),
+                                scratch_class->permitted_subclasses());
 }
 
 static bool can_add_or_delete(Method* m) {
