@@ -250,11 +250,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "\n"
   printf "Tools summary:\n"
   if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION. Windows version $WINDOWS_VERSION"
-    if test "x$WINDOWS_ENV_ROOT_PATH" != "x"; then
-      printf ". Root at $WINDOWS_ENV_ROOT_PATH"
-    fi
-    printf "\n"
+    printf "* Environment:    $WINENV_VENDOR version $WINENV_VERSION. Windows version $WINDOWS_VERSION. Root $WINENV_ROOT. Prefix '$WINENV_PREFIX'\n"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"

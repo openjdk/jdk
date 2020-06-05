@@ -36,78 +36,60 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   [ WINDOWS_VERSION=`$CMD /c ver.exe | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
   AC_MSG_RESULT([$WINDOWS_VERSION])
 
+  AC_MSG_CHECKING([Windows environment type])
+  WINENV_VENDOR=${OPENJDK_BUILD_OS_ENV#windows.}
+  AC_MSG_RESULT([$WINENV_VENDOR])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR release])
+  WINENV_UNAME_RELEASE=`$UNAME -r`
+  AC_MSG_RESULT([$WINENV_UNAME_RELEASE])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR version])
+  WINENV_UNAME_VERSION=`$UNAME -v`
+  AC_MSG_RESULT([$WINENV_UNAME_VERSION])
+
+  WINENV_VERSION="$WINENV_UNAME_RELEASE, $WINENV_UNAME_VERSION"
+
+  if test "x$CYGPATH" = x; then
+    AC_MSG_ERROR([Something is wrong with your $WINENV_VENDOR installation since I cannot find cygpath or wslpath in your path])
+  fi
+
+  AC_MSG_CHECKING([$WINENV_VENDOR root directory as Windows path])
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    # On WSL2, we get an UNC path which do not work well in mixed mode
+    WINENV_ROOT=`$CYGPATH -w / 2> /dev/null`
+    if test $? -ne 0; then
+      WINENV_ROOT='[[unavailable]]'
+    fi
+  else
+    WINENV_ROOT=`$CYGPATH -m /`
+  fi
+  AC_MSG_RESULT([$WINENV_ROOT])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
+  WINENV_PREFIX=`$CYGPATH -u c:/ | $SED -e 's!/c/!!'`
+  AC_MSG_RESULT(['$WINENV_PREFIX'])
+
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    AC_MSG_CHECKING([cygwin release])
-    CYGWIN_RELEASE=`$UNAME -r`
-    AC_MSG_RESULT([$CYGWIN_RELEASE])
-
-    AC_MSG_CHECKING([cygwin version])
-    CYGWIN_VERSION=`$UNAME -v`
-    AC_MSG_RESULT([$CYGWIN_VERSION])
-
     # Additional [] needed to keep m4 from mangling shell constructs.
-    [ CYGWIN_VERSION_OLD=`$ECHO $CYGWIN_RELEASE | $GREP -e '^1\.[0-6]'` ]
+    [ CYGWIN_VERSION_OLD=`$ECHO $WINENV_UNAME_RELEASE | $GREP -e '^1\.[0-6]'` ]
     if test "x$CYGWIN_VERSION_OLD" != x; then
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
-
-    WINDOWS_ENV_VENDOR='cygwin'
-    WINDOWS_ENV_VERSION="$CYGWIN_RELEASE, $CYGWIN_VERSION"
-
-    if test "x$CYGPATH" = x; then
-      AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
-    fi
-    AC_MSG_CHECKING([cygwin root directory as unix-style path])
-    # The cmd output ends with Windows line endings (CR/LF)
-    cygwin_winpath_root=`cd / ; cmd /c cd | $TR -d '\r\n'`
-    # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
-    CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
-    AC_MSG_RESULT([$CYGWIN_ROOT_PATH])
-    WINDOWS_ENV_ROOT_PATH="$CYGWIN_ROOT_PATH"
-    test_cygdrive_prefix=`$ECHO $CYGWIN_ROOT_PATH | $GREP ^/cygdrive/`
-    if test "x$test_cygdrive_prefix" = x; then
-      AC_MSG_ERROR([Your cygdrive prefix is not /cygdrive. This is currently not supported. Change with mount -c.])
-    fi
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    AC_MSG_CHECKING([msys release])
-    MSYS_RELEASE=`$UNAME -r`
-    AC_MSG_RESULT([$MSYS_RELEASE])
-
-    AC_MSG_CHECKING([msys version])
-    MSYS_VERSION=`$UNAME -v`
-    AC_MSG_RESULT([$MSYS_VERSION])
-
-    WINDOWS_ENV_VENDOR='msys'
-    WINDOWS_ENV_VERSION="$MSYS_RELEASE, $MSYS_VERSION"
-
-    AC_MSG_CHECKING([msys root directory as unix-style path])
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    MSYS_ROOT_PATH=`cd / ; cmd /c cd | $GREP ".*"`
-    UTIL_REWRITE_AS_UNIX_PATH(MSYS_ROOT_PATH)
-    AC_MSG_RESULT([$MSYS_ROOT_PATH])
-    WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
+    export MSYS2_ARG_CONV_EXCL="*"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-
-    AC_MSG_CHECKING([WSL kernel version])
-    WSL_KERNEL_VERSION=`$UNAME -v`
-    AC_MSG_RESULT([$WSL_KERNEL_VERSION])
-
-    AC_MSG_CHECKING([WSL kernel release])
-    WSL_KERNEL_RELEASE=`$UNAME -r`
-    AC_MSG_RESULT([$WSL_KERNEL_RELEASE])
-
     AC_MSG_CHECKING([WSL distribution])
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
     AC_MSG_RESULT([$WSL_DISTRIBUTION])
 
-    WINDOWS_ENV_VENDOR='wsl'
-    WINDOWS_ENV_VERSION="$WSL_KERNEL_RELEASE, $WSL_KERNEL_VERSION ($WSL_DISTRIBUTION)"
+    WINENV_VERSION="$WINENV_VERSION ($WSL_DISTRIBUTION)"
   else
     AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys, nor wsl was detected.])
   fi
 
-  # Test if windows or unix (cygwin/msys) find is first in path.
+  # Test if windows or unix "find" is first in path.
   AC_MSG_CHECKING([what kind of 'find' is first on the PATH])
   FIND_BINARY_OUTPUT=`find --version 2>&1`
   if test "x`echo $FIND_BINARY_OUTPUT | $GREP GNU`" != x; then
