@@ -24,13 +24,17 @@
  * @test
  * @bug 5015163 7172553
  * @summary tests StringJoinerTest
+ * @modules java.base/jdk.internal.util
  * @run testng StringJoinerTest
  * @author Jim Gish
  */
 import java.util.ArrayList;
 import java.util.StringJoiner;
 import org.testng.annotations.Test;
+import static jdk.internal.util.ArraysSupport.MAX_ARRAY_LENGTH;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+
 
 @Test(groups = {"unit","string","util","libs"})
 public class StringJoinerTest {
@@ -319,6 +323,50 @@ public class StringJoinerTest {
         testCombos(",", "<", "");
         testCombos(",", "", ">");
         testCombos(",", "<", ">");
+    }
+
+    public void OOM1() {
+        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+
+        try {
+            new StringJoiner(maxString, maxString, maxString).toString();
+            fail("Should have thrown OutOfMemoryError");
+        } catch (OutOfMemoryError ex) {
+            // okay
+        }
+    }
+
+    public void OOM2() {
+        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+
+        try {
+            new StringJoiner(maxString, maxString, "").toString();
+            fail("Should have thrown OutOfMemoryError");
+        } catch (OutOfMemoryError ex) {
+            // okay
+        }
+    }
+
+    public void OOM3() {
+        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+
+        try {
+            new StringJoiner(maxString, "", maxString).toString();
+            fail("Should have thrown OutOfMemoryError");
+        } catch (OutOfMemoryError ex) {
+            // okay
+        }
+    }
+
+    public void OOM4() {
+        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+
+        try {
+            new StringJoiner("", maxString, maxString).toString();
+            fail("Should have thrown OutOfMemoryError");
+        } catch (OutOfMemoryError ex) {
+            // okay
+        }
     }
 }
 

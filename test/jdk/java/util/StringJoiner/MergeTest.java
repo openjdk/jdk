@@ -25,12 +25,14 @@
  * @test
  * @bug 8017231 8020977 8054221
  * @summary test  StringJoiner::merge
+ * @modules java.base/jdk.internal.util
  * @run testng MergeTest
  */
 
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 import org.testng.annotations.Test;
+import static jdk.internal.util.ArraysSupport.MAX_ARRAY_LENGTH;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -166,5 +168,20 @@ public class MergeTest {
             assertEquals(sj.merge(sj).toString(), fixes.pre0 + "a,b,a,b" + fixes.suf0);
             assertEquals(sj.merge(sj).toString(), fixes.pre0 + "a,b,a,b,a,b,a,b" + fixes.suf0);
         });
+    }
+
+    public void OOM() {
+        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+
+        try {
+            StringJoiner sj1 = new StringJoiner("", "", "");
+            sj1.add(maxString);
+            StringJoiner sj2 = new StringJoiner("", "", "");
+            sj2.add(maxString);
+            sj1.merge(sj2);
+            fail("Should have thrown OutOfMemoryError");
+        } catch (OutOfMemoryError ex) {
+            // okay
+        }
     }
 }

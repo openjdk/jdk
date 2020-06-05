@@ -125,6 +125,7 @@ public final class StringJoiner {
         this.prefix = prefix.toString();
         this.delimiter = delimiter.toString();
         this.suffix = suffix.toString();
+        checkAddLength(0, 0);
     }
 
     /**
@@ -202,11 +203,20 @@ public final class StringJoiner {
         } else {
             if (size == elts.length)
                 elts = Arrays.copyOf(elts, 2 * size);
-            len += delimiter.length();
+            len = checkAddLength(len, delimiter.length());
         }
-        len += elt.length();
+        len = checkAddLength(len, elt.length());
         elts[size++] = elt;
         return this;
+    }
+
+    private int checkAddLength(int oldLen, int inc) {
+        long newLen = (long)oldLen + (long)inc;
+        long tmpLen = newLen + (long)prefix.length() + (long)suffix.length();
+        if (tmpLen != (int)tmpLen) {
+            throw new OutOfMemoryError("Requested array size exceeds VM limit");
+        }
+        return (int)newLen;
     }
 
     /**
