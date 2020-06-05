@@ -60,19 +60,6 @@ public final class ExtendedSocketOptions {
     private ExtendedSocketOptions() { }
 
     /**
-     * Service level properties. When a security manager is installed,
-     * setting or getting this option requires a {@link NetworkPermission}
-     * {@code ("setOption.SO_FLOW_SLA")} or {@code "getOption.SO_FLOW_SLA"}
-     * respectively.
-     * @deprecated This is supported only on Solaris. Due to deprecation
-     * of Solaris port, this option is also deprecated.
-     */
-    @Deprecated(since="14", forRemoval=true)
-    @SuppressWarnings("removal")
-    public static final SocketOption<SocketFlow> SO_FLOW_SLA = new
-        ExtSocketOption<SocketFlow>("SO_FLOW_SLA", SocketFlow.class);
-
-    /**
      * Disable Delayed Acknowledgements.
      *
      * <p>
@@ -196,8 +183,6 @@ public final class ExtendedSocketOptions {
     private static final PlatformSocketOptions platformSocketOptions =
             PlatformSocketOptions.get();
 
-    private static final boolean flowSupported =
-            platformSocketOptions.flowSupported();
     private static final boolean quickAckSupported =
             platformSocketOptions.quickAckSupported();
     private static final boolean keepAliveOptSupported =
@@ -208,9 +193,6 @@ public final class ExtendedSocketOptions {
 
     static Set<SocketOption<?>> options() {
         Set<SocketOption<?>> options = new HashSet<>();
-        if (flowSupported) {
-            options.add(SO_FLOW_SLA);
-        }
         if (quickAckSupported) {
             options.add(TCP_QUICKACK);
         }
@@ -242,11 +224,7 @@ public final class ExtendedSocketOptions {
                 if (fd == null || !fd.valid())
                     throw new SocketException("socket closed");
 
-                if (option == SO_FLOW_SLA) {
-                    assert flowSupported;
-                    SocketFlow flow = checkValueType(value, SocketFlow.class);
-                    setFlowOption(fd, flow);
-                } else if (option == TCP_QUICKACK) {
+                if (option == TCP_QUICKACK) {
                     setQuickAckOption(fd, (boolean) value);
                 } else if (option == TCP_KEEPCOUNT) {
                     setTcpkeepAliveProbes(fd, (Integer) value);
@@ -277,12 +255,7 @@ public final class ExtendedSocketOptions {
                 if (fd == null || !fd.valid())
                     throw new SocketException("socket closed");
 
-                if (option == SO_FLOW_SLA) {
-                    assert flowSupported;
-                    SocketFlow flow = SocketFlow.create();
-                    getFlowOption(fd, flow);
-                    return flow;
-                } else if (option == TCP_QUICKACK) {
+                if (option == TCP_QUICKACK) {
                     return getQuickAckOption(fd);
                 } else if (option == TCP_KEEPCOUNT) {
                     return getTcpkeepAliveProbes(fd);
@@ -299,34 +272,8 @@ public final class ExtendedSocketOptions {
         });
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T checkValueType(Object value, Class<T> type) {
-        if (!type.isAssignableFrom(value.getClass())) {
-            String s = "Found: " + value.getClass() + ", Expected: " + type;
-            throw new IllegalArgumentException(s);
-        }
-        return (T) value;
-    }
-
     private static final JavaIOFileDescriptorAccess fdAccess =
             SharedSecrets.getJavaIOFileDescriptorAccess();
-
-    @SuppressWarnings("removal")
-    private static void setFlowOption(FileDescriptor fd, SocketFlow f)
-        throws SocketException
-    {
-        int status = platformSocketOptions.setFlowOption(fdAccess.get(fd),
-                                                         f.priority(),
-                                                         f.bandwidth());
-        f.status(status);  // augment the given flow with the status
-    }
-
-    @SuppressWarnings("removal")
-    private static void getFlowOption(FileDescriptor fd, SocketFlow f)
-            throws SocketException {
-        int status = platformSocketOptions.getFlowOption(fdAccess.get(fd), f);
-        f.status(status);  // augment the given flow with the status
-    }
 
     private static void setQuickAckOption(FileDescriptor fd, boolean enable)
             throws SocketException {
@@ -404,21 +351,6 @@ public final class ExtendedSocketOptions {
 
         static PlatformSocketOptions get() {
             return instance;
-        }
-
-        int setFlowOption(int fd, int priority, long bandwidth)
-            throws SocketException
-        {
-            throw new UnsupportedOperationException("unsupported socket option");
-        }
-
-        @SuppressWarnings("removal")
-        int getFlowOption(int fd, SocketFlow f) throws SocketException {
-            throw new UnsupportedOperationException("unsupported socket option");
-        }
-
-        boolean flowSupported() {
-            return false;
         }
 
         void setQuickAck(int fd, boolean on) throws SocketException {

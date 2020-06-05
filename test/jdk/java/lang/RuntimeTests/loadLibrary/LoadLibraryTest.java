@@ -58,7 +58,6 @@ public class LoadLibraryTest {
             // jdk/jdk: loads directly from Bootstrap Classloader (doesn't take lock on Runtime)
             java.net.NetworkInterface.getNetworkInterfaces();
 
-            System.out.println(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);
 */
             Class c = Class.forName("Target2", true, loader);
         } catch (Exception e) {

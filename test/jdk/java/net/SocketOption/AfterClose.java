@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,7 @@ public class AfterClose {
         // extended options
         try {
             Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
-            Field field = c.getField("SO_FLOW_SLA");
-            map.put((SocketOption<?>)field.get(null), listOf(createSocketFlow()));
-            field = c.getField("TCP_QUICKACK");
+            Field field = c.getField("TCP_QUICKACK");
             map.put((SocketOption<?>)field.get(null), listOf(TRUE, FALSE));
             field = c.getField("TCP_KEEPIDLE");
             map.put((SocketOption<?>)field.get(null), listOf(10, 100));
@@ -396,15 +394,5 @@ public class AfterClose {
         assert ms.isBound() == true;
         ms.close();
         return ms;
-    }
-
-    static Object createSocketFlow() {
-        try {
-            Class<?> c = Class.forName("jdk.net.SocketFlow");
-            Method method = c.getDeclaredMethod("create");
-            return method.invoke(null);
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError(e);
-        }
     }
 }
