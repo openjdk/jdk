@@ -31,24 +31,9 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
   fi
 
-  AC_MSG_CHECKING([Windows version])
-  # Additional [] needed to keep m4 from mangling shell constructs.
-  [ WINDOWS_VERSION=`$CMD /c ver.exe | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
-  AC_MSG_RESULT([$WINDOWS_VERSION])
-
   AC_MSG_CHECKING([Windows environment type])
   WINENV_VENDOR=${OPENJDK_BUILD_OS_ENV#windows.}
   AC_MSG_RESULT([$WINENV_VENDOR])
-
-  AC_MSG_CHECKING([$WINENV_VENDOR release])
-  WINENV_UNAME_RELEASE=`$UNAME -r`
-  AC_MSG_RESULT([$WINENV_UNAME_RELEASE])
-
-  AC_MSG_CHECKING([$WINENV_VENDOR version])
-  WINENV_UNAME_VERSION=`$UNAME -v`
-  AC_MSG_RESULT([$WINENV_UNAME_VERSION])
-
-  WINENV_VERSION="$WINENV_UNAME_RELEASE, $WINENV_UNAME_VERSION"
 
   if test "x$CYGPATH" = x; then
     AC_MSG_ERROR([Something is wrong with your $WINENV_VENDOR installation since I cannot find cygpath or wslpath in your path])
@@ -69,6 +54,26 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
   WINENV_PREFIX=`$CYGPATH -u c:/ | $SED -e 's!/c/!!'`
   AC_MSG_RESULT(['$WINENV_PREFIX'])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR temp directory])
+  WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
+  AC_MSG_RESULT([$WINENV_TEMP_DIR])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR release])
+  WINENV_UNAME_RELEASE=`$UNAME -r`
+  AC_MSG_RESULT([$WINENV_UNAME_RELEASE])
+
+  AC_MSG_CHECKING([$WINENV_VENDOR version])
+  WINENV_UNAME_VERSION=`$UNAME -v`
+  AC_MSG_RESULT([$WINENV_UNAME_VERSION])
+
+  WINENV_VERSION="$WINENV_UNAME_RELEASE, $WINENV_UNAME_VERSION"
+
+  AC_MSG_CHECKING([Windows version])
+  # Additional [] needed to keep m4 from mangling shell constructs.
+  [ WINDOWS_VERSION=`cd $WINENV_TEMP_DIR && $CMD /c ver | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
+  AC_MSG_RESULT([$WINDOWS_VERSION])
+
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     # Additional [] needed to keep m4 from mangling shell constructs.
