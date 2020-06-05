@@ -5325,13 +5325,20 @@ address generate_avx_ghash_processBlocks() {
     const Register buf   = c_rarg1;  // source java byte array address
     const Register len   = c_rarg2;  // length
     const Register table = c_rarg3;  // crc_table address (reuse register)
-    const Register tmp   = r11;
-    assert_different_registers(crc, buf, len, table, tmp, rax);
+    const Register tmp1   = r11;
+    const Register tmp2   = r10;
+    assert_different_registers(crc, buf, len, table, tmp1, tmp2, rax);
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ kernel_crc32(crc, buf, len, table, tmp);
+    if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
+        VM_Version::supports_avx512bw() &&
+        VM_Version::supports_avx512vl()) {
+      __ kernel_crc32_avx512(crc, buf, len, table, tmp1, tmp2);
+    } else {
+      __ kernel_crc32(crc, buf, len, table, tmp1);
+    }
 
     __ movl(rax, crc);
     __ vzeroupper();
