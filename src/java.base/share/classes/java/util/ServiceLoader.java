@@ -227,10 +227,10 @@ import jdk.internal.reflect.Reflection;
  * the application module path must have a provider constructor. There is no
  * support for a provider method in this case.
  *
- * <p> As an example, suppose a module specifies the following directives:
+ * <p> As an example, suppose a module specifies the following directive:
  * <pre>{@code
- *     provides com.example.CodecFactory with com.example.impl.StandardCodecs;
- *     provides com.example.CodecFactory with com.example.impl.ExtendedCodecsFactory;
+ *     provides com.example.CodecFactory with com.example.impl.StandardCodecs,
+ *              com.example.impl.ExtendedCodecsFactory;
  * }</pre>
  *
  * <p> where
