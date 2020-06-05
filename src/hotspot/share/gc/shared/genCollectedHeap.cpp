@@ -1237,9 +1237,6 @@ void GenCollectedHeap::print_on(outputStream* st) const {
 void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
-void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
-}
-
 bool GenCollectedHeap::print_location(outputStream* st, void* addr) const {
   return BlockLocationPrinter<GenCollectedHeap>::print_location(st, addr);
 }

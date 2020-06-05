@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   PSHeapSummary create_ps_heap_summary();
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
-  virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 

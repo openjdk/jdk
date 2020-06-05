@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public:
   static void parallel_unlink(StringDedupUnlinkOrOopsDoClosure* unlink, uint worker_id);
 
   static void threads_do(ThreadClosure* tc);
-  static void print_worker_threads_on(outputStream* st);
+
   static void verify();
 
   // GC support

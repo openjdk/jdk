@@ -329,19 +329,6 @@ void ZCollectedHeap::print_extended_on(outputStream* st) const {
   _heap.print_extended_on(st);
 }
 
-void ZCollectedHeap::print_gc_threads_on(outputStream* st) const {
-  _director->print_on(st);
-  st->cr();
-  _driver->print_on(st);
-  st->cr();
-  _uncommitter->print_on(st);
-  st->cr();
-  _stat->print_on(st);
-  st->cr();
-  _heap.print_worker_threads_on(st);
-  _runtime_workers.print_threads_on(st);
-}
-
 void ZCollectedHeap::print_tracing_info() const {
   // Does nothing
 }

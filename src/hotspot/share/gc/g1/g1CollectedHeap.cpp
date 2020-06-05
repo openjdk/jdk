@@ -2567,18 +2567,6 @@ void G1CollectedHeap::print_on_error(outputStream* st) const {
   }
 }
 
-void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
-  workers()->print_worker_threads_on(st);
-  _cm_thread->print_on(st);
-  st->cr();
-  _cm->print_worker_threads_on(st);
-  _cr->print_threads_on(st);
-  _young_gen_sampling_thread->print_on(st);
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::print_worker_threads_on(st);
-  }
-}
-
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
   tc->do_thread(_cm_thread);

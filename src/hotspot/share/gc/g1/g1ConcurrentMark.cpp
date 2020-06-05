@@ -2026,10 +2026,6 @@ void G1ConcurrentMark::print_summary_info() {
             cm_thread()->vtime_accum(), cm_thread()->vtime_mark_accum());
 }
 
-void G1ConcurrentMark::print_worker_threads_on(outputStream* st) const {
-  _concurrent_workers->print_worker_threads_on(st);
-}
-
 void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
   _concurrent_workers->threads_do(tc);
 }

@@ -120,7 +120,6 @@ public:
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
-  virtual void print_gc_threads_on(outputStream* st) const;
   virtual void print_tracing_info() const;
   virtual bool print_location(outputStream* st, void* addr) const;
 

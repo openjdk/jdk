@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,4 @@ void ZWorkers::run_concurrent(ZTask* task) {
 
 void ZWorkers::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
-}
-
-void ZWorkers::print_threads_on(outputStream* st) const {
-  _workers.print_worker_threads_on(st);
 }

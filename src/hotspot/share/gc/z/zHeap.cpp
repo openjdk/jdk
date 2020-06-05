@@ -202,10 +202,6 @@ void ZHeap::worker_threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZHeap::print_worker_threads_on(outputStream* st) const {
-  _workers.print_threads_on(st);
-}
-
 void ZHeap::out_of_memory() {
   ResourceMark rm;
 

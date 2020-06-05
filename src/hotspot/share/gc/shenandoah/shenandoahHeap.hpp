@@ -160,7 +160,6 @@ public:
   void print_on(outputStream* st)              const;
   void print_extended_on(outputStream *st)     const;
   void print_tracing_info()                    const;
-  void print_gc_threads_on(outputStream* st)   const;
   void print_heap_regions_on(outputStream* st) const;
 
   void stop();

@@ -429,13 +429,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const = 0;
 
-  // Print all GC threads (other than the VM thread)
-  // used by this heap.
-  virtual void print_gc_threads_on(outputStream* st) const = 0;
-  // The default behavior is to call print_gc_threads_on() on tty.
-  void print_gc_threads() {
-    print_gc_threads_on(tty);
-  }
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
