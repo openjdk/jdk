@@ -604,10 +604,6 @@ var getJibProfilesProfiles = function (input, common, data) {
                 dependencies: [ name + ".jdk" ],
                 configure_args: [
                     "--with-boot-jdk=" + input.get(name + ".jdk", "home_path"),
-                    // Full docs do not currently work with bootcycle build
-                    // since Nashorn was removed. This negates the
-                    // --enable-full-docs from the main profile.
-                    "--enable-full-docs=auto",
                 ]
             }
             profiles[bootcyclePrebuiltName] = concatObjects(profiles[name],
@@ -765,7 +761,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
             profiles[cmpBaselineName].configure_args = concat(
                 profiles[cmpBaselineName].configure_args,
-                "--with-hotspot-build-time=n/a", 
+                "--with-hotspot-build-time=n/a",
                 "--disable-precompiled-headers");
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;

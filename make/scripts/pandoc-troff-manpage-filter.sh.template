@@ -22,7 +22,7 @@
 # questions.
 #
 
-# Simple wrapper script to call Nashorn with the javascript pandoc filter
+# Simple wrapper script to call Java with the pandoc filter
 
-@@JJS@@ -scripting \
-    "@@TOPDIR@@/make/scripts/pandoc-troff-manpage-filter.js" 2> /dev/null
+@@JAVA_SMALL@@ -cp @@BUILDTOOLS_OUTPUTDIR@@/jdk_tools_classes \
+    build.tools.pandocfilter.PandocManPageTroffFilter
