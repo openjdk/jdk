@@ -372,6 +372,10 @@ else # $(HAS_SPEC)=true
         else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
           $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
         endif
+        PATCH_DRY_RUN := $$(shell cd $$(topdir) && $$(PATCH) --dry-run -p1 < $$(COMPARE_BUILD_PATCH) > /dev/null 2>&1 || $$(ECHO) FAILED)
+        ifeq ($$(PATCH_DRY_RUN), FAILED)
+          $$(error Patch file $$(COMPARE_BUILD_PATCH) does not apply cleanly)
+        endif
       endif
       ifneq ($$(COMPARE_BUILD_FAIL), true)
         COMPARE_BUILD_IGNORE_RESULT := || true
