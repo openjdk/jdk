@@ -632,20 +632,10 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
     # Need to check if the found msvcr is correct architecture
     AC_MSG_CHECKING([found $DLL_NAME architecture])
     MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
     else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
+      CORRECT_MSVCR_ARCH=x86-64
     fi
     if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       AC_MSG_RESULT([ok])

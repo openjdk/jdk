@@ -208,7 +208,7 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
       ;;
     *msys*)
       VAR_OS=windows
-      VAR_OS_ENV=windows.msys
+      VAR_OS_ENV=windows.msys2
       ;;
     *aix*)
       VAR_OS=aix

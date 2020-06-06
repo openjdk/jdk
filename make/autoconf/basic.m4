@@ -405,18 +405,8 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
   # df -l lists only local disks; if the given directory is not found then
   # a non-zero exit code is given
   if test "x$DF" = x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # msys does not have df; use Windows "net use" instead.
-      IS_NETWORK_DISK=`net use | grep \`pwd -W | cut -d ":" -f 1 | tr a-z A-Z\`:`
-      if test "x$IS_NETWORK_DISK" = x; then
-        $2
-      else
-        $3
-      fi
-    else
-      # No df here, say it's local
-      $2
-    fi
+    # No df here, say it's local
+    $2
   else
     # JDK-8189619
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which

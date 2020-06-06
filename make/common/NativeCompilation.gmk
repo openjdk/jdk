@@ -175,12 +175,6 @@ $(strip \
 )
 endef
 
-ifeq ($(call isBuildOsEnv, windows.cygwin), true)
-  UNIX_PATH_PREFIX := /cygdrive
-else ifeq ($(call isBuildOsEnv, windows.msys), true)
-  UNIX_PATH_PREFIX :=
-endif
-
 # This pattern is used to transform the output of the microsoft CL compiler
 # into a make syntax dependency file (.d)
 WINDOWS_SHOWINCLUDE_SED_PATTERN := \
@@ -188,7 +182,7 @@ WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e 's|Note: including file: *||' \
     -e 's|\r||g' \
     -e 's|\\|/|g' \
-    -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
+    -e 's|^\([a-zA-Z]\):|$(WINENV_PREFIX)/\1|g' \
     -e '\|$(TOPDIR)|I !d' \
     -e 's|$$$$| \\|g' \
     #

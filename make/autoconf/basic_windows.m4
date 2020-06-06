@@ -52,10 +52,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     WINENV_ROOT=${WINENV_ROOT%/}
   fi
   AC_MSG_RESULT([$WINENV_ROOT])
+  AC_SUBST(WINENV_ROOT)
 
   AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
   WINENV_PREFIX=`$CYGPATH -u c:/ | $SED -e 's!/c/!!'`
   AC_MSG_RESULT(['$WINENV_PREFIX'])
+  AC_SUBST(WINENV_PREFIX)
 
   AC_MSG_CHECKING([$WINENV_VENDOR temp directory])
   WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
@@ -84,16 +86,16 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
     export MSYS2_ARG_CONV_EXCL="*"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-    AC_MSG_CHECKING([WSL distribution])
+    AC_MSG_CHECKING([wsl distribution])
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
     AC_MSG_RESULT([$WSL_DISTRIBUTION])
 
     WINENV_VERSION="$WINENV_VERSION ($WSL_DISTRIBUTION)"
   else
-    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys, nor wsl was detected.])
+    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys2, nor wsl was detected.])
   fi
 
   # Test if windows or unix "find" is first in path.
@@ -103,7 +105,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([unix style])
   elif test "x`echo $FIND_BINARY_OUTPUT | $GREP FIND`" != x; then
     AC_MSG_RESULT([Windows])
-    AC_MSG_NOTICE([Your path contains Windows tools (C:\Windows\system32) before your unix (cygwin or msys) tools.])
+    AC_MSG_NOTICE([Your path contains Windows tools (C:\Windows\system32) before your unix tools.])
     AC_MSG_NOTICE([This will not work. Please correct and make sure /usr/bin (or similar) is first in path.])
     AC_MSG_ERROR([Cannot continue])
   else
@@ -127,7 +129,7 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
     if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
       # Important to keep the .exe suffix on Cygwin for Hotspot makefiles
       FIXPATH="$FIXPATH_BIN -c"
-    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.msys; then
+    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.msys2; then
       # Take all collected prefixes and turn them into a -m/c/foo@/c/bar@... command line
       # @ was chosen as separator to minimize risk of other tools messing around with it
       all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" \

@@ -25,7 +25,7 @@
 
 AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 [
-  AC_CHECK_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd)
+  AC_CHECK_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd pacman)
 ])
 
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
@@ -38,8 +38,6 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
     HELP_MSG="OpenJDK distributions are available at http://jdk.java.net/."
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
   else
     PKGHANDLER_COMMAND=
 
@@ -58,6 +56,8 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
         pkgadd_help  $MISSING_DEPENDENCY ;;
       zypper)
         zypper_help  $MISSING_DEPENDENCY ;;
+      pacman)
+        pacman_help  $MISSING_DEPENDENCY ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -81,10 +81,6 @@ cygwin_help() {
       HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
       ;;
   esac
-}
-
-msys_help() {
-  PKGHANDLER_COMMAND=""
 }
 
 apt_help() {
@@ -156,6 +152,20 @@ brew_help() {
       PKGHANDLER_COMMAND="brew install freetype" ;;
     ccache)
       PKGHANDLER_COMMAND="brew install ccache" ;;
+  esac
+}
+
+pacman_help() {
+  case $1 in
+    unzip)
+      PKGHANDLER_COMMAND="sudo pacman -S unzip" ;;
+      ;;
+    zip)
+      PKGHANDLER_COMMAND="sudo pacman -S zip" ;;
+      ;;
+    make)
+      PKGHANDLER_COMMAND="sudo pacman -S make" ;;
+      ;;
   esac
 }
 
