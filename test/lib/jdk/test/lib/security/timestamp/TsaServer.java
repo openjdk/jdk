@@ -45,6 +45,30 @@ public class TsaServer implements AutoCloseable {
     private final HttpServer server;
 
     /**
+     * Create {@code TSA} server with the given port and {@link TsaHandler}.
+     *
+     * @param port the port number
+     * @param handler a {@link TsaHandler} instance
+     * @throws IOException the I/O exception
+     */
+    public TsaServer(int port, TsaHandler handler) throws IOException {
+        server = HttpServer.create(new InetSocketAddress(port), 0);
+        if (handler != null) {
+            setHandler(handler);
+        }
+    }
+
+    /**
+     * Create {@code TSA} server with the given port, but without {@link TsaHandler}.
+     *
+     * @param port the port number
+     * @throws IOException the I/O exception
+     */
+    public TsaServer(int port) throws IOException {
+        this(port, null);
+    }
+
+    /**
      * Create {@code TSA} server with the given port, key store and the
      * associated passphrase if any. A default {@link TsaHandler} is initialized
      * along with this server.
@@ -56,38 +80,16 @@ public class TsaServer implements AutoCloseable {
      */
     public TsaServer(int port, KeyStore keyStore, String passphrase)
             throws IOException {
-        Objects.requireNonNull(keyStore, "Key store cannot be null");
-
-        server = HttpServer.create(new InetSocketAddress(port), 0);
-        server.createContext("/", new TsaHandler(keyStore, passphrase));
-    }
-
-    public TsaServer(KeyStore keyStore, String passphrase) throws IOException {
-        this(0, keyStore, passphrase);
-    }
-
-    public TsaServer(int port, KeyStore keyStore) throws IOException {
-        this(port, keyStore, null);
-    }
-
-    public TsaServer(KeyStore keyStore) throws IOException {
-        this(0, keyStore, null);
+        this(port, new TsaHandler(keyStore, passphrase));
     }
 
     /**
-     * Create {@code TSA} server with the given port and {@link TsaHandler}.
+     * Setup a {@link TsaHandler} for this {@code TSA} server.
      *
-     * @param port the port number
-     * @param handler a {@link TsaHandler} instance
-     * @throws IOException the I/O exception
+     * @param handler a {@link TsaHandler}
      */
-    public TsaServer(int port, TsaHandler handler) throws IOException {
-        server = HttpServer.create(new InetSocketAddress(port), 0);
+    public void setHandler(TsaHandler handler) {
         server.createContext("/", handler);
-    }
-
-    public TsaServer(TsaHandler handler) throws IOException {
-        this(0, handler);
     }
 
     /**

@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
@@ -46,6 +47,7 @@ import com.sun.net.httpserver.HttpExchange;
 
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.security.KeyStoreUtils;
 import jdk.test.lib.security.timestamp.*;
 import jdk.test.lib.util.JarUtils;
 import sun.security.pkcs.PKCS7;
@@ -153,8 +155,7 @@ public class TimestampCheck {
     private static class Handler extends TsaHandler {
 
         Handler(String keystore) throws Exception {
-            super(KeyStore.getInstance(new File(keystore),
-                    PASSWORD.toCharArray()), PASSWORD);
+            super(KeyStoreUtils.loadKeyStore(keystore, PASSWORD), PASSWORD);
         }
 
         public TsaSigner createSigner(HttpExchange exchange)
@@ -170,7 +171,7 @@ public class TimestampCheck {
     }
 
     private static TsaServer initServer(String keystore) throws Exception {
-        return new TsaServer(new Handler(keystore));
+        return new TsaServer(0, new Handler(keystore));
     }
 
     public static void main(String[] args) throws Throwable {

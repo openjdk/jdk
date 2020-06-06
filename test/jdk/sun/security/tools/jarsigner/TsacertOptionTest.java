@@ -22,7 +22,13 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.security.KeyStoreUtils;
+import jdk.test.lib.security.timestamp.TsaHandler;
+import jdk.test.lib.security.timestamp.TsaServer;
 import jdk.test.lib.util.JarUtils;
+
+import java.io.File;
+import java.security.KeyStore;
 
 /**
  * @test
@@ -110,8 +116,7 @@ public class TsacertOptionTest extends Test {
                 "-file", "cert").shouldHaveExitValue(0);
 
 
-        try (TimestampCheck.Handler tsa = TimestampCheck.Handler.init(0,
-                KEYSTORE)) {
+        try (TsaServer tsa = new TsaServer(0)) {
 
             // look for free network port for TSA service
             int port = tsa.getPort();
@@ -133,6 +138,9 @@ public class TsacertOptionTest extends Test {
                     "-ext", "ExtendedkeyUsage:critical=timeStamping",
                     "-ext", "SubjectInfoAccess=timeStamping:URI:" + tsaUrl,
                     "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+
+            tsa.setHandler(new TsaHandler(
+                    KeyStoreUtils.loadKeyStore(KEYSTORE, PASSWORD), PASSWORD));
 
             // start TSA
             tsa.start();
