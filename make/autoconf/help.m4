@@ -159,13 +159,10 @@ pacman_help() {
   case $1 in
     unzip)
       PKGHANDLER_COMMAND="sudo pacman -S unzip" ;;
-      ;;
     zip)
       PKGHANDLER_COMMAND="sudo pacman -S zip" ;;
-      ;;
     make)
       PKGHANDLER_COMMAND="sudo pacman -S make" ;;
-      ;;
   esac
 }
 
