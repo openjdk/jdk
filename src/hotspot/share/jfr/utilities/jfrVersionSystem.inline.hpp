@@ -25,9 +25,11 @@
 #ifndef SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 #define SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 
+#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/utilities/jfrVersionSystem.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/vm_version.hpp"
 
 inline JfrVersionSystem::Node::Node() : _next(NULL), _version(0), _live(true) {}
 
@@ -39,7 +41,7 @@ inline void JfrVersionSystem::Node::set(traceid version) {
   Atomic::release_store_fence(&_version, version);
 }
 
-inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(NULL) {
+inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(NULL), _spinlock(0) {
   _tip._value = 1;
 }
 
@@ -63,7 +65,17 @@ inline JfrVersionSystem::Type JfrVersionSystem::tip() const {
 }
 
 inline JfrVersionSystem::Type JfrVersionSystem::increment() {
-  return Atomic::add(&_tip._value, (traceid)1);
+  if (!VM_Version::supports_cx8()) {
+    JfrSpinlockHelper lock(&_spinlock);
+    return ++_tip._value;
+  }
+  traceid cmp;
+  traceid xchg;
+  do {
+    cmp = _tip._value;
+    xchg = cmp + 1;
+  } while (Atomic::cmpxchg(&_tip._value, cmp, xchg) != cmp);
+  return xchg;
 }
 
 inline JfrVersionSystem::NodePtr JfrVersionSystem::acquire() {

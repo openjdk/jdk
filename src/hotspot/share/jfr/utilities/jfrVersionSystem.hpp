@@ -108,6 +108,7 @@ class JfrVersionSystem : public JfrCHeapObj {
   };
   PaddedTip _tip;
   NodePtr _head;
+  volatile int _spinlock;
 
   NodePtr acquire();
   void release(NodePtr node);

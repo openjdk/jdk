@@ -27,6 +27,7 @@
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
