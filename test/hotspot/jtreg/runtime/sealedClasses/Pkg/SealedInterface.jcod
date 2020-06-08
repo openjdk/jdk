@@ -31,7 +31,7 @@
 class Pkg/SealedInterface {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [12] { // Constant Pool
     ; // first element is empty
     class #2; // #1     at 0x0A
