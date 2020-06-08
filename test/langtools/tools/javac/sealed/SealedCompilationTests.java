@@ -267,6 +267,8 @@ public class SealedCompilationTests extends CompilationTestCase {
 
         for (String s : List.of(
                 "class sealed {}",
+                "enum sealed {}",
+                "record sealed() {}",
                 "interface sealed {}",
                 "@interface sealed {}"
         )) {
@@ -278,6 +280,34 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class Foo { sealed i; }",
                 "class Foo { void m(sealed i) {} }"
                 )) {
+            assertFail("compiler.err.restricted.type.not.allowed.here", s);
+        }
+
+        for (String s : List.of(
+                "class SealedTest { String permits; }",
+                "class SealedTest { int permits = 0; }",
+                "class SealedTest { void test(String permits) { } }",
+                "class SealedTest { void permits(String permits) { } }",
+                "class SealedTest { void test() { String permits = null; } }"
+        )) {
+            assertOK(s);
+        }
+
+        for (String s : List.of(
+                "class permits {}",
+                "enum permits {}",
+                "record permits() {}",
+                "interface permits {}",
+                "@interface permits {}"
+        )) {
+            assertFail("compiler.err.restricted.type.not.allowed", s);
+        }
+
+        for (String s : List.of(
+                "class Foo { permits m() {} }",
+                "class Foo { permits i; }",
+                "class Foo { void m(permits i) {} }"
+        )) {
             assertFail("compiler.err.restricted.type.not.allowed.here", s);
         }
 
