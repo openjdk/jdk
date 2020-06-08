@@ -25,9 +25,8 @@
 
 package sun.swing;
 
-import jdk.internal.misc.Unsafe;
-
 import java.awt.*;
+import java.lang.invoke.MethodHandles;
 import javax.swing.*;
 
 import javax.swing.text.JTextComponent;
@@ -40,8 +39,6 @@ import javax.swing.text.JTextComponent;
  * for another example.
  */
 public final class SwingAccessor {
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-
     /**
      * We don't need any objects of this class.
      * It's rather a collection of static methods
@@ -142,7 +139,7 @@ public final class SwingAccessor {
      */
     public static JComponentAccessor getJComponentAccessor() {
         if (jComponentAccessor == null) {
-            unsafe.ensureClassInitialized(JComponent.class);
+            ensureClassInitialized(JComponent.class);
         }
 
         return jComponentAccessor;
@@ -165,7 +162,7 @@ public final class SwingAccessor {
      */
     public static JTextComponentAccessor getJTextComponentAccessor() {
         if (jtextComponentAccessor == null) {
-            unsafe.ensureClassInitialized(JTextComponent.class);
+            ensureClassInitialized(JTextComponent.class);
         }
 
         return jtextComponentAccessor;
@@ -188,7 +185,7 @@ public final class SwingAccessor {
      */
     public static JLightweightFrameAccessor getJLightweightFrameAccessor() {
         if (jLightweightFrameAccessor == null) {
-            unsafe.ensureClassInitialized(JLightweightFrame.class);
+            ensureClassInitialized(JLightweightFrame.class);
         }
         return jLightweightFrameAccessor;
     }
@@ -210,7 +207,7 @@ public final class SwingAccessor {
      */
     public static UIDefaultsAccessor getUIDefaultsAccessor() {
         if (uiDefaultsAccessor == null) {
-            unsafe.ensureClassInitialized(UIDefaults.class);
+            ensureClassInitialized(UIDefaults.class);
         }
         return uiDefaultsAccessor;
     }
@@ -232,7 +229,7 @@ public final class SwingAccessor {
      */
     public static RepaintManagerAccessor getRepaintManagerAccessor() {
         if (repaintManagerAccessor == null) {
-            unsafe.ensureClassInitialized(RepaintManager.class);
+            ensureClassInitialized(RepaintManager.class);
         }
         return repaintManagerAccessor;
     }
@@ -247,7 +244,7 @@ public final class SwingAccessor {
      */
     public static PopupFactoryAccessor getPopupFactoryAccessor() {
         if (popupFactoryAccessor == null) {
-            unsafe.ensureClassInitialized(PopupFactory.class);
+            ensureClassInitialized(PopupFactory.class);
         }
         return popupFactoryAccessor;
     }
@@ -269,7 +266,7 @@ public final class SwingAccessor {
      */
     public static KeyStrokeAccessor getKeyStrokeAccessor() {
         if (keyStrokeAccessor == null) {
-            unsafe.ensureClassInitialized(KeyStroke.class);
+            ensureClassInitialized(KeyStroke.class);
         }
         return keyStrokeAccessor;
     }
@@ -279,5 +276,11 @@ public final class SwingAccessor {
      */
     public static void setKeyStrokeAccessor(KeyStrokeAccessor accessor) {
         SwingAccessor.keyStrokeAccessor = accessor;
+    }
+
+    private static void ensureClassInitialized(Class<?> c) {
+        try {
+            MethodHandles.lookup().ensureInitialized(c);
+        } catch (IllegalAccessException e) {}
     }
 }

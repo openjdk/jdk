@@ -699,8 +699,19 @@ public final class Unsafe {
      * Detects if the given class may need to be initialized. This is often
      * needed in conjunction with obtaining the static field base of a
      * class.
+     *
+     * @deprecated No replacement API for this method.  As multiple threads
+     * may be trying to initialize the same class or interface at the same time.
+     * The only reliable result returned by this method is {@code false}
+     * indicating that the given class has been initialized.  Instead, simply
+     * call {@link java.lang.invoke.MethodHandles.Lookup#ensureInitialized(Class)}
+     * that does nothing if the given class has already been initialized.
+     * This method is subject to removal in a future version of JDK.
+     *
      * @return false only if a call to {@code ensureClassInitialized} would have no effect
+     *
      */
+    @Deprecated(since = "15", forRemoval = true)
     @ForceInline
     public boolean shouldBeInitialized(Class<?> c) {
         return theInternalUnsafe.shouldBeInitialized(c);
@@ -710,7 +721,11 @@ public final class Unsafe {
      * Ensures the given class has been initialized. This is often
      * needed in conjunction with obtaining the static field base of a
      * class.
+     *
+     * @deprecated Use the {@link java.lang.invoke.MethodHandles.Lookup#ensureInitialized(Class)}
+     * method instead.  This method is subject to removal in a future version of JDK.
      */
+    @Deprecated(since = "15", forRemoval = true)
     @ForceInline
     public void ensureClassInitialized(Class<?> c) {
         theInternalUnsafe.ensureClassInitialized(c);

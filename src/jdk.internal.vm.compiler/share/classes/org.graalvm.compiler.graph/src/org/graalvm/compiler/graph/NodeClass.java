@@ -33,6 +33,7 @@ import static org.graalvm.compiler.graph.Node.WithAllEdges;
 import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -133,6 +134,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     public static <T> NodeClass<T> get(Class<T> clazz) {
         int numTries = 0;
         while (true) {
+            @SuppressWarnings("removal")
             boolean shouldBeInitializedBefore = UNSAFE.shouldBeInitialized(clazz);
 
             NodeClass<T> result = getUnchecked(clazz);
@@ -146,13 +148,18 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
              * information without failing gates.
              */
             numTries++;
+            @SuppressWarnings("removal")
             boolean shouldBeInitializedAfter = UNSAFE.shouldBeInitialized(clazz);
             String msg = "GR-9537 Reflective field access of TYPE field returned null. This is probably a bug in HotSpot class initialization. " +
                             " clazz: " + clazz.getTypeName() + ", numTries: " + numTries +
                             ", shouldBeInitializedBefore: " + shouldBeInitializedBefore + ", shouldBeInitializedAfter: " + shouldBeInitializedAfter;
             if (numTries <= 100) {
                 TTY.println(msg);
-                UNSAFE.ensureClassInitialized(clazz);
+                try {
+                    MethodHandles.lookup().ensureInitialized(clazz);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 throw GraalError.shouldNotReachHere(msg);
             }
