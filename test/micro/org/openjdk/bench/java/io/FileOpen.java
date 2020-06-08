@@ -26,6 +26,8 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,6 +45,15 @@ public class FileOpen {
     public String root = "/";
     public String trailingSlash = "/test/dir/file/name.txt/";
     public String notNormalizedFile = "/test/dir/file//name.txt";
+
+    public File tmp;
+
+    @Setup
+    public void setup() throws IOException {
+        tmp = new File("FileOpen.tmp");
+        tmp.createNewFile();
+        tmp.deleteOnExit();
+    }
 
     @Benchmark
     public void mix(Blackhole bh) {
@@ -65,5 +76,13 @@ public class FileOpen {
     @Benchmark
     public File notNormalized() {
         return new File(notNormalizedFile);
+    }
+
+    @Benchmark
+    public boolean booleanAttributes() {
+        return tmp.exists()
+                && tmp.isHidden()
+                && tmp.isDirectory()
+                && tmp.isFile();
     }
 }

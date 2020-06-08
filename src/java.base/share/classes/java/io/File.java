@@ -820,7 +820,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return ((fs.getBooleanAttributes(this) & FileSystem.BA_EXISTS) != 0);
+        return fs.hasBooleanAttributes(this, FileSystem.BA_EXISTS);
     }
 
     /**
@@ -850,8 +850,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return ((fs.getBooleanAttributes(this) & FileSystem.BA_DIRECTORY)
-                != 0);
+        return fs.hasBooleanAttributes(this, FileSystem.BA_DIRECTORY);
     }
 
     /**
@@ -883,7 +882,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return ((fs.getBooleanAttributes(this) & FileSystem.BA_REGULAR) != 0);
+        return fs.hasBooleanAttributes(this, FileSystem.BA_REGULAR);
     }
 
     /**
@@ -912,7 +911,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return ((fs.getBooleanAttributes(this) & FileSystem.BA_HIDDEN) != 0);
+        return fs.hasBooleanAttributes(this, FileSystem.BA_HIDDEN);
     }
 
     /**
@@ -2103,7 +2102,7 @@ public class File
                     throw se;
                 }
             }
-        } while ((fs.getBooleanAttributes(f) & FileSystem.BA_EXISTS) != 0);
+        } while (fs.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
 
         if (!fs.createFileExclusively(f.getPath()))
             throw new IOException("Unable to create temporary file");

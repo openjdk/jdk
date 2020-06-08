@@ -260,9 +260,20 @@ class UnixFileSystem extends FileSystem {
     @Override
     public int getBooleanAttributes(File f) {
         int rv = getBooleanAttributes0(f);
-        String name = f.getName();
-        boolean hidden = !name.isEmpty() && name.charAt(0) == '.';
-        return rv | (hidden ? BA_HIDDEN : 0);
+        return rv | isHidden(f);
+    }
+
+    @Override
+    public boolean hasBooleanAttributes(File f, int attributes) {
+        int rv = getBooleanAttributes0(f);
+        if ((attributes & BA_HIDDEN) != 0) {
+            rv |= isHidden(f);
+        }
+        return (rv & attributes) == attributes;
+    }
+
+    private static int isHidden(File f) {
+        return f.getName().startsWith(".") ? BA_HIDDEN : 0;
     }
 
     @Override
