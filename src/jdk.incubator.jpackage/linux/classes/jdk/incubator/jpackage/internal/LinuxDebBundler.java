@@ -40,7 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.incubator.jpackage.internal.LinuxAppBundler.LINUX_INSTALL_DIR;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;

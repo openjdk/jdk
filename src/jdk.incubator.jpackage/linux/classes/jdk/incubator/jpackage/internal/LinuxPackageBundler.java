@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.incubator.jpackage.internal.DesktopIntegration.*;
-import static jdk.incubator.jpackage.internal.LinuxAppBundler.LINUX_INSTALL_DIR;
-import static jdk.incubator.jpackage.internal.LinuxAppBundler.LINUX_PACKAGE_DEPENDENCIES;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
 
 
@@ -43,6 +41,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
     LinuxPackageBundler(BundlerParamInfo<String> packageName) {
         this.packageName = packageName;
+        appImageBundler = new LinuxAppBundler().setDependentTask(true);
     }
 
     @Override
@@ -51,7 +50,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         // run basic validation to ensure requirements are met
         // we are not interested in return code, only possible exception
-        APP_BUNDLER.fetchFrom(params).validate(params);
+        appImageBundler.validate(params);
 
         validateInstallDir(LINUX_INSTALL_DIR.fetchFrom(params));
 
@@ -115,8 +114,8 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 initAppImageLayout.apply(appImage).copy(
                         thePackage.sourceApplicationLayout());
             } else {
-                appImage = APP_BUNDLER.fetchFrom(params).doBundle(params,
-                        thePackage.sourceRoot().toFile(), true);
+                appImage = appImageBundler.execute(params,
+                        thePackage.sourceRoot().toFile());
                 ApplicationLayout srcAppLayout = initAppImageLayout.apply(
                         appImage);
                 if (appImage.equals(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params))) {
@@ -314,15 +313,32 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     private final BundlerParamInfo<String> packageName;
+    private final Bundler appImageBundler;
     private boolean withFindNeededPackages;
     private DesktopIntegration desktopIntegration;
 
-    private static final BundlerParamInfo<LinuxAppBundler> APP_BUNDLER =
-        new StandardBundlerParam<>(
-                "linux.app.bundler",
-                LinuxAppBundler.class,
-                (params) -> new LinuxAppBundler(),
-                null
-        );
+    private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.LINUX_PACKAGE_DEPENDENCIES.getId(),
+            String.class,
+            params -> "",
+            (s, p) -> s
+    );
 
+    static final BundlerParamInfo<String> LINUX_INSTALL_DIR =
+            new StandardBundlerParam<>(
+            "linux-install-dir",
+            String.class,
+            params -> {
+                 String dir = INSTALL_DIR.fetchFrom(params);
+                 if (dir != null) {
+                     if (dir.endsWith("/")) {
+                         dir = dir.substring(0, dir.length()-1);
+                     }
+                     return dir;
+                 }
+                 return "/opt";
+             },
+            (s, p) -> s
+    );
 }

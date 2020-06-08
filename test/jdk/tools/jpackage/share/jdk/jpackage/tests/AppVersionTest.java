@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,21 @@
 
 package jdk.jpackage.tests;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import jdk.incubator.jpackage.internal.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
+import jdk.incubator.jpackage.internal.AppImageFile;
+import org.w3c.dom.Document;
 
 /*
  * @test
@@ -93,7 +100,7 @@ public final class AppVersionTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws XPathExpressionException, IOException {
         if (expectedVersion == null) {
             new PackageTest()
             .setExpectedExitCode(1)
@@ -110,8 +117,11 @@ public final class AppVersionTest {
             cmd.addArguments(jpackageArgs);
         }
         cmd.executeAndAssertHelloAppImageCreated();
-        String actualVersion = cmd.readLaunherCfgFile().getValue("Application",
-                "app.version");
+
+        Document xml = AppImageFile.readXml(cmd.outputBundle());
+        String actualVersion = XPathFactory.newInstance().newXPath().evaluate(
+                "/jpackage-state/app-version/text()", xml, XPathConstants.STRING).toString();
+
         TKit.assertEquals(expectedVersion, actualVersion,
                 "Check application version");
     }

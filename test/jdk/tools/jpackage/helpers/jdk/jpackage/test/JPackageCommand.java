@@ -729,10 +729,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public List<String> readRuntimeReleaseFile() {
         verifyIsOfType(PackageType.IMAGE);
-        if (isRuntime()) {
-            return null;
-        }
-        Path release = appLayout().runtimeRelease();
+        Path release = appLayout().runtimeHomeDirectory().resolve("release");
         try {
             return Files.readAllLines(release);
         } catch (IOException ioe) {

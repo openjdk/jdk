@@ -29,37 +29,32 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.regex.Matcher;
-import java.util.spi.ToolProvider;
-import java.util.jar.JarFile;
 import java.lang.module.Configuration;
-import java.lang.module.ResolvedModule;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 
 
 final class JLinkBundlerHelper {
 
-    private static final ToolProvider JLINK_TOOL =
-            ToolProvider.findFirst("jlink").orElseThrow();
-
-    static void execute(Map<String, ? super Object> params,
-            AbstractAppImageBuilder imageBuilder)
-            throws IOException, Exception {
+    static void execute(Map<String, ? super Object> params, Path outputDir)
+            throws IOException, PackagerException {
 
         List<Path> modulePath =
                 StandardBundlerParam.MODULE_PATH.fetchFrom(params);
@@ -69,7 +64,6 @@ final class JLinkBundlerHelper {
                 StandardBundlerParam.LIMIT_MODULES.fetchFrom(params);
         List<String> options =
                 StandardBundlerParam.JLINK_OPTIONS.fetchFrom(params);
-        Path outputDir = imageBuilder.getRuntimeRoot();
 
         LauncherData launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(
                 params);
@@ -79,11 +73,10 @@ final class JLinkBundlerHelper {
 
         // Modules
         if (!launcherData.isModular() && addModules.isEmpty()) {
-            addModules.add(ModuleHelper.ALL_DEFAULT);
+            addModules.add(ALL_DEFAULT);
         }
 
-        Set<String> modules = new ModuleHelper(
-                modulePath, addModules, limitModules).modules();
+        Set<String> modules = createModuleList(modulePath, addModules, limitModules);
 
         if (launcherData.isModular()) {
             modules.add(launcherData.moduleName());
@@ -91,8 +84,6 @@ final class JLinkBundlerHelper {
 
         runJLink(outputDir, modulePath, modules, limitModules,
                 options, bindServices);
-
-        imageBuilder.prepareApplicationFiles(params);
     }
 
     /*
@@ -137,72 +128,41 @@ final class JLinkBundlerHelper {
                 ModuleFinder.ofSystem());
     }
 
-    private static class ModuleHelper {
-        // The token for "all modules on the module path".
-        private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
+    private static Set<String> createModuleList(List<Path> paths,
+            Set<String> addModules, Set<String> limitModules) {
 
-        // The token for "all valid runtime modules".
-        static final String ALL_DEFAULT = "ALL-DEFAULT";
+        final Set<String> modules = new HashSet<>();
 
-        private final Set<String> modules = new HashSet<>();
-        ModuleHelper(List<Path> paths, Set<String> addModules,
-                Set<String> limitModules) {
-            boolean addAllModulePath = false;
-            boolean addDefaultMods = false;
+        final Map<String, Supplier<Collection<String>>> phonyModules = Map.of(
+                ALL_MODULE_PATH,
+                () -> createModuleFinder(paths)
+                            .findAll()
+                            .stream()
+                            .map(ModuleReference::descriptor)
+                            .map(ModuleDescriptor::name)
+                            .collect(Collectors.toSet()),
+                ALL_DEFAULT,
+                () -> getDefaultModules(paths, modules));
 
-            for (Iterator<String> iterator = addModules.iterator();
-                    iterator.hasNext();) {
-                String module = iterator.next();
-
-                switch (module) {
-                    case ALL_MODULE_PATH:
-                        iterator.remove();
-                        addAllModulePath = true;
-                        break;
-                    case ALL_DEFAULT:
-                        iterator.remove();
-                        addDefaultMods = true;
-                        break;
-                    default:
-                        this.modules.add(module);
-                }
-            }
-
-            if (addAllModulePath) {
-                this.modules.addAll(getModuleNamesFromPath(paths));
-            } else if (addDefaultMods) {
-                this.modules.addAll(getDefaultModules(
-                        paths, addModules));
+        Supplier<Collection<String>> phonyModule = null;
+        for (var module : addModules) {
+            phonyModule = phonyModules.get(module);
+            if (phonyModule == null) {
+                modules.add(module);
             }
         }
 
-        Set<String> modules() {
-            return modules;
+        if (phonyModule != null) {
+            modules.addAll(phonyModule.get());
         }
 
-        private static Set<String> getModuleNamesFromPath(List<Path> paths) {
-
-            return createModuleFinder(paths)
-                    .findAll()
-                    .stream()
-                    .map(ModuleReference::descriptor)
-                    .map(ModuleDescriptor::name)
-                    .collect(Collectors.toSet());
-        }
+        return modules;
     }
 
     private static void runJLink(Path output, List<Path> modulePath,
             Set<String> modules, Set<String> limitModules,
             List<String> options, boolean bindServices)
-            throws PackagerException {
-
-        // This is just to ensure jlink is given a non-existant directory
-        // The passed in output path should be non-existant or empty directory
-        try {
-            IOUtils.deleteRecursive(output.toFile());
-        } catch (IOException ioe) {
-            throw new PackagerException(ioe);
-        }
+            throws PackagerException, IOException {
 
         ArrayList<String> args = new ArrayList<String>();
         args.add("--output");
@@ -237,14 +197,14 @@ final class JLinkBundlerHelper {
         PrintWriter pw = new PrintWriter(writer);
 
         Log.verbose("jlink arguments: " + args);
-        int retVal = JLINK_TOOL.run(pw, pw, args.toArray(new String[0]));
+        int retVal = LazyLoad.JLINK_TOOL.run(pw, pw, args.toArray(new String[0]));
         String jlinkOut = writer.toString();
 
         if (retVal != 0) {
             throw new PackagerException("error.jlink.failed" , jlinkOut);
-        } else if (jlinkOut.length() > 0) {
-            Log.verbose("jlink output: " + jlinkOut);
         }
+
+        Log.verbose("jlink output: " + jlinkOut);
     }
 
     private static String getPathList(List<Path> pathList) {
@@ -258,4 +218,15 @@ final class JLinkBundlerHelper {
         return Matcher.quoteReplacement(strings.stream().collect(
                 Collectors.joining(",")));
     }
+
+    // The token for "all modules on the module path".
+    private final static String ALL_MODULE_PATH = "ALL-MODULE-PATH";
+
+    // The token for "all valid runtime modules".
+    private final static String ALL_DEFAULT = "ALL-DEFAULT";
+
+    private static class LazyLoad {
+        static final ToolProvider JLINK_TOOL = ToolProvider.findFirst(
+                "jlink").orElseThrow();
+    };
 }

@@ -30,10 +30,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -54,11 +51,22 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
-import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.*;
-import static jdk.incubator.jpackage.internal.MacAppBundler.*;
+import static jdk.incubator.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
+import static jdk.incubator.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
+import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.COPYRIGHT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_DESCRIPTION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_EXTENSIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -74,13 +82,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private final Path root;
     private final Path contentsDir;
-    private final Path appDir;
-    private final Path javaModsDir;
     private final Path resourcesDir;
     private final Path macOSDir;
     private final Path runtimeDir;
     private final Path runtimeRoot;
-    private final Path mdir;
 
     private static List<String> keyChains;
 
@@ -139,26 +144,15 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     null : Boolean.valueOf(s)
         );
 
-    public MacAppImageBuilder(Map<String, Object> params, Path imageOutDir)
-            throws IOException {
-        super(params, imageOutDir.resolve(APP_NAME.fetchFrom(params)
-                + ".app/Contents/runtime/Contents/Home"));
+    public MacAppImageBuilder(Path imageOutDir) {
+        super(imageOutDir);
 
-        Objects.requireNonNull(imageOutDir);
-
-        this.root = imageOutDir.resolve(APP_NAME.fetchFrom(params) + ".app");
+        this.root = imageOutDir;
         this.contentsDir = root.resolve("Contents");
-        this.appDir = contentsDir.resolve("app");
-        this.javaModsDir = appDir.resolve("mods");
-        this.resourcesDir = contentsDir.resolve("Resources");
-        this.macOSDir = contentsDir.resolve("MacOS");
-        this.runtimeDir = contentsDir.resolve("runtime");
-        this.runtimeRoot = runtimeDir.resolve("Contents/Home");
-        this.mdir = runtimeRoot.resolve("lib");
-        Files.createDirectories(appDir);
-        Files.createDirectories(resourcesDir);
-        Files.createDirectories(macOSDir);
-        Files.createDirectories(runtimeDir);
+        this.resourcesDir = appLayout.destktopIntegrationDirectory();
+        this.macOSDir = appLayout.launchersDirectory();
+        this.runtimeDir = appLayout.runtimeDirectory();
+        this.runtimeRoot = appLayout.runtimeHomeDirectory();
     }
 
     private void writeEntry(InputStream in, Path dstFile) throws IOException {
@@ -167,18 +161,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     @Override
-    public Path getAppDir() {
-        return appDir;
-    }
-
-    @Override
-    public Path getAppModsDir() {
-        return javaModsDir;
-    }
-
-    @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
+        Files.createDirectories(macOSDir);
+
         Map<String, ? super Object> originalParams = new HashMap<>(params);
         // Generate PkgInfo
         File pkgInfoFile = new File(contentsDir.toFile(), "PkgInfo");
@@ -195,8 +181,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
         executable.toFile().setExecutable(true, false);
         // generate main app launcher config file
-        File cfg = new File(root.toFile(), getLauncherCfgName(params));
-        writeCfgFile(params, cfg);
+        writeCfgFile(params);
 
         // create additional app launcher(s) and config file(s)
         List<Map<String, ? super Object>> entryPoints =
@@ -213,8 +198,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             addExecutable.toFile().setExecutable(true, false);
 
             // add config file for add launcher
-            cfg = new File(root.toFile(), getLauncherCfgName(tmp));
-            writeCfgFile(tmp, cfg);
+            writeCfgFile(tmp);
         }
 
         // Copy class path entries to Java folder
@@ -244,19 +228,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         sign(params);
     }
 
-    @Override
-    public void prepareJreFiles(Map<String, ? super Object> params)
-            throws IOException {
-        copyRuntimeFiles(params);
-        sign(params);
-    }
-
-    @Override
-    File getRuntimeImageDir(File runtimeImageTop) {
-        File home = new File(runtimeImageTop, "Contents/Home");
-        return (home.exists() ? home : runtimeImageTop);
-    }
-
     private void copyRuntimeFiles(Map<String, ? super Object> params)
             throws IOException {
         // Generate Info.plist
@@ -265,18 +236,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         // generate java runtime info.plist
         writeRuntimeInfoPlist(
                 runtimeDir.resolve("Contents/Info.plist").toFile(), params);
-
-        // copy library
-        Path runtimeMacOSDir = Files.createDirectories(
-                runtimeDir.resolve("Contents/MacOS"));
-
-        // JDK 9, 10, and 11 have extra '/jli/' subdir
-        Path jli = runtimeRoot.resolve("lib/libjli.dylib");
-        if (!Files.exists(jli)) {
-            jli = runtimeRoot.resolve("lib/jli/libjli.dylib");
-        }
-
-        Files.copy(jli, runtimeMacOSDir.resolve("libjli.dylib"));
     }
 
     private void sign(Map<String, ? super Object> params) throws IOException {
@@ -313,11 +272,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private static String getLauncherName(Map<String, ? super Object> params) {
         return APP_NAME.fetchFrom(params);
-    }
-
-    public static String getLauncherCfgName(
-            Map<String, ? super Object> params) {
-        return "Contents/app/" + APP_NAME.fetchFrom(params) + ".cfg";
     }
 
     private String getBundleName(Map<String, ? super Object> params) {

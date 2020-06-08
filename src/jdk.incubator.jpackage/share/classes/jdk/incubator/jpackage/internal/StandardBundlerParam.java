@@ -470,10 +470,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         return applicationImage;
     }
 
-    static void copyPredefinedRuntimeImage(
-            Map<String, ? super Object> params,
-            AbstractAppImageBuilder appBuilder)
-            throws IOException , ConfigException {
+    static void copyPredefinedRuntimeImage(Map<String, ? super Object> params,
+            ApplicationLayout appLayout) throws IOException, ConfigException {
         File topImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
         if (!topImage.exists()) {
             throw new ConfigException(
@@ -485,16 +483,17 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     "message.runtime-image-dir-does-not-exist.advice"),
                     PREDEFINED_RUNTIME_IMAGE.getID()));
         }
-        File image = appBuilder.getRuntimeImageDir(topImage);
+
         // copy whole runtime, need to skip jmods and src.zip
         final List<String> excludes = Arrays.asList("jmods", "src.zip");
-        IOUtils.copyRecursive(image.toPath(), appBuilder.getRuntimeRoot(), excludes);
+        IOUtils.copyRecursive(topImage.toPath(),
+                appLayout.runtimeHomeDirectory(), excludes);
 
         // if module-path given - copy modules to appDir/mods
         List<Path> modulePath =
                 StandardBundlerParam.MODULE_PATH.fetchFrom(params);
         List<Path> defaultModulePath = getDefaultModulePath();
-        Path dest = appBuilder.getAppModsDir();
+        Path dest = appLayout.appModsDirectory();
 
         if (dest != null) {
             for (Path mp : modulePath) {
@@ -504,8 +503,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                 }
             }
         }
-
-        appBuilder.prepareApplicationFiles(params);
     }
 
     private static List<Path> getDefaultModulePath() {
