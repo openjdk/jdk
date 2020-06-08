@@ -37,11 +37,11 @@ import java.util.stream.Stream;
 class MaskCommentsAndModifiers {
 
     private final static Set<String> IGNORED_MODIFIERS =
-            Stream.of( "public", "protected", "private", "static", "final" )
+            Stream.of( "public", "protected", "private", "static" )
                     .collect( Collectors.toSet() );
 
     private final static Set<String> OTHER_MODIFIERS =
-            Stream.of( "abstract", "strictfp", "transient", "volatile", "synchronized", "native", "default" )
+            Stream.of( "abstract", "strictfp", "transient", "volatile", "synchronized", "native", "default", "final" )
                     .collect( Collectors.toSet() );
 
     // Builder to accumulate non-masked characters

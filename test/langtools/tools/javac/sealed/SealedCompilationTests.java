@@ -27,6 +27,7 @@
  * SealedCompilationTests
  *
  * @test
+ * @bug 8246353
  * @summary Negative compilation tests, and positive compilation (smoke) tests for sealed classes
  * @library /lib/combo /tools/lib
  * @modules
@@ -58,11 +59,13 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.SourceVersion;
 
 import com.sun.tools.javac.util.Assert;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 import tools.javac.combo.CompilationTestCase;
 
@@ -90,11 +93,18 @@ public class SealedCompilationTests extends CompilationTestCase {
 
     /* simplest annotation processor just to force a round of annotation processing for all tests
      */
+    @SupportedAnnotationTypes("*")
     public static class SimplestAP extends AbstractProcessor {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             return true;
         }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
     }
 
     public SealedCompilationTests() {
@@ -691,6 +701,18 @@ public class SealedCompilationTests extends CompilationTestCase {
             }
             throw new AssertionError("Expected output not found. Expected: " + expected);
         }
+    }
+
+    public void testNonSealedErroneousSuper() {
+        assertFail("compiler.err.cant.resolve",
+                   d -> {
+                       if (diags.keys().size() != 1) {
+                           fail("Unexpected errors: " + diags.toString());
+                       }
+                   },
+                   """
+                   non-sealed class C extends Undefined {}
+                   """);
     }
 
     public void testIllFormedNonSealed() {
