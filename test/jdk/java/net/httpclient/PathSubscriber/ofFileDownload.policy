@@ -21,7 +21,7 @@
 // questions.
 //
 
-// for JTwork/classes/0/test/lib/jdk/test/lib/net/SimpleSSLContext.class
+// for test/lib library classes
 grant codeBase "file:${test.classes}/../../../../../test/lib/-" {
     permission java.util.PropertyPermission "java.vm.info", "read";
     permission java.util.PropertyPermission "jdk.debug", "read";
@@ -31,9 +31,14 @@ grant codeBase "file:${test.classes}/../../../../../test/lib/-" {
     permission java.util.PropertyPermission "test.src.path", "read";
     permission java.util.PropertyPermission "user.name", "read";
     permission java.io.FilePermission "${test.src}/../../../../../lib/jdk/test/lib/net/testkeys", "read";
+
+    // file permissions for test files
+    permission java.io.FilePermission "${user.dir}${/}file.zip", "delete";
+    permission java.io.FilePermission "${user.dir}${/}defaultDir", "read,delete";
+    permission java.io.FilePermission "${user.dir}${/}defaultDir/*", "read,delete";
 };
 
-// for JTwork/classes/0/java/net/httpclient/http2/server/*
+// for java/net/httpclient/http2/server/*
 grant codeBase "file:${test.classes}/../../../../../java/net/httpclient/http2/server/*" {
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.frame";
@@ -54,8 +59,8 @@ grant codeBase "file:${test.classes}/*" {
     permission java.net.URLPermission "http://localhost:*/http2/echo", "GET";
     permission java.net.URLPermission "https://localhost:*/https2/echo", "GET";
 
-    // file permissions
-    permission java.io.FilePermission "${user.dir}${/}file.zip", "read,write,delete";
+    // file permissions for test files
+    permission java.io.FilePermission "${user.dir}${/}file.zip", "read,write";
     permission java.io.FilePermission "${user.dir}${/}defaultDir", "read,write,delete";
     permission java.io.FilePermission "${user.dir}${/}defaultDir/*", "read,write,delete";
 
