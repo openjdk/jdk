@@ -89,14 +89,9 @@ public abstract class AbstractAppImageBuilder {
             File cfgFileName) throws IOException {
         cfgFileName.getParentFile().mkdirs();
         cfgFileName.delete();
-        File mainJar = JLinkBundlerHelper.getMainJar(params);
-        ModFile.ModType mainJarType = ModFile.ModType.Unknown;
 
-        if (mainJar != null) {
-            mainJarType = new ModFile(mainJar).getModType();
-        }
-
-        String mainModule = StandardBundlerParam.MODULE.fetchFrom(params);
+        LauncherData launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(
+                params);
 
         try (PrintStream out = new PrintStream(cfgFileName)) {
 
@@ -104,27 +99,26 @@ public abstract class AbstractAppImageBuilder {
             out.println("app.name=" + APP_NAME.fetchFrom(params));
             out.println("app.version=" + VERSION.fetchFrom(params));
             out.println("app.runtime=" + getCfgRuntimeDir());
-            out.println("app.classpath="
-                    + getCfgClassPath(CLASSPATH.fetchFrom(params)));
+
+            for (var path : launcherData.classPath()) {
+                out.println("app.classpath=" + getCfgAppDir()
+                        + path.toString().replace("\\", "/"));
+            }
 
             // The main app is required to be a jar, modular or unnamed.
-            if (mainModule != null &&
-                    (mainJarType == ModFile.ModType.Unknown ||
-                    mainJarType == ModFile.ModType.ModularJar)) {
-                out.println("app.mainmodule=" + mainModule);
+            if (launcherData.isModular()) {
+                out.println("app.mainmodule=" + launcherData.moduleName() + "/"
+                        + launcherData.qualifiedClassName());
             } else {
-                String mainClass =
-                        StandardBundlerParam.MAIN_CLASS.fetchFrom(params);
                 // If the app is contained in an unnamed jar then launch it the
                 // legacy way and the main class string must be
                 // of the format com/foo/Main
-                if (mainJar != null) {
+                if (launcherData.mainJarName() != null) {
                     out.println("app.classpath=" + getCfgAppDir()
-                            + mainJar.toPath().getFileName().toString());
+                            + launcherData.mainJarName().toString());
                 }
-                if (mainClass != null) {
-                    out.println("app.mainclass=" + mainClass);
-                }
+
+                out.println("app.mainclass=" + launcherData.qualifiedClassName());
             }
 
             out.println();
@@ -146,6 +140,14 @@ public abstract class AbstractAppImageBuilder {
             for (String arg : args) {
                 out.println("arguments=" + arg);
             }
+        }
+    }
+
+    protected void copyApplication(Map<String, ? super Object> params)
+            throws IOException {
+        Path inputPath = StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
+        if (inputPath != null) {
+            IOUtils.copyRecursive(SOURCE_DIR.fetchFrom(params), getAppDir());
         }
     }
 

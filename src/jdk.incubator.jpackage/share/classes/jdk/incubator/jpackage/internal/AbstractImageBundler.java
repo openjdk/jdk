@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,7 @@ package jdk.incubator.jpackage.internal;
 
 import java.text.MessageFormat;
 import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.io.File;
-import java.io.IOException;
 
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
 
@@ -49,13 +45,12 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
  */
 public abstract class AbstractImageBundler extends AbstractBundler {
 
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.incubator.jpackage.internal.resources.MainResources");
-
-    public void imageBundleValidation(Map<String, ? super Object> params)
+    protected void imageBundleValidation(Map<String, ? super Object> params)
              throws ConfigException {
-        StandardBundlerParam.validateMainClassInfoFromAppResources(params);
-
+        if (!params.containsKey(PREDEFINED_APP_IMAGE.getID())
+                && !StandardBundlerParam.isRuntimeInstaller(params)) {
+            StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params);
+        }
     }
 
     protected File createRoot(Map<String, ? super Object> params,
@@ -68,11 +63,6 @@ public abstract class AbstractImageBundler extends AbstractBundler {
             Log.verbose(MessageFormat.format(
                     I18N.getString("message.creating-app-bundle"),
                     name, outputDirectory.getAbsolutePath()));
-        }
-
-        // NAME will default to CLASS, so the real problem is no MAIN_CLASS
-        if (name == null) {
-            throw new PackagerException("ERR_NoMainClass");
         }
 
         // Create directory structure

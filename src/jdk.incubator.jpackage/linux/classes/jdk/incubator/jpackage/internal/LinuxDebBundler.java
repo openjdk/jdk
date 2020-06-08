@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
 
     private static final BundlerParamInfo<String> MAINTAINER =
             new StandardBundlerParam<> (
-            BundleParams.PARAM_MAINTAINER,
+            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId() + ".internal",
             String.class,
             params -> VENDOR.fetchFrom(params) + " <"
                     + EMAIL.fetchFrom(params) + ">",

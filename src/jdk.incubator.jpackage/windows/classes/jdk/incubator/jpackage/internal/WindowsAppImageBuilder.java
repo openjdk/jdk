@@ -192,22 +192,4 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         executableFile.toFile().setExecutable(true);
         executableFile.toFile().setReadOnly();
     }
-
-    private void copyApplication(Map<String, ? super Object> params)
-            throws IOException {
-        List<RelativeFileSet> appResourcesList =
-                APP_RESOURCES_LIST.fetchFrom(params);
-        if (appResourcesList == null) {
-            throw new RuntimeException("Null app resources?");
-        }
-        for (RelativeFileSet appResources : appResourcesList) {
-            if (appResources == null) {
-                throw new RuntimeException("Null app resources?");
-            }
-            File srcdir = appResources.getBaseDirectory();
-            for (String fname : appResources.getIncludedFiles()) {
-                copyEntry(appDir, srcdir, fname);
-            }
-        }
-    }
 }

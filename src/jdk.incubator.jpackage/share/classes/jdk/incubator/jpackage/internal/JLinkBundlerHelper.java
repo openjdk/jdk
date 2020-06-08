@@ -27,28 +27,18 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.Optional;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.regex.Matcher;
@@ -64,76 +54,8 @@ import jdk.internal.module.ModulePath;
 
 final class JLinkBundlerHelper {
 
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.incubator.jpackage.internal.resources.MainResources");
-
-    static final ToolProvider JLINK_TOOL =
+    private static final ToolProvider JLINK_TOOL =
             ToolProvider.findFirst("jlink").orElseThrow();
-
-    static File getMainJar(Map<String, ? super Object> params) {
-        File result = null;
-        RelativeFileSet fileset =
-                StandardBundlerParam.MAIN_JAR.fetchFrom(params);
-
-        if (fileset != null) {
-            String filename = fileset.getIncludedFiles().iterator().next();
-            result = fileset.getBaseDirectory().toPath().
-                    resolve(filename).toFile();
-
-            if (result == null || !result.exists()) {
-                String srcdir =
-                    StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
-
-                if (srcdir != null) {
-                    result = new File(srcdir + File.separator + filename);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    static String getMainClassFromModule(Map<String, ? super Object> params) {
-        String mainModule = StandardBundlerParam.MODULE.fetchFrom(params);
-        if (mainModule != null)  {
-
-            int index = mainModule.indexOf("/");
-            if (index > 0) {
-                return mainModule.substring(index + 1);
-            } else {
-                ModuleDescriptor descriptor =
-                        JLinkBundlerHelper.getMainModuleDescription(params);
-                if (descriptor != null) {
-                    Optional<String> mainClass = descriptor.mainClass();
-                    if (mainClass.isPresent()) {
-                        Log.verbose(MessageFormat.format(I18N.getString(
-                                    "message.module-class"),
-                                    mainClass.get(),
-                                    JLinkBundlerHelper.getMainModule(params)));
-                        return mainClass.get();
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    static String getMainModule(Map<String, ? super Object> params) {
-        String result = null;
-        String mainModule = StandardBundlerParam.MODULE.fetchFrom(params);
-
-        if (mainModule != null) {
-            int index = mainModule.indexOf("/");
-
-            if (index > 0) {
-                result = mainModule.substring(0, index);
-            } else {
-                result = mainModule;
-            }
-        }
-
-        return result;
-    }
 
     static void execute(Map<String, ? super Object> params,
             AbstractAppImageBuilder imageBuilder)
@@ -148,76 +70,29 @@ final class JLinkBundlerHelper {
         List<String> options =
                 StandardBundlerParam.JLINK_OPTIONS.fetchFrom(params);
         Path outputDir = imageBuilder.getRuntimeRoot();
-        File mainJar = getMainJar(params);
-        ModFile.ModType mainJarType = ModFile.ModType.Unknown;
 
-        if (mainJar != null) {
-            mainJarType = new ModFile(mainJar).getModType();
-        } else if (StandardBundlerParam.MODULE.fetchFrom(params) == null) {
-            // user specified only main class, all jars will be on the classpath
-            mainJarType = ModFile.ModType.UnnamedJar;
-        }
+        LauncherData launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(
+                params);
 
         boolean bindServices =
                 StandardBundlerParam.BIND_SERVICES.fetchFrom(params);
 
         // Modules
-        String mainModule = getMainModule(params);
-        if (mainModule == null) {
-            if (mainJarType == ModFile.ModType.UnnamedJar) {
-                if (addModules.isEmpty()) {
-                    // The default for an unnamed jar is ALL_DEFAULT
-                    addModules.add(ModuleHelper.ALL_DEFAULT);
-                }
-            } else if (mainJarType == ModFile.ModType.Unknown ||
-                    mainJarType == ModFile.ModType.ModularJar) {
-                addModules.add(ModuleHelper.ALL_DEFAULT);
-            }
+        if (!launcherData.isModular() && addModules.isEmpty()) {
+            addModules.add(ModuleHelper.ALL_DEFAULT);
         }
 
         Set<String> modules = new ModuleHelper(
                 modulePath, addModules, limitModules).modules();
 
-        if (mainModule != null) {
-            modules.add(mainModule);
+        if (launcherData.isModular()) {
+            modules.add(launcherData.moduleName());
         }
 
         runJLink(outputDir, modulePath, modules, limitModules,
                 options, bindServices);
 
         imageBuilder.prepareApplicationFiles(params);
-    }
-
-
-    // Returns the path to the JDK modules in the user defined module path.
-    static Path findPathOfModule( List<Path> modulePath, String moduleName) {
-
-        for (Path path : modulePath) {
-            Path moduleNamePath = path.resolve(moduleName);
-
-            if (Files.exists(moduleNamePath)) {
-                return path;
-            }
-        }
-
-        return null;
-    }
-
-    static ModuleDescriptor getMainModuleDescription(Map<String, ? super Object> params) {
-        boolean hasModule = params.containsKey(StandardBundlerParam.MODULE.getID());
-        if (hasModule) {
-            List<Path> modulePath = StandardBundlerParam.MODULE_PATH.fetchFrom(params);
-            if (!modulePath.isEmpty()) {
-                ModuleFinder finder = ModuleFinder.of(modulePath.toArray(new Path[0]));
-                String mainModule = JLinkBundlerHelper.getMainModule(params);
-                Optional<ModuleReference> omref = finder.find(mainModule);
-                if (omref.isPresent()) {
-                    return omref.get().descriptor();
-                }
-            }
-        }
-
-        return null;
     }
 
     /*
@@ -255,7 +130,7 @@ final class JLinkBundlerHelper {
                 .anyMatch(e -> !e.isQualified());
     }
 
-    private static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
+    static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
         return ModuleFinder.compose(
                 ModulePath.of(JarFile.runtimeVersion(), true,
                         modulePath.toArray(Path[]::new)),
@@ -373,27 +248,14 @@ final class JLinkBundlerHelper {
     }
 
     private static String getPathList(List<Path> pathList) {
-        String ret = null;
-        for (Path p : pathList) {
-            String s =  Matcher.quoteReplacement(p.toString());
-            if (ret == null) {
-                ret = s;
-            } else {
-                ret += File.pathSeparator +  s;
-            }
-        }
-        return ret;
+        return pathList.stream()
+                .map(Path::toString)
+                .map(Matcher::quoteReplacement)
+                .collect(Collectors.joining(File.pathSeparator));
     }
 
     private static String getStringList(Set<String> strings) {
-        String ret = null;
-        for (String s : strings) {
-            if (ret == null) {
-                ret = s;
-            } else {
-                ret += "," + s;
-            }
-        }
-        return (ret == null) ? null : Matcher.quoteReplacement(ret);
+        return Matcher.quoteReplacement(strings.stream().collect(
+                Collectors.joining(",")));
     }
 }

@@ -65,8 +65,6 @@ import java.util.stream.Stream;
  */
 class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.incubator.jpackage.internal.resources.MainResources");
     private static final String JAVABASEJMOD = "java.base.jmod";
     private final static String DEFAULT_VERSION = "1.0";
     private final static String DEFAULT_RELEASE = "1";
@@ -86,67 +84,36 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         this.stringConverter = stringConverter;
     }
 
-    static final StandardBundlerParam<RelativeFileSet> APP_RESOURCES =
+    static final StandardBundlerParam<LauncherData> LAUNCHER_DATA =
             new StandardBundlerParam<>(
-                    BundleParams.PARAM_APP_RESOURCES,
-                    RelativeFileSet.class,
-                    null, // no default.  Required parameter
-                    null  // no string translation,
-                          // tool must provide complex type
+                    "launcherData",
+                    LauncherData.class,
+                    params -> {
+                        try {
+                            return LauncherData.create(params);
+                        } catch (ConfigException | IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    },
+                    null
             );
 
-    @SuppressWarnings("unchecked")
-    static final
-            StandardBundlerParam<List<RelativeFileSet>> APP_RESOURCES_LIST =
-            new StandardBundlerParam<>(
-                    BundleParams.PARAM_APP_RESOURCES + "List",
-                    (Class<List<RelativeFileSet>>) (Object) List.class,
-                    // Default is appResources, as a single item list
-                    p -> new ArrayList<>(Collections.singletonList(
-                            APP_RESOURCES.fetchFrom(p))),
-                    StandardBundlerParam::createAppResourcesListFromString
-            );
-
-    static final StandardBundlerParam<String> SOURCE_DIR =
+    static final StandardBundlerParam<Path> SOURCE_DIR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.INPUT.getId(),
-                    String.class,
+                    Path.class,
                     p -> null,
-                    (s, p) -> {
-                        String value = String.valueOf(s);
-                        if (value.charAt(value.length() - 1) ==
-                                File.separatorChar) {
-                            return value.substring(0, value.length() - 1);
-                        }
-                        else {
-                            return value;
-                        }
-                    }
+                    (s, p) -> Path.of(s)
             );
 
     // note that each bundler is likely to replace this one with
     // their own converter
-    static final StandardBundlerParam<RelativeFileSet> MAIN_JAR =
+    static final StandardBundlerParam<Path> MAIN_JAR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.MAIN_JAR.getId(),
-                    RelativeFileSet.class,
-                    params -> {
-                        extractMainClassInfoFromAppResources(params);
-                        return (RelativeFileSet) params.get("mainJar");
-                    },
-                    (s, p) -> getMainJar(s, p)
-            );
-
-    static final StandardBundlerParam<String> CLASSPATH =
-            new StandardBundlerParam<>(
-                    "classpath",
-                    String.class,
-                    params -> {
-                        extractMainClassInfoFromAppResources(params);
-                        String cp = (String) params.get("classpath");
-                        return cp == null ? "" : cp;
-                    },
-                    (s, p) -> s
+                    Path.class,
+                    params -> LAUNCHER_DATA.fetchFrom(params).mainJarName(),
+                    null
             );
 
     static final StandardBundlerParam<String> MAIN_CLASS =
@@ -157,14 +124,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                         if (isRuntimeInstaller(params)) {
                             return null;
                         }
-                        extractMainClassInfoFromAppResources(params);
-                        String s = (String) params.get(
-                                BundleParams.PARAM_APPLICATION_CLASS);
-                        if (s == null) {
-                            s = JLinkBundlerHelper.getMainClassFromModule(
-                                    params);
-                        }
-                        return s;
+                        return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
                     (s, p) -> s
             );
@@ -253,13 +213,11 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> Arrays.asList(s.split("\n\n"))
             );
 
-    // note that each bundler is likely to replace this one with
-    // their own converter
     static final StandardBundlerParam<String> VERSION =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.VERSION.getId(),
                     String.class,
-                    params -> getDefaultAppVersion(params),
+                    StandardBundlerParam::getDefaultAppVersion,
                     (s, p) -> s
             );
 
@@ -414,19 +372,12 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.MODULE_PATH.getId(),
                     (Class<List<Path>>) (Object)List.class,
-                    p -> { return getDefaultModulePath(); },
+                    p -> getDefaultModulePath(),
                     (s, p) -> {
-                        List<Path> modulePath = Arrays.asList(s
-                                .split(File.pathSeparator)).stream()
-                                .map(ss -> new File(ss).toPath())
+                        List<Path> modulePath = Stream.of(s.split(File.pathSeparator))
+                                .map(Path::of)
                                 .collect(Collectors.toList());
-                        Path javaBasePath = null;
-                        if (modulePath != null) {
-                            javaBasePath = JLinkBundlerHelper
-                                    .findPathOfModule(modulePath, JAVABASEJMOD);
-                        } else {
-                            modulePath = new ArrayList<Path>();
-                        }
+                        Path javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
 
                         // Add the default JDK module path to the module path.
                         if (javaBasePath == null) {
@@ -434,9 +385,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
                             if (jdkModulePath != null) {
                                 modulePath.addAll(jdkModulePath);
-                                javaBasePath =
-                                        JLinkBundlerHelper.findPathOfModule(
-                                        modulePath, JAVABASEJMOD);
+                                javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
                             }
                         }
 
@@ -448,6 +397,20 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
                         return modulePath;
                     });
+
+    // Returns the path to the JDK modules in the user defined module path.
+    private static Path findPathOfModule( List<Path> modulePath, String moduleName) {
+
+        for (Path path : modulePath) {
+            Path moduleNamePath = path.resolve(moduleName);
+
+            if (Files.exists(moduleNamePath)) {
+                return path;
+            }
+        }
+
+        return null;
+    }
 
     static final BundlerParamInfo<String> MODULE =
             new StandardBundlerParam<>(
@@ -496,16 +459,13 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
     }
 
     static File getPredefinedAppImage(Map<String, ? super Object> params) {
-        File applicationImage = null;
-        if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-            if (!applicationImage.exists()) {
-                throw new RuntimeException(
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist"),
-                                PREDEFINED_APP_IMAGE.getID(),
-                                applicationImage.toString()));
-            }
+        File applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+        if (applicationImage != null && !applicationImage.exists()) {
+            throw new RuntimeException(
+                    MessageFormat.format(I18N.getString(
+                            "message.app-image-dir-does-not-exist"),
+                            PREDEFINED_APP_IMAGE.getID(),
+                            applicationImage.toString()));
         }
         return applicationImage;
     }
@@ -548,236 +508,36 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         appBuilder.prepareApplicationFiles(params);
     }
 
-    static void extractMainClassInfoFromAppResources(
-            Map<String, ? super Object> params) {
-        boolean hasMainClass = params.containsKey(MAIN_CLASS.getID());
-        boolean hasMainJar = params.containsKey(MAIN_JAR.getID());
-        boolean hasMainJarClassPath = params.containsKey(CLASSPATH.getID());
-        boolean hasModule = params.containsKey(MODULE.getID());
-
-        if (hasMainClass && hasMainJar && hasMainJarClassPath || hasModule ||
-                isRuntimeInstaller(params)) {
-            return;
-        }
-
-        // it's a pair.
-        // The [0] is the srcdir [1] is the file relative to sourcedir
-        List<String[]> filesToCheck = new ArrayList<>();
-
-        if (hasMainJar) {
-            RelativeFileSet rfs = MAIN_JAR.fetchFrom(params);
-            for (String s : rfs.getIncludedFiles()) {
-                filesToCheck.add(
-                        new String[] {rfs.getBaseDirectory().toString(), s});
-            }
-        } else if (hasMainJarClassPath) {
-            for (String s : CLASSPATH.fetchFrom(params).split("\\s+")) {
-                if (APP_RESOURCES.fetchFrom(params) != null) {
-                    filesToCheck.add(
-                            new String[] {APP_RESOURCES.fetchFrom(params)
-                            .getBaseDirectory().toString(), s});
-                }
-            }
-        } else {
-            List<RelativeFileSet> rfsl = APP_RESOURCES_LIST.fetchFrom(params);
-            if (rfsl == null || rfsl.isEmpty()) {
-                return;
-            }
-            for (RelativeFileSet rfs : rfsl) {
-                if (rfs == null) continue;
-
-                for (String s : rfs.getIncludedFiles()) {
-                    filesToCheck.add(
-                            new String[]{rfs.getBaseDirectory().toString(), s});
-                }
-            }
-        }
-
-        // presume the set iterates in-order
-        for (String[] fnames : filesToCheck) {
-            try {
-                // only sniff jars
-                if (!fnames[1].toLowerCase().endsWith(".jar")) continue;
-
-                File file = new File(fnames[0], fnames[1]);
-                // that actually exist
-                if (!file.exists()) continue;
-
-                try (JarFile jf = new JarFile(file)) {
-                    Manifest m = jf.getManifest();
-                    Attributes attrs = (m != null) ?
-                            m.getMainAttributes() : null;
-
-                    if (attrs != null) {
-                        if (!hasMainJar) {
-                            if (fnames[0] == null) {
-                                fnames[0] = file.getParentFile().toString();
-                            }
-                            params.put(MAIN_JAR.getID(), new RelativeFileSet(
-                                    new File(fnames[0]),
-                                    new LinkedHashSet<>(Collections
-                                    .singletonList(file))));
-                        }
-                        if (!hasMainJarClassPath) {
-                            String cp =
-                                    attrs.getValue(Attributes.Name.CLASS_PATH);
-                            params.put(CLASSPATH.getID(),
-                                    cp == null ? "" : cp);
-                        }
-                        break;
-                    }
-                }
-            } catch (IOException ignore) {
-                ignore.printStackTrace();
-            }
-        }
+    private static List<Path> getDefaultModulePath() {
+        return List.of(
+                Path.of(System.getProperty("java.home"), "jmods").toAbsolutePath());
     }
 
-    static void validateMainClassInfoFromAppResources(
-            Map<String, ? super Object> params) throws ConfigException {
-        boolean hasMainClass = params.containsKey(MAIN_CLASS.getID());
-        boolean hasMainJar = params.containsKey(MAIN_JAR.getID());
-        boolean hasMainJarClassPath = params.containsKey(CLASSPATH.getID());
-        boolean hasModule = params.containsKey(MODULE.getID());
-        boolean hasAppImage = params.containsKey(PREDEFINED_APP_IMAGE.getID());
-
-        if (hasMainClass && hasMainJar && hasMainJarClassPath ||
-               hasAppImage || isRuntimeInstaller(params)) {
-            return;
-        }
-        if (hasModule) {
-            if (JLinkBundlerHelper.getMainClassFromModule(params) == null) {
-                throw new ConfigException(
-                        I18N.getString("ERR_NoMainClass"), null);
-            }
-        } else {
-            extractMainClassInfoFromAppResources(params);
-
-            if (!params.containsKey(MAIN_CLASS.getID())) {
-                if (hasMainJar) {
-                    throw new ConfigException(
-                            MessageFormat.format(I18N.getString(
-                            "error.no-main-class-with-main-jar"),
-                            MAIN_JAR.fetchFrom(params)),
-                            MessageFormat.format(I18N.getString(
-                            "error.no-main-class-with-main-jar.advice"),
-                            MAIN_JAR.fetchFrom(params)));
-                } else {
-                    throw new ConfigException(
-                            I18N.getString("error.no-main-class"),
-                            I18N.getString("error.no-main-class.advice"));
-                }
-            }
-        }
-    }
-
-    private static List<RelativeFileSet>
-            createAppResourcesListFromString(String s,
-            Map<String, ? super Object> objectObjectMap) {
-        List<RelativeFileSet> result = new ArrayList<>();
-        for (String path : s.split("[:;]")) {
-            File f = new File(path);
-            if (f.getName().equals("*") || path.endsWith("/") ||
-                    path.endsWith("\\")) {
-                if (f.getName().equals("*")) {
-                    f = f.getParentFile();
-                }
-                Set<File> theFiles = new HashSet<>();
-                try {
-                    try (Stream<Path> stream = Files.walk(f.toPath())) {
-                        stream.filter(Files::isRegularFile)
-                                .forEach(p -> theFiles.add(p.toFile()));
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                result.add(new RelativeFileSet(f, theFiles));
-            } else {
-                result.add(new RelativeFileSet(f.getParentFile(),
-                        Collections.singleton(f)));
-            }
-        }
-        return result;
-    }
-
-    private static RelativeFileSet getMainJar(
-            String mainJarValue, Map<String, ? super Object> params) {
-        for (RelativeFileSet rfs : APP_RESOURCES_LIST.fetchFrom(params)) {
-            File appResourcesRoot = rfs.getBaseDirectory();
-            File mainJarFile = new File(appResourcesRoot, mainJarValue);
-
-            if (mainJarFile.exists()) {
-                return new RelativeFileSet(appResourcesRoot,
-                     new LinkedHashSet<>(Collections.singletonList(
-                     mainJarFile)));
-            }
-            mainJarFile = new File(mainJarValue);
-            if (mainJarFile.exists()) {
-                // absolute path for main-jar may fail is not legal
-                // below contains explicit error message.
-            } else {
-                List<Path> modulePath = MODULE_PATH.fetchFrom(params);
-                modulePath.removeAll(getDefaultModulePath());
-                if (!modulePath.isEmpty()) {
-                    Path modularJarPath = JLinkBundlerHelper.findPathOfModule(
-                            modulePath, mainJarValue);
-                    if (modularJarPath != null &&
-                            Files.exists(modularJarPath)) {
-                        return new RelativeFileSet(appResourcesRoot,
-                                new LinkedHashSet<>(Collections.singletonList(
-                                modularJarPath.toFile())));
-                    }
-                }
-            }
-        }
-
-        throw new IllegalArgumentException(
-                new ConfigException(MessageFormat.format(I18N.getString(
-                        "error.main-jar-does-not-exist"),
-                        mainJarValue), I18N.getString(
-                        "error.main-jar-does-not-exist.advice")));
-    }
-
-    static List<Path> getDefaultModulePath() {
-        List<Path> result = new ArrayList<Path>();
-        Path jdkModulePath = Paths.get(
-                System.getProperty("java.home"), "jmods").toAbsolutePath();
-
-        if (jdkModulePath != null && Files.exists(jdkModulePath)) {
-            result.add(jdkModulePath);
-        }
-        else {
-            // On a developer build the JDK Home isn't where we expect it
-            // relative to the jmods directory. Do some extra
-            // processing to find it.
-            Map<String, String> env = System.getenv();
-
-            if (env.containsKey("JDK_HOME")) {
-                jdkModulePath = Paths.get(env.get("JDK_HOME"),
-                        ".." + File.separator + "images"
-                        + File.separator + "jmods").toAbsolutePath();
-
-                if (jdkModulePath != null && Files.exists(jdkModulePath)) {
-                    result.add(jdkModulePath);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    static String getDefaultAppVersion(Map<String, ? super Object> params) {
+    private static String getDefaultAppVersion(Map<String, ? super Object> params) {
         String appVersion = DEFAULT_VERSION;
 
-        ModuleDescriptor descriptor = JLinkBundlerHelper.getMainModuleDescription(params);
-        if (descriptor != null) {
-            Optional<Version> oversion = descriptor.version();
-            if (oversion.isPresent()) {
+        if (isRuntimeInstaller(params)) {
+            return appVersion;
+        }
+
+        LauncherData launcherData = null;
+        try {
+            launcherData = LAUNCHER_DATA.fetchFrom(params);
+        } catch (RuntimeException ex) {
+            if (ex.getCause() instanceof ConfigException) {
+                return appVersion;
+            }
+            throw ex;
+        }
+
+        if (launcherData.isModular()) {
+            String moduleVersion = launcherData.getAppVersion();
+            if (moduleVersion != null) {
                 Log.verbose(MessageFormat.format(I18N.getString(
                         "message.module-version"),
-                        oversion.get().toString(),
-                        JLinkBundlerHelper.getMainModule(params)));
-                appVersion = oversion.get().toString();
+                        moduleVersion,
+                        launcherData.moduleName()));
+                appVersion = moduleVersion;
             }
         }
 

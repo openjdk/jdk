@@ -218,7 +218,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         // Copy class path entries to Java folder
-        copyClassPathEntries(appDir, params);
+        copyApplication(params);
 
         /*********** Take care of "config" files *******/
 
@@ -312,33 +312,12 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     private static String getLauncherName(Map<String, ? super Object> params) {
-        if (APP_NAME.fetchFrom(params) != null) {
-            return APP_NAME.fetchFrom(params);
-        } else {
-            return MAIN_CLASS.fetchFrom(params);
-        }
+        return APP_NAME.fetchFrom(params);
     }
 
     public static String getLauncherCfgName(
             Map<String, ? super Object> params) {
         return "Contents/app/" + APP_NAME.fetchFrom(params) + ".cfg";
-    }
-
-    private void copyClassPathEntries(Path javaDirectory,
-            Map<String, ? super Object> params) throws IOException {
-        List<RelativeFileSet> resourcesList =
-                APP_RESOURCES_LIST.fetchFrom(params);
-        if (resourcesList == null) {
-            throw new RuntimeException(
-                    I18N.getString("message.null-classpath"));
-        }
-
-        for (RelativeFileSet classPath : resourcesList) {
-            File srcdir = classPath.getBaseDirectory();
-            for (String fname : classPath.getIncludedFiles()) {
-                copyEntry(javaDirectory, srcdir, fname);
-            }
-        }
     }
 
     private String getBundleName(Map<String, ? super Object> params) {
@@ -398,50 +377,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         data.put("DEPLOY_LAUNCHER_NAME", getLauncherName(params));
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
         data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
-
-        boolean hasMainJar = MAIN_JAR.fetchFrom(params) != null;
-        boolean hasMainModule =
-                StandardBundlerParam.MODULE.fetchFrom(params) != null;
-
-        if (hasMainJar) {
-            data.put("DEPLOY_MAIN_JAR_NAME", MAIN_JAR.fetchFrom(params).
-                    getIncludedFiles().iterator().next());
-        }
-        else if (hasMainModule) {
-            data.put("DEPLOY_MODULE_NAME",
-                    StandardBundlerParam.MODULE.fetchFrom(params));
-        }
-
-        StringBuilder sb = new StringBuilder();
-        List<String> jvmOptions = JAVA_OPTIONS.fetchFrom(params);
-
-        String newline = ""; //So we don't add extra line after last append
-        for (String o : jvmOptions) {
-            sb.append(newline).append(
-                    "    <string>").append(o).append("</string>");
-            newline = "\n";
-        }
-
-        data.put("DEPLOY_JAVA_OPTIONS", sb.toString());
-
-        sb = new StringBuilder();
-        List<String> args = ARGUMENTS.fetchFrom(params);
-        newline = "";
-        // So we don't add unneccessary extra line after last append
-
-        for (String o : args) {
-            sb.append(newline).append("    <string>").append(o).append(
-                    "</string>");
-            newline = "\n";
-        }
-        data.put("DEPLOY_ARGUMENTS", sb.toString());
-
-        newline = "";
-
-        data.put("DEPLOY_LAUNCHER_CLASS", MAIN_CLASS.fetchFrom(params));
-
-        data.put("DEPLOY_APP_CLASSPATH",
-                  getCfgClassPath(CLASSPATH.fetchFrom(params)));
 
         StringBuilder bundleDocumentTypes = new StringBuilder();
         StringBuilder exportedTypes = new StringBuilder();
@@ -788,8 +723,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
         Path frameworkPath = appLocation.resolve("Contents/Frameworks");
         if (Files.isDirectory(frameworkPath)) {
-            Files.list(frameworkPath)
-                    .forEach(signIdentifiedByPList);
+            try (var fileList = Files.list(frameworkPath)) {
+                fileList.forEach(signIdentifiedByPList);
+            }
 
             ioe = toThrow.get();
             if (ioe != null) {

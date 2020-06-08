@@ -147,19 +147,4 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
             iconResource.saveToFile(iconTarget);
         }
     }
-
-    private void copyApplication(Map<String, ? super Object> params)
-            throws IOException {
-        for (RelativeFileSet appResources :
-                APP_RESOURCES_LIST.fetchFrom(params)) {
-            if (appResources == null) {
-                throw new RuntimeException("Null app resources?");
-            }
-            File srcdir = appResources.getBaseDirectory();
-            for (String fname : appResources.getIncludedFiles()) {
-                copyEntry(appLayout.appDirectory(), srcdir, fname);
-            }
-        }
-    }
-
 }
