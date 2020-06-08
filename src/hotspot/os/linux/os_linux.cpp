@@ -2089,40 +2089,42 @@ void os::print_dll_info(outputStream *st) {
   }
 }
 
-int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  FILE *procmapsFile = NULL;
+struct loaded_modules_info_param {
+  os::LoadedModulesCallbackFunc callback;
+  void *param;
+};
 
-  // Open the procfs maps file for the current process
-  if ((procmapsFile = fopen("/proc/self/maps", "r")) != NULL) {
-    // Allocate PATH_MAX for file name plus a reasonable size for other fields.
-    char line[PATH_MAX + 100];
+static int dl_iterate_callback(struct dl_phdr_info *info, size_t size, void *data) {
+  if ((info->dlpi_name == NULL) || (*info->dlpi_name == '\0')) {
+    return 0;
+  }
 
-    // Read line by line from 'file'
-    while (fgets(line, sizeof(line), procmapsFile) != NULL) {
-      u8 base, top, inode;
-      char name[sizeof(line)];
+  struct loaded_modules_info_param *callback_param = reinterpret_cast<struct loaded_modules_info_param *>(data);
+  address base = NULL;
+  address top = NULL;
+  for (int idx = 0; idx < info->dlpi_phnum; idx++) {
+    const ElfW(Phdr) *phdr = info->dlpi_phdr + idx;
+    if (phdr->p_type == PT_LOAD) {
+      address raw_phdr_base = reinterpret_cast<address>(info->dlpi_addr + phdr->p_vaddr);
 
-      // Parse fields from line, discard perms, offset and device
-      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %*s %*s %*s " INT64_FORMAT " %s",
-             &base, &top, &inode, name);
-      // the last entry 'name' is empty for some entries, so we might have 3 matches instead of 4 for some lines
-      if (matches < 3) continue;
-      if (matches == 3) name[0] = '\0';
+      address phdr_base = align_down(raw_phdr_base, phdr->p_align);
+      if ((base == NULL) || (base > phdr_base)) {
+        base = phdr_base;
+      }
 
-      // Filter by inode 0 so that we only get file system mapped files.
-      if (inode != 0) {
-
-        // Call callback with the fields of interest
-        if(callback(name, (address)base, (address)top, param)) {
-          // Oops abort, callback aborted
-          fclose(procmapsFile);
-          return 1;
-        }
+      address phdr_top = align_up(raw_phdr_base + phdr->p_memsz, phdr->p_align);
+      if ((top == NULL) || (top < phdr_top)) {
+        top = phdr_top;
       }
     }
-    fclose(procmapsFile);
   }
-  return 0;
+
+  return callback_param->callback(info->dlpi_name, base, top, callback_param->param);
+}
+
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
+  struct loaded_modules_info_param callback_param = {callback, param};
+  return dl_iterate_phdr(&dl_iterate_callback, &callback_param);
 }
 
 void os::print_os_info_brief(outputStream* st) {
