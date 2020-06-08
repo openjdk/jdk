@@ -684,7 +684,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                     local: "bundles/\\(jdk.*doc-api-spec.tar.gz\\)",
                     remote: [
                         "bundles/common/jdk-" + data.version + "_doc-api-spec.tar.gz",
-                        "bundles/linux-x64/\\1"
+                        "bundles/common/\\1"
                     ],
                 },
             }
