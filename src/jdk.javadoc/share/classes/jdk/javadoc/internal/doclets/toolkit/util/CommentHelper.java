@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -376,23 +376,18 @@ public class CommentHelper {
             return null;
         } else if (utils.isTypeElement(e)) {
             return (TypeElement) e;
-        } else if (!utils.isPackage(e)) {
+        } else if (!utils.isPackage(e) && !utils.isModule(e)) {
             return utils.getEnclosingTypeElement(e);
         }
         return null;
     }
 
-    public String getReferencedClassName(DocTree dtree) {
-        Utils utils = configuration.utils;
-        Element e = getReferencedClass(dtree);
-        if (e != null) {
-            return utils.isTypeElement(e) ? utils.getSimpleName(e) : null;
-        }
+    public String getReferencedModuleName(DocTree dtree) {
         String s = getReferencedSignature(dtree);
-        if (s == null) {
+        if (s == null || s.contains("#") || s.contains("(")) {
             return null;
         }
-        int n = s.indexOf("#");
+        int n = s.indexOf("/");
         return (n == -1) ? s : s.substring(0, n);
     }
 
@@ -422,6 +417,15 @@ public class CommentHelper {
         }
         return null;
     }
+
+    public ModuleElement getReferencedModule(DocTree dtree) {
+        Element e = getReferencedElement(dtree);
+        if (e != null && configuration.utils.isModule(e)) {
+            return (ModuleElement) e;
+        }
+        return null;
+    }
+
 
     public List<? extends DocTree> getFirstSentenceTrees(List<? extends DocTree> body) {
         return configuration.docEnv.getDocTrees().getFirstSentence(body);

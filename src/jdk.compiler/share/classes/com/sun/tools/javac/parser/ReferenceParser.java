@@ -47,6 +47,7 @@ public class ReferenceParser {
      * Any, but not all, of the member fields may be null.
      */
     static public class Reference {
+        public final JCTree.JCExpression moduleName;
         /** The type, if any, in the signature. */
         public final JCTree qualExpr;
         /** The member name, if any, in the signature. */
@@ -54,7 +55,8 @@ public class ReferenceParser {
         /** The parameter types, if any, in the signature. */
         public final List<JCTree> paramTypes;
 
-        Reference(JCTree qualExpr, Name member, List<JCTree> paramTypes) {
+        Reference(JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
+            this.moduleName = moduleName;
             this.qualExpr = qualExpr;
             this.member = member;
             this.paramTypes = paramTypes;
@@ -89,7 +91,8 @@ public class ReferenceParser {
      */
     public Reference parse(String sig) throws ParseException {
 
-        // Break sig apart into qualifiedExpr member paramTypes.
+        // Break sig apart into moduleName qualifiedExpr member paramTypes.
+        JCTree.JCExpression moduleName;
         JCTree qualExpr;
         Name member;
         List<JCTree> paramTypes;
@@ -98,18 +101,27 @@ public class ReferenceParser {
                 = new Log.DeferredDiagnosticHandler(fac.log);
 
         try {
-            int hash = sig.indexOf("#");
-            int lparen = sig.indexOf("(", hash + 1);
-            if (hash == -1) {
+            int slash = sig.indexOf("/");
+            int hash = sig.indexOf("#", slash + 1);
+            int lparen = sig.indexOf("(", Math.max(slash, hash) + 1);
+            if (slash > -1) {
+                moduleName = parseModule(sig.substring(0, slash));
+            } else {
+                moduleName = null;
+            }
+            if (slash > 0 && sig.length() == slash + 1) {
+                qualExpr = null;
+                member = null;
+            } else if (hash == -1) {
                 if (lparen == -1) {
-                    qualExpr = parseType(sig);
+                    qualExpr = parseType(sig.substring(slash + 1));
                     member = null;
                 } else {
                     qualExpr = null;
-                    member = parseMember(sig.substring(0, lparen));
+                    member = parseMember(sig.substring(slash + 1, lparen));
                 }
             } else {
-                qualExpr = (hash == 0) ? null : parseType(sig.substring(0, hash));
+                qualExpr = (hash == slash + 1) ? null : parseType(sig.substring(slash + 1, hash));
                 if (lparen == -1)
                     member = parseMember(sig.substring(hash + 1));
                 else
@@ -132,7 +144,15 @@ public class ReferenceParser {
             fac.log.popDiagnosticHandler(deferredDiagnosticHandler);
         }
 
-        return new Reference(qualExpr, member, paramTypes);
+        return new Reference(moduleName, qualExpr, member, paramTypes);
+    }
+
+    private JCTree.JCExpression parseModule(String s) throws ParseException {
+        JavacParser p = fac.newParser(s, false, false, false);
+        JCTree.JCExpression expr = p.qualident(false);
+        if (p.token().kind != TokenKind.EOF)
+            throw new ParseException("dc.ref.unexpected.input");
+        return expr;
     }
 
     private JCTree parseType(String s) throws ParseException {
