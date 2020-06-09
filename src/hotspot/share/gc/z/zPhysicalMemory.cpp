@@ -319,17 +319,15 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   log_info(gc, init)("Uncommit Delay: " UINTX_FORMAT "s", ZUncommitDelay);
 }
 
-void ZPhysicalMemoryManager::nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const {
+void ZPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
   // From an NMT point of view we treat the first heap view (marked0) as committed
   const uintptr_t addr = ZAddress::marked0(offset);
-  const size_t size = pmem.size();
   MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
 }
 
-void ZPhysicalMemoryManager::nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const {
+void ZPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
   if (MemTracker::tracking_level() > NMT_minimal) {
     const uintptr_t addr = ZAddress::marked0(offset);
-    const size_t size = pmem.size();
     Tracker tracker(Tracker::uncommit);
     tracker.record((address)addr, size);
   }
@@ -403,7 +401,7 @@ void ZPhysicalMemoryManager::pretouch_view(uintptr_t addr, size_t size) const {
   os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
 }
 
-void ZPhysicalMemoryManager::map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const {
+void ZPhysicalMemoryManager::map_view(uintptr_t addr, const ZPhysicalMemory& pmem) const {
   size_t size = 0;
 
   // Map segments
@@ -422,8 +420,8 @@ void ZPhysicalMemoryManager::map_view(const ZPhysicalMemory& pmem, uintptr_t add
   }
 }
 
-void ZPhysicalMemoryManager::unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const {
-  _backing.unmap(addr, pmem.size());
+void ZPhysicalMemoryManager::unmap_view(uintptr_t addr, size_t size) const {
+  _backing.unmap(addr, size);
 }
 
 void ZPhysicalMemoryManager::pretouch(uintptr_t offset, size_t size) const {
@@ -438,42 +436,44 @@ void ZPhysicalMemoryManager::pretouch(uintptr_t offset, size_t size) const {
   }
 }
 
-void ZPhysicalMemoryManager::map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
+void ZPhysicalMemoryManager::map(uintptr_t offset, const ZPhysicalMemory& pmem) const {
+  const size_t size = pmem.size();
+
   if (ZVerifyViews) {
     // Map good view
-    map_view(pmem, ZAddress::good(offset));
+    map_view(ZAddress::good(offset), pmem);
   } else {
     // Map all views
-    map_view(pmem, ZAddress::marked0(offset));
-    map_view(pmem, ZAddress::marked1(offset));
-    map_view(pmem, ZAddress::remapped(offset));
+    map_view(ZAddress::marked0(offset), pmem);
+    map_view(ZAddress::marked1(offset), pmem);
+    map_view(ZAddress::remapped(offset), pmem);
   }
 
-  nmt_commit(pmem, offset);
+  nmt_commit(offset, size);
 }
 
-void ZPhysicalMemoryManager::unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {
-  nmt_uncommit(pmem, offset);
+void ZPhysicalMemoryManager::unmap(uintptr_t offset, size_t size) const {
+  nmt_uncommit(offset, size);
 
   if (ZVerifyViews) {
     // Unmap good view
-    unmap_view(pmem, ZAddress::good(offset));
+    unmap_view(ZAddress::good(offset), size);
   } else {
     // Unmap all views
-    unmap_view(pmem, ZAddress::marked0(offset));
-    unmap_view(pmem, ZAddress::marked1(offset));
-    unmap_view(pmem, ZAddress::remapped(offset));
+    unmap_view(ZAddress::marked0(offset), size);
+    unmap_view(ZAddress::marked1(offset), size);
+    unmap_view(ZAddress::remapped(offset), size);
   }
 }
 
-void ZPhysicalMemoryManager::debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
+void ZPhysicalMemoryManager::debug_map(uintptr_t offset, const ZPhysicalMemory& pmem) const {
   // Map good view
   assert(ZVerifyViews, "Should be enabled");
-  map_view(pmem, ZAddress::good(offset));
+  map_view(ZAddress::good(offset), pmem);
 }
 
-void ZPhysicalMemoryManager::debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {
+void ZPhysicalMemoryManager::debug_unmap(uintptr_t offset, size_t size) const {
   // Unmap good view
   assert(ZVerifyViews, "Should be enabled");
-  unmap_view(pmem, ZAddress::good(offset));
+  unmap_view(ZAddress::good(offset), size);
 }

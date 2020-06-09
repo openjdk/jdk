@@ -1045,6 +1045,10 @@
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
   </Event>
 
+  <Event name="ZUnmap" category="Java Virtual Machine, GC, Detailed" label="ZGC Unmap" description="Unmapping of memory" thread="true">
+    <Field type="ulong" contentType="bytes" name="unmapped" label="Unmapped" />
+  </Event>
+
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
     startTime="false">
     <Field type="uint" name="index" label="Index" />

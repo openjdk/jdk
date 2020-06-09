@@ -85,12 +85,12 @@ private:
   ZPhysicalMemoryBacking _backing;
   ZMemoryManager         _manager;
 
-  void nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
-  void nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void nmt_commit(uintptr_t offset, size_t size) const;
+  void nmt_uncommit(uintptr_t offset, size_t size) const;
 
   void pretouch_view(uintptr_t addr, size_t size) const;
-  void map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
-  void unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
+  void map_view(uintptr_t addr, const ZPhysicalMemory& pmem) const;
+  void unmap_view(uintptr_t addr, size_t size) const;
 
 public:
   ZPhysicalMemoryManager(size_t max_capacity);
@@ -108,11 +108,11 @@ public:
 
   void pretouch(uintptr_t offset, size_t size) const;
 
-  void map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
-  void unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void map(uintptr_t offset, const ZPhysicalMemory& pmem) const;
+  void unmap(uintptr_t offset, size_t size) const;
 
-  void debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
-  void debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void debug_map(uintptr_t offset, const ZPhysicalMemory& pmem) const;
+  void debug_unmap(uintptr_t offset, size_t size) const;
 };
 
 #endif // SHARE_GC_Z_ZPHYSICALMEMORY_HPP

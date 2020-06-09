@@ -36,9 +36,11 @@ class ThreadClosure;
 class ZPageAllocation;
 class ZWorkers;
 class ZUncommitter;
+class ZUnmapper;
 
 class ZPageAllocator {
   friend class VMStructs;
+  friend class ZUnmapper;
   friend class ZUncommitter;
 
 private:
@@ -59,6 +61,7 @@ private:
   ssize_t                    _reclaimed;
   ZList<ZPageAllocation>     _stalled;
   ZList<ZPageAllocation>     _satisfied;
+  ZUnmapper*                 _unmapper;
   ZUncommitter*              _uncommitter;
   mutable ZSafeDelete<ZPage> _safe_delete;
   bool                       _initialized;
