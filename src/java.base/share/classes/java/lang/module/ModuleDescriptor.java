@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,17 +68,17 @@ import jdk.internal.module.ModuleInfo;
  * #read(InputStream,Supplier) read} methods defined here. </p>
  *
  * <p> A module descriptor describes a <em>normal</em>, open, or automatic
- * module. <em>Normal</em> modules and open modules describe their {@link
+ * module. <em>Normal</em> modules and open modules describe their {@linkplain
  * #requires() dependences}, {@link #exports() exported-packages}, the services
- * that they {@link #uses() use} or {@link #provides() provide}, and other
- * components. <em>Normal</em> modules may {@link #opens() open} specific
- * packages. The module descriptor for an open modules does not declare any
+ * that they {@linkplain #uses() use} or {@linkplain #provides() provide}, and other
+ * components. <em>Normal</em> modules may {@linkplain #opens() open} specific
+ * packages. The module descriptor for an open module does not declare any
  * open packages (its {@code opens} method returns an empty set) but when
  * instantiated in the Java virtual machine then it is treated as if all
  * packages are open. The module descriptor for an automatic module does not
  * declare any dependences (except for the mandatory dependency on {@code
  * java.base}), and does not declare any exported or open packages. Automatic
- * module receive special treatment during resolution so that they read all
+ * modules receive special treatment during resolution so that they read all
  * other modules in the configuration. When an automatic module is instantiated
  * in the Java virtual machine then it reads every unnamed module and is
  * treated as if all packages are exported and open. </p>
@@ -131,7 +131,7 @@ public class ModuleDescriptor
 
 
     /**
-     * <p> A dependence upon a module </p>
+     * <p> A dependence upon a module. </p>
      *
      * @see ModuleDescriptor#requires()
      * @since 9
@@ -607,7 +607,7 @@ public class ModuleDescriptor
         private final Set<String> targets;  // empty if unqualified export
 
         /**
-         * Constructs an Opens
+         * Constructs an {@code Opens}.
          */
         private Opens(Set<Modifier> ms, String source, Set<String> targets) {
             this.mods = Set.copyOf(ms);
@@ -634,9 +634,9 @@ public class ModuleDescriptor
         }
 
         /**
-         * Returns {@code true} if this is a qualified opens.
+         * Returns {@code true} if this is a qualified {@code Opens}.
          *
-         * @return {@code true} if this is a qualified opens
+         * @return {@code true} if this is a qualified {@code Opens}
          */
         public boolean isQualified() {
             return !targets.isEmpty();
@@ -652,19 +652,19 @@ public class ModuleDescriptor
         }
 
         /**
-         * For a qualified opens, returns the non-empty and immutable set
+         * For a qualified {@code Opens}, returns the non-empty and immutable set
          * of the module names to which the package is open. For an
-         * unqualified opens, returns an empty set.
+         * unqualified {@code Opens}, returns an empty set.
          *
          * @return The set of target module names or for an unqualified
-         *         opens, an empty set
+         *         {@code Opens}, an empty set
          */
         public Set<String> targets() {
             return targets;
         }
 
         /**
-         * Compares this module opens to another.
+         * Compares this module {@code Opens} to another.
          *
          * <p> Two {@code Opens} objects are compared by comparing the package
          * names lexicographically. Where the packages names are equal then the
@@ -680,11 +680,11 @@ public class ModuleDescriptor
          * set. </p>
          *
          * @param  that
-         *         The module opens to compare
+         *         The module {@code Opens} to compare
          *
          * @return A negative integer, zero, or a positive integer if this module
-         *         opens is less than, equal to, or greater than the given
-         *         module opens
+         *         {@code Opens} is less than, equal to, or greater than the given
+         *         module {@code Opens}
          */
         @Override
         public int compareTo(Opens that) {
@@ -710,14 +710,14 @@ public class ModuleDescriptor
         }
 
         /**
-         * Computes a hash code for this module opens.
+         * Computes a hash code for this module {@code Opens}.
          *
          * <p> The hash code is based upon the modifiers, the package name,
-         * and for a qualified opens, the set of modules names to which the
+         * and for a qualified {@code Opens}, the set of modules names to which the
          * package is opened. It satisfies the general contract of the
          * {@link Object#hashCode Object.hashCode} method.
          *
-         * @return The hash-code value for this module opens
+         * @return The hash-code value for this module {@code Opens}
          */
         @Override
         public int hashCode() {
@@ -727,7 +727,7 @@ public class ModuleDescriptor
         }
 
         /**
-         * Tests this module opens for equality with the given object.
+         * Tests this module {@code Opens} for equality with the given object.
          *
          * <p> If the given object is not an {@code Opens} then this method
          * returns {@code false}. Two {@code Opens} objects are equal if their
@@ -810,7 +810,7 @@ public class ModuleDescriptor
         public List<String> providers() { return providers; }
 
         /**
-         * Compares this provides to another.
+         * Compares this {@code Provides} to another.
          *
          * <p> Two {@code Provides} objects are compared by comparing the fully
          * qualified class name of the service type lexicographically. Where the
@@ -824,8 +824,9 @@ public class ModuleDescriptor
          * @param  that
          *         The {@code Provides} to compare
          *
-         * @return A negative integer, zero, or a positive integer if this provides
-         *         is less than, equal to, or greater than the given provides
+         * @return A negative integer, zero, or a positive integer if this
+         *         {@code Provides} is less than, equal to, or greater than
+         *         the given {@code Provides}
          */
         public int compareTo(Provides that) {
             if (this == that) return 0;
@@ -850,7 +851,7 @@ public class ModuleDescriptor
         }
 
         /**
-         * Computes a hash code for this provides.
+         * Computes a hash code for this {@code Provides}.
          *
          * <p> The hash code is based upon the service type and the set of
          * providers. It satisfies the general contract of the {@link
@@ -864,7 +865,7 @@ public class ModuleDescriptor
         }
 
         /**
-         * Tests this provides for equality with the given object.
+         * Tests this {@code Provides} for equality with the given object.
          *
          * <p> If the given object is not a {@code Provides} then this method
          * returns {@code false}. Two {@code Provides} objects are equal if the
@@ -889,9 +890,9 @@ public class ModuleDescriptor
         }
 
         /**
-         * Returns a string describing this provides.
+         * Returns a string describing this {@code Provides}.
          *
-         * @return A string describing this provides
+         * @return A string describing this {@code Provides}
          */
         @Override
         public String toString() {
@@ -1416,7 +1417,7 @@ public class ModuleDescriptor
 
     /**
      * <p> Returns the string with the possibly-unparseable version of the
-     * module </p>
+     * module. </p>
      *
      * @return The string containing the version of the module or an empty
      *         {@code Optional} if the module does not have a version
