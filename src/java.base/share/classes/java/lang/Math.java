@@ -2659,7 +2659,7 @@ public final class Math {
          * round it away to zero.  This is done by first multiplying
          * by 2 ^ (scaleFactor % n) and then multiplying several
          * times by 2^n as needed where n is the exponent of number
-         * that is a covenient power of two.  In this way, at most one
+         * that is a convenient power of two.  In this way, at most one
          * real rounding error occurs.  If the double value set is
          * being used exclusively, the rounding will occur on a
          * multiply.  If the double-extended-exponent value set is

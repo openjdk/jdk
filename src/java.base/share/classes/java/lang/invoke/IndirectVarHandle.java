@@ -35,7 +35,7 @@ import java.util.function.BiFunction;
 /**
  * An indirect var handle can be thought of as an aggregate of the method handles implementing its supported access modes.
  * Its varform contains no method name table (given that some of the method handles composing a bound var handle might
- * not be direct). The set of method handles constituting an inditrect var handle are retrieved lazily, to minimize
+ * not be direct). The set of method handles constituting an indirect var handle are retrieved lazily, to minimize
  * code spinning (since not all the access modes will be used anyway).
  * Indirect var handles are useful when constructing var handle adapters - that is, an adapter var handle
  * can be constructed by extracting the method handles constituting the target var handle, adapting them
