@@ -2538,6 +2538,10 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   assert(is_aligned(class_space_rs.base(), class_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.size(), class_space_alignment), "Sanity");
 
+  // NMT: fix up the space tags
+  MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
+  MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
+
   return archive_space_rs.base();
 
 #else
