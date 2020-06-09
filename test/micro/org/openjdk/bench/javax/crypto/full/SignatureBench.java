@@ -121,7 +121,7 @@ public class SignatureBench extends CryptoBase {
         @Param({"SHA256withECDSA"})
         private String algorithm;
 
-        @Param({"160", "224", "256"})
+        @Param({"256"})
         private int keyLength;
 
     }
