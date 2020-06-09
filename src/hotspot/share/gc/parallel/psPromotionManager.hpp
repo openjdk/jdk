@@ -99,7 +99,6 @@ class PSPromotionManager {
   static MutableSpace* young_space() { return _young_space; }
 
   inline static PSPromotionManager* manager_array(uint index);
-  template <class T> inline void claim_or_forward_internal_depth(T* p);
 
   template <class T> void  process_array_chunk_work(oop obj,
                                                     int start, int end);

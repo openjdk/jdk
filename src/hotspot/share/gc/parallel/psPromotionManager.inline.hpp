@@ -36,6 +36,7 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
@@ -48,28 +49,12 @@ inline void PSPromotionManager::push_depth(ScannerTask task) {
 }
 
 template <class T>
-inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
-  if (p != NULL) { // XXX: error if p != NULL here
-    oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
-    if (o->is_forwarded()) {
-      o = o->forwardee();
-      // Card mark
-      if (PSScavenge::is_obj_in_young(o)) {
-        PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
-      }
-      RawAccess<IS_NOT_NULL>::oop_store(p, o);
-    } else {
-      push_depth(ScannerTask(p));
-    }
-  }
-}
-
-template <class T>
 inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
-
-  claim_or_forward_internal_depth(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+  Prefetch::write(obj->mark_addr_raw(), 0);
+  push_depth(ScannerTask(p));
 }
 
 inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
