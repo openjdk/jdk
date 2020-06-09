@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package gc;
 
 /**
  * @test TestObjectAlignment
- * @key gc
  * @bug 8021823
  * @summary G1: Concurrent marking crashes with -XX:ObjectAlignmentInBytes>=32 in 64bit VMs
  * @library /test/lib

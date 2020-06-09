@@ -25,7 +25,7 @@
 /*
  * @test TestStringDedupStress
  * @summary Test Shenandoah string deduplication implementation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc:open
@@ -46,7 +46,7 @@
 /*
  * @test TestStringDedupStress
  * @summary Test Shenandoah string deduplication implementation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc:open
@@ -77,7 +77,7 @@
  /*
  * @test TestStringDedupStress
  * @summary Test Shenandoah string deduplication implementation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc:open

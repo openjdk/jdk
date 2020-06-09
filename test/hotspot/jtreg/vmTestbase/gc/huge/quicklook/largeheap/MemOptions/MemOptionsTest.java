@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @key gc
  *
  * @summary converted from VM Testbase gc/huge/quicklook/largeheap/MemOptions.
  * @requires vm.bits == 64

@@ -28,7 +28,6 @@ package gc.g1;
  * @bug 8134857
  * @summary Regression test to ensure that G1 supports PLAB sizes of half a region size.
  * @requires vm.gc.G1
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

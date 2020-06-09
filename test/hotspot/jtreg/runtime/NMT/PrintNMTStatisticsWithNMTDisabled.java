@@ -23,7 +23,6 @@
 
  /*
  * @test
- * @key nmt
  * @summary Trying to enable PrintNMTStatistics should result in a warning
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

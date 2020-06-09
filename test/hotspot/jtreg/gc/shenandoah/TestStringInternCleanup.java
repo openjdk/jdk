@@ -25,7 +25,6 @@
 /*
  * @test TestStringInternCleanup
  * @summary Check that Shenandoah cleans up interned strings
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
@@ -52,7 +51,6 @@
 /*
  * @test TestStringInternCleanup
  * @summary Check that Shenandoah cleans up interned strings
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
@@ -80,7 +78,6 @@
 /*
  * @test TestStringInternCleanup
  * @summary Check that Shenandoah cleans up interned strings
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark

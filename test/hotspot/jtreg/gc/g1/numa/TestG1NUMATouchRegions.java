@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package gc.g1;
 /**
  * @test TestG1NUMATouchRegions
  * @summary Ensure the bottom of the given heap regions are properly touched with requested NUMA id.
- * @key gc
  * @requires vm.gc.G1
  * @requires os.family == "linux"
  * @library /test/lib

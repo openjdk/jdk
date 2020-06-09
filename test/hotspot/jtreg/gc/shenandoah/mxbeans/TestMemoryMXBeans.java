@@ -25,7 +25,6 @@
 /**
  * @test TestMemoryMXBeans
  * @summary Test JMX memory beans
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          java.management

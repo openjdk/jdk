@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 7162400
- * @key regression
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open

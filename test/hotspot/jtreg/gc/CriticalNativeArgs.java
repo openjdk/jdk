@@ -26,7 +26,6 @@ package gc;
 
 /*
  * @test CriticalNativeStressEpsilon
- * @key gc
  * @bug 8199868
  * @library /
  * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & vm.gc.Epsilon & !vm.graal.enabled
@@ -36,7 +35,6 @@ package gc;
 
 /*
  * @test CriticalNativeStressShenandoah
- * @key gc
  * @bug 8199868
  * @library /
  * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & vm.gc.Shenandoah & !vm.graal.enabled

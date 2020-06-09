@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/vector/FloatArrayHigh.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, monitoring]

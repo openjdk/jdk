@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ package gc.g1;
  * @summary Check that benign (0-sized) out of heap bounds card table invalidations do not assert.
  * @requires vm.gc.G1
  * @requires vm.debug
- * @key gc
  * @run main/othervm -XX:NewSize=1M -Xlog:gc -XX:MaxNewSize=1m -XX:-UseTLAB -XX:OldSize=63M -XX:MaxHeapSize=64M gc.g1.TestInvalidateArrayCopy
  */
 

@@ -28,7 +28,6 @@ package gc.g1;
  * @bug 8151920
  * @requires vm.gc.G1
  * @summary Make sure that G1 does not assert when printing region liveness data on a humongous continues region.
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox

@@ -25,7 +25,6 @@ package gc.g1;
 
 /**
  * @test TestPrintRegionRememberedSetInfo
- * @key gc
  * @bug 8014240
  * @summary Test output of G1PrintRegionRememberedSetInfo
  * @requires vm.gc.G1

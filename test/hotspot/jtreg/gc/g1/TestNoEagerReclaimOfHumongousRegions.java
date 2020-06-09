@@ -30,7 +30,6 @@ package gc.g1;
  *          8139424 and the test will crash if an eager reclaim occur. The test is not 100% deterministic and
  *          might pass even if there are problems in the code, but it will never crash unless there is a problem.
  * @requires vm.gc.G1
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox

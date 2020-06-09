@@ -25,7 +25,6 @@
 /*
  * @test MallocSiteTypeChange
  * @bug 8200109
- * @key nmt jcmd
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

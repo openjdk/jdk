@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress gc
+ * @key stress
  *
  * @summary converted from VM Testbase gc/huge/quicklook/largeheap/Access.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]

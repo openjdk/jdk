@@ -28,7 +28,6 @@ package gc.g1;
  * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630 8160055 8177059 8166191
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
- * @key gc
  * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

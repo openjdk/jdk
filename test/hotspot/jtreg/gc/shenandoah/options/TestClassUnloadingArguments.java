@@ -25,7 +25,6 @@
 /*
  * @test TestClassUnloadingArguments
  * @summary Test that loop mining arguments are sane
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @run driver TestClassUnloadingArguments

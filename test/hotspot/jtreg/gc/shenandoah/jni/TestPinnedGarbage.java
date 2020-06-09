@@ -24,7 +24,7 @@
 
 /* @test TestPinnedGarbage
  * @summary Test that garbage in the pinned region does not crash VM
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -41,7 +41,7 @@
 
 /* @test TestPinnedGarbage
  * @summary Test that garbage in the pinned region does not crash VM
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

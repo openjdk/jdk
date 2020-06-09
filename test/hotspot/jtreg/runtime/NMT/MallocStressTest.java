@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Stress test for malloc tracking
- * @key nmt jcmd stress randomness
+ * @key stress randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

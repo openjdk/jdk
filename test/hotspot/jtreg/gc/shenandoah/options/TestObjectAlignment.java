@@ -24,7 +24,6 @@
 
 /*
  * @test TestObjectAlignment
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC          TestObjectAlignment
@@ -39,7 +38,6 @@
 
 /*
  * @test TestObjectAlignment
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16          TestObjectAlignment

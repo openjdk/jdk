@@ -25,7 +25,6 @@ package gc.epsilon;
 
 /**
  * @test TestUpdateCountersSteps
- * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Test EpsilonUpdateCountersStep works
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonUpdateCountersStep=1    gc.epsilon.TestUpdateCountersSteps

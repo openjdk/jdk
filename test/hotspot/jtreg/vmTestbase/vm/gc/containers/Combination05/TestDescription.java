@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase vm/gc/containers/Combination05.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, quick, vm6, monitoring]

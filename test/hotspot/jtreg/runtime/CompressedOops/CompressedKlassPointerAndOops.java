@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8000968
- * @key regression
  * @summary NPG: UseCompressedClassPointers asserts with ObjectAlignmentInBytes=32
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

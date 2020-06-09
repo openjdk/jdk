@@ -25,7 +25,6 @@
 /**
  * @test TestMemoryPools
  * @summary Test JMX memory pools
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          java.management

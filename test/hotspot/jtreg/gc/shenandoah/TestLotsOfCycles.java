@@ -24,7 +24,6 @@
 
 /*
  * @test TestLotsOfCycles
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -42,7 +41,6 @@
 
 /*
  * @test TestLotsOfCycles
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -80,7 +78,6 @@
 
 /*
  * @test TestLotsOfCycles
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

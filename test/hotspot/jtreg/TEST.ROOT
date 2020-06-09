@@ -27,8 +27,11 @@
 # It also contains test-suite configuration information.
 
 # The list of keywords supported in this test suite
+# stress:               stress/slow test
+# headful:              test can be run only on headful host
+# intermittent:         flaky test, known to fail intermittently
 # randomness:           test uses randomness, test cases differ from run to run
-keys=cte_test jcmd nmt regression gc stress metaspace headful intermittent randomness
+keys=stress headful intermittent randomness
 
 groups=TEST.groups TEST.quick-groups
 

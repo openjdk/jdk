@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package gc.parallel;
  * @test TestPrintGCDetailsVerbose
  * @bug 8016740 8177963
  * @summary Tests that jvm with maximally verbose GC logging does not crash when ParOldGC has no memory
- * @key gc
  * @requires vm.gc.Parallel
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xmx50m -XX:+UseParallelGC -Xlog:gc*=trace gc.parallel.TestPrintGCDetailsVerbose

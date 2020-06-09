@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase vm/gc/concurrent/lp30yp0rp70mr30st0.
  * VM Testbase keywords: [gc, stress, stressopt, feature_g1, nonconcurrent, monitoring]

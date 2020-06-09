@@ -24,7 +24,6 @@
 
 /*
  * @test TestWrongArrayMember
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC                         TestWrongArrayMember

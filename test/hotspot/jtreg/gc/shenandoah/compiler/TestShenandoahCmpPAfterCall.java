@@ -25,7 +25,6 @@
  * @test
  * @bug 8244663
  * @summary Shenandoah: C2 assertion fails in Matcher::collect_null_checks
- * @key gc
  * @requires vm.flavor == "server"
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *

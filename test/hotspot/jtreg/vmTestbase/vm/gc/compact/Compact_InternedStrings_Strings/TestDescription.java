@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase vm/gc/compact/Compact_InternedStrings_Strings.
  * VM Testbase keywords: [gc, stress, stressopt, feature_perm_removal_jdk7, nonconcurrent, quick]

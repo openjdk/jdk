@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestParallelGCThreads
- * @key gc
  * @bug 8059527 8081382
  * @summary Tests argument processing for ParallelGCThreads
  * @library /test/lib

@@ -27,7 +27,6 @@ package gc.logging;
  * @test TestDeprecatedPrintFlags
  * @bug 8145180
  * @summary Verify PrintGC, PrintGCDetails and -Xloggc
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

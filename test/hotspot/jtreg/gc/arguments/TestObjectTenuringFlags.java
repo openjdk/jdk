@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestObjectTenuringFlags
- * @key gc
  * @bug 6521376
  * @requires vm.gc.Parallel
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,

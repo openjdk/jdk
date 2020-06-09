@@ -27,7 +27,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test TestArrayCopyStress
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

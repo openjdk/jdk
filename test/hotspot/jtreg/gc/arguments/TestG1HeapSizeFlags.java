@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestG1HeapSizeFlags
- * @key gc
  * @bug 8006088
  * @requires vm.gc.G1
  * @summary Tests argument processing for initial and maximum heap size for the G1 collector

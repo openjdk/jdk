@@ -26,7 +26,6 @@ package gc.stress.gclocker;
 
 /*
  * @test TestGCLockerWithShenandoah
- * @key gc
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress Shenandoah's JNI handling by calling GetPrimitiveArrayCritical while concurrently filling up old gen.

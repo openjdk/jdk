@@ -23,7 +23,6 @@
 
  /*
  * @test
- * @key nmt
  * @summary Turning off NMT should not result in an error
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

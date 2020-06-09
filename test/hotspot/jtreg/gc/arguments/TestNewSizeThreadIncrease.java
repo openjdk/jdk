@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestNewSizeThreadIncrease
- * @key gc
  * @bug 8144527
  * @summary Tests argument processing for NewSizeThreadIncrease
  * @library /test/lib

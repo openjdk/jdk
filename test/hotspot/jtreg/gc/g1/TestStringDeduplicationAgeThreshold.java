@@ -27,7 +27,6 @@ package gc.g1;
  * @test TestStringDeduplicationAgeThreshold
  * @summary Test string deduplication age threshold
  * @bug 8029075
- * @key gc
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /

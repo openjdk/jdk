@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package gc.stress.gclocker;
 
 /*
  * @test TestGCLockerWithG1
- * @key gc
  * @library /
  * @requires vm.gc.G1
  * @summary Stress G1's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.

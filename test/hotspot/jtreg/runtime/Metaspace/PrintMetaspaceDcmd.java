@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,6 @@ import jdk.test.lib.JDKToolFinder;
 
 /*
  * @test
- * @key metaspace jcmd
  * @summary Test the VM.metaspace command
  * @requires vm.gc != "Z" & vm.bits != "32"
  * @library /test/lib
@@ -39,7 +38,6 @@ import jdk.test.lib.JDKToolFinder;
  */
 /*
  * @test
- * @key metaspace jcmd
  * @summary Test the VM.metaspace command
  * @requires vm.gc != "Z" & vm.bits == "32"
  * @library /test/lib

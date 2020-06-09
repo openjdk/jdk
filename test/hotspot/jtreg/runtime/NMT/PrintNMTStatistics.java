@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @key nmt regression
  * @bug 8005936 8058606
  * @summary Verify PrintNMTStatistics on normal JVM exit for detail and summary tracking level
  * @modules java.base/jdk.internal.misc

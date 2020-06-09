@@ -24,7 +24,6 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -51,7 +50,6 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -83,7 +81,6 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -110,7 +107,6 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -142,7 +138,6 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -179,7 +174,6 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g

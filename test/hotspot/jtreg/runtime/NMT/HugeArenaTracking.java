@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key nmt jcmd randomness
+ * @key randomness
  * @library /test/lib
  * @requires vm.bits == 64
  * @modules java.base/jdk.internal.misc

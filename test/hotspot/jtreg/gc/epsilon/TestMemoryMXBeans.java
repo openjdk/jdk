@@ -26,7 +26,6 @@ package gc.epsilon;
 
 /**
  * @test TestMemoryMXBeans
- * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Test JMX memory beans
  * @modules java.base/jdk.internal.misc

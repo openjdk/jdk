@@ -25,7 +25,7 @@
 /*
  * @test TestSieveObjects
  * @summary Acceptance tests: collector can deal with retained objects
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -53,7 +53,7 @@
 /*
  * @test TestSieveObjects
  * @summary Acceptance tests: collector can deal with retained objects
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -97,7 +97,7 @@
 /*
  * @test TestSieveObjects
  * @summary Acceptance tests: collector can deal with retained objects
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

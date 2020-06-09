@@ -24,7 +24,6 @@
 
 /* @test TestJNIGlobalRefs
  * @summary Test JNI Global Refs with Shenandoah
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -35,7 +34,6 @@
 
 /* @test TestJNIGlobalRefs
  * @summary Test JNI Global Refs with Shenandoah
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

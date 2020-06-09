@@ -26,7 +26,7 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithZ
- * @key gc randomness
+ * @key randomness
  * @library / /test/lib
  * @requires vm.gc.Z & !vm.graal.enabled
  * @summary Stress the Z

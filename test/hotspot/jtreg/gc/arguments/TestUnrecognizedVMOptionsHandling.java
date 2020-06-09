@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestUnrecognizedVMOptionsHandling
- * @key gc
  * @bug 8017611
  * @summary Tests handling unrecognized VM options
  * @library /test/lib
