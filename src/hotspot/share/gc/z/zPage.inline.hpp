@@ -126,12 +126,16 @@ inline size_t ZPage::remaining() const {
   return end() - top();
 }
 
+inline const ZVirtualMemory& ZPage::virtual_memory() const {
+  return _virtual;
+}
+
 inline const ZPhysicalMemory& ZPage::physical_memory() const {
   return _physical;
 }
 
-inline const ZVirtualMemory& ZPage::virtual_memory() const {
-  return _virtual;
+inline ZPhysicalMemory& ZPage::physical_memory() {
+  return _physical;
 }
 
 inline uint8_t ZPage::numa_id() {
@@ -148,17 +152,6 @@ inline bool ZPage::is_allocating() const {
 
 inline bool ZPage::is_relocatable() const {
   return _seqnum < ZGlobalSeqNum;
-}
-
-inline bool ZPage::is_mapped() const {
-  return _seqnum > 0;
-}
-
-inline void ZPage::set_pre_mapped() {
-  // The _seqnum variable is also used to signal that the virtual and physical
-  // memory has been mapped. So, we need to set it to non-zero when the memory
-  // has been pre-mapped.
-  _seqnum = 1;
 }
 
 inline uint64_t ZPage::last_used() const {

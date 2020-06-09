@@ -93,11 +93,11 @@ bool ZPhysicalMemoryBacking::is_initialized() const {
   return _initialized;
 }
 
-void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
 }
 
-bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
+bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) const {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
@@ -116,7 +116,7 @@ bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
   return true;
 }
 
-size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) const {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -144,7 +144,7 @@ size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
   }
 }
 
-size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) const {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 

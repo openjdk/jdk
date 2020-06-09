@@ -42,7 +42,7 @@ bool ZPhysicalMemoryBacking::is_initialized() const {
   return true;
 }
 
-void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
 }
 

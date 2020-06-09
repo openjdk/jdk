@@ -32,20 +32,29 @@ class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:
   uintptr_t _start;
   uintptr_t _end;
+  bool      _committed;
 
 public:
   ZPhysicalMemorySegment();
-  ZPhysicalMemorySegment(uintptr_t start, size_t size);
+  ZPhysicalMemorySegment(uintptr_t start, size_t size, bool committed);
 
   uintptr_t start() const;
   uintptr_t end() const;
   size_t size() const;
+
+  bool is_committed() const;
+  void set_committed(bool committed);
 };
 
 class ZPhysicalMemory {
 private:
-  size_t                  _nsegments;
+  uint32_t                _nsegments_max;
+  uint32_t                _nsegments;
   ZPhysicalMemorySegment* _segments;
+
+  void insert_segment(uint32_t index, uintptr_t start, size_t size, bool committed);
+  void replace_segment(uint32_t index, uintptr_t start, size_t size, bool committed);
+  void remove_segment(uint32_t index);
 
 public:
   ZPhysicalMemory();
@@ -57,18 +66,24 @@ public:
   bool is_null() const;
   size_t size() const;
 
-  size_t nsegments() const;
-  const ZPhysicalMemorySegment& segment(size_t index) const;
+  uint32_t nsegments() const;
+  const ZPhysicalMemorySegment& segment(uint32_t index) const;
+
+  void add_segments(const ZPhysicalMemory& pmem);
+  void remove_segments();
+
   void add_segment(const ZPhysicalMemorySegment& segment);
+  bool commit_segment(uint32_t index, size_t size);
+  bool uncommit_segment(uint32_t index, size_t size);
 
   ZPhysicalMemory split(size_t size);
+  ZPhysicalMemory split_committed();
 };
 
 class ZPhysicalMemoryManager {
 private:
   ZPhysicalMemoryBacking _backing;
-  ZMemoryManager         _committed;
-  ZMemoryManager         _uncommitted;
+  ZMemoryManager         _manager;
 
   void nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
   void nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
@@ -82,14 +97,14 @@ public:
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max) const;
-  bool supports_uncommit();
+  void warn_commit_limits(size_t max_capacity) const;
+  void try_enable_uncommit(size_t min_capacity, size_t max_capacity);
 
-  size_t commit(size_t size);
-  size_t uncommit(size_t size);
-
-  ZPhysicalMemory alloc(size_t size);
+  void alloc(ZPhysicalMemory& pmem, size_t size);
   void free(const ZPhysicalMemory& pmem);
+
+  bool commit(ZPhysicalMemory& pmem);
+  bool uncommit(ZPhysicalMemory& pmem);
 
   void pretouch(uintptr_t offset, size_t size) const;
 

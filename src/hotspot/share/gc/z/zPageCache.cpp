@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zPage.inline.hpp"
@@ -29,25 +30,36 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 
 static const ZStatCounter ZCounterPageCacheHitL1("Memory", "Page Cache Hit L1", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheHitL2("Memory", "Page Cache Hit L2", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheHitL3("Memory", "Page Cache Hit L3", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheMiss("Memory", "Page Cache Miss", ZStatUnitOpsPerSecond);
 
+class ZPageCacheFlushClosure : public StackObj {
+  friend class ZPageCache;
+
+protected:
+  const size_t _requested;
+  size_t       _flushed;
+
+public:
+  ZPageCacheFlushClosure(size_t requested);
+  virtual bool do_page(const ZPage* page) = 0;
+};
+
 ZPageCacheFlushClosure::ZPageCacheFlushClosure(size_t requested) :
     _requested(requested),
     _flushed(0) {}
 
-size_t ZPageCacheFlushClosure::overflushed() const {
-  return _flushed > _requested ? _flushed - _requested : 0;
-}
-
 ZPageCache::ZPageCache() :
-    _available(0),
     _small(),
     _medium(),
-    _large() {}
+    _large(),
+    _last_commit(0) {}
 
 ZPage* ZPageCache::alloc_small_page() {
   const uint32_t numa_id = ZNUMA::id();
@@ -161,7 +173,7 @@ ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
         page = oversized->split(type, size);
 
         // Cache remainder
-        free_page_inner(oversized);
+        free_page(oversized);
       } else {
         // Re-type correctly sized page
         page = oversized->retype(type);
@@ -169,16 +181,14 @@ ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
     }
   }
 
-  if (page != NULL) {
-    _available -= page->size();
-  } else {
+  if (page == NULL) {
     ZStatInc(ZCounterPageCacheMiss);
   }
 
   return page;
 }
 
-void ZPageCache::free_page_inner(ZPage* page) {
+void ZPageCache::free_page(ZPage* page) {
   const uint8_t type = page->type();
   if (type == ZPageTypeSmall) {
     _small.get(page->numa_id()).insert_first(page);
@@ -189,11 +199,6 @@ void ZPageCache::free_page_inner(ZPage* page) {
   }
 }
 
-void ZPageCache::free_page(ZPage* page) {
-  free_page_inner(page);
-  _available += page->size();
-}
-
 bool ZPageCache::flush_list_inner(ZPageCacheFlushClosure* cl, ZList<ZPage>* from, ZList<ZPage>* to) {
   ZPage* const page = from->last();
   if (page == NULL || !cl->do_page(page)) {
@@ -202,7 +207,6 @@ bool ZPageCache::flush_list_inner(ZPageCacheFlushClosure* cl, ZList<ZPage>* from
   }
 
   // Flush page
-  _available -= page->size();
   from->remove(page);
   to->insert_last(page);
   return true;
@@ -239,6 +243,94 @@ void ZPageCache::flush(ZPageCacheFlushClosure* cl, ZList<ZPage>* to) {
   flush_list(cl, &_large, to);
   flush_list(cl, &_medium, to);
   flush_per_numa_lists(cl, &_small, to);
+
+  if (cl->_flushed > cl->_requested) {
+    // Overflushed, re-insert part of last page into the cache
+    const size_t overflushed = cl->_flushed - cl->_requested;
+    ZPage* const reinsert = to->last()->split(overflushed);
+    free_page(reinsert);
+    cl->_flushed -= overflushed;
+  }
+}
+
+class ZPageCacheFlushForAllocationClosure : public ZPageCacheFlushClosure {
+public:
+  ZPageCacheFlushForAllocationClosure(size_t requested) :
+      ZPageCacheFlushClosure(requested) {}
+
+  virtual bool do_page(const ZPage* page) {
+    if (_flushed < _requested) {
+      // Flush page
+      _flushed += page->size();
+      return true;
+    }
+
+    // Don't flush page
+    return false;
+  }
+};
+
+void ZPageCache::flush_for_allocation(size_t requested, ZList<ZPage>* to) {
+  ZPageCacheFlushForAllocationClosure cl(requested);
+  flush(&cl, to);
+}
+
+class ZPageCacheFlushForUncommitClosure : public ZPageCacheFlushClosure {
+private:
+  const uint64_t _now;
+  uint64_t*      _timeout;
+
+public:
+  ZPageCacheFlushForUncommitClosure(size_t requested, uint64_t now, uint64_t* timeout) :
+      ZPageCacheFlushClosure(requested),
+      _now(now),
+      _timeout(timeout) {
+    // Set initial timeout
+    *_timeout = ZUncommitDelay;
+  }
+
+  virtual bool do_page(const ZPage* page) {
+    const uint64_t expires = page->last_used() + ZUncommitDelay;
+    if (expires > _now) {
+      // Don't flush page, record shortest non-expired timeout
+      *_timeout = MIN2(*_timeout, expires - _now);
+      return false;
+    }
+
+    if (_flushed >= _requested) {
+      // Don't flush page, requested amount flushed
+      return false;
+    }
+
+    // Flush page
+    _flushed += page->size();
+    return true;
+  }
+};
+
+size_t ZPageCache::flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64_t* timeout) {
+  const uint64_t now = os::elapsedTime();
+  const uint64_t expires = _last_commit + ZUncommitDelay;
+  if (expires > now) {
+    // Delay uncommit, set next timeout
+    *timeout = expires - now;
+    return 0;
+  }
+
+  if (requested == 0) {
+    // Nothing to flush, set next timeout
+    *timeout = ZUncommitDelay;
+    return 0;
+  }
+
+  ZPageCacheFlushForUncommitClosure cl(requested, now, timeout);
+  flush(&cl, to);
+
+  return cl._flushed;
+}
+
+void ZPageCache::set_last_commit() {
+  _last_commit = os::elapsedTime();
 }
 
 void ZPageCache::pages_do(ZPageClosure* cl) const {

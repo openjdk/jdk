@@ -144,7 +144,6 @@ public class EventNames {
     public final static String GCPhaseConcurrentLevel1 = PREFIX + "GCPhaseConcurrentLevel1";
     public final static String ZAllocationStall = PREFIX + "ZAllocationStall";
     public final static String ZPageAllocation = PREFIX + "ZPageAllocation";
-    public final static String ZPageCacheFlush = PREFIX + "ZPageCacheFlush";
     public final static String ZRelocationSet = PREFIX + "ZRelocationSet";
     public final static String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public final static String ZUncommit = PREFIX + "ZUncommit";

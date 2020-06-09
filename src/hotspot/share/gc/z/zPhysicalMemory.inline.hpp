@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
 
 inline ZPhysicalMemorySegment::ZPhysicalMemorySegment() :
     _start(UINTPTR_MAX),
-    _end(UINTPTR_MAX) {}
+    _end(UINTPTR_MAX),
+    _committed(false) {}
 
-inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(uintptr_t start, size_t size) :
+inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(uintptr_t start, size_t size, bool committed) :
     _start(start),
-    _end(start + size) {}
+    _end(start + size),
+    _committed(committed) {}
 
 inline uintptr_t ZPhysicalMemorySegment::start() const {
   return _start;
@@ -47,15 +49,23 @@ inline size_t ZPhysicalMemorySegment::size() const {
   return _end - _start;
 }
 
+inline bool ZPhysicalMemorySegment::is_committed() const {
+  return _committed;
+}
+
+inline void ZPhysicalMemorySegment::set_committed(bool committed) {
+  _committed = committed;
+}
+
 inline bool ZPhysicalMemory::is_null() const {
   return _nsegments == 0;
 }
 
-inline size_t ZPhysicalMemory::nsegments() const {
+inline uint32_t ZPhysicalMemory::nsegments() const {
   return _nsegments;
 }
 
-inline const ZPhysicalMemorySegment& ZPhysicalMemory::segment(size_t index) const {
+inline const ZPhysicalMemorySegment& ZPhysicalMemory::segment(uint32_t index) const {
   assert(index < _nsegments, "Invalid segment index");
   return _segments[index];
 }

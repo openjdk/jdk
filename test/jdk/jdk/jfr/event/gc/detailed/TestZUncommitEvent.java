@@ -63,12 +63,6 @@ public class TestZUncommitEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             System.out.println("Events: " + events.size());
             Events.hasEvents(events);
-            for (RecordedEvent event : Events.fromRecording(recording)) {
-                System.out.println("Event:" + event);
-                final long capacityBefore = Events.assertField(event, "capacityBefore").getValue();
-                final long capacityAfter = Events.assertField(event, "capacityAfter").below(capacityBefore).getValue();
-                Events.assertField(event, "uncommitted").equal(capacityBefore - capacityAfter);
-            }
         }
     }
 }

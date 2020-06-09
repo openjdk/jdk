@@ -44,7 +44,7 @@ public:
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max) const;
+  void warn_commit_limits(size_t max_capacity) const;
 
   size_t commit(size_t offset, size_t length);
   size_t uncommit(size_t offset, size_t length);

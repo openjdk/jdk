@@ -25,6 +25,8 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDirector.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
@@ -52,7 +54,6 @@ ZCollectedHeap::ZCollectedHeap() :
     _heap(),
     _director(new ZDirector()),
     _driver(new ZDriver()),
-    _uncommitter(new ZUncommitter()),
     _stat(new ZStat()),
     _runtime_workers() {}
 
@@ -78,11 +79,19 @@ void ZCollectedHeap::initialize_serviceability() {
   _heap.serviceability_initialize();
 }
 
+class ZStopConcurrentGCThreadClosure : public ThreadClosure {
+public:
+  virtual void do_thread(Thread* thread) {
+    if (thread->is_ConcurrentGC_thread() &&
+        !thread->is_GC_task_thread()) {
+      static_cast<ConcurrentGCThread*>(thread)->stop();
+    }
+  }
+};
+
 void ZCollectedHeap::stop() {
-  _director->stop();
-  _driver->stop();
-  _uncommitter->stop();
-  _stat->stop();
+  ZStopConcurrentGCThreadClosure cl;
+  gc_threads_do(&cl);
 }
 
 SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {
@@ -278,9 +287,8 @@ jlong ZCollectedHeap::millis_since_last_gc() {
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_director);
   tc->do_thread(_driver);
-  tc->do_thread(_uncommitter);
   tc->do_thread(_stat);
-  _heap.worker_threads_do(tc);
+  _heap.threads_do(tc);
   _runtime_workers.threads_do(tc);
 }
 

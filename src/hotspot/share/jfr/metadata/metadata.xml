@@ -1002,16 +1002,11 @@
   <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
      <Field type="ZPageTypeType" name="type" label="Type" />
      <Field type="ulong" contentType="bytes" name="size" label="Size" />
-     <Field type="ulong" contentType="bytes" name="usedAfter" label="Used After" />
-     <Field type="ulong" contentType="bytes" name="freeAfter" label="Free After" />
-     <Field type="ulong" contentType="bytes" name="inCacheAfter" label="In Cache After" />
+     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
+     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
+     <Field type="uint" name="segments" label="Segments" />
      <Field type="boolean" name="nonBlocking" label="Non-blocking" />
      <Field type="boolean" name="noReserve" label="No Reserve" />
-  </Event>
-
-  <Event name="ZPageCacheFlush" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Cache Flush" description="Flushing of ZPages" thread="true" stackTrace="true">
-     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed Size" />
-     <Field type="boolean" name="forAllocation" label="For Allocation" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
@@ -1047,8 +1042,6 @@
   </Event>
 
   <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true">
-    <Field type="ulong" contentType="bytes" name="capacityBefore" label="Capacity Before" />
-    <Field type="ulong" contentType="bytes" name="capacityAfter" label="Capacity After" />
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
   </Event>
 

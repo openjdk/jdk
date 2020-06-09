@@ -35,8 +35,8 @@ private:
   size_t   _available;
   bool     _initialized;
 
-  void warn_available_space(size_t max) const;
-  void warn_max_map_count(size_t max) const;
+  void warn_available_space(size_t max_capacity) const;
+  void warn_max_map_count(size_t max_capacity) const;
 
   int create_mem_fd(const char* name) const;
   int create_file_fd(const char* name) const;
@@ -49,26 +49,26 @@ private:
   ZErrno fallocate_compat_mmap_hugetlbfs(size_t offset, size_t length, bool touch) const;
   ZErrno fallocate_compat_mmap_tmpfs(size_t offset, size_t length) const;
   ZErrno fallocate_compat_pwrite(size_t offset, size_t length) const;
-  ZErrno fallocate_fill_hole_compat(size_t offset, size_t length);
-  ZErrno fallocate_fill_hole_syscall(size_t offset, size_t length);
-  ZErrno fallocate_fill_hole(size_t offset, size_t length);
-  ZErrno fallocate_punch_hole(size_t offset, size_t length);
-  ZErrno split_and_fallocate(bool punch_hole, size_t offset, size_t length);
-  ZErrno fallocate(bool punch_hole, size_t offset, size_t length);
+  ZErrno fallocate_fill_hole_compat(size_t offset, size_t length) const;
+  ZErrno fallocate_fill_hole_syscall(size_t offset, size_t length) const;
+  ZErrno fallocate_fill_hole(size_t offset, size_t length) const;
+  ZErrno fallocate_punch_hole(size_t offset, size_t length) const;
+  ZErrno split_and_fallocate(bool punch_hole, size_t offset, size_t length) const;
+  ZErrno fallocate(bool punch_hole, size_t offset, size_t length) const;
 
-  bool commit_inner(size_t offset, size_t length);
-  size_t commit_numa_interleaved(size_t offset, size_t length);
-  size_t commit_default(size_t offset, size_t length);
+  bool commit_inner(size_t offset, size_t length) const;
+  size_t commit_numa_interleaved(size_t offset, size_t length) const;
+  size_t commit_default(size_t offset, size_t length) const;
 
 public:
   ZPhysicalMemoryBacking(size_t max_capacity);
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max) const;
+  void warn_commit_limits(size_t max_capacity) const;
 
-  size_t commit(size_t offset, size_t length);
-  size_t uncommit(size_t offset, size_t length);
+  size_t commit(size_t offset, size_t length) const;
+  size_t uncommit(size_t offset, size_t length) const;
 
   void map(uintptr_t addr, size_t size, uintptr_t offset) const;
   void unmap(uintptr_t addr, size_t size) const;

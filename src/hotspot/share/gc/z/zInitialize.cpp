@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZThreadLocalAllocBuffer::initialize();
   ZTracer::initialize();
   ZLargePages::initialize();
-  ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
 
   initialize_os();
