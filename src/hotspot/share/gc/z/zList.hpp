@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public:
   void transfer(ZList<T>* list);
 };
 
-template <typename T, bool forward>
+template <typename T, bool Forward>
 class ZListIteratorImpl : public StackObj {
 private:
   const ZList<T>* const _list;
@@ -96,6 +96,17 @@ private:
 
 public:
   ZListIteratorImpl(const ZList<T>* list);
+
+  bool next(T** elem);
+};
+
+template <typename T, bool Forward>
+class ZListRemoveIteratorImpl : public StackObj {
+private:
+  ZList<T>* const _list;
+
+public:
+  ZListRemoveIteratorImpl(ZList<T>* list);
 
   bool next(T** elem);
 };
@@ -114,6 +125,12 @@ template <typename T>
 class ZListReverseIterator : public ZListIteratorImpl<T, ZLIST_REVERSE> {
 public:
   ZListReverseIterator(const ZList<T>* list);
+};
+
+template <typename T>
+class ZListRemoveIterator : public ZListRemoveIteratorImpl<T, ZLIST_FORWARD> {
+public:
+  ZListRemoveIterator(ZList<T>* list);
 };
 
 #endif // SHARE_GC_Z_ZLIST_HPP
