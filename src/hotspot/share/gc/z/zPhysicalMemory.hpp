@@ -78,6 +78,8 @@ private:
   void unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
 
 public:
+  ZPhysicalMemoryManager(size_t max_capacity);
+
   bool is_initialized() const;
 
   void warn_commit_limits(size_t max) const;

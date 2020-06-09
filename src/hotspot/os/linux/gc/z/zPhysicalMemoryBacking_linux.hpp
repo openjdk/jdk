@@ -46,7 +46,6 @@ private:
   bool is_hugetlbfs() const;
   bool tmpfs_supports_transparent_huge_pages() const;
 
-  ZErrno fallocate_compat_ftruncate(size_t size) const;
   ZErrno fallocate_compat_mmap_hugetlbfs(size_t offset, size_t length, bool touch) const;
   ZErrno fallocate_compat_mmap_tmpfs(size_t offset, size_t length) const;
   ZErrno fallocate_compat_pwrite(size_t offset, size_t length) const;
@@ -62,13 +61,11 @@ private:
   size_t commit_default(size_t offset, size_t length);
 
 public:
-  ZPhysicalMemoryBacking();
+  ZPhysicalMemoryBacking(size_t max_capacity);
 
   bool is_initialized() const;
 
   void warn_commit_limits(size_t max) const;
-
-  size_t size() const;
 
   size_t commit(size_t offset, size_t length);
   size_t uncommit(size_t offset, size_t length);

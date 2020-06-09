@@ -135,6 +135,12 @@ ZPhysicalMemory ZPhysicalMemory::split(size_t size) {
   return pmem;
 }
 
+ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity) :
+    _backing(max_capacity) {
+  // Register everything as uncommitted
+  _uncommitted.free(0, max_capacity);
+}
+
 bool ZPhysicalMemoryManager::is_initialized() const {
   return _backing.is_initialized();
 }
@@ -145,7 +151,6 @@ void ZPhysicalMemoryManager::warn_commit_limits(size_t max) const {
 
 bool ZPhysicalMemoryManager::supports_uncommit() {
   assert(!is_init_completed(), "Invalid state");
-  assert(_backing.size() >= ZGranuleSize, "Invalid size");
 
   // Test if uncommit is supported by uncommitting and then re-committing a granule
   return commit(uncommit(ZGranuleSize)) == ZGranuleSize;
@@ -191,18 +196,6 @@ size_t ZPhysicalMemoryManager::commit(size_t size) {
       // Failed or partialy failed
       _uncommitted.free(start + filled, allocated - filled);
       return committed;
-    }
-  }
-
-  // Expand backing memory
-  if (committed < size) {
-    const size_t remaining = size - committed;
-    const uintptr_t start = _backing.size();
-    const size_t expanded = _backing.commit(start, remaining);
-    if (expanded > 0) {
-      // Successful or partialy successful
-      _committed.free(start, expanded);
-      committed += expanded;
     }
   }
 

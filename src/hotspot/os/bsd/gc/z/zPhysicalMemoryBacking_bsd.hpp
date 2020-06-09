@@ -27,19 +27,16 @@
 class ZPhysicalMemoryBacking {
 private:
   uintptr_t _base;
-  size_t    _size;
   bool      _initialized;
 
   bool commit_inner(size_t offset, size_t length);
 
 public:
-  ZPhysicalMemoryBacking();
+  ZPhysicalMemoryBacking(size_t max_capacity);
 
   bool is_initialized() const;
 
   void warn_commit_limits(size_t max) const;
-
-  size_t size() const;
 
   size_t commit(size_t offset, size_t length);
   size_t uncommit(size_t offset, size_t length);
