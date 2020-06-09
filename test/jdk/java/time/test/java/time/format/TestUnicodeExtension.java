@@ -47,6 +47,7 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -825,15 +826,26 @@ public class TestUnicodeExtension {
     public void test_localizedBy(Locale locale, Chronology chrono, ZoneId zone,
                                 Chronology chronoExpected, ZoneId zoneExpected,
                                 String formatExpected) {
-        DateTimeFormatter dtf =
-            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.FULL)
-                .withChronology(chrono).withZone(zone).localizedBy(locale);
-        assertEquals(dtf.getChronology(), chronoExpected);
-        assertEquals(dtf.getZone(), zoneExpected);
-        String formatted = dtf.format(ZDT);
-        assertEquals(formatted, formatExpected);
-        assertEquals(dtf.parse(formatted, ZonedDateTime::from),
-            zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT);
+        // try this test both with the implicit default locale, and explicit default locale ja-JP
+        Locale def = Locale.getDefault();
+        try {
+            Stream.of(def, Locale.JAPAN).forEach(l -> {
+                System.out.println("    Testing with the default locale: " + l);
+                Locale.setDefault(l);
+
+                DateTimeFormatter dtf =
+                        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.FULL)
+                                .withChronology(chrono).withZone(zone).localizedBy(locale);
+                assertEquals(dtf.getChronology(), chronoExpected);
+                assertEquals(dtf.getZone(), zoneExpected);
+                String formatted = dtf.format(ZDT);
+                assertEquals(formatted, formatExpected);
+                assertEquals(dtf.parse(formatted, ZonedDateTime::from),
+                        zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT);
+            });
+        } finally {
+            Locale.setDefault(def);
+        }
     }
 
     @Test(dataProvider="withLocale")
