@@ -28,7 +28,6 @@ package gc.g1;
  * @bug 8058801 8048179
  * @summary Ensure that the output for a G1TraceEagerReclaimHumongousObjects
  * includes the expected necessary messages.
- * @key gc
  * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

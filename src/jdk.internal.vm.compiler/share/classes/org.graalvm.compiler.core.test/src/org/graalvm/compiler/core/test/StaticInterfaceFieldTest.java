@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.lang.reflect.Method;
 
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
@@ -93,7 +93,7 @@ public class StaticInterfaceFieldTest extends GraalTest {
         final Method m = getMethod(clazz, methodName);
         ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
         OptionValues options = getInitialOptions();
-        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).build();
         StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).build();
         try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("GraphBuilding", graph, method)) {
             graphBuilderSuite.apply(graph, context);

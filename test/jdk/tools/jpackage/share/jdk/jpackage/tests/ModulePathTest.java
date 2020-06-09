@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public final class ModulePathTest {
                 expectedErrorMessage = "Error: Missing argument: --runtime-image or --module-path";
             } else {
                 expectedErrorMessage = String.format(
-                        "Error: Module %s not found", appDesc.moduleName());
+                        "Failed to find %s module in module path", appDesc.moduleName());
             }
 
             List<String> output = cmd

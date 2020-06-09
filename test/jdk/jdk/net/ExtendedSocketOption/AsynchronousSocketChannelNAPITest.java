@@ -101,9 +101,9 @@ public class AsynchronousSocketChannelNAPITest {
             ss.bind(new InetSocketAddress(hostAddr, 0));
 
             try (var c = AsynchronousSocketChannel.open()) {
-                c.connect(ss.getLocalAddress());
+                c.connect(ss.getLocalAddress()).get();
 
-                    try(var s = ss.accept().get()) {
+                try (var s = ss.accept().get()) {
                     assertEquals((int) s.getOption(SO_INCOMING_NAPI_ID), 0);
 
                     for (int i = 0; i < 10; i++) {

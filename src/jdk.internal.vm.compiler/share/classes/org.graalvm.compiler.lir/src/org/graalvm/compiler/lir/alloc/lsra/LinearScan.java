@@ -211,6 +211,22 @@ public class LinearScan {
         this.detailedAsserts = Assertions.detailedAssertionsEnabled(ir.getOptions());
     }
 
+    /**
+     * Compute the variable number of the given operand.
+     *
+     * @param operand
+     * @return the variable number of the supplied operand or {@code -1} if the supplied operand
+     *         describes a register
+     */
+    public int getVariableNumber(int operand) {
+        // check if its a variable
+        if (operand >= firstVariableNumber) {
+            return operand - firstVariableNumber;
+        }
+        // register case
+        return -1;
+    }
+
     public LIRGenerationResult getLIRGenerationResult() {
         return res;
     }

@@ -66,11 +66,13 @@ class TreeDependencyScanner extends TreeScanner<Void, Set<String>> {
     // -- Differentiate declaration references from body references ---
 
     @Override
+    @SuppressWarnings("preview")
     public Void visitClass(ClassTree node, Set<String> p) {
         scan(node.getModifiers(), p);
         scan(node.getTypeParameters(), p);
         scan(node.getExtendsClause(), p);
         scan(node.getImplementsClause(), p);
+        scan(node.getPermitsClause(), p);
         scan(node.getMembers(), body);
         return null;
     }

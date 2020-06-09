@@ -24,7 +24,6 @@
 // Aix commits on touch, so this test won't work.
 /*
  * @test
- * @key regression
  * @bug 8012015
  * @requires !(os.family == "aix")
  * @summary Make sure reserved (but uncommitted) memory is not accessible

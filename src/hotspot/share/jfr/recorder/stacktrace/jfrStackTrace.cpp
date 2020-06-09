@@ -191,7 +191,7 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
       // none of it is safe
       return false;
     }
-    const traceid mid = JfrTraceId::use(method);
+    const traceid mid = JfrTraceId::load(method);
     int type = st.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
@@ -246,7 +246,7 @@ bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
       break;
     }
     const Method* method = vfs.method();
-    const traceid mid = JfrTraceId::use(method);
+    const traceid mid = JfrTraceId::load(method);
     int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {

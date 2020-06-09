@@ -29,7 +29,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test TestMetaspaceSizeFlags
- * @key gc
  * @bug 8024650
  * @summary Test that metaspace size flags can be set correctly
  * @library /test/lib

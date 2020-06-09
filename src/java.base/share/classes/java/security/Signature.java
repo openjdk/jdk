@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import jdk.internal.access.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.util.KnownOIDs;
 
 /**
  * The Signature class is used to provide applications the functionality
@@ -548,7 +549,7 @@ public abstract class Signature extends SignatureSpi {
             Set<String> critSet = c.getCriticalExtensionOIDs();
 
             if (critSet != null && !critSet.isEmpty()
-                && critSet.contains("2.5.29.15")) {
+                && critSet.contains(KnownOIDs.KeyUsage.value())) {
                 boolean[] keyUsageInfo = c.getKeyUsage();
                 // keyUsageInfo[0] is for digitalSignature.
                 if ((keyUsageInfo != null) && (keyUsageInfo[0] == false))
@@ -1011,13 +1012,15 @@ public abstract class Signature extends SignatureSpi {
     /**
      * Returns the parameters used with this signature object.
      *
-     * <p> If this signature has been previously initialized with parameters
-     * (by calling the {@code setParameter} method), this method returns
-     * the same parameters. If this signature has not been initialized with
-     * parameters, this method may return a combination of default and
-     * randomly generated parameter values if the underlying
-     * signature implementation supports it and can successfully generate
-     * them. Otherwise, {@code null} is returned.
+     * <p> If this signature has been initialized with parameters
+     * (by calling {@link #setParameter(AlgorithmParameterSpec)} or
+     * {@link #setParameter(String, Object)}) and the underlying signature
+     * implementation supports returning the parameters as
+     * {@code AlgorithmParameters}, this method returns the same parameters.
+     * If the parameters were not set, this method may return a combination
+     * of default and randomly generated parameter values if the
+     * underlying signature implementation supports it and can successfully
+     * generate them. Otherwise, {@code null} is returned.
      *
      * @return the parameters used with this signature, or {@code null}
      *

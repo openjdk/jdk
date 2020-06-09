@@ -60,7 +60,6 @@ import com.sun.jdi.request.EventRequestManager;
 /*
  * @test GetObjectLockCount.java
  * @bug 8036666
- * @key regression
  * @summary verify jvm returns correct lock recursion count
  * @run compile -g RecursiveObjectLock.java
  * @run main/othervm GetObjectLockCount

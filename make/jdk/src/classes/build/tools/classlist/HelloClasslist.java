@@ -74,31 +74,40 @@ public class HelloClasslist {
                 .forEach(System.out::println);
 
         // Common concatenation patterns
-        String SS     = String.valueOf(args.length) + String.valueOf(args.length);
-        String CS     = "string" + String.valueOf(args.length);
-        String SC     = String.valueOf(args.length) + "string";
-        String SCS    = String.valueOf(args.length) + "string" + String.valueOf(args.length);
-        String CSS    = "string" + String.valueOf(args.length) + String.valueOf(args.length);
-        String CSC    = "string" + String.valueOf(args.length) + "string";
-        String SSC    = String.valueOf(args.length) + String.valueOf(args.length) + "string";
-        String CSCS   = "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length);
-        String SCSC   = String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string";
-        String CSCSC  = "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string";
-        String SCSCS  = String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length);
-        String CI     = "string" + args.length;
-        String IC     = args.length + "string";
-        String SI     = String.valueOf(args.length) + args.length;
-        String IS     = args.length + String.valueOf(args.length);
-        String CIS    = "string" + args.length + String.valueOf(args.length);
-        String CSCI   = "string" + String.valueOf(args.length) + "string" + args.length;
-        String CIC    = "string" + args.length + "string";
-        String CICI   = "string" + args.length + "string" + args.length;
-        String CJ     = "string" + System.currentTimeMillis();
-        String JC     = System.currentTimeMillis() + "string";
-        String CD     = "string" + (args.length/2.0);
-        String CJC    = "string" + System.currentTimeMillis() + "string";
-        String CJCJ   = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis();
-        String CJCJC  = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis() + "string";
+        int i = args.length;
+        String s = String.valueOf(i);
+
+        String SS     = s + s;
+        String CS     = "string" + s;
+        String SC     = s + "string";
+        String SCS    = s + "string" + s;
+        String CSS    = "string" + s + s;
+        String CSC    = "string" + s + "string";
+        String SSC    = s + s + "string";
+        String CSCS   = "string" + s + "string" + s;
+        String SCSC   = s + "string" + s + "string";
+        String CSCSC  = "string" + s + "string" + s + "string";
+        String SCSCS  = s + "string" + s + "string" + s;
+        String SSCSS  = s + s + "string" + s + s;
+        String SSSSS  = s + s + s + s + s;
+
+        String CI     = "string" + i;
+        String IC     = i + "string";
+        String SI     = s + i;
+        String IS     = i + s;
+        String CIS    = "string" + i + s;
+        String CSCI   = "string" + s + "string" + i;
+        String CIC    = "string" + i + "string";
+        String CICI   = "string" + i + "string" + i;
+
+        long l = System.currentTimeMillis();
+        String CJ     = "string" + l;
+        String JC     = l + "string";
+        String CJC    = "string" + l + "string";
+        String CJCJ   = "string" + l + "string" + l;
+        String CJCJC  = "string" + l + "string" + l + "string";
+        double d = i / 2.0;
+        String CD     = "string" + d;
 
         String newDate = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
                 LocalDateTime.now(ZoneId.of("GMT")));

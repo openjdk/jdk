@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,28 +25,29 @@
 
 package org.graalvm.compiler.hotspot.aarch64;
 
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
-
-import jdk.vm.ci.aarch64.AArch64Kind;
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.meta.AllocatableValue;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.aarch64.AArch64LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+
+import jdk.vm.ci.aarch64.AArch64Kind;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.meta.AllocatableValue;
 
 public final class AArch64HotSpotLoadConfigValueOp extends AArch64LIRInstruction {
 
     public static final LIRInstructionClass<AArch64HotSpotLoadConfigValueOp> TYPE = LIRInstructionClass.create(AArch64HotSpotLoadConfigValueOp.class);
 
     @Def({OperandFlag.REG}) protected AllocatableValue result;
-    private final int markId;
+    private final HotSpotMarkId markId;
 
-    public AArch64HotSpotLoadConfigValueOp(int markId, AllocatableValue result) {
+    public AArch64HotSpotLoadConfigValueOp(HotSpotMarkId markId, AllocatableValue result) {
         super(TYPE);
         this.result = result;
         this.markId = markId;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,7 +730,7 @@ public class Types {
          */
         public FunctionDescriptor findDescriptorInternal(TypeSymbol origin,
                 CompoundScope membersCache) throws FunctionDescriptorLookupError {
-            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0) {
+            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0 || origin.isSealed()) {
                 //t must be an interface
                 throw failure("not.a.functional.intf", origin);
             }
@@ -2124,22 +2124,31 @@ public class Types {
                 if (t.tsym == sym)
                     return t;
 
-                Type st = supertype(t);
-                if (st.hasTag(CLASS) || st.hasTag(TYPEVAR)) {
-                    Type x = asSuper(st, sym);
-                    if (x != null)
-                        return x;
+                Symbol c = t.tsym;
+                if ((c.flags_field & LOCKED) != 0) {
+                    return null;
                 }
-                if ((sym.flags() & INTERFACE) != 0) {
-                    for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
-                        if (!l.head.hasTag(ERROR)) {
-                            Type x = asSuper(l.head, sym);
-                            if (x != null)
-                                return x;
+                try {
+                    c.flags_field |= LOCKED;
+                    Type st = supertype(t);
+                    if (st.hasTag(CLASS) || st.hasTag(TYPEVAR)) {
+                        Type x = asSuper(st, sym);
+                        if (x != null)
+                            return x;
+                    }
+                    if ((sym.flags() & INTERFACE) != 0) {
+                        for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
+                            if (!l.head.hasTag(ERROR)) {
+                                Type x = asSuper(l.head, sym);
+                                if (x != null)
+                                    return x;
+                            }
                         }
                     }
+                    return null;
+                } finally {
+                    c.flags_field &= ~LOCKED;
                 }
-                return null;
             }
 
             @Override

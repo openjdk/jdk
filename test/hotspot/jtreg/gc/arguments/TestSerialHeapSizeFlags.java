@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestSerialHeapSizeFlags
- * @key gc
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the Serial collector
  * @library /test/lib

@@ -28,6 +28,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -776,7 +777,8 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing register info")
 
      // decode register contents if possible
-     if (_verbose && _context && Universe::is_fully_initialized()) {
+     if (_verbose && _context && _thread && Universe::is_fully_initialized()) {
+       ResourceMark rm(_thread);
        os::print_register_info(st, _context);
        st->cr();
      }
@@ -792,7 +794,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("inspecting top of stack")
 
      // decode stack contents if possible
-     if (_verbose && _context && Universe::is_fully_initialized()) {
+     if (_verbose && _context && _thread && Universe::is_fully_initialized()) {
        frame fr = os::fetch_frame_from_context(_context);
        const int slots = 8;
        const intptr_t *start = fr.sp();
@@ -801,6 +803,7 @@ void VMError::report(outputStream* st, bool _verbose) {
          st->print_cr("Stack slot to memory mapping:");
          for (int i = 0; i < slots; ++i) {
            st->print("stack at sp + %d slots: ", i);
+           ResourceMark rm(_thread);
            os::print_location(st, *(start + i));
          }
        }
@@ -925,11 +928,18 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing heap information")
 
-     if (_verbose && Universe::is_fully_initialized()) {
-       Universe::heap()->print_on_error(st);
-       st->cr();
-       st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-       st->cr();
+     if (_verbose) {
+       GCLogPrecious::print_on_error(st);
+
+       if (Universe::heap() != NULL) {
+         Universe::heap()->print_on_error(st);
+         st->cr();
+       }
+
+       if (Universe::is_fully_initialized()) {
+         st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+         st->cr();
+       }
      }
 
   STEP("printing metaspace information")
@@ -1131,6 +1141,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   if (Universe::is_fully_initialized()) {
     MutexLocker hl(Heap_lock);
+    GCLogPrecious::print_on_error(st);
     Universe::heap()->print_on_error(st);
     st->cr();
     st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
@@ -1737,18 +1748,22 @@ bool VMError::check_timeout() {
 
 #ifndef PRODUCT
 typedef void (*voidfun_t)();
+
 // Crash with an authentic sigfpe
+volatile int sigfpe_int = 0;
 static void crash_with_sigfpe() {
+
   // generate a native synchronous SIGFPE where possible;
+  sigfpe_int = sigfpe_int/sigfpe_int;
+
   // if that did not cause a signal (e.g. on ppc), just
   // raise the signal.
-  volatile int x = 0;
-  volatile int y = 1/x;
 #ifndef _WIN32
   // OSX implements raise(sig) incorrectly so we need to
   // explicitly target the current thread
   pthread_kill(pthread_self(), SIGFPE);
 #endif
+
 } // end: crash_with_sigfpe
 
 // crash with sigsegv at non-null address.

@@ -326,7 +326,8 @@ class os: AllStatic {
   // Both base and split point must be aligned to allocation granularity; split point shall
   //  be >0 and <size.
   // Splitting guarantees that the resulting two memory regions can be released independently
-  //  from each other using os::release_memory().
+  //  from each other using os::release_memory(). It also means NMT will track these regions
+  //  individually, allowing different tags to be set.
   static void   split_reserved_memory(char *base, size_t size, size_t split);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
@@ -368,7 +369,7 @@ class os: AllStatic {
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false);
+                           bool allow_exec = false, MEMFLAGS flags = mtNone);
   static char*  remap_memory(int fd, const char* file_name, size_t file_offset,
                              char *addr, size_t bytes, bool read_only,
                              bool allow_exec);

@@ -199,9 +199,9 @@ ifeq ($(call isTargetOsType, unix), true)
       # PANDOC_TROFF_MANPAGE_FILTER, a wrapper around
       # PANDOC_TROFF_MANPAGE_FILTER_JAVASCRIPT. This is created by buildtools-jdk.
 
-      # We should also depend on the source javascript filter
-      PANDOC_TROFF_MANPAGE_FILTER_JAVASCRIPT := \
-          $(TOPDIR)/make/scripts/pandoc-troff-manpage-filter.js
+      # We should also depend on the source code for the filter
+      PANDOC_TROFF_MANPAGE_FILTER_SOURCE := $(call FindFiles, \
+          $(TOPDIR)/make/jdk/src/classes/build/tools/pandocfilter)
 
       # The norm in man pages is to display code literals as bold, but pandoc
       # "correctly" converts these constructs (encoded in markdown using `...`
@@ -231,7 +231,7 @@ ifeq ($(call isTargetOsType, unix), true)
 		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
 		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
           EXTRA_DEPS := $(PANDOC_TROFF_MANPAGE_FILTER) \
-              $(PANDOC_TROFF_MANPAGE_FILTER_JAVASCRIPT), \
+              $(PANDOC_TROFF_MANPAGE_FILTER_SOURCE), \
       ))
 
       TARGETS += $(BUILD_MAN_PAGES)

@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zSyscall_windows.hpp"
-#include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 
@@ -38,13 +38,13 @@ static void lookup_symbol(Fn*& fn, const char* library, const char* symbol) {
   char ebuf[1024];
   void* const handle = os::dll_load(library, ebuf, sizeof(ebuf));
   if (handle == NULL) {
-    log_error(gc)("Failed to load library: %s", library);
+    log_error_p(gc)("Failed to load library: %s", library);
     vm_exit_during_initialization("ZGC requires Windows version 1803 or later");
   }
 
   fn = reinterpret_cast<Fn*>(os::dll_lookup(handle, symbol));
   if (fn == NULL) {
-    log_error(gc)("Failed to lookup symbol: %s", symbol);
+    log_error_p(gc)("Failed to lookup symbol: %s", symbol);
     vm_exit_during_initialization("ZGC requires Windows version 1803 or later");
   }
 }

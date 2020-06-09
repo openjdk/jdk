@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,69 @@ public class ArrayCopyIntrinsificationTest extends GraalCompilerTest {
         return dst;
     }
 
+    public static Object genericArraycopyCatchNullException(Object src, int srcPos, Object dst, int dstPos, int length) {
+        boolean caught = false;
+        try {
+            System.arraycopy(src, srcPos, dst, dstPos, length);
+        } catch (NullPointerException e) {
+            caught = true;
+        }
+        return caught;
+    }
+
+    public static Object genericArraycopyCatchArrayStoreException(Object src, int srcPos, Object dst, int dstPos, int length) {
+        boolean caught = false;
+        try {
+            System.arraycopy(src, srcPos, dst, dstPos, length);
+        } catch (ArrayStoreException e) {
+            caught = true;
+        }
+        return caught;
+    }
+
+    public static Object genericArraycopyCatchArrayIndexException(Object src, int srcPos, Object dst, int dstPos, int length) {
+        boolean caught = false;
+        try {
+            System.arraycopy(src, srcPos, dst, dstPos, length);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            caught = true;
+        }
+        return caught;
+    }
+
     public static Object[] objectArraycopy(Object[] src, int srcPos, Object[] dst, int dstPos, int length) {
         System.arraycopy(src, srcPos, dst, dstPos, length);
         return dst;
+    }
+
+    public static Object objectArraycopyCatchNullException(Object[] src, int srcPos, Object[] dst, int dstPos, int length) {
+        boolean caught = false;
+        try {
+            System.arraycopy(src, srcPos, dst, dstPos, length);
+        } catch (NullPointerException e) {
+            caught = true;
+        }
+        return caught;
+    }
+
+    public static Object objectArraycopyCatchArrayStoreException(Object[] src, int srcPos, Object[] dst, int dstPos, int length) {
+        boolean caught = false;
+        try {
+            System.arraycopy(src, srcPos, dst, dstPos, length);
+        } catch (ArrayStoreException e) {
+            caught = true;
+        }
+        return caught;
+    }
+
+    public static Object objectArraycopyCatchArrayIndexException(Object[] src, int srcPos, Object[] dst, int dstPos, int length) {
+        boolean caught = false;
+        try {
+            System.arraycopy(src, srcPos, dst, dstPos, length);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            caught = true;
+        }
+        return caught;
     }
 
     public static Object[] objectArraycopyExact(Integer[] src, int srcPos, Integer[] dst, int dstPos, int length) {
@@ -283,5 +343,31 @@ public class ArrayCopyIntrinsificationTest extends GraalCompilerTest {
             System.arraycopy(rows[i], 0, copy[i], 0, rows[i].length);
         }
         return copy;
+    }
+
+    @Test
+    public void testGenericExceptions() {
+        test("genericArraycopyCatchNullException", null, 4, new byte[128], 2, 3);
+        test("genericArraycopyCatchNullException", new byte[128], 4, null, 2, 3);
+        Object[] integerDest = new Integer[128];
+        Object[] longSource = new Object[128];
+        for (int i = 0; i < longSource.length; i++) {
+            longSource[i] = Long.valueOf(i);
+        }
+        test("genericArraycopyCatchArrayStoreException", longSource, 4, integerDest, 2, 3);
+        test("genericArraycopyCatchArrayIndexException", new int[128], 0, new int[128], Integer.MAX_VALUE, 1);
+    }
+
+    @Test
+    public void testObjectArrayExceptions() {
+        test("objectArraycopyCatchNullException", null, 4, new Byte[128], 2, 3);
+        test("objectArraycopyCatchNullException", new Byte[128], 4, null, 2, 3);
+        Object[] integerDest = new Integer[128];
+        Object[] longSource = new Object[128];
+        for (int i = 0; i < longSource.length; i++) {
+            longSource[i] = Long.valueOf(i);
+        }
+        test("objectArraycopyCatchArrayStoreException", longSource, 4, integerDest, 2, 3);
+        test("objectArraycopyCatchArrayIndexException", new Integer[128], 0, new Integer[128], Integer.MAX_VALUE, 1);
     }
 }

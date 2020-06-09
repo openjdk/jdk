@@ -1,8 +1,8 @@
-## jQuery v3.4.1
+## jQuery v3.5.1
 
 ### jQuery License
 ```
-jQuery v 3.4.1
+jQuery v 3.5.1
 Copyright JS Foundation and other contributors, https://js.foundation/
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -26,7 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ******************************************
 
-The jQuery JavaScript Library v3.4.1 also includes Sizzle.js
+The jQuery JavaScript Library v3.5.1 also includes Sizzle.js
 
 Sizzle.js includes the following license:
 

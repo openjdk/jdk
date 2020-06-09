@@ -25,11 +25,10 @@
 
 package sun.security.krb5;
 
+import java.lang.invoke.MethodHandles;
 import javax.security.auth.kerberos.KeyTab;
-import jdk.internal.misc.Unsafe;
 
 public class KerberosSecrets {
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
 
     public static void setJavaxSecurityAuthKerberosAccess
@@ -39,8 +38,11 @@ public class KerberosSecrets {
 
     public static JavaxSecurityAuthKerberosAccess
             getJavaxSecurityAuthKerberosAccess() {
-        if (javaxSecurityAuthKerberosAccess == null)
-            unsafe.ensureClassInitialized(KeyTab.class);
+        if (javaxSecurityAuthKerberosAccess == null) {
+            try {
+                MethodHandles.lookup().ensureInitialized(KeyTab.class);
+            } catch (IllegalAccessException e) {}
+        }
         return javaxSecurityAuthKerberosAccess;
     }
 }

@@ -901,17 +901,18 @@ class MacroAssembler: public Assembler {
 
  public:
   enum {
-    stop_stop                = 0,
-    stop_untested            = 1,
-    stop_unimplemented       = 2,
-    stop_shouldnotreachhere  = 3
+    stop_stop               = 0,
+    stop_untested           = 1,
+    stop_unimplemented      = 2,
+    stop_shouldnotreachhere = 3,
+    stop_msg_present        = -0x8000
   };
 
   // Prints msg, dumps registers and stops execution.
-  void stop         (const char* msg = NULL) { stop(stop_stop,               msg ); }
-  void untested     (const char* msg = NULL) { stop(stop_untested,           msg ); }
-  void unimplemented(const char* msg = NULL) { stop(stop_unimplemented,      msg ); }
-  void should_not_reach_here()               { stop(stop_shouldnotreachhere, NULL); }
+  void stop                 (const char* msg = NULL) { stop(stop_stop,               msg); }
+  void untested             (const char* msg = NULL) { stop(stop_untested,           msg); }
+  void unimplemented        (const char* msg = NULL) { stop(stop_unimplemented,      msg); }
+  void should_not_reach_here(const char* msg = NULL) { stop(stop_shouldnotreachhere, msg); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
 };

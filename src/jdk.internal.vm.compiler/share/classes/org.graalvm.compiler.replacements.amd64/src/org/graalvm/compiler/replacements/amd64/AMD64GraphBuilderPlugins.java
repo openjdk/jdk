@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ import sun.misc.Unsafe;
 public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
     @Override
     public void register(Plugins plugins, Replacements replacements, Architecture architecture, boolean explicitUnsafeNullChecks,
-                    boolean registerMathPlugins, boolean emitJDK9StringSubstitutions, boolean useFMAIntrinsics) {
+                    boolean registerForeignCallMath, boolean emitJDK9StringSubstitutions, boolean useFMAIntrinsics) {
         register(plugins, replacements, (AMD64) architecture, explicitUnsafeNullChecks, emitJDK9StringSubstitutions, useFMAIntrinsics);
     }
 

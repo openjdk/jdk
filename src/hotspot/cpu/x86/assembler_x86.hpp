@@ -2201,6 +2201,7 @@ private:
   // Ternary logic instruction.
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, Address     src3, int vector_len);
+  void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
 
   // vinserti forms
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -2245,6 +2246,7 @@ private:
   void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
   void vpbroadcastq(XMMRegister dst, Address src, int vector_len);
 
+  void evbroadcasti32x4(XMMRegister dst, Address src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
 
@@ -2274,6 +2276,7 @@ private:
   void vzeroupper();
 
   // AVX support for vectorized conditional move (float/double). The following two instructions used only coupled.
+  void blendvpb(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
   void blendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
   void cmpps(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);

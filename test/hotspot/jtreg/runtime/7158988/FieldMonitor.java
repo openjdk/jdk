@@ -24,7 +24,6 @@
 /*
  * @test FieldMonitor.java
  * @bug 7158988
- * @key regression
  * @summary verify jvm does not crash while debugging
  * @run compile TestPostFieldModification.java
  * @run main/othervm FieldMonitor

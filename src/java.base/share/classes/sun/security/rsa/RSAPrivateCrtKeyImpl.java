@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,9 @@ import java.security.interfaces.*;
 
 import sun.security.util.*;
 
-import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
 
-import static sun.security.rsa.RSAUtil.KeyType;
+import sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in CRT form.
@@ -67,11 +66,12 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger qe;      // prime exponent q
     private BigInteger coeff;   // CRT coeffcient
 
+    private transient KeyType type;
+
     // Optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId.
     // Must be null for "RSA" keys.
-    @SuppressWarnings("serial") // Not statically typed as Serializable
-    private AlgorithmParameterSpec keyParams;
+    private transient AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new key from its encoding. Returns a CRT key if possible
@@ -79,6 +79,9 @@ public final class RSAPrivateCrtKeyImpl
      */
     public static RSAPrivateKey newKey(byte[] encoded)
             throws InvalidKeyException {
+        if (encoded == null || encoded.length == 0) {
+            throw new InvalidKeyException("Missing key encoding");
+        }
         RSAPrivateCrtKeyImpl key = new RSAPrivateCrtKeyImpl(encoded);
         // check all CRT-specific components are available, if any one
         // missing, return a non-CRT key instead
@@ -89,7 +92,7 @@ public final class RSAPrivateCrtKeyImpl
             (key.getPrimeQ().signum() == 0) ||
             (key.getCrtCoefficient().signum() == 0)) {
             return new RSAPrivateKeyImpl(
-                key.algid,
+                key.type, key.keyParams,
                 key.getModulus(),
                 key.getPrivateExponent()
             );
@@ -109,14 +112,13 @@ public final class RSAPrivateCrtKeyImpl
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
         RSAPrivateKey key;
-        AlgorithmId rsaId = RSAUtil.createAlgorithmId(type, params);
         if ((e.signum() == 0) || (p.signum() == 0) ||
             (q.signum() == 0) || (pe.signum() == 0) ||
             (qe.signum() == 0) || (coeff.signum() == 0)) {
             // if any component is missing, return a non-CRT key
-            return new RSAPrivateKeyImpl(rsaId, n, d);
+            return new RSAPrivateKeyImpl(type, params, n, d);
         } else {
-            return new RSAPrivateCrtKeyImpl(rsaId, n, e, d,
+            return new RSAPrivateCrtKeyImpl(type, params, n, e, d,
                 p, q, pe, qe, coeff);
         }
     }
@@ -125,15 +127,14 @@ public final class RSAPrivateCrtKeyImpl
      * Construct a key from its encoding. Called from newKey above.
      */
     RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
-        if (encoded == null || encoded.length == 0) {
-            throw new InvalidKeyException("Missing key encoding");
-        }
-
-        decode(encoded);
+        super(encoded);
+        parseKeyBits();
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
         try {
-            // this will check the validity of params
-            this.keyParams = RSAUtil.getParamSpec(algid);
+            // check the validity of oid and params
+            Object[] o = RSAUtil.getTypeAndParamSpec(algid);
+            this.type = (KeyType) o[0];
+            this.keyParams = (AlgorithmParameterSpec) o[1];
         } catch (ProviderException e) {
             throw new InvalidKeyException(e);
         }
@@ -143,7 +144,7 @@ public final class RSAPrivateCrtKeyImpl
      * Construct a RSA key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
-    RSAPrivateCrtKeyImpl(AlgorithmId rsaId,
+    RSAPrivateCrtKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,
             BigInteger n, BigInteger e, BigInteger d,
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
@@ -157,11 +158,19 @@ public final class RSAPrivateCrtKeyImpl
         this.pe = pe;
         this.qe = qe;
         this.coeff = coeff;
-        this.keyParams = RSAUtil.getParamSpec(rsaId);
 
-        // generate the encoding
-        algid = rsaId;
         try {
+            // validate and generate the algid encoding
+            algid = RSAUtil.createAlgorithmId(type, keyParams);
+        } catch (ProviderException exc) {
+            throw new InvalidKeyException(exc);
+        }
+
+        this.type = type;
+        this.keyParams = keyParams;
+
+        try {
+            // generate the key encoding
             DerOutputStream out = new DerOutputStream();
             out.putInteger(0); // version must be 0
             out.putInteger(n);
@@ -184,7 +193,7 @@ public final class RSAPrivateCrtKeyImpl
     // see JCA doc
     @Override
     public String getAlgorithm() {
-        return algid.getName();
+        return type.keyAlgo;
     }
 
     // see JCA doc
@@ -244,15 +253,12 @@ public final class RSAPrivateCrtKeyImpl
     // return a string representation of this key for debugging
     @Override
     public String toString() {
-        return "SunRsaSign " + getAlgorithm() + " private CRT key, " + n.bitLength()
-               + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
-               + "\n  private exponent: " + d;
+        return "SunRsaSign " + type.keyAlgo + " private CRT key, "
+               + n.bitLength() + " bits" + "\n  params: " + keyParams
+               + "\n  modulus: " + n + "\n  private exponent: " + d;
     }
 
-    /**
-     * Parse the key. Called by PKCS8Key.
-     */
-    protected void parseKeyBits() throws InvalidKeyException {
+    private void parseKeyBits() throws InvalidKeyException {
         try {
             DerInputStream in = new DerInputStream(key);
             DerValue derValue = in.getDerValue();

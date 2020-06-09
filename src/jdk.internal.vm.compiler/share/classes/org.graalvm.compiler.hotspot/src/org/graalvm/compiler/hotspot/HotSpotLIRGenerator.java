@@ -103,7 +103,7 @@ public interface HotSpotLIRGenerator extends LIRGeneratorTool {
      * @param kind type of the value to load
      * @return value of loaded global in register
      */
-    default Value emitLoadConfigValue(int markId, LIRKind kind) {
+    default Value emitLoadConfigValue(HotSpotMarkId markId, LIRKind kind) {
         throw new GraalError("Emitting code to load a config value is not currently supported on %s", target().arch);
     }
 

@@ -27,22 +27,19 @@
 class ZPhysicalMemoryBacking {
 private:
   uintptr_t _base;
-  size_t    _size;
   bool      _initialized;
 
-  bool commit_inner(size_t offset, size_t length);
+  bool commit_inner(size_t offset, size_t length) const;
 
 public:
-  ZPhysicalMemoryBacking();
+  ZPhysicalMemoryBacking(size_t max_capacity);
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max) const;
+  void warn_commit_limits(size_t max_capacity) const;
 
-  size_t size() const;
-
-  size_t commit(size_t offset, size_t length);
-  size_t uncommit(size_t offset, size_t length);
+  size_t commit(size_t offset, size_t length) const;
+  size_t uncommit(size_t offset, size_t length) const;
 
   void map(uintptr_t addr, size_t size, uintptr_t offset) const;
   void unmap(uintptr_t addr, size_t size) const;

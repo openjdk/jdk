@@ -28,6 +28,7 @@ import java.util.concurrent.Callable;
 /**
  * @test
  * @summary Test input invariants for StringConcatFactory
+ * @bug 8246152
  *
  * @compile StringConcatFactoryInvariants.java
  *
@@ -213,8 +214,14 @@ public class StringConcatFactoryInvariants {
         ok("Static arguments and recipe match",
                 () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, "bar"));
 
-        fail("Static arguments and recipe mismatch",
+        fail("Static arguments and recipe mismatch: too few",
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold));
+
+        fail("Static arguments and recipe mismatch: too many",
                 () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, "bar", "baz"));
+
+        failNPE("Static arguments and recipe mismatch, too many, overflowing constant is null",
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, "bar", null));
 
         // Advanced factory: check for mismatched recipe and dynamic arguments
         fail("Dynamic arguments and recipe mismatch",

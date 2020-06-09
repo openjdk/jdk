@@ -407,6 +407,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     root,
                     "--install-location",
                     getInstallDir(params),
+                    "--filter",
+                    AppImageFile.getPathInAppImage(Path.of("")).toString(),
                     "--analyze",
                     cpl.getAbsolutePath());
 
@@ -422,6 +424,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     root,
                     "--install-location",
                     getInstallDir(params),
+                    "--filter",
+                    AppImageFile.getPathInAppImage(Path.of("")).toString(),
                     "--component-plist",
                     cpl.getAbsolutePath(),
                     "--scripts",

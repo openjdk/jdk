@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -49,11 +50,11 @@ public final class FusedMultiplyAddNode extends TernaryNode implements Arithmeti
 
     public static final NodeClass<FusedMultiplyAddNode> TYPE = NodeClass.create(FusedMultiplyAddNode.class);
 
-    public FusedMultiplyAddNode(ValueNode a, ValueNode b, ValueNode c) {
-        super(TYPE, computeStamp(a.stamp(NodeView.DEFAULT), b.stamp(NodeView.DEFAULT), c.stamp(NodeView.DEFAULT)), a, b, c);
-        assert a.getStackKind().isNumericFloat();
-        assert b.getStackKind().isNumericFloat();
-        assert c.getStackKind().isNumericFloat();
+    public FusedMultiplyAddNode(ValueNode x, ValueNode y, ValueNode z) {
+        super(TYPE, computeStamp(x.stamp(NodeView.DEFAULT), y.stamp(NodeView.DEFAULT), z.stamp(NodeView.DEFAULT)), x, y, z);
+        assert x.getStackKind().isNumericFloat();
+        assert y.getStackKind().isNumericFloat();
+        assert z.getStackKind().isNumericFloat();
     }
 
     @Override
@@ -62,25 +63,52 @@ public final class FusedMultiplyAddNode extends TernaryNode implements Arithmeti
     }
 
     private static Stamp computeStamp(Stamp stampX, Stamp stampY, Stamp stampZ) {
-        Stamp m = FloatStamp.OPS.getMul().foldStamp(stampX, stampY);
-        return FloatStamp.OPS.getAdd().foldStamp(m, stampZ);
+        if (stampX.isEmpty()) {
+            return stampX;
+        }
+        if (stampY.isEmpty()) {
+            return stampY;
+        }
+        if (stampZ.isEmpty()) {
+            return stampZ;
+        }
+        JavaConstant constantX = ((FloatStamp) stampX).asConstant();
+        JavaConstant constantY = ((FloatStamp) stampY).asConstant();
+        JavaConstant constantZ = ((FloatStamp) stampZ).asConstant();
+        if (constantX != null && constantY != null && constantZ != null) {
+            if (stampX.getStackKind() == JavaKind.Float) {
+                float result = GraalServices.fma(constantX.asFloat(), constantY.asFloat(), constantZ.asFloat());
+                if (Float.isNaN(result)) {
+                    return StampFactory.forFloat(JavaKind.Float, Double.NaN, Double.NaN, false);
+                } else {
+                    return StampFactory.forFloat(JavaKind.Float, result, result, true);
+                }
+            } else {
+                double result = GraalServices.fma(constantX.asDouble(), constantY.asDouble(), constantZ.asDouble());
+                assert stampX.getStackKind() == JavaKind.Double;
+                if (Double.isNaN(result)) {
+                    return StampFactory.forFloat(JavaKind.Double, Double.NaN, Double.NaN, false);
+                } else {
+                    return StampFactory.forFloat(JavaKind.Double, result, result, true);
+                }
+            }
+        }
+
+        return stampX.unrestricted();
     }
 
     @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode a, ValueNode b, ValueNode c) {
-        if (a.isConstant() && b.isConstant() && c.isConstant()) {
-            JavaConstant ca = a.asJavaConstant();
-            JavaConstant cb = b.asJavaConstant();
-            JavaConstant cc = c.asJavaConstant();
-
-            ValueNode res;
-            if (a.getStackKind() == JavaKind.Float) {
-                res = ConstantNode.forFloat(GraalServices.fma(ca.asFloat(), cb.asFloat(), cc.asFloat()));
+    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY, ValueNode forZ) {
+        if (forX.isConstant() && forY.isConstant() && forZ.isConstant()) {
+            JavaConstant constantX = forX.asJavaConstant();
+            JavaConstant constantY = forY.asJavaConstant();
+            JavaConstant constantZ = forZ.asJavaConstant();
+            if (forX.getStackKind() == JavaKind.Float) {
+                return ConstantNode.forFloat(GraalServices.fma(constantX.asFloat(), constantY.asFloat(), constantZ.asFloat()));
             } else {
-                assert a.getStackKind() == JavaKind.Double;
-                res = ConstantNode.forDouble(GraalServices.fma(ca.asDouble(), cb.asDouble(), cc.asDouble()));
+                assert forX.getStackKind() == JavaKind.Double;
+                return ConstantNode.forDouble(GraalServices.fma(constantX.asDouble(), constantY.asDouble(), constantZ.asDouble()));
             }
-            return res;
         }
         return this;
     }

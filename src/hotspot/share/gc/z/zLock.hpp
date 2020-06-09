@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,20 @@ public:
   void unlock();
 
   bool is_owned() const;
+};
+
+class ZConditionLock {
+private:
+  os::PlatformMonitor _lock;
+
+public:
+  void lock();
+  bool try_lock();
+  void unlock();
+
+  bool wait(uint64_t millis = 0);
+  void notify();
+  void notify_all();
 };
 
 template <typename T>

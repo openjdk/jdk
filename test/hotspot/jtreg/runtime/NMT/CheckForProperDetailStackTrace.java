@@ -24,7 +24,6 @@
  /*
  * @test
  * @bug 8133747 8218458
- * @key nmt
  * @summary Running with NMT detail should produce expected stack traces.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

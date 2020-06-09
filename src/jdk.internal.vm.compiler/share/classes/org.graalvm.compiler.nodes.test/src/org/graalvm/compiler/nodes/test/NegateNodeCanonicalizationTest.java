@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions
 import static org.junit.Assert.assertEquals;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -50,7 +50,7 @@ public class NegateNodeCanonicalizationTest {
     @Before
     public void before() {
         OptionValues options = getInitialOptions();
-        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).build();
         graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).build();
     }
 

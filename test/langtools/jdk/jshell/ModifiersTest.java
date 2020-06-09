@@ -44,13 +44,13 @@ public class ModifiersTest extends KullaTesting {
     public Object[][] getTestCases() {
         List<Object[]> testCases = new ArrayList<>();
         String[] ignoredModifiers = new String[] {
-            "static", "final"
+            "static"
         };
         String[] silentlyIgnoredModifiers = new String[] {
             "public", "protected", "private"
         };
         String[] before = new String[] {
-            "strictfp", "abstract", "@X", "@X(value=9)"
+            "strictfp", "abstract", "final", "@X", "@X(value=9)"
         };
         String context = "@interface X { int value() default 0; }";
         Consumer<String> eval = this::assertEval;

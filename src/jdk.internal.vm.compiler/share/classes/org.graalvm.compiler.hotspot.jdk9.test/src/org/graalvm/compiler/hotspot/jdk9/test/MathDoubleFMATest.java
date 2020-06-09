@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.hotspot.jdk9.test;
 
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import java.util.ArrayList;
@@ -41,14 +42,12 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import jdk.vm.ci.amd64.AMD64;
-
 @RunWith(Parameterized.class)
 public final class MathDoubleFMATest extends GraalCompilerTest {
 
     @Before
-    public void checkAMD64() {
-        assumeTrue("skipping AMD64 specific test", getTarget().arch instanceof AMD64);
+    public void checkNotSPARC() {
+        assumeFalse("skipping tests on SPARC", isSPARC(getTarget().arch));
         HotSpotGraalRuntimeProvider rt = (HotSpotGraalRuntimeProvider) Graal.getRequiredCapability(RuntimeProvider.class);
         assumeTrue("skipping FMA specific test", rt.getVMConfig().useFMAIntrinsics);
     }

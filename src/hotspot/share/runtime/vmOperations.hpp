@@ -90,7 +90,6 @@
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(GetCurrentLocation)                    \
-  template(EnterInterpOnlyMode)                   \
   template(ChangeSingleStep)                      \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
@@ -246,14 +245,6 @@ class VM_GTestExecuteAtSafepoint: public VM_Operation {
 
  protected:
   VM_GTestExecuteAtSafepoint() {}
-};
-
-class VM_MarkActiveNMethods: public VM_Operation {
- public:
-  VM_MarkActiveNMethods() {}
-  VMOp_Type type() const                         { return VMOp_MarkActiveNMethods; }
-  void doit();
-  bool allow_nested_vm_operations() const        { return true; }
 };
 
 // Deopt helper that can deoptimize frames in threads other than the
@@ -420,6 +411,7 @@ class VM_Exit: public VM_Operation {
     }
   }
   VMOp_Type type() const { return VMOp_Exit; }
+  bool doit_prologue();
   void doit();
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package org.graalvm.compiler.hotspot.stubs;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.SAFEPOINT;
 import static org.graalvm.compiler.hotspot.nodes.JumpToExceptionHandlerNode.jumpToExceptionHandler;
 import static org.graalvm.compiler.hotspot.nodes.PatchReturnAddressNode.patchReturnAddress;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readExceptionOop;
@@ -37,6 +39,7 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.decipher;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.fatal;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
+import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -49,6 +52,8 @@ import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.options.OptionValues;
@@ -58,10 +63,10 @@ import jdk.internal.vm.compiler.word.WordFactory;
 import jdk.vm.ci.code.Register;
 
 /**
- * Stub called by the {@linkplain GraalHotSpotVMConfig#MARKID_EXCEPTION_HANDLER_ENTRY exception
- * handler entry point} in a compiled method. This entry point is used when returning to a method to
- * handle an exception thrown by a callee. It is not used for routing implicit exceptions.
- * Therefore, it does not need to save any registers as HotSpot uses a caller save convention.
+ * Stub called by the {@linkplain HotSpotMarkId#EXCEPTION_HANDLER_ENTRY exception handler entry
+ * point} in a compiled method. This entry point is used when returning to a method to handle an
+ * exception thrown by a callee. It is not used for routing implicit exceptions. Therefore, it does
+ * not need to save any registers as HotSpot uses a caller save convention.
  * <p>
  * The descriptor for a call to this stub is {@link HotSpotBackend#EXCEPTION_HANDLER}.
  */
@@ -143,7 +148,8 @@ public class ExceptionHandlerStub extends SnippetStub {
         return Assertions.assertionsEnabled() || cAssertionsEnabled(config);
     }
 
-    public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_PC = newDescriptor(ExceptionHandlerStub.class, "exceptionHandlerForPc", Word.class, Word.class);
+    public static final HotSpotForeignCallDescriptor EXCEPTION_HANDLER_FOR_PC = newDescriptor(SAFEPOINT, REEXECUTABLE, any(), ExceptionHandlerStub.class, "exceptionHandlerForPc", Word.class,
+                    Word.class);
 
     @NodeIntrinsic(value = StubForeignCallNode.class)
     public static native Word exceptionHandlerForPc(@ConstantNodeParameter ForeignCallDescriptor exceptionHandlerForPc, Word thread);

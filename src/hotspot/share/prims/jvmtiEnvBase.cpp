@@ -653,6 +653,9 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *java_thread, jobject *mo
          current_jt == java_thread->active_handshaker(),
          "call by myself or at direct handshake");
   oop obj = NULL;
+  // The ObjectMonitor* can't be async deflated since we are either
+  // at a safepoint or the calling thread is operating on itself so
+  // it cannot leave the underlying wait()/enter() call.
   ObjectMonitor *mon = java_thread->current_waiting_monitor();
   if (mon == NULL) {
     // thread is not doing an Object.wait() call
@@ -730,7 +733,10 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
   HandleMark hm;
   oop wait_obj = NULL;
   {
-    // save object of current wait() call (if any) for later comparison
+    // The ObjectMonitor* can't be async deflated since we are either
+    // at a safepoint or the calling thread is operating on itself so
+    // it cannot leave the underlying wait() call.
+    // Save object of current wait() call (if any) for later comparison.
     ObjectMonitor *mon = java_thread->current_waiting_monitor();
     if (mon != NULL) {
       wait_obj = (oop)mon->object();
@@ -738,7 +744,10 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
   }
   oop pending_obj = NULL;
   {
-    // save object of current enter() call (if any) for later comparison
+    // The ObjectMonitor* can't be async deflated since we are either
+    // at a safepoint or the calling thread is operating on itself so
+    // it cannot leave the underlying enter() call.
+    // Save object of current enter() call (if any) for later comparison.
     ObjectMonitor *mon = java_thread->current_pending_monitor();
     if (mon != NULL) {
       pending_obj = (oop)mon->object();

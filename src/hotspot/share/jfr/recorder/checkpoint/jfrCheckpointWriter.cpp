@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ JfrCheckpointFlush::JfrCheckpointFlush(Type* old, size_t used, size_t requested,
   _result(JfrCheckpointManager::flush(old, used, requested, t)) {}
 
 JfrCheckpointWriter::JfrCheckpointWriter(JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(JfrCheckpointManager::lease_buffer(Thread::current()), Thread::current()),
+  JfrCheckpointWriterBase(JfrCheckpointManager::lease(Thread::current()), Thread::current()),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),
@@ -45,8 +45,8 @@ JfrCheckpointWriter::JfrCheckpointWriter(JfrCheckpointType type /* GENERIC */) :
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(Thread* t, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(JfrCheckpointManager::lease_buffer(t), t),
+JfrCheckpointWriter::JfrCheckpointWriter(Thread* thread, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
+  JfrCheckpointWriterBase(JfrCheckpointManager::lease(thread), thread),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),
@@ -59,8 +59,8 @@ JfrCheckpointWriter::JfrCheckpointWriter(Thread* t, bool header /* true */, JfrC
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(Thread* t, JfrBuffer* buffer, JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(buffer, t),
+JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type /* GENERIC */) :
+  JfrCheckpointWriterBase(JfrCheckpointManager::lease(thread, previous_epoch), thread),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),

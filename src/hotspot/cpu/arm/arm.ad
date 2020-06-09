@@ -8963,7 +8963,7 @@ instruct ShouldNotReachHere( )
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ udf(0xdead);
+      __ stop(_halt_reason);
     }
   %}
   ins_pipe(tail_call);

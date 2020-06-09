@@ -238,6 +238,10 @@ public final class Executor extends CommandArguments<Executor> {
         return result.assertExitCodeIs(expectedCode);
     }
 
+    public List<String> executeWithoutExitCodeCheckAndGetOutput() {
+        return saveOutput().executeWithoutExitCodeCheck().getOutput();
+    }
+
     private boolean withSavedOutput() {
         return saveOutputType.contains(SaveOutputType.FULL) || saveOutputType.contains(
                 SaveOutputType.FIRST_LINE);

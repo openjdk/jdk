@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -246,6 +247,32 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                             type));
                     pre.add(link);
                 }
+            }
+        }
+        List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
+        List<? extends TypeMirror> linkablePermits = permits.stream()
+                .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
+                .collect(Collectors.toList());
+        if (!linkablePermits.isEmpty()) {
+            boolean isFirst = true;
+            for (TypeMirror type : linkablePermits) {
+                TypeElement tDoc = utils.asTypeElement(type);
+                if (isFirst) {
+                    pre.add(DocletConstants.NL);
+                    pre.add("permits ");
+                    isFirst = false;
+                } else {
+                    pre.add(", ");
+                }
+                Content link = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.PERMITTED_SUBCLASSES,
+                        type));
+                pre.add(link);
+            }
+            if (linkablePermits.size() < permits.size()) {
+                Content c = new StringContent(resources.getText("doclet.not.exhaustive"));
+                pre.add(" ");
+                pre.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
             }
         }
         classInfoTree.add(pre);

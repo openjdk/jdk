@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class Heap$Type$Buffer$RW$
     // Cached array base offset
     private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
 
-    // Cached array base offset
+    // Cached array index scale
     private static final long ARRAY_INDEX_SCALE = UNSAFE.arrayIndexScale($type$[].class);
 
     // For speed these fields are actually declared in X-Buffer;
@@ -244,29 +244,7 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer put($Type$Buffer src) {
 #if[rw]
         checkSegment();
-        if (src instanceof Heap$Type$Buffer) {
-            if (src == this)
-                throw createSameBufferException();
-            Heap$Type$Buffer sb = (Heap$Type$Buffer)src;
-            int pos = position();
-            int sbpos = sb.position();
-            int n = sb.limit() - sbpos;
-            if (n > limit() - pos)
-                throw new BufferOverflowException();
-            System.arraycopy(sb.hb, sb.ix(sbpos),
-                             hb, ix(pos), n);
-            sb.position(sbpos + n);
-            position(pos + n);
-        } else if (src.isDirect()) {
-            int n = src.remaining();
-            int pos = position();
-            if (n > limit() - pos)
-                throw new BufferOverflowException();
-            src.get(hb, ix(pos), n);
-            position(pos + n);
-        } else {
-            super.put(src);
-        }
+        super.put(src);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();

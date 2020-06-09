@@ -65,6 +65,7 @@ import org.graalvm.compiler.nodes.GraphDecoder.MethodScope;
 import org.graalvm.compiler.nodes.GraphDecoder.ProxyPlaceholder;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
+import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.LoopExplosionPlugin.LoopExplosionKind;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -98,6 +99,11 @@ public class GraphDecoder {
         public final EncodedGraph encodedGraph;
         /** The highest node order id that a fixed node has in the EncodedGraph. */
         public final int maxFixedNodeOrderId;
+        /**
+         * Number of bytes needed to encode an order id (order ids have a per-encoded-graph fixed
+         * size).
+         */
+        public final int orderIdWidth;
         /** Access to the encoded graph. */
         public final TypeReader reader;
         /** The kind of loop explosion to be performed during decoding. */
@@ -125,8 +131,8 @@ public class GraphDecoder {
             if (encodedGraph != null) {
                 reader = UnsafeArrayTypeReader.create(encodedGraph.getEncoding(), encodedGraph.getStartOffset(), architecture.supportsUnalignedMemoryAccess());
                 maxFixedNodeOrderId = reader.getUVInt();
+                int nodeCount = reader.getUVInt();
                 if (encodedGraph.nodeStartOffsets == null) {
-                    int nodeCount = reader.getUVInt();
                     int[] nodeStartOffsets = new int[nodeCount];
                     for (int i = 0; i < nodeCount; i++) {
                         nodeStartOffsets[i] = encodedGraph.getStartOffset() - reader.getUVInt();
@@ -134,9 +140,18 @@ public class GraphDecoder {
                     encodedGraph.nodeStartOffsets = nodeStartOffsets;
                     graph.setGuardsStage((StructuredGraph.GuardsStage) readObject(this));
                 }
+
+                if (nodeCount <= GraphEncoder.MAX_INDEX_1_BYTE) {
+                    orderIdWidth = 1;
+                } else if (nodeCount <= GraphEncoder.MAX_INDEX_2_BYTES) {
+                    orderIdWidth = 2;
+                } else {
+                    orderIdWidth = 4;
+                }
             } else {
                 reader = null;
                 maxFixedNodeOrderId = 0;
+                orderIdWidth = 0;
             }
 
             if (loopExplosion.useExplosion()) {
@@ -388,7 +403,8 @@ public class GraphDecoder {
         public final int exceptionNextOrderId;
         public JavaConstant constantReceiver;
 
-        protected InvokeData(Invoke invoke, ResolvedJavaType contextType, int invokeOrderId, int callTargetOrderId, int stateAfterOrderId, int nextOrderId, int nextNextOrderId, int exceptionOrderId,
+        protected InvokeData(Invoke invoke, ResolvedJavaType contextType, int invokeOrderId, int callTargetOrderId, int stateAfterOrderId, int nextOrderId, int nextNextOrderId,
+                        int exceptionOrderId,
                         int exceptionStateOrderId, int exceptionNextOrderId) {
             this.invoke = invoke;
             this.contextType = contextType;
@@ -608,8 +624,12 @@ public class GraphDecoder {
                 LoopScope outerScope = loopScope.outer;
                 int nextIterationNumber = outerScope.nextIterationFromLoopExitDuplication.isEmpty() ? outerScope.loopIteration + 1
                                 : outerScope.nextIterationFromLoopExitDuplication.getLast().loopIteration + 1;
+                Node[] initialCreatedNodes = outerScope.initialCreatedNodes == null ? null
+                                : (methodScope.loopExplosion.mergeLoops()
+                                                ? Arrays.copyOf(outerScope.initialCreatedNodes, outerScope.initialCreatedNodes.length)
+                                                : outerScope.initialCreatedNodes);
                 successorAddScope = new LoopScope(methodScope, outerScope.outer, outerScope.loopDepth, nextIterationNumber, outerScope.loopBeginOrderId, LoopScopeTrigger.LOOP_EXIT_DUPLICATION,
-                                outerScope.initialCreatedNodes == null ? null : Arrays.copyOf(outerScope.initialCreatedNodes, outerScope.initialCreatedNodes.length),
+                                initialCreatedNodes,
                                 Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length),
                                 outerScope.nextIterationFromLoopExitDuplication,
                                 outerScope.nextIterationFromLoopEndDuplication,
@@ -638,6 +658,12 @@ public class GraphDecoder {
         assert node.getNodeClass() == methodScope.encodedGraph.getNodeClasses()[typeId];
         makeFixedNodeInputs(methodScope, loopScope, node);
         readProperties(methodScope, node);
+
+        if ((node instanceof IfNode || node instanceof SwitchNode) &&
+                        earlyCanonicalization(methodScope, successorAddScope, nodeOrderId, node)) {
+            return loopScope;
+        }
+
         makeSuccessorStubs(methodScope, successorAddScope, node, updatePredecessors);
 
         LoopScope resultScope = loopScope;
@@ -685,7 +711,7 @@ public class GraphDecoder {
                     int nextIterationNumber = loopScope.nextIterationsFromUnrolling.isEmpty() ? loopScope.loopIteration + 1 : loopScope.nextIterationsFromUnrolling.getLast().loopIteration + 1;
                     LoopScope outerLoopMergeScope = new LoopScope(methodScope, loopScope.outer, loopScope.loopDepth, nextIterationNumber, loopScope.loopBeginOrderId,
                                     LoopScopeTrigger.LOOP_BEGIN_UNROLLING,
-                                    Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length),
+                                    methodScope.loopExplosion.mergeLoops() ? Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length) : loopScope.initialCreatedNodes,
                                     Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length),
                                     loopScope.nextIterationFromLoopExitDuplication,
                                     loopScope.nextIterationFromLoopEndDuplication,
@@ -947,7 +973,7 @@ public class GraphDecoder {
         if (trigger != null) {
             int nextIterationNumber = nextIterations.isEmpty() ? loopScope.loopIteration + 1 : nextIterations.getLast().loopIteration + 1;
             LoopScope nextIterationScope = new LoopScope(methodScope, loopScope.outer, loopScope.loopDepth, nextIterationNumber, loopScope.loopBeginOrderId, trigger,
-                            Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length),
+                            methodScope.loopExplosion.mergeLoops() ? Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length) : loopScope.initialCreatedNodes,
                             Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length),
                             loopScope.nextIterationFromLoopExitDuplication,
                             loopScope.nextIterationFromLoopEndDuplication,
@@ -970,6 +996,23 @@ public class GraphDecoder {
      * @param node The node to be simplified.
      */
     protected void handleFixedNode(MethodScope methodScope, LoopScope loopScope, int nodeOrderId, FixedNode node) {
+    }
+
+    /**
+     * Hook for subclasses for early canonicalization of IfNodes and IntegerSwitchNodes.
+     *
+     * "Early" means that this is called before successor stubs creation. Therefore, all successors
+     * are null a this point, and calling any method using them without prior manual initialization
+     * will fail.
+     *
+     * @param methodScope The current method.
+     * @param loopScope The current loop.
+     * @param nodeOrderId The orderId of the node.
+     * @param node The node to be simplified.
+     * @return true if canonicalization happened, false otherwise.
+     */
+    protected boolean earlyCanonicalization(MethodScope methodScope, LoopScope loopScope, int nodeOrderId, FixedNode node) {
+        return false;
     }
 
     protected void handleProxyNodes(MethodScope methodScope, LoopScope loopScope, LoopExitNode loopExit) {
@@ -1486,7 +1529,8 @@ public class GraphDecoder {
         if (node instanceof Invoke) {
             assert node instanceof InvokeNode || node instanceof InvokeWithExceptionNode : "The only two Invoke node classes. Got " + node.getClass();
             if (edges.type() == Edges.Type.Successors) {
-                assert edges.getCount() == (node instanceof InvokeWithExceptionNode ? 2 : 1) : "InvokeNode has one successor (next); InvokeWithExceptionNode has two successors (next, exceptionEdge)";
+                assert edges.getCount() == (node instanceof InvokeWithExceptionNode ? 2
+                                : 1) : "InvokeNode has one successor (next); InvokeWithExceptionNode has two successors (next, exceptionEdge)";
                 return true;
             } else {
                 assert edges.type() == Edges.Type.Inputs;
@@ -1517,7 +1561,15 @@ public class GraphDecoder {
     }
 
     protected int readOrderId(MethodScope methodScope) {
-        return methodScope.reader.getUVInt();
+        switch (methodScope.orderIdWidth) {
+            case 1:
+                return methodScope.reader.getU1();
+            case 2:
+                return methodScope.reader.getU2();
+            case 4:
+                return methodScope.reader.getS4();
+        }
+        throw GraalError.shouldNotReachHere("Invalid orderIdWidth: " + methodScope.orderIdWidth);
     }
 
     protected Object readObject(MethodScope methodScope) {

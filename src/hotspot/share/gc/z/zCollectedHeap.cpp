@@ -25,6 +25,8 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDirector.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
@@ -52,7 +54,6 @@ ZCollectedHeap::ZCollectedHeap() :
     _heap(),
     _director(new ZDirector()),
     _driver(new ZDriver()),
-    _uncommitter(new ZUncommitter()),
     _stat(new ZStat()),
     _runtime_workers() {}
 
@@ -78,11 +79,19 @@ void ZCollectedHeap::initialize_serviceability() {
   _heap.serviceability_initialize();
 }
 
+class ZStopConcurrentGCThreadClosure : public ThreadClosure {
+public:
+  virtual void do_thread(Thread* thread) {
+    if (thread->is_ConcurrentGC_thread() &&
+        !thread->is_GC_task_thread()) {
+      static_cast<ConcurrentGCThread*>(thread)->stop();
+    }
+  }
+};
+
 void ZCollectedHeap::stop() {
-  _director->stop();
-  _driver->stop();
-  _uncommitter->stop();
-  _stat->stop();
+  ZStopConcurrentGCThreadClosure cl;
+  gc_threads_do(&cl);
 }
 
 SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {
@@ -278,9 +287,8 @@ jlong ZCollectedHeap::millis_since_last_gc() {
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_director);
   tc->do_thread(_driver);
-  tc->do_thread(_uncommitter);
   tc->do_thread(_stat);
-  _heap.worker_threads_do(tc);
+  _heap.threads_do(tc);
   _runtime_workers.threads_do(tc);
 }
 
@@ -305,37 +313,28 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 }
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
+  st->print_cr("ZGC Globals:");
+  st->print_cr(" GlobalPhase:       %u (%s)", ZGlobalPhase, ZGlobalPhaseToString());
+  st->print_cr(" GlobalSeqNum:      %u", ZGlobalSeqNum);
+  st->print_cr(" Offset Max:        " SIZE_FORMAT "%s (" PTR_FORMAT ")",
+               byte_size_in_exact_unit(ZAddressOffsetMax),
+               exact_unit_for_byte_size(ZAddressOffsetMax),
+               ZAddressOffsetMax);
+  st->print_cr(" Page Size Small:   " SIZE_FORMAT "M", ZPageSizeSmall / M);
+  st->print_cr(" Page Size Medium:  " SIZE_FORMAT "M", ZPageSizeMedium / M);
+  st->cr();
+  st->print_cr("ZGC Metadata Bits:");
+  st->print_cr(" Good:              " PTR_FORMAT, ZAddressGoodMask);
+  st->print_cr(" Bad:               " PTR_FORMAT, ZAddressBadMask);
+  st->print_cr(" WeakBad:           " PTR_FORMAT, ZAddressWeakBadMask);
+  st->print_cr(" Marked:            " PTR_FORMAT, ZAddressMetadataMarked);
+  st->print_cr(" Remapped:          " PTR_FORMAT, ZAddressMetadataRemapped);
+  st->cr();
   CollectedHeap::print_on_error(st);
-
-  st->print_cr( "Heap");
-  st->print_cr( "     GlobalPhase:       %u", ZGlobalPhase);
-  st->print_cr( "     GlobalSeqNum:      %u", ZGlobalSeqNum);
-  st->print_cr( "     Offset Max:        " SIZE_FORMAT_W(-15) " (" PTR_FORMAT ")", ZAddressOffsetMax, ZAddressOffsetMax);
-  st->print_cr( "     Page Size Small:   " SIZE_FORMAT_W(-15) " (" PTR_FORMAT ")", ZPageSizeSmall, ZPageSizeSmall);
-  st->print_cr( "     Page Size Medium:  " SIZE_FORMAT_W(-15) " (" PTR_FORMAT ")", ZPageSizeMedium, ZPageSizeMedium);
-  st->print_cr( "Metadata Bits");
-  st->print_cr( "     Good:              " PTR_FORMAT, ZAddressGoodMask);
-  st->print_cr( "     Bad:               " PTR_FORMAT, ZAddressBadMask);
-  st->print_cr( "     WeakBad:           " PTR_FORMAT, ZAddressWeakBadMask);
-  st->print_cr( "     Marked:            " PTR_FORMAT, ZAddressMetadataMarked);
-  st->print_cr( "     Remapped:          " PTR_FORMAT, ZAddressMetadataRemapped);
 }
 
 void ZCollectedHeap::print_extended_on(outputStream* st) const {
   _heap.print_extended_on(st);
-}
-
-void ZCollectedHeap::print_gc_threads_on(outputStream* st) const {
-  _director->print_on(st);
-  st->cr();
-  _driver->print_on(st);
-  st->cr();
-  _uncommitter->print_on(st);
-  st->cr();
-  _stat->print_on(st);
-  st->cr();
-  _heap.print_worker_threads_on(st);
-  _runtime_workers.print_threads_on(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {

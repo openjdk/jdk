@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.StructuredGraph.FrameStateVerificationFeature;
 
 /**
  * Provides an implementation of {@link StateSplit}.
@@ -62,5 +63,12 @@ public abstract class AbstractStateSplit extends FixedWithNextNode implements St
     protected AbstractStateSplit(NodeClass<? extends AbstractStateSplit> c, Stamp stamp, FrameState stateAfter) {
         super(c, stamp);
         this.stateAfter = stateAfter;
+    }
+
+    @Override
+    public boolean verify() {
+        assert !hasSideEffect() || !this.graph().getFrameStateVerification().implies(FrameStateVerificationFeature.STATE_SPLITS) ||
+                        this.stateAfter != null : "State split with side-effect must have a state until FSA " + this;
+        return super.verify();
     }
 }

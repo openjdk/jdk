@@ -25,9 +25,11 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaFileObject;
 
@@ -711,6 +713,14 @@ public class TypeEnter implements Completer {
                 }
             }
 
+            // Determine permits.
+            ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
+            List<JCExpression> permittedTrees = tree.permitting;
+            for (JCExpression permitted : permittedTrees) {
+                Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
+                permittedSubtypeSymbols.append(pt.tsym);
+            }
+
             if ((sym.flags_field & ANNOTATION) != 0) {
                 ct.interfaces_field = List.of(syms.annotationType);
                 ct.all_interfaces_field = ct.interfaces_field;
@@ -719,6 +729,15 @@ public class TypeEnter implements Completer {
                 ct.all_interfaces_field = (all_interfaces == null)
                         ? ct.interfaces_field : all_interfaces.toList();
             }
+
+            /* it could be that there are already some symbols in the permitted list, for the case
+             * where there are subtypes in the same compilation unit but the permits list is empty
+             * so don't overwrite the permitted list if it is not empty
+             */
+            if (!permittedSubtypeSymbols.isEmpty()) {
+                sym.permitted = permittedSubtypeSymbols.toList();
+            }
+            sym.isPermittedExplicit = !permittedSubtypeSymbols.isEmpty();
         }
             //where:
             protected JCExpression clearTypeParams(JCExpression superType) {
@@ -729,7 +748,7 @@ public class TypeEnter implements Completer {
     private final class HierarchyPhase extends AbstractHeaderPhase implements Completer {
 
         public HierarchyPhase() {
-            super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
+            super(CompletionCause.HIERARCHY_PHASE, new PermitsPhase());
         }
 
         @Override
@@ -799,6 +818,33 @@ public class TypeEnter implements Completer {
             Env<AttrContext> env = typeEnvs.get((ClassSymbol) sym);
 
             super.doCompleteEnvs(List.of(env));
+        }
+
+    }
+
+    private final class PermitsPhase extends AbstractHeaderPhase {
+
+        public PermitsPhase() {
+            super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
+        }
+
+        @Override
+        protected void runPhase(Env<AttrContext> env) {
+            JCClassDecl tree = env.enclClass;
+            if (!tree.sym.isAnonymous() || tree.sym.isEnum()) {
+                for (Type supertype : types.directSupertypes(tree.sym.type)) {
+                    if (supertype.tsym.kind == TYP) {
+                        ClassSymbol supClass = (ClassSymbol) supertype.tsym;
+                        Env<AttrContext> supClassEnv = enter.getEnv(supClass);
+                        if (supClass.isSealed() &&
+                            !supClass.isPermittedExplicit &&
+                            supClassEnv != null &&
+                            supClassEnv.toplevel == env.toplevel) {
+                            supClass.permitted = supClass.permitted.append(tree.sym);
+                        }
+                    }
+                }
+            }
         }
 
     }

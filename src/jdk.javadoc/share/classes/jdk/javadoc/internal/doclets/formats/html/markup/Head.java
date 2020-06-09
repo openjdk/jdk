@@ -311,7 +311,9 @@ public class Head extends Content {
         }
 
         if (index) {
-            addStylesheet(tree, DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_STYLESHEET_FILE));
+            // The order of the addStylesheet(...) calls is important
+            addStylesheet(tree, DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_UI_CSS));
+            addStylesheet(tree, DocPaths.JQUERY_OVERRIDES_CSS);
         }
     }
 
@@ -332,8 +334,8 @@ public class Head extends Content {
                         .append(";\n")
                         .append("loadScripts(document, 'script');");
             }
-            addJQueryFile(tree, DocPaths.JQUERY_JS_3_4);
             addJQueryFile(tree, DocPaths.JQUERY_JS);
+            addJQueryFile(tree, DocPaths.JQUERY_UI_JS);
         }
         for (Script script : scripts) {
             tree.add(script.asContent());

@@ -21,49 +21,43 @@
  * questions.
  */
 
-import com.sun.net.httpserver.*;
-
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.Signature;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import com.sun.net.httpserver.HttpExchange;
+
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.security.KeyStoreUtils;
+import jdk.test.lib.security.timestamp.*;
 import jdk.test.lib.util.JarUtils;
-import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs.SignerInfo;
 import sun.security.timestamp.TimestampToken;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.ObjectIdentifier;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.X500Name;
 
 /*
  * @test
  * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404
- *          8242151
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
@@ -85,240 +79,110 @@ import sun.security.x509.X500Name;
  */
 public class TimestampCheck {
 
-    static final String defaultPolicyId = "2.3.4";
-    static String host = null;
+    private static final String PASSWORD = "changeit";
+    private static final String defaultPolicyId = "2.3.4";
+    private static String host = null;
 
-    static class Handler implements HttpHandler, AutoCloseable {
+    private static class Interceptor implements RespInterceptor {
 
-        private final HttpServer httpServer;
-        private final String keystore;
+        private final String path;
 
-        @Override
-        public void handle(HttpExchange t) throws IOException {
-            int len = 0;
-            for (String h: t.getRequestHeaders().keySet()) {
-                if (h.equalsIgnoreCase("Content-length")) {
-                    len = Integer.valueOf(t.getRequestHeaders().get(h).get(0));
-                }
-            }
-            byte[] input = new byte[len];
-            t.getRequestBody().read(input);
-
-            try {
-                String path = t.getRequestURI().getPath().substring(1);
-                byte[] output = sign(input, path);
-                Headers out = t.getResponseHeaders();
-                out.set("Content-Type", "application/timestamp-reply");
-
-                t.sendResponseHeaders(200, output.length);
-                OutputStream os = t.getResponseBody();
-                os.write(output);
-            } catch (Exception e) {
-                e.printStackTrace();
-                t.sendResponseHeaders(500, 0);
-            }
-            t.close();
+        Interceptor(String path) {
+            this.path = path;
         }
 
-        /**
-         * @param input The data to sign
-         * @param path different cases to simulate, impl on URL path
-         * @returns the signed
-         */
-        byte[] sign(byte[] input, String path) throws Exception {
-
-            DerValue value = new DerValue(input);
-            System.out.println("#\n# Incoming Request\n===================");
-            System.out.println("# Version: " + value.data.getInteger());
-            DerValue messageImprint = value.data.getDerValue();
-            AlgorithmId aid = AlgorithmId.parse(
-                    messageImprint.data.getDerValue());
-            System.out.println("# AlgorithmId: " + aid);
-
-            ObjectIdentifier policyId = ObjectIdentifier.of(defaultPolicyId);
-            BigInteger nonce = null;
-            while (value.data.available() > 0) {
-                DerValue v = value.data.getDerValue();
-                if (v.tag == DerValue.tag_Integer) {
-                    nonce = v.getBigInteger();
-                    System.out.println("# nonce: " + nonce);
-                } else if (v.tag == DerValue.tag_Boolean) {
-                    System.out.println("# certReq: " + v.getBoolean());
-                } else if (v.tag == DerValue.tag_ObjectId) {
-                    policyId = v.getOID();
-                    System.out.println("# PolicyID: " + policyId);
-                }
-            }
-
-            System.out.println("#\n# Response\n===================");
-            KeyStore ks = KeyStore.getInstance(
-                    new File(keystore), "changeit".toCharArray());
-
-            // If path starts with "ts", use the TSA it points to.
-            // Otherwise, always use "ts".
-            String alias = path.startsWith("ts") ? path : "ts";
-
-            if (path.equals("diffpolicy")) {
-                policyId = ObjectIdentifier.of(defaultPolicyId);
-            }
-
-            DerOutputStream statusInfo = new DerOutputStream();
-            statusInfo.putInteger(0);
-
-            AlgorithmId[] algorithms = {aid};
-            Certificate[] chain = ks.getCertificateChain(alias);
-            X509Certificate[] signerCertificateChain;
-            X509Certificate signer = (X509Certificate)chain[0];
-
-            if (path.equals("fullchain")) {   // Only case 5 uses full chain
-                signerCertificateChain = new X509Certificate[chain.length];
-                for (int i=0; i<chain.length; i++) {
-                    signerCertificateChain[i] = (X509Certificate)chain[i];
-                }
+        @Override
+        public X509Certificate[] getSignerCertChain(
+                X509Certificate[] signerCertChain, boolean certReq)
+                throws Exception {
+            if (path.equals("fullchain")) { // Only case 5 uses full chain
+                return signerCertChain;
             } else if (path.equals("nocert")) {
-                signerCertificateChain = new X509Certificate[0];
+                return new X509Certificate[0];
             } else {
-                signerCertificateChain = new X509Certificate[1];
-                signerCertificateChain[0] = (X509Certificate)chain[0];
+                return new X509Certificate[] { signerCertChain[0] };
             }
+        }
 
-            DerOutputStream tst = new DerOutputStream();
+        @Override
+        public String getSigAlgo(String sigAlgo) throws Exception {
+            return "SHA256withRSA";
+        }
 
-            tst.putInteger(1);
-            tst.putOID(policyId);
+        @Override
+        public TsaParam getRespParam(TsaParam reqParam) {
+            TsaParam respParam = RespInterceptor.super.getRespParam(reqParam);
 
-            if (!path.equals("baddigest") && !path.equals("diffalg")) {
-                tst.putDerValue(messageImprint);
-            } else {
-                byte[] data = messageImprint.toByteArray();
-                if (path.equals("diffalg")) {
-                    data[6] = (byte)0x01;
-                } else {
-                    data[data.length-1] = (byte)0x01;
-                    data[data.length-2] = (byte)0x02;
-                    data[data.length-3] = (byte)0x03;
-                }
-                tst.write(data);
+            String policyId
+                    = respParam.policyId() == null || path.equals("diffpolicy")
+                    ? TimestampCheck.defaultPolicyId
+                    : respParam.policyId();
+            respParam.policyId(policyId);
+
+            String digestAlgo = respParam.digestAlgo();
+            if (path.equals("diffalg")) {
+                digestAlgo = digestAlgo.contains("256")
+                        ? "SHA-1" : "SHA-256";
             }
+            respParam.digestAlgo(digestAlgo);
 
-            tst.putInteger(1);
+            byte[] hashedMessage = respParam.hashedMessage();
+            if (path.equals("baddigest")) {
+                hashedMessage[hashedMessage.length - 1] = (byte) 0x01;
+                hashedMessage[hashedMessage.length - 2] = (byte) 0x02;
+                hashedMessage[hashedMessage.length - 3] = (byte) 0x03;
+            }
+            respParam.hashedMessage(hashedMessage);
 
             Instant instant = Instant.now();
             if (path.equals("tsold")) {
                 instant = instant.minus(20, ChronoUnit.DAYS);
             }
-            tst.putGeneralizedTime(Date.from(instant));
+            respParam.genTime(Date.from(instant));
 
+            BigInteger nonce = respParam.nonce();
             if (path.equals("diffnonce")) {
-                tst.putInteger(1234);
+                nonce = BigInteger.valueOf(1234);
             } else if (path.equals("nononce")) {
-                // no noce
-            } else {
-                tst.putInteger(nonce);
+                nonce = null;
             }
+            respParam.nonce(nonce);
 
-            DerOutputStream tstInfo = new DerOutputStream();
-            tstInfo.write(DerValue.tag_Sequence, tst);
-
-            DerOutputStream tstInfo2 = new DerOutputStream();
-            tstInfo2.putOctetString(tstInfo.toByteArray());
-
-            // Always use the same algorithm at timestamp signing
-            // so it is different from the hash algorithm.
-            String sigAlg = "SHA256withRSA";
-            Signature sig = Signature.getInstance(sigAlg);
-            sig.initSign((PrivateKey)(ks.getKey(
-                    alias, "changeit".toCharArray())));
-            sig.update(tstInfo.toByteArray());
-
-            ContentInfo contentInfo = new ContentInfo(ObjectIdentifier.of(
-                    "1.2.840.113549.1.9.16.1.4"),
-                    new DerValue(tstInfo2.toByteArray()));
-
-            System.out.println("# Signing...");
-            System.out.println("# " + new X500Name(signer
-                    .getIssuerX500Principal().getName()));
-            System.out.println("# " + signer.getSerialNumber());
-
-            SignerInfo signerInfo = new SignerInfo(
-                    new X500Name(signer.getIssuerX500Principal().getName()),
-                    signer.getSerialNumber(),
-                    AlgorithmId.get(AlgorithmId.getDigAlgFromSigAlg(sigAlg)),
-                    AlgorithmId.get(AlgorithmId.getEncAlgFromSigAlg(sigAlg)),
-                    sig.sign());
-
-            SignerInfo[] signerInfos = {signerInfo};
-            PKCS7 p7 = new PKCS7(algorithms, contentInfo,
-                    signerCertificateChain, signerInfos);
-            ByteArrayOutputStream p7out = new ByteArrayOutputStream();
-            p7.encodeSignedData(p7out);
-
-            DerOutputStream response = new DerOutputStream();
-            response.write(DerValue.tag_Sequence, statusInfo);
-            response.putDerValue(new DerValue(p7out.toByteArray()));
-
-            DerOutputStream out = new DerOutputStream();
-            out.write(DerValue.tag_Sequence, response);
-
-            return out.toByteArray();
-        }
-
-        private Handler(HttpServer httpServer, String keystore) {
-            this.httpServer = httpServer;
-            this.keystore = keystore;
-        }
-
-        /**
-         * Initialize TSA instance.
-         *
-         * Extended Key Info extension of certificate that is used for
-         * signing TSA responses should contain timeStamping value.
-         */
-        static Handler init(int port, String keystore) throws IOException {
-            HttpServer httpServer = HttpServer.create(
-                    new InetSocketAddress(port), 0);
-            Handler tsa = new Handler(httpServer, keystore);
-            httpServer.createContext("/", tsa);
-            return tsa;
-        }
-
-        /**
-         * Start TSA service.
-         */
-        void start() {
-            httpServer.start();
-        }
-
-        /**
-         * Stop TSA service.
-         */
-        void stop() {
-            httpServer.stop(0);
-        }
-
-        /**
-         * Return server port number.
-         */
-        int getPort() {
-            return httpServer.getAddress().getPort();
-        }
-
-        @Override
-        public void close() throws Exception {
-            stop();
+            return respParam;
         }
     }
 
-    public static void main(String[] args) throws Throwable {
+    private static class Handler extends TsaHandler {
 
-        try (Handler tsa = Handler.init(0, "ks");) {
+        Handler(String keystore) throws Exception {
+            super(KeyStoreUtils.loadKeyStore(keystore, PASSWORD), PASSWORD);
+        }
+
+        public TsaSigner createSigner(HttpExchange exchange)
+                throws Exception {
+            String path = exchange.getRequestURI().getPath().substring(1);
+
+            SignerEntry signerEntry = createSignerEntry(
+                    path.startsWith("ts") ? path : "ts");
+            byte[] requestData = exchange.getRequestBody().readAllBytes();
+            RespInterceptor interceptor = new Interceptor(path);
+            return new TsaSigner(signerEntry, requestData, interceptor);
+        }
+    }
+
+    private static TsaServer initServer(String keystore) throws Exception {
+        return new TsaServer(0, new Handler(keystore));
+    }
+
+    public static void main(String[] args) throws Throwable {
+        prepare();
+
+        try (TsaServer tsa = initServer("ks");) {
             tsa.start();
             int port = tsa.getPort();
             host = "http://localhost:" + port + "/";
 
             if (args.length == 0) {         // Run this test
-
-                prepare();
 
                 sign("normal")
                         .shouldNotContain("Warning")

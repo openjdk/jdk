@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,23 @@ public class CipherOutputStream extends FilterOutputStream {
     private byte[] ibuffer = new byte[1];
 
     // the buffer holding data ready to be written out
-    private byte[] obuffer;
+    private byte[] obuffer = null;
 
     // stream status
     private boolean closed = false;
+
+    /**
+     * Ensure obuffer is big enough for the next update or doFinal
+     * operation, given the input length <code>inLen</code> (in bytes)
+     *
+     * @param inLen the input length (in bytes)
+     */
+    private void ensureCapacity(int inLen) {
+        int minLen = cipher.getOutputSize(inLen);
+        if (obuffer == null || obuffer.length < minLen) {
+            obuffer = new byte[minLen];
+        }
+    }
 
     /**
      *
@@ -123,12 +136,18 @@ public class CipherOutputStream extends FilterOutputStream {
      * @param      b   the <code>byte</code>.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void write(int b) throws IOException {
         ibuffer[0] = (byte) b;
-        obuffer = cipher.update(ibuffer, 0, 1);
-        if (obuffer != null) {
-            output.write(obuffer);
-            obuffer = null;
+        ensureCapacity(1);
+        try {
+            int ostored = cipher.update(ibuffer, 0, 1, obuffer);
+            if (ostored > 0) {
+                output.write(obuffer, 0, ostored);
+            }
+        } catch (ShortBufferException sbe) {
+            // should never happen; re-throw just in case
+            throw new IOException(sbe);
         }
     };
 
@@ -146,6 +165,7 @@ public class CipherOutputStream extends FilterOutputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        javax.crypto.CipherOutputStream#write(byte[], int, int)
      */
+    @Override
     public void write(byte b[]) throws IOException {
         write(b, 0, b.length);
     }
@@ -159,11 +179,17 @@ public class CipherOutputStream extends FilterOutputStream {
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void write(byte b[], int off, int len) throws IOException {
-        obuffer = cipher.update(b, off, len);
-        if (obuffer != null) {
-            output.write(obuffer);
-            obuffer = null;
+        ensureCapacity(len);
+        try {
+            int ostored = cipher.update(b, off, len, obuffer);
+            if (ostored > 0) {
+                output.write(obuffer, 0, ostored);
+            }
+        } catch (ShortBufferException e) {
+            // should never happen; re-throw just in case
+            throw new IOException(e);
         }
     }
 
@@ -180,11 +206,10 @@ public class CipherOutputStream extends FilterOutputStream {
      *
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void flush() throws IOException {
-        if (obuffer != null) {
-            output.write(obuffer);
-            obuffer = null;
-        }
+        // simply call output.flush() since 'obuffer' content is always
+        // written out immediately
         output.flush();
     }
 
@@ -203,20 +228,26 @@ public class CipherOutputStream extends FilterOutputStream {
      *
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void close() throws IOException {
         if (closed) {
             return;
         }
 
         closed = true;
+        ensureCapacity(0);
         try {
-            obuffer = cipher.doFinal();
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
-            obuffer = null;
+            int ostored = cipher.doFinal(obuffer, 0);
+            if (ostored > 0) {
+                output.write(obuffer, 0, ostored);
+            }
+        } catch (IllegalBlockSizeException | BadPaddingException
+                | ShortBufferException e) {
         }
+        obuffer = null;
         try {
             flush();
         } catch (IOException ignored) {}
-        out.close();
+        output.close();
     }
 }

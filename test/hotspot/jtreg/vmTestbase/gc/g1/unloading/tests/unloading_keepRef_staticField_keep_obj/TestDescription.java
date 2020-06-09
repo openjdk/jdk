@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/g1/unloading/tests/unloading_keepRef_staticField_keep_obj.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, javac]

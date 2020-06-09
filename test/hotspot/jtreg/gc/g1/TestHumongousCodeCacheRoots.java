@@ -25,7 +25,6 @@ package gc.g1;
 
 /*
  * @test
- * @key regression gc
  * @bug 8027756
  * @requires vm.gc.G1
  * @library /test/lib

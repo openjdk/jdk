@@ -32,8 +32,7 @@ import java.security.interfaces.*;
 import java.security.spec.*;
 
 import sun.security.action.GetPropertyAction;
-import sun.security.x509.AlgorithmId;
-import static sun.security.rsa.RSAUtil.KeyType;
+import sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * KeyFactory for RSA keys, e.g. "RSA", "RSASSA-PSS".
@@ -211,7 +210,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             throw new InvalidKeyException("Key must not be null");
         }
         // ensure the key algorithm matches the current KeyFactory instance
-        checkKeyAlgo(key, type.keyAlgo());
+        checkKeyAlgo(key, type.keyAlgo);
 
         // no translation needed if the key is already our own impl
         if ((key instanceof RSAPrivateKeyImpl) ||
@@ -259,7 +258,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             RSAPublicKey rsaKey = (RSAPublicKey)key;
             try {
                 return new RSAPublicKeyImpl(
-                    RSAUtil.createAlgorithmId(type, rsaKey.getParams()),
+                    type, rsaKey.getParams(),
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent());
             } catch (ProviderException e) {
@@ -269,7 +268,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
         } else if ("X.509".equals(key.getFormat())) {
             RSAPublicKey translated = new RSAPublicKeyImpl(key.getEncoded());
             // ensure the key algorithm matches the current KeyFactory instance
-            checkKeyAlgo(translated, type.keyAlgo());
+            checkKeyAlgo(translated, type.keyAlgo);
             return translated;
         } else {
             throw new InvalidKeyException("Public keys must be instance "
@@ -284,7 +283,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             RSAPrivateCrtKey rsaKey = (RSAPrivateCrtKey)key;
             try {
                 return new RSAPrivateCrtKeyImpl(
-                    RSAUtil.createAlgorithmId(type, rsaKey.getParams()),
+                    type, rsaKey.getParams(),
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent(),
                     rsaKey.getPrivateExponent(),
@@ -302,7 +301,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             RSAPrivateKey rsaKey = (RSAPrivateKey)key;
             try {
                 return new RSAPrivateKeyImpl(
-                    RSAUtil.createAlgorithmId(type, rsaKey.getParams()),
+                    type, rsaKey.getParams(),
                     rsaKey.getModulus(),
                     rsaKey.getPrivateExponent()
                 );
@@ -314,7 +313,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             RSAPrivateKey translated =
                 RSAPrivateCrtKeyImpl.newKey(key.getEncoded());
             // ensure the key algorithm matches the current KeyFactory instance
-            checkKeyAlgo(translated, type.keyAlgo());
+            checkKeyAlgo(translated, type.keyAlgo);
             return translated;
         } else {
             throw new InvalidKeyException("Private keys must be instance "
@@ -329,13 +328,13 @@ public class RSAKeyFactory extends KeyFactorySpi {
             X509EncodedKeySpec x509Spec = (X509EncodedKeySpec)keySpec;
             RSAPublicKey generated = new RSAPublicKeyImpl(x509Spec.getEncoded());
             // ensure the key algorithm matches the current KeyFactory instance
-            checkKeyAlgo(generated, type.keyAlgo());
+            checkKeyAlgo(generated, type.keyAlgo);
             return generated;
         } else if (keySpec instanceof RSAPublicKeySpec) {
             RSAPublicKeySpec rsaSpec = (RSAPublicKeySpec)keySpec;
             try {
                 return new RSAPublicKeyImpl(
-                    RSAUtil.createAlgorithmId(type, rsaSpec.getParams()),
+                    type, rsaSpec.getParams(),
                     rsaSpec.getModulus(),
                     rsaSpec.getPublicExponent()
                 );
@@ -355,13 +354,13 @@ public class RSAKeyFactory extends KeyFactorySpi {
             PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec)keySpec;
             RSAPrivateKey generated = RSAPrivateCrtKeyImpl.newKey(pkcsSpec.getEncoded());
             // ensure the key algorithm matches the current KeyFactory instance
-            checkKeyAlgo(generated, type.keyAlgo());
+            checkKeyAlgo(generated, type.keyAlgo);
             return generated;
         } else if (keySpec instanceof RSAPrivateCrtKeySpec) {
             RSAPrivateCrtKeySpec rsaSpec = (RSAPrivateCrtKeySpec)keySpec;
             try {
                 return new RSAPrivateCrtKeyImpl(
-                    RSAUtil.createAlgorithmId(type, rsaSpec.getParams()),
+                    type, rsaSpec.getParams(),
                     rsaSpec.getModulus(),
                     rsaSpec.getPublicExponent(),
                     rsaSpec.getPrivateExponent(),
@@ -378,7 +377,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             RSAPrivateKeySpec rsaSpec = (RSAPrivateKeySpec)keySpec;
             try {
                 return new RSAPrivateKeyImpl(
-                    RSAUtil.createAlgorithmId(type, rsaSpec.getParams()),
+                    type, rsaSpec.getParams(),
                     rsaSpec.getModulus(),
                     rsaSpec.getPrivateExponent()
                 );

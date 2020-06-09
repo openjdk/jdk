@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,14 @@
 
 package org.graalvm.compiler.hotspot.amd64;
 
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.LEAF;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.NO_LOCATIONS;
+
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.SnippetStub;
 import org.graalvm.compiler.options.OptionValues;
@@ -38,28 +43,28 @@ import jdk.vm.ci.meta.JavaKind;
 
 public final class AMD64ArrayEqualsStub extends SnippetStub {
 
-    public static final ForeignCallDescriptor STUB_BOOLEAN_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_BOOLEAN_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "booleanArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_BYTE_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_BYTE_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "byteArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_CHAR_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_CHAR_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "charArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_SHORT_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_SHORT_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "shortArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_INT_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_INT_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "intArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_LONG_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_LONG_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "longArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_FLOAT_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_FLOAT_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "floatArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_DOUBLE_ARRAY_EQUALS = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_DOUBLE_ARRAY_EQUALS = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "doubleArraysEquals", boolean.class, Pointer.class, Pointer.class, int.class);
 
-    public static final ForeignCallDescriptor STUB_BYTE_ARRAY_EQUALS_DIRECT = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_BYTE_ARRAY_EQUALS_DIRECT = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "byteArraysEqualsDirect", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_CHAR_ARRAY_EQUALS_DIRECT = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_CHAR_ARRAY_EQUALS_DIRECT = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "charArraysEqualsDirect", boolean.class, Pointer.class, Pointer.class, int.class);
-    public static final ForeignCallDescriptor STUB_CHAR_ARRAY_EQUALS_BYTE_ARRAY = new ForeignCallDescriptor(
+    public static final HotSpotForeignCallDescriptor STUB_CHAR_ARRAY_EQUALS_BYTE_ARRAY = new HotSpotForeignCallDescriptor(LEAF, REEXECUTABLE, NO_LOCATIONS,
                     "charArrayEqualsByteArray", boolean.class, Pointer.class, Pointer.class, int.class);
 
     public AMD64ArrayEqualsStub(ForeignCallDescriptor foreignCallDescriptor, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {

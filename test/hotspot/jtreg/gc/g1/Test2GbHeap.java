@@ -25,7 +25,6 @@ package gc.g1;
 
 /*
  * @test Test2GbHeap
- * @key gc regression
  * @bug 8031686
  * @summary Regression test to ensure we can start G1 with 2gb heap.
  * Skip test on 32 bit system: it typically does not support the many and large virtual memory reservations needed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 8033626
+ * @bug 8033626 8246453
  * @summary assert(ex_map->jvms()->same_calls_as(_exceptions->jvms())) failed: all collected exceptions must come from the same place
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
  * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *      -XX:CompileCommand=compileonly,compiler.intrinsics.object.TestClone::test*
+ *      compiler.intrinsics.object.TestClone
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.object.TestClone::test*
  *      compiler.intrinsics.object.TestClone
  */

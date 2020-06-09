@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,6 @@ public class DeployParamsTest {
         params = new DeployParams();
 
         params.setOutput(testRoot);
-        params.addResource(testRoot, new File(testRoot, "test.jar"));
         params.addBundleArgument(Arguments.CLIOptions.APPCLASS.getId(),
                 "TestClass");
         params.addBundleArgument(Arguments.CLIOptions.MAIN_JAR.getId(),

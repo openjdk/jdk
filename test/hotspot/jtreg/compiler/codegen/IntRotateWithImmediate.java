@@ -26,7 +26,6 @@
  * @test
  * @bug 8080190
  * @bug 8154537
- * @key regression
  * @summary Test that the rotate distance used in the rotate instruction is properly masked with 0x1f
  *
  * @run main/othervm -Xbatch -XX:-UseOnStackReplacement compiler.codegen.IntRotateWithImmediate

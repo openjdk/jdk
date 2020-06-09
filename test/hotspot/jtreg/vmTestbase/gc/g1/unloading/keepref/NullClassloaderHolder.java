@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ public class NullClassloaderHolder implements RefHolder {
 
     private static final int NUMBER_OF_CLASSES = 1000;
     private static Set<Class<?>> classesPool = Collections.synchronizedSet(new HashSet<Class<?>>());
+    private final Random random;
 
     static {
         for (int i = 1; i <= NUMBER_OF_CLASSES; i++) {
@@ -47,6 +48,10 @@ public class NullClassloaderHolder implements RefHolder {
                 throw new RuntimeException("Test bug", e);
             }
         }
+    }
+
+    public NullClassloaderHolder(long seed) {
+        random = new Random(seed);
     }
 
     @Override
@@ -66,14 +71,14 @@ public class NullClassloaderHolder implements RefHolder {
         }
     }
 
-    private static Field getRandomField(Class<?> clazz) {
+    private Field getRandomField(Class<?> clazz) {
         ArrayList<Field> fields = new ArrayList<>();
         for (Field f : clazz.getFields()) {
             if (f.getName().startsWith("staticField")) {
                 fields.add(f);
             }
         }
-        return fields.get(new Random().nextInt(fields.size()));
+        return fields.get(random.nextInt(fields.size()));
     }
 
 }

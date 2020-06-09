@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,30 @@ inline bool ZReentrantLock::is_owned() const {
   Thread* const thread = Thread::current();
   Thread* const owner = Atomic::load(&_owner);
   return owner == thread;
+}
+
+inline void ZConditionLock::lock() {
+  _lock.lock();
+}
+
+inline bool ZConditionLock::try_lock() {
+  return _lock.try_lock();
+}
+
+inline void ZConditionLock::unlock() {
+  _lock.unlock();
+}
+
+inline bool ZConditionLock::wait(uint64_t millis) {
+  return _lock.wait(millis) == OS_OK;
+}
+
+inline void ZConditionLock::notify() {
+  _lock.notify();
+}
+
+inline void ZConditionLock::notify_all() {
+  _lock.notify_all();
 }
 
 template <typename T>

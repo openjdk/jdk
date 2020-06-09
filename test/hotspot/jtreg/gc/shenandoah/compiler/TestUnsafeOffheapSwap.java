@@ -24,7 +24,6 @@
 /**
  * @test TestUnsafeOffheapSwap
  * @summary Miscompilation in Unsafe off-heap swap routines
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc:+open
  *

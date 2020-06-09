@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Twitter, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /* @test TestSizeTransitionsSerial
- * @key gc
  * @requires vm.gc.Serial
  * @summary Tests that the metaspace size transition logging is done correctly.
  * @library /test/lib
@@ -41,7 +40,6 @@ import java.util.List;
  */
 
 /* @test TestSizeTransitionsParallel
- * @key gc
  * @requires vm.gc.Parallel
  * @summary Tests that the metaspace size transition logging is done correctly.
  * @library /test/lib
@@ -50,7 +48,6 @@ import java.util.List;
  */
 
 /* @test TestSizeTransitionsG1
- * @key gc
  * @requires vm.gc.G1
  * @summary Tests that the metaspace size transition logging is done correctly.
  * @library /test/lib

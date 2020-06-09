@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestG1ConcRefinementThreads
- * @key gc
  * @bug 8047976
  * @requires vm.gc.G1
  * @summary Tests argument processing for G1ConcRefinementThreads

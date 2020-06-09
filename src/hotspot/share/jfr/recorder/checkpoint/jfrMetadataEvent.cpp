@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,10 @@ static void write_metadata_blob(JfrChunkWriter& chunkwriter) {
   chunkwriter.write_unbuffered(data_address, length);
 }
 
-void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
+bool JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   assert(chunkwriter.is_valid(), "invariant");
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
-    return;
+    return false;
   }
   // header
   const int64_t metadata_offset = chunkwriter.reserve(sizeof(u4));
@@ -65,6 +65,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   chunkwriter.write_padded_at_offset((u4)size_written, metadata_offset);
   chunkwriter.set_last_metadata_offset(metadata_offset);
   last_metadata_id = metadata_id;
+  return true;
 }
 
 void JfrMetadataEvent::update(jbyteArray metadata) {

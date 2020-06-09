@@ -71,8 +71,8 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
         if (!hasNoUsages()) {
             AbstractBeginNode prevBegin = prevBegin(evacuateFrom);
             assert prevBegin != null;
-            replaceAtUsages(InputType.Anchor, prevBegin);
-            replaceAtUsages(InputType.Guard, prevBegin);
+            replaceAtUsages(prevBegin, InputType.Anchor);
+            replaceAtUsages(prevBegin, InputType.Guard);
             assert anchored().isEmpty() : anchored().snapshot();
         }
     }

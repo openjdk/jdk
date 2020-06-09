@@ -46,7 +46,9 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -144,12 +146,12 @@ import org.graalvm.compiler.nodes.java.InstanceOfDynamicNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.LoadExceptionObjectNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.NewMultiArrayNode;
-import org.graalvm.compiler.nodes.java.RawMonitorEnterNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
@@ -209,8 +211,9 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
     protected ForeignCallSnippets.Templates foreignCallSnippets;
 
     public DefaultHotSpotLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, HotSpotRegistersProvider registers,
-                    HotSpotConstantReflectionProvider constantReflection, PlatformConfigurationProvider platformConfig, TargetDescription target) {
-        super(metaAccess, foreignCalls, platformConfig, target, runtime.getVMConfig().useCompressedOops);
+                    HotSpotConstantReflectionProvider constantReflection, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
+                    TargetDescription target) {
+        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, runtime.getVMConfig().useCompressedOops);
         this.runtime = runtime;
         this.registers = registers;
         this.constantReflection = constantReflection;
@@ -296,7 +299,8 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
                     if (instanceOfDynamicNode.allowsNull()) {
                         ValueNode object = instanceOfDynamicNode.getObject();
                         LogicNode newTypeCheck = graph.addOrUniqueWithInputs(
-                                        InstanceOfDynamicNode.create(graph.getAssumptions(), tool.getConstantReflection(), instanceOfDynamicNode.getMirrorOrHub(), object, false));
+                                        InstanceOfDynamicNode.create(graph.getAssumptions(), tool.getConstantReflection(), instanceOfDynamicNode.getMirrorOrHub(), object,
+                                                        false/* null checked below */, instanceOfDynamicNode.isExact()));
                         LogicNode newNode = LogicNode.or(graph.unique(IsNullNode.create(object)), newTypeCheck, GraalDirectives.UNLIKELY_PROBABILITY);
                         instanceOfDynamicNode.replaceAndDelete(newNode);
                     }
@@ -337,9 +341,11 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
                     allocationSnippets.lower((VerifyHeapNode) n, tool);
                 }
-            } else if (n instanceof RawMonitorEnterNode) {
+            } else if (n instanceof MonitorEnterNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    monitorSnippets.lower((RawMonitorEnterNode) n, registers, tool);
+                    monitorSnippets.lower((MonitorEnterNode) n, registers, tool);
+                } else {
+                    loadHubForMonitorEnterNode((MonitorEnterNode) n, tool, graph);
                 }
             } else if (n instanceof MonitorExitNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
@@ -425,6 +431,14 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
             }
         }
 
+    }
+
+    protected void loadHubForMonitorEnterNode(MonitorEnterNode monitor, LoweringTool tool, StructuredGraph graph) {
+        if (monitor.getObjectData() == null) {
+            ValueNode objectNonNull = createNullCheckedValue(monitor.object(), monitor, tool);
+            monitor.setObject(objectNonNull);
+            monitor.setObjectData(graph.addOrUnique(LoadHubNode.create(objectNonNull, tool.getStampProvider(), tool.getMetaAccess(), tool.getConstantReflection())));
+        }
     }
 
     private static void lowerComputeObjectAddressNode(ComputeObjectAddressNode n) {
@@ -591,6 +605,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
 
     private void lowerStoreHubNode(StoreHubNode storeHub, StructuredGraph graph) {
         WriteNode hub = createWriteHub(graph, storeHub.getObject(), storeHub.getValue());
+        hub.setStateAfter(storeHub.stateAfter());
         graph.replaceFixed(storeHub, hub);
     }
 
@@ -599,7 +614,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
         if (graph.getGuardsStage() == StructuredGraph.GuardsStage.FIXED_DEOPTS) {
             StartNode newStart = graph.add(new StartNode());
             ParameterNode buffer = graph.addWithoutUnique(new ParameterNode(0, StampPair.createSingle(StampFactory.forKind(runtime.getTarget().wordJavaKind))));
-            ForeignCallNode migrationEnd = graph.add(new ForeignCallNode(foreignCalls, OSR_MIGRATION_END, buffer));
+            ForeignCallNode migrationEnd = graph.add(new ForeignCallNode(OSR_MIGRATION_END, buffer));
             migrationEnd.setStateAfter(osrStart.stateAfter());
             newStart.setNext(migrationEnd);
             FixedNode next = osrStart.next();
@@ -649,7 +664,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
 
                 // write the displaced mark to the correct stack slot
                 AddressNode addressDisplacedMark = createOffsetAddress(graph, beginLockScope, runtime.getVMConfig().basicLockDisplacedHeaderOffset);
-                WriteNode writeStackSlot = graph.add(new WriteNode(addressDisplacedMark, DISPLACED_MARK_WORD_LOCATION, loadDisplacedHeader, BarrierType.NONE, false));
+                WriteNode writeStackSlot = graph.add(new WriteNode(addressDisplacedMark, DISPLACED_MARK_WORD_LOCATION, loadDisplacedHeader, BarrierType.NONE));
                 graph.addBeforeFixed(migrationEnd, writeStackSlot);
 
                 // load the lock object from the osr buffer
@@ -682,17 +697,17 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
     }
 
     public static final class RuntimeCalls {
-        public static final EnumMap<BytecodeExceptionKind, ForeignCallDescriptor> runtimeCalls;
+        public static final EnumMap<BytecodeExceptionKind, ForeignCallSignature> runtimeCalls;
 
         static {
             runtimeCalls = new EnumMap<>(BytecodeExceptionKind.class);
-            runtimeCalls.put(BytecodeExceptionKind.ARRAY_STORE, new ForeignCallDescriptor("createArrayStoreException", ArrayStoreException.class, Object.class));
-            runtimeCalls.put(BytecodeExceptionKind.CLASS_CAST, new ForeignCallDescriptor("createClassCastException", ClassCastException.class, Object.class, KlassPointer.class));
-            runtimeCalls.put(BytecodeExceptionKind.NULL_POINTER, new ForeignCallDescriptor("createNullPointerException", NullPointerException.class));
-            runtimeCalls.put(BytecodeExceptionKind.OUT_OF_BOUNDS, new ForeignCallDescriptor("createOutOfBoundsException", ArrayIndexOutOfBoundsException.class, int.class, int.class));
-            runtimeCalls.put(BytecodeExceptionKind.DIVISION_BY_ZERO, new ForeignCallDescriptor("createDivisionByZeroException", ArithmeticException.class));
-            runtimeCalls.put(BytecodeExceptionKind.INTEGER_EXACT_OVERFLOW, new ForeignCallDescriptor("createIntegerExactOverflowException", ArithmeticException.class));
-            runtimeCalls.put(BytecodeExceptionKind.LONG_EXACT_OVERFLOW, new ForeignCallDescriptor("createLongExactOverflowException", ArithmeticException.class));
+            runtimeCalls.put(BytecodeExceptionKind.ARRAY_STORE, new ForeignCallSignature("createArrayStoreException", ArrayStoreException.class, Object.class));
+            runtimeCalls.put(BytecodeExceptionKind.CLASS_CAST, new ForeignCallSignature("createClassCastException", ClassCastException.class, Object.class, KlassPointer.class));
+            runtimeCalls.put(BytecodeExceptionKind.NULL_POINTER, new ForeignCallSignature("createNullPointerException", NullPointerException.class));
+            runtimeCalls.put(BytecodeExceptionKind.OUT_OF_BOUNDS, new ForeignCallSignature("createOutOfBoundsException", ArrayIndexOutOfBoundsException.class, int.class, int.class));
+            runtimeCalls.put(BytecodeExceptionKind.DIVISION_BY_ZERO, new ForeignCallSignature("createDivisionByZeroException", ArithmeticException.class));
+            runtimeCalls.put(BytecodeExceptionKind.INTEGER_EXACT_OVERFLOW, new ForeignCallSignature("createIntegerExactOverflowException", ArithmeticException.class));
+            runtimeCalls.put(BytecodeExceptionKind.LONG_EXACT_OVERFLOW, new ForeignCallSignature("createLongExactOverflowException", ArithmeticException.class));
         }
     }
 
@@ -714,18 +729,20 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
             return;
         }
 
-        ForeignCallDescriptor descriptor = RuntimeCalls.runtimeCalls.get(node.getExceptionKind());
+        ForeignCallDescriptor descriptor = foreignCalls.getDescriptor(RuntimeCalls.runtimeCalls.get(node.getExceptionKind()));
         assert descriptor != null;
 
         StructuredGraph graph = node.graph();
-        ForeignCallNode foreignCallNode = graph.add(new ForeignCallNode(foreignCalls, descriptor, node.stamp(NodeView.DEFAULT), node.getArguments()));
+        ForeignCallNode foreignCallNode = graph.add(new ForeignCallNode(descriptor, node.stamp(NodeView.DEFAULT), node.getArguments()));
         /*
          * The original BytecodeExceptionNode has a rethrowException FrameState which isn't suitable
          * for deopt because the exception to be thrown come from this call so it's not available in
          * the debug info. The foreign call needs a stateDuring instead so it can deopt with a
          * pending exception.
          */
-        foreignCallNode.setStateAfter(node.createStateDuring());
+        foreignCallNode.setStateDuring(node.createStateDuring());
+        // Keep a proper stateAfter for use by FSA
+        foreignCallNode.setStateAfter(node.stateAfter());
         graph.replaceFixedWithFixed(node, foreignCallNode);
     }
 
@@ -774,7 +791,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
         }
 
         AddressNode address = createOffsetAddress(graph, object, runtime.getVMConfig().hubOffset);
-        return graph.add(new WriteNode(address, HUB_WRITE_LOCATION, writeValue, BarrierType.NONE, false));
+        return graph.add(new WriteNode(address, HUB_WRITE_LOCATION, writeValue, BarrierType.NONE));
     }
 
     @Override
@@ -785,11 +802,6 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
     @Override
     public int arrayLengthOffset() {
         return runtime.getVMConfig().arrayOopDescLengthOffset();
-    }
-
-    @Override
-    public final JavaKind getStorageKind(ResolvedJavaField field) {
-        return field.getJavaKind();
     }
 
     @Override

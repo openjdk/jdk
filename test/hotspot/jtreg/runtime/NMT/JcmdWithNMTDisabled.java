@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @key nmt jcmd
  * @summary Verify that jcmd correctly reports that NMT is not enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

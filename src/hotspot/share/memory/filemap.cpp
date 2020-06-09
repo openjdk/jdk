@@ -1499,11 +1499,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     si->set_read_only(false); // Need to patch the pointers
   }
 
-  if (rs.is_reserved()) {
-    assert(rs.contains(requested_addr) && rs.contains(requested_addr + size - 1), "must be");
-    MemTracker::record_virtual_memory_type((address)requested_addr, mtClassShared);
-  }
-
   if (MetaspaceShared::use_windows_memory_mapping() && rs.is_reserved()) {
     // This is the second time we try to map the archive(s). We have already created a ReservedSpace
     // that covers all the FileMapRegions to ensure all regions can be mapped. However, Windows
@@ -1515,9 +1510,12 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     }
   } else {
+    // Note that this may either be a "fresh" mapping into unreserved address
+    // space (Windows, first mapping attempt), or a mapping into pre-reserved
+    // space (Posix). See also comment in MetaspaceShared::map_archives().
     char* base = os::map_memory(_fd, _full_path, si->file_offset(),
                                 requested_addr, size, si->read_only(),
-                                si->allow_exec());
+                                si->allow_exec(), mtClassShared);
     if (base != requested_addr) {
       log_info(cds)("Unable to map %s shared space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
@@ -1527,14 +1525,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     si->set_mapped_from_file(true);
   }
   si->set_mapped_base(requested_addr);
-
-  if (!rs.is_reserved()) {
-    // When mapping on Windows for the first attempt, we don't reserve the address space for the regions
-    // (Windows can't mmap into a ReservedSpace). In this case, NMT requires we call it after
-    // os::map_memory has succeeded.
-    assert(MetaspaceShared::use_windows_memory_mapping(), "Windows memory mapping only");
-    MemTracker::record_virtual_memory_type((address)requested_addr, mtClassShared);
-  }
 
   if (VerifySharedSpaces && !verify_region_checksum(i)) {
     return MAP_ARCHIVE_OTHER_FAILURE;
@@ -1552,7 +1542,7 @@ char* FileMapInfo::map_bitmap_region() {
   bool read_only = true, allow_exec = false;
   char* requested_addr = NULL; // allow OS to pick any location
   char* bitmap_base = os::map_memory(_fd, _full_path, si->file_offset(),
-                                     requested_addr, si->used_aligned(), read_only, allow_exec);
+                                     requested_addr, si->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == NULL) {
     log_error(cds)("failed to map relocation bitmap");
     return NULL;

@@ -27,7 +27,6 @@ package gc.g1;
  * @test TestLargePageUseForAuxMemory.java
  * @summary Test that auxiliary data structures are allocated using large pages if available.
  * @bug 8058354 8079208
- * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.gc.G1

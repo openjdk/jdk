@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 #include "jfr/recorder/storage/jfrMemorySpaceRetrieval.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
+#include "jfr/utilities/jfrLinkedList.hpp"
 
 class JfrChunkWriter;
 class JfrStringPool;
-class Mutex;
 
-typedef JfrMemorySpace<JfrStringPoolBuffer, JfrMspaceSequentialRetrieval, JfrStringPool> JfrStringPoolMspace;
+typedef JfrMemorySpace<JfrStringPool, JfrMspaceRetrieval, JfrLinkedList<JfrStringPoolBuffer> > JfrStringPoolMspace;
 
 //
 // Although called JfrStringPool, a more succinct description would be
@@ -48,21 +48,15 @@ class JfrStringPool : public JfrCHeapObj {
   size_t write();
   size_t write_at_safepoint();
   size_t clear();
+  typedef JfrStringPoolMspace::Node    Buffer;
+  typedef JfrStringPoolMspace::NodePtr BufferPtr;
 
-  typedef JfrStringPoolMspace::Type Buffer;
  private:
-  JfrStringPoolMspace* _free_list_mspace;
-  Mutex* _lock;
+  JfrStringPoolMspace* _mspace;
   JfrChunkWriter& _chunkwriter;
 
-  // mspace callback
-  void register_full(Buffer* t, Thread* thread);
-  void lock();
-  void unlock();
-  DEBUG_ONLY(bool is_locked() const;)
-
-  static Buffer* lease_buffer(Thread* thread, size_t size = 0);
-  static Buffer* flush(Buffer* old, size_t used, size_t requested, Thread* t);
+  static BufferPtr lease(Thread* thread, size_t size = 0);
+  static BufferPtr flush(BufferPtr old, size_t used, size_t requested, Thread* thread);
 
   JfrStringPool(JfrChunkWriter& cw);
   ~JfrStringPool();
@@ -73,11 +67,14 @@ class JfrStringPool : public JfrCHeapObj {
   static void destroy();
   static bool is_modified();
 
+  // mspace callback
+  void register_full(BufferPtr buffer, Thread* thread);
+
   friend class JfrRecorder;
   friend class JfrRecorderService;
   friend class JfrStringPoolFlush;
   friend class JfrStringPoolWriter;
-  template <typename, template <typename> class, typename>
+  template <typename, template <typename> class, typename, typename, bool>
   friend class JfrMemorySpace;
 };
 

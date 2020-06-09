@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 
 @NodeInfo(cycles = CYCLES_4, size = SIZE_16)
 public class ResolveConstantNode extends DeoptimizingFixedWithNextNode implements Lowerable {
@@ -53,11 +52,6 @@ public class ResolveConstantNode extends DeoptimizingFixedWithNextNode implement
         super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.action = HotSpotConstantLoadAction.RESOLVE;
-    }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
     }
 
     public ValueNode value() {

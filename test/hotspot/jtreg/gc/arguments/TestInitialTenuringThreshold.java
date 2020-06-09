@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestInitialTenuringThreshold
- * @key gc
  * @bug 8014765
  * @requires vm.gc.Parallel
  * @summary Tests argument processing for initial tenuring threshold

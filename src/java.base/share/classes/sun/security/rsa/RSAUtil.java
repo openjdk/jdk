@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,52 +40,71 @@ import sun.security.x509.AlgorithmId;
 public class RSAUtil {
 
     public enum KeyType {
-        RSA ("RSA"),
-        PSS ("RSASSA-PSS")
+        RSA ("RSA", AlgorithmId.RSAEncryption_oid, null),
+        PSS ("RSASSA-PSS", AlgorithmId.RSASSA_PSS_oid, PSSParameterSpec.class)
         ;
 
-        private final String algo;
+        final String keyAlgo;
+        final ObjectIdentifier oid;
+        final Class<? extends AlgorithmParameterSpec> paramSpecCls;
 
-        KeyType(String keyAlgo) {
-            this.algo = keyAlgo;
+        KeyType(String keyAlgo, ObjectIdentifier oid,
+                Class<? extends AlgorithmParameterSpec> paramSpecCls) {
+            this.keyAlgo = keyAlgo;
+            this.oid = oid;
+            this.paramSpecCls = paramSpecCls;
         }
-        public String keyAlgo() {
-            return algo;
-        }
-        public static KeyType lookup(String name)
-                throws InvalidKeyException, ProviderException {
-            if (name == null) {
-                throw new InvalidKeyException("Null key algorithm");
+
+        public static KeyType lookup(String name) throws ProviderException {
+
+            requireNonNull(name, "Key algorithm should not be null");
+
+            // match loosely in order to work with 3rd party providers which
+            // may not follow the standard names
+            if (name.indexOf("PSS") != -1) {
+                return PSS;
+            } else if (name.indexOf("RSA") != -1) {
+                return RSA;
+            } else { // no match
+                throw new ProviderException("Unsupported algorithm " + name);
             }
-            for (KeyType kt : KeyType.values()) {
-                if (kt.keyAlgo().equalsIgnoreCase(name)) {
-                    return kt;
-                }
-            }
-            // no match
-            throw new ProviderException("Unsupported algorithm " + name);
         }
     }
 
-    public static void checkParamsAgainstType(KeyType type,
+    private static void requireNonNull(Object obj, String msg) {
+        if (obj == null) throw new ProviderException(msg);
+    }
+
+    public static AlgorithmParameterSpec checkParamsAgainstType(KeyType type,
             AlgorithmParameterSpec paramSpec) throws ProviderException {
-        switch (type) {
-            case RSA:
-                if (paramSpec != null) {
-                    throw new ProviderException("null params expected for " +
-                        type.keyAlgo());
-                }
-                break;
-            case PSS:
-                if ((paramSpec != null) &&
-                    !(paramSpec instanceof PSSParameterSpec)) {
-                    throw new ProviderException
-                        ("PSSParmeterSpec expected for " + type.keyAlgo());
-                }
-                break;
-            default:
-                throw new ProviderException
-                    ("Unsupported RSA algorithm " + type);
+
+        // currently no check for null parameter spec
+        // assumption is parameter spec is optional and can be null
+        if (paramSpec == null) return null;
+
+        Class<? extends AlgorithmParameterSpec> expCls = type.paramSpecCls;
+        if (expCls == null) {
+            throw new ProviderException("null params expected for " +
+                    type.keyAlgo);
+        } else if (!expCls.isInstance(paramSpec)) {
+            throw new ProviderException
+                    (expCls + " expected for " + type.keyAlgo);
+        }
+        return paramSpec;
+    }
+
+    public static AlgorithmParameters getParams(KeyType type,
+            AlgorithmParameterSpec spec) throws ProviderException {
+
+        if (spec == null) return null;
+
+        try {
+            AlgorithmParameters params =
+                    AlgorithmParameters.getInstance(type.keyAlgo);
+            params.init(spec);
+            return params;
+        } catch (NoSuchAlgorithmException | InvalidParameterSpecException ex) {
+            throw new ProviderException(ex);
         }
     }
 
@@ -94,69 +113,53 @@ public class RSAUtil {
 
         checkParamsAgainstType(type, paramSpec);
 
-        ObjectIdentifier oid = null;
-        AlgorithmParameters params = null;
-        try {
-            switch (type) {
-                case RSA:
-                    oid = AlgorithmId.RSAEncryption_oid;
-                    break;
-                case PSS:
-                    if (paramSpec != null) {
-                        params = AlgorithmParameters.getInstance(type.keyAlgo());
-                        params.init(paramSpec);
-                    }
-                    oid = AlgorithmId.RSASSA_PSS_oid;
-                    break;
-                default:
-                    throw new ProviderException
-                        ("Unsupported RSA algorithm "  + type);
-            }
-            AlgorithmId result;
-            if (params == null) {
-                result = new AlgorithmId(oid);
-            } else {
-                result = new AlgorithmId(oid, params);
-            }
-            return result;
-        } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
-            // should not happen
-            throw new ProviderException(e);
-        }
+        ObjectIdentifier oid = type.oid;
+        AlgorithmParameters params = getParams(type, paramSpec);
+        return new AlgorithmId(oid, params);
     }
 
-    public static AlgorithmParameterSpec getParamSpec(AlgorithmId algid)
-            throws ProviderException {
-        if (algid == null) {
-            throw new ProviderException("AlgorithmId should not be null");
-        }
-        return getParamSpec(algid.getParameters());
-    }
+    public static AlgorithmParameterSpec getParamSpec(
+            AlgorithmParameters params) throws ProviderException {
 
-    public static AlgorithmParameterSpec getParamSpec(AlgorithmParameters params)
-            throws ProviderException {
         if (params == null) return null;
 
-        try {
-            String algName = params.getAlgorithm();
-            KeyType type = KeyType.lookup(algName);
-            Class<? extends AlgorithmParameterSpec> specCls;
-            switch (type) {
-                case RSA:
-                    throw new ProviderException("No params accepted for " +
-                        type.keyAlgo());
-                case PSS:
-                    specCls = PSSParameterSpec.class;
-                    break;
-                default:
-                    throw new ProviderException("Unsupported RSA algorithm: " + algName);
-            }
-            return params.getParameterSpec(specCls);
-        } catch (ProviderException pe) {
-            // pass it up
-            throw pe;
-        } catch (Exception e) {
-            throw new ProviderException(e);
+        String algName = params.getAlgorithm();
+
+        KeyType type = KeyType.lookup(algName);
+        Class<? extends AlgorithmParameterSpec> specCls = type.paramSpecCls;
+        if (specCls == null) {
+            throw new ProviderException("No params accepted for " +
+                    type.keyAlgo);
         }
+        try {
+            return params.getParameterSpec(specCls);
+        } catch (InvalidParameterSpecException ex) {
+            throw new ProviderException(ex);
+        }
+    }
+
+    public static Object[] getTypeAndParamSpec(AlgorithmId algid)
+            throws ProviderException {
+
+        requireNonNull(algid, "AlgorithmId should not be null");
+
+        Object[] result = new Object[2];
+
+        String algName = algid.getName();
+        try {
+            result[0] = KeyType.lookup(algName);
+        } catch (ProviderException pe) {
+            // accommodate RSA keys encoded with various RSA signature oids
+            // for backward compatibility
+            if (algName.indexOf("RSA") != -1) {
+                result[0] = KeyType.RSA;
+            } else {
+                // pass it up
+                throw pe;
+            }
+        }
+
+        result[1] = getParamSpec(algid.getParameters());
+        return result;
     }
 }

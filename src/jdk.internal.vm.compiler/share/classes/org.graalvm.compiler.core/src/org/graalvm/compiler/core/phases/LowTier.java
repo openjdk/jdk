@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.core.phases;
 
-import static org.graalvm.compiler.core.common.GraalOptions.LateMembars;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -37,7 +36,6 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.ExpandLogicPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
-import org.graalvm.compiler.phases.common.InsertMembarsPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.ProfileCompiledMethodsPhase;
 import org.graalvm.compiler.phases.common.PropagateDeoptimizeProbabilityPhase;
@@ -80,9 +78,6 @@ public class LowTier extends BaseTier<LowTierContext> {
 
         appendPhase(new PropagateDeoptimizeProbabilityPhase());
 
-        if (LateMembars.getValue(options)) {
-            appendPhase(new InsertMembarsPhase());
-        }
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
     }
 }

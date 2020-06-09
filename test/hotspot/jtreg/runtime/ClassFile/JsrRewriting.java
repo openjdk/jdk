@@ -32,7 +32,6 @@
  * @bug 7053586
  * @bug 7185550
  * @bug 7149464
- * @key cte_test
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.desktop

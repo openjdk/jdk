@@ -251,7 +251,7 @@ a.ui-button:active,
 .ui-button:active,
 .ui-button.ui-state-active:hover {
 	border: 1px solid #aaaaaa;
-	background: #F8981D;
+	background: #dadada url("images/ui-bg_glass_65_dadada_1x400.png") 50% 50% repeat-x;
 	font-weight: normal;
 	color: #212121;
 }

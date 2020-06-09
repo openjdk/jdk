@@ -239,21 +239,11 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
       C_O_FLAG_NONE="${C_O_FLAG_NONE} ${DISABLE_FORTIFY_CFLAGS}"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # On MacOSX we optimize for size, something
-      # we should do for all platforms?
-      C_O_FLAG_HIGHEST_JVM="-Os"
-      C_O_FLAG_HIGHEST="-Os"
-      C_O_FLAG_HI="-Os"
-      C_O_FLAG_NORM="-Os"
-      C_O_FLAG_DEBUG_JVM=""
-    else
-      C_O_FLAG_HIGHEST_JVM="-O3"
-      C_O_FLAG_HIGHEST="-O3"
-      C_O_FLAG_HI="-O3"
-      C_O_FLAG_NORM="-O2"
-      C_O_FLAG_DEBUG_JVM="-O0"
-    fi
+    C_O_FLAG_HIGHEST_JVM="-O3"
+    C_O_FLAG_HIGHEST="-O3"
+    C_O_FLAG_HI="-O3"
+    C_O_FLAG_NORM="-O2"
+    C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_SIZE="-Os"
     C_O_FLAG_DEBUG="-O0"
     C_O_FLAG_NONE="-O0"

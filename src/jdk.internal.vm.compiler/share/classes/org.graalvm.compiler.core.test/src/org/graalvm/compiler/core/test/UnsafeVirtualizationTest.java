@@ -282,6 +282,7 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
         } else {
             UNSAFE.putLong(t, getUnsafeByteArrayOffset(0), l2);
         }
+        sideEffect();
         if (c) {
             GraalDirectives.deoptimize();
         }
@@ -495,7 +496,7 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
         VirtualObjectNode virtual = graph.getNodes().filter(VirtualObjectNode.class).first();
         if (virtual instanceof VirtualArrayNode) {
             VirtualArrayNode array = (VirtualArrayNode) virtual;
-            if (array.isVirtualByteArray()) {
+            if (array.isVirtualByteArray(context.getMetaAccessExtensionProvider())) {
                 canVirtualize = context.getPlatformConfigurationProvider().canVirtualizeLargeByteArrayAccess();
             }
         }

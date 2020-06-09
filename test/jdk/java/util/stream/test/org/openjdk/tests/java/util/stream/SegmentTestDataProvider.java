@@ -23,7 +23,6 @@
 
 package org.openjdk.tests.java.util.stream;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
@@ -116,9 +115,9 @@ public class SegmentTestDataProvider {
 
     static Consumer<MemorySegment> segmentCopier(Consumer<MemorySegment> input) {
         return segment -> {
-            MemorySegment copy = MemorySegment.ofArray(new byte[(int)segment.byteSize()]);
-            MemoryAddress.copy(segment.baseAddress(), copy.baseAddress(), segment.byteSize());
-            input.accept(copy);
+            MemorySegment dest = MemorySegment.ofArray(new byte[(int)segment.byteSize()]);
+            dest.copyFrom(segment);
+            input.accept(dest);
         };
     }
 

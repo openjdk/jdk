@@ -27,7 +27,6 @@ package gc.g1;
  * @test TestRemsetLoggingThreads
  * @requires vm.gc.G1
  * @bug 8025441 8145534
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management

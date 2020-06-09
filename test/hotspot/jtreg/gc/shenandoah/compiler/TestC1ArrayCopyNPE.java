@@ -24,7 +24,6 @@
 
 /* @test TestC1ArrayCopyNPE
  * @summary test C1 arraycopy intrinsic
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @run main/othervm -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestC1ArrayCopyNPE
  */

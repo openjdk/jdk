@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.nio.ReadOnlyBufferException;
 
 import sun.security.util.Debug;
 import sun.security.jca.*;
+import sun.security.util.KnownOIDs;
 
 /**
  * This class provides the functionality of a cryptographic cipher for
@@ -237,9 +238,6 @@ public class Cipher {
     // The operation mode - store the operation mode after the
     // cipher has been initialized.
     private int opmode = 0;
-
-    // The OID for the KeyUsage extension in an X.509 v3 certificate
-    private static final String KEY_USAGE_EXTENSION_OID = "2.5.29.15";
 
     // next SPI  to try in provider selection
     // null once provider is selected
@@ -1742,7 +1740,7 @@ public class Cipher {
             Set<String> critSet = cert.getCriticalExtensionOIDs();
 
             if (critSet != null && !critSet.isEmpty()
-                && critSet.contains(KEY_USAGE_EXTENSION_OID)) {
+                && critSet.contains(KnownOIDs.KeyUsage.value())) {
                 boolean[] keyUsageInfo = cert.getKeyUsage();
                 // keyUsageInfo[2] is for keyEncipherment;
                 // keyUsageInfo[3] is for dataEncipherment.

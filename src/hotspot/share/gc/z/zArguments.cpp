@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,18 @@ void ZArguments::initialize() {
 
   if (ConcGCThreads == 0) {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
+  }
+
+  // Select medium page size so that we can calculate the max reserve
+  ZHeuristics::set_medium_page_size();
+
+  // MinHeapSize/InitialHeapSize must be at least as large as the max reserve
+  const size_t max_reserve = ZHeuristics::max_reserve();
+  if (MinHeapSize < max_reserve) {
+    FLAG_SET_ERGO(MinHeapSize, max_reserve);
+  }
+  if (InitialHeapSize < max_reserve) {
+    FLAG_SET_ERGO(InitialHeapSize, max_reserve);
   }
 
 #ifdef COMPILER2

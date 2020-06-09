@@ -37,7 +37,7 @@ import sun.security.x509.AlgorithmId;
 import sun.security.util.*;
 
 public final class EdDSAPrivateKeyImpl
-    extends PKCS8Key implements EdECPrivateKey {
+        extends PKCS8Key implements EdECPrivateKey {
 
     private static final long serialVersionUID = 1L;
 
@@ -45,46 +45,36 @@ public final class EdDSAPrivateKeyImpl
     private byte[] h;
 
     EdDSAPrivateKeyImpl(EdDSAParameters params, byte[] h)
-        throws InvalidKeyException {
+            throws InvalidKeyException {
 
         this.paramSpec = new NamedParameterSpec(params.getName());
         this.algid = new AlgorithmId(params.getOid());
         this.h = h.clone();
 
-        encodeKey();
-
+        DerOutputStream derKey = new DerOutputStream();
+        try {
+            derKey.putOctetString(h);
+            this.key = derKey.toByteArray();
+        } catch (IOException ex) {
+            throw new AssertionError("Should not happen", ex);
+        }
         checkLength(params);
     }
 
     EdDSAPrivateKeyImpl(byte[] encoded) throws InvalidKeyException {
 
-        decode(encoded);
+        super(encoded);
         EdDSAParameters params = EdDSAParameters.get(
             InvalidKeyException::new, algid);
         paramSpec = new NamedParameterSpec(params.getName());
 
-        decodeKey();
-
-        checkLength(params);
-    }
-
-    private void decodeKey() throws InvalidKeyException {
         try {
             DerInputStream derStream = new DerInputStream(key);
             h = derStream.getOctetString();
         } catch (IOException ex) {
             throw new InvalidKeyException(ex);
         }
-    }
-
-    private void encodeKey() {
-        DerOutputStream derKey = new DerOutputStream();
-        try {
-            derKey.putOctetString(h);
-            this.key = derKey.toByteArray();
-        } catch (IOException ex) {
-            throw new ProviderException(ex);
-        }
+        checkLength(params);
     }
 
     void checkLength(EdDSAParameters params) throws InvalidKeyException {

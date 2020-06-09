@@ -595,8 +595,12 @@ bool ParallelScavengeHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void ParallelScavengeHeap::print_on(outputStream* st) const {
-  young_gen()->print_on(st);
-  old_gen()->print_on(st);
+  if (young_gen() != NULL) {
+    young_gen()->print_on(st);
+  }
+  if (old_gen() != NULL) {
+    old_gen()->print_on(st);
+  }
   MetaspaceUtils::print_on(st);
 }
 
@@ -609,10 +613,6 @@ void ParallelScavengeHeap::print_on_error(outputStream* st) const {
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
   ParallelScavengeHeap::heap()->workers().threads_do(tc);
-}
-
-void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
-  ParallelScavengeHeap::heap()->workers().print_worker_threads_on(st);
 }
 
 void ParallelScavengeHeap::print_tracing_info() const {

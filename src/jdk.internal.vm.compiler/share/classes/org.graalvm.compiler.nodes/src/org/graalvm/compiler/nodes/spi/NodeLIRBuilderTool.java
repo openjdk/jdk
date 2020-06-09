@@ -46,6 +46,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.extended.ForeignCall;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -61,6 +62,8 @@ public interface NodeLIRBuilderTool extends NodeValueMap {
     void emitSwitch(SwitchNode i);
 
     void emitInvoke(Invoke i);
+
+    void emitForeignCall(ForeignCall i);
 
     // Handling of block-end nodes still needs to be unified in the LIRGenerator.
     void visitMerge(AbstractMergeNode i);

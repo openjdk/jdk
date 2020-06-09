@@ -53,6 +53,11 @@ void JfrEventSetting::set_enabled(jlong id, bool enabled) {
   setting(event_id).enabled = enabled;
 }
 
+void JfrEventSetting::set_large(JfrEventId event_id) {
+  assert(bounds_check_event(event_id), "invariant");
+  setting(event_id).large = true;
+}
+
 #ifdef ASSERT
 bool JfrEventSetting::bounds_check_event(jlong id) {
   if ((unsigned)id < FIRST_EVENT_ID) {

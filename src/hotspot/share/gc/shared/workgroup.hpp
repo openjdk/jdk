@@ -188,12 +188,6 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   // Debugging.
   const char* name() const { return _name; }
 
-  // Printing
-  void print_worker_threads_on(outputStream *st) const;
-  void print_worker_threads() const {
-    print_worker_threads_on(tty);
-  }
-
  protected:
   virtual AbstractGangWorker* allocate_worker(uint which) = 0;
 };

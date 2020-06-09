@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.StructuredGraph.FrameStateVerificationFeature;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -257,5 +258,15 @@ public abstract class AbstractMergeNode extends BeginStateSplitNode implements I
                 }
             }
         }
+    }
+
+    protected boolean verifyState() {
+        return this.stateAfter != null;
+    }
+
+    @Override
+    public boolean verify() {
+        assert !this.graph().getFrameStateVerification().implies(FrameStateVerificationFeature.MERGES) || verifyState() : "Merge must have a state until FSA " + this;
+        return super.verify();
     }
 }

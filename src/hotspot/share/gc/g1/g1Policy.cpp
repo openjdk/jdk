@@ -73,7 +73,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _rs_length(0),
   _rs_length_prediction(0),
   _pending_cards_at_gc_start(0),
-  _bytes_allocated_in_old_since_last_gc(0),
+  _old_gen_alloc_tracker(),
   _initial_mark_to_mixed(),
   _collection_set(NULL),
   _g1h(NULL),
@@ -460,7 +460,7 @@ void G1Policy::record_full_collection_end() {
   update_young_list_max_and_target_length();
   update_rs_length_prediction();
 
-  _bytes_allocated_in_old_since_last_gc = 0;
+  _old_gen_alloc_tracker.reset_after_full_gc();
 
   record_pause(FullGC, _full_collection_start_sec, end_sec);
 }
@@ -795,11 +795,11 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     // predicted target occupancy.
     size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
 
-    update_ihop_prediction(app_time_ms / 1000.0,
-                           _bytes_allocated_in_old_since_last_gc,
+    _old_gen_alloc_tracker.reset_after_young_gc(app_time_ms / 1000.0);
+    update_ihop_prediction(_old_gen_alloc_tracker.last_cycle_duration(),
+                           _old_gen_alloc_tracker.last_cycle_old_bytes(),
                            last_unrestrained_young_length * HeapRegion::GrainBytes,
                            this_pause_was_young_only);
-    _bytes_allocated_in_old_since_last_gc = 0;
 
     _ihop_control->send_trace_event(_g1h->gc_tracer_stw());
   } else {

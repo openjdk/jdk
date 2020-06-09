@@ -1,2 +1,2 @@
-FauxEnum3.java:10:8: compiler.err.enum.types.not.extensible
+FauxEnum3.java:11:14: compiler.err.enum.types.not.extensible
 1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,8 @@ class EventWriterHost : public WriterHost<BE, IE, WriterPolicyImpl> {
   EventWriterHost(Thread* thread);
   void begin_write();
   intptr_t end_write();
-  void begin_event_write();
-  intptr_t end_event_write();
-};
-
-template <typename BE, typename IE, typename WriterPolicyImpl >
-class StackEventWriterHost : public EventWriterHost<BE, IE, WriterPolicyImpl> {
- public:
-  template <typename StorageType>
-  StackEventWriterHost(StorageType* storage, Thread* thread);
-  StackEventWriterHost(Thread* thread);
-  ~StackEventWriterHost();
+  void begin_event_write(bool large);
+  intptr_t end_event_write(bool large);
 };
 
 #endif // SHARE_JFR_WRITERS_JFREVENTWRITERHOST_HPP

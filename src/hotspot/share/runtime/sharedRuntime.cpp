@@ -65,6 +65,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/copy.hpp"
@@ -3070,10 +3071,15 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != NULL) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      // Inflate so the displaced header becomes position-independent
-      if (lock->displaced_header().is_unlocked())
+      // Inflate so the object's header no longer refers to the BasicLock.
+      if (lock->displaced_header().is_unlocked()) {
+        // The object is locked and the resulting ObjectMonitor* will also be
+        // locked so it can't be async deflated until ownership is dropped.
+        // See the big comment in basicLock.cpp: BasicLock::move_to().
         ObjectSynchronizer::inflate_helper(kptr2->obj());
-      // Now the displaced header is free to move
+      }
+      // Now the displaced header is free to move because the
+      // object's header no longer refers to it.
       buf[i++] = (intptr_t)lock->displaced_header().value();
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }

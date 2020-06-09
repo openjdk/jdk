@@ -335,7 +335,8 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
             case WRITE_POINTER:
             case WRITE_OBJECT:
             case WRITE_BARRIERED:
-            case INITIALIZE: {
+            case INITIALIZE:
+            case WRITE_POINTER_SIDE_EFFECT_FREE: {
                 assert args.length == 3 || args.length == 4;
                 JavaKind writeKind = wordTypes.asKind(wordMethod.getSignature().getParameterType(wordMethod.isStatic() ? 2 : 1, wordMethod.getDeclaringClass()));
                 AddressNode address = makeAddress(b, args[0], args[1]);
@@ -464,11 +465,12 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
     }
 
     protected void writeOp(GraphBuilderContext b, JavaKind writeKind, AddressNode address, LocationIdentity location, ValueNode value, Opcode op) {
-        assert op == Opcode.WRITE_POINTER || op == Opcode.WRITE_OBJECT || op == Opcode.WRITE_BARRIERED || op == Opcode.INITIALIZE;
+        assert op == Opcode.WRITE_POINTER || op == Opcode.WRITE_POINTER_SIDE_EFFECT_FREE || op == Opcode.WRITE_OBJECT || op == Opcode.WRITE_BARRIERED || op == Opcode.INITIALIZE;
         final BarrierType barrier = (op == Opcode.WRITE_BARRIERED ? BarrierType.UNKNOWN : BarrierType.NONE);
         final boolean compressible = (op == Opcode.WRITE_OBJECT || op == Opcode.WRITE_BARRIERED);
         assert op != Opcode.INITIALIZE || location.isInit() : "must use init location for initializing";
-        b.add(new JavaWriteNode(writeKind, address, location, value, barrier, compressible));
+        final boolean hasSideEffect = (op != Opcode.WRITE_POINTER_SIDE_EFFECT_FREE);
+        b.add(new JavaWriteNode(writeKind, address, location, value, barrier, compressible, hasSideEffect));
     }
 
     protected AbstractCompareAndSwapNode casOp(JavaKind writeKind, JavaKind returnKind, AddressNode address, LocationIdentity location, ValueNode expectedValue, ValueNode newValue) {

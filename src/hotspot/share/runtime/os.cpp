@@ -1763,10 +1763,10 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
-                           bool allow_exec) {
+                           bool allow_exec, MEMFLAGS flags) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
   }
   return result;
 }

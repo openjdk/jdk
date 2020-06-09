@@ -26,7 +26,6 @@ package gc.g1;
 /**
  * @test
  * @bug 8169703
- * @key gc regression
  * @summary Verifies that dumping and loading a CDS archive succeeds with AlwaysPreTouch
  * @requires vm.gc.G1
  * @requires vm.cds

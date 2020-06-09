@@ -404,7 +404,8 @@ public class GenerateJfrFiles {
             out.write("  jlong  cutoff_ticks;");
             out.write("  u1     stacktrace;");
             out.write("  u1     enabled;");
-            out.write("  u1     pad[6]; // Because GCC on linux ia32 at least tries to pack this.");
+            out.write("  u1     large;");
+            out.write("  u1     pad[5]; // Because GCC on linux ia32 at least tries to pack this.");
             out.write("};");
             out.write("");
             out.write("union JfrNativeSettings {");

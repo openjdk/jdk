@@ -31,7 +31,6 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.replacements.nodes.BasicArrayCopyNode;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
@@ -50,26 +49,25 @@ public final class ArrayCopyNode extends BasicArrayCopyNode implements Lowerable
         super(TYPE, src, srcPos, dst, dstPos, length, null, bci);
         this.forceAnyLocation = forceAnyLocation;
         if (!forceAnyLocation) {
-            elementKind = ArrayCopySnippets.Templates.selectComponentKind(this);
+            elementKind = ArrayCopy.selectComponentKind(this);
         } else {
             assert elementKind == null;
         }
     }
 
+    public ArrayCopyNode(ArrayCopy arraycopy) {
+        this(arraycopy.getBci(), arraycopy.getSource(), arraycopy.getSourcePosition(), arraycopy.getDestination(), arraycopy.getDestinationPosition(), arraycopy.getLength());
+    }
+
     @Override
     public LocationIdentity getKilledLocationIdentity() {
         if (!forceAnyLocation && elementKind == null) {
-            elementKind = ArrayCopySnippets.Templates.selectComponentKind(this);
+            elementKind = ArrayCopy.selectComponentKind(this);
         }
         if (elementKind != null) {
             return NamedLocationIdentity.getArrayLocation(elementKind);
         }
         return any();
-    }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
     }
 
     public boolean killsAnyLocation() {

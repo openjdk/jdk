@@ -406,13 +406,13 @@ public class TestSearch extends JavadocTester {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
-                    <link rel="stylesheet" type="text/css" href="script-dir/jquery-ui.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="script-dir/jquery-ui.min.css" title="Style">
                     """,
                 """
-                    <script type="text/javascript" src="script-dir/jquery-3.4.1.js"></script>
+                    <script type="text/javascript" src="script-dir/jquery-3.5.1.min.js"></script>
                     """,
                 """
-                    <script type="text/javascript" src="script-dir/jquery-ui.js"></script>""",
+                    <script type="text/javascript" src="script-dir/jquery-ui.min.js"></script>""",
                 """
                     var pathtoroot = "./";
                     loadScripts(document, 'script');""",
@@ -689,13 +689,11 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "search.js",
-                "script-dir/jquery-3.4.1.js",
-                "script-dir/jquery-ui.js",
-                "script-dir/jquery-ui.css",
+                "jquery-ui.overrides.css",
+                "script-dir/jquery-3.5.1.min.js",
                 "script-dir/jquery-ui.min.js",
                 "script-dir/jquery-ui.min.css",
                 "script-dir/jquery-ui.structure.min.css",
-                "script-dir/jquery-ui.structure.css",
                 "script-dir/images/ui-bg_glass_65_dadada_1x400.png",
                 "script-dir/images/ui-icons_454545_256x240.png",
                 "script-dir/images/ui-bg_glass_95_fef1ec_1x400.png",

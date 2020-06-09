@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 
 package org.graalvm.compiler.replacements;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.replacements.nodes.AssertionNode;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
 
 // JaCoCo Exclude
 public final class ReplacementsUtil {
@@ -47,19 +47,13 @@ public final class ReplacementsUtil {
      */
     public static void staticAssert(boolean condition, String message) {
         if (REPLACEMENTS_ASSERTIONS_ENABLED) {
-            AssertionNode.assertion(true, condition, message);
+            AssertionNode.staticAssert(condition, message);
         }
     }
 
     public static void staticAssert(boolean condition, String message, Object arg1) {
         if (REPLACEMENTS_ASSERTIONS_ENABLED) {
-            AssertionNode.assertion(true, condition, message, arg1, "");
-        }
-    }
-
-    public static void staticAssert(boolean condition, String message, Object arg1, Object arg2) {
-        if (REPLACEMENTS_ASSERTIONS_ENABLED) {
-            AssertionNode.assertion(true, condition, message, arg1, arg2);
+            AssertionNode.staticAssert(condition, message, arg1, "");
         }
     }
 
@@ -67,9 +61,9 @@ public final class ReplacementsUtil {
      * Asserts that condition evaluates to true at runtime. This is intended to be used within
      * snippets or stubs, and will lead to a VM error if it fails.
      */
-    public static void runtimeAssert(boolean condition, String message) {
+    public static void dynamicAssert(boolean condition, String message) {
         if (REPLACEMENTS_ASSERTIONS_ENABLED) {
-            AssertionNode.assertion(false, condition, message);
+            AssertionNode.dynamicAssert(condition, message);
         }
     }
 

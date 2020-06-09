@@ -1,4 +1,4 @@
-Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,10 @@ CommandLine class -- parses command line args. Static class.
 --------------------------
 Usage:
 
-java Churn [-l numberOfLoops] [-t numberOfThreads] [-a sizeOfArray] [-m multiplier] [-f <run forever>] [-s seed]
+java Churn [-l numberOfLoops] [-t numberOfThreads] [-a sizeOfArray] [-m multiplier] [-f <run forever>]
 
 NOTE: the options can be passed in any order
 
-
-seed is the seed for the LocalRandom pseudo-random generator
 
 numberOfLoops is the number of iterations a test will go through.
 This defaults to 2000

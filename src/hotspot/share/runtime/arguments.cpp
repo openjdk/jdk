@@ -85,7 +85,7 @@ bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
 intx   Arguments::_Tier3InvokeNotifyFreqLog     = Tier3InvokeNotifyFreqLog;
 intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
-size_t Arguments::_SharedBaseAddress            = SharedBaseAddress;
+size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
@@ -2281,8 +2281,8 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
     Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
   }
 
-  // CDS dumping always write the archive to the default value of SharedBaseAddress.
-  Arguments::_SharedBaseAddress = SharedBaseAddress;
+  // Remember the default value of SharedBaseAddress.
+  Arguments::_default_SharedBaseAddress = SharedBaseAddress;
 
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);
@@ -3042,6 +3042,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
+      // Just continue, since "-XX:+EnableJVMCIProduct" has been specified before
+      if (EnableJVMCIProduct) {
+        continue;
+      }
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.
       if (jvmciFlag != NULL && jvmciFlag->is_unlocked()) {

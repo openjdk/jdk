@@ -222,14 +222,14 @@ public final class TraceClassVisitor extends ClassVisitor {
     /**
       * <b>Experimental, use at your own risk.</b>.
       *
-      * @param permittedSubtype the internal name of a permitted subtype.
+      * @param permittedSubclass the internal name of a permitted subclass.
       * @deprecated this API is experimental.
       */
     @Override
     @Deprecated
-    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
-        p.visitPermittedSubtypeExperimental(permittedSubtype);
-        super.visitPermittedSubtypeExperimental(permittedSubtype);
+    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
+        p.visitPermittedSubclassExperimental(permittedSubclass);
+        super.visitPermittedSubclassExperimental(permittedSubclass);
     }
 
     @Override

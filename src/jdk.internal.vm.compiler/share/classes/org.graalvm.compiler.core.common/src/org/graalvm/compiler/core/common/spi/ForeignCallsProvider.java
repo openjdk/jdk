@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package org.graalvm.compiler.core.common.spi;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.code.ValueKindFactory;
 
@@ -35,35 +34,19 @@ import jdk.vm.ci.code.ValueKindFactory;
 public interface ForeignCallsProvider extends ValueKindFactory<LIRKind> {
 
     /**
-     * Determines if a given foreign call is side-effect free. Deoptimization cannot return
-     * execution to a point before a foreign call that has a side effect.
-     */
-    boolean isReexecutable(ForeignCallDescriptor descriptor);
-
-    /**
-     * Gets the set of memory locations killed by a given foreign call. Returning the special value
-     * {@link LocationIdentity#any()} denotes that the call kills all memory locations. Returning
-     * any empty array denotes that the call does not kill any memory locations.
-     */
-    LocationIdentity[] getKilledLocations(ForeignCallDescriptor descriptor);
-
-    /**
-     * Determines if deoptimization can occur during a given foreign call.
-     */
-    boolean canDeoptimize(ForeignCallDescriptor descriptor);
-
-    /**
-     * Identifies foreign calls which are guaranteed to include a safepoint check.
-     */
-    boolean isGuaranteedSafepoint(ForeignCallDescriptor descriptor);
-
-    /**
      * Gets the linkage for a foreign call.
      */
     ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor);
 
     /**
-     * Return true if the foreign call has a binding.
+     * Gets the linkage for a foreign call.
      */
-    boolean isAvailable(ForeignCallDescriptor descriptor);
+    default ForeignCallLinkage lookupForeignCall(ForeignCallSignature signature) {
+        return lookupForeignCall(getDescriptor(signature));
+    }
+
+    /**
+     * Gets the descriptor for a foreign call.
+     */
+    ForeignCallDescriptor getDescriptor(ForeignCallSignature signature);
 }

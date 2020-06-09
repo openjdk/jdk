@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,14 @@
 
 package org.graalvm.compiler.hotspot.test;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl;
-import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -46,12 +43,11 @@ public class ForeignCallDeoptimizeTest extends GraalCompilerTest {
 
     @Override
     protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
-        ForeignCallsProvider foreignCalls = ((HotSpotProviders) getProviders()).getForeignCalls();
         invocationPlugins.register(new InvocationPlugin() {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
-                ForeignCallNode node = new ForeignCallNode(foreignCalls, HotSpotForeignCallsProviderImpl.TEST_DEOPTIMIZE_CALL_INT, arg);
+                ForeignCallNode node = new ForeignCallNode(HotSpotForeignCallsProviderImpl.TEST_DEOPTIMIZE_CALL_INT, arg);
                 b.addPush(JavaKind.Int, node);
                 return true;
             }

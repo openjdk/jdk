@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.StructuredGraph.FrameStateVerificationFeature;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
 @NodeInfo(allowedUsageTypes = {Association}, cycles = CYCLES_0, size = SIZE_0)
@@ -121,5 +122,16 @@ public final class LoopExitNode extends BeginStateSplitNode implements IterableN
             prev = prev.predecessor();
             graph().removeFixed(begin);
         }
+    }
+
+    @Override
+    public boolean verify() {
+        /*
+         * State verification for loop exits is special in that loop exits with exception handling
+         * BCIs must not survive until code generation, thus they are cleared shortly before frame
+         * state assignment, thus we only verify them until their removal
+         */
+        assert !this.graph().getFrameStateVerification().implies(FrameStateVerificationFeature.LOOP_EXITS) || this.stateAfter != null : "Loop exit must have a state until FSA " + this;
+        return super.verify();
     }
 }

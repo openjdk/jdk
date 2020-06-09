@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.IsolateUtil;
 
 /**
  * Manages a directory into which diagnostics such crash reports and dumps should be written. The
@@ -107,7 +108,7 @@ public class DiagnosticsOutputDirectory {
             // directory specified by the DumpPath option.
             baseDir = Paths.get(".");
         }
-        return baseDir.resolve("graal_diagnostics_" + GraalServices.getExecutionID()).toAbsolutePath().toString();
+        return baseDir.resolve("graal_diagnostics_" + GraalServices.getExecutionID() + '@' + IsolateUtil.getIsolateID()).toAbsolutePath().toString();
     }
 
     /**

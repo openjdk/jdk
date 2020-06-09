@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -60,7 +61,7 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -150,13 +151,23 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         }
 
         protected String getClassPath() {
-            String bootclasspath;
+            String classpath;
             if (JavaVersionUtil.JAVA_SPEC <= 8) {
-                bootclasspath = System.getProperty("sun.boot.class.path");
+                classpath = System.getProperty("sun.boot.class.path");
             } else {
-                bootclasspath = JRT_CLASS_PATH_ENTRY;
+                classpath = JRT_CLASS_PATH_ENTRY;
             }
-            return bootclasspath;
+
+            // Also process classes that go into the libgraal native image.
+            String javaClassPath = System.getProperty("java.class.path");
+            if (javaClassPath != null) {
+                for (String path : javaClassPath.split(File.pathSeparator)) {
+                    if (path.contains("libgraal") && !path.contains("processor")) {
+                        classpath += File.pathSeparator + path;
+                    }
+                }
+            }
+            return classpath;
         }
 
         protected boolean shouldLoadClass(String className) {
@@ -345,6 +356,8 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         verifiers.add(new VerifyGetOptionsUsage());
         verifiers.add(new VerifyUnsafeAccess());
 
+        loadVerifiers(verifiers);
+
         VerifyFoldableMethods foldableMethodsVerifier = new VerifyFoldableMethods();
         if (tool.shouldVerifyFoldableMethods()) {
             verifiers.add(foldableMethodsVerifier);
@@ -354,7 +367,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
 
         for (Method m : BadUsageWithEquals.class.getDeclaredMethods()) {
             ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-            try (DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER)) {
+            try (DebugContext debug = new Builder(options).build()) {
                 StructuredGraph graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).method(method).build();
                 try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("CheckingGraph", graph, method)) {
                     graphBuilderSuite.apply(graph, context);
@@ -408,7 +421,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                         String methodName = className + "." + method.getName();
                         if (matches(filters, methodName)) {
                             executor.execute(() -> {
-                                try (DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER)) {
+                                try (DebugContext debug = new Builder(options).build()) {
                                     boolean isSubstitution = method.getAnnotation(Snippet.class) != null || method.getAnnotation(MethodSubstitution.class) != null;
                                     StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).setIsSubstitution(isSubstitution).build();
                                     try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("CheckingGraph", graph, method)) {
@@ -468,6 +481,13 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                 msg.append(e);
             }
             Assert.fail(msg.toString());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void loadVerifiers(List<VerifyPhase<CoreProviders>> verifiers) {
+        for (VerifyPhase<CoreProviders> verifier : ServiceLoader.load(VerifyPhase.class)) {
+            verifiers.add(verifier);
         }
     }
 

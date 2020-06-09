@@ -64,7 +64,9 @@ public class SideEffectNode extends AbstractMemoryCheckpoint implements LIRLower
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        generator.setResult(this, generator.operand(value));
+        if (value != null) {
+            generator.setResult(this, generator.operand(value));
+        }
     }
 
     @Override

@@ -146,12 +146,14 @@ abstract class KrbKdcRep {
             boolean reqPaReqEncPaRep = false;
             boolean repPaReqEncPaRepValid = false;
 
-            for (PAData pa : req.pAData) {
-                if (pa.getType() == Krb5.PA_REQ_ENC_PA_REP) {
-                    // The KDC supports RFC 6806 and ENC-PA-REP was sent in
-                    // the request (AS-REQ). A valid checksum is now required.
-                    reqPaReqEncPaRep = true;
-                    break;
+            if (req.pAData != null) {
+                for (PAData pa : req.pAData) {
+                    if (pa.getType() == Krb5.PA_REQ_ENC_PA_REP) {
+                        // The KDC supports RFC 6806 and ENC-PA-REP was sent in
+                        // the request (AS-REQ). A valid checksum is now required.
+                        reqPaReqEncPaRep = true;
+                        break;
+                    }
                 }
             }
 

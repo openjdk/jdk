@@ -27,7 +27,6 @@ package gc;
  * @test TestNumWorkerOutputG1
  * @bug 8165292
  * @summary Check that when PrintGCDetails is enabled, gc,task output is printed only once per collection.
- * @key gc
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib

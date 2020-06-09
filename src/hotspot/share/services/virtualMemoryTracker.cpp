@@ -348,12 +348,9 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       reserved_rgn->set_call_stack(stack);
       reserved_rgn->set_flag(flag);
       return true;
-    } else if (reserved_rgn->adjacent_to(base_addr, size)) {
-      VirtualMemorySummary::record_reserved_memory(size, flag);
-      reserved_rgn->expand_region(base_addr, size);
-      reserved_rgn->set_call_stack(stack);
-      return true;
     } else {
+      assert(reserved_rgn->overlap_region(base_addr, size), "Must be");
+
       // Overlapped reservation.
       // It can happen when the regions are thread stacks, as JNI
       // thread does not detach from VM before exits, and leads to
@@ -491,6 +488,30 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   }
 }
 
+// Given an existing memory mapping registered with NMT, split the mapping in
+//  two. The newly created two mappings will be registered under the call
+//  stack and the memory flags of the original section.
+bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split) {
+
+  ReservedMemoryRegion  rgn(addr, size);
+  ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
+  assert(reserved_rgn->same_region(addr, size), "Must be identical region");
+  assert(reserved_rgn != NULL, "No reserved region");
+  assert(reserved_rgn->committed_size() == 0, "Splitting committed region?");
+
+  NativeCallStack original_stack = *reserved_rgn->call_stack();
+  MEMFLAGS original_flags = reserved_rgn->flag();
+
+  _reserved_regions->remove(rgn);
+
+  // Now, create two new regions.
+  add_reserved_region(addr, split, original_stack, original_flags);
+  add_reserved_region(addr + split, size - split, original_stack, original_flags);
+
+  return true;
+}
+
+
 // Iterate the range, find committed region within its bound.
 class RegionIterator : public StackObj {
 private:
@@ -539,15 +560,21 @@ public:
       address committed_start;
       size_t  committed_size;
       size_t stack_size = rgn->base() + rgn->size() - stack_bottom;
+      // Align the size to work with full pages (Alpine and AIX stack top is not page aligned)
+      size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
 
       ReservedMemoryRegion* region = const_cast<ReservedMemoryRegion*>(rgn);
       NativeCallStack ncs; // empty stack
 
-      RegionIterator itr(stack_bottom, stack_size);
+      RegionIterator itr(stack_bottom, aligned_stack_size);
       DEBUG_ONLY(bool found_stack = false;)
       while (itr.next_committed(committed_start, committed_size)) {
         assert(committed_start != NULL, "Should not be null");
         assert(committed_size > 0, "Should not be 0");
+        // unaligned stack_size case: correct the region to fit the actual stack_size
+        if (stack_bottom + stack_size < committed_start + committed_size) {
+          committed_size = stack_bottom + stack_size - committed_start;
+        }
         region->add_committed_region(committed_start, committed_size, ncs);
         DEBUG_ONLY(found_stack = true;)
       }

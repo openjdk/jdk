@@ -344,7 +344,7 @@ public class Arguments {
         private final String id;
         private final String shortId;
         private final OptionCategories category;
-        private final ArgAction action;
+        private final Runnable action;
         private static Arguments argContext;
 
         private CLIOptions(String id, OptionCategories category) {
@@ -357,12 +357,12 @@ public class Arguments {
         }
 
         private CLIOptions(String id,
-                OptionCategories category, ArgAction action) {
+                OptionCategories category, Runnable action) {
             this(id, null, category, action);
         }
 
         private CLIOptions(String id, String shortId,
-                           OptionCategories category, ArgAction action) {
+                           OptionCategories category, Runnable action) {
             this.id = id;
             this.shortId = shortId;
             this.action = action;
@@ -395,7 +395,7 @@ public class Arguments {
 
         void execute() {
             if (action != null) {
-                action.execute();
+                action.run();
             } else {
                 defaultAction();
             }
@@ -470,8 +470,6 @@ public class Arguments {
             // for current configuration.
 
             validateArguments();
-
-            addResources(deployParams, input, mainJarPath);
 
             List<Map<String, ? super Object>> launchersAsMap =
                     new ArrayList<>();
@@ -678,35 +676,6 @@ public class Arguments {
                 bundler.cleanup(localParams);
             }
         }
-    }
-
-    private void addResources(DeployParams deployParams,
-            String inputdir, String mainJar) throws PackagerException {
-
-        if (inputdir == null || inputdir.isEmpty()) {
-            return;
-        }
-
-        File baseDir = new File(inputdir);
-
-        if (!baseDir.isDirectory()) {
-            throw new PackagerException("ERR_InputNotDirectory", inputdir);
-        }
-        if (!baseDir.canRead()) {
-            throw new PackagerException("ERR_CannotReadInputDir", inputdir);
-        }
-
-        List<String> fileNames;
-        fileNames = new ArrayList<>();
-        try (Stream<Path> files = Files.list(baseDir.toPath())) {
-            files.forEach(file -> fileNames.add(
-                    file.getFileName().toString()));
-        } catch (IOException e) {
-            Log.error("Unable to add resources: " + e.getMessage());
-        }
-        fileNames.forEach(file -> deployParams.addResource(baseDir, file));
-
-        deployParams.setClasspath(mainJar);
     }
 
     static CLIOptions toCLIOption(String arg) {

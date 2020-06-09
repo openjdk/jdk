@@ -37,6 +37,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
@@ -651,6 +652,8 @@ jint universe_init() {
 
   initialize_global_behaviours();
 
+  GCLogPrecious::initialize();
+
   GCConfig::arguments()->initialize_heap_sizes();
 
   jint status = Universe::initialize_heap();
@@ -1091,12 +1094,10 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     log_debug(gc, verify)("SystemDictionary");
     SystemDictionary::verify();
   }
-#ifndef PRODUCT
   if (should_verify_subset(Verify_ClassLoaderDataGraph)) {
     log_debug(gc, verify)("ClassLoaderDataGraph");
     ClassLoaderDataGraph::verify();
   }
-#endif
   if (should_verify_subset(Verify_MetaspaceUtils)) {
     log_debug(gc, verify)("MetaspaceUtils");
     MetaspaceUtils::verify_free_chunks();

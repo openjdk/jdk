@@ -95,7 +95,7 @@ public class LoopOverNonConstantMapped {
             }
             ((MappedByteBuffer)byteBuffer).force();
         }
-        segment = MemorySegment.mapFromPath(tempPath, ALLOC_SIZE, FileChannel.MapMode.READ_WRITE);
+        segment = MemorySegment.mapFromPath(tempPath, 0L, ALLOC_SIZE, FileChannel.MapMode.READ_WRITE);
         unsafe_addr = segment.baseAddress().toRawLongValue();
     }
 

@@ -66,15 +66,13 @@ class NMethodSweeper : public AllStatic {
   };
   static long      _traversals;                   // Stack scan count, also sweep ID.
   static long      _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
-  static long      _time_counter;                 // Virtual time used to periodically invoke sweeper
-  static long      _last_sweep;                   // Value of _time_counter when the last sweep happened
   static CompiledMethodIterator _current;         // Current compiled method
   static int       _seen;                         // Nof. nmethod we have currently processed in current pass of CodeCache
+  static size_t    _sweep_threshold_bytes;        // The threshold for when to invoke sweeps
 
-  static volatile int  _sweep_started;            // Flag to control conc sweeper
-  static volatile bool _should_sweep;             // Indicates if we should invoke the sweeper
-  static volatile bool _force_sweep;              // Indicates if we should force a sweep
-  static volatile int _bytes_changed;             // Counts the total nmethod size if the nmethod changed from:
+  static volatile bool _should_sweep;             // Indicates if a normal sweep will be done
+  static volatile bool _force_sweep;              // Indicates if a forced sweep will be done
+  static volatile size_t _bytes_changed;          // Counts the total nmethod size if the nmethod changed from:
                                                   //   1) alive       -> not_entrant
                                                   //   2) not_entrant -> zombie
   // Stat counters
@@ -95,33 +93,31 @@ class NMethodSweeper : public AllStatic {
   static void sweep_code_cache();
   static void handle_safepoint_request();
   static void do_stack_scanning();
-  static void possibly_sweep();
+  static void sweep();
  public:
-  static long traversal_count()              { return _traversals; }
-  static int  total_nof_methods_reclaimed()  { return _total_nof_methods_reclaimed; }
+  static long traversal_count()                    { return _traversals; }
+  static size_t sweep_threshold_bytes()              { return _sweep_threshold_bytes; }
+  static void set_sweep_threshold_bytes(size_t threshold) { _sweep_threshold_bytes = threshold; }
+  static int  total_nof_methods_reclaimed()        { return _total_nof_methods_reclaimed; }
   static const Tickspan total_time_sweeping()      { return _total_time_sweeping; }
   static const Tickspan peak_sweep_time()          { return _peak_sweep_time; }
   static const Tickspan peak_sweep_fraction_time() { return _peak_sweep_fraction_time; }
   static void log_sweep(const char* msg, const char* format = NULL, ...) ATTRIBUTE_PRINTF(2, 3);
 
-
 #ifdef ASSERT
   // Keep track of sweeper activity in the ring buffer
   static void record_sweep(CompiledMethod* nm, int line);
-  static void report_events(int id, address entry);
-  static void report_events();
 #endif
 
-  static void mark_active_nmethods();      // Invoked at the end of each safepoint
   static CodeBlobClosure* prepare_mark_active_nmethods();
   static CodeBlobClosure* prepare_reset_hotness_counters();
-  static void sweeper_loop();
-  static void notify(int code_blob_type);  // Possibly start the sweeper thread.
-  static void force_sweep();
 
+  static void sweeper_loop();
+  static bool should_start_aggressive_sweep(int code_blob_type);
+  static void force_sweep();
   static int hotness_counter_reset_val();
   static void report_state_change(nmethod* nm);
-  static void possibly_enable_sweeper();
+  static void report_allocation(int code_blob_type);  // Possibly start the sweeper thread.
   static void possibly_flush(nmethod* nm);
   static void print(outputStream* out);   // Printing/debugging
   static void print() { print(tty); }

@@ -59,7 +59,6 @@ import java.util.Objects;
 import java.util.PropertyPermission;
 import java.util.concurrent.Callable;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.module.Modules;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
@@ -73,7 +72,6 @@ import jdk.jfr.internal.consumer.FileAccess;
  * {@link AccessController#doPrivileged(PrivilegedAction)}
  */
 public final class SecuritySupport {
-    private final static Unsafe unsafe = Unsafe.getUnsafe();
     private final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final static Module JFR_MODULE = Event.class.getModule();
     public  final static SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
@@ -433,7 +431,11 @@ public final class SecuritySupport {
     }
 
     static void ensureClassIsInitialized(Class<?> clazz) {
-        unsafe.ensureClassInitialized(clazz);
+        try {
+            MethodHandles.privateLookupIn(clazz, LOOKUP).ensureInitialized(clazz);
+        } catch (IllegalAccessException e) {
+            throw new InternalError(e);
+        }
     }
 
     static Class<?> defineClass(Class<?> lookupClass, byte[] bytes) {

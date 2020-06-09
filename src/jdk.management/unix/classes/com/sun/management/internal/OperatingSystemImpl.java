@@ -72,13 +72,13 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (containerMetrics != null) {
             long memSwapLimit = containerMetrics.getMemoryAndSwapLimit();
             long memLimit = containerMetrics.getMemoryLimit();
-            long deltaLimit = memSwapLimit - memLimit;
-            // Return 0 when memSwapLimit == memLimit, which means no swap space is allowed.
-            // And the same for memSwapLimit < memLimit.
-            if (deltaLimit <= 0) {
-                return 0;
-            }
             if (memSwapLimit >= 0 && memLimit >= 0) {
+                long deltaLimit = memSwapLimit - memLimit;
+                // Return 0 when memSwapLimit == memLimit, which means no swap space is allowed.
+                // And the same for memSwapLimit < memLimit.
+                if (deltaLimit <= 0) {
+                    return 0;
+                }
                 for (int attempt = 0; attempt < MAX_ATTEMPTS_NUMBER; attempt++) {
                     long memSwapUsage = containerMetrics.getMemoryAndSwapUsage();
                     long memUsage = containerMetrics.getMemoryUsage();

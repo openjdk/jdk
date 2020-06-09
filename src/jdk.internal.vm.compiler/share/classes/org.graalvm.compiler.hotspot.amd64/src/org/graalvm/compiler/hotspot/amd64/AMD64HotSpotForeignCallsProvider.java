@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,10 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.Options.GraalArithmeticStubs;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.JUMP_ADDRESS;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.NOT_REEXECUTABLE;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.COMPUTES_REGISTERS_KILLED;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_ALL_CALLER_SAVE_REGISTERS;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NO_VZERO;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.LEAF;
 import static org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions.UPDATE_BYTES_CRC32C;
 import static org.graalvm.compiler.hotspot.replacements.CRC32Substitutions.UPDATE_BYTES_CRC32;
 import static org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode.BinaryOperation.POW;
@@ -47,7 +45,6 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.LOG10;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.SIN;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
-import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -90,80 +87,79 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
         RegisterValue exception = rax.asValue(LIRKind.reference(word));
         RegisterValue exceptionPc = rdx.asValue(LIRKind.value(word));
         CallingConvention exceptionCc = new CallingConvention(0, ILLEGAL, exception, exceptionPc);
-        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER, 0L, DESTROYS_ALL_CALLER_SAVE_REGISTERS, LEAF_NO_VZERO, NOT_REEXECUTABLE, exceptionCc, null, any()));
-        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER_IN_CALLER, JUMP_ADDRESS, DESTROYS_ALL_CALLER_SAVE_REGISTERS, LEAF_NO_VZERO, NOT_REEXECUTABLE, exceptionCc, null,
-                        any()));
+        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER, 0L, DESTROYS_ALL_CALLER_SAVE_REGISTERS, exceptionCc, null));
+        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER_IN_CALLER, JUMP_ADDRESS, DESTROYS_ALL_CALLER_SAVE_REGISTERS, exceptionCc, null));
 
         if (config.useCRC32Intrinsics) {
             // This stub does callee saving
-            registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall, LEAF_NO_VZERO, NOT_REEXECUTABLE, any());
+            registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall);
         }
         if (config.useCRC32CIntrinsics) {
-            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, LEAF_NO_VZERO, NOT_REEXECUTABLE, any());
+            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall);
         }
 
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS_COMPACT, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS_COMPACT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_BYTE, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_BYTE, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_BYTES, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_2_BYTES, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_3_BYTES, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_BYTES, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_BYTES, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_BYTES, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR_COMPACT, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR_COMPACT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS_COMPACT, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS_COMPACT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS_COMPACT, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS_COMPACT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS_COMPACT, options, providers,
+        link(new AMD64ArrayIndexOfStub(options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS_COMPACT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
 
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_SHORT_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_SHORT_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_SHORT_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_INT_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_INT_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_INT_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_LONG_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_LONG_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_LONG_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_FLOAT_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_FLOAT_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_FLOAT_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_DOUBLE_ARRAY_EQUALS, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_DOUBLE_ARRAY_EQUALS, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_DOUBLE_ARRAY_EQUALS, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS_DIRECT, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS_DIRECT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_BYTE_ARRAY_EQUALS_DIRECT, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS_DIRECT, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS_DIRECT, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS_DIRECT, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS_BYTE_ARRAY, options, providers,
-                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS_BYTE_ARRAY, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayEqualsStub.STUB_CHAR_ARRAY_EQUALS_BYTE_ARRAY, COMPUTES_REGISTERS_KILLED)));
 
         link(new AMD64ArrayCompareToStub(AMD64ArrayCompareToStub.STUB_BYTE_ARRAY_COMPARE_TO_BYTE_ARRAY, options, providers,
-                        registerStubCall(AMD64ArrayCompareToStub.STUB_BYTE_ARRAY_COMPARE_TO_BYTE_ARRAY, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayCompareToStub.STUB_BYTE_ARRAY_COMPARE_TO_BYTE_ARRAY, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayCompareToStub(AMD64ArrayCompareToStub.STUB_BYTE_ARRAY_COMPARE_TO_CHAR_ARRAY, options, providers,
-                        registerStubCall(AMD64ArrayCompareToStub.STUB_BYTE_ARRAY_COMPARE_TO_CHAR_ARRAY, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayCompareToStub.STUB_BYTE_ARRAY_COMPARE_TO_CHAR_ARRAY, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayCompareToStub(AMD64ArrayCompareToStub.STUB_CHAR_ARRAY_COMPARE_TO_BYTE_ARRAY, options, providers,
-                        registerStubCall(AMD64ArrayCompareToStub.STUB_CHAR_ARRAY_COMPARE_TO_BYTE_ARRAY, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayCompareToStub.STUB_CHAR_ARRAY_COMPARE_TO_BYTE_ARRAY, COMPUTES_REGISTERS_KILLED)));
         link(new AMD64ArrayCompareToStub(AMD64ArrayCompareToStub.STUB_CHAR_ARRAY_COMPARE_TO_CHAR_ARRAY, options, providers,
-                        registerStubCall(AMD64ArrayCompareToStub.STUB_CHAR_ARRAY_COMPARE_TO_CHAR_ARRAY, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+                        registerStubCall(AMD64ArrayCompareToStub.STUB_CHAR_ARRAY_COMPARE_TO_CHAR_ARRAY, COMPUTES_REGISTERS_KILLED)));
 
         super.initialize(providers, options);
     }
@@ -176,13 +172,13 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
     @Override
     protected void registerMathStubs(GraalHotSpotVMConfig hotSpotVMConfig, HotSpotProviders providers, OptionValues options) {
         if (GraalArithmeticStubs.getValue(options)) {
-            link(new AMD64MathStub(SIN, options, providers, registerStubCall(SIN.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-            link(new AMD64MathStub(COS, options, providers, registerStubCall(COS.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-            link(new AMD64MathStub(TAN, options, providers, registerStubCall(TAN.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-            link(new AMD64MathStub(EXP, options, providers, registerStubCall(EXP.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-            link(new AMD64MathStub(LOG, options, providers, registerStubCall(LOG.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-            link(new AMD64MathStub(LOG10, options, providers, registerStubCall(LOG10.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
-            link(new AMD64MathStub(POW, options, providers, registerStubCall(POW.foreignCallDescriptor, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(SIN, options, providers, registerStubCall(SIN.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(COS, options, providers, registerStubCall(COS.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(TAN, options, providers, registerStubCall(TAN.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(EXP, options, providers, registerStubCall(EXP.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(LOG, options, providers, registerStubCall(LOG.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(LOG10, options, providers, registerStubCall(LOG10.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
+            link(new AMD64MathStub(POW, options, providers, registerStubCall(POW.foreignCallSignature, LEAF, REEXECUTABLE, COMPUTES_REGISTERS_KILLED, NO_LOCATIONS)));
         } else {
             super.registerMathStubs(hotSpotVMConfig, providers, options);
         }

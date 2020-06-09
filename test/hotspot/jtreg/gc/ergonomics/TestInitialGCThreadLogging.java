@@ -27,7 +27,6 @@ package gc.ergonomics;
  * @test TestInitialGCThreadLogging
  * @bug 8157240
  * @summary Check trace logging of initial GC threads.
- * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

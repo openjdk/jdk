@@ -357,15 +357,15 @@ public class ASMifier extends Printer {
     /**
       * <b>Experimental, use at your own risk.</b>.
       *
-      * @param permittedSubtype the internal name of a permitted subtype.
+      * @param permittedSubclass the internal name of a permitted subclass.
       * @deprecated this API is experimental.
       */
     @Override
     @Deprecated
-    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
+    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
         stringBuilder.setLength(0);
-        stringBuilder.append("classWriter.visitPermittedSubtypeExperimental(");
-        appendConstant(permittedSubtype);
+        stringBuilder.append("classWriter.visitPermittedSubclassExperimental(");
+        appendConstant(permittedSubclass);
         stringBuilder.append(END_PARAMETERS);
         text.add(stringBuilder.toString());
     }

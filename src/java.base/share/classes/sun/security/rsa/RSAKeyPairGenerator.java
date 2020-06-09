@@ -32,10 +32,10 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
 import sun.security.jca.JCAUtil;
+import sun.security.rsa.RSAUtil.KeyType;
+
 import static sun.security.util.SecurityProviderConstants.DEF_RSA_KEY_SIZE;
 import static sun.security.util.SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
-import sun.security.x509.AlgorithmId;
-import static sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * RSA keypair generation. Standard algorithm, minimum key length 512 bit.
@@ -55,7 +55,7 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     private int keySize;
 
     private final KeyType type;
-    private AlgorithmId rsaId;
+    private AlgorithmParameterSpec keyParams;
 
     // PRNG to use
     private SecureRandom random;
@@ -116,7 +116,7 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         }
 
         try {
-            this.rsaId = RSAUtil.createAlgorithmId(type, tmpParams);
+            this.keyParams = RSAUtil.checkParamsAgainstType(type, tmpParams);
         } catch (ProviderException e) {
             throw new InvalidAlgorithmParameterException(
                 "Invalid key parameters", e);
@@ -177,9 +177,10 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
             BigInteger coeff = q.modInverse(p);
 
             try {
-                PublicKey publicKey = new RSAPublicKeyImpl(rsaId, n, e);
-                PrivateKey privateKey = new RSAPrivateCrtKeyImpl(
-                    rsaId, n, e, d, p, q, pe, qe, coeff);
+                PublicKey publicKey = new RSAPublicKeyImpl(type, keyParams,
+                        n, e);
+                PrivateKey privateKey = new RSAPrivateCrtKeyImpl(type,
+                        keyParams, n, e, d, p, q, pe, qe, coeff);
                 return new KeyPair(publicKey, privateKey);
             } catch (InvalidKeyException exc) {
                 // invalid key exception only thrown for keys < 512 bit,

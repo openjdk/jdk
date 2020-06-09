@@ -136,13 +136,21 @@ class ObjectMonitor {
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
   void* volatile _object;           // backward object pointer - strong root
- private:
+  typedef enum {
+    Free = 0,  // Free must be 0 for monitor to be free after memset(..,0,..).
+    New,
+    Old
+  } AllocationState;
+  AllocationState _allocation_state;
   // Separate _header and _owner on different cache lines since both can
-  // have busy multi-threaded access. _header and _object are set at
-  // initial inflation and _object doesn't change until deflation so
-  // _object is a good choice to share the cache line with _header.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE,
-                        sizeof(volatile markWord) + sizeof(void* volatile));
+  // have busy multi-threaded access. _header, _object and _allocation_state
+  // are set at initial inflation. _object and _allocation_state don't
+  // change until deflation so _object and _allocation_state are good
+  // choices to share the cache line with _header.
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
+                        sizeof(void* volatile) + sizeof(AllocationState));
+  // Used by async deflation as a marker in the _owner field:
+  #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
@@ -164,9 +172,10 @@ class ObjectMonitor {
   volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
-  volatile jint  _contentions;      // Number of active contentions in enter(). It is used by is_busy()
+  jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
-                                    // deflated. See ObjectSynchronizer::deflate_monitor().
+                                    // deflated. It is also used by the async deflation protocol. See
+                                    // ObjectSynchronizer::deflate_monitor() and deflate_monitor_using_JT().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile jint  _waiters;          // number of waiting threads
@@ -233,17 +242,34 @@ class ObjectMonitor {
 
   intptr_t is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
-    return _contentions|_waiters|intptr_t(_owner)|intptr_t(_cxq)|intptr_t(_EntryList);
+    intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
+    if (!AsyncDeflateIdleMonitors) {
+      ret_code |= contentions() | intptr_t(_owner);
+    } else {
+      if (contentions() > 0) {
+        ret_code |= contentions();
+      }
+      if (_owner != DEFLATER_MARKER) {
+        ret_code |= intptr_t(_owner);
+      }
+    }
+    return ret_code;
   }
   const char* is_busy_to_string(stringStream* ss);
 
   intptr_t  is_entered(Thread* current) const;
 
-  void*     owner() const;
+  void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
+  // Returns true if owner field == DEFLATER_MARKER and false otherwise.
+  bool      owner_is_DEFLATER_MARKER();
+  // Returns true if 'this' is being async deflated and false otherwise.
+  bool      is_being_async_deflated();
   // Clear _owner field; current value must match old_value.
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from(void* old_value, void* new_value);
+  // Simply set _owner field to new_value; current value must match old_value1 or old_value2.
+  void      set_owner_from(void* old_value1, void* old_value2, void* new_value);
   // Simply set _owner field to self; current value must match basic_lock_p.
   void      set_owner_from_BasicLock(void* basic_lock_p, Thread* self);
   // Try to set _owner field to new_value if the current value matches
@@ -262,6 +288,7 @@ class ObjectMonitor {
   jint      waiters() const;
 
   jint      contentions() const;
+  void      add_to_contentions(jint value);
   intx      recursions() const                                         { return _recursions; }
 
   // JVM/TI GetObjectMonitorUsage() needs this:
@@ -286,7 +313,9 @@ class ObjectMonitor {
     // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
     // _contentions == 0 EntryList  == NULL
     // _recursions == 0 _WaitSet == NULL
-    DEBUG_ONLY(stringStream ss;)
+#ifdef ASSERT
+    stringStream ss;
+#endif
     assert((is_busy() | _recursions) == 0, "freeing in-use monitor: %s, "
            "recursions=" INTX_FORMAT, is_busy_to_string(&ss), _recursions);
     _succ          = NULL;
@@ -301,13 +330,19 @@ class ObjectMonitor {
   void*     object() const;
   void*     object_addr();
   void      set_object(void* obj);
+  void      set_allocation_state(AllocationState s);
+  AllocationState allocation_state() const;
+  bool      is_free() const;
+  bool      is_old() const;
+  bool      is_new() const;
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(Thread* THREAD);
   void      clear();
+  void      clear_common();
 
-  void      enter(TRAPS);
+  bool      enter(TRAPS);
   void      exit(bool not_suspended, TRAPS);
   void      wait(jlong millis, bool interruptable, TRAPS);
   void      notify(TRAPS);
@@ -321,7 +356,7 @@ class ObjectMonitor {
 
 // Use the following at your own risk
   intx      complete_exit(TRAPS);
-  void      reenter(intx recursions, TRAPS);
+  bool      reenter(intx recursions, TRAPS);
 
  private:
   void      AddWaiter(ObjectWaiter* waiter);
@@ -332,10 +367,22 @@ class ObjectMonitor {
   void      ReenterI(Thread* self, ObjectWaiter* self_node);
   void      UnlinkAfterAcquire(Thread* self, ObjectWaiter* self_node);
   int       TryLock(Thread* self);
-  int       NotRunnable(Thread* self, Thread * Owner);
+  int       NotRunnable(Thread* self, Thread* Owner);
   int       TrySpin(Thread* self);
   void      ExitEpilog(Thread* self, ObjectWaiter* Wakee);
   bool      ExitSuspendEquivalent(JavaThread* self);
+  void      install_displaced_markword_in_object(const oop obj);
 };
+
+// Macro to use guarantee() for more strict AsyncDeflateIdleMonitors
+// checks and assert() otherwise.
+#define ADIM_guarantee(p, ...)       \
+  do {                               \
+    if (AsyncDeflateIdleMonitors) {  \
+      guarantee(p, __VA_ARGS__);     \
+    } else {                         \
+      assert(p, __VA_ARGS__);        \
+    }                                \
+  } while (0)
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

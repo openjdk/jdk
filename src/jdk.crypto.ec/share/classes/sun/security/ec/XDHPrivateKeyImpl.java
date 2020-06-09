@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,45 +43,34 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
     private byte[] k;
 
     XDHPrivateKeyImpl(XECParameters params, byte[] k)
-        throws InvalidKeyException {
+            throws InvalidKeyException {
 
         this.paramSpec = new NamedParameterSpec(params.getName());
         this.k = k.clone();
 
         this.algid = new AlgorithmId(params.getOid());
-        encodeKey();
-
+        DerOutputStream derKey = new DerOutputStream();
+        try {
+            derKey.putOctetString(k);
+            this.key = derKey.toByteArray();
+        } catch (IOException ex) {
+            throw new AssertionError("Should not happen", ex);
+        }
         checkLength(params);
     }
 
     XDHPrivateKeyImpl(byte[] encoded) throws InvalidKeyException {
-
-        decode(encoded);
+        super(encoded);
         XECParameters params = XECParameters.get(
             InvalidKeyException::new, algid);
         paramSpec = new NamedParameterSpec(params.getName());
-        decodeKey();
-
-        checkLength(params);
-    }
-
-    private void decodeKey() throws InvalidKeyException {
         try {
             DerInputStream derStream = new DerInputStream(key);
             k = derStream.getOctetString();
         } catch (IOException ex) {
             throw new InvalidKeyException(ex);
         }
-    }
-
-    private void encodeKey() {
-        DerOutputStream derKey = new DerOutputStream();
-        try {
-            derKey.putOctetString(k);
-            this.key = derKey.toByteArray();
-        } catch (IOException ex) {
-            throw new ProviderException(ex);
-        }
+        checkLength(params);
     }
 
     void checkLength(XECParameters params) throws InvalidKeyException {

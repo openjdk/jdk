@@ -37,6 +37,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
+import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
@@ -62,7 +63,7 @@ import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.VirtualState.NodeClosure;
+import org.graalvm.compiler.nodes.VirtualState.NodePositionClosure;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
@@ -579,12 +580,11 @@ public class LoopFragmentInside extends LoopFragment {
                 ValueNode initializer = firstPhi;
                 if (duplicateState != null) {
                     // fix the merge's state after
-                    duplicateState.applyToNonVirtual(new NodeClosure<ValueNode>() {
-
+                    duplicateState.applyToNonVirtual(new NodePositionClosure<Node>() {
                         @Override
-                        public void apply(Node from, ValueNode node) {
-                            if (node == phi) {
-                                from.replaceFirstInput(phi, firstPhi);
+                        public void apply(Node from, Position p) {
+                            if (p.get(from) == phi) {
+                                p.set(from, firstPhi);
                             }
                         }
                     });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import org.graalvm.compiler.nodes.java.AccessMonitorNode;
 import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
-import org.graalvm.compiler.nodes.java.RawMonitorEnterNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
 
@@ -42,7 +41,7 @@ public class LockEliminationPhase extends Phase {
     protected void run(StructuredGraph graph) {
         for (MonitorExitNode monitorExitNode : graph.getNodes(MonitorExitNode.TYPE)) {
             FixedNode next = monitorExitNode.next();
-            if ((next instanceof MonitorEnterNode || next instanceof RawMonitorEnterNode)) {
+            if ((next instanceof MonitorEnterNode)) {
                 // should never happen, osr monitor enters are always direct successors of the graph
                 // start
                 assert !(next instanceof OSRMonitorEnterNode);

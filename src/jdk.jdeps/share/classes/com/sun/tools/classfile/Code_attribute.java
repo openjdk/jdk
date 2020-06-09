@@ -125,7 +125,7 @@ public class Code_attribute extends Attribute {
 
             Instruction current = null;
             int pc = 0;
-            Instruction next = new Instruction(code, pc);
+            Instruction next = (pc < code.length ? new Instruction(code, pc) : null);
 
         };
     }

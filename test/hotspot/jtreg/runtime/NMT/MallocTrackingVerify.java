@@ -25,7 +25,7 @@
  * @test
  * @bug 8054836
  * @summary Test to verify correctness of malloc tracking
- * @key nmt jcmd randomness
+ * @key randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

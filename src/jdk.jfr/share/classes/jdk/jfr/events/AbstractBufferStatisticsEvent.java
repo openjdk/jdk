@@ -26,31 +26,36 @@
 package jdk.jfr.events;
 
 import jdk.internal.misc.VM.BufferPool;
-
+import jdk.internal.misc.VM;
 import jdk.jfr.*;
 import jdk.jfr.internal.Type;
 
 @Category({ "Java Application", "Statistics" })
 public abstract class AbstractBufferStatisticsEvent extends AbstractJDKEvent {
 
-    AbstractBufferStatisticsEvent() {
-        BufferPool bufferPool = getBufferPool();
-
+    protected AbstractBufferStatisticsEvent(BufferPool bufferPool) {
         count = bufferPool.getCount();
         totalCapacity = bufferPool.getTotalCapacity();
         memoryUsed = bufferPool.getMemoryUsed();
     }
 
     @Label("Count")
-    public long count;
+    final long count;
 
     @Label("Total Capacity")
     @DataAmount
-    public long totalCapacity;
+    final long totalCapacity;
 
     @Label("Memory Used")
     @DataAmount
-    public long memoryUsed;
+    final long memoryUsed;
 
-    abstract BufferPool getBufferPool();
+    static BufferPool findPoolByName(String name) {
+        for (BufferPool pool : VM.getBufferPools()) {
+            if (pool.getName().equals(name)) {
+                return pool;
+            }
+        }
+        throw new InternalError("No buffer pool with name " + name);
+    }
 }

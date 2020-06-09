@@ -421,6 +421,10 @@ public enum SourceVersion {
         case "_":
             return version.compareTo(RELEASE_9) >= 0;
 
+     // case "non-sealed": can be added once it is a keyword only
+     // dependent on release and not also preview features being
+     // enabled.
+
             // Keywords common across versions
 
             // Modifiers

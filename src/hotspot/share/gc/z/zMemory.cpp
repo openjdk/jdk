@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zList.inline.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMemory.inline.hpp"
 #include "memory/allocation.inline.hpp"
 
@@ -86,6 +87,8 @@ void ZMemoryManager::register_callbacks(const Callbacks& callbacks) {
 }
 
 uintptr_t ZMemoryManager::alloc_from_front(size_t size) {
+  ZLocker<ZLock> locker(&_lock);
+
   ZListIterator<ZMemory> iter(&_freelist);
   for (ZMemory* area; iter.next(&area);) {
     if (area->size() >= size) {
@@ -109,6 +112,8 @@ uintptr_t ZMemoryManager::alloc_from_front(size_t size) {
 }
 
 uintptr_t ZMemoryManager::alloc_from_front_at_most(size_t size, size_t* allocated) {
+  ZLocker<ZLock> locker(&_lock);
+
   ZMemory* area = _freelist.first();
   if (area != NULL) {
     if (area->size() <= size) {
@@ -133,6 +138,8 @@ uintptr_t ZMemoryManager::alloc_from_front_at_most(size_t size, size_t* allocate
 }
 
 uintptr_t ZMemoryManager::alloc_from_back(size_t size) {
+  ZLocker<ZLock> locker(&_lock);
+
   ZListReverseIterator<ZMemory> iter(&_freelist);
   for (ZMemory* area; iter.next(&area);) {
     if (area->size() >= size) {
@@ -155,6 +162,8 @@ uintptr_t ZMemoryManager::alloc_from_back(size_t size) {
 }
 
 uintptr_t ZMemoryManager::alloc_from_back_at_most(size_t size, size_t* allocated) {
+  ZLocker<ZLock> locker(&_lock);
+
   ZMemory* area = _freelist.last();
   if (area != NULL) {
     if (area->size() <= size) {
@@ -180,6 +189,8 @@ uintptr_t ZMemoryManager::alloc_from_back_at_most(size_t size, size_t* allocated
 void ZMemoryManager::free(uintptr_t start, size_t size) {
   assert(start != UINTPTR_MAX, "Invalid address");
   const uintptr_t end = start + size;
+
+  ZLocker<ZLock> locker(&_lock);
 
   ZListIterator<ZMemory> iter(&_freelist);
   for (ZMemory* area; iter.next(&area);) {

@@ -28,7 +28,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
@@ -48,7 +47,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
@@ -72,7 +70,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
@@ -95,7 +92,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
@@ -119,7 +115,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
@@ -138,7 +133,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherDeoptWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -160,7 +154,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherDeoptWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -187,7 +180,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherDeoptWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -213,7 +205,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherDeoptWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -240,7 +231,6 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherDeoptWithShenandoah
- * @key gc
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah

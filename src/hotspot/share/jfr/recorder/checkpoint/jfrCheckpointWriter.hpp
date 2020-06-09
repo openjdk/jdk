@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ struct JfrCheckpointContext {
 class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   friend class JfrCheckpointManager;
   friend class JfrSerializerRegistration;
+  friend class JfrTypeManager;
  private:
   JfrTicks _time;
   int64_t _offset;
@@ -68,10 +69,10 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   void increment();
   const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = NULL);
   void release();
-  JfrCheckpointWriter(Thread* t, JfrBuffer* buffer, JfrCheckpointType type = GENERIC);
+  JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
  public:
   JfrCheckpointWriter(JfrCheckpointType type = GENERIC);
-  JfrCheckpointWriter(Thread* t, bool header = true, JfrCheckpointType mode = GENERIC);
+  JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC);
   ~JfrCheckpointWriter();
   void write_type(JfrTypeId type_id);
   void write_count(u4 nof_entries);

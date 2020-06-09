@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package org.graalvm.compiler.core.test;
 
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
@@ -51,7 +52,7 @@ public class SimpleCFGTest extends GraalCompilerTest {
     @Test
     public void testImplies() {
         OptionValues options = getInitialOptions();
-        DebugContext debug = DebugContext.create(options, new GraalDebugHandlersFactory(getSnippetReflection()));
+        DebugContext debug = new Builder(options, new GraalDebugHandlersFactory(getSnippetReflection())).build();
         StructuredGraph graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).build();
 
         EndNode trueEnd = graph.add(new EndNode());

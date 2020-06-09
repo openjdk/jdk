@@ -201,6 +201,8 @@ public final class Class<T> implements java.io.Serializable,
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
 
+    private static final ClassDesc[] EMPTY_CLASS_DESC_ARRAY = new ClassDesc[0];
+
     private static native void registerNatives();
     static {
         registerNatives();
@@ -4382,4 +4384,69 @@ public final class Class<T> implements java.io.Serializable,
     @HotSpotIntrinsicCandidate
     public native boolean isHidden();
 
+    /**
+     * {@preview Associated with sealed classes, a preview feature of the Java language.
+     *
+     *           This method is associated with <i>sealed classes</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * Returns an array containing {@code ClassDesc} objects representing all the
+     * direct subclasses or direct implementation classes permitted to extend or implement this class or interface
+     * if it is sealed. If this {@code Class} object represents a primitive type, {@code void}, an array type,
+     * or a class or interface that is not sealed, an empty array is returned.
+     *
+     * @return an array of class descriptors of all the permitted subclasses of this class or interface
+     *
+     * @jls 8.1 Class Declarations
+     * @jls 9.1 Interface Declarations
+     * @since 15
+     */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    public ClassDesc[] permittedSubclasses() {
+        String[] subclassNames;
+        if (isArray() || isPrimitive() || (subclassNames = getPermittedSubclasses0()).length == 0) {
+            return EMPTY_CLASS_DESC_ARRAY;
+        }
+        ClassDesc[] constants = new ClassDesc[subclassNames.length];
+        int i = 0;
+        for (String subclassName : subclassNames) {
+            try {
+                constants[i++] = ClassDesc.of(subclassName.replace('/', '.'));
+            } catch (IllegalArgumentException iae) {
+                throw new InternalError("Invalid type in permitted subclasses information: " + subclassName, iae);
+            }
+        }
+        return constants;
+    }
+
+    /**
+     * * {@preview Associated with sealed classes, a preview feature of the Java language.
+     *
+     *           This method is associated with <i>sealed classes</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * Returns {@code true} if and only if this {@code Class} object represents a sealed class or interface.
+     * If this {@code Class} object represents a primitive type, {@code void}, or an array type, this method returns
+     * {@code false}.
+     *
+     * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
+     *
+     * @jls 8.1 Class Declarations
+     * @jls 9.1 Interface Declarations
+     * @since 15
+     */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    @SuppressWarnings("preview")
+    public boolean isSealed() {
+        if (isArray() || isPrimitive()) {
+            return false;
+        }
+        return permittedSubclasses().length != 0;
+    }
+
+    private native String[] getPermittedSubclasses0();
 }

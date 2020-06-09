@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ import static org.testng.Assert.fail;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -284,15 +285,8 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         LocalDateTime expected = LocalDateTime.now(Clock.system(zone));
         LocalDateTime test = LocalDateTime.now(zone);
-        for (int i = 0; i < 100; i++) {
-            if (expected.equals(test)) {
-                return;
-            }
-            expected = LocalDateTime.now(Clock.system(zone));
-            test = LocalDateTime.now(zone);
-        }
-        assertEquals(test.truncatedTo(ChronoUnit.SECONDS),
-                     expected.truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS),
+                Duration.ZERO);
     }
 
     //-----------------------------------------------------------------------

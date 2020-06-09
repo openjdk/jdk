@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test commits of overlapping regions of memory.
- * @key nmt jcmd
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

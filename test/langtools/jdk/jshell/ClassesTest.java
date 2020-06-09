@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354 8189248 8010319
+ * @bug 8145239 8129559 8080354 8189248 8010319 8246353
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -251,8 +251,8 @@ public class ClassesTest extends KullaTesting {
         assertEval("public interface A { }");
         assertDeclareWarn1("static class B implements A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("final interface C extends A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 5, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertDeclareWarn1("static interface C extends A { }",
+                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertActiveKeys();
     }
 
@@ -261,8 +261,8 @@ public class ClassesTest extends KullaTesting {
         assertEval("@X public interface A { }");
         assertDeclareWarn1("@X static class B implements A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("@X final interface C extends A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 8, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertDeclareWarn1("@X static interface C extends A { }",
+                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertActiveKeys();
     }
 
@@ -270,8 +270,8 @@ public class ClassesTest extends KullaTesting {
         assertEval("strictfp public interface A { }");
         assertDeclareWarn1("strictfp static class B implements A { }",
                 new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 15, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("strictfp final interface C extends A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 14, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertDeclareWarn1("strictfp static interface C extends A { }",
+                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 15, 0, -1, -1, Diagnostic.Kind.WARNING));
         assertActiveKeys();
     }
 

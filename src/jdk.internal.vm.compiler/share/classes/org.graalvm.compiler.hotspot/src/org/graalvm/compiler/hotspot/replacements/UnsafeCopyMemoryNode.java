@@ -39,7 +39,6 @@ import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(cycles = CYCLES_64, size = SIZE_16, allowedUsageTypes = {Memory})
@@ -77,11 +76,6 @@ public class UnsafeCopyMemoryNode extends AbstractStateSplit implements Lowerabl
     @Override
     public LocationIdentity getKilledLocationIdentity() {
         return LocationIdentity.any();
-    }
-
-    @Override
-    public void lower(LoweringTool tool) {
-        tool.getLowerer().lower(this, tool);
     }
 
     @Override

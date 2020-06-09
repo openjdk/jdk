@@ -49,6 +49,7 @@ import java.util.function.Supplier;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 
 import static jdk.internal.module.ClassFileConstants.*;
 
@@ -61,9 +62,6 @@ import static jdk.internal.module.ClassFileConstants.*;
  */
 
 public final class ModuleInfo {
-
-    private final int JAVA_MIN_SUPPORTED_VERSION = 53;
-    private final int JAVA_MAX_SUPPORTED_VERSION = 59;
 
     private static final JavaLangModuleAccess JLMA
         = SharedSecrets.getJavaLangModuleAccess();
@@ -190,8 +188,7 @@ public final class ModuleInfo {
 
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
-        if (major_version < JAVA_MIN_SUPPORTED_VERSION ||
-                major_version > JAVA_MAX_SUPPORTED_VERSION) {
+        if (!VM.isSupportedModuleDescriptorVersion(major_version, minor_version)) {
             throw invalidModuleDescriptor("Unsupported major.minor version "
                                           + major_version + "." + minor_version);
         }

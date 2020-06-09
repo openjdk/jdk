@@ -488,15 +488,15 @@ public abstract class Printer {
       * <b>Experimental, use at your own risk. This method will be renamed when it becomes stable, this
       * will break existing code using it</b>.
       *
-      * <p>Visits a permitted subtypes. A permitted subtypes is one of the allowed subtypes of the
+      * <p>Visits a permitted subclass. A permitted subtclass is one of the allowed subclasses of the
       * current class. See {@link
-      * jdk.internal.org.objectweb.asm.ClassVisitor#visitPermittedSubtypeExperimental(String)}.
+      * jdk.internal.org.objectweb.asm.ClassVisitor#visitPermittedSubclassExperimental(String)}.
       *
-      * @param permittedSubtype the internal name of a permitted subtype.
+      * @param permittedSubclass the internal name of a permitted subclass.
       * @deprecated this API is experimental.
       */
     @Deprecated
-    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
+    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
     private static final int BEGIN_GROUP = 0x00;
     private static final int BEGIN_GRAPH = 0x01;
     private static final int CLOSE_GROUP = 0x02;
+    private static final int BEGIN_DOCUMENT = 0x03;
 
     private static final int POOL_NEW = 0x00;
     private static final int POOL_STRING = 0x01;
@@ -76,8 +77,8 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
 
     private static final byte[] MAGIC_BYTES = {'B', 'I', 'G', 'V'};
 
-    private static final int MAJOR_VERSION = 6;
-    private static final int MINOR_VERSION = 1;
+    private static final int MAJOR_VERSION = 7;
+    private static final int MINOR_VERSION = 0;
 
     private final ConstantPool constantPool;
     private final ByteBuffer buffer;
@@ -137,6 +138,19 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
             writeGraph(graph, properties);
             flushEmbedded();
             flush();
+        } finally {
+            printing = false;
+        }
+    }
+
+    public final void startDocument(Map<? extends Object, ? extends Object> documentProperties) throws IOException {
+        if (versionMajor < 7) {
+            throw new IllegalStateException("Dump properties unsupported in format v." + versionMajor);
+        }
+        printing = true;
+        try {
+            writeByte(BEGIN_DOCUMENT);
+            writeProperties(null, documentProperties);
         } finally {
             printing = false;
         }

@@ -27,7 +27,6 @@ package gc.logging;
  * @test TestGCId
  * @bug 8043607
  * @summary Ensure that the GCId is logged
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -25,16 +25,11 @@ package gc.z;
 
 /*
  * @test TestUncommit
- * @requires vm.gc.Z & !vm.graal.enabled & vm.compMode != "Xcomp"
+ * @requires vm.gc.Z & !vm.graal.enabled
  * @summary Test ZGC uncommit unused memory
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit true 2
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms512M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit false 1
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 -XX:-ZUncommit gc.z.TestUncommit false 1
- */
-
-/*
- * This test is disabled when running with -Xcomp, since it seems to affect
- * the timing of the test, causing memory to appear to be uncommitted too fast.
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit true 2
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms512M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit false 1
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 -XX:-ZUncommit gc.z.TestUncommit false 1
  */
 
 import java.util.ArrayList;

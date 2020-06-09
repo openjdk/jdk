@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,10 @@
  */
 
 import java.lang.management.*;
-import java.time.Instant;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Phaser;
 import java.util.function.Supplier;
 
@@ -61,12 +64,14 @@ public class AllThreadIds {
     static final int ALL_THREADS = DAEMON_THREADS + USER_THREADS;
     private static final boolean live[] = new boolean[ALL_THREADS];
     private static final Thread allThreads[] = new Thread[ALL_THREADS];
+    private static final Set<Long> allThreadIds = new HashSet<>();
+
     private static final ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
     private static boolean testFailed = false;
     private static boolean trace = false;
 
     private static long prevTotalThreadCount = 0;
-    private static int prevLiveThreadCount = 0;
+    private static long prevLiveTestThreadCount = 0;
     private static int prevPeakThreadCount = 0;
 
     private static final Phaser startupCheck = new Phaser(ALL_THREADS + 1);
@@ -95,9 +100,11 @@ public class AllThreadIds {
         // Start all threads and wait to be sure they all are alive
         for (int i = 0; i < ALL_THREADS; i++) {
             setLive(i, true);
-            allThreads[i] = new MyThread(i);
-            allThreads[i].setDaemon(i < DAEMON_THREADS);
-            allThreads[i].start();
+            Thread thread = new MyThread(i);
+            thread.setDaemon(i < DAEMON_THREADS);
+            thread.start();
+            allThreadIds.add(thread.getId());
+            allThreads[i] = thread;
         }
         // wait until all threads are started.
         startupCheck.arriveAndAwaitAdvance();
@@ -107,30 +114,13 @@ public class AllThreadIds {
             printThreadList();
         }
         // Check mbean now. All threads must appear in getAllThreadIds() list
-        long[] list = mbean.getAllThreadIds();
+        Set<Long> currentThreadIds = new HashSet<>();
+        Arrays.stream(mbean.getAllThreadIds()).forEach(currentThreadIds::add);
 
-        for (int i = 0; i < ALL_THREADS; i++) {
-            long expectedId = allThreads[i].getId();
-            boolean found = false;
-
+        if (!currentThreadIds.containsAll(allThreadIds)) {
+            testFailed = true;
             if (trace) {
-                System.out.print("Looking for thread with id " + expectedId);
-            }
-            for (int j = 0; j < list.length; j++) {
-                if (expectedId == list[j]) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                testFailed = true;
-            }
-            if (trace) {
-                if (!found) {
-                    System.out.print(". TEST FAILED.");
-                }
-                System.out.println();
+                System.out.print(". TEST FAILED.");
             }
         }
         if (trace) {
@@ -201,112 +191,65 @@ public class AllThreadIds {
     }
 
     private static void checkThreadCount(int numNewThreads,
-                                         int numTerminatedThreads)
-        throws Exception {
-
+                                         int numTerminatedThreads) {
         checkLiveThreads(numNewThreads, numTerminatedThreads);
         checkPeakThreads(numNewThreads);
         checkTotalThreads(numNewThreads);
-        checkThreadIds();
+        checkThreadIds(numNewThreads, numTerminatedThreads);
     }
 
     private static void checkLiveThreads(int numNewThreads,
-                                         int numTerminatedThreads)
-        throws InterruptedException {
+                                         int numTerminatedThreads) {
         int diff = numNewThreads - numTerminatedThreads;
-
-        waitTillEquals(
-            diff + prevLiveThreadCount,
-            ()->(long)mbean.getThreadCount(),
-            "Unexpected number of live threads: " +
-                " Prev live = %1$d Current live = ${provided} Threads added = %2$d" +
-                " Threads terminated = %3$d",
-            ()->prevLiveThreadCount,
-            ()->numNewThreads,
-            ()->numTerminatedThreads
-        );
-    }
-
-    private static void checkPeakThreads(int numNewThreads)
-        throws InterruptedException {
-
-        waitTillEquals(numNewThreads + prevPeakThreadCount,
-            ()->(long)mbean.getPeakThreadCount(),
-            "Unexpected number of peak threads: " +
-                " Prev peak = %1$d Current peak = ${provided} Threads added = %2$d",
-            ()->prevPeakThreadCount,
-            ()->numNewThreads
-        );
-    }
-
-    private static void checkTotalThreads(int numNewThreads)
-        throws InterruptedException {
-
-        waitTillEquals(numNewThreads + prevTotalThreadCount,
-            ()->mbean.getTotalStartedThreadCount(),
-            "Unexpected number of total threads: " +
-                " Prev Total = %1$d Current Total = ${provided} Threads added = %2$d",
-            ()->prevTotalThreadCount,
-            ()->numNewThreads
-        );
-    }
-
-    private static void checkThreadIds() throws InterruptedException {
-        long[] list = mbean.getAllThreadIds();
-
-        waitTillEquals(
-            list.length,
-            ()->(long)mbean.getThreadCount(),
-            "Array length returned by " +
-                "getAllThreadIds() = %1$d not matched count = ${provided}",
-            ()->list.length
-        );
-    }
-
-    /**
-     * Waits till the <em>expectedVal</em> equals to the <em>retrievedVal</em>.
-     * It will report a status message on the first occasion of the value mismatch
-     * and then, subsequently, when the <em>retrievedVal</em> value changes.
-     * @param expectedVal The value to wait for
-     * @param retrievedVal The supplier of the value to check against the <em>expectedVal</em>
-     * @param msgFormat The formatted message to be printed in case of mismatch
-     * @param msgArgs The parameters to the formatted message
-     * @throws InterruptedException
-     */
-    private static void waitTillEquals(long expectedVal, Supplier<Long> retrievedVal,
-                                        String msgFormat, Supplier<Object> ... msgArgs)
-        throws InterruptedException {
-        Object[] args = null;
-
-        long countPrev = -1;
-        while (true) {
-            Long count = retrievedVal.get();
-            if (count == expectedVal) break;
-            if (countPrev == -1 || countPrev != count) {
-                if (args == null) {
-                    args = new Object[msgArgs.length];
-                    for(int i=0; i < msgArgs.length; i++) {
-                        args[i] = new ArgWrapper<>((Supplier<Object>)msgArgs[i]);
-                    }
-                }
-                System.err.format("TS: %s\n", Instant.now());
-                System.err.format(
-                    msgFormat
-                        .replace("${provided}", String.valueOf(count))
-                        .replace("$d", "$s"),
-                    args
-                ).flush();
-                printThreadList();
-                System.err.println("\nRetrying ...\n");
-            }
-            countPrev = count;
-            Thread.sleep(1);
+        long threadCount = mbean.getThreadCount();
+        long expectedThreadCount = prevLiveTestThreadCount + diff;
+        // Check that number of live test threads is no less
+        // than number of all threads returned by mbean.getThreadCount()
+        if (threadCount < expectedThreadCount) {
+            testFailed = true;
+            System.err.println(MessageFormat.format("Unexpected number of threads count %d." +
+                    "The expected number is %d or greater", threadCount, expectedThreadCount));
         }
+    }
+
+    private static void checkPeakThreads(int numNewThreads) {
+        long peakThreadCount = mbean.getPeakThreadCount();
+        long expectedThreadCount = Math.max(prevPeakThreadCount, numNewThreads);
+        if (peakThreadCount < expectedThreadCount) {
+            testFailed = true;
+            System.err.println(MessageFormat.format("Unexpected number of peak threads count %d." +
+                    "The expected number is %d or greater", peakThreadCount, expectedThreadCount));
+        }
+    }
+
+    private static void checkTotalThreads(int numNewThreads) {
+        long totalThreadCount = mbean.getTotalStartedThreadCount();
+        long expectedThreadCount = prevTotalThreadCount + numNewThreads;
+        if (totalThreadCount < expectedThreadCount) {
+            testFailed = true;
+            System.err.println(MessageFormat.format("Unexpected number of total threads %d." +
+                    "The expected number is %d or greater", totalThreadCount, expectedThreadCount));
+        }
+    }
+
+    private static void checkThreadIds(int numNewThreads, int numTerminatedThreads) {
+        int threadCount = mbean.getAllThreadIds().length;
+        int expectedThreadCount = numNewThreads - numTerminatedThreads;
+        if (threadCount < expectedThreadCount) {
+            testFailed = true;
+            System.err.println(MessageFormat.format("Unexpected number of threads %d." +
+                    "The expected number is %d or greater", threadCount, expectedThreadCount));
+        }
+    }
+
+    private static long getTestThreadCount() {
+        return Thread.getAllStackTraces().keySet().stream().filter(
+                thread -> thread.isAlive() && allThreadIds.contains(thread.getId())).count();
     }
 
     private static void updateCounters() {
         prevTotalThreadCount = mbean.getTotalStartedThreadCount();
-        prevLiveThreadCount = mbean.getThreadCount();
+        prevLiveTestThreadCount = getTestThreadCount();
         prevPeakThreadCount = mbean.getPeakThreadCount();
     }
 

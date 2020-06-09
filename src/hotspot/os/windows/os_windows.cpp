@@ -3237,6 +3237,10 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   reserve_memory(split, base);
   reserve_memory(size - split, split_address);
 
+  // NMT: nothing to do here. Since Windows implements the split by
+  //  releasing and re-reserving memory, the parts are already registered
+  //  as individual mappings with NMT.
+
 }
 
 // Multiple threads can race in this code but it's not possible to unmap small sections of

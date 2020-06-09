@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ package org.graalvm.compiler.core.common.spi;
 
 import java.util.Arrays;
 
+import jdk.internal.vm.compiler.word.LocationIdentity;
+
 /**
- * The name and signature of a foreign call. A foreign call differs from a normal compiled Java call
- * in at least one of these aspects:
+ * The information required for high level code generation of a foreign call. A foreign call differs
+ * from a normal compiled Java call in at least one of these aspects:
  * <ul>
  * <li>The call is to C/C++/assembler code.</li>
  * <li>The call uses different conventions for passing parameters or returning values.</li>
@@ -42,59 +44,86 @@ import java.util.Arrays;
  */
 public class ForeignCallDescriptor {
 
-    private final String name;
-    private final Class<?> resultType;
-    private final Class<?>[] argumentTypes;
+    protected final ForeignCallSignature signature;
+    protected final boolean isReexecutable;
+    protected final boolean canDeoptimize;
+    protected final boolean isGuaranteedSafepoint;
+    protected final LocationIdentity[] killedLocations;
 
-    public ForeignCallDescriptor(String name, Class<?> resultType, Class<?>... argumentTypes) {
-        this.name = name;
-        this.resultType = resultType;
-        this.argumentTypes = argumentTypes;
+    public ForeignCallDescriptor(String name, Class<?> resultType, Class<?>[] argumentTypes, boolean isReexecutable, LocationIdentity[] killedLocations, boolean canDeoptimize,
+                    boolean isGuaranteedSafepoint) {
+        this.isReexecutable = isReexecutable;
+        this.killedLocations = killedLocations;
+        this.canDeoptimize = canDeoptimize;
+        this.isGuaranteedSafepoint = isGuaranteedSafepoint;
+        this.signature = new ForeignCallSignature(name, resultType, argumentTypes);
+
     }
 
-    /**
-     * Gets the name of this foreign call.
-     */
+    public ForeignCallSignature getSignature() {
+        return signature;
+    }
+
     public String getName() {
-        return name;
+        return signature.getName();
     }
 
-    /**
-     * Gets the return type of this foreign call.
-     */
     public Class<?> getResultType() {
-        return resultType;
+        return signature.getResultType();
     }
 
-    /**
-     * Gets the argument types of this foreign call.
-     */
     public Class<?>[] getArgumentTypes() {
-        return argumentTypes.clone();
+        return signature.getArgumentTypes();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o;
     }
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return signature.hashCode();
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ForeignCallDescriptor) {
-            ForeignCallDescriptor other = (ForeignCallDescriptor) obj;
-            return other.name.equals(name) && other.resultType.equals(resultType) && Arrays.equals(other.argumentTypes, argumentTypes);
-        }
-        return false;
+    /**
+     * Determines if a given foreign call is side-effect free. Deoptimization cannot return
+     * execution to a point before a foreign call that has a side effect.
+     */
+    public boolean isReexecutable() {
+        return isReexecutable;
+    }
+
+    /**
+     * Gets the set of memory locations killed by a given foreign call. Returning the special value
+     * {@link LocationIdentity#any()} denotes that the call kills all memory locations. Returning
+     * any empty array denotes that the call does not kill any memory locations.
+     */
+    public LocationIdentity[] getKilledLocations() {
+        return killedLocations;
+    }
+
+    /**
+     * Determines if deoptimization can occur during a given foreign call.
+     */
+    public boolean canDeoptimize() {
+        return canDeoptimize;
+    }
+
+    /**
+     * Identifies foreign calls which are guaranteed to include a safepoint check.
+     */
+    public boolean isGuaranteedSafepoint() {
+        return isGuaranteedSafepoint;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(name).append('(');
-        String sep = "";
-        for (Class<?> arg : argumentTypes) {
-            sb.append(sep).append(arg.getSimpleName());
-            sep = ",";
-        }
-        return sb.append(')').append(resultType.getSimpleName()).toString();
+        return getClass().getSimpleName() + "{" + signature +
+                        ", isReexecutable=" + isReexecutable +
+                        ", canDeoptimize=" + canDeoptimize +
+                        ", isGuaranteedSafepoint=" + isGuaranteedSafepoint +
+                        ", killedLocations=" + Arrays.toString(killedLocations) +
+                        '}';
     }
 }

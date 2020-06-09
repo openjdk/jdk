@@ -26,14 +26,9 @@ package org.graalvm.compiler.core.test.ea;
 
 import java.lang.ref.SoftReference;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.TypeSystemTest;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.BoxNode;
@@ -45,6 +40,9 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * The PartialEscapeAnalysisPhase is expected to remove all allocations and return the correct
@@ -282,9 +280,7 @@ public class PartialEscapeAnalysisTest extends EATestBase {
     @SafeVarargs
     protected final void testPartialEscapeAnalysis(String snippet, double expectedProbability, int expectedCount, Class<? extends Node>... invalidNodeClasses) {
         prepareGraph(snippet, false);
-        for (AbstractMergeNode merge : graph.getNodes(AbstractMergeNode.TYPE)) {
-            merge.setStateAfter(null);
-        }
+        graph.clearAllStateAfter();
         new DeadCodeEliminationPhase().apply(graph);
         createCanonicalizerPhase().apply(graph, context);
         try {

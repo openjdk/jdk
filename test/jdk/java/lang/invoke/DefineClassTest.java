@@ -242,6 +242,11 @@ public class DefineClassTest {
         lookup().defineClass(generateNonLinkableClass(THIS_PACKAGE + ".NonLinkableClass"));
     }
 
+    @Test(expectedExceptions = { IllegalArgumentException.class })
+    public void testModuleInfo() throws Exception {
+        lookup().defineClass(generateModuleInfo());
+    }
+
     /**
      * Generates a class file with the given class name
      */
@@ -361,6 +366,23 @@ public class DefineClassTest {
         mv.visitInsn(RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
+
+        cw.visitEnd();
+        return cw.toByteArray();
+    }
+
+    /**
+     * Generates a class file with the given class name
+     */
+    byte[] generateModuleInfo() {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
+                + ClassWriter.COMPUTE_FRAMES);
+        cw.visit(V14,
+                ACC_MODULE,
+                "module-info",
+                null,
+                null,
+                null);
 
         cw.visitEnd();
         return cw.toByteArray();

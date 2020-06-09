@@ -6900,7 +6900,7 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Classloader Classes</synopsis>
       <description>
         Returns an array of all classes which this class loader
-        can find by name via 
+        can find by name via
         <externallink id="../api/java.base/java/lang/ClassLoader.html#loadClass(java.lang.String,boolean)">ClassLoader::loadClass</externallink>,
         <externallink id="../api/java.base/java/lang/Class.html#forName(java.lang.String,boolean,java.lang.ClassLoader)">Class::forName</externallink> and bytecode linkage.
         That is, all classes for which <code>initiating_loader</code>
@@ -7680,7 +7680,8 @@ class C2 extends C1 implements I2 {
         The retransformation must not add, remove or rename fields or methods, change the
         signatures of methods, change modifiers, or change inheritance.
         The retransformation must not change the <code>NestHost</code>,
-        <code>NestMembers</code>, or <code>Record</code> attributes.
+        <code>NestMembers</code>, <code>Record</code>, or <code>PermittedSubclasses</code>
+        attributes.
         These restrictions may be lifted in future versions.
         See the error return description below for information on error codes
         returned if an unsupported retransformation is attempted.
@@ -7833,7 +7834,8 @@ class C2 extends C1 implements I2 {
         The redefinition must not add, remove or rename fields or methods, change the
         signatures of methods, change modifiers, or change inheritance.
         The redefinition must not change the <code>NestHost</code>,
-        <code>NestMembers</code>, or <code>Record</code> attributes.
+        <code>NestMembers</code>, <code>Record</code>, or <code>PermittedSubclasses</code>
+        attributes.
         These restrictions may be lifted in future versions.
         See the error return description below for information on error codes
         returned if an unsupported redefinition is attempted.
@@ -12281,7 +12283,7 @@ myInit() {
       function are not reported.
       <p/>
       The location reported by <functionlink id="GetFrameLocation"></functionlink>
-      identifies the executable location in the returning method,
+      for the depth 0 identifies the executable location in the returning method,
       immediately prior to the return.
     </description>
     <origin>jvmdi</origin>
@@ -12332,8 +12334,7 @@ myInit() {
       programming language methods (including native methods).
       <p/>
       The location reported by <functionlink id="GetFrameLocation"></functionlink>
-      identifies the initial executable location in
-      the method.
+      for the depth 0 identifies the initial executable location in the method.
       <p/>
       Enabling method
       entry or exit events will significantly degrade performance on many platforms and is thus
@@ -12385,12 +12386,8 @@ myInit() {
       or by throwing an exception to its caller
       (see <paramlink id="was_popped_by_exception"></paramlink>).
       <p/>
-      The <code>method</code> field uniquely identifies the
-      method being entered or exited. The <code>frame</code> field provides
-      access to the stack frame for the method.
-      <p/>
       The location reported by <functionlink id="GetFrameLocation"></functionlink>
-      identifies the executable location in the returning method
+      for the depth 0 identifies the executable location in the returning method
       immediately prior to the return.
       <p/>
         Enabling method
@@ -15027,6 +15024,11 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for new class file Record attribute:
         - Specify that RedefineClasses and RetransformClasses are not allowed
           to change the class file Record attribute.
+  </change>
+  <change date="13 May 2020" version="15.0.0">
+      Minor update for new class file PermittedSubclasses attribute:
+        - Specify that RedefineClasses and RetransformClasses are not allowed
+          to change the class file PermittedSubclasses attribute.
   </change>
 </changehistory>
 

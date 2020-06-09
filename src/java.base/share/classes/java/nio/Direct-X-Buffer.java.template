@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,44 +409,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put($Type$Buffer src) {
 #if[rw]
         checkSegment();
-        if (src instanceof Direct$Type$Buffer$BO$) {
-            if (src == this)
-                throw createSameBufferException();
-            Direct$Type$Buffer$RW$$BO$ sb = (Direct$Type$Buffer$RW$$BO$)src;
-
-            int spos = sb.position();
-            int slim = sb.limit();
-            assert (spos <= slim);
-            int srem = (spos <= slim ? slim - spos : 0);
-
-            int pos = position();
-            int lim = limit();
-            assert (pos <= lim);
-            int rem = (pos <= lim ? lim - pos : 0);
-
-            if (srem > rem)
-                throw new BufferOverflowException();
-            try {
-                UNSAFE.copyMemory(sb.ix(spos), ix(pos), (long)srem << $LG_BYTES_PER_VALUE$);
-            } finally {
-                Reference.reachabilityFence(sb);
-                Reference.reachabilityFence(this);
-            }
-            sb.position(spos + srem);
-            position(pos + srem);
-        } else if (src.hb != null) {
-
-            int spos = src.position();
-            int slim = src.limit();
-            assert (spos <= slim);
-            int srem = (spos <= slim ? slim - spos : 0);
-
-            put(src.hb, src.offset + spos, srem);
-            src.position(spos + srem);
-
-        } else {
-            super.put(src);
-        }
+        super.put(src);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();

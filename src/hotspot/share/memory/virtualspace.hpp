@@ -78,6 +78,8 @@ class ReservedSpace {
   // This splits the space into two spaces, the first part of which will be returned.
   // If split==true, the resulting two spaces can be released independently from each other.
   //  This may cause the original space to loose its content.
+  //  They also will be tracked individually by NMT and can be tagged with different flags.
+  //  Note that this may cause the original space to loose its content.
   // If split==false, the resulting space will be just a hotspot-internal representation
   //  of a sub section of the underlying mapping.
   ReservedSpace first_part(size_t partition_size, size_t alignment, bool split = false);

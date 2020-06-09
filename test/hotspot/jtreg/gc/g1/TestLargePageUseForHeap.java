@@ -27,7 +27,6 @@ package gc.g1;
  * @test TestLargePageUseForHeap.java
  * @summary Test that Java heap is allocated using large pages of the appropriate size if available.
  * @bug 8221517
- * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.gc.G1

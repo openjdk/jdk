@@ -1077,6 +1077,13 @@ void Metaspace::ergo_initialize() {
   _commit_alignment  = page_size;
   _reserve_alignment = MAX2(page_size, (size_t)os::vm_allocation_granularity());
 
+  // The upcoming Metaspace rewrite will impose a higher alignment granularity.
+  // To prepare for that and to catch/prevent any misuse of Metaspace alignment
+  // which may creep in, up the alignment a bit.
+  if (_reserve_alignment == 4 * K) {
+    _reserve_alignment *= 4;
+  }
+
   // Do not use FLAG_SET_ERGO to update MaxMetaspaceSize, since this will
   // override if MaxMetaspaceSize was set on the command line or not.
   // This information is needed later to conform to the specification of the

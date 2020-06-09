@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,52 +23,73 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zLock.inline.hpp"
+#include "gc/z/zStat.hpp"
 #include "gc/z/zUncommitter.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "logging/log.hpp"
 
-ZUncommitter::ZUncommitter() :
-    _monitor(Monitor::leaf, "ZUncommitter", false, Monitor::_safepoint_check_never),
+static const ZStatCounter ZCounterUncommit("Memory", "Uncommit", ZStatUnitBytesPerSecond);
+
+ZUncommitter::ZUncommitter(ZPageAllocator* page_allocator) :
+    _page_allocator(page_allocator),
+    _lock(),
     _stop(false) {
   set_name("ZUncommitter");
   create_and_start();
 }
 
-bool ZUncommitter::idle(uint64_t timeout) {
-  // Idle for at least one second
-  const uint64_t expires = os::elapsedTime() + MAX2<uint64_t>(timeout, 1);
-
-  for (;;) {
-    // We might wake up spuriously from wait, so always recalculate
-    // the timeout after a wakeup to see if we need to wait again.
-    const uint64_t now = os::elapsedTime();
-    const uint64_t remaining = expires - MIN2(expires, now);
-
-    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
-    if (remaining > 0 && !_stop) {
-      ml.wait(remaining * MILLIUNITS);
-    } else {
-      return !_stop;
-    }
+bool ZUncommitter::wait(uint64_t timeout) const {
+  ZLocker<ZConditionLock> locker(&_lock);
+  while (!ZUncommit && !_stop) {
+    _lock.wait();
   }
+
+  if (!_stop && timeout > 0) {
+    log_debug(gc, heap)("Uncommit Timeout: " UINT64_FORMAT "s", timeout);
+    _lock.wait(timeout * MILLIUNITS);
+  }
+
+  return !_stop;
+}
+
+bool ZUncommitter::should_continue() const {
+  ZLocker<ZConditionLock> locker(&_lock);
+  return !_stop;
 }
 
 void ZUncommitter::run_service() {
-  for (;;) {
-    // Try uncommit unused memory
-    const uint64_t timeout = ZHeap::heap()->uncommit(ZUncommitDelay);
+  uint64_t timeout = 0;
 
-    log_trace(gc, heap)("Uncommit Timeout: " UINT64_FORMAT "s", timeout);
+  while (wait(timeout)) {
+    EventZUncommit event;
+    size_t uncommitted = 0;
 
-    // Idle until next attempt
-    if (!idle(timeout)) {
-      return;
+    while (should_continue()) {
+      // Uncommit chunk
+      const size_t flushed = _page_allocator->uncommit(&timeout);
+      if (flushed == 0) {
+        // Done
+        break;
+      }
+
+      uncommitted += flushed;
+    }
+
+    if (uncommitted > 0) {
+      // Update statistics
+      ZStatInc(ZCounterUncommit, uncommitted);
+      log_info(gc, heap)("Uncommitted: " SIZE_FORMAT "M(%.0f%%)",
+                         uncommitted / M, percent_of(uncommitted, ZHeap::heap()->max_capacity()));
+
+      // Send event
+      event.commit(uncommitted);
     }
   }
 }
 
 void ZUncommitter::stop_service() {
-  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  ZLocker<ZConditionLock> locker(&_lock);
   _stop = true;
-  ml.notify();
+  _lock.notify_all();
 }

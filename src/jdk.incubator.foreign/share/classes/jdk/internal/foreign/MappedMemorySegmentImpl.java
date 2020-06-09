@@ -99,10 +99,11 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements 
 
     // factories
 
-    public static MappedMemorySegment makeMappedSegment(Path path, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
-        if (bytesSize <= 0) throw new IllegalArgumentException("Requested bytes size must be > 0.");
+    public static MappedMemorySegment makeMappedSegment(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
+        if (bytesSize < 0) throw new IllegalArgumentException("Requested bytes size must be >= 0.");
+        if (bytesOffset < 0) throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
         try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
-            UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, 0L, bytesSize);
+            UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, bytesOffset, bytesSize);
             MemoryScope scope = MemoryScope.create(null, unmapperProxy::unmap);
             int modes = defaultAccessModes(bytesSize);
             if (mapMode == FileChannel.MapMode.READ_ONLY) {

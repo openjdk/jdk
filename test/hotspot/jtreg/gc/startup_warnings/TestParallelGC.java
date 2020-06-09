@@ -24,16 +24,15 @@
 package gc.startup_warnings;
 
 /*
-* @test TestParallelGC
-* @key gc
-* @bug 8006398
-* @requires vm.gc.Parallel
-* @summary Test that ParallelGC does not print a warning message
-* @library /test/lib
-* @modules java.base/jdk.internal.misc
-*          java.management
-* @run driver gc.startup_warnings.TestParallelGC
-*/
+ * @test TestParallelGC
+ * @bug 8006398
+ * @requires vm.gc.Parallel
+ * @summary Test that ParallelGC does not print a warning message
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver gc.startup_warnings.TestParallelGC
+ */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;

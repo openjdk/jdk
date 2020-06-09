@@ -15196,7 +15196,7 @@ instruct ShouldNotReachHere() %{
   ins_encode %{
     if (is_reachable()) {
       // TODO: PPC port $archOpcode(ppc64Opcode_tdi);
-      __ should_not_reach_here();
+      __ stop(_halt_reason);
     }
   %}
   ins_pipe(pipe_class_default);

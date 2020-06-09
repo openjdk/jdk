@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class ClassLoadingHelper {
                 assertion.keepLink(new UnusedThreadKiller(objectThread.getId())); // UnusedThreadKiller
                 break;
             case STATIC_FIELD_OF_ROOT_CLASS:
-                RefHolder holder4 = new NullClassloaderHolder();
+                RefHolder holder4 = new NullClassloaderHolder(random.nextLong());
                 Object keep = holder4.hold(referenceToKeep);
                 if (keep != null) {
                     assertion.keepLink(keep);

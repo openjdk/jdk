@@ -687,12 +687,14 @@ define SetupRunMicroTestBody
     $1_MICRO_BASIC_OPTIONS += -rff $$($1_TEST_RESULTS_DIR)/jmh-result.$(MICRO_RESULTS_FORMAT)
   endif
 
+  # Set library path for native dependencies
+  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
+
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
-    JMH_JVM_ARGS := $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
-    # Set library path for native dependencies
-    JMH_JVM_ARGS += -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
-    $1_MICRO_VM_OPTIONS := -jvmArgs $(call ShellQuote,$$(JMH_JVM_ARGS))
+    $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
   endif
+
+  $1_MICRO_VM_OPTIONS := -jvmArgs $(call ShellQuote,$$($1_JMH_JVM_ARGS))
 
   ifneq ($$(MICRO_ITER), )
     $1_MICRO_ITER := -i $$(MICRO_ITER)

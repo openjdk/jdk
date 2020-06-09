@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,13 @@ public class SharedBaseAddress {
     private static final String[] testTable = {
         "1g", "8g", "64g","512g", "4t",
         "32t", "128t", "0",
-        "1", "64k", "64M"
+        "1", "64k", "64M",
+        "0xfffffffffff00000", // archive top wraps around 64-bit address space
+        "0xfff80000",         // archive top wraps around 32-bit address space
+        "0xffffffffffffffff", // archive bottom wraps around 64-bit address space -- due to align_up()
+        "0xffffffff",         // archive bottom wraps around 32-bit address space -- due to align_up()
+        "0x00007ffffff00000", // end of archive will go past the end of user space on linux/x64
+        "0",                  // always let OS pick the base address at runtime (ASLR for CDS archive)
     };
 
     public static void main(String[] args) throws Exception {
@@ -50,10 +56,16 @@ public class SharedBaseAddress {
             System.out.println("sharedBaseAddress = " + testEntry);
             CDSOptions opts = (new CDSOptions())
                 .setArchiveName(filename)
-                .addPrefix("-XX:SharedBaseAddress=" + testEntry);
+                .addPrefix("-XX:SharedBaseAddress=" + testEntry)
+                .addPrefix("-Xlog:cds=debug")
+                .addPrefix("-Xlog:cds+reloc=debug");
 
             CDSTestUtils.createArchiveAndCheck(opts);
-            CDSTestUtils.runWithArchiveAndCheck(opts);
+            OutputAnalyzer out = CDSTestUtils.runWithArchiveAndCheck(opts);
+            if (testEntry.equals("0")) {
+              out.shouldContain("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.")
+                 .shouldContain("Try to map archive(s) at an alternative address");
+            }
         }
     }
 }

@@ -54,6 +54,7 @@ import org.graalvm.compiler.hotspot.HotSpotDataBuilder;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -81,7 +82,6 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
-import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotSentinelConstant;
 import jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig;
@@ -152,9 +152,8 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
     private boolean hasInvalidatePlaceholder(CompilationResult compilationResult) {
         byte[] targetCode = compilationResult.getTargetCode();
         int verifiedEntryOffset = 0;
-        for (Mark mark : compilationResult.getMarks()) {
-            Object markId = mark.id;
-            if (markId instanceof Integer && (int) markId == config.MARKID_VERIFIED_ENTRY) {
+        for (CompilationResult.CodeMark mark : compilationResult.getMarks()) {
+            if (mark.id == HotSpotMarkId.VERIFIED_ENTRY || mark.id == HotSpotMarkId.OSR_ENTRY) {
                 // The nmethod verified entry is located at some pc offset.
                 verifiedEntryOffset = mark.pcOffset;
                 break;
@@ -202,6 +201,9 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
                         masm.sub(64, sp, sp, rscratch1);
                     }
                 }
+            }
+            if (HotSpotMarkId.FRAME_COMPLETE.isAvailable()) {
+                crb.recordMark(HotSpotMarkId.FRAME_COMPLETE);
             }
             if (ZapStackOnMethodEntry.getValue(crb.getOptions())) {
                 try (ScratchRegister sc = masm.getScratchRegister()) {
@@ -312,7 +314,7 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
     private void emitCodePrefix(CompilationResultBuilder crb, ResolvedJavaMethod installedCodeOwner, AArch64MacroAssembler masm, RegisterConfig regConfig, Label verifiedStub) {
         HotSpotProviders providers = getProviders();
         if (installedCodeOwner != null && !isStatic(installedCodeOwner.getModifiers())) {
-            crb.recordMark(config.MARKID_UNVERIFIED_ENTRY);
+            crb.recordMark(HotSpotMarkId.UNVERIFIED_ENTRY);
             CallingConvention cc = regConfig.getCallingConvention(HotSpotCallingConventionType.JavaCallee, null, new JavaType[]{providers.getMetaAccess().lookupJavaType(Object.class)}, this);
             // See definition of IC_Klass in c1_LIRAssembler_aarch64.cpp
             // equal to scratch(1) careful!
@@ -325,7 +327,7 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
             Register klass = r10;
             if (config.useCompressedClassPointers) {
                 masm.ldr(32, klass, klassAddress);
-                AArch64HotSpotMove.decodeKlassPointer(crb, masm, klass, klass, config.getKlassEncoding(), config);
+                AArch64HotSpotMove.decodeKlassPointer(crb, masm, klass, klass, config.getKlassEncoding());
             } else {
                 masm.ldr(64, klass, klassAddress);
             }
@@ -338,9 +340,8 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
             AArch64Call.directJmp(crb, masm, getForeignCalls().lookupForeignCall(IC_MISS_HANDLER));
         }
         masm.align(config.codeEntryAlignment);
-        crb.recordMark(config.MARKID_OSR_ENTRY);
         masm.bind(verifiedStub);
-        crb.recordMark(config.MARKID_VERIFIED_ENTRY);
+        crb.recordMark(crb.compilationResult.getEntryBCI() != -1 ? HotSpotMarkId.OSR_ENTRY : HotSpotMarkId.VERIFIED_ENTRY);
 
         if (GeneratePIC.getValue(crb.getOptions())) {
             // Check for method state
@@ -385,12 +386,12 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
             HotSpotForeignCallsProvider foreignCalls = providers.getForeignCalls();
             try (ScratchRegister sc = masm.getScratchRegister()) {
                 Register scratch = sc.getRegister();
-                crb.recordMark(config.MARKID_EXCEPTION_HANDLER_ENTRY);
+                crb.recordMark(HotSpotMarkId.EXCEPTION_HANDLER_ENTRY);
                 ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(EXCEPTION_HANDLER);
                 Register helper = AArch64Call.isNearCall(linkage) ? null : scratch;
                 AArch64Call.directCall(crb, masm, linkage, helper, null);
             }
-            crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
+            crb.recordMark(HotSpotMarkId.DEOPT_HANDLER_ENTRY);
             ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK);
             masm.adr(lr, 0); // Warning: the argument is an offset from the instruction!
             AArch64Call.directJmp(crb, masm, linkage);

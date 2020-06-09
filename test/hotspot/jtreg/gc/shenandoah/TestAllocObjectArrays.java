@@ -25,7 +25,7 @@
 /*
  * @test TestAllocObjectArrays
  * @summary Acceptance tests: collector can withstand allocation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -53,7 +53,7 @@
 /*
  * @test TestAllocObjectArrays
  * @summary Acceptance tests: collector can withstand allocation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -107,7 +107,7 @@
 /*
  * @test TestAllocObjectArrays
  * @summary Acceptance tests: collector can withstand allocation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

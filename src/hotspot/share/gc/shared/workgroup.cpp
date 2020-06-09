@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,14 +84,6 @@ AbstractGangWorker* AbstractWorkGang::worker(uint i) const {
   result = _workers[i];
   assert(result != NULL, "Indexing to null worker");
   return result;
-}
-
-void AbstractWorkGang::print_worker_threads_on(outputStream* st) const {
-  uint workers = created_workers();
-  for (uint i = 0; i < workers; i++) {
-    worker(i)->print_on(st);
-    st->cr();
-  }
 }
 
 void AbstractWorkGang::threads_do(ThreadClosure* tc) const {

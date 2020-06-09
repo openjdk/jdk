@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -39,8 +41,10 @@ import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.WithExceptionNode;
 import org.graalvm.compiler.nodes.debug.DynamicCounterNode;
 import org.graalvm.compiler.nodes.debug.WeakCounterNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
@@ -173,11 +177,28 @@ public final class GraphEffectList extends EffectList {
      * @param node The fixed node that should be deleted.
      */
     public void deleteNode(Node node) {
-        add("delete fixed node", (graph, obsoleteNodes) -> {
-            if (node instanceof FixedWithNextNode) {
-                GraphUtil.unlinkFixedNode((FixedWithNextNode) node);
+        add("delete fixed node", new Effect() {
+            @Override
+            public void apply(StructuredGraph graph, ArrayList<Node> obsoleteNodes) {
+                if (node instanceof FixedWithNextNode) {
+                    GraphUtil.unlinkFixedNode((FixedWithNextNode) node);
+                } else if (node instanceof WithExceptionNode && node.isAlive()) {
+                    WithExceptionNode withExceptionNode = (WithExceptionNode) node;
+                    AbstractBeginNode next = withExceptionNode.next();
+                    GraphUtil.unlinkAndKillExceptionEdge(withExceptionNode);
+                    if (next.hasNoUsages() && next instanceof MemoryKill) {
+                        // This is a killing begin which is no longer needed.
+                        graph.replaceFixedWithFixed(next, graph.add(new BeginNode()));
+                    }
+                    obsoleteNodes.add(withExceptionNode);
+                }
+                obsoleteNodes.add(node);
             }
-            obsoleteNodes.add(node);
+
+            @Override
+            public boolean isCfgKill() {
+                return node instanceof WithExceptionNode;
+            }
         });
     }
 
@@ -185,7 +206,9 @@ public final class GraphEffectList extends EffectList {
         add("kill if branch", new Effect() {
             @Override
             public void apply(StructuredGraph graph, ArrayList<Node> obsoleteNodes) {
-                graph.removeSplitPropagate(ifNode, ifNode.getSuccessor(constantCondition));
+                if (ifNode.isAlive()) {
+                    graph.removeSplitPropagate(ifNode, ifNode.getSuccessor(constantCondition));
+                }
             }
 
             @Override
@@ -196,7 +219,7 @@ public final class GraphEffectList extends EffectList {
     }
 
     public void replaceWithSink(FixedWithNextNode node, ControlSinkNode sink) {
-        add("kill if branch", new Effect() {
+        add("replace with sink", new Effect() {
             @SuppressWarnings("try")
             @Override
             public void apply(StructuredGraph graph, ArrayList<Node> obsoleteNodes) {

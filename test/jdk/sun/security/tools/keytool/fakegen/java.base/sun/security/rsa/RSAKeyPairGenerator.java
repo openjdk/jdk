@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
-import sun.security.x509.AlgorithmId;
-import static sun.security.rsa.RSAUtil.KeyType;
+import sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * A fake RSA keypair generation.
@@ -44,7 +43,7 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     private int keySize;
 
     private final KeyType type;
-    private AlgorithmId rsaId;
+    private AlgorithmParameterSpec keyParams;
 
     RSAKeyPairGenerator(KeyType type, int defKeySize) {
         this.type = type;
@@ -98,7 +97,7 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         }
 
         try {
-            this.rsaId = RSAUtil.createAlgorithmId(type, tmpParams);
+            this.keyParams = RSAUtil.checkParamsAgainstType(type, tmpParams);
         } catch (ProviderException e) {
             throw new InvalidAlgorithmParameterException(
                 "Invalid key parameters", e);
@@ -436,9 +435,9 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         BigInteger coeff = q.modInverse(p);
 
         try {
-            PublicKey publicKey = new RSAPublicKeyImpl(rsaId, n, e);
+            PublicKey publicKey = new RSAPublicKeyImpl(type, keyParams, n, e);
             PrivateKey privateKey = new RSAPrivateCrtKeyImpl(
-                    rsaId, n, e, d, p, q, pe, qe, coeff);
+                    type, keyParams, n, e, d, p, q, pe, qe, coeff);
             return new KeyPair(publicKey, privateKey);
         } catch (InvalidKeyException exc) {
             // invalid key exception only thrown for keys < 512 bit,

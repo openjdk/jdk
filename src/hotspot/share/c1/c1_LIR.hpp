@@ -1404,30 +1404,27 @@ class LIR_OpBranch: public LIR_Op {
 
  private:
   LIR_Condition _cond;
-  BasicType     _type;
   Label*        _label;
   BlockBegin*   _block;  // if this is a branch to a block, this is the block
   BlockBegin*   _ublock; // if this is a float-branch, this is the unorderd block
   CodeStub*     _stub;   // if this is a branch to a stub, this is the stub
 
  public:
-  LIR_OpBranch(LIR_Condition cond, BasicType type, Label* lbl)
+  LIR_OpBranch(LIR_Condition cond, Label* lbl)
     : LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*) NULL)
     , _cond(cond)
-    , _type(type)
     , _label(lbl)
     , _block(NULL)
     , _ublock(NULL)
     , _stub(NULL) { }
 
-  LIR_OpBranch(LIR_Condition cond, BasicType type, BlockBegin* block);
-  LIR_OpBranch(LIR_Condition cond, BasicType type, CodeStub* stub);
+  LIR_OpBranch(LIR_Condition cond, BlockBegin* block);
+  LIR_OpBranch(LIR_Condition cond, CodeStub* stub);
 
   // for unordered comparisons
-  LIR_OpBranch(LIR_Condition cond, BasicType type, BlockBegin* block, BlockBegin* ublock);
+  LIR_OpBranch(LIR_Condition cond, BlockBegin* block, BlockBegin* ublock);
 
   LIR_Condition cond()        const              { return _cond;        }
-  BasicType     type()        const              { return _type;        }
   Label*        label()       const              { return _label;       }
   BlockBegin*   block()       const              { return _block;       }
   BlockBegin*   ublock()      const              { return _ublock;      }
@@ -2176,23 +2173,25 @@ class LIR_List: public CompilationResourceObj {
 
   // jump is an unconditional branch
   void jump(BlockBegin* block) {
-    append(new LIR_OpBranch(lir_cond_always, T_ILLEGAL, block));
+    append(new LIR_OpBranch(lir_cond_always, block));
   }
   void jump(CodeStub* stub) {
-    append(new LIR_OpBranch(lir_cond_always, T_ILLEGAL, stub));
+    append(new LIR_OpBranch(lir_cond_always, stub));
   }
-  void branch(LIR_Condition cond, BasicType type, Label* lbl)        { append(new LIR_OpBranch(cond, type, lbl)); }
-  void branch(LIR_Condition cond, BasicType type, BlockBegin* block) {
-    assert(type != T_FLOAT && type != T_DOUBLE, "no fp comparisons");
-    append(new LIR_OpBranch(cond, type, block));
+  void branch(LIR_Condition cond, Label* lbl) {
+    append(new LIR_OpBranch(cond, lbl));
   }
-  void branch(LIR_Condition cond, BasicType type, CodeStub* stub)    {
-    assert(type != T_FLOAT && type != T_DOUBLE, "no fp comparisons");
-    append(new LIR_OpBranch(cond, type, stub));
+  // Should not be used for fp comparisons
+  void branch(LIR_Condition cond, BlockBegin* block) {
+    append(new LIR_OpBranch(cond, block));
   }
-  void branch(LIR_Condition cond, BasicType type, BlockBegin* block, BlockBegin* unordered) {
-    assert(type == T_FLOAT || type == T_DOUBLE, "fp comparisons only");
-    append(new LIR_OpBranch(cond, type, block, unordered));
+  // Should not be used for fp comparisons
+  void branch(LIR_Condition cond, CodeStub* stub) {
+    append(new LIR_OpBranch(cond, stub));
+  }
+  // Should only be used for fp comparisons
+  void branch(LIR_Condition cond, BlockBegin* block, BlockBegin* unordered) {
+    append(new LIR_OpBranch(cond, block, unordered));
   }
 
   void shift_left(LIR_Opr value, LIR_Opr count, LIR_Opr dst, LIR_Opr tmp);

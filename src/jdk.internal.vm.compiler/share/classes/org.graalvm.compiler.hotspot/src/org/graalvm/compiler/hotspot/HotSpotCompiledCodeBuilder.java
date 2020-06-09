@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.hotspot;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 import static org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder.Options.ShowSubstitutionSourceInfo;
 import static org.graalvm.util.CollectionsUtil.anyMatch;
 
@@ -37,11 +39,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.CompilationResult.CodeAnnotation;
 import org.graalvm.compiler.code.CompilationResult.CodeComment;
+import org.graalvm.compiler.code.CompilationResult.CodeMark;
 import org.graalvm.compiler.code.CompilationResult.JumpTable;
 import org.graalvm.compiler.code.DataSection;
 import org.graalvm.compiler.code.SourceMapping;
@@ -138,10 +139,10 @@ public class HotSpotCompiledCodeBuilder {
                 jvmciCompileState = 0L;
             }
             return new HotSpotCompiledNmethod(name, targetCode, targetCodeSize, sites, assumptions, methods, comments, dataSection, dataSectionAlignment, dataSectionPatches, isImmutablePIC,
-                            totalFrameSize, customStackArea, hsMethod, entryBCI, id, jvmciCompileState, hasUnsafeAccess);
+                    totalFrameSize, customStackArea, hsMethod, entryBCI, id, jvmciCompileState, hasUnsafeAccess);
         } else {
             return new HotSpotCompiledCode(name, targetCode, targetCodeSize, sites, assumptions, methods, comments, dataSection, dataSectionAlignment, dataSectionPatches, isImmutablePIC,
-                            totalFrameSize, customStackArea);
+                    totalFrameSize, customStackArea);
         }
     }
 
@@ -211,6 +212,23 @@ public class HotSpotCompiledCodeBuilder {
         }
     }
 
+
+    /**
+     * @return the list of {@link Mark marks} converted from the {@link CodeMark CodeMarks}.
+     */
+    private static  List<Mark> getTranslatedMarks(List<CodeMark> codeMarks) {
+        if (codeMarks.isEmpty()) {
+            return emptyList();
+        }
+        // The HotSpot backend needs these in the exact form of a Mark so convert all the marks
+        // to that form.
+        List<Mark> translated = new ArrayList<>(codeMarks.size());
+        for (CodeMark m : codeMarks) {
+            translated.add(new Mark(m.pcOffset, m.id.getId()));
+        }
+        return unmodifiableList(translated);
+    }
+
     /**
      * HotSpot expects sites to be presented in ascending order of PC (see
      * {@code DebugInformationRecorder::add_new_pc_offset}). In addition, it expects
@@ -218,11 +236,11 @@ public class HotSpotCompiledCodeBuilder {
      */
     private static Site[] getSortedSites(CompilationResult target, OptionValues options, boolean includeSourceInfo) {
         List<Site> sites = new ArrayList<>(
-                        target.getExceptionHandlers().size() + target.getInfopoints().size() + target.getDataPatches().size() + target.getMarks().size() + target.getSourceMappings().size());
+                target.getExceptionHandlers().size() + target.getInfopoints().size() + target.getDataPatches().size() + target.getMarks().size() + target.getSourceMappings().size());
         sites.addAll(target.getExceptionHandlers());
         sites.addAll(target.getInfopoints());
         sites.addAll(target.getDataPatches());
-        sites.addAll(target.getMarks());
+        sites.addAll(getTranslatedMarks(target.getMarks()));
 
         if (includeSourceInfo) {
             /*
@@ -332,7 +350,7 @@ public class HotSpotCompiledCodeBuilder {
 
     private static boolean verifyTrim(NodeSourcePosition sourcePosition) {
         for (NodeSourcePosition sp = sourcePosition; sp != null; sp = sp.getCaller()) {
-            assert (sp.getMethod().getAnnotation(Snippet.class) == null && sp.getMethod().getAnnotation(MethodSubstitution.class) == null);
+            assert !sp.isSubstitution();
         }
         return true;
     }

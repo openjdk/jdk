@@ -27,6 +27,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
+#include "gc/z/zHeuristics.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -57,7 +58,7 @@ ZHeap* ZHeap::_heap = NULL;
 ZHeap::ZHeap() :
     _workers(),
     _object_allocator(),
-    _page_allocator(&_workers, heap_min_size(), heap_initial_size(), heap_max_size(), heap_max_reserve_size()),
+    _page_allocator(&_workers, MinHeapSize, InitialHeapSize, MaxHeapSize, ZHeuristics::max_reserve()),
     _page_table(),
     _forwarding_table(),
     _mark(&_workers, &_page_table),
@@ -66,32 +67,13 @@ ZHeap::ZHeap() :
     _relocate(&_workers),
     _relocation_set(),
     _unload(&_workers),
-    _serviceability(heap_min_size(), heap_max_size()) {
+    _serviceability(min_capacity(), max_capacity()) {
   // Install global heap instance
   assert(_heap == NULL, "Already initialized");
   _heap = this;
 
   // Update statistics
-  ZStatHeap::set_at_initialize(heap_min_size(), heap_max_size(), heap_max_reserve_size());
-}
-
-size_t ZHeap::heap_min_size() const {
-  return MinHeapSize;
-}
-
-size_t ZHeap::heap_initial_size() const {
-  return InitialHeapSize;
-}
-
-size_t ZHeap::heap_max_size() const {
-  return MaxHeapSize;
-}
-
-size_t ZHeap::heap_max_reserve_size() const {
-  // Reserve one small page per worker plus one shared medium page. This is still just
-  // an estimate and doesn't guarantee that we can't run out of memory during relocation.
-  const size_t max_reserve_size = (_workers.nworkers() * ZPageSizeSmall) + ZPageSizeMedium;
-  return MIN2(max_reserve_size, heap_max_size());
+  ZStatHeap::set_at_initialize(min_capacity(), max_capacity(), max_reserve());
 }
 
 bool ZHeap::is_initialized() const {
@@ -198,12 +180,9 @@ void ZHeap::set_boost_worker_threads(bool boost) {
   _workers.set_boost(boost);
 }
 
-void ZHeap::worker_threads_do(ThreadClosure* tc) const {
+void ZHeap::threads_do(ThreadClosure* tc) const {
+  _page_allocator.threads_do(tc);
   _workers.threads_do(tc);
-}
-
-void ZHeap::print_worker_threads_on(outputStream* st) const {
-  _workers.print_threads_on(st);
 }
 
 void ZHeap::out_of_memory() {
@@ -239,10 +218,6 @@ void ZHeap::free_page(ZPage* page, bool reclaimed) {
 
   // Free page
   _page_allocator.free_page(page, reclaimed);
-}
-
-uint64_t ZHeap::uncommit(uint64_t delay) {
-  return _page_allocator.uncommit(delay);
 }
 
 void ZHeap::flip_to_marked() {
@@ -505,6 +480,7 @@ void ZHeap::print_extended_on(outputStream* st) const {
   _page_allocator.enable_deferred_delete();
 
   // Print all pages
+  st->print_cr("ZGC Page Table:");
   ZPageTableIterator iter(&_page_table);
   for (ZPage* page; iter.next(&page);) {
     page->print_on(st);
@@ -512,8 +488,6 @@ void ZHeap::print_extended_on(outputStream* st) const {
 
   // Allow pages to be deleted
   _page_allocator.enable_deferred_delete();
-
-  st->cr();
 }
 
 bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {

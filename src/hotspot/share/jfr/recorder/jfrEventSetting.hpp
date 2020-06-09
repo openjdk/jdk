@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,9 @@ class JfrEventSetting : AllStatic {
   static jlong threshold(JfrEventId event_id);
   static bool set_cutoff(jlong event_id, jlong cutoff_ticks);
   static jlong cutoff(JfrEventId event_id);
+  static bool is_large(JfrEventId event_id);
+  static void set_large(JfrEventId event_id);
+
   DEBUG_ONLY(static bool bounds_check_event(jlong id);)
 };
 

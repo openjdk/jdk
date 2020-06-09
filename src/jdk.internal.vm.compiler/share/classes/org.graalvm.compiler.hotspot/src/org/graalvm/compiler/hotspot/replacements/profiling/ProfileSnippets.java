@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import org.graalvm.compiler.hotspot.nodes.profiling.ProfileInvokeNode;
 import org.graalvm.compiler.hotspot.nodes.profiling.ProfileNode;
 import org.graalvm.compiler.hotspot.word.MethodCountersPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -61,8 +62,11 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 public class ProfileSnippets implements Snippets {
+    public static final LocationIdentity METHOD_COUNTERS = NamedLocationIdentity.mutable("MethodCounters");
+
     @NodeIntrinsic(ForeignCallNode.class)
     public static native void methodInvocationEvent(@ConstantNodeParameter ForeignCallDescriptor descriptor, MethodCountersPointer counters);
 
@@ -75,8 +79,8 @@ public class ProfileSnippets implements Snippets {
 
     @Snippet
     public static void profileMethodEntry(MethodCountersPointer counters, int step, int stepLog, @ConstantParameter int freqLog) {
-        int counterValue = counters.readInt(invocationCounterOffset(INJECTED_VMCONFIG)) + invocationCounterIncrement(INJECTED_VMCONFIG) * step;
-        counters.writeInt(invocationCounterOffset(INJECTED_VMCONFIG), counterValue);
+        int counterValue = counters.readInt(invocationCounterOffset(INJECTED_VMCONFIG), METHOD_COUNTERS) + invocationCounterIncrement(INJECTED_VMCONFIG) * step;
+        counters.writeIntSideEffectFree(invocationCounterOffset(INJECTED_VMCONFIG), counterValue, METHOD_COUNTERS);
         if (freqLog >= 0) {
             final int mask = notificationMask(freqLog, stepLog);
             if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << invocationCounterShift(INJECTED_VMCONFIG))) == 0)) {
@@ -90,8 +94,8 @@ public class ProfileSnippets implements Snippets {
 
     @Snippet
     public static void profileBackedge(MethodCountersPointer counters, int step, int stepLog, @ConstantParameter int freqLog, int bci, int targetBci) {
-        int counterValue = counters.readInt(backedgeCounterOffset(INJECTED_VMCONFIG)) + invocationCounterIncrement(INJECTED_VMCONFIG) * step;
-        counters.writeInt(backedgeCounterOffset(INJECTED_VMCONFIG), counterValue);
+        int counterValue = counters.readInt(backedgeCounterOffset(INJECTED_VMCONFIG), METHOD_COUNTERS) + invocationCounterIncrement(INJECTED_VMCONFIG) * step;
+        counters.writeIntSideEffectFree(backedgeCounterOffset(INJECTED_VMCONFIG), counterValue, METHOD_COUNTERS);
         final int mask = notificationMask(freqLog, stepLog);
         if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << invocationCounterShift(INJECTED_VMCONFIG))) == 0)) {
             methodBackedgeEvent(HotSpotBackend.BACKEDGE_EVENT, counters, bci, targetBci);

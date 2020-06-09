@@ -966,13 +966,13 @@ void DynamicArchiveBuilder::relocate_buffer_to_target() {
   if (addr_delta == 0) {
     ArchivePtrMarker::compact(relocatable_base, relocatable_end);
   } else {
-    // The base archive is NOT mapped at Arguments::default_SharedBaseAddress() (due to ASLR).
+    // The base archive is NOT mapped at MetaspaceShared::requested_base_address() (due to ASLR).
     // This means that the current content of the dynamic archive is based on a random
     // address. Let's relocate all the pointers, so that it can be mapped to
-    // Arguments::default_SharedBaseAddress() without runtime relocation.
+    // MetaspaceShared::requested_base_address() without runtime relocation.
     //
     // Note: both the base and dynamic archive are written with
-    // FileMapHeader::_shared_base_address == Arguments::default_SharedBaseAddress()
+    // FileMapHeader::_requested_base_address == MetaspaceShared::requested_base_address()
 
     // Patch all pointers that are marked by ptrmap within this region,
     // where we have just dumped all the metaspace data.
@@ -992,7 +992,7 @@ void DynamicArchiveBuilder::relocate_buffer_to_target() {
 
     // after patching, the pointers must point inside this range
     // (the requested location of the archive, as mapped at runtime).
-    address valid_new_base = (address)Arguments::default_SharedBaseAddress();
+    address valid_new_base = (address)MetaspaceShared::requested_base_address();
     address valid_new_end  = valid_new_base + base_plus_top_size;
 
     log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
@@ -1020,7 +1020,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   const char* archive_name = Arguments::GetSharedDynamicArchivePath();
   dynamic_info->open_for_write(archive_name);
   MetaspaceShared::write_core_archive_regions(dynamic_info, NULL, NULL);
-  dynamic_info->set_final_requested_base((char*)Arguments::default_SharedBaseAddress());
+  dynamic_info->set_final_requested_base((char*)MetaspaceShared::requested_base_address());
   dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
   dynamic_info->write_header();
   dynamic_info->close();

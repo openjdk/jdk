@@ -94,6 +94,7 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
@@ -469,7 +470,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-     static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                   \
      static_field(SystemDictionary,            WK_KLASS(Object_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(String_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Class_klass),                         InstanceKlass*)                        \
@@ -478,7 +478,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  InstanceKlass*)                        \
-     static_field(SystemDictionary,            _java_system_loader,                           oop)                                   \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* vmSymbols */                                                                                                                    \
@@ -899,14 +898,14 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   volatile_nonstatic_field(ObjectMonitor,      _header,                                       markWord)                              \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
-  volatile_nonstatic_field(ObjectMonitor,      _contentions,                                  jint)                                  \
+  volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
+  nonstatic_field(ObjectMonitor,               _contentions,                                  jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
-  nonstatic_field(ObjectMonitor,               _next_om,                                      ObjectMonitor*)                        \
-  volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-  static_ptr_volatile_field(ObjectSynchronizer, g_block_list,                                 PaddedObjectMonitor*)                  \
+  static_field(ObjectSynchronizer,             g_block_list,                                  PaddedObjectMonitor*)                  \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \

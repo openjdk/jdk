@@ -240,5 +240,3 @@ org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest  
 org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 
 org.graalvm.compiler.hotspot.test.ReservedStackAccessTest        8213567   windows-all
-
-org.graalvm.compiler.hotspot.test.LambdaStableNameTest           8243381   generic-all

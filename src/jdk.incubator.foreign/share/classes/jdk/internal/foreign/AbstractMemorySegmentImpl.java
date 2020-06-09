@@ -34,6 +34,8 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetPropertyAction;
 
@@ -57,14 +59,14 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractMemorySegmentImpl implements MemorySegment, MemorySegmentProxy {
 
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     private static final boolean enableSmallSegments =
             Boolean.parseBoolean(GetPropertyAction.privilegedGetProperty("jdk.incubator.foreign.SmallSegments", "true"));
 
-    final static int ACCESS_MASK = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
     final static int FIRST_RESERVED_FLAG = 1 << 16; // upper 16 bits are reserved
     final static int SMALL = FIRST_RESERVED_FLAG;
     final static long NONCE = new Random().nextLong();
-    final static int DEFAULT_MASK = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
 
     final static JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
 
@@ -89,8 +91,8 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
 
     static int defaultAccessModes(long size) {
         return (enableSmallSegments && size < Integer.MAX_VALUE) ?
-                DEFAULT_MASK | SMALL :
-                DEFAULT_MASK;
+                ALL_ACCESS | SMALL :
+                ALL_ACCESS;
     }
 
     @Override
@@ -111,6 +113,59 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
         }
         return (Spliterator<S>)new SegmentSplitter(sequenceLayout.elementLayout().byteSize(), sequenceLayout.elementCount().getAsLong(),
                 (AbstractMemorySegmentImpl)segment.withAccessModes(segment.accessModes() & ~CLOSE));
+    }
+
+    @Override
+    public final MemorySegment fill(byte value){
+        checkRange(0, length, true);
+        UNSAFE.setMemory(base(), min(), length, value);
+        return this;
+    }
+
+    public void copyFrom(MemorySegment src) {
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)src;
+        long size = that.byteSize();
+        checkRange(0, size, true);
+        that.checkRange(0, size, false);
+        UNSAFE.copyMemory(
+                that.base(), that.min(),
+                base(), min(), size);
+    }
+
+    private final static VarHandle BYTE_HANDLE = MemoryLayout.ofSequence(MemoryLayouts.JAVA_BYTE)
+            .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+
+    @Override
+    public long mismatch(MemorySegment other) {
+        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)other;
+        final long thisSize = this.byteSize();
+        final long thatSize = that.byteSize();
+        final long length = Math.min(thisSize, thatSize);
+        this.checkRange(0, length, false);
+        that.checkRange(0, length, false);
+        if (this == other) {
+            return -1;
+        }
+
+        long i = 0;
+        if (length > 7) {
+            i = ArraysSupport.vectorizedMismatchLarge(
+                    this.base(), this.min(),
+                    that.base(), that.min(),
+                    length, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+            if (i >= 0) {
+                return i;
+            }
+            i = length - ~i;
+        }
+        MemoryAddress thisAddress = this.baseAddress();
+        MemoryAddress thatAddress = that.baseAddress();
+        for (; i < length; i++) {
+            if ((byte) BYTE_HANDLE.get(thisAddress, i) != (byte) BYTE_HANDLE.get(thatAddress, i)) {
+                return i;
+            }
+        }
+        return thisSize != thatSize ? length : -1;
     }
 
     @Override
@@ -135,7 +190,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
 
     @Override
     public final int accessModes() {
-        return mask & ACCESS_MASK;
+        return mask & ALL_ACCESS;
     }
 
     @Override
@@ -159,7 +214,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
         if ((~accessModes() & accessModes) != 0) {
             throw new IllegalArgumentException("Cannot acquire more access modes");
         }
-        return dup(0, length, (mask & ~ACCESS_MASK) | accessModes, scope);
+        return dup(0, length, (mask & ~ALL_ACCESS) | accessModes, scope);
     }
 
     @Override
@@ -169,7 +224,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
     }
 
     private void checkAccessModes(int accessModes) {
-        if ((accessModes & ~ACCESS_MASK) != 0) {
+        if ((accessModes & ~ALL_ACCESS) != 0) {
             throw new IllegalArgumentException("Invalid access modes");
         }
     }
@@ -216,7 +271,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
         checkIntSize("byte[]");
         byte[] arr = new byte[(int)length];
         MemorySegment arrSegment = MemorySegment.ofArray(arr);
-        MemoryAddress.copy(baseAddress(), arrSegment.baseAddress(), length);
+        arrSegment.copyFrom(this);
         return arr;
     }
 

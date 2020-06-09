@@ -484,6 +484,13 @@ void CompilerConfig::ergo_initialize() {
     }
   }
 
+  if (FLAG_IS_DEFAULT(SweeperThreshold)) {
+    if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
+      // Cap default SweeperThreshold value to an equivalent of 1.2 Mb
+      FLAG_SET_ERGO(SweeperThreshold, (1.2 * M * 100) / ReservedCodeCacheSize);
+    }
+  }
+
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");
     FLAG_SET_DEFAULT(UseLoopCounter, true);

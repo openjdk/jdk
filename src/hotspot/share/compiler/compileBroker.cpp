@@ -885,6 +885,9 @@ JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queu
 
 
 void CompileBroker::init_compiler_sweeper_threads() {
+  NMethodSweeper::set_sweep_threshold_bytes(static_cast<size_t>(SweeperThreshold * ReservedCodeCacheSize / 100.0));
+  log_info(codecache, sweep)("Sweeper threshold: " SIZE_FORMAT " bytes", NMethodSweeper::sweep_threshold_bytes());
+
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
 #if !defined(ZERO)
@@ -1652,7 +1655,8 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());
-  if (comp->is_jvmci()) {
+  if (comp->is_jvmci() && !task->should_wait_for_compilation()) {
+    // It may return before compilation is completed.
     free_task = wait_for_jvmci_completion((JVMCICompiler*) comp, task, thread);
   } else
 #endif

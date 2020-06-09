@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 package org.graalvm.compiler.graph.test;
 
 import org.graalvm.compiler.api.test.Graal;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Builder;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.After;
 
@@ -46,7 +46,7 @@ public abstract class GraphTest {
             }
             throw new AssertionError("At most one " + DebugContext.class.getName() + " object should be created per test");
         }
-        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        DebugContext debug = new Builder(options).build();
         cachedDebug.set(debug);
         return debug;
     }

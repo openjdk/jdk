@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,15 @@ import org.graalvm.compiler.graph.Node;
 /**
  * A marker interface for nodes that represent calls to other methods.
  */
-public interface Invokable {
+public interface Invokable extends DeoptBciSupplier {
     ResolvedJavaMethod getTargetMethod();
 
-    int bci();
+    /**
+     * Returns the {@linkplain ResolvedJavaMethod method} from which the call is executed.
+     *
+     * @return the method from which the call is executed.
+     */
+    ResolvedJavaMethod getContextMethod();
 
     default boolean isAlive() {
         return asFixedNode().isAlive();

@@ -4692,6 +4692,8 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   DO_JAVA_THREADS(t_list, p) {
     if (!p->can_call_java()) continue;
 
+    // The first stage of async deflation does not affect any field
+    // used by this comparison so the ObjectMonitor* is usable here.
     address pending = (address)p->current_pending_monitor();
     if (pending == monitor) {             // found a match
       if (i < count) result->append(p);   // save the first count matches
@@ -4733,6 +4735,22 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // cannot assert on lack of success here; see above comment
   return the_owner;
 }
+
+class PrintOnClosure : public ThreadClosure {
+private:
+  outputStream* _st;
+
+public:
+  PrintOnClosure(outputStream* st) :
+      _st(st) {}
+
+  virtual void do_thread(Thread* thread) {
+    if (thread != NULL) {
+      thread->print_on(_st);
+      _st->cr();
+    }
+  }
+};
 
 // Threads::print_on() is called at safepoint by VM_PrintThreads operation.
 void Threads::print_on(outputStream* st, bool print_stacks,
@@ -4776,14 +4794,10 @@ void Threads::print_on(outputStream* st, bool print_stacks,
 #endif // INCLUDE_SERVICES
   }
 
-  VMThread::vm_thread()->print_on(st);
-  st->cr();
-  Universe::heap()->print_gc_threads_on(st);
-  WatcherThread* wt = WatcherThread::watcher_thread();
-  if (wt != NULL) {
-    wt->print_on(st);
-    st->cr();
-  }
+  PrintOnClosure cl(st);
+  cl.do_thread(VMThread::vm_thread());
+  Universe::heap()->gc_threads_do(&cl);
+  cl.do_thread(WatcherThread::watcher_thread());
 
   st->flush();
 }
@@ -4838,8 +4852,10 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
 
-  PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
-  Universe::heap()->gc_threads_do(&print_closure);
+  if (Universe::heap() != NULL) {
+    PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
+    Universe::heap()->gc_threads_do(&print_closure);
+  }
 
   if (!found_current) {
     st->cr();

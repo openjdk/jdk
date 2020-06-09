@@ -120,6 +120,11 @@ class x86 {
   // masks and table for CRC32
   static uint64_t _crc_by128_masks[];
   static juint    _crc_table[];
+#ifdef _LP64
+  static juint    _crc_by128_masks_avx512[];
+  static juint    _crc_table_avx512[];
+  static juint    _shuf_table_crc32_avx512[];
+#endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
   // swap mask for ghash
@@ -210,6 +215,11 @@ class x86 {
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
   static address counter_shuffle_mask_addr() { return _counter_shuffle_mask_addr; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
+#ifdef _LP64
+  static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
+  static address shuf_table_crc32_avx512_addr()  { return (address)_shuf_table_crc32_avx512; }
+  static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
+#endif // _LP64
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
   static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }
   static address ghash_shufflemask_addr() { return _ghash_shuffmask_addr; }

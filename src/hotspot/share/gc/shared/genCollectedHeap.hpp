@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ protected:
     GCH_PS_ObjectSynchronizer_oops_do,
     GCH_PS_FlatProfiler_oops_do,
     GCH_PS_Management_oops_do,
-    GCH_PS_SystemDictionary_oops_do,
+    GCH_PS_VMGlobal_oops_do,
     GCH_PS_ClassLoaderDataGraph_oops_do,
     GCH_PS_jvmti_oops_do,
     GCH_PS_CodeCache_oops_do,
@@ -331,7 +331,6 @@ public:
 
   // Override.
   virtual void print_on(outputStream* st) const;
-  virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 

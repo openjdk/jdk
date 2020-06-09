@@ -49,6 +49,8 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -2029,8 +2031,8 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
       JvmtiExport::oops_do(&mark_and_push_closure);
       break;
 
-    case ParallelRootType::system_dictionary:
-      SystemDictionary::oops_do(&mark_and_push_closure);
+    case ParallelRootType::vm_global:
+      OopStorageSet::vm_global()->oops_do(&mark_and_push_closure);
       break;
 
     case ParallelRootType::class_loader_data:
@@ -2238,7 +2240,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   ObjectSynchronizer::oops_do(&oop_closure);
   Management::oops_do(&oop_closure);
   JvmtiExport::oops_do(&oop_closure);
-  SystemDictionary::oops_do(&oop_closure);
+  OopStorageSet::vm_global()->oops_do(&oop_closure);
   CLDToOopClosure cld_closure(&oop_closure, ClassLoaderData::_claim_strong);
   ClassLoaderDataGraph::cld_do(&cld_closure);
 

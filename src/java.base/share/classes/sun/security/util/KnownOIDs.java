@@ -355,6 +355,11 @@ public enum KnownOIDs {
         boolean registerNames() { return false; }
     },
 
+    OIW_SHA1withRSA_Odd("1.3.14.3.2.15", "SHA1withRSA") {
+        @Override
+        boolean registerNames() { return false; }
+    },
+
     SHA_1("1.3.14.3.2.26", "SHA-1", "SHA", "SHA1"),
 
     OIW_SHA1withDSA("1.3.14.3.2.27", "SHA1withDSA") {

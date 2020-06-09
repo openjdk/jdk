@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public final class StateSplitProxyNode extends FixedValueAnchorNode implements C
 
     @Override
     public Node canonical(CanonicalizerTool tool) {
-        if (object.isConstant() && !delayElimination || stateAfter == null) {
+        if (!delayElimination && (object != null && object.isConstant()) || stateAfter == null) {
             return object;
         }
         return this;

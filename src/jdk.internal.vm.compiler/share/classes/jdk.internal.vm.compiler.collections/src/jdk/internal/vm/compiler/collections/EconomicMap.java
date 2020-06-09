@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,26 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Memory efficient map data structure.
+ * Memory efficient map data structure that dynamically changes its representation depending on the
+ * number of entries and is specially optimized for small number of entries. It keeps elements in a
+ * linear list without any hashing when the number of entries is small. Should an actual hash data
+ * structure be necessary, it tries to fit the hash value into as few bytes as possible. In contrast
+ * to {@link java.util.HashMap}, it avoids allocating an extra node object per entry and rather
+ * keeps values always in a plain array. See {@link EconomicMapImpl} for implementation details and
+ * exact thresholds when its representation changes.
+ *
+ * It supports a {@code null} value, but it does not support adding or looking up a {@code null}
+ * key. Operations {@code get} and {@code put} provide constant-time performance on average if
+ * repeatedly performed. They can however trigger an operation growing or compressing the data
+ * structure, which is linear in the number of elements. Iteration is also linear in the number of
+ * elements.
+ *
+ * The implementation is not synchronized. If multiple threads want to access the data structure, it
+ * requires manual synchronization, for example using {@link java.util.Collections#synchronizedMap}.
+ * There is also no extra precaution to detect concurrent modification while iterating.
+ *
+ * Different strategies for the equality comparison can be configured by providing a
+ * {@link Equivalence} configuration object.
  *
  * @since 19.0
  */
@@ -53,7 +72,8 @@ public interface EconomicMap<K, V> extends UnmodifiableEconomicMap<K, V> {
 
     /**
      * Associates {@code value} with {@code key} in this map. If the map previously contained a
-     * mapping for {@code key}, the old value is replaced by {@code value}.
+     * mapping for {@code key}, the old value is replaced by {@code value}. While the {@code value}
+     * may be {@code null}, the {@code key} must not be {code null}.
      *
      * @return the previous value associated with {@code key}, or {@code null} if there was no
      *         mapping for {@code key}.
@@ -94,7 +114,7 @@ public interface EconomicMap<K, V> extends UnmodifiableEconomicMap<K, V> {
 
     /**
      * Removes the mapping for {@code key} from this map if it is present. The map will not contain
-     * a mapping for {@code key} once the call returns.
+     * a mapping for {@code key} once the call returns. The {@code key} must not be {@code null}.
      *
      * @return the previous value associated with {@code key}, or {@code null} if there was no
      *         mapping for {@code key}.

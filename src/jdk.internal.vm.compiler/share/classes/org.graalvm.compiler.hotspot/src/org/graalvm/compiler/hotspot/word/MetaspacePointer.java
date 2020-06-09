@@ -989,4 +989,490 @@ public abstract class MetaspacePointer {
      */
     @Operation(opcode = Opcode.WRITE_POINTER)
     public abstract void writeObject(int offset, Object val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeByteSideEffectFree(WordBase offset, byte val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeCharSideEffectFree(WordBase offset, char val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeShortSideEffectFree(WordBase offset, short val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeIntSideEffectFree(WordBase offset, int val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeLongSideEffectFree(WordBase offset, long val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeFloatSideEffectFree(WordBase offset, float val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeDoubleSideEffectFree(WordBase offset, double val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeWordSideEffectFree(WordBase offset, WordBase val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeObjectSideEffectFree(WordBase offset, Object val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeByteSideEffectFree(int offset, byte val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeCharSideEffectFree(int offset, char val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeShortSideEffectFree(int offset, short val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeIntSideEffectFree(int offset, int val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeLongSideEffectFree(int offset, long val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeFloatSideEffectFree(int offset, float val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeDoubleSideEffectFree(int offset, double val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeWordSideEffectFree(int offset, WordBase val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param locationIdentity the identity of the write
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeObjectSideEffectFree(int offset, Object val, LocationIdentity locationIdentity);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeByteSideEffectFree(WordBase offset, byte val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeCharSideEffectFree(WordBase offset, char val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeShortSideEffectFree(WordBase offset, short val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeIntSideEffectFree(WordBase offset, int val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeLongSideEffectFree(WordBase offset, long val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeFloatSideEffectFree(WordBase offset, float val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeDoubleSideEffectFree(WordBase offset, double val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeWordSideEffectFree(WordBase offset, WordBase val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     * <p>
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
+     * knows that the highest-order bit of the unsigned value is never used).
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeObjectSideEffectFree(WordBase offset, Object val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeByteSideEffectFree(int offset, byte val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeCharSideEffectFree(int offset, char val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeShortSideEffectFree(int offset, short val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeIntSideEffectFree(int offset, int val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeLongSideEffectFree(int offset, long val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeFloatSideEffectFree(int offset, float val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeDoubleSideEffectFree(int offset, double val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeWordSideEffectFree(int offset, WordBase val);
+
+    /**
+     * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
+     * bytes. The write is side-effect free, it is not a part of the JVM state and can be repeated
+     * after deoptimization.
+     *
+     * @param offset the signed offset for the memory access
+     * @param val the value to be written to memory
+     */
+    @Operation(opcode = Opcode.WRITE_POINTER_SIDE_EFFECT_FREE)
+    public abstract void writeObjectSideEffectFree(int offset, Object val);
+
 }

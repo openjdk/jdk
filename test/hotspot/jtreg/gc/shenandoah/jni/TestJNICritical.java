@@ -24,7 +24,7 @@
 
 /* @test TestJNICritical
  * @summary test JNI critical arrays support in Shenandoah
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

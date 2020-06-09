@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/heapShared.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
@@ -212,11 +213,13 @@ size_t SimpleCompactHashtable::calculate_header_size() {
 void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
   // NOTE: if you change this function, you MUST change the number 5 in
   // calculate_header_size() accordingly.
-  soc->do_ptr((void**)&_base_address);
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
   soc->do_ptr((void**)&_buckets);
   soc->do_ptr((void**)&_entries);
+  if (soc->reading()) {
+    _base_address = (address)SharedBaseAddress;
+  }
 }
 #endif // INCLUDE_CDS
 

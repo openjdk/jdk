@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643 8187359 8199762 8080353
+ * @bug 8080357 8167643 8187359 8199762 8080353 8246353
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -298,8 +298,8 @@ public class MethodsTest extends KullaTesting {
         assertActiveKeys();
 
         assertDeclareWarn1("final String f() {return null;}",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 5, 0, -1, -1, Diagnostic.Kind.WARNING),
-                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                null,
+                ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(f, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertNumberOfActiveMethods(1);
         assertActiveKeys();

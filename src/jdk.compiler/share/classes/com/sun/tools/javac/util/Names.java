@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package com.sun.tools.javac.util;
-
-import java.util.Set;
 
 /**
  * Access to the compiler's name table.  Standard names are defined,
@@ -161,6 +159,7 @@ public class Names {
     public final Name Synthetic;
     public final Name Value;
     public final Name Varargs;
+    public final Name PermittedSubclasses;
 
     // members of java.lang.annotation.ElementType
     public final Name ANNOTATION_TYPE;
@@ -203,12 +202,17 @@ public class Names {
     public final Name bootstrap;
 
     public final Name record;
+    public final Name non;
 
     // serialization members, used by records too
     public final Name serialPersistentFields;
     public final Name writeObject;
     public final Name writeReplace;
     public final Name readObjectNoData;
+
+    // sealed types
+    public final Name permits;
+    public final Name sealed;
 
     public final Name.Table table;
 
@@ -329,6 +333,7 @@ public class Names {
         Synthetic = fromString("Synthetic");
         Value = fromString("Value");
         Varargs = fromString("Varargs");
+        PermittedSubclasses = fromString("PermittedSubclasses");
 
         // members of java.lang.annotation.ElementType
         ANNOTATION_TYPE = fromString("ANNOTATION_TYPE");
@@ -367,11 +372,16 @@ public class Names {
 
         bootstrap = fromString("bootstrap");
         record = fromString("record");
+        non = fromString("non");
 
         serialPersistentFields = fromString("serialPersistentFields");
         writeObject = fromString("writeObject");
         writeReplace = fromString("writeReplace");
         readObjectNoData = fromString("readObjectNoData");
+
+        // sealed types
+        permits = fromString("permits");
+        sealed = fromString("sealed");
     }
 
     protected Name.Table createTable(Options options) {

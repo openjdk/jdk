@@ -25,13 +25,11 @@
 
 package org.graalvm.compiler.core.test;
 
+import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.memory.WriteNode;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.phases.common.FloatingReadPhase;
-import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
-import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.phases.tiers.Suites;
+import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.junit.Test;
 
 public class MemoryGraphCanonicalizeTest extends GraalCompilerTest {
@@ -69,15 +67,15 @@ public class MemoryGraphCanonicalizeTest extends GraalCompilerTest {
 
     @Test
     public void testComplexElimination() {
-        testGraph("complexElimination", 6);
+        testGraph("complexElimination", 5);
     }
 
     public void testGraph(String name, int expectedWrites) {
         StructuredGraph graph = parseEager(name, StructuredGraph.AllowAssumptions.YES);
-        HighTierContext context = getDefaultHighTierContext();
-        new LoweringPhase(createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
-        new IncrementalCanonicalizerPhase<>(createCanonicalizerPhase(), new FloatingReadPhase()).apply(graph, context);
-        createCanonicalizerPhase().apply(graph, context);
+        Suites s = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend().getSuites().getDefaultSuites(getInitialOptions());
+        s.getHighTier().apply(graph, getDefaultHighTierContext());
+        s.getMidTier().apply(graph, getDefaultMidTierContext());
+
         int writes = graph.getNodes().filter(WriteNode.class).count();
         assertTrue(writes == expectedWrites, "Expected %d writes, found %d", expectedWrites, writes);
     }

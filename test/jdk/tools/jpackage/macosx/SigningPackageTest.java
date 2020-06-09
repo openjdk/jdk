@@ -26,11 +26,18 @@ import java.nio.file.Paths;
 import jdk.jpackage.test.*;
 
 /**
- * Tests generation of dmg and pkg with --mac-sign and related arguments. Test will
- * generate pkg and verifies its signature. It verifies that dmg is not signed, but app
- * image inside dmg is signed. This test requires that machine is configured with test
- * certificate for "Developer ID Installer: jpackage.openjdk.java.net" in jpackagerTest
- * keychain with always allowed access to this keychain for user which runs test.
+ * Tests generation of dmg and pkg with --mac-sign and related arguments.
+ * Test will generate pkg and verifies its signature. It verifies that dmg
+ * is not signed, but app image inside dmg is signed. This test requires that
+ * the machine is configured with test certificate for
+ * "Developer ID Installer: jpackage.openjdk.java.net" in
+ * jpackagerTest keychain with
+ * always allowed access to this keychain for user which runs test.
+ * note:
+ * "jpackage.openjdk.java.net" can be over-ridden by systerm property
+ * "jpackage.mac.signing.key.user.name", and
+ * "jpackagerTest" can be over-ridden by system property
+ * "jpackage.mac.signing.keychain"
  */
 
 /*
@@ -80,7 +87,7 @@ public class SigningPackageTest {
                     .addInitializer(cmd -> {
                         cmd.addArguments("--mac-sign",
                                 "--mac-signing-key-user-name", SigningBase.DEV_NAME,
-                                "--mac-signing-keychain", "jpackagerTest.keychain");
+                                "--mac-signing-keychain", SigningBase.KEYCHAIN);
                     })
                     .forTypes(PackageType.MAC_PKG)
                     .addBundleVerifier(SigningPackageTest::verifyPKG)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,39 @@
 
 package org.graalvm.compiler.replacements.amd64;
 
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 
 public class AMD64ArrayIndexOf {
 
-    public static final ForeignCallDescriptor STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES = new ForeignCallSignature(
                     "indexOfTwoConsecutiveBytes", int.class, byte[].class, int.class, int.class, int.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS = new ForeignCallSignature(
                     "indexOfTwoConsecutiveChars", int.class, char[].class, int.class, int.class, int.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS_COMPACT = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS_COMPACT = new ForeignCallSignature(
                     "indexOfTwoConsecutiveCharsCompact", int.class, byte[].class, int.class, int.class, int.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_1_BYTE = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_1_BYTE = new ForeignCallSignature(
                     "indexOf1Byte", int.class, byte[].class, int.class, int.class, byte.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_2_BYTES = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_2_BYTES = new ForeignCallSignature(
                     "indexOf2Bytes", int.class, byte[].class, int.class, int.class, byte.class, byte.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_3_BYTES = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_3_BYTES = new ForeignCallSignature(
                     "indexOf3Bytes", int.class, byte[].class, int.class, int.class, byte.class, byte.class, byte.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_4_BYTES = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_4_BYTES = new ForeignCallSignature(
                     "indexOf4Bytes", int.class, byte[].class, int.class, int.class, byte.class, byte.class, byte.class, byte.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_1_CHAR = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_1_CHAR = new ForeignCallSignature(
                     "indexOf1Char", int.class, char[].class, int.class, int.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_2_CHARS = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_2_CHARS = new ForeignCallSignature(
                     "indexOf2Chars", int.class, char[].class, int.class, int.class, char.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_3_CHARS = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_3_CHARS = new ForeignCallSignature(
                     "indexOf3Chars", int.class, char[].class, int.class, int.class, char.class, char.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_4_CHARS = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_4_CHARS = new ForeignCallSignature(
                     "indexOf4Chars", int.class, char[].class, int.class, int.class, char.class, char.class, char.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_1_CHAR_COMPACT = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_1_CHAR_COMPACT = new ForeignCallSignature(
                     "indexOf1CharCompact", int.class, byte[].class, int.class, int.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_2_CHARS_COMPACT = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_2_CHARS_COMPACT = new ForeignCallSignature(
                     "indexOf2CharsCompact", int.class, byte[].class, int.class, int.class, char.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_3_CHARS_COMPACT = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_3_CHARS_COMPACT = new ForeignCallSignature(
                     "indexOf3CharsCompact", int.class, byte[].class, int.class, int.class, char.class, char.class, char.class);
-    public static final ForeignCallDescriptor STUB_INDEX_OF_4_CHARS_COMPACT = new ForeignCallDescriptor(
+    public static final ForeignCallSignature STUB_INDEX_OF_4_CHARS_COMPACT = new ForeignCallSignature(
                     "indexOf4CharsCompact", int.class, byte[].class, int.class, int.class, char.class, char.class, char.class, char.class);
 
     public static int indexOfTwoConsecutiveBytes(byte[] array, int arrayLength, int fromIndex, byte b1, byte b2) {

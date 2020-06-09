@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,4 @@ public final class MaterializedObjectState extends EscapeObjectState implements 
         return graph().addWithoutUnique(new MaterializedObjectState(object(), materializedValue));
     }
 
-    @Override
-    public void applyToNonVirtual(NodeClosure<? super ValueNode> closure) {
-        closure.apply(this, materializedValue);
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,5 +36,7 @@ public interface Lowerable extends ValueNodeInterface {
      * Expand this node into lower level nodes expressing the same semantics. If the introduced
      * nodes are themselves lowerable, they should be recursively lowered as part of this call.
      */
-    void lower(LoweringTool tool);
+    default void lower(LoweringTool tool) {
+        tool.getLowerer().lower(asNode(), tool);
+    }
 }

@@ -64,6 +64,7 @@ import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.KillingBeginNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.MultiKillingBeginNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -359,9 +360,22 @@ public final class SchedulePhase extends Phase {
                 lastBlock = currentBlock;
             }
 
-            if (lastBlock.getBeginNode() instanceof KillingBeginNode) {
-                LocationIdentity locationIdentity = ((KillingBeginNode) lastBlock.getBeginNode()).getKilledLocationIdentity();
-                if ((locationIdentity.isAny() || locationIdentity.equals(location)) && lastBlock != earliestBlock) {
+            if (lastBlock != earliestBlock) {
+                boolean foundKill = false;
+                if (lastBlock.getBeginNode() instanceof KillingBeginNode) {
+                    LocationIdentity locationIdentity = ((KillingBeginNode) lastBlock.getBeginNode()).getKilledLocationIdentity();
+                    if (locationIdentity.isAny() || locationIdentity.equals(location)) {
+                        foundKill = true;
+                    }
+                } else if (lastBlock.getBeginNode() instanceof MultiKillingBeginNode) {
+                    for (LocationIdentity locationIdentity : ((MultiKillingBeginNode) lastBlock.getBeginNode()).getKilledLocationIdentities()) {
+                        if (locationIdentity.isAny() || locationIdentity.equals(location)) {
+                            foundKill = true;
+                            break;
+                        }
+                    }
+                }
+                if (foundKill) {
                     // The begin of this block kills the location, so we *have* to schedule the node
                     // in the dominating block.
                     lastBlock = lastBlock.getDominator();

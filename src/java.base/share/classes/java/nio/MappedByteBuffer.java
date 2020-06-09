@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,11 +223,9 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        if (isSync) {
-            return force(0, limit());
-        }
-        if ((address != 0) && (capacity() != 0)) {
-            return force(0, capacity());
+        int limit = limit();
+        if (isSync || ((address != 0) && (limit != 0))) {
+            return force(0, limit);
         }
         return this;
     }
@@ -278,9 +276,10 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        if ((address != 0) && (limit() != 0)) {
+        int limit = limit();
+        if ((address != 0) && (limit != 0)) {
             // check inputs
-            Objects.checkFromIndexSize(index, length, limit());
+            Objects.checkFromIndexSize(index, length, limit);
             MappedMemoryUtils.force(fd, address, isSync, index, length);
         }
         return this;

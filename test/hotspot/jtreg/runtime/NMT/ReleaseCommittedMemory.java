@@ -25,7 +25,6 @@
  * @test
  * @bug 8013120
  * @summary Release committed memory and make sure NMT handles it correctly
- * @key nmt regression
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

@@ -1036,16 +1036,12 @@ public class JavaCompiler {
         return trees.toList();
     }
 
-    /**
-     * Enter the symbols found in a list of parse trees if the compilation
-     * is expected to proceed beyond anno processing into attr.
-     * As a side-effect, this puts elements on the "todo" list.
-     * Also stores a list of all top level classes in rootClasses.
-     */
-    public List<JCCompilationUnit> enterTreesIfNeeded(List<JCCompilationUnit> roots) {
-       if (shouldStop(CompileState.ATTR))
-           return List.nil();
-        return enterTrees(initModules(roots));
+   /**
+    * Returns true iff the compilation will continue after annotation processing
+    * is done.
+    */
+    public boolean continueAfterProcessAnnotations() {
+        return !shouldStop(CompileState.ATTR);
     }
 
     public List<JCCompilationUnit> initModules(List<JCCompilationUnit> roots) {

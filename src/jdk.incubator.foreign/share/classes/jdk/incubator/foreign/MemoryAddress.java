@@ -116,33 +116,6 @@ public interface MemoryAddress {
     int hashCode();
 
     /**
-     * Perform bulk copy from source address to target address. More specifically, the bytes at addresses {@code src}
-     * through {@code src.addOffset(bytes - 1)} are copied into addresses {@code dst} through {@code dst.addOffset(bytes - 1)}.
-     * If the source and address ranges overlap, then the copying is performed as if the bytes at addresses {@code src}
-     * through {@code src.addOffset(bytes - 1)} were first copied into a temporary segment with size {@code bytes},
-     * and then the contents of the temporary segment were copied into the bytes at addresses {@code dst} through
-     * {@code dst.addOffset(bytes - 1)}.
-     * <p>
-     * The result of a bulk copy is unspecified if, in the uncommon case, the source and target address ranges do not
-     * overlap, but refer to overlapping regions of the same backing storage using different addresses.  For example,
-     * this may occur if the same file is {@link MemorySegment#mapFromPath mapped} to two segments.
-     *
-     * @param src the source address.
-     * @param dst the target address.
-     * @param bytes the number of bytes to be copied.
-     * @throws IndexOutOfBoundsException if {@code bytes < 0}, or if it is greater than the size of the segments
-     * associated with either {@code src} or {@code dst}.
-     * @throws IllegalStateException if either the source address or the target address belong to memory segments
-     * which have been already closed, or if access occurs from a thread other than the thread owning either segment.
-     * @throws UnsupportedOperationException if either {@code src} or {@code dst} do not feature required access modes;
-     * more specifically, {@code src} should be associated with a segment with {@link MemorySegment#READ} access mode,
-     * while {@code dst} should be associated with a segment with {@link MemorySegment#WRITE} access mode.
-     */
-    static void copy(MemoryAddress src, MemoryAddress dst, long bytes) {
-        MemoryAddressImpl.copy((MemoryAddressImpl)src, (MemoryAddressImpl)dst, bytes);
-    }
-
-    /**
      * The <em>unchecked</em> memory address instance modelling the {@code NULL} address. This address is <em>not</em> backed by
      * a memory segment and hence it cannot be dereferenced.
      */

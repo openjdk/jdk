@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public abstract class SerialWriteBarrierSnippets extends WriteBarrierSnippets im
         Word base = cardTableAddress().add(ptr.unsignedShiftRight(cardTableShift()));
         if (verifyOnly) {
             byte cardValue = base.readByte(0, GC_CARD_LOCATION);
-            AssertionNode.assertion(false, cardValue == dirtyCardValue(), "card must be dirty");
+            AssertionNode.dynamicAssert(cardValue == dirtyCardValue(), "card must be dirty");
         } else {
             base.writeByte(0, dirtyCardValue(), GC_CARD_LOCATION);
         }

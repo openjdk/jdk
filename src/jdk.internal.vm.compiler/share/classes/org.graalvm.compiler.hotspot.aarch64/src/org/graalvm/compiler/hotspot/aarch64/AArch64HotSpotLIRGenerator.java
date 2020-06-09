@@ -63,6 +63,7 @@ import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
@@ -270,7 +271,7 @@ public class AArch64HotSpotLIRGenerator extends AArch64LIRGenerator implements H
             if (encoding.hasBase() || GeneratePIC.getValue(options)) {
                 if (GeneratePIC.getValue(options)) {
                     Variable baseAddress = newVariable(lirKindTool.getWordKind());
-                    AArch64HotSpotMove.BaseMove move = new AArch64HotSpotMove.BaseMove(baseAddress, config);
+                    AArch64HotSpotMove.BaseMove move = new AArch64HotSpotMove.BaseMove(baseAddress);
                     append(move);
                     base = baseAddress;
                 } else {
@@ -299,7 +300,7 @@ public class AArch64HotSpotLIRGenerator extends AArch64LIRGenerator implements H
             if (encoding.hasBase() || GeneratePIC.getValue(options)) {
                 if (GeneratePIC.getValue(options)) {
                     Variable baseAddress = newVariable(LIRKind.value(AArch64Kind.QWORD));
-                    AArch64HotSpotMove.BaseMove move = new AArch64HotSpotMove.BaseMove(baseAddress, config);
+                    AArch64HotSpotMove.BaseMove move = new AArch64HotSpotMove.BaseMove(baseAddress);
                     append(move);
                     base = baseAddress;
                 } else {
@@ -472,7 +473,7 @@ public class AArch64HotSpotLIRGenerator extends AArch64LIRGenerator implements H
     }
 
     @Override
-    public Value emitLoadConfigValue(int markId, LIRKind kind) {
+    public Value emitLoadConfigValue(HotSpotMarkId markId, LIRKind kind) {
         Variable result = newVariable(kind);
         append(new AArch64HotSpotLoadConfigValueOp(markId, result));
         return result;

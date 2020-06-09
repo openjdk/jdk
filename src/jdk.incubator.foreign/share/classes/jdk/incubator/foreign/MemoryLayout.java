@@ -97,7 +97,7 @@ import java.util.stream.Stream;
  * Layout paths are typically expressed as a sequence of one or more {@link PathElement} instances.
  * <p>
  * Layout paths are for example useful in order to obtain offsets of arbitrarily nested layouts inside another layout
- * (see {@link MemoryLayout#offset(PathElement...)}), to quickly obtain a memory access handle corresponding to the selected
+ * (see {@link MemoryLayout#bitOffset(PathElement...)}), to quickly obtain a memory access handle corresponding to the selected
  * layout (see {@link MemoryLayout#varHandle(Class, PathElement...)}), to select an arbitrarily nested layout inside
  * another layout (see {@link MemoryLayout#select(PathElement...)}, or to transform a nested layout element inside
  * another layout (see {@link MemoryLayout#map(UnaryOperator, PathElement...)}).
@@ -112,9 +112,9 @@ SequenceLayout seq = MemoryLayout.ofSequence(5,
 ));
  * }</pre></blockquote>
  *
- * We can obtain the offset of the member layout named <code>value</code> from <code>seq</code>, as follows:
+ * We can obtain the offset, in bits, of the member layout named <code>value</code> from <code>seq</code>, as follows:
  * <blockquote><pre>{@code
-long valueOffset = seq.addOffset(PathElement.sequenceElement(), PathElement.groupElement("value"));
+long valueOffset = seq.bitOffset(PathElement.sequenceElement(), PathElement.groupElement("value"));
  * }</pre></blockquote>
  *
  * Similarly, we can select the member layout named {@code value}, as follows:
@@ -342,8 +342,28 @@ public interface MemoryLayout extends Constable {
      * (see {@link PathElement#sequenceElement()} and {@link PathElement#sequenceElement(long, long)}).
      * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
      */
-    default long offset(PathElement... elements) {
+    default long bitOffset(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset, EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
+    }
+
+    /**
+     * Computes the offset, in bytes, of the layout selected by a given layout path, where the path is considered rooted in this
+     * layout.
+     *
+     * @apiNote if the layout path has one (or more) free dimensions,
+     * the offset is computed as if all the indices corresponding to such dimensions were set to {@code 0}.
+     *
+     * @param elements the layout path elements.
+     * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
+     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout, or if the
+     * layout path contains one or more path elements that select multiple sequence element indices
+     * (see {@link PathElement#sequenceElement()} and {@link PathElement#sequenceElement(long, long)}).
+     * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size,
+     * or if {@code bitOffset(elements)} is not a multiple of 8.
+     */
+    default long byteOffset(PathElement... elements) {
+        return Utils.bitsToBytesOrThrow(bitOffset(elements),
+                () -> new UnsupportedOperationException("Cannot compute byte offset; bit offset is not a multiple of 8"));
     }
 
     /**

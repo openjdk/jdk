@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,16 +69,14 @@ public:
   uintptr_t top() const;
   size_t remaining() const;
 
-  const ZPhysicalMemory& physical_memory() const;
   const ZVirtualMemory& virtual_memory() const;
+  const ZPhysicalMemory& physical_memory() const;
+  ZPhysicalMemory& physical_memory();
 
   uint8_t numa_id();
 
   bool is_allocating() const;
   bool is_relocatable() const;
-
-  bool is_mapped() const;
-  void set_pre_mapped();
 
   uint64_t last_used() const;
   void set_last_used();
@@ -88,6 +86,7 @@ public:
   ZPage* retype(uint8_t type);
   ZPage* split(size_t size);
   ZPage* split(uint8_t type, size_t size);
+  ZPage* split_committed();
 
   bool is_in(uintptr_t addr) const;
 

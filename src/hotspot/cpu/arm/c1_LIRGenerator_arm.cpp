@@ -390,7 +390,7 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LI
 
     LabelObj* L_already_dirty = new LabelObj();
     __ cmp(lir_cond_equal, cur_value, LIR_OprFact::intConst(CardTable::dirty_card_val()));
-    __ branch(lir_cond_equal, T_BYTE, L_already_dirty->label());
+    __ branch(lir_cond_equal, L_already_dirty->label());
     set_card(tmp, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
@@ -539,7 +539,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
 void LIRGenerator::make_div_by_zero_check(LIR_Opr right_arg, BasicType type, CodeEmitInfo* info) {
   assert(right_arg->is_register(), "must be");
   __ cmp(lir_cond_equal, right_arg, make_constant(type, 0));
-  __ branch(lir_cond_equal, type, new DivByZeroStub(info));
+  __ branch(lir_cond_equal, new DivByZeroStub(info));
 }
 
 
@@ -1227,7 +1227,7 @@ void LIRGenerator::do_soft_float_compare(If* x) {
            LIR_OprFact::intConst(0) : LIR_OprFact::intConst(1));
   profile_branch(x, cond);
   move_to_phi(x->state());
-  __ branch(lir_cond_equal, T_INT, x->tsux());
+  __ branch(lir_cond_equal, x->tsux());
 }
 #endif // __SOFTFP__
 
@@ -1285,9 +1285,9 @@ void LIRGenerator::do_If(If* x) {
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {
-    __ branch(lir_cond(cond), right->type(), x->tsux(), x->usux());
+    __ branch(lir_cond(cond), x->tsux(), x->usux());
   } else {
-    __ branch(lir_cond(cond), right->type(), x->tsux());
+    __ branch(lir_cond(cond), x->tsux());
   }
   assert(x->default_sux() == x->fsux(), "wrong destination above");
   __ jump(x->default_sux());

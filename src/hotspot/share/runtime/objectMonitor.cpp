@@ -240,7 +240,7 @@ void ObjectMonitor::operator delete[] (void *p) {
 // -----------------------------------------------------------------------------
 // Enter support
 
-void ObjectMonitor::enter(TRAPS) {
+bool ObjectMonitor::enter(TRAPS) {
   // The following code is ordered to check the most common cases first
   // and to reduce RTS->RTO cache line upgrades on SPARC and IA32 processors.
   Thread * const Self = THREAD;
@@ -248,20 +248,20 @@ void ObjectMonitor::enter(TRAPS) {
   void* cur = try_set_owner_from(NULL, Self);
   if (cur == NULL) {
     assert(_recursions == 0, "invariant");
-    return;
+    return true;
   }
 
   if (cur == Self) {
     // TODO-FIXME: check for integer overflow!  BUGID 6557169.
     _recursions++;
-    return;
+    return true;
   }
 
   if (Self->is_lock_owned((address)cur)) {
     assert(_recursions == 0, "internal state error");
     _recursions = 1;
     set_owner_from_BasicLock(cur, Self);  // Convert from BasicLock* to Thread*.
-    return;
+    return true;
   }
 
   // We've encountered genuine contention.
@@ -281,7 +281,7 @@ void ObjectMonitor::enter(TRAPS) {
            ", encoded this=" INTPTR_FORMAT, ((oop)object())->mark().value(),
            markWord::encode(this).value());
     Self->_Stalled = 0;
-    return;
+    return true;
   }
 
   assert(_owner != Self, "invariant");
@@ -290,12 +290,25 @@ void ObjectMonitor::enter(TRAPS) {
   JavaThread * jt = (JavaThread *) Self;
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(jt->thread_state() != _thread_blocked, "invariant");
-  assert(this->object() != NULL, "invariant");
-  assert(_contentions >= 0, "invariant");
+  assert(AsyncDeflateIdleMonitors || this->object() != NULL, "invariant");
+  assert(AsyncDeflateIdleMonitors || contentions() >= 0, "must not be negative: contentions=%d", contentions());
 
-  // Prevent deflation at STW-time.  See deflate_idle_monitors() and is_busy().
-  // Ensure the object-monitor relationship remains stable while there's contention.
-  Atomic::inc(&_contentions);
+  // Keep track of contention for JVM/TI and M&M queries.
+  add_to_contentions(1);
+  if (is_being_async_deflated()) {
+    // Async deflation is in progress and our contentions increment
+    // above lost the race to async deflation. Undo the work and
+    // force the caller to retry.
+    const oop l_object = (oop)object();
+    if (l_object != NULL) {
+      // Attempt to restore the header/dmw to the object's header so that
+      // we only retry once if the deflater thread happens to be slow.
+      install_displaced_markword_in_object(l_object);
+    }
+    Self->_Stalled = 0;
+    add_to_contentions(-1);
+    return false;
+  }
 
   JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(jt);)
   EventJavaMonitorEnter event;
@@ -356,8 +369,8 @@ void ObjectMonitor::enter(TRAPS) {
     // acquire it.
   }
 
-  Atomic::dec(&_contentions);
-  assert(_contentions >= 0, "invariant");
+  add_to_contentions(-1);
+  assert(contentions() >= 0, "must not be negative: contentions=%d", contentions());
   Self->_Stalled = 0;
 
   // Must either set _recursions = 0 or ASSERT _recursions == 0.
@@ -393,6 +406,7 @@ void ObjectMonitor::enter(TRAPS) {
     event.commit();
   }
   OM_PERFDATA_OP(ContendedLockAttempts, inc());
+  return true;
 }
 
 // Caveat: TryLock() is not necessarily serializing if it returns failure.
@@ -412,12 +426,86 @@ int ObjectMonitor::TryLock(Thread * Self) {
   return -1;
 }
 
+// Install the displaced mark word (dmw) of a deflating ObjectMonitor
+// into the header of the object associated with the monitor. This
+// idempotent method is called by a thread that is deflating a
+// monitor and by other threads that have detected a race with the
+// deflation process.
+void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
+  // This function must only be called when (owner == DEFLATER_MARKER
+  // && contentions <= 0), but we can't guarantee that here because
+  // those values could change when the ObjectMonitor gets moved from
+  // the global free list to a per-thread free list.
+
+  guarantee(obj != NULL, "must be non-NULL");
+
+  // Separate loads in is_being_async_deflated(), which is almost always
+  // called before this function, from the load of dmw/header below.
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    // A non-multiple copy atomic (nMCA) machine needs a bigger
+    // hammer to separate the loads before and the load below.
+    OrderAccess::fence();
+  } else {
+    OrderAccess::loadload();
+  }
+
+  const oop l_object = (oop)object();
+  if (l_object == NULL) {
+    // ObjectMonitor's object ref has already been cleared by async
+    // deflation so we're done here.
+    return;
+  }
+  ADIM_guarantee(l_object == obj, "object=" INTPTR_FORMAT " must equal obj="
+                 INTPTR_FORMAT, p2i(l_object), p2i(obj));
+
+  markWord dmw = header();
+  // The dmw has to be neutral (not NULL, not locked and not marked).
+  ADIM_guarantee(dmw.is_neutral(), "must be neutral: dmw=" INTPTR_FORMAT, dmw.value());
+
+  // Install displaced mark word if the object's header still points
+  // to this ObjectMonitor. More than one racing caller to this function
+  // can rarely reach this point, but only one can win.
+  markWord res = obj->cas_set_mark(dmw, markWord::encode(this));
+  if (res != markWord::encode(this)) {
+    // This should be rare so log at the Info level when it happens.
+    log_info(monitorinflation)("install_displaced_markword_in_object: "
+                               "failed cas_set_mark: new_mark=" INTPTR_FORMAT
+                               ", old_mark=" INTPTR_FORMAT ", res=" INTPTR_FORMAT,
+                               dmw.value(), markWord::encode(this).value(),
+                               res.value());
+  }
+
+  // Note: It does not matter which thread restored the header/dmw
+  // into the object's header. The thread deflating the monitor just
+  // wanted the object's header restored and it is. The threads that
+  // detected a race with the deflation process also wanted the
+  // object's header restored before they retry their operation and
+  // because it is restored they will only retry once.
+}
+
 // Convert the fields used by is_busy() to a string that can be
 // used for diagnostic output.
 const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
-  ss->print("is_busy: contentions=%d, waiters=%d, owner=" INTPTR_FORMAT
-            ", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, _contentions,
-            _waiters, p2i(_owner), p2i(_cxq), p2i(_EntryList));
+  ss->print("is_busy: waiters=%d, ", _waiters);
+  if (!AsyncDeflateIdleMonitors) {
+    ss->print("contentions=%d, ", contentions());
+    ss->print("owner=" INTPTR_FORMAT, p2i(_owner));
+  } else {
+    if (contentions() > 0) {
+      ss->print("contentions=%d, ", contentions());
+    } else {
+      ss->print("contentions=0");
+    }
+    if (_owner != DEFLATER_MARKER) {
+      ss->print("owner=" INTPTR_FORMAT, p2i(_owner));
+    } else {
+      // We report NULL instead of DEFLATER_MARKER here because is_busy()
+      // ignores DEFLATER_MARKER values.
+      ss->print("owner=" INTPTR_FORMAT, NULL);
+    }
+  }
+  ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
+            p2i(_EntryList));
   return ss->base();
 }
 
@@ -432,6 +520,25 @@ void ObjectMonitor::EnterI(TRAPS) {
   if (TryLock (Self) > 0) {
     assert(_succ != Self, "invariant");
     assert(_owner == Self, "invariant");
+    assert(_Responsible != Self, "invariant");
+    return;
+  }
+
+  if (AsyncDeflateIdleMonitors &&
+      try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
+    // Cancelled the in-progress async deflation by changing owner from
+    // DEFLATER_MARKER to Self. As part of the contended enter protocol,
+    // contentions was incremented to a positive value before EnterI()
+    // was called and that prevents the deflater thread from winning the
+    // last part of the 2-part async deflation protocol. After EnterI()
+    // returns to enter(), contentions is decremented because the caller
+    // now owns the monitor. We bump contentions an extra time here to
+    // prevent the deflater thread from winning the last part of the
+    // 2-part async deflation protocol after the regular decrement
+    // occurs in enter(). The deflater thread will decrement contentions
+    // after it recognizes that the async deflation was cancelled.
+    add_to_contentions(1);
+    assert(_succ != Self, "invariant");
     assert(_Responsible != Self, "invariant");
     return;
   }
@@ -551,6 +658,23 @@ void ObjectMonitor::EnterI(TRAPS) {
     }
 
     if (TryLock(Self) > 0) break;
+
+    if (AsyncDeflateIdleMonitors &&
+        try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
+      // Cancelled the in-progress async deflation by changing owner from
+      // DEFLATER_MARKER to Self. As part of the contended enter protocol,
+      // contentions was incremented to a positive value before EnterI()
+      // was called and that prevents the deflater thread from winning the
+      // last part of the 2-part async deflation protocol. After EnterI()
+      // returns to enter(), contentions is decremented because the caller
+      // now owns the monitor. We bump contentions an extra time here to
+      // prevent the deflater thread from winning the last part of the
+      // 2-part async deflation protocol after the regular decrement
+      // occurs in enter(). The deflater thread will decrement contentions
+      // after it recognizes that the async deflation was cancelled.
+      add_to_contentions(1);
+      break;
+    }
 
     // The lock is still contested.
     // Keep a tally of the # of futile wakeups.
@@ -816,7 +940,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // We'd like to assert that: (THREAD->thread_state() != _thread_blocked) ;
 // There's one exception to the claim above, however.  EnterI() can call
 // exit() to drop a lock if the acquirer has been externally suspended.
-// In that case exit() is called with _thread_state as _thread_blocked,
+// In that case exit() is called with _thread_state == _thread_blocked,
 // but the monitor's _contentions field is > 0, which inhibits reclamation.
 //
 // 1-0 exit
@@ -1091,7 +1215,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   // out-of-scope (non-extant).
   Wakee  = NULL;
 
-  // Drop the lock
+  // Drop the lock.
   // Uses a fence to separate release_store(owner) from the LD in unpark().
   release_clear_owner(Self);
   OrderAccess::fence();
@@ -1139,16 +1263,19 @@ intx ObjectMonitor::complete_exit(TRAPS) {
 
 // reenter() enters a lock and sets recursion count
 // complete_exit/reenter operate as a wait without waiting
-void ObjectMonitor::reenter(intx recursions, TRAPS) {
+bool ObjectMonitor::reenter(intx recursions, TRAPS) {
   Thread * const Self = THREAD;
   assert(Self->is_Java_thread(), "Must be Java thread!");
   JavaThread *jt = (JavaThread *)THREAD;
 
   guarantee(_owner != Self, "reenter already owner");
-  enter(THREAD);       // enter the monitor
+  if (!enter(THREAD)) {
+    return false;
+  }
+  // Entered the monitor.
   guarantee(_recursions == 0, "reenter recursion");
   _recursions = recursions;
-  return;
+  return true;
 }
 
 // Checks that the current THREAD owns this monitor and causes an
@@ -1962,14 +2089,20 @@ void ObjectMonitor::print() const { print_on(tty); }
 // (ObjectMonitor) 0x00007fdfb6012e40 = {
 //   _header = 0x0000000000000001
 //   _object = 0x000000070ff45fd0
-//   _next_om = 0x0000000000000000
+//   _allocation_state = Old
 //   _pad_buf0 = {
 //     [0] = '\0'
 //     ...
-//     [103] = '\0'
+//     [43] = '\0'
 //   }
 //   _owner = 0x0000000000000000
 //   _previous_owner_tid = 0
+//   _pad_buf1 = {
+//     [0] = '\0'
+//     ...
+//     [47] = '\0'
+//   }
+//   _next_om = 0x0000000000000000
 //   _recursions = 0
 //   _EntryList = 0x0000000000000000
 //   _cxq = 0x0000000000000000
@@ -1987,7 +2120,17 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(_object));
-  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
+  st->print("  _allocation_state = ");
+  if (is_free()) {
+    st->print("Free");
+  } else if (is_old()) {
+    st->print("Old");
+  } else if (is_new()) {
+    st->print("New");
+  } else {
+    st->print("unknown=%d", _allocation_state);
+  }
+  st->cr();
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");
@@ -1995,6 +2138,12 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  }");
   st->print_cr("  _owner = " INTPTR_FORMAT, p2i(_owner));
   st->print_cr("  _previous_owner_tid = " JLONG_FORMAT, _previous_owner_tid);
+  st->print_cr("  _pad_buf1 = {");
+  st->print_cr("    [0] = '\\0'");
+  st->print_cr("    ...");
+  st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf1) - 1);
+  st->print_cr("  }");
+  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
   st->print_cr("  _recursions = " INTX_FORMAT, _recursions);
   st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
   st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
@@ -2002,7 +2151,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  _Responsible = " INTPTR_FORMAT, p2i(_Responsible));
   st->print_cr("  _Spinner = %d", _Spinner);
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
-  st->print_cr("  _contentions = %d", _contentions);
+  st->print_cr("  _contentions = %d", contentions());
   st->print_cr("  _WaitSet = " INTPTR_FORMAT, p2i(_WaitSet));
   st->print_cr("  _waiters = %d", _waiters);
   st->print_cr("  _WaitSetLock = %d", _WaitSetLock);

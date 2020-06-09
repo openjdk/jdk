@@ -41,6 +41,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -281,6 +282,14 @@ void VMThread::run() {
     xtty->stamp();
     xtty->end_elem();
     assert(should_terminate(), "termination flag must be set");
+  }
+
+  if (AsyncDeflateIdleMonitors && log_is_enabled(Info, monitorinflation)) {
+    // AsyncDeflateIdleMonitors does a special deflation at the final
+    // safepoint in order to reduce the in-use monitor population that
+    // is reported by ObjectSynchronizer::log_in_use_monitor_details()
+    // at VM exit.
+    ObjectSynchronizer::set_is_special_deflation_requested(true);
   }
 
   // 4526887 let VM thread exit at Safepoint

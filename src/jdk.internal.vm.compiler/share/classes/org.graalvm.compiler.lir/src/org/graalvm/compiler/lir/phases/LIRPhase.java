@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.CompilerPhaseScope;
 import org.graalvm.compiler.debug.MemUseTrackerKey;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.lir.LIR;
@@ -112,8 +113,11 @@ public abstract class LIRPhase<C> {
     @SuppressWarnings("try")
     public final void apply(TargetDescription target, LIRGenerationResult lirGenRes, C context, boolean dumpLIR) {
         DebugContext debug = lirGenRes.getLIR().getDebug();
-        try (DebugContext.Scope s = debug.scope(getName(), this)) {
-            try (DebugCloseable a = timer.start(debug); DebugCloseable c = memUseTracker.start(debug)) {
+        CharSequence name = getName();
+        try (DebugContext.Scope s = debug.scope(name, this)) {
+            try (CompilerPhaseScope cps = debug.enterCompilerPhase(name);
+                            DebugCloseable a = timer.start(debug);
+                            DebugCloseable c = memUseTracker.start(debug)) {
                 run(target, lirGenRes, context);
                 if (dumpLIR && debug.areScopesEnabled()) {
                     dumpAfter(lirGenRes);

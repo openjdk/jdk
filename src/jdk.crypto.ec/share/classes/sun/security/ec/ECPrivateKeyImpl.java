@@ -71,7 +71,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
      * Construct a key from its encoding. Called by the ECKeyFactory.
      */
     ECPrivateKeyImpl(byte[] encoded) throws InvalidKeyException {
-        decode(encoded);
+        super(encoded);
+        parseKeyBits();
     }
 
     /**
@@ -112,8 +113,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     }
 
     private void makeEncoding(BigInteger s) throws InvalidKeyException {
-        algid = new AlgorithmId
-        (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
+        algid = new AlgorithmId(AlgorithmId.EC_oid,
+                ECParameters.getAlgorithmParameters(params));
         try {
             byte[] sArr = s.toByteArray();
             // convert to fixed-length array
@@ -131,8 +132,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                 new DerValue(DerValue.tag_Sequence, out.toByteArray());
             key = val.toByteArray();
         } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
+            throw new AssertionError("Should not happen", exc);
         }
     }
 
@@ -163,10 +163,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return params;
     }
 
-    /**
-     * Parse the key. Called by PKCS8Key.
-     */
-    protected void parseKeyBits() throws InvalidKeyException {
+    private void parseKeyBits() throws InvalidKeyException {
         try {
             DerInputStream in = new DerInputStream(key);
             DerValue derValue = in.getDerValue();

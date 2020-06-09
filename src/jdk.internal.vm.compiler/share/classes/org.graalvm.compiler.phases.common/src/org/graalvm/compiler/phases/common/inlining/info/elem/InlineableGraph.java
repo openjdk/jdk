@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
@@ -69,7 +68,8 @@ public class InlineableGraph implements Inlineable {
     private FixedNodeRelativeFrequencyCache probabilites = new FixedNodeRelativeFrequencyCache();
 
     public InlineableGraph(final ResolvedJavaMethod method, final Invoke invoke, final HighTierContext context, CanonicalizerPhase canonicalizer, boolean trackNodeSourcePosition) {
-        StructuredGraph original = context.getReplacements().getSubstitution(method, invoke.bci(), trackNodeSourcePosition, null, invoke.asNode().getOptions());
+        StructuredGraph original = context.getReplacements().getSubstitution(method, invoke.bci(), trackNodeSourcePosition, null,
+                        invoke.asNode().graph().allowAssumptions(), invoke.asNode().getOptions());
         if (original == null) {
             original = parseBytecodes(method, context, canonicalizer, invoke.asNode().graph(), trackNodeSourcePosition);
         } else if (original.isFrozen()) {
@@ -191,7 +191,7 @@ public class InlineableGraph implements Inlineable {
     @SuppressWarnings("try")
     private static StructuredGraph parseBytecodes(ResolvedJavaMethod method, HighTierContext context, CanonicalizerPhase canonicalizer, StructuredGraph caller, boolean trackNodeSourcePosition) {
         DebugContext debug = caller.getDebug();
-        StructuredGraph newGraph = new StructuredGraph.Builder(caller.getOptions(), debug, AllowAssumptions.ifNonNull(caller.getAssumptions())).method(method).trackNodeSourcePosition(
+        StructuredGraph newGraph = new StructuredGraph.Builder(caller.getOptions(), debug, caller.allowAssumptions()).method(method).trackNodeSourcePosition(
                         trackNodeSourcePosition).useProfilingInfo(caller.useProfilingInfo()).build();
         try (DebugContext.Scope s = debug.scope("InlineGraph", newGraph)) {
             if (!caller.isUnsafeAccessTrackingEnabled()) {

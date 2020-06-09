@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,11 @@ public final class BitMap2D {
     }
 
     public BitMap2D(int sizeInSlots, int bitsPerSlot) {
+        long nBits = (long) sizeInSlots * bitsPerSlot;
+        if (nBits > Integer.MAX_VALUE) {
+            // Avoids issues where (sizeInSlots * bitsPerSlot) wraps around to a positive integer
+            throw new OutOfMemoryError("Cannot allocate a BitSet for " + nBits + " bits");
+        }
         map = new BitSet(sizeInSlots * bitsPerSlot);
         this.bitsPerSlot = bitsPerSlot;
     }

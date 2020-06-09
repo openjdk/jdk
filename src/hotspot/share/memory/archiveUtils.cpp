@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,12 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
 
   if (_ptr_base <= ptr_loc && ptr_loc < _ptr_end) {
     address value = *ptr_loc;
+    // We don't want any pointer that points to very bottom of the archive, otherwise when
+    // MetaspaceShared::default_base_address()==0, we can't distinguish between a pointer
+    // to nothing (NULL) vs a pointer to an objects that happens to be at the very bottom
+    // of the archive.
+    assert(value != (address)_ptr_base, "don't point to the bottom of the archive");
+
     if (value != NULL) {
       assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
       size_t idx = ptr_loc - _ptr_base;

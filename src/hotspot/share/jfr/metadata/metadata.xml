@@ -890,6 +890,7 @@
   <Event name="CodeSweeperConfiguration" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="boolean" name="sweeperEnabled" label="Code Sweeper Enabled" />
     <Field type="boolean" name="flushingEnabled" label="Code Cache Flushing Enabled" />
+    <Field type="ulong" contentType="bytes" name="sweepThreshold" label="Sweep Threshold" />
   </Event>
 
   <Event name="IntFlag" category="Java Virtual Machine, Flag" period="endChunk" label="Int Flag">
@@ -1001,16 +1002,11 @@
   <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
      <Field type="ZPageTypeType" name="type" label="Type" />
      <Field type="ulong" contentType="bytes" name="size" label="Size" />
-     <Field type="ulong" contentType="bytes" name="usedAfter" label="Used After" />
-     <Field type="ulong" contentType="bytes" name="freeAfter" label="Free After" />
-     <Field type="ulong" contentType="bytes" name="inCacheAfter" label="In Cache After" />
+     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
+     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
+     <Field type="uint" name="segments" label="Segments" />
      <Field type="boolean" name="nonBlocking" label="Non-blocking" />
      <Field type="boolean" name="noReserve" label="No Reserve" />
-  </Event>
-
-  <Event name="ZPageCacheFlush" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Cache Flush" description="Flushing of ZPages" thread="true" stackTrace="true">
-     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed Size" />
-     <Field type="boolean" name="forAllocation" label="For Allocation" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
@@ -1046,9 +1042,11 @@
   </Event>
 
   <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true">
-    <Field type="ulong" contentType="bytes" name="capacityBefore" label="Capacity Before" />
-    <Field type="ulong" contentType="bytes" name="capacityAfter" label="Capacity After" />
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
+  </Event>
+
+  <Event name="ZUnmap" category="Java Virtual Machine, GC, Detailed" label="ZGC Unmap" description="Unmapping of memory" thread="true">
+    <Field type="ulong" contentType="bytes" name="unmapped" label="Unmapped" />
   </Event>
 
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"

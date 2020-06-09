@@ -25,7 +25,6 @@
 /*
  * @test TestLoopMiningArguments
  * @summary Test that loop mining arguments are sane
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @requires vm.flavor == "server"
  * @library /test/lib

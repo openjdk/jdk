@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8068909
- * @key regression
  * @summary test that string optimizations produce code, that doesn't lead to a crash.
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement

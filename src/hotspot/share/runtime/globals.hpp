@@ -683,11 +683,21 @@ const size_t minimumSymbolTableSize = 1024;
                "Disable the use of stack guard pages if the JVM is loaded " \
                "on the primordial process thread")                          \
                                                                             \
+  diagnostic(bool, AsyncDeflateIdleMonitors, true,                          \
+          "Deflate idle monitors using the ServiceThread.")                 \
+                                                                            \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  diagnostic(intx, AsyncDeflationInterval, 250,                             \
+          "Async deflate idle monitors every so many milliseconds when "    \
+          "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
+          range(0, max_jint)                                                \
+                                                                            \
   experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
-                "Percentage of used monitors before triggering cleanup "    \
-                "safepoint which deflates monitors (0 is off). "            \
-                "The check is performed on GuaranteedSafepointInterval.")   \
-                range(0, 100)                                               \
+          "Percentage of used monitors before triggering deflation (0 is "  \
+          "off). The check is performed on GuaranteedSafepointInterval "    \
+          "or AsyncDeflationInterval.")                                     \
+          range(0, 100)                                                     \
                                                                             \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
@@ -1681,6 +1691,11 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
+                                                                            \
+  product(double, SweeperThreshold, 0.5,                                    \
+          "Threshold controlling when code cache sweeper is invoked."       \
+          "Value is percentage of ReservedCodeCacheSize.")                  \
+          range(0.0, 100.0)                                                 \
                                                                             \
   product(uintx, StartAggressiveSweepingAt, 10,                             \
           "Start aggressive sweeping if X[%] of the code cache is free."    \

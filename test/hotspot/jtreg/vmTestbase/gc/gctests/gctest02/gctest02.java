@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @key gc
+ * @key randomness
  *
  * @summary converted from VM Testbase gc/gctests/gctest02.
  * VM Testbase keywords: [gc]
@@ -40,6 +40,8 @@ package gc.gctests.gctest02;
 
 import nsk.share.TestFailure;
 import nsk.share.TestBug;
+import nsk.share.test.LocalRandom;
+
 /*  stress testing
  create 16 memory evil threads requesting to allocate
  the object of sizes from 8 to ( 2 ^ 19).
@@ -48,25 +50,9 @@ import nsk.share.TestBug;
  to simulate the object life time.
 */
 
-import java.util.Random;
-
 class PopulationException extends Exception {
     //this exception is used to signal that we've
     //reached the end of the test
-}
-
-//the LocalRandom class is used to isolate the pseudo-random
-//number generator from other parts of the system which might
-//silently be using it.
-//This is to make sure the tests are repeatable
-
-class LocalRandom {
-    public static Random rGen = null;
-
-    public static double random() {
-        //should fail if rGen is not initialized
-        return rGen.nextDouble();
-    }
 }
 
 class ThreadCount {
@@ -190,7 +176,6 @@ public class gctest02 {
         public static void main(String args[] ) {
                 int bufsz = 8;
                 int peopleLimit = 1000;
-                long randomSeed = System.currentTimeMillis();
                 Memevil me=null;
                 if (args.length > 0)
                 {
@@ -206,24 +191,9 @@ public class gctest02 {
                         }
                 }
 
-                if (args.length == 2)
-                {
-                        try
-                        {
-                                randomSeed = new Long(args[1]).longValue();
-                        }
-                        catch (NumberFormatException e)
-                        {
-                                throw new TestBug(
-                                        "Bad input to gctest02. Expected long, got: ->"
-                                        + args[0] + "<-", e);
-                        }
-                }
                 Person.setPopulationLimit(peopleLimit);
-                System.out.println("Seed value: " + randomSeed);
                 for (int ii=0; ii<40; ii++) {
                         bufsz = 8;
-                        LocalRandom.rGen = new Random(randomSeed);
                         Person.populationCount = 0;
                         Escaper you = new Escaper();
                         you.setName("Escaper");

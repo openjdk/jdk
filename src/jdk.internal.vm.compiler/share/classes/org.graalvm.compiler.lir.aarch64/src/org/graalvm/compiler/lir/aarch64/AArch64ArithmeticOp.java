@@ -461,8 +461,9 @@ public enum AArch64ArithmeticOp {
         }
     }
 
-    public static class ExtendedAddShiftOp extends AArch64LIRInstruction {
-        private static final LIRInstructionClass<ExtendedAddShiftOp> TYPE = LIRInstructionClass.create(ExtendedAddShiftOp.class);
+    public static class ExtendedAddSubShiftOp extends AArch64LIRInstruction {
+        private static final LIRInstructionClass<ExtendedAddSubShiftOp> TYPE = LIRInstructionClass.create(ExtendedAddSubShiftOp.class);
+        @Opcode private final AArch64ArithmeticOp op;
         @Def(REG) protected AllocatableValue result;
         @Use(REG) protected AllocatableValue src1;
         @Use(REG) protected AllocatableValue src2;
@@ -475,8 +476,9 @@ public enum AArch64ArithmeticOp {
          * @param extendType defines how src2 is extended to the same size as src1.
          * @param shiftAmt must be in range 0 to 4.
          */
-        public ExtendedAddShiftOp(AllocatableValue result, AllocatableValue src1, AllocatableValue src2, AArch64Assembler.ExtendType extendType, int shiftAmt) {
+        public ExtendedAddSubShiftOp(AArch64ArithmeticOp op, AllocatableValue result, AllocatableValue src1, AllocatableValue src2, AArch64Assembler.ExtendType extendType, int shiftAmt) {
             super(TYPE);
+            this.op = op;
             this.result = result;
             this.src1 = src1;
             this.src2 = src2;
@@ -487,7 +489,16 @@ public enum AArch64ArithmeticOp {
         @Override
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             int size = result.getPlatformKind().getSizeInBytes() * Byte.SIZE;
-            masm.add(size, asRegister(result), asRegister(src1), asRegister(src2), extendType, shiftAmt);
+            switch (op) {
+                case ADD:
+                    masm.add(size, asRegister(result), asRegister(src1), asRegister(src2), extendType, shiftAmt);
+                    break;
+                case SUB:
+                    masm.sub(size, asRegister(result), asRegister(src1), asRegister(src2), extendType, shiftAmt);
+                    break;
+                default:
+                    throw GraalError.shouldNotReachHere();
+            }
         }
     }
 

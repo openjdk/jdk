@@ -54,3 +54,19 @@ uintptr_t  ZAddressMetadataMarked0;
 uintptr_t  ZAddressMetadataMarked1;
 uintptr_t  ZAddressMetadataRemapped;
 uintptr_t  ZAddressMetadataFinalizable;
+
+const char* ZGlobalPhaseToString() {
+  switch (ZGlobalPhase) {
+  case ZPhaseMark:
+    return "Mark";
+
+  case ZPhaseMarkCompleted:
+    return "MarkCompleted";
+
+  case ZPhaseRelocate:
+    return "Relocate";
+
+  default:
+    return "Unknown";
+  }
+}

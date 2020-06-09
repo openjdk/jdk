@@ -27,6 +27,7 @@ package org.graalvm.compiler.nodes.virtual;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.IterableNodeType;
@@ -37,11 +38,11 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 
 @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
 public abstract class VirtualObjectNode extends ValueNode implements LIRLowerable, IterableNodeType {
@@ -103,7 +104,7 @@ public abstract class VirtualObjectNode extends ValueNode implements LIRLowerabl
     /**
      * Returns the {@link JavaKind} of the entry at the given index.
      */
-    public abstract JavaKind entryKind(int index);
+    public abstract JavaKind entryKind(MetaAccessExtensionProvider metaAccessExtensionProvider, int index);
 
     /**
      * Returns an exact duplicate of this virtual object node, which has not been added to the graph
@@ -147,16 +148,16 @@ public abstract class VirtualObjectNode extends ValueNode implements LIRLowerabl
     public boolean canVirtualizeLargeByteArrayUnsafeRead(ValueNode entry, int index, JavaKind accessKind, VirtualizerTool tool) {
         return (tool.canVirtualizeLargeByteArrayUnsafeAccess() || accessKind == JavaKind.Byte) &&
                         !entry.isIllegalConstant() && entry.getStackKind() == accessKind.getStackKind() &&
-                        isVirtualByteArrayAccess(accessKind) &&
+                        isVirtualByteArrayAccess(tool.getMetaAccessExtensionProvider(), accessKind) &&
                         accessKind.getByteCount() == ((VirtualArrayNode) this).byteArrayEntryByteCount(index, tool);
     }
 
-    public boolean isVirtualByteArrayAccess(JavaKind accessKind) {
-        return accessKind.isPrimitive() && isVirtualByteArray();
+    public boolean isVirtualByteArrayAccess(MetaAccessExtensionProvider metaAccessExtensionProvider, JavaKind accessKind) {
+        return accessKind.isPrimitive() && isVirtualByteArray(metaAccessExtensionProvider);
     }
 
-    public boolean isVirtualByteArray() {
-        return isVirtualArray() && entryCount() > 0 && entryKind(0) == JavaKind.Byte;
+    public boolean isVirtualByteArray(MetaAccessExtensionProvider metaAccessExtensionProvider) {
+        return isVirtualArray() && entryCount() > 0 && entryKind(metaAccessExtensionProvider, 0) == JavaKind.Byte;
     }
 
     private boolean isVirtualArray() {

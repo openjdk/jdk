@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@ package jdk.tools.jaotc;
 
 import java.util.List;
 
-import jdk.vm.ci.code.site.Mark;
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 
 final class CodeOffsets {
     private final int entry;
@@ -42,34 +43,32 @@ final class CodeOffsets {
         this.deoptHandler = deoptHandler;
     }
 
-    static CodeOffsets buildFrom(List<Mark> marks) {
+    static CodeOffsets buildFrom(List<CompilationResult.CodeMark> marks) {
         int entry = 0;
         int verifiedEntry = 0;
         int exceptionHandler = -1;
         int deoptHandler = -1;
 
-        for (Mark mark : marks) {
-            if (mark.id instanceof Integer) {
-                MarkId markId = MarkId.getEnum((int) mark.id);
-                switch (markId) {
-                    case UNVERIFIED_ENTRY:
-                        entry = mark.pcOffset;
-                        break;
-                    case VERIFIED_ENTRY:
-                        verifiedEntry = mark.pcOffset;
-                        break;
-                    case OSR_ENTRY:
-                        // Unhandled
-                        break;
-                    case EXCEPTION_HANDLER_ENTRY:
-                        exceptionHandler = mark.pcOffset;
-                        break;
-                    case DEOPT_HANDLER_ENTRY:
-                        deoptHandler = mark.pcOffset;
-                        break;
-                    default:
-                        break; // Ignore others
-                }
+        for (CompilationResult.CodeMark mark : marks) {
+            HotSpotMarkId markId = (HotSpotMarkId) mark.id;
+            switch (markId) {
+                case UNVERIFIED_ENTRY:
+                    entry = mark.pcOffset;
+                    break;
+                case VERIFIED_ENTRY:
+                    verifiedEntry = mark.pcOffset;
+                    break;
+                case OSR_ENTRY:
+                    // Unhandled
+                    break;
+                case EXCEPTION_HANDLER_ENTRY:
+                    exceptionHandler = mark.pcOffset;
+                    break;
+                case DEOPT_HANDLER_ENTRY:
+                    deoptHandler = mark.pcOffset;
+                    break;
+                default:
+                    break; // Ignore others
             }
         }
         return new CodeOffsets(entry, verifiedEntry, exceptionHandler, deoptHandler);

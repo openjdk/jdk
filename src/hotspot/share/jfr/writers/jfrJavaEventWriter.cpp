@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ static int start_pos_offset = invalid_offset;
 static int start_pos_address_offset = invalid_offset;
 static int current_pos_offset = invalid_offset;
 static int max_pos_offset = invalid_offset;
-static int max_event_size_offset = invalid_offset;
 static int notified_offset = invalid_offset;
 static int thread_id_offset = invalid_offset;
 static int valid_offset = invalid_offset;
@@ -109,13 +108,6 @@ static bool setup_event_writer_offsets(TRAPS) {
   assert(invalid_offset == max_pos_offset, "invariant");
   compute_offset(max_pos_offset, klass, max_pos_sym, vmSymbols::long_signature());
   assert(max_pos_offset != invalid_offset, "invariant");
-
-  const char max_event_size_name[] = "maxEventSize";
-  Symbol* const max_event_size_sym = SymbolTable::new_symbol(max_event_size_name);
-  assert (max_event_size_sym != NULL, "invariant");
-  assert(invalid_offset == max_event_size_offset, "invariant");
-  compute_offset(max_event_size_offset, klass, max_event_size_sym, vmSymbols::int_signature());
-  assert(max_event_size_offset != invalid_offset, "invariant");
 
   const char notified_name[] = "notified";
   Symbol* const notified_sym = SymbolTable::new_symbol(notified_name);

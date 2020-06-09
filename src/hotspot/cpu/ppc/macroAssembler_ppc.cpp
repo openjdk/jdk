@@ -4432,17 +4432,21 @@ void MacroAssembler::verify_oop_addr(RegisterOrConstant offs, Register base, con
 
 // Call a C-function that prints output.
 void MacroAssembler::stop(int type, const char* msg) {
+  bool msg_present = (msg != NULL);
+
 #ifndef PRODUCT
-  block_comment(err_msg("stop(type %d): %s {", type, msg));
+  block_comment(err_msg("stop(type %d): %s {", type, msg_present ? msg : "null"));
 #else
   block_comment("stop {");
 #endif
 
-  if (type != stop_shouldnotreachhere) {
-    // Use R0 to pass msg. "shouldnotreachhere" preserves R0.
-    load_const_optimized(R0, (void*)msg);
+  if (msg_present) {
+    type |= stop_msg_present;
   }
   tdi_unchecked(traptoUnconditional, 0/*reg 0*/, type);
+  if (msg_present) {
+    emit_int64((uintptr_t)msg);
+  }
 
   block_comment("} stop;");
 }

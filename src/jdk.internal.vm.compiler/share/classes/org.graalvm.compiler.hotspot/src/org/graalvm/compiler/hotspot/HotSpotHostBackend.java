@@ -27,15 +27,18 @@ package org.graalvm.compiler.hotspot;
 import static jdk.vm.ci.code.CodeUtil.K;
 import static jdk.vm.ci.code.CodeUtil.getCallingConvention;
 import static jdk.vm.ci.common.InitTimer.timer;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.LEAF_NO_VZERO;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.NO_LOCATIONS;
 
 import java.util.Collections;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.gen.LIRGenerationProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotHostForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotLoweringProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -67,21 +70,25 @@ public abstract class HotSpotHostBackend extends HotSpotBackend implements LIRGe
     /**
      * Descriptor for {@code SharedRuntime::deopt_blob()->unpack()}.
      */
-    public static final ForeignCallDescriptor DEOPT_BLOB_UNPACK = new ForeignCallDescriptor("deopt_blob()->unpack()", void.class);
+    public static final HotSpotForeignCallDescriptor DEOPT_BLOB_UNPACK = new HotSpotForeignCallDescriptor(LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS, "deopt_blob()->unpack()", void.class);
 
     /**
      * Descriptor for {@code SharedRuntime::deopt_blob()->unpack_with_exception_in_tls()}.
      */
-    public static final ForeignCallDescriptor DEOPT_BLOB_UNPACK_WITH_EXCEPTION_IN_TLS = new ForeignCallDescriptor("deopt_blob()->unpack_with_exception_in_tls()", void.class);
+    public static final HotSpotForeignCallDescriptor DEOPT_BLOB_UNPACK_WITH_EXCEPTION_IN_TLS = new HotSpotForeignCallDescriptor(LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS,
+                    "deopt_blob()->unpack_with_exception_in_tls()", void.class);
 
     /**
      * Descriptor for {@code SharedRuntime::deopt_blob()->uncommon_trap()}.
      */
-    public static final ForeignCallDescriptor DEOPT_BLOB_UNCOMMON_TRAP = new ForeignCallDescriptor("deopt_blob()->uncommon_trap()", void.class);
+    public static final HotSpotForeignCallDescriptor DEOPT_BLOB_UNCOMMON_TRAP = new HotSpotForeignCallDescriptor(LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS, "deopt_blob()->uncommon_trap()",
+                    void.class);
 
-    public static final ForeignCallDescriptor ENABLE_STACK_RESERVED_ZONE = new ForeignCallDescriptor("enableStackReservedZoneEntry", void.class, Word.class);
+    public static final HotSpotForeignCallDescriptor ENABLE_STACK_RESERVED_ZONE = new HotSpotForeignCallDescriptor(LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS, "enableStackReservedZoneEntry",
+                    void.class, Word.class);
 
-    public static final ForeignCallDescriptor THROW_DELAYED_STACKOVERFLOW_ERROR = new ForeignCallDescriptor("throwDelayedStackoverflowError", void.class);
+    public static final HotSpotForeignCallDescriptor THROW_DELAYED_STACKOVERFLOW_ERROR = new HotSpotForeignCallDescriptor(LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS, "throwDelayedStackoverflowError",
+                    void.class);
 
     protected final GraalHotSpotVMConfig config;
 

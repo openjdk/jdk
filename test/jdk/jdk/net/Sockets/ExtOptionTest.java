@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 import static jdk.net.ExtendedSocketOptions.TCP_QUICKACK;
-import static jdk.net.ExtendedSocketOptions.SO_FLOW_SLA;
 
 public class ExtOptionTest {
 

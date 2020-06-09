@@ -29,14 +29,17 @@ import static jdk.vm.ci.meta.DeoptimizationAction.None;
 import static jdk.vm.ci.meta.DeoptimizationReason.RuntimeConstraint;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.MinimalBulkZeroingSize;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_OPTIONVALUES;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_OPTIONVALUES;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_ARRAY;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_ARRAY_OR_NULL;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_INSTANCE;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_INSTANCE_OR_NULL;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_MULTI_ARRAY;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_MULTI_ARRAY_OR_NULL;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor.Transition.SAFEPOINT;
+import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.NO_LOCATIONS;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_ARRAY_KLASS_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_INIT_STATE_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.HUB_WRITE_LOCATION;
@@ -66,7 +69,7 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FAST_PAT
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.VERY_FAST_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
-import static org.graalvm.compiler.replacements.ReplacementsUtil.runtimeAssert;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.dynamicAssert;
 import static org.graalvm.compiler.replacements.ReplacementsUtil.staticAssert;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
@@ -83,6 +86,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
 import org.graalvm.compiler.hotspot.nodes.KlassBeingInitializedCheckNode;
@@ -128,9 +132,10 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class HotSpotAllocationSnippets extends AllocationSnippets {
     /** New dynamic array stub that throws an {@link OutOfMemoryError} on allocation failure. */
-    public static final ForeignCallDescriptor DYNAMIC_NEW_INSTANCE = new ForeignCallDescriptor("dynamic_new_instance", Object.class, Class.class);
+    public static final HotSpotForeignCallDescriptor DYNAMIC_NEW_INSTANCE = new HotSpotForeignCallDescriptor(SAFEPOINT, REEXECUTABLE, NO_LOCATIONS, "dynamic_new_instance", Object.class, Class.class);
     /** New dynamic array stub that returns null on allocation failure. */
-    public static final ForeignCallDescriptor DYNAMIC_NEW_INSTANCE_OR_NULL = new ForeignCallDescriptor("dynamic_new_instance_or_null", Object.class, Class.class);
+    public static final HotSpotForeignCallDescriptor DYNAMIC_NEW_INSTANCE_OR_NULL = new HotSpotForeignCallDescriptor(SAFEPOINT, REEXECUTABLE, NO_LOCATIONS, "dynamic_new_instance_or_null",
+                    Object.class, Class.class);
 
     private final GraalHotSpotVMConfig config;
     private final Register threadRegister;
@@ -290,7 +295,7 @@ public class HotSpotAllocationSnippets extends AllocationSnippets {
         if (knownElementKind == JavaKind.Illegal) {
             layoutHelper = readLayoutHelper(nonNullKlass);
         } else {
-            runtimeAssert(knownLayoutHelper == readLayoutHelper(nonNullKlass), "layout mismatch");
+            dynamicAssert(knownLayoutHelper == readLayoutHelper(nonNullKlass), "layout mismatch");
             layoutHelper = knownLayoutHelper;
         }
         //@formatter:off

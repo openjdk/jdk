@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,40 @@
 
 #include "memory/allocation.hpp"
 
-enum jfr_iter_direction {
-  forward = 1,
-  backward
+template <typename List>
+class StopOnNullCondition {
+  typedef typename List::Node Node;
+ private:
+  List& _list;
+  mutable Node* _node;
+ public:
+  StopOnNullCondition(List& list) : _list(list), _node(list.head()) {}
+  bool has_next() const {
+    return _node != NULL;
+  }
+  Node* next() const {
+    assert(_node != NULL, "invariant");
+    Node* temp = _node;
+    _node = (Node*)_node->_next;
+    return temp;
+  }
 };
 
-template <typename Node>
-class StopOnNullCondition : public AllStatic {
+template <typename List>
+class StopOnNullConditionRemoval {
+  typedef typename List::Node Node;
+ private:
+  List& _list;
+  mutable Node* _node;
  public:
-  static bool has_next(const Node* node) {
-    return node != NULL;
+  StopOnNullConditionRemoval(List& list) : _list(list), _node(NULL) {}
+  bool has_next() const {
+    _node = _list.remove();
+    return _node != NULL;
+  }
+  Node* next() const {
+    assert(_node != NULL, "invariant");
+    return _node;
   }
 };
 
@@ -44,64 +68,52 @@ template <typename List, template <typename> class ContinuationPredicate>
 class Navigator {
  public:
   typedef typename List::Node Node;
-  typedef jfr_iter_direction Direction;
-  Navigator(List& list, Direction direction) :
-    _list(list), _node(direction == forward ? list.head() : list.tail()), _direction(direction) {}
+  Navigator(List& list) : _continuation(list) {}
   bool has_next() const {
-    return ContinuationPredicate<Node>::has_next(_node);
+    return _continuation.has_next();
   }
-
-  bool direction_forward() const {
-    return _direction == forward;
-  }
-
   Node* next() const {
-    assert(_node != NULL, "invariant");
-    Node* temp = _node;
-    _node = direction_forward() ? (Node*)_node->next() : (Node*)_node->prev();
-    return temp;
+    return _continuation.next();
   }
-
-  void set_direction(Direction direction) {
-    _direction = direction;
-  }
-
-  void reset(Direction direction) {
-    set_direction(direction);
-    _node = direction_forward() ? _list.head() : _list.tail();
-  }
-
  private:
-  List& _list;
+  ContinuationPredicate<List> _continuation;
   mutable Node* _node;
-  Direction _direction;
 };
 
 template <typename List>
 class NavigatorStopOnNull : public Navigator<List, StopOnNullCondition> {
  public:
-  NavigatorStopOnNull(List& list, jfr_iter_direction direction = forward) : Navigator<List, StopOnNullCondition>(list, direction) {}
+  NavigatorStopOnNull(List& list) : Navigator<List, StopOnNullCondition>(list) {}
+};
+
+template <typename List>
+class NavigatorStopOnNullRemoval : public Navigator<List, StopOnNullConditionRemoval> {
+public:
+  NavigatorStopOnNullRemoval(List& list) : Navigator<List, StopOnNullConditionRemoval>(list) {}
 };
 
 template<typename List, template <typename> class Navigator, typename AP = StackObj>
 class IteratorHost : public AP {
  private:
   Navigator<List> _navigator;
-
  public:
-  typedef typename List::Node Node;
-  typedef jfr_iter_direction Direction;
-  IteratorHost(List& list, Direction direction = forward) : AP(), _navigator(list, direction) {}
-  void reset(Direction direction = forward) { _navigator.reset(direction); }
+  typedef typename List::NodePtr NodePtr;
+  IteratorHost(List& list) : AP(), _navigator(list) {}
+  void reset() { _navigator.reset(); }
   bool has_next() const { return _navigator.has_next(); }
-  Node* next() const { return _navigator.next(); }
-  void set_direction(Direction direction) { _navigator.set_direction(direction); }
+  NodePtr next() const { return _navigator.next(); }
 };
 
 template<typename List, typename AP = StackObj>
 class StopOnNullIterator : public IteratorHost<List, NavigatorStopOnNull, AP> {
  public:
-  StopOnNullIterator(List& list, jfr_iter_direction direction = forward) : IteratorHost<List, NavigatorStopOnNull, AP>(list, direction) {}
+  StopOnNullIterator(List& list) : IteratorHost<List, NavigatorStopOnNull, AP>(list) {}
+};
+
+template<typename List, typename AP = StackObj>
+class StopOnNullIteratorRemoval : public IteratorHost<List, NavigatorStopOnNullRemoval, AP> {
+public:
+  StopOnNullIteratorRemoval(List& list) : IteratorHost<List, NavigatorStopOnNullRemoval, AP>(list) {}
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRITERATOR_HPP

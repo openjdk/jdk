@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.interfaces.*;
 
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
+
+import sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in non-CRT
@@ -58,27 +59,37 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     private final BigInteger n;         // modulus
     private final BigInteger d;         // private exponent
 
+    private transient final KeyType type;
+
     // optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId.
     // must be null for "RSA" keys.
-    @SuppressWarnings("serial") // Not statically typed as Serializable
-    private final AlgorithmParameterSpec keyParams;
+    private transient final AlgorithmParameterSpec keyParams;
 
     /**
      * Construct a key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
-    RSAPrivateKeyImpl(AlgorithmId rsaId, BigInteger n, BigInteger d)
-            throws InvalidKeyException {
+    RSAPrivateKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,
+            BigInteger n, BigInteger d) throws InvalidKeyException {
+
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), null);
 
         this.n = n;
         this.d = d;
-        this.keyParams = RSAUtil.getParamSpec(rsaId);
 
-        // generate the encoding
-        algid = rsaId;
         try {
+            // validate and generate the algid encoding
+            algid = RSAUtil.createAlgorithmId(type, keyParams);
+        } catch (ProviderException pe) {
+            throw new InvalidKeyException(pe);
+        }
+
+        this.type = type;
+        this.keyParams = keyParams;
+
+        try {
+            // generate the key encoding
             DerOutputStream out = new DerOutputStream();
             out.putInteger(0); // version must be 0
             out.putInteger(n);
@@ -101,7 +112,7 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     // see JCA doc
     @Override
     public String getAlgorithm() {
-        return algid.getName();
+        return type.keyAlgo;
     }
 
     // see JCA doc
@@ -125,7 +136,7 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     // return a string representation of this key for debugging
     @Override
     public String toString() {
-        return "Sun " + getAlgorithm() + " private key, " + n.bitLength()
+        return "Sun " + type.keyAlgo + " private key, " + n.bitLength()
                + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
                + "\n  private exponent: " + d;
     }

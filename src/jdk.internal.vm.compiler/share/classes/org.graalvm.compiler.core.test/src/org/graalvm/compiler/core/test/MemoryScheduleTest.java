@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
@@ -699,16 +700,20 @@ public class MemoryScheduleTest extends GraphScheduleTest {
                 createInliningPhase(canonicalizer).apply(graph, context);
             }
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
-            if (mode == TestMode.WITHOUT_FRAMESTATES || mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
-                graph.clearAllStateAfter();
-            }
-            debug.dump(DebugContext.BASIC_LEVEL, graph, "after removal of framestates");
 
             new FloatingReadPhase().apply(graph);
             new RemoveValueProxyPhase().apply(graph);
 
             MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
             new GuardLoweringPhase().apply(graph, midContext);
+
+            if (mode == TestMode.WITHOUT_FRAMESTATES || mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
+                graph.clearAllStateAfter();
+                // disable stat split verification
+                graph.setGuardsStage(GuardsStage.AFTER_FSA);
+            }
+            debug.dump(DebugContext.BASIC_LEVEL, graph, "after removal of framestates");
+
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER).apply(graph, midContext);
 

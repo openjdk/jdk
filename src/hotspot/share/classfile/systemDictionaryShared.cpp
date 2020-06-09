@@ -61,9 +61,9 @@
 #include "utilities/stringUtils.hpp"
 
 
-objArrayOop SystemDictionaryShared::_shared_protection_domains  =  NULL;
-objArrayOop SystemDictionaryShared::_shared_jar_urls            =  NULL;
-objArrayOop SystemDictionaryShared::_shared_jar_manifests       =  NULL;
+OopHandle SystemDictionaryShared::_shared_protection_domains  =  NULL;
+OopHandle SystemDictionaryShared::_shared_jar_urls            =  NULL;
+OopHandle SystemDictionaryShared::_shared_jar_manifests       =  NULL;
 DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
@@ -460,15 +460,15 @@ static RunTimeSharedDictionary _dynamic_builtin_dictionary;
 static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
 
 oop SystemDictionaryShared::shared_protection_domain(int index) {
-  return _shared_protection_domains->obj_at(index);
+  return ((objArrayOop)_shared_protection_domains.resolve())->obj_at(index);
 }
 
 oop SystemDictionaryShared::shared_jar_url(int index) {
-  return _shared_jar_urls->obj_at(index);
+  return ((objArrayOop)_shared_jar_urls.resolve())->obj_at(index);
 }
 
 oop SystemDictionaryShared::shared_jar_manifest(int index) {
-  return _shared_jar_manifests->obj_at(index);
+  return ((objArrayOop)_shared_jar_manifests.resolve())->obj_at(index);
 }
 
 Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TRAPS) {
@@ -926,30 +926,27 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
   return NULL;
 }
 
-void SystemDictionaryShared::oops_do(OopClosure* f) {
-  f->do_oop((oop*)&_shared_protection_domains);
-  f->do_oop((oop*)&_shared_jar_urls);
-  f->do_oop((oop*)&_shared_jar_manifests);
-}
-
 void SystemDictionaryShared::allocate_shared_protection_domain_array(int size, TRAPS) {
-  if (_shared_protection_domains == NULL) {
-    _shared_protection_domains = oopFactory::new_objArray(
+  if (_shared_protection_domains.resolve() == NULL) {
+    oop spd = oopFactory::new_objArray(
         SystemDictionary::ProtectionDomain_klass(), size, CHECK);
+    _shared_protection_domains = OopHandle::create(spd);
   }
 }
 
 void SystemDictionaryShared::allocate_shared_jar_url_array(int size, TRAPS) {
-  if (_shared_jar_urls == NULL) {
-    _shared_jar_urls = oopFactory::new_objArray(
+  if (_shared_jar_urls.resolve() == NULL) {
+    oop sju = oopFactory::new_objArray(
         SystemDictionary::URL_klass(), size, CHECK);
+    _shared_jar_urls = OopHandle::create(sju);
   }
 }
 
 void SystemDictionaryShared::allocate_shared_jar_manifest_array(int size, TRAPS) {
-  if (_shared_jar_manifests == NULL) {
-    _shared_jar_manifests = oopFactory::new_objArray(
+  if (_shared_jar_manifests.resolve() == NULL) {
+    oop sjm = oopFactory::new_objArray(
         SystemDictionary::Jar_Manifest_klass(), size, CHECK);
+    _shared_jar_manifests = OopHandle::create(sjm);
   }
 }
 

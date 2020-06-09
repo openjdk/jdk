@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
@@ -72,16 +73,15 @@ static ZErrno mremap(uintptr_t from_addr, uintptr_t to_addr, size_t size) {
   return (res == KERN_SUCCESS) ? ZErrno(0) : ZErrno(EINVAL);
 }
 
-ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
     _base(0),
-    _size(0),
     _initialized(false) {
 
   // Reserve address space for backing memory
-  _base = (uintptr_t)os::reserve_memory(MaxHeapSize);
+  _base = (uintptr_t)os::reserve_memory(max_capacity);
   if (_base == 0) {
     // Failed
-    log_error(gc)("Failed to reserve address space for backing memory");
+    log_error_pd(gc)("Failed to reserve address space for backing memory");
     return;
   }
 
@@ -93,15 +93,11 @@ bool ZPhysicalMemoryBacking::is_initialized() const {
   return _initialized;
 }
 
-void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
 }
 
-size_t ZPhysicalMemoryBacking::size() const {
-  return _size;
-}
-
-bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
+bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) const {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
@@ -116,17 +112,11 @@ bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
     return false;
   }
 
-  const size_t end = offset + length;
-  if (end > _size) {
-    // Record new size
-    _size = end;
-  }
-
   // Success
   return true;
 }
 
-size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) const {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -154,7 +144,7 @@ size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
   }
 }
 
-size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) const {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 

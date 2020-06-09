@@ -174,7 +174,6 @@ public:
       rp = NULL;
     }
 
-    _cm->concurrent_scan_code_roots(worker_id, rp);
     _cm->mark_loop(worker_id, _terminator, rp,
                    true, // cancellable
                    ShenandoahStringDedup::is_enabled()); // perform string dedup
@@ -214,6 +213,44 @@ public:
     }
   }
 };
+
+// Process concurrent roots at safepoints
+template <typename T>
+class ShenandoahProcessConcurrentRootsTask : public AbstractGangTask {
+private:
+  ShenandoahConcurrentRootScanner<false /* concurrent */> _rs;
+  ShenandoahConcurrentMark* const _cm;
+  ReferenceProcessor*             _rp;
+public:
+
+  ShenandoahProcessConcurrentRootsTask(ShenandoahConcurrentMark* cm,
+                                       ShenandoahPhaseTimings::Phase phase,
+                                       uint nworkers);
+  void work(uint worker_id);
+};
+
+template <typename T>
+ShenandoahProcessConcurrentRootsTask<T>::ShenandoahProcessConcurrentRootsTask(ShenandoahConcurrentMark* cm,
+                                                                              ShenandoahPhaseTimings::Phase phase,
+                                                                              uint nworkers) :
+  AbstractGangTask("Shenandoah STW Concurrent Mark Task"),
+  _rs(nworkers, phase),
+  _cm(cm),
+  _rp(NULL) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (heap->process_references()) {
+    _rp = heap->ref_processor();
+    shenandoah_assert_rp_isalive_installed();
+  }
+}
+
+template <typename T>
+void ShenandoahProcessConcurrentRootsTask<T>::work(uint worker_id) {
+  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahObjToScanQueue* q = _cm->task_queues()->queue(worker_id);
+  T cl(q, _rp);
+  _rs.oops_do(&cl, worker_id);
+}
 
 class ShenandoahFinalMarkingTask : public AbstractGangTask {
 private:
@@ -267,13 +304,6 @@ public:
       }
     }
 
-    if (heap->is_degenerated_gc_in_progress() || heap->is_full_gc_in_progress()) {
-      // Full GC does not execute concurrent cycle.
-      // Degenerated cycle may bypass concurrent cycle.
-      // So code roots might not be scanned, let's scan here.
-      _cm->concurrent_scan_code_roots(worker_id, rp);
-    }
-
     _cm->mark_loop(worker_id, _terminator, rp,
                    false, // not cancellable
                    _dedup_string);
@@ -308,8 +338,6 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
     ShenandoahInitMarkRootsTask<NONE> mark_roots(&root_proc);
     workers->run_task(&mark_roots);
   }
-
-  clear_claim_codecache();
 }
 
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
@@ -390,34 +418,47 @@ void ShenandoahConcurrentMark::initialize(uint workers) {
   }
 }
 
-void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, ReferenceProcessor* rp) {
-  if (_heap->unload_classes()) {
-    return;
-  }
+// Mark concurrent roots during concurrent phases
+class ShenandoahMarkConcurrentRootsTask : public AbstractGangTask {
+private:
+  SuspendibleThreadSetJoiner         _sts_joiner;
+  ShenandoahConcurrentRootScanner<true /* concurrent */> _rs;
+  ShenandoahObjToScanQueueSet* const _queue_set;
+  ReferenceProcessor* const          _rp;
 
-  if (claim_codecache()) {
-    ShenandoahObjToScanQueue* q = task_queues()->queue(worker_id);
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    // TODO: We can not honor StringDeduplication here, due to lock ranking
-    // inversion. So, we may miss some deduplication candidates.
-    if (_heap->has_forwarded_objects()) {
-      ShenandoahMarkResolveRefsClosure cl(q, rp);
-      CodeBlobToOopClosure blobs(&cl, !CodeBlobToOopClosure::FixRelocations);
-      CodeCache::blobs_do(&blobs);
-    } else {
-      ShenandoahMarkRefsClosure cl(q, rp);
-      CodeBlobToOopClosure blobs(&cl, !CodeBlobToOopClosure::FixRelocations);
-      CodeCache::blobs_do(&blobs);
-    }
-  }
+public:
+  ShenandoahMarkConcurrentRootsTask(ShenandoahObjToScanQueueSet* qs,
+                                    ReferenceProcessor* rp,
+                                    ShenandoahPhaseTimings::Phase phase,
+                                    uint nworkers);
+  void work(uint worker_id);
+};
+
+ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahObjToScanQueueSet* qs,
+                                                                     ReferenceProcessor* rp,
+                                                                     ShenandoahPhaseTimings::Phase phase,
+                                                                     uint nworkers) :
+  AbstractGangTask("Shenandoah Concurrent Mark Task"),
+  _rs(nworkers, phase),
+  _queue_set(qs),
+  _rp(rp) {
+  assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
+}
+
+void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
+  ShenandoahMarkResolveRefsClosure cl(q, _rp);
+  _rs.oops_do(&cl, worker_id);
 }
 
 void ShenandoahConcurrentMark::mark_from_roots() {
   WorkGang* workers = _heap->workers();
   uint nworkers = workers->active_workers();
 
+  ReferenceProcessor* rp = NULL;
   if (_heap->process_references()) {
-    ReferenceProcessor* rp = _heap->ref_processor();
+    rp = _heap->ref_processor();
     rp->set_active_mt_degree(nworkers);
 
     // enable ("weak") refs discovery
@@ -430,6 +471,13 @@ void ShenandoahConcurrentMark::mark_from_roots() {
   ReferenceProcessorIsAliveMutator fix_isalive(_heap->ref_processor(), is_alive.is_alive_closure());
 
   task_queues()->reserve(nworkers);
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_mark_roots);
+    // Use separate task to mark concurrent roots, since it may hold ClassLoaderData_lock and CodeCache_lock
+    ShenandoahMarkConcurrentRootsTask task(task_queues(), rp, ShenandoahPhaseTimings::conc_mark_roots, nworkers);
+    workers->run_task(&task);
+  }
 
   {
     TaskTerminator terminator(nworkers, task_queues());
@@ -445,30 +493,50 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
 
   uint nworkers = _heap->workers()->active_workers();
 
-  // Finally mark everything else we've got in our queues during the previous steps.
-  // It does two different things for concurrent vs. mark-compact GC:
-  // - For concurrent GC, it starts with empty task queues, drains the remaining
-  //   SATB buffers, and then completes the marking closure.
-  // - For mark-compact GC, it starts out with the task queues seeded by initial
-  //   root scan, and completes the closure, thus marking through all live objects
-  // The implementation is the same, so it's shared here.
   {
-    ShenandoahGCPhase phase(full_gc ?
-                            ShenandoahPhaseTimings::full_gc_mark_finish_queues :
-                            ShenandoahPhaseTimings::finish_queues);
-    task_queues()->reserve(nworkers);
-
     shenandoah_assert_rp_isalive_not_installed();
     ShenandoahIsAliveSelector is_alive;
     ReferenceProcessorIsAliveMutator fix_isalive(_heap->ref_processor(), is_alive.is_alive_closure());
 
-    StrongRootsScope scope(nworkers);
-    TaskTerminator terminator(nworkers, task_queues());
-    ShenandoahFinalMarkingTask task(this, &terminator, ShenandoahStringDedup::is_enabled());
-    _heap->workers()->run_task(&task);
-  }
+    // Full GC does not execute concurrent cycle. Degenerated cycle may bypass concurrent cycle.
+    // In those cases, concurrent roots might not be scanned, scan them here. Ideally, this
+    // should piggyback to ShenandoahFinalMarkingTask, but it makes time tracking very hard.
+    // Given full GC and degenerated GC are rare, use a separate task.
+    if (_heap->is_degenerated_gc_in_progress() || _heap->is_full_gc_in_progress()) {
+      ShenandoahPhaseTimings::Phase phase = _heap->is_full_gc_in_progress() ?
+                                            ShenandoahPhaseTimings::full_gc_scan_conc_roots :
+                                            ShenandoahPhaseTimings::degen_gc_scan_conc_roots;
+      ShenandoahGCPhase gc_phase(phase);
+      if (_heap->has_forwarded_objects()) {
+        ShenandoahProcessConcurrentRootsTask<ShenandoahMarkResolveRefsClosure> task(this, phase, nworkers);
+        _heap->workers()->run_task(&task);
+      } else {
+        ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure> task(this, phase, nworkers);
+        _heap->workers()->run_task(&task);
+      }
+    }
 
-  assert(task_queues()->is_empty(), "Should be empty");
+    // Finally mark everything else we've got in our queues during the previous steps.
+    // It does two different things for concurrent vs. mark-compact GC:
+    // - For concurrent GC, it starts with empty task queues, drains the remaining
+    //   SATB buffers, and then completes the marking closure.
+    // - For mark-compact GC, it starts out with the task queues seeded by initial
+    //   root scan, and completes the closure, thus marking through all live objects
+    // The implementation is the same, so it's shared here.
+    {
+      ShenandoahGCPhase phase(full_gc ?
+                              ShenandoahPhaseTimings::full_gc_mark_finish_queues :
+                              ShenandoahPhaseTimings::finish_queues);
+      task_queues()->reserve(nworkers);
+
+      StrongRootsScope scope(nworkers);
+      TaskTerminator terminator(nworkers, task_queues());
+      ShenandoahFinalMarkingTask task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      _heap->workers()->run_task(&task);
+    }
+
+    assert(task_queues()->is_empty(), "Should be empty");
+  }
 
   // When we're done marking everything, we process weak references.
   if (_heap->process_references()) {
@@ -941,12 +1009,4 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, ShenandoahLiveData* live_da
       if (terminator->offer_termination(&tt)) return;
     }
   }
-}
-
-bool ShenandoahConcurrentMark::claim_codecache() {
-  return _claimed_codecache.try_set();
-}
-
-void ShenandoahConcurrentMark::clear_claim_codecache() {
-  _claimed_codecache.unset();
 }

@@ -70,11 +70,11 @@ import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.InfopointReason;
-import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.InvokeTarget;
 import jdk.vm.ci.meta.JavaConstant;
@@ -246,8 +246,12 @@ public class CompilationResultBuilder {
         compilationResult.setMaxInterpreterFrameSize(maxInterpreterFrameSize);
     }
 
-    public Mark recordMark(Object id) {
-        return compilationResult.recordMark(asm.position(), id);
+    public CompilationResult.CodeMark recordMark(CompilationResult.MarkId id) {
+        CompilationResult.CodeMark mark = compilationResult.recordMark(asm.position(), id);
+        if (currentCallContext != null) {
+            currentCallContext.recordMark(mark);
+        }
+        return mark;
     }
 
     public void blockComment(String s) {
@@ -308,7 +312,10 @@ public class CompilationResultBuilder {
 
     public void recordDirectCall(int posBefore, int posAfter, InvokeTarget callTarget, LIRFrameState info) {
         DebugInfo debugInfo = info != null ? info.debugInfo() : null;
-        compilationResult.recordCall(posBefore, posAfter - posBefore, callTarget, debugInfo, true);
+        Call call = compilationResult.recordCall(posBefore, posAfter - posBefore, callTarget, debugInfo, true);
+        if (currentCallContext != null) {
+            currentCallContext.recordCall(call);
+        }
     }
 
     public void recordIndirectCall(int posBefore, int posAfter, InvokeTarget callTarget, LIRFrameState info) {
@@ -687,5 +694,39 @@ public class CompilationResultBuilder {
             }
         }
         return false;
+    }
+
+    private CallContext currentCallContext;
+
+    public final class CallContext implements AutoCloseable {
+        private CompilationResult.CodeMark mark;
+        private Call call;
+
+        @Override
+        public void close() {
+            currentCallContext = null;
+            compilationResult.recordCallContext(mark, call);
+        }
+
+        void recordCall(Call c) {
+            assert this.call == null : "Recording call twice";
+            this.call = c;
+        }
+
+        void recordMark(CompilationResult.CodeMark m) {
+            assert this.mark == null : "Recording mark twice";
+            this.mark = m;
+        }
+    }
+
+    public CallContext openCallContext(boolean direct) {
+        if (currentCallContext != null) {
+            throw GraalError.shouldNotReachHere("Call context already open");
+        }
+        // Currently only AOT requires call context information and only for direct calls.
+        if (compilationResult.isImmutablePIC() && direct) {
+            currentCallContext = new CallContext();
+        }
+        return currentCallContext;
     }
 }

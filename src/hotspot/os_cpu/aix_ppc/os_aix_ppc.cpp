@@ -438,25 +438,28 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
 
       // stop on request
       else if (sig == SIGTRAP && (stop_type = nativeInstruction_at(pc)->get_stop_type()) != -1) {
-        const char *msg = NULL,
-                   *detail_msg = (const char*)(uc->uc_mcontext.jmp_context.gpr[0]);
+        bool msg_present = (stop_type & MacroAssembler::stop_msg_present);
+        stop_type = (stop_type &~ MacroAssembler::stop_msg_present);
+
+        const char *msg = NULL;
         switch (stop_type) {
-          case MacroAssembler::stop_stop              :  msg = "stop"; break;
-          case MacroAssembler::stop_untested          :  msg = "untested"; break;
-          case MacroAssembler::stop_unimplemented     :  msg = "unimplemented"; break;
-          case MacroAssembler::stop_shouldnotreachhere:  msg = "shouldnotreachhere"; detail_msg = NULL; break;
+          case MacroAssembler::stop_stop              : msg = "stop"; break;
+          case MacroAssembler::stop_untested          : msg = "untested"; break;
+          case MacroAssembler::stop_unimplemented     : msg = "unimplemented"; break;
+          case MacroAssembler::stop_shouldnotreachhere: msg = "shouldnotreachhere"; break;
           default: msg = "unknown"; break;
         }
-        if (detail_msg == NULL) {
-          detail_msg = "no details provided";
-        }
+
+        const char **detail_msg_ptr = (const char**)(pc + 4);
+        const char *detail_msg = msg_present ? *detail_msg_ptr : "no details provided";
 
         if (TraceTraps) {
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
         va_list detail_args;
-        VMError::report_and_die(t, ucVoid, NULL, 0, msg, detail_msg, detail_args);
+        VMError::report_and_die(INTERNAL_ERROR, msg, detail_msg, detail_args, thread,
+                                pc, info, ucVoid, NULL, 0, 0);
         va_end(detail_args);
       }
 

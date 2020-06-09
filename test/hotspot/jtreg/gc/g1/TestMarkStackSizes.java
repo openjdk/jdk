@@ -25,7 +25,6 @@ package gc.g1;
 
 /*
  * @test TestMarkStackSizes
- * @key gc regression
  * @bug 8238855
  * @summary Consistency checks for marking flag related options.
  * @requires vm.gc.G1

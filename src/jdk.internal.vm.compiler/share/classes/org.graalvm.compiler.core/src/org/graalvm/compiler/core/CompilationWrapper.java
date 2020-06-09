@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureA
 import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
 import static org.graalvm.compiler.core.GraalCompilerOptions.MaxCompilationProblemsPerAction;
 import static org.graalvm.compiler.core.common.GraalOptions.TrackNodeSourcePosition;
-import static org.graalvm.compiler.debug.DebugContext.VERBOSE_LEVEL;
 import static org.graalvm.compiler.debug.DebugOptions.Dump;
 import static org.graalvm.compiler.debug.DebugOptions.DumpPath;
 import static org.graalvm.compiler.debug.DebugOptions.MethodFilter;
@@ -43,6 +42,7 @@ import java.io.PrintStream;
 import java.util.Map;
 
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
 import org.graalvm.compiler.debug.PathUtilities;
 import org.graalvm.compiler.debug.TTY;
@@ -276,7 +276,7 @@ public abstract class CompilationWrapper<T> {
                 }
 
                 OptionValues retryOptions = new OptionValues(initialOptions,
-                                Dump, ":" + VERBOSE_LEVEL,
+                                Dump, ":" + DebugOptions.DiagnoseDumpLevel.getValue(initialOptions),
                                 MethodFilter, null,
                                 DumpPath, dumpPath.getPath(),
                                 TrackNodeSourcePosition, true);

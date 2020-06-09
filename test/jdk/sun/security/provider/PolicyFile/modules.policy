@@ -7,8 +7,6 @@ grant {
     permission javax.security.auth.AuthPermission "doAsPrivileged";
     permission javax.security.auth.PrivateCredentialPermission "* * \"*\"",
                                                                "read";
-    // java.base module (@jdk.Exported Permissions)
-    permission jdk.net.NetworkPermission "setOption.SO_FLOW_SLA";
     // java.desktop module
     permission java.awt.AWTPermission "createRobot";
     permission javax.sound.sampled.AudioPermission "play";

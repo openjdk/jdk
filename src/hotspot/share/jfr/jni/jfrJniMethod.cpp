@@ -38,12 +38,13 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
-#include "jfr/jni/jfrGetAllEventClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/support/jfrJdkJfrEvent.hpp"
+#include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -163,7 +164,7 @@ NO_TRANSITION(jlong, jfr_get_epoch_address(JNIEnv* env, jobject jvm))
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm))
-  return JfrEventClasses::unloaded_event_classes_count();
+  return JfrKlassUnloading::event_class_count();
 NO_TRANSITION_END
 
 NO_TRANSITION(jdouble, jfr_time_conv_factor(JNIEnv* env, jobject jvm))
@@ -234,11 +235,11 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_emit_event(JNIEnv* env, jobject jvm, jlong eventT
 JVM_END
 
 JVM_ENTRY_NO_ENV(jobject, jfr_get_all_event_classes(JNIEnv* env, jobject jvm))
-  return JfrEventClasses::get_all_event_classes(thread);
+  return JdkJfrEvent::get_all_klasses(thread);
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_class_id(JNIEnv* env, jclass jvm, jclass jc))
-  return JfrTraceId::use(jc);
+  return JfrTraceId::load(jc);
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip))
@@ -311,7 +312,7 @@ JVM_ENTRY_NO_ENV(void, jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_type_id(JNIEnv* env, jobject jvm, jclass jc))
-  return JfrTraceId::get(jc);
+  return JfrTraceId::load_raw(jc);
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_add_string_constant(JNIEnv* env, jclass jvm, jboolean epoch, jlong id, jstring string))

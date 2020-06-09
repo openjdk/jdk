@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ import org.graalvm.compiler.lir.alloc.lsra.Interval.SpillState;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan.BlockData;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
+import org.graalvm.compiler.lir.util.IndexedValueMap;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterArray;
@@ -71,7 +72,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.lir.util.IndexedValueMap;
 
 public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
 
@@ -160,8 +160,17 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
     @SuppressWarnings("try")
     void computeLocalLiveSets() {
         int liveSize = allocator.liveSetSize();
-
-        intervalInLoop = new BitMap2D(allocator.operandSize(), allocator.numLoops());
+        int variables = allocator.operandSize();
+        int loops = allocator.numLoops();
+        long nBits = (long) variables * loops;
+        try {
+            if (nBits > Integer.MAX_VALUE) {
+                throw new OutOfMemoryError();
+            }
+            intervalInLoop = new BitMap2D(variables, loops);
+        } catch (OutOfMemoryError e) {
+            throw new PermanentBailoutException(e, "Cannot handle %d variables in %d loops", variables, loops);
+        }
 
         try {
             final BitSet liveGenScratch = new BitSet(liveSize);
@@ -390,8 +399,22 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                 if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
                     reportFailure(numBlocks);
                 }
+                BitSet bs = allocator.getBlockData(startBlock).liveIn;
+                StringBuilder sb = new StringBuilder();
+                for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
+                    int variableNumber = allocator.getVariableNumber(i);
+                    if (variableNumber >= 0) {
+                        sb.append("v").append(variableNumber);
+                    } else {
+                        sb.append(allocator.getRegisters().get(i));
+                    }
+                    sb.append(System.lineSeparator());
+                    if (i == Integer.MAX_VALUE) {
+                        break;
+                    }
+                }
                 // bailout if this occurs in product mode.
-                throw new GraalError("liveIn set of first block must be empty: " + allocator.getBlockData(startBlock).liveIn);
+                throw new GraalError("liveIn set of first block must be empty: " + allocator.getBlockData(startBlock).liveIn + " Live operands:" + sb.toString());
             }
         }
     }

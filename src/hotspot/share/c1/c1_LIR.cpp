@@ -236,30 +236,27 @@ void LIR_Op2::verify() const {
 }
 
 
-LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BasicType type, BlockBegin* block)
+LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BlockBegin* block)
   : LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
   , _cond(cond)
-  , _type(type)
   , _label(block->label())
   , _block(block)
   , _ublock(NULL)
   , _stub(NULL) {
 }
 
-LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BasicType type, CodeStub* stub) :
+LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, CodeStub* stub) :
   LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
   , _cond(cond)
-  , _type(type)
   , _label(stub->entry())
   , _block(NULL)
   , _ublock(NULL)
   , _stub(stub) {
 }
 
-LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BasicType type, BlockBegin* block, BlockBegin* ublock)
+LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BlockBegin* block, BlockBegin* ublock)
   : LIR_Op(lir_cond_float_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
   , _cond(cond)
-  , _type(type)
   , _label(block->label())
   , _block(block)
   , _ublock(ublock)
@@ -1403,7 +1400,7 @@ void LIR_List::null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_nu
     // Emit an explicit null check and deoptimize if opr is null
     CodeStub* deopt = new DeoptimizeStub(info, Deoptimization::Reason_null_check, Deoptimization::Action_none);
     cmp(lir_cond_equal, opr, LIR_OprFact::oopConst(NULL));
-    branch(lir_cond_equal, T_OBJECT, deopt);
+    branch(lir_cond_equal, deopt);
   } else {
     // Emit an implicit null check
     append(new LIR_Op1(lir_null_check, opr, info));

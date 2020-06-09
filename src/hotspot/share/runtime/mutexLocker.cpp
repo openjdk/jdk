@@ -61,6 +61,7 @@ Mutex*   SymbolArena_lock             = NULL;
 Monitor* StringDedupQueue_lock        = NULL;
 Mutex*   StringDedupTable_lock        = NULL;
 Monitor* CodeCache_lock               = NULL;
+Monitor* CodeSweeper_lock             = NULL;
 Mutex*   MethodData_lock              = NULL;
 Mutex*   TouchedMethodLog_lock        = NULL;
 Mutex*   RetData_lock                 = NULL;
@@ -232,8 +233,9 @@ void mutex_init() {
     def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  _safepoint_check_never);
     def(StringDedupTable_lock      , PaddedMutex  , leaf + 1,    true,  _safepoint_check_never);
   }
-  def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  _safepoint_check_always);
+  def(ParGCRareEvent_lock          , PaddedMutex  , leaf,        true,  _safepoint_check_always);
   def(CodeCache_lock               , PaddedMonitor, special,     true,  _safepoint_check_never);
+  def(CodeSweeper_lock             , PaddedMonitor, special-2,   true,  _safepoint_check_never);
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for oop_map_cache allocation.
 

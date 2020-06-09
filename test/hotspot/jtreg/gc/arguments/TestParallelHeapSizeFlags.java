@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestParallelHeapSizeFlags
- * @key gc
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the
  * parallel collectors.

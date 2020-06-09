@@ -42,7 +42,7 @@ import java.util.Random;
 
 /**
  * @test TestUnifiedLoggingSwitchStress
- * @key gc stress randomness
+ * @key stress randomness
  * @summary Switches gc log level on fly while stressing memory/gc
  * @requires !vm.flightRecorder
  * @requires vm.gc != "Z"

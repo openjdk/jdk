@@ -27,19 +27,23 @@
 # It also contains test-suite configuration information.
 
 # The list of keywords supported in this test suite
+# stress:               stress/slow test
+# headful:              test can be run only on headful host
+# intermittent:         flaky test, known to fail intermittently
 # randomness:           test uses randomness, test cases differ from run to run
-keys=cte_test jcmd nmt regression gc stress metaspace headful intermittent randomness
+keys=stress headful intermittent randomness
 
 groups=TEST.groups TEST.quick-groups
 
 # Source files for classes that will be used at the beginning of each test suite run,
 # to determine additional characteristics of the system for use with the @requires tag.
-# Note: compiled bootlibs code will be located in the folder 'bootClasses'
+# Note: compiled bootlibs classes will be added to BCP.
 requires.extraPropDefns = ../../jtreg-ext/requires/VMProps.java
-requires.extraPropDefns.bootlibs = ../../lib/sun \
+requires.extraPropDefns.bootlibs = ../../lib/sun
+requires.extraPropDefns.libs = \
     ../../lib/jdk/test/lib/Platform.java \
     ../../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:bootClasses
+requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
 requires.properties= \
     sun.arch.data.model \
     vm.simpleArch \

@@ -27,6 +27,7 @@ package org.graalvm.compiler.virtual.phases.ea;
 import java.util.Arrays;
 import java.util.List;
 
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -134,7 +135,7 @@ public class ObjectState {
         return j - valuePos;
     }
 
-    public EscapeObjectState createEscapeObjectState(DebugContext debug, VirtualObjectNode virtual) {
+    public EscapeObjectState createEscapeObjectState(DebugContext debug, MetaAccessExtensionProvider metaAccessExtensionProvider, VirtualObjectNode virtual) {
         GET_ESCAPED_OBJECT_STATE.increment(debug);
         if (cachedState == null) {
             CREATE_ESCAPED_OBJECT_STATE.increment(debug);
@@ -147,7 +148,7 @@ public class ObjectState {
                  */
                 ValueNode[] newEntries = entries.clone();
                 for (int i = 0; i < newEntries.length; i++) {
-                    if (newEntries[i].asJavaConstant() == JavaConstant.defaultForKind(virtual.entryKind(i).getStackKind())) {
+                    if (newEntries[i].asJavaConstant() == JavaConstant.defaultForKind(virtual.entryKind(metaAccessExtensionProvider, i).getStackKind())) {
                         newEntries[i] = null;
                     }
                 }

@@ -28,6 +28,12 @@ import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
+
+import static org.graalvm.compiler.api.directives.GraalDirectives.LIKELY_PROBABILITY;
+import static org.graalvm.compiler.api.directives.GraalDirectives.UNLIKELY_PROBABILITY;
+import static org.graalvm.compiler.api.directives.GraalDirectives.SLOWPATH_PROBABILITY;
+import static org.graalvm.compiler.api.directives.GraalDirectives.injectBranchProbability;
+
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -116,26 +122,30 @@ public class AMD64StringUTF16Substitutions {
 
     @MethodSubstitution
     public static int indexOfUnsafe(byte[] source, int sourceCount, byte[] target, int targetCount, int fromIndex) {
-        ReplacementsUtil.runtimeAssert(fromIndex >= 0, "StringUTF16.indexOfUnsafe invalid args: fromIndex negative");
-        ReplacementsUtil.runtimeAssert(targetCount > 0, "StringUTF16.indexOfUnsafe invalid args: targetCount <= 0");
-        ReplacementsUtil.runtimeAssert(targetCount <= length(target), "StringUTF16.indexOfUnsafe invalid args: targetCount > length(target)");
-        ReplacementsUtil.runtimeAssert(sourceCount >= targetCount, "StringUTF16.indexOfUnsafe invalid args: sourceCount < targetCount");
+        ReplacementsUtil.dynamicAssert(fromIndex >= 0, "StringUTF16.indexOfUnsafe invalid args: fromIndex negative");
+        ReplacementsUtil.dynamicAssert(targetCount > 0, "StringUTF16.indexOfUnsafe invalid args: targetCount <= 0");
+        ReplacementsUtil.dynamicAssert(targetCount <= length(target), "StringUTF16.indexOfUnsafe invalid args: targetCount > length(target)");
+        ReplacementsUtil.dynamicAssert(sourceCount >= targetCount, "StringUTF16.indexOfUnsafe invalid args: sourceCount < targetCount");
         if (targetCount == 1) {
             return AMD64ArrayIndexOf.indexOf1Char(source, sourceCount, fromIndex, StringUTF16Substitutions.getChar(target, 0));
         } else {
             int haystackLength = sourceCount - (targetCount - 2);
             int offset = fromIndex;
-            while (offset < haystackLength) {
+            while (injectBranchProbability(LIKELY_PROBABILITY, offset < haystackLength)) {
                 int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveChars(source, haystackLength, offset, StringUTF16Substitutions.getChar(target, 0),
                                 StringUTF16Substitutions.getChar(target, 1));
-                if (indexOfResult < 0) {
+                if (injectBranchProbability(UNLIKELY_PROBABILITY, indexOfResult < 0)) {
                     return -1;
                 }
                 offset = indexOfResult;
-                Pointer cmpSourcePointer = charOffsetPointer(source, offset);
-                Pointer targetPointer = pointer(target);
-                if (targetCount == 2 || ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char)) {
+                if (injectBranchProbability(UNLIKELY_PROBABILITY, targetCount == 2)) {
                     return offset;
+                } else {
+                    Pointer cmpSourcePointer = charOffsetPointer(source, offset);
+                    Pointer targetPointer = pointer(target);
+                    if (injectBranchProbability(UNLIKELY_PROBABILITY, ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char))) {
+                        return offset;
+                    }
                 }
                 offset++;
             }
@@ -145,25 +155,29 @@ public class AMD64StringUTF16Substitutions {
 
     @MethodSubstitution
     public static int indexOfLatin1Unsafe(byte[] source, int sourceCount, byte[] target, int targetCount, int fromIndex) {
-        ReplacementsUtil.runtimeAssert(fromIndex >= 0, "StringUTF16.indexOfLatin1Unsafe invalid args: fromIndex negative");
-        ReplacementsUtil.runtimeAssert(targetCount > 0, "StringUTF16.indexOfLatin1Unsafe invalid args: targetCount <= 0");
-        ReplacementsUtil.runtimeAssert(targetCount <= target.length, "StringUTF16.indexOfLatin1Unsafe invalid args: targetCount > length(target)");
-        ReplacementsUtil.runtimeAssert(sourceCount >= targetCount, "StringUTF16.indexOfLatin1Unsafe invalid args: sourceCount < targetCount");
+        ReplacementsUtil.dynamicAssert(fromIndex >= 0, "StringUTF16.indexOfLatin1Unsafe invalid args: fromIndex negative");
+        ReplacementsUtil.dynamicAssert(targetCount > 0, "StringUTF16.indexOfLatin1Unsafe invalid args: targetCount <= 0");
+        ReplacementsUtil.dynamicAssert(targetCount <= target.length, "StringUTF16.indexOfLatin1Unsafe invalid args: targetCount > length(target)");
+        ReplacementsUtil.dynamicAssert(sourceCount >= targetCount, "StringUTF16.indexOfLatin1Unsafe invalid args: sourceCount < targetCount");
         if (targetCount == 1) {
             return AMD64ArrayIndexOf.indexOf1Char(source, sourceCount, fromIndex, (char) Byte.toUnsignedInt(target[0]));
         } else {
             int haystackLength = sourceCount - (targetCount - 2);
             int offset = fromIndex;
-            while (offset < haystackLength) {
+            while (injectBranchProbability(LIKELY_PROBABILITY, offset < haystackLength)) {
                 int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveChars(source, haystackLength, offset, (char) Byte.toUnsignedInt(target[0]), (char) Byte.toUnsignedInt(target[1]));
-                if (indexOfResult < 0) {
+                if (injectBranchProbability(UNLIKELY_PROBABILITY, indexOfResult < 0)) {
                     return -1;
                 }
                 offset = indexOfResult;
-                Pointer cmpSourcePointer = charOffsetPointer(source, offset);
-                Pointer targetPointer = pointer(target);
-                if (targetCount == 2 || ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char, JavaKind.Byte)) {
+                if (injectBranchProbability(UNLIKELY_PROBABILITY, targetCount == 2)) {
                     return offset;
+                } else {
+                    Pointer cmpSourcePointer = charOffsetPointer(source, offset);
+                    Pointer targetPointer = pointer(target);
+                    if (injectBranchProbability(UNLIKELY_PROBABILITY, ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char, JavaKind.Byte))) {
+                        return offset;
+                    }
                 }
                 offset++;
             }
@@ -210,7 +224,11 @@ public class AMD64StringUTF16Substitutions {
     }
 
     private static void checkLimits(int srcLen, int srcIndex, int destLen, int destIndex, int len) {
-        if (len < 0 || srcIndex < 0 || (srcIndex + len > srcLen) || destIndex < 0 || (destIndex + len > destLen)) {
+        if (injectBranchProbability(SLOWPATH_PROBABILITY, len < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, srcIndex < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, srcIndex + len > srcLen) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, destIndex < 0) ||
+                        injectBranchProbability(SLOWPATH_PROBABILITY, destIndex + len > destLen)) {
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
         }
     }

@@ -32,7 +32,6 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -121,141 +120,8 @@ public final class StringConcatFactory {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
-    /**
-     * Parses the recipe string, and produces a traversable collection of
-     * {@link java.lang.invoke.StringConcatFactory.RecipeElement}-s for generator
-     * strategies. Notably, this class parses out the constants from the recipe
-     * and from other static arguments.
-     */
-    private static final class Recipe {
-        private final List<RecipeElement> elements;
-
-        public Recipe(String src, Object[] constants) {
-            List<RecipeElement> el = new ArrayList<>();
-
-            int constC = 0;
-            int argC = 0;
-
-            StringBuilder acc = new StringBuilder();
-
-            for (int i = 0; i < src.length(); i++) {
-                char c = src.charAt(i);
-
-                if (c == TAG_CONST || c == TAG_ARG) {
-                    // Detected a special tag, flush all accumulated characters
-                    // as a constant first:
-                    if (acc.length() > 0) {
-                        el.add(new RecipeElement(acc.toString()));
-                        acc.setLength(0);
-                    }
-                    if (c == TAG_CONST) {
-                        Object cnst = constants[constC++];
-                        el.add(new RecipeElement(cnst));
-                    } else if (c == TAG_ARG) {
-                        el.add(new RecipeElement(argC++));
-                    }
-                } else {
-                    // Not a special character, this is a constant embedded into
-                    // the recipe itself.
-                    acc.append(c);
-                }
-            }
-
-            // Flush the remaining characters as constant:
-            if (acc.length() > 0) {
-                el.add(new RecipeElement(acc.toString()));
-            }
-
-            elements = el;
-        }
-
-        public List<RecipeElement> getElements() {
-            return elements;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Recipe recipe = (Recipe) o;
-            return elements.equals(recipe.elements);
-        }
-
-        @Override
-        public String toString() {
-            return "Recipe{" +
-                    "elements=" + elements +
-                    '}';
-        }
-
-        @Override
-        public int hashCode() {
-            return elements.hashCode();
-        }
-    }
-
-    private static final class RecipeElement {
-        private final String value;
-        private final int argPos;
-        private final char tag;
-
-        public RecipeElement(Object cnst) {
-            this.value = String.valueOf(Objects.requireNonNull(cnst));
-            this.argPos = -1;
-            this.tag = TAG_CONST;
-        }
-
-        public RecipeElement(int arg) {
-            this.value = null;
-            this.argPos = arg;
-            this.tag = TAG_ARG;
-        }
-
-        public String getValue() {
-            assert (tag == TAG_CONST);
-            return value;
-        }
-
-        public int getArgPos() {
-            assert (tag == TAG_ARG);
-            return argPos;
-        }
-
-        public char getTag() {
-            return tag;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            RecipeElement that = (RecipeElement) o;
-
-            if (this.tag != that.tag) return false;
-            if (this.tag == TAG_CONST && (!value.equals(that.value))) return false;
-            if (this.tag == TAG_ARG && (argPos != that.argPos)) return false;
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return "RecipeElement{" +
-                    "value='" + value + '\'' +
-                    ", argPos=" + argPos +
-                    ", tag=" + tag +
-                    '}';
-        }
-
-        @Override
-        public int hashCode() {
-            return (int)tag;
-        }
-    }
-
     // StringConcatFactory bootstrap methods are startup sensitive, and may be
-    // special cased in java.lang.invokeBootstrapMethodInvoker to ensure
+    // special cased in java.lang.invoke.BootstrapMethodInvoker to ensure
     // methods are invoked with exact type information to avoid generating
     // code for runtime checks. Take care any changes or additions here are
     // reflected there as appropriate.
@@ -332,7 +198,12 @@ public final class StringConcatFactory {
     public static CallSite makeConcat(MethodHandles.Lookup lookup,
                                       String name,
                                       MethodType concatType) throws StringConcatException {
-        return doStringConcat(lookup, name, concatType, true, null);
+        // This bootstrap method is unlikely to be used in practice,
+        // avoid optimizing it at the expense of makeConcatWithConstants
+
+        // Mock the recipe to reuse the concat generator code
+        String recipe = "\u0001".repeat(concatType.parameterCount());
+        return makeConcatWithConstants(lookup, name, concatType, recipe);
     }
 
     /**
@@ -450,16 +321,9 @@ public final class StringConcatFactory {
                                                    String name,
                                                    MethodType concatType,
                                                    String recipe,
-                                                   Object... constants) throws StringConcatException {
-        return doStringConcat(lookup, name, concatType, false, recipe, constants);
-    }
-
-    private static CallSite doStringConcat(MethodHandles.Lookup lookup,
-                                           String name,
-                                           MethodType concatType,
-                                           boolean generateRecipe,
-                                           String recipe,
-                                           Object... constants) throws StringConcatException {
+                                                   Object... constants)
+        throws StringConcatException
+    {
         Objects.requireNonNull(lookup, "Lookup is null");
         Objects.requireNonNull(name, "Name is null");
         Objects.requireNonNull(concatType, "Concat type is null");
@@ -474,40 +338,7 @@ public final class StringConcatFactory {
                     lookup.lookupClass().getName());
         }
 
-        int cCount = 0;
-        int oCount = 0;
-        if (generateRecipe) {
-            // Mock the recipe to reuse the concat generator code
-            char[] value = new char[concatType.parameterCount()];
-            Arrays.fill(value, TAG_ARG);
-            recipe = new String(value);
-            oCount = concatType.parameterCount();
-        } else {
-            Objects.requireNonNull(recipe, "Recipe is null");
-
-            for (int i = 0; i < recipe.length(); i++) {
-                char c = recipe.charAt(i);
-                if (c == TAG_CONST) cCount++;
-                if (c == TAG_ARG)   oCount++;
-            }
-        }
-
-        if (oCount != concatType.parameterCount()) {
-            throw new StringConcatException(
-                    "Mismatched number of concat arguments: recipe wants " +
-                            oCount +
-                            " arguments, but signature provides " +
-                            concatType.parameterCount());
-        }
-
-        if (cCount != constants.length) {
-            throw new StringConcatException(
-                    "Mismatched number of concat constants: recipe wants " +
-                            cCount +
-                            " constants, but only " +
-                            constants.length +
-                            " are passed");
-        }
+        List<String> elements = parseRecipe(concatType, recipe, constants);
 
         if (!concatType.returnType().isAssignableFrom(String.class)) {
             throw new StringConcatException(
@@ -522,22 +353,90 @@ public final class StringConcatFactory {
                     MAX_INDY_CONCAT_ARG_SLOTS);
         }
 
-        Recipe rec = new Recipe(recipe, constants);
-        MethodHandle mh = generate(lookup, concatType, rec);
-        return new ConstantCallSite(mh.asType(concatType));
-    }
-
-    private static MethodHandle generate(Lookup lookup, MethodType mt, Recipe recipe) throws StringConcatException {
         try {
-            return generateMHInlineCopy(mt, recipe);
-        } catch (Error | StringConcatException e) {
-            // Pass through any error or existing StringConcatException
+            return new ConstantCallSite(
+                    generateMHInlineCopy(concatType, elements)
+                            .viewAsType(concatType, true));
+        } catch (Error e) {
+            // Pass through any error
             throw e;
         } catch (Throwable t) {
             throw new StringConcatException("Generator failed", t);
         }
     }
 
+    private static List<String> parseRecipe(MethodType concatType,
+                                            String recipe,
+                                            Object[] constants)
+        throws StringConcatException
+    {
+
+        Objects.requireNonNull(recipe, "Recipe is null");
+        // Element list containing String constants, or null for arguments
+        List<String> elements = new ArrayList<>();
+
+        int cCount = 0;
+        int oCount = 0;
+
+        StringBuilder acc = new StringBuilder();
+
+        for (int i = 0; i < recipe.length(); i++) {
+            char c = recipe.charAt(i);
+
+            if (c == TAG_CONST) {
+                if (cCount == constants.length) {
+                    // Not enough constants
+                    throw constantMismatch(constants, cCount);
+                }
+                // Accumulate constant args along with any constants encoded
+                // into the recipe
+                acc.append(constants[cCount++]);
+            } else if (c == TAG_ARG) {
+                // Flush any accumulated characters into a constant
+                if (acc.length() > 0) {
+                    elements.add(acc.toString());
+                    acc.setLength(0);
+                }
+                elements.add(null);
+                oCount++;
+            } else {
+                // Not a special character, this is a constant embedded into
+                // the recipe itself.
+                acc.append(c);
+            }
+        }
+
+        // Flush the remaining characters as constant:
+        if (acc.length() > 0) {
+            elements.add(acc.toString());
+        }
+        if (oCount != concatType.parameterCount()) {
+            throw argumentMismatch(concatType, oCount);
+        }
+        if (cCount < constants.length) {
+            throw constantMismatch(constants, cCount);
+        }
+        return elements;
+    }
+
+    private static StringConcatException argumentMismatch(MethodType concatType,
+                                                          int oCount) {
+        return new StringConcatException(
+                "Mismatched number of concat arguments: recipe wants " +
+                oCount +
+                " arguments, but signature provides " +
+                concatType.parameterCount());
+    }
+
+    private static StringConcatException constantMismatch(Object[] constants,
+            int cCount) {
+        return new StringConcatException(
+                "Mismatched number of concat constants: recipe wants " +
+                        cCount +
+                        " constants, but only " +
+                        constants.length +
+                        " are passed");
+    }
 
     /**
      * <p>This strategy replicates what StringBuilders are doing: it builds the
@@ -546,35 +445,33 @@ public final class StringConcatFactory {
      * most notably, the private String constructor that accepts byte[] arrays
      * without copying.
      */
-    private static MethodHandle generateMHInlineCopy(MethodType mt, Recipe recipe) throws Throwable {
+    private static MethodHandle generateMHInlineCopy(MethodType mt, List<String> elements) {
 
         // Fast-path two-argument Object + Object concatenations
-        if (recipe.getElements().size() == 2) {
+        if (elements.size() == 2) {
             // Two object arguments
+            String s0 = elements.get(0);
+            String s1 = elements.get(1);
+
             if (mt.parameterCount() == 2 &&
                     !mt.parameterType(0).isPrimitive() &&
                     !mt.parameterType(1).isPrimitive() &&
-                    recipe.getElements().get(0).getTag() == TAG_ARG &&
-                    recipe.getElements().get(1).getTag() == TAG_ARG) {
-
+                    s0 == null &&
+                    s1 == null) {
                 return simpleConcat();
-
             } else if (mt.parameterCount() == 1 &&
                     !mt.parameterType(0).isPrimitive()) {
+
                 // One Object argument, one constant
                 MethodHandle mh = simpleConcat();
 
-                if (recipe.getElements().get(0).getTag() == TAG_CONST &&
-                        recipe.getElements().get(1).getTag() == TAG_ARG) {
+                if (s0 != null && s1 == null) {
                     // First recipe element is a constant
-                    return MethodHandles.insertArguments(mh, 0,
-                            recipe.getElements().get(0).getValue());
+                    return MethodHandles.insertArguments(mh, 0, s0);
 
-                } else if (recipe.getElements().get(1).getTag() == TAG_CONST &&
-                        recipe.getElements().get(0).getTag() == TAG_ARG) {
+                } else if (s1 != null && s0 == null) {
                     // Second recipe element is a constant
-                    return MethodHandles.insertArguments(mh, 1,
-                            recipe.getElements().get(1).getValue());
+                    return MethodHandles.insertArguments(mh, 1, s1);
 
                 }
             }
@@ -584,7 +481,8 @@ public final class StringConcatFactory {
         // Create filters and obtain filtered parameter types. Filters would be used in the beginning
         // to convert the incoming arguments into the arguments we can process (e.g. Objects -> Strings).
         // The filtered argument type list is used all over in the combinators below.
-        Class<?>[] ptypes = mt.parameterArray();
+
+        Class<?>[] ptypes = mt.erase().parameterArray();
         MethodHandle[] filters = null;
         for (int i = 0; i < ptypes.length; i++) {
             MethodHandle filter = stringifierFor(ptypes[i]);
@@ -593,7 +491,7 @@ public final class StringConcatFactory {
                     filters = new MethodHandle[ptypes.length];
                 }
                 filters[i] = filter;
-                ptypes[i] = filter.type().returnType();
+                ptypes[i] = String.class;
             }
         }
 
@@ -602,9 +500,7 @@ public final class StringConcatFactory {
         // assembled bottom-up, which makes the code arguably hard to read.
 
         // Drop all remaining parameter types, leave only helper arguments:
-        MethodHandle mh;
-
-        mh = MethodHandles.dropArguments(newString(), 2, ptypes);
+        MethodHandle mh = MethodHandles.dropArguments(newString(), 2, ptypes);
 
         long initialLengthCoder = INITIAL_CODER;
 
@@ -616,35 +512,29 @@ public final class StringConcatFactory {
         // create prependers that fold in surrounding constants into the argument prepender. This reduces
         // the number of unique MH combinator tree shapes we'll create in an application.
         String constant = null;
-        for (RecipeElement el : recipe.getElements()) {
+        int pos = 0;
+        for (String el : elements) {
             // Do the prepend, and put "new" index at index 1
-            switch (el.getTag()) {
-                case TAG_CONST: {
-                    String constantValue = el.getValue();
+            if (el != null) {
+                // Constant element
 
-                    // Eagerly update the initialLengthCoder value
-                    initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constantValue);
+                // Eagerly update the initialLengthCoder value
+                initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, el);
 
-                    // Collecting into a single constant that we'll either fold
-                    // into the next argument prepender, or into the newArray
-                    // combinator
-                    constant = constant == null ? constantValue : constant + constantValue;
-                    break;
-                }
-                case TAG_ARG: {
-                    // Add prepender, along with any prefix constant
-                    int pos = el.getArgPos();
-                    mh = MethodHandles.filterArgumentsWithCombiner(
-                            mh, 1,
-                            prepender(constant, ptypes[pos]),
-                            1, 0, // indexCoder, storage
-                            2 + pos  // selected argument
-                    );
-                    constant = null;
-                    break;
-                }
-                default:
-                    throw new StringConcatException("Unhandled tag: " + el.getTag());
+                // Save the constant and fold it either into the next
+                // argument prepender, or into the newArray combinator
+                assert (constant == null);
+                constant = el;
+            } else {
+                // Add prepender, along with any prefix constant
+                mh = MethodHandles.filterArgumentsWithCombiner(
+                        mh, 1,
+                        prepender(constant, ptypes[pos]),
+                        1, 0, // indexCoder, storage
+                        2 + pos  // selected argument
+                );
+                constant = null;
+                pos++;
             }
         }
 
@@ -686,38 +576,30 @@ public final class StringConcatFactory {
         // combined in as:
         //   (<args>)String = (<args>)
 
-        int ac = -1;
+        pos = -1;
         MethodHandle mix = null;
-        for (RecipeElement el : recipe.getElements()) {
-            switch (el.getTag()) {
-                case TAG_CONST:
-                    // Constants already handled in the code above
-                    break;
-                case TAG_ARG:
-                    if (ac >= 0) {
+        for (String el : elements) {
+            // Constants already handled in the code above
+            if (el == null) {
+                    if (pos >= 0) {
                         // Compute new "index" in-place using old value plus the appropriate argument.
                         mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, mix,
                                 0, // old-index
-                                1 + ac // selected argument
+                                1 + pos // selected argument
                         );
                     }
 
-                    ac = el.getArgPos();
-                    Class<?> argClass = ptypes[ac];
+                    Class<?> argClass = ptypes[++pos];
                     mix = mixer(argClass);
-
-                    break;
-                default:
-                    throw new StringConcatException("Unhandled tag: " + el.getTag());
             }
         }
 
         // Insert the initialLengthCoder value into the final mixer, then
         // fold that into the base method handle
-        if (ac >= 0) {
+        if (pos >= 0) {
             mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
             mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + ac // selected argument
+                    1 + pos // selected argument
             );
         } else {
             // No mixer (constants only concat), insert initialLengthCoder directly
@@ -750,9 +632,10 @@ public final class StringConcatFactory {
     private static final Function<Class<?>, MethodHandle> PREPEND = new Function<>() {
         @Override
         public MethodHandle apply(Class<?> c) {
-            return JLA.stringConcatHelper("prepend",
+            MethodHandle prepend = JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
                             Wrapper.asPrimitiveType(c), String.class));
+            return prepend.rebind();
         }
     };
 
@@ -760,31 +643,37 @@ public final class StringConcatFactory {
         @Override
         public MethodHandle apply(Class<?> c) {
             return MethodHandles.insertArguments(
-                            PREPENDERS.computeIfAbsent(c, PREPEND), 3, (String)null);
+                    PREPENDERS.computeIfAbsent(c, PREPEND), 3, (String)null);
         }
     };
 
     private static final Function<Class<?>, MethodHandle> MIX = new Function<>() {
         @Override
         public MethodHandle apply(Class<?> c) {
-            return JLA.stringConcatHelper("mix", methodType(long.class, long.class, Wrapper.asPrimitiveType(c)));
+            MethodHandle mix = JLA.stringConcatHelper("mix",
+                    methodType(long.class, long.class, Wrapper.asPrimitiveType(c)));
+            return mix.rebind();
         }
     };
 
     private @Stable static MethodHandle SIMPLE_CONCAT;
     private static MethodHandle simpleConcat() {
-        if (SIMPLE_CONCAT == null) {
-            SIMPLE_CONCAT = JLA.stringConcatHelper("simpleConcat", methodType(String.class, Object.class, Object.class));
+        MethodHandle mh = SIMPLE_CONCAT;
+        if (mh == null) {
+            MethodHandle simpleConcat = JLA.stringConcatHelper("simpleConcat",
+                    methodType(String.class, Object.class, Object.class));
+            SIMPLE_CONCAT = mh = simpleConcat.rebind();
         }
-        return SIMPLE_CONCAT;
+        return mh;
     }
 
     private @Stable static MethodHandle NEW_STRING;
     private static MethodHandle newString() {
         MethodHandle mh = NEW_STRING;
         if (mh == null) {
-            NEW_STRING = mh =
-                    JLA.stringConcatHelper("newString", methodType(String.class, byte[].class, long.class));
+            MethodHandle newString = JLA.stringConcatHelper("newString",
+                    methodType(String.class, byte[].class, long.class));
+            NEW_STRING = mh = newString.rebind();
         }
         return mh;
     }
@@ -793,9 +682,9 @@ public final class StringConcatFactory {
     private static MethodHandle newArrayWithSuffix(String suffix) {
         MethodHandle mh = NEW_ARRAY_SUFFIX;
         if (mh == null) {
-            NEW_ARRAY_SUFFIX = mh =
-                    JLA.stringConcatHelper("newArrayWithSuffix",
-                            methodType(byte[].class, String.class, long.class));
+            MethodHandle newArrayWithSuffix = JLA.stringConcatHelper("newArrayWithSuffix",
+                    methodType(byte[].class, String.class, long.class));
+            NEW_ARRAY_SUFFIX = mh = newArrayWithSuffix.rebind();
         }
         return MethodHandles.insertArguments(mh, 0, suffix);
     }
@@ -819,8 +708,8 @@ public final class StringConcatFactory {
     private static MethodHandle objectStringifier() {
         MethodHandle mh = OBJECT_STRINGIFIER;
         if (mh == null) {
-            OBJECT_STRINGIFIER = mh =
-                    JLA.stringConcatHelper("stringOf", methodType(String.class, Object.class));
+            OBJECT_STRINGIFIER = mh = JLA.stringConcatHelper("stringOf",
+                    methodType(String.class, Object.class));
         }
         return mh;
     }
@@ -863,7 +752,7 @@ public final class StringConcatFactory {
      * @return stringifier; null, if not available
      */
     private static MethodHandle stringifierFor(Class<?> t) {
-        if (!t.isPrimitive()) {
+        if (t == Object.class) {
             return objectStringifier();
         } else if (t == float.class) {
             return floatStringifier();

@@ -30,6 +30,7 @@ package java.nio;
 #if[char]
 import java.io.IOException;
 #end[char]
+import java.lang.ref.Reference;
 #if[streamableType]
 import java.util.Spliterator;
 import java.util.stream.StreamSupport;
@@ -116,7 +117,7 @@ import jdk.internal.util.ArraysSupport;
  * obvious.  It is therefore recommended that direct buffers be allocated
  * primarily for large, long-lived buffers that are subject to the underlying
  * system's native I/O operations.  In general it is best to allocate direct
- * buffers only when they yield a measureable gain in program performance.
+ * buffers only when they yield a measurable gain in program performance.
  *
  * <p> A direct byte buffer may also be created by {@link
  * java.nio.channels.FileChannel#map mapping} a region of a file
@@ -922,7 +923,10 @@ public abstract class $Type$Buffer
      *         dst.put(src.get()); </pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient.
+     * buffer and it is potentially much more efficient.  If this buffer and
+     * the source buffer share the same backing array or memory, then the
+     * result will be as if the source elements were first copied to an
+     * intermediate location before being written into this buffer.
      *
      * @param  src
      *         The source buffer from which $type$s are to be read;
@@ -945,11 +949,67 @@ public abstract class $Type$Buffer
             throw createSameBufferException();
         if (isReadOnly())
             throw new ReadOnlyBufferException();
-        int n = src.remaining();
-        if (n > remaining())
+
+        int srcPos = src.position();
+        int n = src.limit() - srcPos;
+        int pos = position();
+        if (n > limit() - pos)
             throw new BufferOverflowException();
-        for (int i = 0; i < n; i++)
-            put(src.get());
+
+        Object srcBase = src.base();
+
+#if[char]
+        if (src.isAddressable()) {
+#else[char]
+        assert srcBase != null || src.isDirect();
+#end[char]
+
+            Object base = base();
+            assert base != null || isDirect();
+
+            long srcAddr = src.address + ((long)srcPos << $LG_BYTES_PER_VALUE$);
+            long addr = address + ((long)pos << $LG_BYTES_PER_VALUE$);
+            long len = (long)n << $LG_BYTES_PER_VALUE$;
+
+#if[!byte]
+            if (this.order() == src.order()) {
+#end[!byte]
+                try {
+                    UNSAFE.copyMemory(srcBase,
+                                      srcAddr,
+                                      base,
+                                      addr,
+                                      len);
+                } finally {
+                    Reference.reachabilityFence(src);
+                    Reference.reachabilityFence(this);
+                }
+#if[!byte]
+            } else {
+                try {
+                    UNSAFE.copySwapMemory(srcBase,
+                                          srcAddr,
+                                          base,
+                                          addr,
+                                          len,
+                                          (long)1 << $LG_BYTES_PER_VALUE$);
+                } finally {
+                    Reference.reachabilityFence(src);
+                    Reference.reachabilityFence(this);
+                }
+            }
+#end[!byte]
+
+            position(pos + n);
+            src.position(srcPos + n);
+#if[char]
+        } else { // src.isAddressable() == false
+            assert StringCharBuffer.class.isInstance(src);
+            for (int i = 0; i < n; i++)
+                put(src.get());
+        }
+#end[char]
+
         return this;
     }
 
@@ -1436,6 +1496,20 @@ public abstract class $Type$Buffer
      * @return  {@code true} if, and only if, this buffer is direct
      */
     public abstract boolean isDirect();
+
+#if[char]
+    /**
+     * Tells whether this buffer has addressable memory, e.g., a Java array or
+     * a native address.  This method returns {@code true}.  Subclasses such as
+     * {@code StringCharBuffer}, which wraps a {@code CharSequence}, should
+     * override this method to return {@code false}.
+     *
+     * @return {@code true} if, and only, this buffer has addressable memory
+     */
+    boolean isAddressable() {
+        return true;
+    }
+#end[char]
 
 #if[!char]
 

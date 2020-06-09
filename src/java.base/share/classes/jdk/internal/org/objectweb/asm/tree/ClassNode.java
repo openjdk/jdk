@@ -160,12 +160,12 @@ public class ClassNode extends ClassVisitor {
 
     /**
       * <b>Experimental, use at your own risk. This method will be renamed when it becomes stable, this
-      * will break existing code using it</b>. The internal names of the permitted subtypes of this
+      * will break existing code using it</b>. The internal names of the permitted subclasses of this
       * class. May be {@literal null}.
       *
       * @deprecated this API is experimental.
       */
-    @Deprecated public List<String> permittedSubtypesExperimental;
+    @Deprecated public List<String> permittedSubclassesExperimental;
 
     /** The record components of this class. May be {@literal null}. */
     public List<RecordComponentNode> recordComponents;
@@ -284,13 +284,13 @@ public class ClassNode extends ClassVisitor {
     /**
       * <b>Experimental, use at your own risk.</b>.
       *
-      * @param permittedSubtype the internal name of a permitted subtype.
+      * @param permittedSubclass the internal name of a permitted subclass.
       * @deprecated this API is experimental.
       */
     @Override
     @Deprecated
-    public void visitPermittedSubtypeExperimental(final String permittedSubtype) {
-        permittedSubtypesExperimental = Util.add(permittedSubtypesExperimental, permittedSubtype);
+    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
+        permittedSubclassesExperimental = Util.add(permittedSubclassesExperimental, permittedSubclass);
     }
 
     @Override
@@ -351,7 +351,7 @@ public class ClassNode extends ClassVisitor {
       */
     @SuppressWarnings("deprecation")
     public void check(final int api) {
-        if (api != Opcodes.ASM9_EXPERIMENTAL && permittedSubtypesExperimental != null) {
+        if (api != Opcodes.ASM9_EXPERIMENTAL && permittedSubclassesExperimental != null) {
             throw new UnsupportedClassVersionException();
         }
         if (api < Opcodes.ASM8 && ((access & Opcodes.ACC_RECORD) != 0 || recordComponents != null)) {
@@ -473,10 +473,10 @@ public class ClassNode extends ClassVisitor {
                 classVisitor.visitNestMember(nestMembers.get(i));
             }
         }
-        // Visit the permitted subtypes.
-        if (permittedSubtypesExperimental != null) {
-            for (int i = 0, n = permittedSubtypesExperimental.size(); i < n; ++i) {
-                classVisitor.visitPermittedSubtypeExperimental(permittedSubtypesExperimental.get(i));
+        // Visit the permitted subclass.
+        if (permittedSubclassesExperimental != null) {
+            for (int i = 0, n = permittedSubclassesExperimental.size(); i < n; ++i) {
+                classVisitor.visitPermittedSubclassExperimental(permittedSubclassesExperimental.get(i));
             }
         }
         // Visit the inner classes.

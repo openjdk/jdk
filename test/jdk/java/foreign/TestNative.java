@@ -172,16 +172,14 @@ public class TestNative {
         }
     }
 
-    static final int ALL_ACCESS_MODES = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
-
     @Test
     public void testDefaultAccessModes() {
         MemoryAddress addr = MemoryAddress.ofLong(allocate(12));
         MemorySegment mallocSegment = MemorySegment.ofNativeRestricted(addr, 12, null,
                 () -> free(addr.toRawLongValue()), null);
         try (MemorySegment segment = mallocSegment) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS_MODES));
-            assertEquals(segment.accessModes(), ALL_ACCESS_MODES);
+            assertTrue(segment.hasAccessModes(ALL_ACCESS));
+            assertEquals(segment.accessModes(), ALL_ACCESS);
         }
     }
 

@@ -28,7 +28,7 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithZ
- * @key gc stress
+ * @key stress
  * @library /
  * @requires vm.gc.Z
  * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
@@ -38,7 +38,7 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherDeoptWithZ
- * @key gc stress
+ * @key stress
  * @library /
  * @requires vm.gc.Z
  * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled & vm.opt.ClassUnloading != false

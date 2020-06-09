@@ -25,7 +25,7 @@ package gc;
 
 /**
  * @test TestSoftReferencesBehaviorOnOOME
- * @key gc randomness
+ * @key randomness
  * @summary Tests that all SoftReferences has been cleared at time of OOM.
  * @requires vm.gc != "Z"
  * @library /test/lib

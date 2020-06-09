@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,14 +339,14 @@ public class FloatStamp extends PrimitiveStamp {
                 if (Float.isNaN(value.asFloat())) {
                     result = new FloatStamp(32, Double.NaN, Double.NaN, false);
                 } else {
-                    result = new FloatStamp(32, value.asFloat(), value.asFloat(), !Float.isNaN(value.asFloat()));
+                    result = new FloatStamp(32, value.asFloat(), value.asFloat(), true);
                 }
                 break;
             case Double:
                 if (Double.isNaN(value.asDouble())) {
                     result = new FloatStamp(64, Double.NaN, Double.NaN, false);
                 } else {
-                    result = new FloatStamp(64, value.asDouble(), value.asDouble(), !Double.isNaN(value.asDouble()));
+                    result = new FloatStamp(64, value.asDouble(), value.asDouble(), true);
                 }
                 break;
             default:

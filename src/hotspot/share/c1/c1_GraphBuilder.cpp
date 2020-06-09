@@ -4050,7 +4050,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
           if (ciMethod::is_consistent_info(callee, target)) {
             Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
             ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
-            if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
+            if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
               return true;
             }
           } else {
@@ -4116,7 +4116,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
           // We don't do CHA here so only inline static and statically bindable methods.
           if (target->is_static() || target->can_be_statically_bound()) {
             Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-            if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
+            if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
               return true;
             }
           } else {

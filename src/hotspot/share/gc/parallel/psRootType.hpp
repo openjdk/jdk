@@ -38,7 +38,7 @@ public:
     jni_handles,
     object_synchronizer,
     management,
-    system_dictionary,
+    vm_global,
     class_loader_data,
     jvmti,
     code_cache,

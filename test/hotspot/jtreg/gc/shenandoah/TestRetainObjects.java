@@ -25,7 +25,6 @@
 /*
  * @test TestRetainObjects
  * @summary Acceptance tests: collector can deal with retained objects
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -52,7 +51,6 @@
 /*
  * @test TestRetainObjects
  * @summary Acceptance tests: collector can deal with retained objects
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -95,7 +93,6 @@
 /*
  * @test TestRetainObjects
  * @summary Acceptance tests: collector can deal with retained objects
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

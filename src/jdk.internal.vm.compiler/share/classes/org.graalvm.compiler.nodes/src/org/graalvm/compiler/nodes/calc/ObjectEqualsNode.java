@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,8 @@ public final class ObjectEqualsNode extends PointerEqualsNode implements Virtual
                     if (type.equals(metaAccess.lookupJavaType(Integer.class)) || type.equals(metaAccess.lookupJavaType(Long.class))) {
                         // both are virtual without identity: check contents
                         assert xVirtual.entryCount() == 1 && yVirtual.entryCount() == 1;
-                        assert xVirtual.entryKind(0).getStackKind() == JavaKind.Int || xVirtual.entryKind(0) == JavaKind.Long;
+                        assert xVirtual.entryKind(tool.getMetaAccessExtensionProvider(), 0).getStackKind() == JavaKind.Int ||
+                                        xVirtual.entryKind(tool.getMetaAccessExtensionProvider(), 0) == JavaKind.Long;
                         return new IntegerEqualsNode(tool.getEntry(xVirtual, 0), tool.getEntry(yVirtual, 0));
                     }
                 }

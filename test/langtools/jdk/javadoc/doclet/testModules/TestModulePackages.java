@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178070 8196201 8184205
+ * @bug 8178070 8196201 8184205 8246429
  * @summary Test packages table in module summary pages
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -120,6 +120,53 @@ public class TestModulePackages extends JavadocTester {
         checkTableHead("m");
         checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
         checkPackageRow("m", "q", "i1", null, null, "&nbsp;");
+    }
+
+    @Test
+    public void exportSameName(Path base) throws Exception {
+        Path src = base.resolve("src");
+        new ModuleBuilder(tb, "m")
+                .comment("exports same qualified package and types as module o")
+                .exports("p")
+                .classes("package p; public class C { }")
+                .write(src);
+        new ModuleBuilder(tb, "o")
+                .comment("exports same qualified package and types as module m")
+                .exports("p")
+                .classes("package p; public class C { }")
+                .write(src);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet",
+                "--module-source-path", src.toString(),
+                "--module", "m,o");
+
+        // error: the unnamed module reads package p from both o and m
+        checkExit(Exit.ERROR);
+        checkCaption("m", TabKind.EXPORTS);
+        checkCaption("o", TabKind.EXPORTS);
+        checkTableHead("m");
+        checkTableHead("o");
+        checkPackageRow("m", "p", "i0", null, null, "&nbsp;");
+        checkPackageRow("o", "p", "i0", null, null, "&nbsp;");
+        checkOutput("m/p/package-summary.html", true,
+                """
+                    <div class="sub-title"><span class="module-label-in-package">Module</span>&nbsp;<a href="../module-summary.html">m</a></div>
+                    """);
+        checkOutput("o/p/package-summary.html", true,
+                """
+                    <div class="sub-title"><span class="module-label-in-package">Module</span>&nbsp;<a href="../module-summary.html">o</a></div>
+                    """);
+        checkOutput("m/p/C.html", true,
+                """
+                    <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a href="../module-summary.html">m</a></div>
+                    <div class="sub-title"><span class="package-label-in-type">Package</span>&nbsp;<a href="package-summary.html">p</a></div>
+                    """);
+        checkOutput("o/p/C.html", true,
+                """
+                    <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a href="../module-summary.html">o</a></div>
+                    <div class="sub-title"><span class="package-label-in-type">Package</span>&nbsp;<a href="package-summary.html">p</a></div>
+                    """);
     }
 
     @Test

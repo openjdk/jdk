@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,9 +236,10 @@ int JvmtiThreadState::count_frames() {
 
 
 void JvmtiThreadState::invalidate_cur_stack_depth() {
-  guarantee(SafepointSynchronize::is_at_safepoint() ||
-    (JavaThread *)Thread::current() == get_thread(),
-    "must be current thread or at safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         (JavaThread *)Thread::current() == get_thread() ||
+         Thread::current() == get_thread()->active_handshaker(),
+         "bad synchronization with owner thread");
 
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
 }

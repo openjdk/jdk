@@ -523,13 +523,13 @@ void ShenandoahNMethodList::transfer(ShenandoahNMethodList* const list, int limi
 }
 
 ShenandoahNMethodList* ShenandoahNMethodList::acquire() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  assert_locked_or_safepoint(CodeCache_lock);
   _ref_count++;
   return this;
 }
 
 void ShenandoahNMethodList::release() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  assert_locked_or_safepoint(CodeCache_lock);
   _ref_count--;
   if (_ref_count == 0) {
     delete this;

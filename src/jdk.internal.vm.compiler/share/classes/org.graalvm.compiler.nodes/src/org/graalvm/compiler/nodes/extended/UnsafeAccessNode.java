@@ -58,6 +58,8 @@ public abstract class UnsafeAccessNode extends FixedWithNextNode implements Cano
     protected final LocationIdentity locationIdentity;
     protected final boolean forceAnyLocation;
 
+    public abstract boolean isVolatile();
+
     protected UnsafeAccessNode(NodeClass<? extends UnsafeAccessNode> c, Stamp stamp, ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity,
                     boolean forceAnyLocation) {
         super(c, stamp);
@@ -109,11 +111,7 @@ public abstract class UnsafeAccessNode extends FixedWithNextNode implements Cano
                     // this is never a valid access of an arbitrary address.
                     if (field != null && field.getJavaKind() == this.accessKind()) {
                         assert !graph().isAfterFloatingReadPhase() : "cannot add more precise memory location after floating read phase";
-                        // Unsafe accesses never have volatile semantics.
-                        // Memory barriers are placed around such an unsafe access at construction
-                        // time if necessary, unlike AccessFieldNodes which encapsulate their
-                        // potential volatile semantics.
-                        return cloneAsFieldAccess(graph().getAssumptions(), field, false);
+                        return cloneAsFieldAccess(graph().getAssumptions(), field, isVolatile());
                     }
                 }
             }
@@ -122,7 +120,7 @@ public abstract class UnsafeAccessNode extends FixedWithNextNode implements Cano
             if (receiverType != null && receiverType.isArray()) {
                 LocationIdentity identity = NamedLocationIdentity.getArrayLocation(receiverType.getComponentType().getJavaKind());
                 assert !graph().isAfterFloatingReadPhase() : "cannot add more precise memory location after floating read phase";
-                return cloneAsArrayAccess(offset(), identity);
+                return cloneAsArrayAccess(offset(), identity, isVolatile());
             }
         }
 
@@ -135,7 +133,7 @@ public abstract class UnsafeAccessNode extends FixedWithNextNode implements Cano
 
     protected abstract ValueNode cloneAsFieldAccess(Assumptions assumptions, ResolvedJavaField field, boolean volatileAccess);
 
-    protected abstract ValueNode cloneAsArrayAccess(ValueNode location, LocationIdentity identity);
+    protected abstract ValueNode cloneAsArrayAccess(ValueNode location, LocationIdentity identity, boolean volatileAccess);
 
     /**
      * In this method we check if the unsafe access is to a static field. This is the case when

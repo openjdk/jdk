@@ -25,7 +25,6 @@ package gc.epsilon;
 
 /**
  * @test TestManyThreads
- * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Test allocations from many threads
  *

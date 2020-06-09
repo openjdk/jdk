@@ -30,7 +30,9 @@
 #include "jfr/utilities/jfrHashtable.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
-#include "utilities/growableArray.hpp"
+
+template <typename T>
+class GrowableArray;
 
 // Composite callback/functor building block
 template <typename T, typename Func1, typename Func2>
@@ -81,8 +83,8 @@ class ClearArtifact {
   bool operator()(T const& value) {
     CLEAR_SERIALIZED(value);
     assert(IS_NOT_SERIALIZED(value), "invariant");
-    SET_PREV_EPOCH_CLEARED_BIT(value);
-    CLEAR_METHOD_AND_CLASS_PREV_EPOCH(value);
+    SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
+    CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
     return true;
   }
 };
@@ -91,11 +93,11 @@ template <>
 class ClearArtifact<const Method*> {
  public:
   bool operator()(const Method* method) {
-    assert(METHOD_FLAG_USED_PREV_EPOCH(method), "invariant");
-    CLEAR_METHOD_SERIALIZED(method);
+    assert(METHOD_FLAG_USED_PREVIOUS_EPOCH(method), "invariant");
+    CLEAR_SERIALIZED_METHOD(method);
     assert(METHOD_NOT_SERIALIZED(method), "invariant");
-    SET_PREV_EPOCH_METHOD_CLEARED_BIT(method);
-    CLEAR_METHOD_FLAG_USED_PREV_EPOCH(method);
+    SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
+    CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
     return true;
   }
 };
@@ -145,7 +147,7 @@ public:
     if (_current_epoch) {
       return leakp ? IS_LEAKP(klass) : METHOD_USED_THIS_EPOCH(klass);
     }
-    return  leakp ? IS_LEAKP(klass) : METHOD_USED_PREV_EPOCH(klass);
+    return  leakp ? IS_LEAKP(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
   }
 };
 
@@ -158,7 +160,7 @@ class MethodFlagPredicate {
     if (_current_epoch) {
       return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
     }
-    return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_PREV_EPOCH(method);
+    return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
   }
 };
 
@@ -291,6 +293,7 @@ class JfrArtifactSet : public JfrCHeapObj {
  private:
   JfrSymbolId* _symbol_id;
   GrowableArray<const Klass*>* _klass_list;
+  GrowableArray<const Klass*>* _klass_loader_set;
   size_t _total_count;
 
  public:
@@ -315,6 +318,7 @@ class JfrArtifactSet : public JfrCHeapObj {
   int entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
+  bool should_do_loader_klass(const Klass* k);
 
   template <typename Functor>
   void iterate_klasses(Functor& functor) const {

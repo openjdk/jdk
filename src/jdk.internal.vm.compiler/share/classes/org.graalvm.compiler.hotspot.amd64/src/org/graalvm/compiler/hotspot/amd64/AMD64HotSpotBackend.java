@@ -34,7 +34,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 
 import jdk.internal.vm.compiler.collections.EconomicSet;
-import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
@@ -49,6 +48,7 @@ import org.graalvm.compiler.hotspot.HotSpotDataBuilder;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -170,6 +170,9 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
                 } else {
                     asm.decrementq(rsp, frameSize);
                 }
+                if (HotSpotMarkId.FRAME_COMPLETE.isAvailable()) {
+                    crb.recordMark(HotSpotMarkId.FRAME_COMPLETE);
+                }
                 if (ZapStackOnMethodEntry.getValue(crb.getOptions())) {
                     final int intSize = 4;
                     for (int i = 0; i < frameSize / intSize; ++i) {
@@ -210,10 +213,11 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
         assert gen.getDeoptimizationRescueSlot() == null || frameMap.frameNeedsAllocating() : "method that can deoptimize must have a frame";
         OptionValues options = lir.getOptions();
         DebugContext debug = lir.getDebug();
-        boolean omitFrame = CanOmitFrame.getValue(options) && !frameMap.frameNeedsAllocating() && !lir.hasArgInCallerFrame() && !gen.hasForeignCall();
+        boolean omitFrame = CanOmitFrame.getValue(options) && !frameMap.frameNeedsAllocating() && !lir.hasArgInCallerFrame() && !gen.hasForeignCall() &&
+                        !((AMD64FrameMap) frameMap).useStandardFrameProlog();
 
         Stub stub = gen.getStub();
-        AMD64MacroAssembler masm = new AMD64MacroAssembler(getTarget(), options);
+        AMD64MacroAssembler masm = new AMD64MacroAssembler(getTarget(), options, config.CPU_HAS_INTEL_JCC_ERRATUM);
         masm.setCodePatchShifter(compilationResult::shiftCodePatch);
         HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null, omitFrame, config.preserveFramePointer);
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
@@ -237,10 +241,9 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
         AMD64MacroAssembler asm = (AMD64MacroAssembler) crb.asm;
         FrameMap frameMap = crb.frameMap;
         RegisterConfig regConfig = frameMap.getRegisterConfig();
-        Label verifiedEntry = new Label();
 
         // Emit the prefix
-        emitCodePrefix(installedCodeOwner, crb, asm, regConfig, verifiedEntry);
+        emitCodePrefix(installedCodeOwner, crb, asm, regConfig);
 
         // Emit code for the LIR
         emitCodeBody(installedCodeOwner, crb, lir);
@@ -257,10 +260,10 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
      *
      * @param installedCodeOwner see {@link LIRGenerationProvider#emitCode}
      */
-    public void emitCodePrefix(ResolvedJavaMethod installedCodeOwner, CompilationResultBuilder crb, AMD64MacroAssembler asm, RegisterConfig regConfig, Label verifiedEntry) {
+    public void emitCodePrefix(ResolvedJavaMethod installedCodeOwner, CompilationResultBuilder crb, AMD64MacroAssembler asm, RegisterConfig regConfig) {
         HotSpotProviders providers = getProviders();
         if (installedCodeOwner != null && !installedCodeOwner.isStatic()) {
-            crb.recordMark(config.MARKID_UNVERIFIED_ENTRY);
+            crb.recordMark(HotSpotMarkId.UNVERIFIED_ENTRY);
             CallingConvention cc = regConfig.getCallingConvention(HotSpotCallingConventionType.JavaCallee, null, new JavaType[]{providers.getMetaAccess().lookupJavaType(Object.class)}, this);
             Register inlineCacheKlass = rax; // see definition of IC_Klass in
                                              // c1_LIRAssembler_x86.cpp
@@ -274,7 +277,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
                 AMD64HotSpotMove.decodeKlassPointer(crb, asm, register, heapBase, src, config);
                 if (GeneratePIC.getValue(crb.getOptions())) {
                     asm.movq(heapBase, asm.getPlaceholder(-1));
-                    crb.recordMark(config.MARKID_NARROW_OOP_BASE_ADDRESS);
+                    crb.recordMark(HotSpotMarkId.NARROW_OOP_BASE_ADDRESS);
                 } else {
                     if (config.narrowKlassBase != 0) {
                         // The heap base register was destroyed above, so restore it
@@ -293,9 +296,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
         }
 
         asm.align(config.codeEntryAlignment);
-        crb.recordMark(config.MARKID_OSR_ENTRY);
-        asm.bind(verifiedEntry);
-        crb.recordMark(config.MARKID_VERIFIED_ENTRY);
+        crb.recordMark(crb.compilationResult.getEntryBCI() != -1 ? HotSpotMarkId.OSR_ENTRY : HotSpotMarkId.VERIFIED_ENTRY);
 
         if (GeneratePIC.getValue(crb.getOptions())) {
             // Check for method state
@@ -326,9 +327,9 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
         HotSpotFrameContext frameContext = (HotSpotFrameContext) crb.frameContext;
         if (!frameContext.isStub) {
             HotSpotForeignCallsProvider foreignCalls = providers.getForeignCalls();
-            crb.recordMark(config.MARKID_EXCEPTION_HANDLER_ENTRY);
+            crb.recordMark(HotSpotMarkId.EXCEPTION_HANDLER_ENTRY);
             AMD64Call.directCall(crb, asm, foreignCalls.lookupForeignCall(EXCEPTION_HANDLER), null, false, null);
-            crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
+            crb.recordMark(HotSpotMarkId.DEOPT_HANDLER_ENTRY);
             AMD64Call.directCall(crb, asm, foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK), null, false, null);
         } else {
             // No need to emit the stubs for entries back into the method since

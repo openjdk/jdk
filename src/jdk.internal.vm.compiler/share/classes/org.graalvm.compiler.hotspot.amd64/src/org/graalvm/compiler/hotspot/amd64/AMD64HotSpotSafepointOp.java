@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,17 @@
 
 package org.graalvm.compiler.hotspot.amd64;
 
-import static org.graalvm.compiler.core.common.NumUtil.isInt;
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static jdk.vm.ci.amd64.AMD64.rax;
 import static jdk.vm.ci.amd64.AMD64.rip;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.common.NumUtil.isInt;
 
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -67,7 +68,7 @@ public final class AMD64HotSpotSafepointOp extends AMD64LIRInstruction {
         this.state = state;
         this.config = config;
         this.thread = thread;
-        if (config.threadLocalHandshakes || isPollingPageFar(config) || ImmutableCode.getValue(tool.getOptions())) {
+        if (config.useThreadLocalPolling || isPollingPageFar(config) || ImmutableCode.getValue(tool.getOptions())) {
             temp = tool.getLIRGeneratorTool().newVariable(LIRKind.value(tool.getLIRGeneratorTool().target().arch.getWordKind()));
         } else {
             // Don't waste a register if it's unneeded
@@ -81,7 +82,7 @@ public final class AMD64HotSpotSafepointOp extends AMD64LIRInstruction {
     }
 
     public static void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler asm, GraalHotSpotVMConfig config, boolean atReturn, LIRFrameState state, Register thread, Register scratch) {
-        if (config.threadLocalHandshakes) {
+        if (config.useThreadLocalPolling) {
             emitThreadLocalPoll(crb, asm, config, atReturn, state, thread, scratch);
         } else {
             emitGlobalPoll(crb, asm, config, atReturn, state, scratch);
@@ -111,21 +112,21 @@ public final class AMD64HotSpotSafepointOp extends AMD64LIRInstruction {
                 asm.movq(scratch, (AMD64Address) crb.recordDataReferenceInCode(pollingPageAddress, alignment));
             }
             final int pos = asm.position();
-            crb.recordMark(atReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
+            crb.recordMark(atReturn ? HotSpotMarkId.POLL_RETURN_FAR : HotSpotMarkId.POLL_FAR);
             if (state != null) {
                 crb.recordInfopoint(pos, state, InfopointReason.SAFEPOINT);
             }
             asm.testl(rax, new AMD64Address(scratch));
         } else if (isPollingPageFar(config)) {
             asm.movq(scratch, config.safepointPollingAddress);
-            crb.recordMark(atReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
+            crb.recordMark(atReturn ? HotSpotMarkId.POLL_RETURN_FAR : HotSpotMarkId.POLL_FAR);
             final int pos = asm.position();
             if (state != null) {
                 crb.recordInfopoint(pos, state, InfopointReason.SAFEPOINT);
             }
             asm.testl(rax, new AMD64Address(scratch));
         } else {
-            crb.recordMark(atReturn ? config.MARKID_POLL_RETURN_NEAR : config.MARKID_POLL_NEAR);
+            crb.recordMark(atReturn ? HotSpotMarkId.POLL_RETURN_NEAR : HotSpotMarkId.POLL_NEAR);
             final int pos = asm.position();
             if (state != null) {
                 crb.recordInfopoint(pos, state, InfopointReason.SAFEPOINT);
@@ -142,7 +143,7 @@ public final class AMD64HotSpotSafepointOp extends AMD64LIRInstruction {
 
         assert config.threadPollingPageOffset >= 0;
         asm.movptr(scratch, new AMD64Address(thread, config.threadPollingPageOffset));
-        crb.recordMark(atReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
+        crb.recordMark(atReturn ? HotSpotMarkId.POLL_RETURN_FAR : HotSpotMarkId.POLL_FAR);
         final int pos = asm.position();
         if (state != null) {
             crb.recordInfopoint(pos, state, InfopointReason.SAFEPOINT);

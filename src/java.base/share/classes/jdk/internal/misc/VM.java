@@ -27,11 +27,11 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import jdk.internal.access.SharedSecrets;
 
@@ -45,7 +45,6 @@ public class VM {
     private static final int SYSTEM_LOADER_INITIALIZING  = 3;
     private static final int SYSTEM_BOOTED               = 4;
     private static final int SYSTEM_SHUTDOWN             = 5;
-
 
     // 0, 1, 2, ...
     private static volatile int initLevel;
@@ -148,6 +147,45 @@ public class VM {
         return pageAlignDirectMemory;
     }
 
+    private static int classFileMajorVersion;
+    private static int classFileMinorVersion;
+    private static final int PREVIEW_MINOR_VERSION = 65535;
+
+    /**
+     * Tests if the given version is a supported {@code class}
+     * file version.
+     *
+     * A {@code class} file depends on the preview features of Java SE {@code N}
+     * if the major version is {@code N} and the minor version is 65535.
+     * This method returns {@code true} if the given version is a supported
+     * {@code class} file version regardless of whether the preview features
+     * are enabled or not.
+     *
+     * @jvms 4.1 Table 4.1-A. class file format major versions
+     */
+    public static boolean isSupportedClassFileVersion(int major, int minor) {
+        if (major < 45 || major > classFileMajorVersion) return false;
+        // for major version is between 45 and 55 inclusive, the minor version may be any value
+        if (major < 56) return true;
+        // otherwise, the minor version must be 0 or 65535
+        return minor == 0 || minor == PREVIEW_MINOR_VERSION;
+    }
+
+    /**
+     * Tests if the given version is a supported {@code class}
+     * file version for module descriptor.
+     *
+     * major.minor version >= 53.0
+     */
+    public static boolean isSupportedModuleDescriptorVersion(int major, int minor) {
+        if (major < 53 || major > classFileMajorVersion) return false;
+        // for major version is between 45 and 55 inclusive, the minor version may be any value
+        if (major < 56) return true;
+        // otherwise, the minor version must be 0 or 65535
+        // preview features do not apply to module-info.class but JVMS allows it
+        return minor == 0 || minor == PREVIEW_MINOR_VERSION;
+    }
+
     /**
      * Returns true if the given class loader is the bootstrap class loader
      * or the platform class loader.
@@ -222,6 +260,15 @@ public class VM {
         s = props.get("sun.nio.PageAlignDirectMemory");
         if ("true".equals(s))
             pageAlignDirectMemory = true;
+
+        s = props.get("java.class.version");
+        int index = s.indexOf('.');
+        try {
+            classFileMajorVersion = Integer.valueOf(s.substring(0, index));
+            classFileMinorVersion = Integer.valueOf(s.substring(index+1, s.length()));
+        } catch (NumberFormatException e) {
+            throw new InternalError(e);
+        }
     }
 
     // Initialize any miscellaneous operating system settings that need to be

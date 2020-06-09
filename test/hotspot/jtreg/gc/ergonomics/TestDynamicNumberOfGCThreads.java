@@ -27,7 +27,6 @@ package gc.ergonomics;
  * @test TestDynamicNumberOfGCThreads
  * @bug 8017462
  * @summary Ensure that UseDynamicNumberOfGCThreads runs
- * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

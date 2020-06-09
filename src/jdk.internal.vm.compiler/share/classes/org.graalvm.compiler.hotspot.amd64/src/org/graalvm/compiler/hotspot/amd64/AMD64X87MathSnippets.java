@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
@@ -55,7 +55,7 @@ public class AMD64X87MathSnippets implements Snippets {
         if (Math.abs(input) < PI_4) {
             return AMD64X87MathIntrinsicNode.compute(input, UnaryOperation.SIN);
         }
-        return callDouble1(UnaryOperation.SIN.foreignCallDescriptor, input);
+        return callDouble1(UnaryOperation.SIN.foreignCallSignature, input);
     }
 
     @Snippet
@@ -63,7 +63,7 @@ public class AMD64X87MathSnippets implements Snippets {
         if (Math.abs(input) < PI_4) {
             return AMD64X87MathIntrinsicNode.compute(input, UnaryOperation.COS);
         }
-        return callDouble1(UnaryOperation.COS.foreignCallDescriptor, input);
+        return callDouble1(UnaryOperation.COS.foreignCallSignature, input);
     }
 
     @Snippet
@@ -71,11 +71,11 @@ public class AMD64X87MathSnippets implements Snippets {
         if (Math.abs(input) < PI_4) {
             return AMD64X87MathIntrinsicNode.compute(input, UnaryOperation.TAN);
         }
-        return callDouble1(UnaryOperation.TAN.foreignCallDescriptor, input);
+        return callDouble1(UnaryOperation.TAN.foreignCallSignature, input);
     }
 
     @NodeIntrinsic(value = ForeignCallNode.class)
-    private static native double callDouble1(@ConstantNodeParameter ForeignCallDescriptor descriptor, double value);
+    private static native double callDouble1(@ConstantNodeParameter ForeignCallSignature signature, double value);
 
     public static class Templates extends AbstractTemplates {
 

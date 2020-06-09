@@ -122,9 +122,9 @@ private:
   // java.security.ProtectionDomain objects associated with each shared class.
   //
   // See SystemDictionaryShared::init_security_info for more info.
-  static objArrayOop _shared_protection_domains;
-  static objArrayOop _shared_jar_urls;
-  static objArrayOop _shared_jar_manifests;
+  static OopHandle _shared_protection_domains;
+  static OopHandle _shared_jar_urls;
+  static OopHandle _shared_jar_manifests;
 
   static InstanceKlass* load_shared_class_for_builtin_loader(
                                                Symbol* class_name,
@@ -180,12 +180,12 @@ private:
                                              ModuleEntry* mod, TRAPS);
   static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
 
-  static void atomic_set_array_index(objArrayOop array, int index, oop o) {
+  static void atomic_set_array_index(OopHandle array, int index, oop o) {
     // Benign race condition:  array.obj_at(index) may already be filled in.
     // The important thing here is that all threads pick up the same result.
     // It doesn't matter which racing thread wins, as long as only one
     // result is used by all threads, and all future queries.
-    array->atomic_compare_exchange_oop(index, o, NULL);
+    ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
   }
 
   static oop shared_protection_domain(int index);
@@ -235,7 +235,6 @@ public:
 
 
   static void allocate_shared_data_arrays(int size, TRAPS);
-  static void oops_do(OopClosure* f);
 
   // Check if sharing is supported for the class loader.
   static bool is_sharing_possible(ClassLoaderData* loader_data);

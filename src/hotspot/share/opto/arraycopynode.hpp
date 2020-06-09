@@ -144,7 +144,7 @@ public:
                              Node* src_klass = NULL, Node* dest_klass = NULL,
                              Node* src_length = NULL, Node* dest_length = NULL);
 
-  void connect_outputs(GraphKit* kit);
+  void connect_outputs(GraphKit* kit, bool deoptimize_on_exception = false);
 
   bool is_arraycopy()             const  { assert(_kind != None, "should bet set"); return _kind == ArrayCopy; }
   bool is_arraycopy_validated()   const  { assert(_kind != None, "should bet set"); return _kind == ArrayCopy && _arguments_validated; }

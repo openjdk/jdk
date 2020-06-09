@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,10 @@ TEST_VM(markWord, printing) {
   // This is no longer biased, because ObjectLocker revokes the bias.
   assert_test_pattern(h_obj, "is_neutral no_hash");
 
+  // Hash the object then print it.
+  intx hash = h_obj->identity_hash();
+  assert_test_pattern(h_obj, "is_neutral hash=0x");
+
   // Wait gets the lock inflated.
   {
     ObjectLocker ol(h_obj, THREAD);
@@ -135,14 +139,18 @@ TEST_VM(markWord, printing) {
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
 
-  // Make the object older. Not all GCs use this field.
-  Universe::heap()->collect(GCCause::_java_lang_system_gc);
-  if (UseParallelGC) {
-    assert_test_pattern(h_obj, "is_neutral no_hash age 1");
-  }
+  if (!AsyncDeflateIdleMonitors) {
+    // With AsyncDeflateIdleMonitors, the collect() call below
+    // does not guarantee monitor deflation.
+    // Make the object older. Not all GCs use this field.
+    Universe::heap()->collect(GCCause::_java_lang_system_gc);
+    if (UseParallelGC) {
+      assert_test_pattern(h_obj, "is_neutral no_hash age 1");
+    }
 
-  // Hash the object then print it.
-  intx hash = h_obj->identity_hash();
-  assert_test_pattern(h_obj, "is_neutral hash=0x");
+    // Hash the object then print it.
+    intx hash = h_obj->identity_hash();
+    assert_test_pattern(h_obj, "is_neutral hash=0x");
+  }
 }
 #endif // PRODUCT

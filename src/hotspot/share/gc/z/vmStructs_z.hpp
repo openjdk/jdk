@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   volatile_nonstatic_field(ZPage,               _top,                 uintptr_t)                     \
                                                                                                      \
   nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
-  nonstatic_field(ZPageAllocator,               _capacity,            size_t)                        \
-  nonstatic_field(ZPageAllocator,               _used,                size_t)                        \
+  volatile_nonstatic_field(ZPageAllocator,      _capacity,            size_t)                        \
+  volatile_nonstatic_field(ZPageAllocator,      _used,                size_t)                        \
                                                                                                      \
   nonstatic_field(ZPageTable,                   _map,                 ZGranuleMapForPageTable)       \
                                                                                                      \

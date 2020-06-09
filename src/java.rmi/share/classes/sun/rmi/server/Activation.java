@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ import com.sun.rmi.rmid.ExecOptionPermission;
  * @author      Ann Wollrath
  * @since       1.2
  */
+@SuppressWarnings("removal")
 public class Activation implements Serializable {
 
     /** indicate compatibility with JDK 1.2 version of class */
@@ -2145,6 +2146,8 @@ public class Activation implements Serializable {
                 system.shutdown();
                 System.exit(0);
             }
+
+            System.err.println(getTextResource("rmid.deprecation.warning"));
 
             /*
              * Fix for 4173960: Create and initialize activation using

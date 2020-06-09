@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import sun.rmi.transport.LiveRef;
  *
  * @author Ann Wollrath
  */
-@SuppressWarnings("serial") // Externalizable class w/o no-arg c'tor
+@SuppressWarnings({"removal", "serial"}) // Externalizable class w/o no-arg c'tor
 public class ActivatableServerRef extends UnicastServerRef2 {
 
     private static final long serialVersionUID = 2002967993223003793L;

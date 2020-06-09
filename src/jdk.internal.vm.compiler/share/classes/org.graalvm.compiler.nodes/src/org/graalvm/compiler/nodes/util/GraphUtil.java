@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import jdk.internal.vm.compiler.collections.Equivalence;
 import jdk.internal.vm.compiler.collections.MapCursor;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.code.SourceStackTraceBailoutException;
-import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph;
@@ -73,13 +72,15 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
+import org.graalvm.compiler.nodes.WithExceptionNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider.FindLengthMode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.nodes.spi.CoreProvidersDelegate;
 import org.graalvm.compiler.nodes.spi.LimitedValueProxy;
-import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.type.StampTool;
@@ -96,7 +97,6 @@ import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -399,6 +399,14 @@ public class GraphUtil {
         FixedNode next = fixed.next();
         fixed.setNext(null);
         fixed.replaceAtPredecessor(next);
+    }
+
+    public static void unlinkAndKillExceptionEdge(WithExceptionNode withException) {
+        assert withException.next() != null && withException.predecessor() != null && withException.isAlive() : withException;
+        FixedNode next = withException.next();
+        withException.setNext(null);
+        withException.replaceAtPredecessor(next);
+        withException.killExceptionEdge();
     }
 
     public static void checkRedundantPhi(PhiNode phiNode) {
@@ -919,39 +927,16 @@ public class GraphUtil {
         };
     }
 
-    private static final class DefaultSimplifierTool implements SimplifierTool {
-        private final MetaAccessProvider metaAccess;
-        private final ConstantReflectionProvider constantReflection;
-        private final ConstantFieldProvider constantFieldProvider;
+    private static final class DefaultSimplifierTool extends CoreProvidersDelegate implements SimplifierTool {
         private final boolean canonicalizeReads;
         private final Assumptions assumptions;
         private final OptionValues options;
-        private final LoweringProvider loweringProvider;
 
-        DefaultSimplifierTool(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, boolean canonicalizeReads,
-                        Assumptions assumptions, OptionValues options, LoweringProvider loweringProvider) {
-            this.metaAccess = metaAccess;
-            this.constantReflection = constantReflection;
-            this.constantFieldProvider = constantFieldProvider;
+        DefaultSimplifierTool(CoreProviders providers, boolean canonicalizeReads, Assumptions assumptions, OptionValues options) {
+            super(providers);
             this.canonicalizeReads = canonicalizeReads;
             this.assumptions = assumptions;
             this.options = options;
-            this.loweringProvider = loweringProvider;
-        }
-
-        @Override
-        public MetaAccessProvider getMetaAccess() {
-            return metaAccess;
-        }
-
-        @Override
-        public ConstantReflectionProvider getConstantReflection() {
-            return constantReflection;
-        }
-
-        @Override
-        public ConstantFieldProvider getConstantFieldProvider() {
-            return constantFieldProvider;
         }
 
         @Override
@@ -996,22 +981,16 @@ public class GraphUtil {
 
         @Override
         public Integer smallestCompareWidth() {
-            if (loweringProvider != null) {
-                return loweringProvider.smallestCompareWidth();
+            if (getLowerer() != null) {
+                return getLowerer().smallestCompareWidth();
             } else {
                 return null;
             }
         }
     }
 
-    public static SimplifierTool getDefaultSimplifier(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    boolean canonicalizeReads, Assumptions assumptions, OptionValues options) {
-        return getDefaultSimplifier(metaAccess, constantReflection, constantFieldProvider, canonicalizeReads, assumptions, options, null);
-    }
-
-    public static SimplifierTool getDefaultSimplifier(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    boolean canonicalizeReads, Assumptions assumptions, OptionValues options, LoweringProvider loweringProvider) {
-        return new DefaultSimplifierTool(metaAccess, constantReflection, constantFieldProvider, canonicalizeReads, assumptions, options, loweringProvider);
+    public static SimplifierTool getDefaultSimplifier(CoreProviders providers, boolean canonicalizeReads, Assumptions assumptions, OptionValues options) {
+        return new DefaultSimplifierTool(providers, canonicalizeReads, assumptions, options);
     }
 
     public static Constant foldIfConstantAndRemove(ValueNode node, ValueNode constant) {

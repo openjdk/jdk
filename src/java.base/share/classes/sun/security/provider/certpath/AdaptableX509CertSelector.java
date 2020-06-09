@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Date;
 
 import sun.security.util.Debug;
 import sun.security.util.DerInputStream;
+import sun.security.util.KnownOIDs;
 import sun.security.x509.SerialNumber;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 
@@ -212,7 +213,8 @@ class AdaptableX509CertSelector extends X509CertSelector {
             return true;
         }
         try {
-            byte[] extVal = xcert.getExtensionValue("2.5.29.14");
+            byte[] extVal = xcert.getExtensionValue(
+                    KnownOIDs.SubjectKeyID.value());
             if (extVal == null) {
                 if (debug != null && Debug.isVerbose()) {
                     debug.println("AdaptableX509CertSelector.match: "

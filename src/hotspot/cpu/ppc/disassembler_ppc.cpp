@@ -192,7 +192,10 @@ void Disassembler::annotate(address here, outputStream* st) {
     st->fill_to(aligned_pos + tabspacing);
     st->print(";trap: ic miss check");
   } else if ((stop_type = MacroAssembler::tdi_get_si16(instruction, Assembler::traptoUnconditional, 0)) != -1) {
+    bool msg_present = (stop_type & MacroAssembler::stop_msg_present);
+    stop_type = (stop_type &~ MacroAssembler::stop_msg_present);
+    const char **detail_msg_ptr = (const char**)(here + 4);
     st->fill_to(aligned_pos + tabspacing);
-    st->print(";trap: stop type %d", stop_type);
+    st->print(";trap: stop type %d: %s", stop_type, msg_present ? *detail_msg_ptr : "no details provided");
   }
 }

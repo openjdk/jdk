@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,21 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.text.MessageFormat;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ResourceBundle;
+import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
+import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERBOSE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
-import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.*;
-
-public class MacAppBundler extends AbstractImageBundler {
-
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.incubator.jpackage.internal.resources.MacResources");
+public class MacAppBundler extends AppImageBundler {
+     public MacAppBundler() {
+        setAppImageSupplier(MacAppImageBuilder::new);
+        setParamsValidator(MacAppBundler::doValidate);
+    }
 
     private static final String TEMPLATE_BUNDLE_ICON = "java.icns";
 
@@ -99,27 +98,11 @@ public class MacAppBundler extends AbstractImageBundler {
         return s;
     }
 
-    @Override
-    public boolean validate(Map<String, ? super Object> params)
+    private static void doValidate(Map<String, ? super Object> params)
             throws ConfigException {
-        try {
-            return doValidate(params);
-        } catch (RuntimeException re) {
-            if (re.getCause() instanceof ConfigException) {
-                throw (ConfigException) re.getCause();
-            } else {
-                throw new ConfigException(re);
-            }
-        }
-    }
-
-    private boolean doValidate(Map<String, ? super Object> params)
-            throws ConfigException {
-
-        imageBundleValidation(params);
 
         if (StandardBundlerParam.getPredefinedAppImage(params) != null) {
-            return true;
+            return;
         }
 
         // validate short version
@@ -156,74 +139,5 @@ public class MacAppBundler extends AbstractImageBundler {
                 throw new ConfigException(ex);
             }
         }
-
-        return true;
     }
-
-    File doBundle(Map<String, ? super Object> params, File outputDirectory,
-            boolean dependentTask) throws PackagerException {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        } else {
-            return doAppBundle(params, outputDirectory, dependentTask);
-        }
-    }
-
-    File doAppBundle(Map<String, ? super Object> params, File outputDirectory,
-            boolean dependentTask) throws PackagerException {
-        try {
-            File rootDirectory = createRoot(params, outputDirectory,
-                    dependentTask, APP_NAME.fetchFrom(params) + ".app");
-            AbstractAppImageBuilder appBuilder =
-                    new MacAppImageBuilder(params, outputDirectory.toPath());
-            if (PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) == null ) {
-                JLinkBundlerHelper.execute(params, appBuilder);
-            } else {
-                StandardBundlerParam.copyPredefinedRuntimeImage(
-                        params, appBuilder);
-            }
-            return rootDirectory;
-        } catch (PackagerException pe) {
-            throw pe;
-        } catch (Exception ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////
-    // Implement Bundler
-    /////////////////////////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-        return I18N.getString("app.bundler.name");
-    }
-
-    @Override
-    public String getID() {
-        return "mac.app";
-    }
-
-    @Override
-    public String getBundleType() {
-        return "IMAGE";
-    }
-
-    @Override
-    public File execute(Map<String, ? super Object> params,
-            File outputParentDir) throws PackagerException {
-        return doBundle(params, outputParentDir, false);
-    }
-
-    @Override
-    public boolean supported(boolean runtimeInstaller) {
-        return true;
-    }
-
-    @Override
-    public boolean isDefault() {
-        return false;
-    }
-
 }

@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test that os::attempt_reserve_memory_at doesn't register the memory as committed
- * @key nmt jcmd
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

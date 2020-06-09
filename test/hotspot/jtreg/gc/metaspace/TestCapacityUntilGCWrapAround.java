@@ -25,7 +25,6 @@ package gc.metaspace;
 
 /*
  * @test
- * @key gc
  * @bug 8049831
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

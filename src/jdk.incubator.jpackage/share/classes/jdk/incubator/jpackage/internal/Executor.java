@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -48,8 +50,8 @@ final public class Executor {
         return this;
     }
 
-    Executor setWaitBeforeOutput(boolean v) {
-        waitBeforeOutput = v;
+    Executor setWriteOutputToFile(boolean v) {
+        writeOutputToFile = v;
         return this;
     }
 
@@ -80,8 +82,13 @@ final public class Executor {
         output = null;
 
         boolean needProcessOutput = outputConsumer != null || Log.isVerbose() || saveOutput;
+        File outputFile = null;
         if (needProcessOutput) {
             pb.redirectErrorStream(true);
+            if (writeOutputToFile) {
+                outputFile = File.createTempFile("jpackageOutputTempFile", ".tmp");
+                pb.redirectOutput(outputFile);
+            }
         } else {
             // We are not going to read process output, so need to notify
             // ProcessBuilder about this. Otherwise some processes might just
@@ -94,7 +101,7 @@ final public class Executor {
         Process p = pb.start();
 
         int code = 0;
-        if (waitBeforeOutput) {
+        if (writeOutputToFile) {
             try {
                 code = p.waitFor();
             } catch (InterruptedException ex) {
@@ -104,25 +111,17 @@ final public class Executor {
         }
 
         if (needProcessOutput) {
-            try (var br = new BufferedReader(new InputStreamReader(
-                    p.getInputStream()))) {
-                final List<String> savedOutput;
-                // Need to save output if explicitely requested (saveOutput=true) or
-                // if will be used used by multiple consumers
-                if ((outputConsumer != null && Log.isVerbose()) || saveOutput) {
-                    savedOutput = br.lines().collect(Collectors.toList());
-                    if (saveOutput) {
-                        output = savedOutput;
-                    }
-                } else {
-                    savedOutput = null;
-                }
+            final List<String> savedOutput;
+            Supplier<Stream<String>> outputStream;
 
-                Supplier<Stream<String>> outputStream = () -> {
+            if (writeOutputToFile) {
+                savedOutput = Files.readAllLines(outputFile.toPath());
+                outputFile.delete();
+                outputStream = () -> {
                     if (savedOutput != null) {
                         return savedOutput.stream();
                     }
-                    return br.lines();
+                    return null;
                 };
 
                 if (Log.isVerbose()) {
@@ -132,21 +131,50 @@ final public class Executor {
                 if (outputConsumer != null) {
                     outputConsumer.accept(outputStream.get());
                 }
+            } else {
+                try (var br = new BufferedReader(new InputStreamReader(
+                        p.getInputStream()))) {
+                    // Need to save output if explicitely requested (saveOutput=true) or
+                    // if will be used used by multiple consumers
+                    if ((outputConsumer != null && Log.isVerbose()) || saveOutput) {
+                        savedOutput = br.lines().collect(Collectors.toList());
+                        if (saveOutput) {
+                            output = savedOutput;
+                        }
+                    } else {
+                        savedOutput = null;
+                    }
 
-                if (savedOutput == null) {
-                    // For some processes on Linux if the output stream
-                    // of the process is opened but not consumed, the process
-                    // would exit with code 141.
-                    // It turned out that reading just a single line of process
-                    // output fixes the problem, but let's process
-                    // all of the output, just in case.
-                    br.lines().forEach(x -> {});
+                    outputStream = () -> {
+                        if (savedOutput != null) {
+                            return savedOutput.stream();
+                        }
+                        return br.lines();
+                    };
+
+                    if (Log.isVerbose()) {
+                        outputStream.get().forEach(Log::verbose);
+                    }
+
+                    if (outputConsumer != null) {
+                        outputConsumer.accept(outputStream.get());
+                    }
+
+                    if (savedOutput == null) {
+                        // For some processes on Linux if the output stream
+                        // of the process is opened but not consumed, the process
+                        // would exit with code 141.
+                        // It turned out that reading just a single line of process
+                        // output fixes the problem, but let's process
+                        // all of the output, just in case.
+                        br.lines().forEach(x -> {});
+                    }
                 }
             }
         }
 
         try {
-            if (!waitBeforeOutput) {
+            if (!writeOutputToFile) {
                 code = p.waitFor();
             }
             return code;
@@ -175,7 +203,7 @@ final public class Executor {
 
     private ProcessBuilder pb;
     private boolean saveOutput;
-    private boolean waitBeforeOutput;
+    private boolean writeOutputToFile;
     private List<String> output;
     private Consumer<Stream<String>> outputConsumer;
 }

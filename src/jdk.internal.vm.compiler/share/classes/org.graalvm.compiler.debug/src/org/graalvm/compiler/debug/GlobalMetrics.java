@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.graalvm.compiler.debug;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +36,7 @@ import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.MapCursor;
 import jdk.internal.vm.compiler.collections.Pair;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.IsolateUtil;
 
 /**
  * Metric values that can be {@linkplain #add(DebugContext) updated} by multiple threads.
@@ -75,10 +77,30 @@ public class GlobalMetrics {
         return res;
     }
 
+    private static PrintStream openPrintStream(String metricsFile) throws IOException {
+        if (metricsFile == null) {
+            return DebugContext.getDefaultLogStream();
+        } else {
+            long isolateID = IsolateUtil.getIsolateID();
+            Path path;
+            if (isolateID != 0L) {
+                int lastDot = metricsFile.lastIndexOf('.');
+                if (lastDot != -1) {
+                    path = Paths.get(metricsFile.substring(0, lastDot) + '@' + isolateID + metricsFile.substring(lastDot));
+                } else {
+                    path = Paths.get(metricsFile + isolateID);
+                }
+            } else {
+                path = Paths.get(metricsFile);
+            }
+            return new PrintStream(Files.newOutputStream(path));
+        }
+    }
+
     /**
      * Prints the values in the object to the file specified by
      * {@link DebugOptions#AggregatedMetricsFile} if present otherwise to
-     * {@link DebugContext#DEFAULT_LOG_STREAM}.
+     * {@link DebugContext#getDefaultLogStream()}.
      */
     public void print(OptionValues options) {
         long[] vals = values;
@@ -88,10 +110,11 @@ public class GlobalMetrics {
             boolean csv = metricsFile != null && (metricsFile.endsWith(".csv") || metricsFile.endsWith(".CSV"));
             PrintStream p = null;
             try {
-                p = metricsFile == null ? DebugContext.DEFAULT_LOG_STREAM : new PrintStream(Files.newOutputStream(Paths.get(metricsFile)));
+                p = openPrintStream(metricsFile);
+                String isolateID = IsolateUtil.getIsolateID(false);
                 if (!csv) {
                     if (!map.isEmpty()) {
-                        p.println("++ Aggregated Metrics ++");
+                        p.printf("++ Aggregated Metrics %s ++%n", isolateID);
                     }
                 }
                 String csvFormat = CSVUtil.buildFormatString("%s", "%s", "%s");
@@ -107,7 +130,7 @@ public class GlobalMetrics {
                 }
                 if (!csv) {
                     if (!map.isEmpty()) {
-                        p.println("-- Aggregated Metrics --");
+                        p.printf("-- Aggregated Metrics %s --%n", isolateID);
                     }
                 }
             } catch (IOException e) {

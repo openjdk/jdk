@@ -30,7 +30,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test CriticalNativeStressEpsilon
- * @key gc randomness
+ * @key randomness
  * @bug 8199868
  * @library / /test/lib
  * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & vm.gc.Epsilon & !vm.graal.enabled
@@ -40,7 +40,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test CriticalNativeStressShenandoah
- * @key gc randomness
+ * @key randomness
  * @bug 8199868
  * @library / /test/lib
  * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & vm.gc.Shenandoah & !vm.graal.enabled

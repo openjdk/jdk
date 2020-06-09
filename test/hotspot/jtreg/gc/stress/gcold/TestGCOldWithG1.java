@@ -26,7 +26,7 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithG1
- * @key gc randomness
+ * @key randomness
  * @library / /test/lib
  * @requires vm.gc.G1
  * @summary Stress the G1 GC by trying to make old objects more likely to be garbage than young objects.

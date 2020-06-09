@@ -286,8 +286,10 @@ void EpsilonHeap::print_on(outputStream *st) const {
   // Cast away constness:
   ((VirtualSpace)_virtual_space).print_on(st);
 
-  st->print_cr("Allocation space:");
-  _space->print_on(st);
+  if (_space != NULL) {
+    st->print_cr("Allocation space:");
+    _space->print_on(st);
+  }
 
   MetaspaceUtils::print_on(st);
 }

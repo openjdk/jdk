@@ -205,15 +205,13 @@ public class TestSpliterator {
         };
     }
 
-    static final int ALL_ACCESS_MODES = READ | WRITE | CLOSE | ACQUIRE | HANDOFF;
-
     @DataProvider(name = "accessScenarios")
     public Object[][] accessScenarios() {
         SequenceLayout layout = MemoryLayout.ofSequence(16, MemoryLayouts.JAVA_INT);
         var mallocSegment = MemorySegment.allocateNative(layout);
 
         Map<Supplier<Spliterator<MemorySegment>>,Integer> l = Map.of(
-            () -> spliterator(mallocSegment.withAccessModes(ALL_ACCESS_MODES), layout), ALL_ACCESS_MODES,
+            () -> spliterator(mallocSegment.withAccessModes(ALL_ACCESS), layout), ALL_ACCESS,
             () -> spliterator(mallocSegment.withAccessModes(0), layout), 0,
             () -> spliterator(mallocSegment.withAccessModes(READ), layout), READ,
             () -> spliterator(mallocSegment.withAccessModes(CLOSE), layout), 0,

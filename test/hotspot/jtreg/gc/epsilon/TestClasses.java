@@ -25,7 +25,6 @@ package gc.epsilon;
 
 /**
  * @test TestClasses
- * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon is able to allocate a lot of classes
  *

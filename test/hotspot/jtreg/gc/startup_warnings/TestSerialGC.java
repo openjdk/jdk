@@ -24,15 +24,14 @@
 package gc.startup_warnings;
 
 /*
-* @test TestSerialGC
-* @key gc
-* @bug 8006398
-* @summary Test that SerialGC does not print a warning message
-* @library /test/lib
-* @modules java.base/jdk.internal.misc
-*          java.management
-* @run driver gc.startup_warnings.TestSerialGC
-*/
+ * @test TestSerialGC
+ * @bug 8006398
+ * @summary Test that SerialGC does not print a warning message
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver gc.startup_warnings.TestSerialGC
+ */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;

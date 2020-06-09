@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,8 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
 
     protected final IntrinsicMethod intrinsicMethod;
 
-    public MethodHandleNode(IntrinsicMethod intrinsicMethod, InvokeKind invokeKind, ResolvedJavaMethod targetMethod, int bci, StampPair returnStamp, ValueNode... arguments) {
-        super(TYPE, invokeKind, targetMethod, bci, returnStamp, arguments);
+    public MethodHandleNode(IntrinsicMethod intrinsicMethod, MacroParams p) {
+        super(TYPE, p);
         this.intrinsicMethod = intrinsicMethod;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,6 +533,130 @@ public enum Condition {
         }
     }
 
+    private static boolean in(Condition needle, Condition... haystack) {
+        for (Condition c : haystack) {
+            if (c == needle) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if this condition and {@code other} will never both return true for the same
+     * arguments. This means that tests using these conditions can be safely reordered.
+     */
+    public boolean trueIsDisjoint(Condition other) {
+        if (other == this) {
+            return false;
+        }
+        switch (this) {
+            case EQ: {
+                // 0 EQ 0 is not disjoint from 0 LE 0
+                // 0 EQ 0 is not disjoint from 0 GE 0
+                // 0 EQ 0 is not disjoint from 0 AE 0
+                // 0 EQ 0 is not disjoint from 0 BE 0
+                return in(other, NE, LT, GT, AT, BT);
+            }
+            case NE: {
+                // 0 NE 1 is not disjoint from 0 LT 1
+                // 0 NE 1 is not disjoint from 0 LE 1
+                // 0 NE -1 is not disjoint from 0 GT -1
+                // 0 NE -1 is not disjoint from 0 GE -1
+                // 1 NE 0 is not disjoint from 1 AE 0
+                // 0 NE 1 is not disjoint from 0 BE 1
+                // 1 NE 0 is not disjoint from 1 AT 0
+                // 0 NE 1 is not disjoint from 0 BT 1
+                return other == EQ;
+            }
+            case LT: {
+                // 0 LT 1 is not disjoint from 0 NE 1
+                // 0 LT 1 is not disjoint from 0 LE 1
+                // -1 LT 0 is not disjoint from -1 AE 0
+                // 0 LT 1 is not disjoint from 0 BE 1
+                // -1 LT 0 is not disjoint from -1 AT 0
+                // 0 LT 1 is not disjoint from 0 BT 1
+                return in(other, EQ, GT, GE);
+            }
+            case LE: {
+                // 0 LE 0 is not disjoint from 0 EQ 0
+                // 0 LE 1 is not disjoint from 0 NE 1
+                // 0 LE 1 is not disjoint from 0 LT 1
+                // 0 LE 0 is not disjoint from 0 GE 0
+                // 0 LE 0 is not disjoint from 0 AE 0
+                // 0 LE 0 is not disjoint from 0 BE 0
+                // -1 LE 0 is not disjoint from -1 AT 0
+                // 0 LE 1 is not disjoint from 0 BT 1
+                return other == GT;
+            }
+            case GT: {
+                // 0 GT -1 is not disjoint from 0 NE -1
+                // 0 GT -1 is not disjoint from 0 GE -1
+                // 1 GT 0 is not disjoint from 1 AE 0
+                // 0 GT -1 is not disjoint from 0 BE -1
+                // 1 GT 0 is not disjoint from 1 AT 0
+                // 0 GT -1 is not disjoint from 0 BT -1
+                return in(other, EQ, LT, LE);
+            }
+            case GE: {
+                // 0 GE 0 is not disjoint from 0 EQ 0
+                // 0 GE -1 is not disjoint from 0 NE -1
+                // 0 GE 0 is not disjoint from 0 LE 0
+                // 0 GE -1 is not disjoint from 0 GT -1
+                // 0 GE 0 is not disjoint from 0 AE 0
+                // 0 GE 0 is not disjoint from 0 BE 0
+                // 1 GE 0 is not disjoint from 1 AT 0
+                // 0 GE -1 is not disjoint from 0 BT -1
+                return other == LT;
+            }
+            case AE: {
+                // 0 AE 0 is not disjoint from 0 EQ 0
+                // 1 AE 0 is not disjoint from 1 NE 0
+                // -1 AE 0 is not disjoint from -1 LT 0
+                // 0 AE 0 is not disjoint from 0 LE 0
+                // 1 AE 0 is not disjoint from 1 GT 0
+                // 0 AE 0 is not disjoint from 0 GE 0
+                // 0 AE 0 is not disjoint from 0 BE 0
+                // 1 AE 0 is not disjoint from 1 AT 0
+                return other == BT;
+            }
+            case BE: {
+                // 0 BE 0 is not disjoint from 0 EQ 0
+                // 0 BE 1 is not disjoint from 0 NE 1
+                // 0 BE 1 is not disjoint from 0 LT 1
+                // 0 BE 0 is not disjoint from 0 LE 0
+                // 0 BE -1 is not disjoint from 0 GT -1
+                // 0 BE 0 is not disjoint from 0 GE 0
+                // 0 BE 0 is not disjoint from 0 AE 0
+                // 0 BE 1 is not disjoint from 0 BT 1
+                return other == AT;
+            }
+            case AT: {
+                // 1 AT 0 is not disjoint from 1 NE 0
+                // -1 AT 0 is not disjoint from -1 LT 0
+                // -1 AT 0 is not disjoint from -1 LE 0
+                // 1 AT 0 is not disjoint from 1 GT 0
+                // 1 AT 0 is not disjoint from 1 GE 0
+                // 1 AT 0 is not disjoint from 1 AE 0
+                return in(other, EQ, BE, BT);
+            }
+            case BT: {
+                // 0 BT 1 is not disjoint from 0 NE 1
+                // 0 BT 1 is not disjoint from 0 LT 1
+                // 0 BT 1 is not disjoint from 0 LE 1
+                // 0 BT -1 is not disjoint from 0 GT -1
+                // 0 BT -1 is not disjoint from 0 GE -1
+                // 0 BT 1 is not disjoint from 0 BE 1
+                return in(other, EQ, AE, AT);
+            }
+        }
+        throw new IllegalArgumentException(this.toString());
+    }
+
+    /**
+     * Return the join of this condition and {@code other}. Only non-null return values are
+     * meaningful.
+     */
     public Condition join(Condition other) {
         if (other == this) {
             return this;

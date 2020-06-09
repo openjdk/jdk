@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,6 @@
 
 typedef Adapter<JfrFlush> JfrNativeEventAdapter;
 typedef MemoryWriterHost<JfrNativeEventAdapter, StackObj> JfrNativeEventWriterImpl;
-typedef StackEventWriterHost<BigEndianEncoder, CompressedIntegerEncoder, JfrNativeEventWriterImpl> JfrNativeEventWriter;
+typedef EventWriterHost<BigEndianEncoder, CompressedIntegerEncoder, JfrNativeEventWriterImpl> JfrNativeEventWriter;
 
 #endif // SHARE_JFR_WRITERS_JFRNATIVEEVENTWRITER_HPP

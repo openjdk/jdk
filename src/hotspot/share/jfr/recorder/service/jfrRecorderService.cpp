@@ -462,7 +462,6 @@ void JfrRecorderService::vm_error_rotation() {
     open_new_chunk(true);
   }
   if (_chunkwriter.is_valid()) {
-    _checkpoint_manager.register_service_thread(t);
     _storage.flush_regular_buffer(t->jfr_thread_local()->native_buffer(), t);
     _chunkwriter.mark_chunk_final();
     invoke_flush();
@@ -655,10 +654,6 @@ void JfrRecorderService::process_full_buffers() {
   if (_chunkwriter.is_valid()) {
     _storage.write_full();
   }
-}
-
-void JfrRecorderService::scavenge() {
-  _storage.scavenge();
 }
 
 void JfrRecorderService::evaluate_chunk_size_for_rotation() {

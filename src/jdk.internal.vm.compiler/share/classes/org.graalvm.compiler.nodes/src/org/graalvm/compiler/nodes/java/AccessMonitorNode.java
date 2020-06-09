@@ -53,6 +53,12 @@ public abstract class AccessMonitorNode extends AbstractMemoryCheckpoint impleme
     @Input ValueNode object;
     @Input(Association) MonitorIdNode monitorId;
 
+    /**
+     * Additional information already loaded from {@link #object} in an early lowering stage to
+     * facilitate value numbering and high-level optimizations. The value is VM-dependent.
+     */
+    @OptionalInput private ValueNode objectData;
+
     protected AccessMonitorNode(NodeClass<? extends AccessMonitorNode> c, ValueNode object, MonitorIdNode monitorId, boolean biasable) {
         super(c, StampFactory.forVoid());
         this.object = object;
@@ -89,16 +95,17 @@ public abstract class AccessMonitorNode extends AbstractMemoryCheckpoint impleme
         this.object = lockedObject;
     }
 
+    public ValueNode getObjectData() {
+        return objectData;
+    }
+
+    public void setObjectData(ValueNode objectData) {
+        updateUsages(this.objectData, objectData);
+        this.objectData = objectData;
+    }
+
     public MonitorIdNode getMonitorId() {
         return monitorId;
-    }
-
-    public void disableBiasedLocking() {
-        this.biasable = false;
-    }
-
-    public boolean isBiasable() {
-        return biasable;
     }
 
     protected boolean biasable = true;

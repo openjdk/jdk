@@ -36,6 +36,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotMarkId;
 import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
 import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.loop.BasicInductionVariable;
@@ -100,7 +101,7 @@ public class AMD64HotSpotAddressLowering extends AMD64CompressAddressLowering {
         } else if (encoding.getBase() != 0 || (generatePIC && compression.stamp(NodeView.DEFAULT) instanceof KlassPointerStamp)) {
             if (generatePIC) {
                 if (other == null) {
-                    ValueNode base = compression.graph().unique(new GraalHotSpotVMConfigNode(config, config.MARKID_NARROW_KLASS_BASE_ADDRESS, JavaKind.Long));
+                    ValueNode base = compression.graph().unique(new GraalHotSpotVMConfigNode(config, HotSpotMarkId.NARROW_KLASS_BASE_ADDRESS, JavaKind.Long));
                     addr.setBase(base);
                 } else {
                     return false;

@@ -25,7 +25,7 @@
 /*
  * @test TestAllocHumongousFragment
  * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -53,7 +53,7 @@
 /*
  * @test TestAllocHumongousFragment
  * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -98,7 +98,7 @@
 /*
  * @test TestAllocHumongousFragment
  * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
