@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,6 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
 
 AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
 [
-  FIXPATH_DETACH_FLAG=""
+  FIXPATH_DETACH_FLAG="--detach"
   AC_SUBST(FIXPATH_DETACH_FLAG)
 ])

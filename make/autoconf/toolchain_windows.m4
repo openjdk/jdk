@@ -327,26 +327,6 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
       VS_PATH="$TOOLCHAIN_PATH:$PATH"
     fi
 
-    # Convert DEVKIT_VS_INCLUDE into windows style VS_INCLUDE so that it
-    # can still be exported as INCLUDE for compiler invocations without
-    # SYSROOT_CFLAGS
-    # FIXME: should not be needed!
-    OLDIFS="$IFS"
-    IFS=";"
-    for i in $DEVKIT_VS_INCLUDE; do
-      ipath=$i
-      UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([ipath])
-      VS_INCLUDE="$VS_INCLUDE;$ipath"
-    done
-    # Convert DEVKIT_VS_LIB into VS_LIB so that it can still be exported
-    # as LIB for compiler invocations without SYSROOT_LDFLAGS
-    for i in $DEVKIT_VS_LIB; do
-      libpath=$i
-      UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([libpath])
-      VS_LIB="$VS_LIB;$libpath"
-    done
-    IFS="$OLDIFS"
-
     AC_MSG_NOTICE([Found devkit $VS_DESCRIPTION])
 
   elif test "x$with_toolchain_version" != x; then
@@ -414,13 +394,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
       UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_VS_ENV_CMD])
 
-      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-        WINPATH_BASH="bash"
-      else
-        WINPATH_BASH="$BASH.exe"
-        UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_BASH])
-      fi
-
       # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
       # script (executable by bash) that will setup the important variables.
       EXTRACT_VC_ENV_BAT_FILE="$VS_ENV_TMP_DIR/extract-vs-env.bat"
@@ -431,8 +404,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # In some cases, the VS_ENV_CMD will change directory, change back so
       # the set-vs-env.sh ends up in the right place.
       $ECHO 'cd %~dp0' >> $EXTRACT_VC_ENV_BAT_FILE
-#      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
- if test x = x; then
         # These will end up something like:
         # echo VS_PATH=\"$PATH\" > set-vs-env.sh
         # The trailing space for everyone except PATH is no typo, but is needed due
@@ -453,26 +424,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
             >> $EXTRACT_VC_ENV_BAT_FILE
         $ECHO 'echo WINDOWSSDKDIR="%WINDOWSSDKDIR% " >> set-vs-env.sh' \
             >> $EXTRACT_VC_ENV_BAT_FILE
-      else
-        # These will end up something like:
-        # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
-        # The trailing space for everyone except PATH is no typo, but is needed due
-        # to trailing \ in the Windows paths. These will be stripped later.
-        $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO "$WINPATH_BASH -c 'echo VCToolsRedistDir="'\"$VCToolsRedistDir \" >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-      fi
 
       # Now execute the newly created bat file.
       # Change directory so we don't need to mess with Windows paths in redirects.

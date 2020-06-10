@@ -666,28 +666,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   TOOLCHAIN_FIND_COMPILER([CC], [C], $TOOLCHAIN_CC_BINARY)
   # Now that we have resolved CC ourself, let autoconf have its go at it
-  echo CC is $CC. now auto
-  echo CFLAGS is $CFLAGS
-  echo LDFLAGS is $LDFLAGS
-  echo LIBS=$LIBS
   LIBS="-link $LDFLAGS"
   LDFLAGS=
-  OLD_CC="$CC"
   UTIL_ADD_FIXPATH([CC])
-#  CC="$FIXPATH $CC"
-  echo new CC is $CC.
   AC_PROG_CC([$CC])
-  echo done
 
-echo will find CXX
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
-  echo found CXX=$CXX
   # Now that we have resolved CXX ourself, let autoconf have its go at it
-  OLD_CXX="$CXX"
- # CXX="$FIXPATH $CXX"
-
- UTIL_ADD_FIXPATH([CXX])
-  echo running CXX: $CXX.
+  UTIL_ADD_FIXPATH([CXX])
   AC_PROG_CXX([$CXX])
 
   # This is the compiler version number on the form X.Y[.Z]
@@ -711,11 +697,6 @@ echo will find CXX
   UTIL_FIXUP_EXECUTABLE(CPP)
   AC_PROG_CXXCPP
   UTIL_FIXUP_EXECUTABLE(CXXCPP)
-#  CC="$OLD_CC"
-#  CXX="$OLD_CXX"
-
-  echo we got CPP=$CPP
-  echo CXXCPP=$CXXCPP
 
   #
   # Setup the linker (LD)
@@ -724,31 +705,19 @@ echo will find CXX
     # In the Microsoft toolchain we have a separate LD command "link".
     # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
     # a cygwin program for something completely different.
-    echo should rejet $CYGWIN_LINK
     UTIL_PATH_PROGS(LD, link$EXE_SUFFIX)
-#    echo PATH is $PATH.
-#    AC_CHECK_PROG([LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
-#    AC_CHECK_PROG([LD], [link$EXE_SUFFIX],,,, [$CYGWIN_LINK])
-    #UTIL_FIXUP_EXECUTABLE(LD)
+    UTIL_FIXUP_EXECUTABLE(LD)
     UTIL_ADD_FIXPATH([LD])
+
     # Verify that we indeed succeeded with this trick.
     AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
-
-    # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
-    # which, in combination with WSLENV, will make the WSL layer complain
-#    old_path="$PATH"
-#    PATH=
-
     "$LD" --version > /dev/null
-
     if test $? -eq 0 ; then
       AC_MSG_RESULT([no])
       AC_MSG_ERROR([This is the Cygwin link tool. Please check your PATH and rerun configure.])
     else
       AC_MSG_RESULT([yes])
     fi
-
- #   PATH="$old_path"
 
     LDCXX="$LD"
     # jaotc being a windows program expects the linker to be supplied with exe suffix.
@@ -784,7 +753,7 @@ echo will find CXX
     AS="$CC -c"
   else
     UTIL_PATH_PROGS(AS, ml$EXE_SUFFIX)
-    #UTIL_FIXUP_EXECUTABLE(AS)
+    UTIL_FIXUP_EXECUTABLE(AS)
     UTIL_ADD_FIXPATH([AS])
   fi
   AC_SUBST(AS)
@@ -794,9 +763,8 @@ echo will find CXX
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
-#    AC_CHECK_PROG([AR], [lib$EXE_SUFFIX],[lib$EXE_SUFFIX],,,)
     UTIL_PATH_PROGS(AR, lib$EXE_SUFFIX)
-    #UTIL_FIXUP_EXECUTABLE(AR)
+    UTIL_FIXUP_EXECUTABLE(AR)
     UTIL_ADD_FIXPATH([AR])
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_CHECK_TOOLS(AR, ar gcc-ar)
@@ -821,21 +789,16 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-  #(variable, prog-to-check-for, value-if-found, [value-if-not-found], [path = ‘$PATH’], [reject])
-    #AC_CHECK_PROG([MT], [mt$EXE_SUFFIX], [mt$EXE_SUFFIX],,, [/usr/bin/mt])
-    #— Macro: AC_PATH_PROGS (variable, progs-to-check-for, [value-if-not-found], [path = ‘$PATH’])
     UTIL_PATH_PROGS(MT, mt$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(MT)
     UTIL_ADD_FIXPATH(MT)
 
     # Setup the resource compiler (RC)
-    #AC_CHECK_PROG([RC], [rc$EXE_SUFFIX], [rc$EXE_SUFFIX],,, [/usr/bin/rc])
     UTIL_PATH_PROGS(RC, rc$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(RC)
     UTIL_ADD_FIXPATH(RC)
 
     UTIL_PATH_PROGS(DUMPBIN, dumpbin$EXE_SUFFIX)
-#    AC_CHECK_PROG([DUMPBIN], [dumpbin$EXE_SUFFIX], [dumpbin$EXE_SUFFIX],,,)
     UTIL_FIXUP_EXECUTABLE(DUMPBIN)
     UTIL_ADD_FIXPATH(DUMPBIN)
   fi
