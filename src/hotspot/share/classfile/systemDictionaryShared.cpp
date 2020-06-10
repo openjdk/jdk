@@ -61,9 +61,9 @@
 #include "utilities/stringUtils.hpp"
 
 
-OopHandle SystemDictionaryShared::_shared_protection_domains  =  NULL;
-OopHandle SystemDictionaryShared::_shared_jar_urls            =  NULL;
-OopHandle SystemDictionaryShared::_shared_jar_manifests       =  NULL;
+OopHandle SystemDictionaryShared::_shared_protection_domains;
+OopHandle SystemDictionaryShared::_shared_jar_urls;
+OopHandle SystemDictionaryShared::_shared_jar_manifests;
 DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {

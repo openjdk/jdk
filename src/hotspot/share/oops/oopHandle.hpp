@@ -42,7 +42,7 @@ private:
 
 public:
   OopHandle() : _obj(NULL) {}
-  OopHandle(oop* w) : _obj(w) {}
+  explicit OopHandle(oop* w) : _obj(w) {}
 
   inline static OopHandle create(oop obj);
 

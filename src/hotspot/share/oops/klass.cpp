@@ -555,7 +555,7 @@ void Klass::remove_java_mirror() {
     log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
   }
   // Just null out the mirror.  The class_loader_data() no longer exists.
-  _java_mirror = NULL;
+  _java_mirror = OopHandle();
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
@@ -609,7 +609,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
 
     // No archived mirror data
     log_debug(cds, mirror)("No archived mirror data for %s", external_name());
-    _java_mirror = NULL;
+    _java_mirror = OopHandle();
     this->clear_has_raw_archived_mirror();
   }
 

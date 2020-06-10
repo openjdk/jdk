@@ -183,7 +183,7 @@ ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
   }
 }
 
-oop* ClassLoaderData::ChunkedHandleList::add(oop o) {
+OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
   if (_head == NULL || _head->_size == Chunk::CAPACITY) {
     Chunk* next = new Chunk(_head);
     Atomic::release_store(&_head, next);
@@ -191,7 +191,7 @@ oop* ClassLoaderData::ChunkedHandleList::add(oop o) {
   oop* handle = &_head->_data[_head->_size];
   NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, o);
   Atomic::release_store(&_head->_size, _head->_size + 1);
-  return handle;
+  return OopHandle(handle);
 }
 
 int ClassLoaderData::ChunkedHandleList::count() const {
@@ -776,7 +776,7 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   record_modified_oops();
-  return OopHandle(_handles.add(h()));
+  return _handles.add(h());
 }
 
 void ClassLoaderData::remove_handle(OopHandle h) {

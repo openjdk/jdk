@@ -283,7 +283,7 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
         ik->is_shared_app_class())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
-    set_resolved_references(NULL);
+    set_resolved_references(OopHandle());
     return;
   }
 
@@ -315,7 +315,7 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     // resolved references will be created using the normal process
     // when there is no archived value.
     _cache->set_archived_references(archived);
-    set_resolved_references(NULL);
+    set_resolved_references(OopHandle());
   }
 }
 
@@ -389,7 +389,7 @@ void ConstantPool::remove_unshareable_info() {
   // If DynamicDumpSharedSpaces is enabled, clear the resolved references also
   // as java objects are not archived in the top layer.
   if (!HeapShared::is_heap_object_archiving_allowed() || DynamicDumpSharedSpaces) {
-    set_resolved_references(NULL);
+    set_resolved_references(OopHandle());
   }
 
   // Shared ConstantPools are in the RO region, so the _flags cannot be modified.

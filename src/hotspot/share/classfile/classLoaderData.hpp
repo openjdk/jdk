@@ -90,7 +90,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
     // Only one thread at a time can add, guarded by ClassLoaderData::metaspace_lock().
     // However, multiple threads can execute oops_do concurrently with add.
-    oop* add(oop o);
+    OopHandle add(oop o);
     bool contains(oop p);
     NOT_PRODUCT(bool owner_of(oop* p);)
     void oops_do(OopClosure* f);
