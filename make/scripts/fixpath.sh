@@ -1,19 +1,23 @@
 #!/bin/bash
 
-#PATHTOOL=cygpath
-PATHTOOL=wslpath
+PATHTOOL=cygpath
+#PATHTOOL=wslpath
 
 #DRIVEPREFIX=/cygdrive
-#DRIVEPREFIX=
-DRIVEPREFIX=/mnt
+DRIVEPREFIX=
+#DRIVEPREFIX=/mnt
+
 #ENVROOT="c:\cygwin64"
-ENVROOT='\\wsl$\Ubuntu-20.04'
+#ENVROOT='\\wsl$\Ubuntu-20.04'
+ENVROOT="c:\msys64"
 
 TEMPDIRS=""
 trap "cleanup" EXIT
 
 # Make regexp tests case insensitive
 shopt -s nocasematch
+# Prohibit msys2 from meddling with paths
+export MSYS2_ARG_CONV_EXCL="*"
 
 cleanup() {
   if [[ "$TEMPDIRS" != "" ]]; then
