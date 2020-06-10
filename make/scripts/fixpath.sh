@@ -80,6 +80,10 @@ cygwin_import_to_unix() {
       echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
       exit 1
     fi
+    if [[ $dirpart == / ]]; then
+      # Avoid double leading //
+      dirpart=""
+    fi
     basepart="$(basename "$path")"
     path="$dirpart/$basepart"
   fi
