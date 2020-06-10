@@ -55,7 +55,6 @@ final class CfgFile {
         ApplicationLayout appCfgLayout = createAppCfgLayout();
 
         content.add(Map.entry("[Application]", SECTION_TAG));
-        content.add(Map.entry("app.runtime", appCfgLayout.runtimeDirectory()));
 
         if (launcherData.isModular()) {
             content.add(Map.entry("app.mainmodule", launcherData.moduleName()

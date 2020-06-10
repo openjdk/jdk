@@ -102,20 +102,27 @@ public class MacHelper {
             withExplodedDmg(cmd, dmgImage -> {
                 Executor.of("sudo", "cp", "-r")
                 .addArgument(dmgImage)
-                .addArgument("/Applications")
+                .addArgument(getInstallationDirectory(cmd).getParent())
                 .execute();
             });
         };
         dmg.unpackHandler = (cmd, destinationDir) -> {
-            Path[] unpackedFolder = new Path[1];
+            Path unpackDir = destinationDir.resolve(
+                    TKit.removeRootFromAbsolutePath(
+                            getInstallationDirectory(cmd)).getParent());
+            try {
+                Files.createDirectories(unpackDir);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+
             withExplodedDmg(cmd, dmgImage -> {
                 Executor.of("cp", "-r")
                 .addArgument(dmgImage)
-                .addArgument(destinationDir)
+                .addArgument(unpackDir)
                 .execute();
-                unpackedFolder[0] = destinationDir.resolve(dmgImage.getFileName());
             });
-            return unpackedFolder[0];
+            return destinationDir;
         };
         dmg.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_DMG);
@@ -143,13 +150,25 @@ public class MacHelper {
             .addArgument(cmd.outputBundle())
             .addArgument(destinationDir.resolve("data")) // We need non-existing folder
             .execute();
+
+            final Path unpackRoot = destinationDir.resolve("unpacked");
+
+            Path installDir = TKit.removeRootFromAbsolutePath(
+                    getInstallationDirectory(cmd)).getParent();
+            final Path unpackDir = unpackRoot.resolve(installDir);
+            try {
+                Files.createDirectories(unpackDir);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+
             Executor.of("tar", "-C")
-            .addArgument(destinationDir)
+            .addArgument(unpackDir)
             .addArgument("-xvf")
             .addArgument(Path.of(destinationDir.toString(), "data",
                                  cmd.name() + "-app.pkg", "Payload"))
             .execute();
-            return destinationDir.resolve(cmd.name() + ".app");
+            return unpackRoot;
         };
         pkg.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);

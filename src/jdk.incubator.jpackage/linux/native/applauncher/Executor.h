@@ -23,48 +23,22 @@
  * questions.
  */
 
-#include <stdio.h>
-#include "AppLauncher.h"
-#include "FileUtils.h"
-#include "UnixSysInfo.h"
-#include "Package.h"
+#ifndef EXECUTOR_H
+#define EXECUTOR_H
+
+#include "tstrings.h"
 
 
-namespace {
+class CommandOutputConsumer {
+public:
+    virtual ~CommandOutputConsumer() {}
 
+    virtual bool accept(const std::string& line) {
+        return true;
+    };
+};
 
-void launchApp() {
-    setlocale(LC_ALL, "en_US.utf8");
+int executeCommandLineAndReadStdout(const std::string& cmd,
+        CommandOutputConsumer& consumer);
 
-    const tstring launcherPath = SysInfo::getProcessModulePath();
-
-    const Package ownerPackage = Package::findOwnerOfFile(launcherPath);
-
-    AppLauncher appLauncher;
-    appLauncher.addJvmLibName(_T("lib/libjli.so"));
-
-    if (ownerPackage.name().empty()) {
-        // Launcher should be in "bin" subdirectory of app image.
-        const tstring appImageRoot = FileUtils::dirname(
-                FileUtils::dirname(launcherPath));
-
-        appLauncher
-            .setImageRoot(appImageRoot)
-            .setAppDir(FileUtils::mkpath() << appImageRoot << _T("lib/app"))
-            .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
-                    << _T("lib/runtime"));
-    } else {
-        ownerPackage.initAppLauncher(appLauncher);
-    }
-
-    appLauncher.launch();
-}
-
-} // namespace
-
-
-int main(int argc, char *argv[]) {
-    SysInfo::argc = argc;
-    SysInfo::argv = argv;
-    return AppLauncher::launch(std::nothrow, launchApp);
-}
+#endif // #ifndef EXECUTOR_H

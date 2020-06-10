@@ -159,8 +159,15 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             Map<String, ? super Object> params) throws IOException {
         Map<String, String> data = new HashMap<>();
 
-        data.put("APPLICATION_DIRECTORY", Path.of(LINUX_INSTALL_DIR.fetchFrom(
-                params), PACKAGE_NAME.fetchFrom(params)).toString());
+        final Path prefix = Path.of(LINUX_INSTALL_DIR.fetchFrom(params));
+
+        Path appDirectory = prefix;
+        if (!isInstallDirInUsrTree(prefix.toString())) {
+            appDirectory = appDirectory.resolve(PACKAGE_NAME.fetchFrom(params));
+        }
+
+        data.put("APPLICATION_PREFIX", prefix.toString());
+        data.put("APPLICATION_DIRECTORY", appDirectory.toString());
         data.put("APPLICATION_SUMMARY", APP_NAME.fetchFrom(params));
         data.put("APPLICATION_LICENSE_TYPE", LICENSE_TYPE.fetchFrom(params));
 

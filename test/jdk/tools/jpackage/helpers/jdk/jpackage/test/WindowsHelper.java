@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,18 @@ public class WindowsHelper {
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {
-        Path installSubDir = getInstallationSubDirectory(cmd);
-        if (isUserLocalInstall(cmd)) {
-            return USER_LOCAL.resolve(installSubDir);
-        }
-        return PROGRAM_FILES.resolve(installSubDir);
+        return getInstallationRootDirectory(cmd).resolve(
+                getInstallationSubDirectory(cmd));
     }
 
-    static Path getInstallationSubDirectory(JPackageCommand cmd) {
+    private static Path getInstallationRootDirectory(JPackageCommand cmd) {
+        if (isUserLocalInstall(cmd)) {
+            return USER_LOCAL;
+        }
+        return PROGRAM_FILES;
+    }
+
+    private static Path getInstallationSubDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WINDOWS);
         return Path.of(cmd.getArgumentValue("--install-dir", () -> cmd.name()));
     }
@@ -81,11 +85,21 @@ public class WindowsHelper {
         msi.uninstallHandler = cmd -> installMsi.accept(cmd, false);
         msi.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.WIN_MSI);
-            runMsiexecWithRetries(Executor.of("msiexec", "/a")
-                    .addArgument(cmd.outputBundle().normalize())
-                    .addArguments("/qn", String.format("TARGETDIR=%s",
-                            destinationDir.toAbsolutePath().normalize())));
-            return destinationDir.resolve(getInstallationSubDirectory(cmd));
+            final Path unpackBat = destinationDir.resolve("unpack.bat");
+            final Path unpackDir = destinationDir.resolve(
+                    TKit.removeRootFromAbsolutePath(
+                            getInstallationRootDirectory(cmd)));
+            // Put msiexec in .bat file because can't pass value of TARGETDIR
+            // property containing spaces through ProcessBuilder properly.
+            TKit.createTextFile(unpackBat, List.of(String.join(" ", List.of(
+                    "msiexec",
+                    "/a",
+                    String.format("\"%s\"", cmd.outputBundle().normalize()),
+                    "/qn",
+                    String.format("TARGETDIR=\"%s\"",
+                            unpackDir.toAbsolutePath().normalize())))));
+            runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()));
+            return destinationDir;
         };
         return msi;
     }

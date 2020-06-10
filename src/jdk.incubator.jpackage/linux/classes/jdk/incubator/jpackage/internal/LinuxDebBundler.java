@@ -432,10 +432,18 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     private File getConfig_CopyrightFile(Map<String, ? super Object> params) {
-        PlatformPackage thePackage = createMetaPackage(params);
-        return thePackage.sourceRoot().resolve(Path.of(".",
-                LINUX_INSTALL_DIR.fetchFrom(params), PACKAGE_NAME.fetchFrom(
-                params), "share/doc/copyright")).toFile();
+        final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
+        final String packageName = PACKAGE_NAME.fetchFrom(params);
+
+        final Path installPath;
+        if (isInstallDirInUsrTree(installDir) || installDir.startsWith("/usr/")) {
+            installPath = Path.of("/usr/share/doc/", packageName, "copyright");
+        } else {
+            installPath = Path.of(installDir, packageName, "share/doc/copyright");
+        }
+
+        return createMetaPackage(params).sourceRoot().resolve(
+                Path.of("/").relativize(installPath)).toFile();
     }
 
     private File buildDeb(Map<String, ? super Object> params,

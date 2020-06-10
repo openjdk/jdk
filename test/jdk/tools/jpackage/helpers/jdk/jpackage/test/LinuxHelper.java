@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,7 @@ public class LinuxHelper {
             .addArgument(cmd.outputBundle())
             .addArgument(destinationDir)
             .execute();
-            return destinationDir.resolve(String.format(".%s",
-                    cmd.appInstallationDirectory())).normalize();
+            return destinationDir;
         };
         return deb;
     }
@@ -191,8 +190,7 @@ public class LinuxHelper {
                             cmd.outputBundle().toAbsolutePath().toString())))
             .setDirectory(destinationDir)
             .execute();
-            return destinationDir.resolve(String.format(".%s",
-                    cmd.appInstallationDirectory())).normalize();
+            return destinationDir;
         };
 
         return rpm;
