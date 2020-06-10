@@ -414,13 +414,21 @@ void ConstantPool::remove_unshareable_info() {
       // during dump time. We need to restore it back to an UnresolvedClass,
       // so that the proper class loading and initialization can happen
       // at runtime.
-      CPKlassSlot kslot = klass_slot_at(index);
-      int resolved_klass_index = kslot.resolved_klass_index();
-      int name_index = kslot.name_index();
-      assert(tag_at(name_index).is_symbol(), "sanity");
-      resolved_klasses()->at_put(resolved_klass_index, NULL);
-      tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-      assert(klass_name_at(index) == symbol_at(name_index), "sanity");
+      bool clear_it = true;
+      if (pool_holder()->is_hidden() && index == pool_holder()->this_class_index()) {
+        // All references to a hidden class's own field/methods are through this
+        // index. We cannot clear it. See comments in ClassFileParser::fill_instance_klass.
+        clear_it = false;
+      }
+      if (clear_it) {
+        CPKlassSlot kslot = klass_slot_at(index);
+        int resolved_klass_index = kslot.resolved_klass_index();
+        int name_index = kslot.name_index();
+        assert(tag_at(name_index).is_symbol(), "sanity");
+        resolved_klasses()->at_put(resolved_klass_index, NULL);
+        tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
+        assert(klass_name_at(index) == symbol_at(name_index), "sanity");
+      }
     }
   }
   if (cache() != NULL) {

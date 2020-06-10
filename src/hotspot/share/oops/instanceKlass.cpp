@@ -2602,6 +2602,19 @@ void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
   }
 }
 
+void InstanceKlass::assign_class_loader_type() {
+  ClassLoaderData *cld = class_loader_data();
+  if (cld->is_boot_class_loader_data()) {
+    set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
+  }
+  else if (cld->is_platform_class_loader_data()) {
+    set_shared_class_loader_type(ClassLoader::PLATFORM_LOADER);
+  }
+  else if (cld->is_system_class_loader_data()) {
+    set_shared_class_loader_type(ClassLoader::APP_LOADER);
+  }
+}
+
 #if INCLUDE_JVMTI
 static void clear_all_breakpoints(Method* m) {
   m->clear_all_breakpoints();

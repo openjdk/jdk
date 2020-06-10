@@ -26,6 +26,7 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -834,7 +835,7 @@ public final class Utils {
     public static String getTestName() {
         String result = null;
         // If we are using testng, then we should be able to load the "Test" annotation.
-        Class<? extends Annotation> testClassAnnotation;
+        Class<? extends Annotation> testClassAnnotation, junitTestClassAnnotation;
 
         try {
             testClassAnnotation = (Class<? extends Annotation>)Class.forName("org.testng.annotations.Test");
@@ -842,13 +843,21 @@ public final class Utils {
             testClassAnnotation = null;
         }
 
+        // If we are using junit, then we should be able to load the "Test" annotation.
+        try {
+            junitTestClassAnnotation = (Class<? extends Annotation>)Class.forName("org.junit.Test");
+        } catch (ClassNotFoundException e) {
+            junitTestClassAnnotation = null;
+        }
+
         StackTraceElement[] elms = (new Throwable()).getStackTrace();
         for (StackTraceElement n: elms) {
             String className = n.getClassName();
 
             // If this is a "main" method, then use its class name, but only
-            // if we are not using testng.
-            if (testClassAnnotation == null && "main".equals(n.getMethodName())) {
+            // if we are not using testng or junit.
+            if (testClassAnnotation == null && junitTestClassAnnotation == null &&
+                "main".equals(n.getMethodName())) {
                 result = className;
                 break;
             }
@@ -862,6 +871,26 @@ public final class Utils {
                     if (c.isAnnotationPresent(testClassAnnotation)) {
                         result = className;
                         break;
+                    }
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("Unexpected exception: " + e, e);
+                }
+            }
+
+            // If this is a junit test, the test will have no "main" method. We can
+            // detect a junit test class by going through all the methods and
+            // check if the method has the org.junit.Test annotation. If present,
+            // then use the name of this class.
+            if (junitTestClassAnnotation != null) {
+                try {
+                    Class<?> c = Class.forName(className);
+                    Method[] methods = c.getMethods();
+                    for (Method method : methods) {
+                        if (method.getName().equals(n.getMethodName()) &&
+                            method.isAnnotationPresent(junitTestClassAnnotation)) {
+                                result = className;
+                                break;
+                        }
                     }
                 } catch (ClassNotFoundException e) {
                     throw new RuntimeException("Unexpected exception: " + e, e);

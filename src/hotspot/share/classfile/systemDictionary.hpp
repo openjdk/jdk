@@ -132,6 +132,7 @@ class SymbolPropertyTable;
 class ProtectionDomainCacheTable;
 class ProtectionDomainCacheEntry;
 class GCTimer;
+class EventClassLoad;
 
 #define WK_KLASS_ENUM_NAME(kname)    kname##_knum
 
@@ -606,6 +607,7 @@ protected:
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
+  static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
 
   // Basic loading operations
   static InstanceKlass* resolve_instance_class_or_null_helper(Symbol* name,
@@ -632,6 +634,11 @@ protected:
                                             bool is_superclass, TRAPS);
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
                                                Handle protection_domain, TRAPS);
+  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
+                                                       Handle class_loader,
+                                                       Handle protection_domain,
+                                                       PackageEntry* pkg_entry,
+                                                       TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,

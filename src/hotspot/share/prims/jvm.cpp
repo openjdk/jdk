@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -41,6 +42,7 @@
 #include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "memory/dynamicArchive.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
@@ -3723,6 +3725,113 @@ JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   assert(k->is_klass(), "just checking");
   HeapShared::initialize_from_archived_subgraph(k);
+JVM_END
+
+JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
+                                              jclass caller,
+                                              jstring invokedName,
+                                              jobject invokedType,
+                                              jobject methodType,
+                                              jobject implMethodMember,
+                                              jobject instantiatedMethodType,
+                                              jclass lambdaProxyClass))
+  JVMWrapper("JVM_RegisterLambdaProxyClassForArchiving");
+  if (!DynamicDumpSharedSpaces) {
+    return;
+  }
+
+  Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller));
+  InstanceKlass* caller_ik = InstanceKlass::cast(caller_k);
+  if (caller_ik->is_hidden() || caller_ik->is_unsafe_anonymous()) {
+    // VM anonymous classes and hidden classes not of type lambda proxy classes are currently not being archived.
+    // If the caller_ik is of one of the above types, the corresponding lambda proxy class won't be
+    // registered for archiving.
+    return;
+  }
+  Klass* lambda_k = java_lang_Class::as_Klass(JNIHandles::resolve(lambdaProxyClass));
+  InstanceKlass* lambda_ik = InstanceKlass::cast(lambda_k);
+  assert(lambda_ik->is_hidden(), "must be a hidden class");
+  assert(!lambda_ik->is_non_strong_hidden(), "expected a strong hidden class");
+
+  Symbol* invoked_name = NULL;
+  if (invokedName != NULL) {
+    invoked_name = java_lang_String::as_symbol(JNIHandles::resolve_non_null(invokedName));
+  }
+  Handle invoked_type_oop(THREAD, JNIHandles::resolve_non_null(invokedType));
+  Symbol* invoked_type = java_lang_invoke_MethodType::as_signature(invoked_type_oop(), true);
+
+  Handle method_type_oop(THREAD, JNIHandles::resolve_non_null(methodType));
+  Symbol* method_type = java_lang_invoke_MethodType::as_signature(method_type_oop(), true);
+
+  Handle impl_method_member_oop(THREAD, JNIHandles::resolve_non_null(implMethodMember));
+  assert(java_lang_invoke_MemberName::is_method(impl_method_member_oop()), "must be");
+  Method* m = java_lang_invoke_MemberName::vmtarget(impl_method_member_oop());
+
+  Handle instantiated_method_type_oop(THREAD, JNIHandles::resolve_non_null(instantiatedMethodType));
+  Symbol* instantiated_method_type = java_lang_invoke_MethodType::as_signature(instantiated_method_type_oop(), true);
+
+  SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, invoked_name, invoked_type,
+                                                 method_type, m, instantiated_method_type);
+
+JVM_END
+
+JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
+                                                        jclass caller,
+                                                        jstring invokedName,
+                                                        jobject invokedType,
+                                                        jobject methodType,
+                                                        jobject implMethodMember,
+                                                        jobject instantiatedMethodType,
+                                                        jboolean initialize))
+  JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
+  if (!DynamicArchive::is_mapped()) {
+    return NULL;
+  }
+
+  if (invokedName == NULL || invokedType == NULL || methodType == NULL ||
+      implMethodMember == NULL || instantiatedMethodType == NULL) {
+    THROW_(vmSymbols::java_lang_NullPointerException(), NULL);
+  }
+
+  Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller));
+  InstanceKlass* caller_ik = InstanceKlass::cast(caller_k);
+  if (!caller_ik->is_shared()) {
+    // there won't be a shared lambda class if the caller_ik is not in the shared archive.
+    return NULL;
+  }
+
+  Symbol* invoked_name = java_lang_String::as_symbol(JNIHandles::resolve_non_null(invokedName));
+  Handle invoked_type_oop(THREAD, JNIHandles::resolve_non_null(invokedType));
+  Symbol* invoked_type = java_lang_invoke_MethodType::as_signature(invoked_type_oop(), true);
+
+  Handle method_type_oop(THREAD, JNIHandles::resolve_non_null(methodType));
+  Symbol* method_type = java_lang_invoke_MethodType::as_signature(method_type_oop(), true);
+
+  Handle impl_method_member_oop(THREAD, JNIHandles::resolve_non_null(implMethodMember));
+  assert(java_lang_invoke_MemberName::is_method(impl_method_member_oop()), "must be");
+  Method* m = java_lang_invoke_MemberName::vmtarget(impl_method_member_oop());
+
+  Handle instantiated_method_type_oop(THREAD, JNIHandles::resolve_non_null(instantiatedMethodType));
+  Symbol* instantiated_method_type = java_lang_invoke_MethodType::as_signature(instantiated_method_type_oop(), true);
+
+  InstanceKlass* lambda_ik = SystemDictionaryShared::get_shared_lambda_proxy_class(caller_ik, invoked_name, invoked_type,
+                                                                                   method_type, m, instantiated_method_type);
+  jclass jcls = NULL;
+  if (lambda_ik != NULL) {
+    InstanceKlass* loaded_lambda = SystemDictionaryShared::prepare_shared_lambda_proxy_class(lambda_ik, caller_ik, initialize, THREAD);
+    jcls = loaded_lambda == NULL ? NULL : (jclass) JNIHandles::make_local(env, loaded_lambda->java_mirror());
+  }
+  return jcls;
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsCDSDumpingEnable");
+    return DynamicDumpSharedSpaces;
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsCDSSharingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsCDSSharingEnable");
+    return UseSharedSpaces;
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())

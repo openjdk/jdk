@@ -660,6 +660,11 @@ public:
     make_klasses_shareable();
 
     {
+      log_info(cds)("Adjust lambda proxy class dictionary");
+      SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+    }
+
+    {
       log_info(cds)("Final relocation of pointers ... ");
       ResourceMark rm;
       PointerMarker marker(this);
@@ -838,16 +843,7 @@ void DynamicArchiveBuilder::make_klasses_shareable() {
 
   for (i = 0; i < count; i++) {
     InstanceKlass* ik = _klasses->at(i);
-    ClassLoaderData *cld = ik->class_loader_data();
-    if (cld->is_boot_class_loader_data()) {
-      ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
-    }
-    else if (cld->is_platform_class_loader_data()) {
-      ik->set_shared_class_loader_type(ClassLoader::PLATFORM_LOADER);
-    }
-    else if (cld->is_system_class_loader_data()) {
-      ik->set_shared_class_loader_type(ClassLoader::APP_LOADER);
-    }
+    ik->assign_class_loader_type();
 
     MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
     ik->remove_unshareable_info();
