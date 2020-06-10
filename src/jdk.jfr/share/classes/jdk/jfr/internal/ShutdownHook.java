@@ -71,7 +71,9 @@ final class ShutdownHook implements Runnable {
                 recording.stop("Dump on exit");
             }
         } catch (Exception e) {
-            Logger.log(LogTag.JFR, LogLevel.DEBUG, () -> "Could not dump recording " + recording.getName() + " on exit.");
+            if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
+                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Could not dump recording " + recording.getName() + " on exit.");
+            }
         }
     }
 

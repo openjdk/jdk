@@ -75,8 +75,11 @@ final class JIMethodCallInliner extends LocalVariablesSorter {
         this.newClass = newClass;
         this.inlineTarget = inlineTarget;
 
-        Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.DEBUG, "MethodCallInliner: targetMethod=" + newClass + "."
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.DEBUG,
+                "MethodCallInliner: targetMethod=" + newClass + "."
                 + inlineTarget.name + inlineTarget.desc);
+        }
     }
 
     @Override

@@ -158,7 +158,9 @@ public final class JDKEvents {
         for (int i = 0; i < targetClasses.length; i++) {
             if (targetClasses[i].equals(klass)) {
                 Class<?> c = instrumentationClasses[i];
-                Logger.log(LogTag.JFR_SYSTEM, LogLevel.TRACE, () -> "Processing instrumentation class: " + c);
+                if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.TRACE)) {
+                    Logger.log(LogTag.JFR_SYSTEM, LogLevel.TRACE, "Processing instrumentation class: " + c);
+                }
                 return new JIClassInstrumentation(instrumentationClasses[i], klass, oldBytes).getNewBytes();
             }
         }
