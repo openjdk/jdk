@@ -1,12 +1,17 @@
 #!/bin/bash
 
+PATHTOOL=cygpath
+
 DRIVEPREFIX=/cygdrive
 DRIVEPREFIX=
-ENVROOT=c:/cygwin64
-ENVROOT='\\wsl$\Ubuntu-20.04'
+ENVROOT="c:\cygwin64"
+#ENVROOT='\\wsl$\Ubuntu-20.04'
 
 TEMPDIRS=""
 trap "cleanup" EXIT
+
+# Make regexp tests case insensitive
+shopt -s nocasematch
 
 cleanup() {
   if [[ "$TEMPDIRS" != "" ]]; then
@@ -54,6 +59,54 @@ cygwin_convert_at_file() {
   fi
 }
 
+cygwin_import_to_unix() {
+  path="$1"
+
+  if [[ $path =~ ^.:[/\\].*$ ]] ; then
+    # We really don't want windows paths as input, but try to handle them anyway
+    path="$($PATHTOOL -u "$path")"
+    # Path will now be absolute
+  else
+    # Make path absolute, and resolve '..' in path
+    dirpart="$(dirname "$path")"
+    dirpart="$(cd "$dirpart" 2>&1 > /dev/null && pwd)"
+    if [[ $? -ne 0 ]]; then
+      echo fixpath: failure: Directory "'"$path"'" does not exist 1>&2
+      exit 1
+    fi
+    basepart="$(basename "$path")"
+    path="$dirpart/$basepart"
+  fi
+
+  # Now turn it into a windows path
+  winpath="$($PATHTOOL -w "$path")"
+
+  # On WSL1, PATHTOOL will fail for files in envroot. We assume that if PATHTOOL
+  # fails, we have a valid unix path in path.
+
+  if [[ $? -eq 0 ]]; then
+    if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
+      # If it is not in envroot, it's a generic windows path
+      if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
+        # Path has forbidden characters, rewrite as short name
+        shortpath="$(cmd.exe /q /c for %I in \( "$winpath" \) do echo %~sI | tr -d \\n\\r)"
+        path="$($PATHTOOL -u "$shortpath")"
+        # Path is now unix style, based on short name
+      fi
+      # Make it lower case
+      path="$(echo "$path" | tr [:upper:] [:lower:])"
+    fi
+  fi
+
+  if [[ "$path" =~ " " ]]; then
+    echo fixpath: failure: Path "'"$path"'" contains space 1>&2
+    exit 1
+  fi
+
+  result="$path"
+}
+
+
 os_env="$1"
 action="$2"
 shift 2
@@ -77,9 +130,8 @@ if [[ "$action" == "print" ]] ; then
   echo "$args"
 elif [[ "$action" == "import" ]] ; then
   orig="$1"
-  unix_style=$(cygwin_import_to_unix "$orig")
-  print "$unix_style"
-  :
+  cygwin_import_to_unix "$orig"
+  echo "$result"
 elif [[ "$action" == "exec" ]] ; then
   for arg in "$@" ; do
 
