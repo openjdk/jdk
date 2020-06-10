@@ -223,6 +223,15 @@ public class Type implements Comparable<Type> {
         fields.add(valueDescriptor);
     }
 
+    public int indexOf(String name) {
+        for (int i = 0; i < fields.size(); i++) {
+            if (name.equals(fields.get(i).getName())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     void trimFields() {
         getFields();
     }
