@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,22 @@
 /**
  * @test
  * @bug 8026124
- * @summary Javascript file provoked assertion failure in linkResolver.cpp
- * @modules jdk.scripting.nashorn/jdk.nashorn.tools
+ * @summary MethodHandle lookup for an interface method causes assertion failure in linkResolver.cpp
  *
  * @run main/othervm compiler.jsr292.CreatesInterfaceDotEqualsCallInfo
  */
 
 package compiler.jsr292;
 
+import java.lang.invoke.MethodHandles;
+import java.nio.file.Path;
+
 public class CreatesInterfaceDotEqualsCallInfo {
-    public static void main(String[] args) throws java.io.IOException {
-        String[] jsargs = {System.getProperty("test.src", ".") +
-                "/createsInterfaceDotEqualsCallInfo.js"};
-        jdk.nashorn.tools.Shell.main(System.in, System.out, System.err, jsargs);
-        System.out.println("PASS, did not crash running Javascript");
+    public static void main(String[] args) throws Throwable {
+        MethodHandles.publicLookup()
+            .unreflect(Path.class.getMethod("toString", new Class[]{}))
+            .invoke(Path.of("."));
+
+        System.out.println("PASS, did not crash calling interface method handle");
     }
 }
