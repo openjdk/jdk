@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,6 +43,7 @@ import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 import org.xml.sax.SAXException;
+import org.w3c.dom.NodeList;
 
 public class MacHelper {
 
@@ -185,6 +187,40 @@ public class MacHelper {
                     "//string[preceding-sibling::key = \"%s\"][1]", keyName);
             return ThrowingSupplier.toSupplier(() -> (String) xPath.evaluate(
                     query, doc, XPathConstants.STRING)).get();
+        }
+
+        public Boolean queryBoolValue(String keyName) {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            // Query boolean element preceding <key> element
+            // with value equal to `keyName`
+            String query = String.format(
+                    "name(//*[preceding-sibling::key = \"%s\"])", keyName);
+            String value = ThrowingSupplier.toSupplier(() -> (String) xPath.evaluate(
+                    query, doc, XPathConstants.STRING)).get();
+            return Boolean.valueOf(value);
+        }
+
+        public List<String> queryArrayValue(String keyName) {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            // Query string array preceding <key> element with value equal to `keyName`
+            String query = String.format(
+                    "//array[preceding-sibling::key = \"%s\"]", keyName);
+            NodeList list = ThrowingSupplier.toSupplier(() -> (NodeList) xPath.evaluate(
+                    query, doc, XPathConstants.NODESET)).get();
+            if (list.getLength() != 1) {
+                throw new RuntimeException(
+                        String.format("Unable to find <array> element for key = \"%s\"]",
+                                keyName));
+            }
+
+            NodeList childList = list.item(0).getChildNodes();
+            List<String> values = new ArrayList(childList.getLength());
+            for (int i = 0; i < childList.getLength(); i++) {
+                if (childList.item(i).getNodeName().equals("string")) {
+                    values.add(childList.item(i).getTextContent());
+                }
+            }
+            return values;
         }
 
         PListWrapper(String xml) throws ParserConfigurationException,

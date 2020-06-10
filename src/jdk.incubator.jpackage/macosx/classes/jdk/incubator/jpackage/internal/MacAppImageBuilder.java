@@ -144,6 +144,80 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     null : Boolean.valueOf(s)
         );
 
+    private static final StandardBundlerParam<String> FA_MAC_CFBUNDLETYPEROLE =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_CFBUNDLETYPEROLE,
+                     String.class,
+                     params -> "Editor",
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_LSHANDLERRANK =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_LSHANDLERRANK,
+                     String.class,
+                     params -> "Owner",
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_NSSTORETYPEKEY =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_NSSTORETYPEKEY,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_NSDOCUMENTCLASS =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_NSDOCUMENTCLASS,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_LSTYPEISPACKAGE =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_LSTYPEISPACKAGE,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_LSDOCINPLACE =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_LSDOCINPLACE,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_UIDOCBROWSER =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_UIDOCBROWSER,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     @SuppressWarnings("unchecked")
+     private static final StandardBundlerParam<List<String>> FA_MAC_NSEXPORTABLETYPES =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_NSEXPORTABLETYPES,
+                     (Class<List<String>>) (Object) List.class,
+                     params -> null,
+                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
+             );
+
+     @SuppressWarnings("unchecked")
+     private static final StandardBundlerParam<List<String>> FA_MAC_UTTYPECONFORMSTO =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_UTTYPECONFORMSTO,
+                     (Class<List<String>>) (Object) List.class,
+                     params -> Arrays.asList("public.data"),
+                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
+             );
+
     public MacAppImageBuilder(Path imageOutDir) {
         super(imageOutDir);
 
@@ -314,6 +388,31 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 .saveToFile(file);
     }
 
+    private void writeStringArrayPlist(StringBuilder sb, String key,
+            List<String> values) {
+        if (values != null && !values.isEmpty()) {
+            sb.append("  <key>").append(key).append("</key>\n").append("   <array>\n");
+            values.forEach((value) -> {
+                sb.append("    <string>").append(value).append("</string>\n");
+            });
+            sb.append("   </array>\n");
+        }
+    }
+
+    private void writeStringPlist(StringBuilder sb, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            sb.append("  <key>").append(key).append("</key>\n").append("  <string>")
+                    .append(value).append("</string>\n").append("\n");
+         }
+    }
+
+    private void writeBoolPlist(StringBuilder sb, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            sb.append("  <key>").append(key).append("</key>\n").append("  <")
+                    .append(value).append("/>\n").append("\n");
+         }
+    }
+
     private void writeInfoPlist(File file, Map<String, ? super Object> params)
             throws IOException {
         Log.verbose(MessageFormat.format(I18N.getString(
@@ -338,113 +437,65 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 fileAssociation : FILE_ASSOCIATIONS.fetchFrom(params)) {
 
             List<String> extensions = FA_EXTENSIONS.fetchFrom(fileAssociation);
-
             if (extensions == null) {
                 Log.verbose(I18N.getString(
                         "message.creating-association-with-null-extension"));
             }
 
-            List<String> mimeTypes = FA_CONTENT_TYPE.fetchFrom(fileAssociation);
             String itemContentType = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params)
                     + "." + ((extensions == null || extensions.isEmpty())
                     ? "mime" : extensions.get(0));
             String description = FA_DESCRIPTION.fetchFrom(fileAssociation);
             File icon = FA_ICON.fetchFrom(fileAssociation);
 
-            bundleDocumentTypes.append("    <dict>\n")
-                    .append("      <key>LSItemContentTypes</key>\n")
-                    .append("      <array>\n")
-                    .append("        <string>")
-                    .append(itemContentType)
-                    .append("</string>\n")
-                    .append("      </array>\n")
-                    .append("\n")
-                    .append("      <key>CFBundleTypeName</key>\n")
-                    .append("      <string>")
-                    .append(description)
-                    .append("</string>\n")
-                    .append("\n")
-                    .append("      <key>LSHandlerRank</key>\n")
-                    .append("      <string>Owner</string>\n")
-                            // TODO make a bundler arg
-                    .append("\n")
-                    .append("      <key>CFBundleTypeRole</key>\n")
-                    .append("      <string>Editor</string>\n")
-                            // TODO make a bundler arg
-                    .append("\n")
-                    .append("      <key>LSIsAppleDefaultForType</key>\n")
-                    .append("      <true/>\n")
-                            // TODO make a bundler arg
-                    .append("\n");
+            bundleDocumentTypes.append(" <dict>\n");
+            writeStringArrayPlist(bundleDocumentTypes, "LSItemContentTypes",
+                    Arrays.asList(itemContentType));
+            writeStringPlist(bundleDocumentTypes, "CFBundleTypeName", description);
+            writeStringPlist(bundleDocumentTypes, "LSHandlerRank",
+                    FA_MAC_LSHANDLERRANK.fetchFrom(fileAssociation));
+            writeStringPlist(bundleDocumentTypes, "CFBundleTypeRole",
+                    FA_MAC_CFBUNDLETYPEROLE.fetchFrom(fileAssociation));
+            writeStringPlist(bundleDocumentTypes, "NSPersistentStoreTypeKey",
+                    FA_MAC_NSSTORETYPEKEY.fetchFrom(fileAssociation));
+            writeStringPlist(bundleDocumentTypes, "NSDocumentClass",
+                    FA_MAC_NSDOCUMENTCLASS.fetchFrom(fileAssociation));
+            writeBoolPlist(bundleDocumentTypes, "LSIsAppleDefaultForType",
+                    "true");
+            writeBoolPlist(bundleDocumentTypes, "LSTypeIsPackage",
+                    FA_MAC_LSTYPEISPACKAGE.fetchFrom(fileAssociation));
+            writeBoolPlist(bundleDocumentTypes, "LSSupportsOpeningDocumentsInPlace",
+                    FA_MAC_LSDOCINPLACE.fetchFrom(fileAssociation));
+            writeBoolPlist(bundleDocumentTypes, "UISupportsDocumentBrowser",
+                    FA_MAC_UIDOCBROWSER.fetchFrom(fileAssociation));
+            if (icon != null && icon.exists()) {
+                writeStringPlist(bundleDocumentTypes, "CFBundleTypeIconFile",
+                        icon.getName());
+            }
+            bundleDocumentTypes.append("  </dict>\n");
+
+            exportedTypes.append("  <dict>\n");
+            writeStringPlist(exportedTypes, "UTTypeIdentifier",
+                    itemContentType);
+            writeStringPlist(exportedTypes, "UTTypeDescription",
+                    description);
+            writeStringArrayPlist(exportedTypes, "UTTypeConformsTo",
+                    FA_MAC_UTTYPECONFORMSTO.fetchFrom(fileAssociation));
 
             if (icon != null && icon.exists()) {
-                bundleDocumentTypes
-                        .append("      <key>CFBundleTypeIconFile</key>\n")
-                        .append("      <string>")
-                        .append(icon.getName())
-                        .append("</string>\n");
+                writeStringPlist(exportedTypes, "UTTypeIconFile", icon.getName());
             }
-            bundleDocumentTypes.append("    </dict>\n");
-
-            exportedTypes.append("    <dict>\n")
-                    .append("      <key>UTTypeIdentifier</key>\n")
-                    .append("      <string>")
-                    .append(itemContentType)
-                    .append("</string>\n")
-                    .append("\n")
-                    .append("      <key>UTTypeDescription</key>\n")
-                    .append("      <string>")
-                    .append(description)
-                    .append("</string>\n")
-                    .append("      <key>UTTypeConformsTo</key>\n")
-                    .append("      <array>\n")
-                    .append("          <string>public.data</string>\n")
-                            //TODO expose this?
-                    .append("      </array>\n")
-                    .append("\n");
-
-            if (icon != null && icon.exists()) {
-                exportedTypes.append("      <key>UTTypeIconFile</key>\n")
-                        .append("      <string>")
-                        .append(icon.getName())
-                        .append("</string>\n")
-                        .append("\n");
-            }
-
             exportedTypes.append("\n")
-                    .append("      <key>UTTypeTagSpecification</key>\n")
-                    .append("      <dict>\n")
-                            // TODO expose via param? .append(
-                            // "        <key>com.apple.ostype</key>\n");
-                            // TODO expose via param? .append(
-                            // "        <string>ABCD</string>\n")
+                    .append("  <key>UTTypeTagSpecification</key>\n")
+                    .append("  <dict>\n")
                     .append("\n");
-
-            if (extensions != null && !extensions.isEmpty()) {
-                exportedTypes.append(
-                        "        <key>public.filename-extension</key>\n")
-                        .append("        <array>\n");
-
-                for (String ext : extensions) {
-                    exportedTypes.append("          <string>")
-                            .append(ext)
-                            .append("</string>\n");
-                }
-                exportedTypes.append("        </array>\n");
-            }
-            if (mimeTypes != null && !mimeTypes.isEmpty()) {
-                exportedTypes.append("        <key>public.mime-type</key>\n")
-                        .append("        <array>\n");
-
-                for (String mime : mimeTypes) {
-                    exportedTypes.append("          <string>")
-                            .append(mime)
-                            .append("</string>\n");
-                }
-                exportedTypes.append("        </array>\n");
-            }
-            exportedTypes.append("      </dict>\n")
-                    .append("    </dict>\n");
+            writeStringArrayPlist(exportedTypes, "public.filename-extension",
+                    extensions);
+            writeStringArrayPlist(exportedTypes, "public.mime-type",
+                    FA_CONTENT_TYPE.fetchFrom(fileAssociation));
+            writeStringArrayPlist(exportedTypes, "NSExportableTypes",
+                    FA_MAC_NSEXPORTABLETYPES.fetchFrom(fileAssociation));
+            exportedTypes.append("  </dict>\n").append(" </dict>\n");
         }
         String associationData;
         if (bundleDocumentTypes.length() > 0) {

@@ -70,6 +70,20 @@ public class Arguments {
     private static final String FA_DESCRIPTION = "description";
     private static final String FA_ICON = "icon";
 
+    // Mac specific file association keys
+    // String
+    public static final String MAC_CFBUNDLETYPEROLE = "mac.CFBundleTypeRole";
+    public static final String MAC_LSHANDLERRANK = "mac.LSHandlerRank";
+    public static final String MAC_NSSTORETYPEKEY = "mac.NSPersistentStoreTypeKey";
+    public static final String MAC_NSDOCUMENTCLASS = "mac.NSDocumentClass";
+    // Boolean
+    public static final String MAC_LSTYPEISPACKAGE = "mac.LSTypeIsPackage";
+    public static final String MAC_LSDOCINPLACE = "mac.LSSupportsOpeningDocumentsInPlace";
+    public static final String MAC_UIDOCBROWSER = "mac.UISupportsDocumentBrowser";
+     // Array of strings
+    public static final String MAC_NSEXPORTABLETYPES = "mac.NSExportableTypes";
+    public static final String MAC_UTTYPECONFORMSTO = "mac.UTTypeConformsTo";
+
     // regexp for parsing args (for example, for additional launchers)
     private static Pattern pattern = Pattern.compile(
           "(?:(?:([\"'])(?:\\\\\\1|.)*?(?:\\1|$))|(?:\\\\[\"'\\s]|[^\\s]))++");
@@ -197,25 +211,45 @@ public class Arguments {
             // load .properties file
             Map<String, String> initialMap = getPropertiesFromFile(popArg());
 
-            String ext = initialMap.get(FA_EXTENSIONS);
-            if (ext != null) {
-                args.put(StandardBundlerParam.FA_EXTENSIONS.getID(), ext);
-            }
+            putUnlessNull(args, StandardBundlerParam.FA_EXTENSIONS.getID(),
+                    initialMap.get(FA_EXTENSIONS));
 
-            String type = initialMap.get(FA_CONTENT_TYPE);
-            if (type != null) {
-                args.put(StandardBundlerParam.FA_CONTENT_TYPE.getID(), type);
-            }
+            putUnlessNull(args, StandardBundlerParam.FA_CONTENT_TYPE.getID(),
+                    initialMap.get(FA_CONTENT_TYPE));
 
-            String desc = initialMap.get(FA_DESCRIPTION);
-            if (desc != null) {
-                args.put(StandardBundlerParam.FA_DESCRIPTION.getID(), desc);
-            }
+            putUnlessNull(args, StandardBundlerParam.FA_DESCRIPTION.getID(),
+                    initialMap.get(FA_DESCRIPTION));
 
-            String icon = initialMap.get(FA_ICON);
-            if (icon != null) {
-                args.put(StandardBundlerParam.FA_ICON.getID(), icon);
-            }
+            putUnlessNull(args, StandardBundlerParam.FA_ICON.getID(),
+                    initialMap.get(FA_ICON));
+
+            // Mac extended file association arguments
+            putUnlessNull(args, MAC_CFBUNDLETYPEROLE,
+                    initialMap.get(MAC_CFBUNDLETYPEROLE));
+
+            putUnlessNull(args, MAC_LSHANDLERRANK,
+                    initialMap.get(MAC_LSHANDLERRANK));
+
+            putUnlessNull(args, MAC_NSSTORETYPEKEY,
+                    initialMap.get(MAC_NSSTORETYPEKEY));
+
+            putUnlessNull(args, MAC_NSDOCUMENTCLASS,
+                    initialMap.get(MAC_NSDOCUMENTCLASS));
+
+            putUnlessNull(args, MAC_LSTYPEISPACKAGE,
+                    initialMap.get(MAC_LSTYPEISPACKAGE));
+
+            putUnlessNull(args, MAC_LSDOCINPLACE,
+                    initialMap.get(MAC_LSDOCINPLACE));
+
+            putUnlessNull(args, MAC_UIDOCBROWSER,
+                    initialMap.get(MAC_UIDOCBROWSER));
+
+            putUnlessNull(args, MAC_NSEXPORTABLETYPES,
+                    initialMap.get(MAC_NSEXPORTABLETYPES));
+
+            putUnlessNull(args, MAC_UTTYPECONFORMSTO,
+                    initialMap.get(MAC_UTTYPECONFORMSTO));
 
             ArrayList<Map<String, ? super Object>> associationList =
                 new ArrayList<Map<String, ? super Object>>();
@@ -724,6 +758,13 @@ public class Arguments {
             }
         }
         return list;
+    }
+
+    static void putUnlessNull(Map<String, ? super Object> params,
+            String param, Object value) {
+        if (value != null) {
+            params.put(param, value);
+        }
     }
 
     private static String unquoteIfNeeded(String in) {
