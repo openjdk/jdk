@@ -1,18 +1,19 @@
 #!/bin/bash
 
-#PATHTOOL=cygpath
-PATHTOOL=wslpath
+PATHTOOL=cygpath
+#PATHTOOL=wslpath
 
-CMD=/mnt/c/Windows/System32/cmd.exe
 
-#DRIVEPREFIX=/cygdrive
+DRIVEPREFIX=/cygdrive
 #DRIVEPREFIX=
-DRIVEPREFIX=/mnt
+#DRIVEPREFIX=/mnt
 
-#ENVROOT="c:\cygwin64"
+CMD=$DRIVEPREFIX/c/Windows/System32/cmd.exe
+
+ENVROOT="c:\cygwin64"
 #ENVROOT='\\wsl$\Ubuntu-20.04'
 #ENVROOT="c:\msys64"
-ENVROOT=
+#ENVROOT=
 
 TEMPDIRS=""
 trap "cleanup" EXIT
