@@ -36,14 +36,37 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @summary Test of diagnostic command GC.heap_dump with gzipped output (Serial, Parallel and G1)
+ * @requires vm.gc.Serial
+ * @summary Test of diagnostic command GC.heap_dump with gzipped output (Serial GC)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseSerialGC HeapDumpCompressedTest
+ */
+
+/*
+ * @test
+ * @requires vm.gc.Parallel
+ * @summary Test of diagnostic command GC.heap_dump with gzipped output (Parallel GC)
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseParallelGC HeapDumpCompressedTest
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @summary Test of diagnostic command GC.heap_dump with gzipped output (G1 GC)
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseG1GC HeapDumpCompressedTest
  */
 
