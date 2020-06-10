@@ -803,6 +803,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitIndex(IndexTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         for (TagStackItem tsi : tagStack) {
             if (tsi.tag == HtmlTag.A) {
                 env.messages.warning(HTML, tree, "dc.tag.a.within.a",
@@ -956,6 +957,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitSummary(SummaryTree node, Void aVoid) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         int idx = env.currDocComment.getFullBody().indexOf(node);
         // Warn if the node is preceded by non-whitespace characters,
         // or other non-text nodes.
@@ -967,6 +969,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitSystemProperty(SystemPropertyTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         for (TagStackItem tsi : tagStack) {
             if (tsi.tag == HtmlTag.A) {
                 env.messages.warning(HTML, tree, "dc.tag.a.within.a",
@@ -1041,6 +1044,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitUnknownInlineTag(UnknownInlineTagTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         checkUnknownTag(tree, tree.getTagName());
         return super.visitUnknownInlineTag(tree, ignore);
     }
