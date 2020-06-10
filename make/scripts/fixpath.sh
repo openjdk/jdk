@@ -91,6 +91,19 @@ cygwin_verify_conversion() {
   return 1
 }
 
+cygwin_verify_current_dir() {
+  arg="$PWD"
+  if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+    return 0
+  elif [[ $arg =~ ^(/[^/]+/[^/]+.*$) ]] ; then
+    if [[ $ENVROOT == "" || $ENVROOT =~ ^\\\\.* ]]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
+}
+
 cygwin_convert_at_file() {
   infile="$1"
   if [[ -e $infile ]] ; then
@@ -181,6 +194,14 @@ cygwin_convert_command_line() {
 }
 
 cygwin_exec_command_line() {
+  cygwin_verify_current_dir
+  if [[ $? -ne 0 ]]; then
+    # WSL1 will just forcefully put us in C:\Windows\System32 if we execute this from
+    # a unix directory. WSL2 will do the same, and print a warning. In both cases,
+    # we prefer to take control.
+    cd $DRIVEPREFIX/c
+    echo fixpath: warning: Changing directory to $DRIVEPREFIX/c 1>&2
+  fi
   args=""
   command=""
   for arg in "$@" ; do
@@ -191,6 +212,7 @@ cygwin_exec_command_line() {
         arg="${BASH_REMATCH[2]}"
         cygwin_convert_to_win "$arg"
         export $key="$result"
+        export WSLENV=$WSLENV:$key/w
       else
         # The actual command will be executed by bash, so don't convert it
         command="$arg"
