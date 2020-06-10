@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
@@ -296,12 +297,12 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   // min capacity, and uncommit is supported by the platform, then uncommit
   // will be enabled.
   if (!ZUncommit) {
-    log_info(gc, init)("Uncommit: Disabled");
+    log_info_p(gc, init)("Uncommit: Disabled");
     return;
   }
 
   if (max_capacity == min_capacity) {
-    log_info(gc, init)("Uncommit: Implicitly Disabled (-Xms equals -Xmx)");
+    log_info_p(gc, init)("Uncommit: Implicitly Disabled (-Xms equals -Xmx)");
     FLAG_SET_ERGO(ZUncommit, false);
     return;
   }
@@ -310,13 +311,13 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   // and then uncommitting a granule.
   ZPhysicalMemory pmem(ZPhysicalMemorySegment(0, ZGranuleSize, false /* committed */));
   if (!commit(pmem) || !uncommit(pmem)) {
-    log_info(gc, init)("Uncommit: Implicitly Disabled (Not supported by operating system)");
+    log_info_p(gc, init)("Uncommit: Implicitly Disabled (Not supported by operating system)");
     FLAG_SET_ERGO(ZUncommit, false);
     return;
   }
 
-  log_info(gc, init)("Uncommit: Enabled");
-  log_info(gc, init)("Uncommit Delay: " UINTX_FORMAT "s", ZUncommitDelay);
+  log_info_p(gc, init)("Uncommit: Enabled");
+  log_info_p(gc, init)("Uncommit Delay: " UINTX_FORMAT "s", ZUncommitDelay);
 }
 
 void ZPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
