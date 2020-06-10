@@ -1,19 +1,40 @@
 #!/bin/bash
 
-PATHTOOL=cygpath
-#PATHTOOL=wslpath
+setup() {
+  if [[ $PATHTOOL == "" ]]; then
+    PATHTOOL="$(type -p cygpath)"
+    if [[ $PATHTOOL == "" ]]; then
+      PATHTOOL="$(type -p wslpath)"
+      if [[ $PATHTOOL == "" ]]; then
+        echo fixpath: failure: Cannot locate cygpath or wslpath >&2
+        exit 2
+      fi
+    fi
+    echo PATHTOOL=$PATHTOOL
+  fi
 
+  if [[ $ENVROOT == "" ]]; then
+    ENVROOT="$($PATHTOOL -w / 2> /dev/null)"
+    echo envrot1=$ENVROOT
+    # Remove trailing backslash
+    ENVROOT=${ENVROOT%\\}
+    echo ENVROOT=$ENVROOT
+  fi
 
-DRIVEPREFIX=/cygdrive
-#DRIVEPREFIX=
-#DRIVEPREFIX=/mnt
+  if [[ $DRIVEPREFIX == "" ]]; then
+    winroot=$($PATHTOOL -u c:/)
+    echo winroot=$winroot
+    DRIVEPREFIX=${winroot%/c/}
+    echo DRIVEPREFIX?=$DRIVEPREFIX
+  fi
 
-CMD=$DRIVEPREFIX/c/Windows/System32/cmd.exe
+  if [[ $CMD == "" ]]; then
+    CMD=$DRIVEPREFIX/c/windows/system32/cmd.exe
+    echo CMD=$CMD
+  fi
+}
 
-ENVROOT="c:\cygwin64"
-#ENVROOT='\\wsl$\Ubuntu-20.04'
-#ENVROOT="c:\msys64"
-#ENVROOT=
+setup
 
 TEMPDIRS=""
 trap "cleanup" EXIT
