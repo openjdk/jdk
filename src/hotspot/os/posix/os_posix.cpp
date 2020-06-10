@@ -396,7 +396,7 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm*  res) {
 }
 
 void os::Posix::print_load_average(outputStream* st) {
-  st->print("load average:");
+  st->print("load average: ");
   double loadavg[3];
   int res = os::loadavg(loadavg, 3);
   if (res != -1) {
@@ -490,7 +490,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 
 void os::Posix::print_uname_info(outputStream* st) {
   // kernel
-  st->print("uname:");
+  st->print("uname: ");
   struct utsname name;
   uname(&name);
   st->print("%s ", name.sysname);
