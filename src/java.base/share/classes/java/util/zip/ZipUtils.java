@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,14 +131,8 @@ class ZipUtils {
     /**
      * Converts Java time to DOS time.
      */
-    private static long javaToDosTime(long time) {
-        Instant instant = Instant.ofEpochMilli(time);
-        LocalDateTime ldt = LocalDateTime.ofInstant(
-                instant, ZoneId.systemDefault());
+    private static long javaToDosTime(LocalDateTime ldt) {
         int year = ldt.getYear() - 1980;
-        if (year < 0) {
-            return (1 << 21) | (1 << 16);
-        }
         return (year << 25 |
             ldt.getMonthValue() << 21 |
             ldt.getDayOfMonth() << 16 |
@@ -154,14 +148,17 @@ class ZipUtils {
      * @param time milliseconds since epoch
      * @return DOS time with 2s remainder encoded into upper half
      */
-    public static long javaToExtendedDosTime(long time) {
-        if (time < 0) {
-            return ZipEntry.DOSTIME_BEFORE_1980;
+    static long javaToExtendedDosTime(long time) {
+        LocalDateTime ldt = javaEpochToLocalDateTime(time);
+        if (ldt.getYear() >= 1980) {
+            return javaToDosTime(ldt) + ((time % 2000) << 32);
         }
-        long dostime = javaToDosTime(time);
-        return (dostime != ZipEntry.DOSTIME_BEFORE_1980)
-                ? dostime + ((time % 2000) << 32)
-                : ZipEntry.DOSTIME_BEFORE_1980;
+        return ZipEntry.DOSTIME_BEFORE_1980;
+    }
+
+    static LocalDateTime javaEpochToLocalDateTime(long time) {
+        Instant instant = Instant.ofEpochMilli(time);
+        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 
     /**
