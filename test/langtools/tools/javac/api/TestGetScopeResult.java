@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,34 @@ public class TestGetScopeResult {
 
         doTest("class Test { void test() { cand((t, var s) -> \"\"); } void cand(I i) { } interface I { public String test(String s); }  }",
                implicitExplicitConflict2);
+
+        String[] noFunctionInterface = {
+            "s:none",
+            ":t",
+            "super:java.lang.Object",
+            "this:Test"
+        };
+
+        doTest("class Test { void test() { cand((t, var s) -> \"\"); } void cand(String s) { } }",
+               noFunctionInterface);
+
+        String[] invocationInMethodInvocation = {
+            "d2:java.lang.Double",
+            "d1:java.lang.Double",
+            "super:java.lang.Object",
+            "this:Test"
+        };
+
+        doTest("""
+               class Test {
+                   void test() { test(reduce(0.0, (d1, d2) -> 0)); }
+                   void test(int i) {}
+                   <T> T reduce(T t, BiFunction<T, T, T> f1) {}
+                   static interface BiFunction<R, P, Q> {
+                       R apply(P p, Q q);
+                   }
+               }""",
+               invocationInMethodInvocation);
     }
 
     public void doTest(String code, String... expected) throws IOException {
