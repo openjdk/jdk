@@ -1,15 +1,18 @@
 #!/bin/bash
 
-PATHTOOL=cygpath
-#PATHTOOL=wslpath
+#PATHTOOL=cygpath
+PATHTOOL=wslpath
+
+CMD=/mnt/c/Windows/System32/cmd.exe
 
 #DRIVEPREFIX=/cygdrive
-DRIVEPREFIX=
-#DRIVEPREFIX=/mnt
+#DRIVEPREFIX=
+DRIVEPREFIX=/mnt
 
 #ENVROOT="c:\cygwin64"
 #ENVROOT='\\wsl$\Ubuntu-20.04'
-ENVROOT="c:\msys64"
+#ENVROOT="c:\msys64"
+ENVROOT=UNAVAILABLE
 
 TEMPDIRS=""
 trap "cleanup" EXIT
@@ -31,12 +34,24 @@ cygwin_convert_to_win() {
   old_ifs="$IFS"
   IFS=":"
   for arg in $1; do
+    mixedpath=""
     if [[ $arg =~ (^[^/]*)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
       # Start looking for drive prefix
-      arg="${BASH_REMATCH[1]}${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
+      prefix="${BASH_REMATCH[1]}"
+      mixedpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
     elif [[ $arg =~ (^[^/]*)(/[^/]+/[^/]+.*$) ]] ; then
       # Does arg contain a potential unix path? Check for /foo/bar
-      arg="${BASH_REMATCH[1]}$ENVROOT${BASH_REMATCH[2]}"
+      prefix="${BASH_REMATCH[1]}"
+      pathmatch="${BASH_REMATCH[2]}"
+      if [[ $ENVROOT == UNAVAILABLE ]]; then
+        echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+        exit 1
+      fi
+      mixedpath="$ENVROOT$pathmatch"
+    fi
+    if [[ $mixedpath != "" ]]; then
+      # If it was a converted path, change slash to backslash
+      arg="$prefix${mixedpath//'/'/'\'}"
     fi
 
     if [[ "$converted" = "" ]]; then
@@ -80,11 +95,15 @@ cygwin_import_to_unix() {
       echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
       exit 1
     fi
+    basepart="$(basename "$path")"
     if [[ $dirpart == / ]]; then
-      # Avoid double leading //
+      # Avoid double leading /
       dirpart=""
     fi
-    basepart="$(basename "$path")"
+    if [[ $basepart == / ]]; then
+      # Avoid trailing /
+      basepart=""
+    fi
     path="$dirpart/$basepart"
   fi
 
@@ -96,7 +115,7 @@ cygwin_import_to_unix() {
       # If it is not in envroot, it's a generic windows path
       if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
         # Path has forbidden characters, rewrite as short name
-        shortpath="$(cmd.exe /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
+        shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
         path="$($PATHTOOL -u "$shortpath")"
         # Path is now unix style, based on short name
       fi
