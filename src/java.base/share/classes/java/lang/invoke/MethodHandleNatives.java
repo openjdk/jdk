@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,7 @@ class MethodHandleNatives {
     /**
      * Obtain the method to link to the VarHandle operation.
      * This method is located here and not in Invokers to avoid
-     * intializing that and other classes early on in VM bootup.
+     * initializing that and other classes early on in VM bootup.
      */
     private static MemberName varHandleOperationLinkerMethod(String name,
                                                              MethodType mtype,

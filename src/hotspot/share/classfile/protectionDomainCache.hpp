@@ -35,18 +35,18 @@
 // to dictionary.hpp pd_set for more information about how protection domain entries
 // are used.
 // This table is walked during GC, rather than the class loader data graph dictionaries.
-class ProtectionDomainCacheEntry : public HashtableEntry<WeakHandle<vm_class_loader_data>, mtClass> {
+class ProtectionDomainCacheEntry : public HashtableEntry<WeakHandle<vm_weak_data>, mtClass> {
   friend class VMStructs;
  public:
   oop object();
   oop object_no_keepalive();
 
   ProtectionDomainCacheEntry* next() {
-    return (ProtectionDomainCacheEntry*)HashtableEntry<WeakHandle<vm_class_loader_data>, mtClass>::next();
+    return (ProtectionDomainCacheEntry*)HashtableEntry<WeakHandle<vm_weak_data>, mtClass>::next();
   }
 
   ProtectionDomainCacheEntry** next_addr() {
-    return (ProtectionDomainCacheEntry**)HashtableEntry<WeakHandle<vm_class_loader_data>, mtClass>::next_addr();
+    return (ProtectionDomainCacheEntry**)HashtableEntry<WeakHandle<vm_weak_data>, mtClass>::next_addr();
   }
 
   void verify();
@@ -61,21 +61,21 @@ class ProtectionDomainCacheEntry : public HashtableEntry<WeakHandle<vm_class_loa
 // we only need to iterate over this set.
 // The amount of different protection domains used is typically magnitudes smaller
 // than the number of system dictionary entries (loaded classes).
-class ProtectionDomainCacheTable : public Hashtable<WeakHandle<vm_class_loader_data>, mtClass> {
+class ProtectionDomainCacheTable : public Hashtable<WeakHandle<vm_weak_data>, mtClass> {
   friend class VMStructs;
 private:
   ProtectionDomainCacheEntry* bucket(int i) const {
-    return (ProtectionDomainCacheEntry*) Hashtable<WeakHandle<vm_class_loader_data>, mtClass>::bucket(i);
+    return (ProtectionDomainCacheEntry*) Hashtable<WeakHandle<vm_weak_data>, mtClass>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   ProtectionDomainCacheEntry** bucket_addr(int i) {
-    return (ProtectionDomainCacheEntry**) Hashtable<WeakHandle<vm_class_loader_data>, mtClass>::bucket_addr(i);
+    return (ProtectionDomainCacheEntry**) Hashtable<WeakHandle<vm_weak_data>, mtClass>::bucket_addr(i);
   }
 
-  ProtectionDomainCacheEntry* new_entry(unsigned int hash, WeakHandle<vm_class_loader_data> protection_domain) {
+  ProtectionDomainCacheEntry* new_entry(unsigned int hash, WeakHandle<vm_weak_data> protection_domain) {
     ProtectionDomainCacheEntry* entry = (ProtectionDomainCacheEntry*)
-      Hashtable<WeakHandle<vm_class_loader_data>, mtClass>::new_entry(hash, protection_domain);
+      Hashtable<WeakHandle<vm_weak_data>, mtClass>::new_entry(hash, protection_domain);
     return entry;
   }
 

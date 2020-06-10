@@ -1685,7 +1685,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         if (member != null) {
             return MethodHandleImpl.makeWrappedMember(this, member, isInvokeSpecial);
         } else if (internalMemberName() == null) {
-            // The required internaMemberName is null, and this MH (like most) doesn't have one.
+            // The required internalMemberName is null, and this MH (like most) doesn't have one.
             return this;
         } else {
             // The following case is rare. Mask the internalMemberName by wrapping the MH in a BMH.

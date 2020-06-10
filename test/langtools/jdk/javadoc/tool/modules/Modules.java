@@ -534,7 +534,7 @@ public class Modules extends ModuleTestBase {
                 "--module", "MIA",
                 "--expand-requires", "all");
 
-        assertMessagePresent("javadoc: error - module MIA not found.");
+        assertMessagePresent("javadoc: error - module MIA not found");
     }
 
     @Test

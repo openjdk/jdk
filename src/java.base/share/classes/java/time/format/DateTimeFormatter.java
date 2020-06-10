@@ -1469,7 +1469,7 @@ public final class DateTimeFormatter {
 
     /**
      * Returns a copy of this formatter with localized values of the locale,
-     * calendar, region, decimal style and/or timezone, that supercede values in
+     * calendar, region, decimal style and/or timezone, that supersede values in
      * this formatter.
      * <p>
      * This is used to lookup any part of the formatter needing specific
@@ -1489,16 +1489,12 @@ public final class DateTimeFormatter {
      *
      * @param locale  the locale, not null
      * @return a formatter based on this formatter with localized values of
-     *      the calendar, decimal style and/or timezone, that supercede values in this
+     *      the calendar, decimal style and/or timezone, that supersede values in this
      *      formatter.
      * @see #withLocale(Locale)
      * @since 10
      */
     public DateTimeFormatter localizedBy(Locale locale) {
-        if (this.locale.equals(locale)) {
-            return this;
-        }
-
         // Override decimalStyle/chronology/timezone for the locale object
         String tzType = locale.getUnicodeLocaleType("tz");
         ZoneId z = tzType != null ?
@@ -1506,13 +1502,16 @@ public final class DateTimeFormatter {
                         .map(ZoneId::of)
                         .orElse(zone) :
                     zone;
-        return new DateTimeFormatter(printerParser,
-                locale,
-                DecimalStyle.of(locale),
-                resolverStyle,
-                resolverFields,
-                Chronology.ofLocale(locale),
-                z);
+        Chronology c = Chronology.ofLocale(locale);
+        DecimalStyle ds = DecimalStyle.of(locale);
+        if (this.locale.equals(locale) &&
+                c.equals(chrono) &&
+                ds.equals(decimalStyle) &&
+                Objects.equals(z, zone)) {
+            return this;
+        } else {
+            return new DateTimeFormatter(printerParser, locale, ds, resolverStyle, resolverFields, c, z);
+        }
     }
 
     //-----------------------------------------------------------------------

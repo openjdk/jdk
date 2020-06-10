@@ -105,7 +105,7 @@ import static java.lang.invoke.MethodType.fromDescriptor;
  * A {@code MethodType} can be described in {@linkplain MethodTypeDesc nominal form}
  * if and only if all of the parameter types and return type can be described
  * with a {@link Class#describeConstable() nominal descriptor} represented by
- * {@link ClassDesc}.  If a method type can be described norminally, then:
+ * {@link ClassDesc}.  If a method type can be described nominally, then:
  * <ul>
  * <li>The method type has a {@link MethodTypeDesc nominal descriptor}
  *     returned by {@link #describeConstable() MethodType::describeConstable}.</li>

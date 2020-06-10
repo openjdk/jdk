@@ -138,8 +138,7 @@ public class DatagramSocket implements java.io.Closeable {
     /**
      * Constructs a datagram socket and binds it to any available port
      * on the local host machine.  The socket will be bound to the
-     * {@link InetAddress#isAnyLocalAddress wildcard} address,
-     * an IP address chosen by the kernel.
+     * {@link InetAddress#isAnyLocalAddress wildcard} address.
      *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
@@ -147,7 +146,7 @@ public class DatagramSocket implements java.io.Closeable {
      * This could result in a SecurityException.
      *
      * @throws     SocketException  if the socket could not be opened,
-     *               or the socket could not bind to the specified local port.
+     *              or the socket could not be bound.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkListen} method doesn't allow the operation.
      *
@@ -173,7 +172,7 @@ public class DatagramSocket implements java.io.Closeable {
      * Creates a datagram socket, bound to the specified local
      * socket address.
      * <p>
-     * If, if the address is {@code null}, creates an unbound socket.
+     * If the address is {@code null} an unbound socket will be created.
      *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
@@ -201,8 +200,7 @@ public class DatagramSocket implements java.io.Closeable {
     /**
      * Constructs a datagram socket and binds it to the specified port
      * on the local host machine.  The socket will be bound to the
-     * {@link InetAddress#isAnyLocalAddress wildcard} address,
-     * an IP address chosen by the kernel.
+     * {@link InetAddress#isAnyLocalAddress wildcard} address.
      *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
@@ -231,9 +229,9 @@ public class DatagramSocket implements java.io.Closeable {
      * 65535 inclusive. A port number of {@code zero} will let the system pick
      * up an ephemeral port in a {@code bind} operation.
      * <p>
-     * If the IP address is 0.0.0.0, the socket will be bound to the
-     * {@link InetAddress#isAnyLocalAddress wildcard} address,
-     * an IP address chosen by the kernel.
+     * If the IP address is a {@link InetAddress#isAnyLocalAddress wildcard}
+     * address, or is {@code null}, the socket will be bound to the wildcard
+     * address.
      *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
@@ -242,7 +240,7 @@ public class DatagramSocket implements java.io.Closeable {
      * This could result in a SecurityException.
      *
      * @param port local port to use in the bind operation.
-     * @param laddr local address to bind
+     * @param laddr local address to bind (can be {@code null})
      *
      * @throws     SocketException  if the socket could not be opened,
      *               or the socket could not bind to the specified local port.

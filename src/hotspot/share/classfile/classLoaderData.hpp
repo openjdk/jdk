@@ -109,9 +109,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   static ClassLoaderData * _the_null_class_loader_data;
 
-  WeakHandle<vm_class_loader_data> _holder; // The oop that determines lifetime of this class loader
-  OopHandle _class_loader;    // The instance of java/lang/ClassLoader associated with
-                              // this ClassLoaderData
+  WeakHandle<vm_weak_data> _holder; // The oop that determines lifetime of this class loader
+  OopHandle _class_loader;          // The instance of java/lang/ClassLoader associated with
+                                    // this ClassLoaderData
 
   ClassLoaderMetaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
                                     // classes in the class loader are allocated.

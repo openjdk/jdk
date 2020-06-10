@@ -464,31 +464,50 @@ public class JavacTrees extends DocTrees {
     private Symbol attributeDocReference(TreePath path, DCReference ref) {
         Env<AttrContext> env = getAttrContext(path);
         if (env == null) return null;
-
+        if (ref.moduleName != null && ref.qualifierExpression == null && ref.memberName != null) {
+            // module name and member name without type
+            return null;
+        }
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log);
         try {
             final TypeSymbol tsym;
             final Name memberName;
+            final ModuleSymbol mdlsym;
+
+            if (ref.moduleName != null) {
+                mdlsym = modules.modulesInitialized() ?
+                        modules.getObservableModule(names.fromString(ref.moduleName.toString()))
+                        : null;
+                if (mdlsym == null) {
+                    return null;
+                } else if (ref.qualifierExpression == null) {
+                    return mdlsym;
+                }
+            } else {
+                mdlsym = modules.getDefaultModule();
+            }
+
             if (ref.qualifierExpression == null) {
                 tsym = env.enclClass.sym;
                 memberName = (Name) ref.memberName;
             } else {
-                // newSeeTree if the qualifierExpression is a type or package name.
-                // javac does not provide the exact method required, so
-                // we first check if qualifierExpression identifies a type,
-                // and if not, then we check to see if it identifies a package.
-                Type t = attr.attribType(ref.qualifierExpression, env);
-                if (t.isErroneous()) {
+                // Check if qualifierExpression is a type or package, using the methods javac provides.
+                // If no module name is given we check if qualifierExpression identifies a type.
+                // If that fails or we have a module name, use that to resolve qualifierExpression to
+                // a package or type.
+                Type t = ref.moduleName == null ? attr.attribType(ref.qualifierExpression, env) : null;
+
+                if (t == null || t.isErroneous()) {
                     JCCompilationUnit toplevel =
                         treeMaker.TopLevel(List.nil());
-                    final ModuleSymbol msym = modules.getDefaultModule();
-                    toplevel.modle = msym;
-                    toplevel.packge = msym.unnamedPackage;
+                    toplevel.modle = mdlsym;
+                    toplevel.packge = mdlsym.unnamedPackage;
                     Symbol sym = attr.attribIdent(ref.qualifierExpression, toplevel);
 
-                    if (sym == null)
+                    if (sym == null) {
                         return null;
+                    }
 
                     sym.complete();
 
@@ -500,7 +519,15 @@ public class JavacTrees extends DocTrees {
                             return null;
                         }
                     } else {
-                        if (ref.qualifierExpression.hasTag(JCTree.Tag.IDENT)) {
+                        if (modules.modulesInitialized() && ref.moduleName == null && ref.memberName == null) {
+                            // package/type does not exist, check if there is a matching module
+                            ModuleSymbol moduleSymbol = modules.getObservableModule(names.fromString(ref.signature));
+                            if (moduleSymbol != null) {
+                                return moduleSymbol;
+                            }
+                        }
+                        if (ref.qualifierExpression.hasTag(JCTree.Tag.IDENT) && ref.moduleName == null
+                                && ref.memberName == null) {
                             // fixup:  allow "identifier" instead of "#identifier"
                             // for compatibility with javadoc
                             tsym = env.enclClass.sym;
@@ -513,7 +540,7 @@ public class JavacTrees extends DocTrees {
                     Type e = t;
                     // If this is an array type convert to element type
                     while (e instanceof ArrayType)
-                        e = ((ArrayType)e).elemtype;
+                        e = ((ArrayType) e).elemtype;
                     tsym = e.tsym;
                     memberName = (Name) ref.memberName;
                 }

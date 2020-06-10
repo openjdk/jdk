@@ -487,7 +487,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
 void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
   if (loader_or_mirror() != NULL) {
     assert(_holder.is_null(), "never replace holders");
-    _holder = WeakHandle<vm_class_loader_data>::create(loader_or_mirror);
+    _holder = WeakHandle<vm_weak_data>::create(loader_or_mirror);
   }
 }
 

@@ -212,7 +212,10 @@ public class CompressedClassPointers {
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000");
-        output.shouldContain("Narrow klass shift: 0");
+        if (!Platform.isAArch64()) {
+            // Currently relax this test for Aarch64.
+            output.shouldContain("Narrow klass shift: 0");
+        }
         output.shouldHaveExitValue(0);
     }
 
@@ -230,7 +233,10 @@ public class CompressedClassPointers {
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000");
-        output.shouldContain("Narrow klass shift: 0");
+        if (!Platform.isAArch64()) {
+            // Currently relax this test for Aarch64.
+            output.shouldContain("Narrow klass shift: 0");
+        }
         output.shouldHaveExitValue(0);
     }
 
@@ -309,9 +315,7 @@ public class CompressedClassPointers {
         heapBaseMinAddressTest();
         sharingTest();
 
-        boolean ccpRequiresCoop = Platform.isAArch64();
-
-        if (!ccpRequiresCoop && !Platform.isOSX()) {
+        if (!Platform.isOSX()) {
             // Testing compressed class pointers without compressed oops.
             // This is only possible if the platform supports it. Notably,
             // on macOS, when compressed oops is disabled and the heap is
