@@ -31,9 +31,9 @@ include MakeBase.gmk
 ############################################################################
 
 ifeq ($(call isTargetOs, windows), true)
-  FIXPATH_COPY := $(TEST_IMAGE_DIR)/bin/fixpath.exe
+  FIXPATH_COPY := $(TEST_IMAGE_DIR)/bin/fixpath.sh
 
-  $(FIXPATH_COPY): $(firstword $(FIXPATH))
+  $(FIXPATH_COPY): $(TOPDIR)/make/scripts/fixpath.sh
 	$(call install-file)
 
   FIXPATH_WORKSPACE_ROOT := $(call FixPath, $(WORKSPACE_ROOT))

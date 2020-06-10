@@ -96,7 +96,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_PATH_PROGS(NICE, nice)
 
   UTIL_PATH_PROGS(LSB_RELEASE, lsb_release)
-  UTIL_PATH_PROGS(CMD, cmd.exe, $PATH /cygdrive/c/Windows/System32 /mnt/c/Windows/System32 /c/Windows/System32)
+  UTIL_PATH_PROGS(CMD, cmd.exe, $PATH /cygdrive/c/windows/system32 /mnt/c/windows/system32 /c/windows/system32)
 ])
 
 ###############################################################################

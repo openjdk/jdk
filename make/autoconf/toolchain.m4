@@ -703,15 +703,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # In the Microsoft toolchain we have a separate LD command "link".
-    # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
-    # a cygwin program for something completely different.
     UTIL_PATH_PROGS(LD, link$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(LD)
     UTIL_ADD_FIXPATH([LD])
 
-    # Verify that we indeed succeeded with this trick.
+    # Make sure we did not pick up /usr/bin/link, which is the unix-style
+    # link executable.
     AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
-    "$LD" --version > /dev/null
+    $LD --version > /dev/null
     if test $? -eq 0 ; then
       AC_MSG_RESULT([no])
       AC_MSG_ERROR([This is the Cygwin link tool. Please check your PATH and rerun configure.])

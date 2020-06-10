@@ -189,11 +189,11 @@ ifeq ($(OPENJDK_TARGET_CPU), x86_64)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  ifeq ($(wildcard $(TEST_IMAGE_DIR)/bin/fixpath.exe), )
+  ifeq ($(wildcard $(TEST_IMAGE_DIR)/bin/fixpath.sh), )
     $(info Error: fixpath is missing from test image '$(TEST_IMAGE_DIR)')
     $(error Cannot continue.)
   endif
-  FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.exe -c
+  FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.sh exec
   PATH_SEP:=;
 else
   FIXPATH :=

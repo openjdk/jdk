@@ -116,7 +116,6 @@ JAVAC_CMD := $(BOOT_JDK)/bin/javac
 JAR_CMD := $(BOOT_JDK)/bin/jar
 JLINK_CMD := $(JDK_OUTPUTDIR)/bin/jlink
 JMOD_CMD := $(JDK_OUTPUTDIR)/bin/jmod
-JARSIGNER_CMD := $(BOOT_JDK)/bin/jarsigner
 
 JAVA := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVA_SMALL := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
@@ -125,7 +124,6 @@ JAVAC := $(FIXPATH) $(JAVAC_CMD)
 JAR := $(FIXPATH) $(JAR_CMD)
 JLINK := $(FIXPATH) $(JLINK_CMD)
 JMOD := $(FIXPATH) $(JMOD_CMD)
-JARSIGNER := $(FIXPATH) $(JARSIGNER_CMD)
 
 BUILD_JAVA := $(JDK_IMAGE_DIR)/bin/JAVA
 ################################################################################
