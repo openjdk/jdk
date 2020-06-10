@@ -26,10 +26,15 @@ setup() {
   if [[ $CMD == "" ]]; then
     CMD=$DRIVEPREFIX/c/windows/system32/cmd.exe
   fi
+
+  if [[ $WINTEMP == "" ]]; then
+    wintemp_win="$($CMD /q /c echo %TEMP% 2>/dev/null | tr -d \\n\\r)"
+    WINTEMP="$($PATHTOOL -u "$wintemp_win")"
+  fi
 }
 
 TEMPDIRS=""
-trap "cleanup" EXIT
+#trap "cleanup" EXIT
 
 # Make regexp tests case insensitive
 shopt -s nocasematch
@@ -42,42 +47,84 @@ cleanup() {
   fi
 }
 
-cygwin_convert_to_win() {
-  converted=""
-
-  old_ifs="$IFS"
-  IFS=":"
-  for arg in $1; do
-    mixedpath=""
-    if [[ $arg =~ (^[^/]*)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
-      # Start looking for drive prefix
-      prefix="${BASH_REMATCH[1]}"
-      mixedpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
-    elif [[ $arg =~ (^[^/]*)(/[^/]+/[^/]+.*$) ]] ; then
-      # Does arg contain a potential unix path? Check for /foo/bar
-      prefix="${BASH_REMATCH[1]}"
-      pathmatch="${BASH_REMATCH[2]}"
-      if [[ $ENVROOT == "" ]]; then
-        echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
-        exit 1
+cygwin_convert_pathlist_to_win() {
+    # If argument seems to be colon separated path list, and all elements
+    # are possible to convert to paths, make a windows path list
+    converted=""
+    old_ifs="$IFS"
+    IFS=":"
+    for arg in "$1"; do
+      if [[ ! -e $arg ]]; then
+        result=""
+        return 1
       fi
-      mixedpath="$ENVROOT$pathmatch"
-    fi
-    if [[ $mixedpath != "" ]]; then
-      # If it was a converted path, change slash to backslash
-      arg="$prefix${mixedpath//'/'/'\'}"
-    fi
+      mixedpath=""
+      if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+        # Start looking for drive prefix
+        mixedpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+      elif [[ $arg =~ ^(/[^/]+/[^/]+.*$) ]] ; then
+        # Does arg contain a potential unix path? Check for /foo/bar
+        pathmatch="${BASH_REMATCH[1]}"
+        if [[ $ENVROOT == "" ]]; then
+          echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+          exit 1
+        fi
+        mixedpath="$ENVROOT$pathmatch"
+      else
+        result=""
+        return 1
+      fi
+      if [[ $mixedpath != "" ]]; then
+        # If it was a converted path, change slash to backslash
+        arg="$prefix${mixedpath//'/'/'\'}"
+      fi
 
-    if [[ "$converted" = "" ]]; then
-      converted="$arg"
-    else
-      converted="$converted:$arg"
-    fi
-  done
-  IFS="$old_ifs"
+      if [[ "$converted" = "" ]]; then
+        converted="$arg"
+      else
+        converted="$converted;$arg"
+      fi
+    done
+    IFS="$old_ifs"
 
-  result="$converted"
+    result="$converted"
+    return 0
 }
+
+cygwin_convert_to_win() {
+  arg="$1"
+  if [[ $arg =~ : ]]; then
+    cygwin_convert_pathlist_to_win "$arg"
+    if [[ $? -eq 0 ]]; then
+      return 0
+    fi
+  fi
+
+  # Arg did not contain ":", or not all elements was possible to convert to
+  # Windows paths, so it was not presumed to be a pathlist.
+  mixedpath=""
+  if [[ $arg =~ (^[^/]*)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+    # Start looking for drive prefix
+    prefix="${BASH_REMATCH[1]}"
+    mixedpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
+  elif [[ $arg =~ (^[^/]*)(/[^/]+/[^/]+.*$) ]] ; then
+    # Does arg contain a potential unix path? Check for /foo/bar
+    prefix="${BASH_REMATCH[1]}"
+    pathmatch="${BASH_REMATCH[2]}"
+    if [[ $ENVROOT == "" ]]; then
+      echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+      exit 1
+    fi
+    mixedpath="$ENVROOT$pathmatch"
+  fi
+  if [[ $mixedpath != "" ]]; then
+    # If it was a converted path, change slash to backslash
+    arg="$prefix${mixedpath//'/'/'\'}"
+  fi
+
+  result="$arg"
+}
+
 
 cygwin_verify_conversion() {
   arg="$1"
@@ -107,13 +154,20 @@ cygwin_verify_current_dir() {
 cygwin_convert_at_file() {
   infile="$1"
   if [[ -e $infile ]] ; then
-    tempdir=$(mktemp -dt fixpath.XXXXXX)
+    tempdir=$(mktemp -dt fixpath.XXXXXX -p "$WINTEMP")
+    echo we got tempdir=$tempdir
     TEMPDIRS="$TEMPDIRS $tempdir"
+    echo WINTEMP is $WINTEMP.
 
     while read line; do
-      cygwin_convert_to_win "$line" >> $tempdir/atfile
+      echo converting $line
+      cygwin_convert_to_win "$line"
+      echo got $result
+      echo "$result" >> $tempdir/atfile
     done < $infile
-    result="@$tempdir/atfile"
+    cygwin_convert_to_win "$tempdir/atfile"
+    result="@$result"
+    echo got result: "$result"
   else
     result="@$infile"
   fi
@@ -179,6 +233,25 @@ cygwin_import_to_unix() {
   result="$path"
 }
 
+cygwin_import_pathlist() {
+  converted=""
+
+  old_ifs="$IFS"
+  IFS=";"
+  for arg in $1; do
+    cygwin_import_to_unix "$arg"
+
+    if [[ "$converted" = "" ]]; then
+      converted="$result"
+    else
+      converted="$converted:$result"
+    fi
+  done
+  IFS="$old_ifs"
+
+  result="$converted"
+}
+
 cygwin_convert_command_line() {
   args=""
   for arg in "$@" ; do
@@ -202,7 +275,7 @@ cygwin_exec_command_line() {
     cd $DRIVEPREFIX/c
     echo fixpath: warning: Changing directory to $DRIVEPREFIX/c 1>&2
   fi
-  args=""
+  args=()
   command=""
   for arg in "$@" ; do
     if [[ $command == "" ]]; then
@@ -217,19 +290,22 @@ cygwin_exec_command_line() {
         # The actual command will be executed by bash, so don't convert it
         command="$arg"
       fi
-    else 
+    else
       if [[ $arg =~ ^@(.*$) ]] ; then
         cygwin_convert_at_file "${BASH_REMATCH[1]}"
       else
         cygwin_convert_to_win "$arg"
       fi
-      args="$args$result "
+
+      args=("${args[@]}" "$result")
+
     fi
   done
-  # Strip trailing space
-  cmdline="$command ${args% }"
   # Now execute it
-  $cmdline
+  if [[ -v DEBUG_FIXPATH ]]; then
+     echo DEBUG FIXPATH: "$command" "${args[@]}"
+  fi
+  "$command" "${args[@]}"
 }
 
 #### MAIN FUNCTION
@@ -248,7 +324,7 @@ elif [[ "$action" == "verify" ]] ; then
   exit $?
 elif [[ "$action" == "import" ]] ; then
   orig="$1"
-  cygwin_import_to_unix "$orig"
+  cygwin_import_pathlist "$orig"
   echo "$result"
 elif [[ "$action" == "exec" ]] ; then
   cygwin_exec_command_line "$@"

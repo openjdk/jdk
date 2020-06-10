@@ -113,7 +113,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
     VS_BASE="$2"
     METHOD="$3"
 
-    UTIL_REWRITE_AS_UNIX_PATH(VS_BASE)
+    UTIL_FIXUP_PATH(VS_BASE)
     # In VS 2017 and VS 2019, the default installation is in a subdir named after the edition.
     # Find the first one present and use that.
     if test "x$VS_EDITIONS" != x; then
@@ -131,7 +131,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
         VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
         VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
-            VC/Auxiliary/Build/vcvarsx86_amd64.bat VC/Auxiliary/Build/vcvars64.bat"
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
@@ -161,16 +161,16 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
     VS_VERSION="$1"
     WIN_SDK_BASE="$2"
     METHOD="$3"
-    UTIL_REWRITE_AS_UNIX_PATH(WIN_SDK_BASE)
+    UTIL_FIXUP_PATH(WIN_SDK_BASE)
     if test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
       if test ! -d "$WIN_SDK_BASE/lib"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         AC_MSG_NOTICE([Warning: Installation is broken, lib dir is missing. Ignoring])
-      elif test -f "$WIN_SDK_BASE/Bin/SetEnv.Cmd"; then
+      elif test -f "$WIN_SDK_BASE/bin/setenv.cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
-        VS_ENV_CMD="$WIN_SDK_BASE/Bin/SetEnv.Cmd"
+        VS_ENV_CMD="$WIN_SDK_BASE/bin/setenv.cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
           VS_ENV_ARGS="/x86"
         else
@@ -245,9 +245,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
         [$PROGRAMFILES_X86/$VS_INSTALL_DIR], [well-known name])
   fi
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
-      [C:/Program Files/$VS_INSTALL_DIR], [well-known name])
+      [c:/program files/$VS_INSTALL_DIR], [well-known name])
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
-      [C:/Program Files (x86)/$VS_INSTALL_DIR], [well-known name])
+      [c:/program files (x86)/$VS_INSTALL_DIR], [well-known name])
   if test "x$SDK_INSTALL_DIR" != x; then
     if test "x$ProgramW6432" != x; then
       TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
@@ -262,9 +262,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
           [$PROGRAMFILES/$SDK_INSTALL_DIR], [well-known name])
     fi
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
-        [C:/Program Files/$SDK_INSTALL_DIR], [well-known name])
+        [c:/program files/$SDK_INSTALL_DIR], [well-known name])
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([${VS_VERSION}],
-        [C:/Program Files (x86)/$SDK_INSTALL_DIR], [well-known name])
+        [c:/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
 
   if test "x$VS_TOOLSET_SUPPORTED" != x; then
@@ -309,6 +309,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     # The TOOLCHAIN_PATH from a devkit is in Unix format. In WSL we need a
     # windows version of the complete VS_PATH as VS_PATH_WINDOWS
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    ### FIXME
       # Convert the toolchain path
       OLDIFS="$IFS"
       IFS=":"
@@ -329,6 +330,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     # Convert DEVKIT_VS_INCLUDE into windows style VS_INCLUDE so that it
     # can still be exported as INCLUDE for compiler invocations without
     # SYSROOT_CFLAGS
+    # FIXME: should not be needed!
     OLDIFS="$IFS"
     IFS=";"
     for i in $DEVKIT_VS_INCLUDE; do
@@ -389,21 +391,6 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
 # the set env variables into the spec file.
 AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 [
-  # Store path to cygwin link.exe to help excluding it when searching for
-  # VS linker. This must be done before changing the PATH when looking for VS.
-  AC_PATH_PROG(CYGWIN_LINK, link.exe)
-  if test "x$CYGWIN_LINK" != x; then
-    AC_MSG_CHECKING([if the first found link.exe is actually the Cygwin link tool])
-    "$CYGWIN_LINK" --version > /dev/null
-    if test $? -eq 0 ; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-      # This might be the VS linker. Don't exclude it later on.
-      CYGWIN_LINK=""
-    fi
-  fi
-
   # First-hand choice is to locate and run the vsvars bat file.
   TOOLCHAIN_FIND_VISUAL_STUDIO
 
@@ -411,7 +398,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
   if test "x$DEVKIT_VS_VERSION" = x; then
     if test "x$VS_ENV_CMD" != x; then
       # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
+      echo will rewrite VS_ENV_CMD from :$VS_ENV_CMD:
       UTIL_FIXUP_EXECUTABLE(VS_ENV_CMD)
+      echo to VS_ENV_CMD=$VS_ENV_CMD
 
       # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
       AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
@@ -428,7 +417,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
         WINPATH_BASH="bash"
       else
-        WINPATH_BASH="$BASH"
+        WINPATH_BASH="$BASH.exe"
         UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_BASH])
       fi
 
@@ -442,7 +431,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # In some cases, the VS_ENV_CMD will change directory, change back so
       # the set-vs-env.sh ends up in the right place.
       $ECHO 'cd %~dp0' >> $EXTRACT_VC_ENV_BAT_FILE
-      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+#      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+ if test x = x; then
         # These will end up something like:
         # echo VS_PATH=\"$PATH\" > set-vs-env.sh
         # The trailing space for everyone except PATH is no typo, but is needed due
@@ -487,7 +477,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Now execute the newly created bat file.
       # Change directory so we don't need to mess with Windows paths in redirects.
       cd $VS_ENV_TMP_DIR
-      $CMD /c extract-vs-env.bat > extract-vs-env.log 2>&1
+      BATPATH=$VS_ENV_TMP_DIR/extract-vs-env.bat
+      UTIL_REWRITE_AS_WINDOWS_MIXED_PATH(BATPATH)
+      echo will execute $BATPATH
+      $CMD /c "$BATPATH"
+      # > extract-vs-env.log 2>&1
       cd $CONFIGURE_START_DIR
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
@@ -510,7 +504,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # In WSL, the extracted VS_PATH is Windows style. This needs to be
       # rewritten as Unix style and the Windows style version is saved
       # in VS_PATH_WINDOWS.
-      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+#      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+  if test x = x; then
         OLDIFS="$IFS"
         IFS=";"
         # Convert VS_PATH to unix style
@@ -522,11 +517,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
           if test "x$path" != x; then
             IFS="$OLDIFS"
             # Check that directory exists before calling fixup_path
+            # FIXME: Is this still a problem???
             testpath=$path
-            UTIL_REWRITE_AS_UNIX_PATH([testpath])
+            UTIL_FIXUP_PATH([testpath])
             if test -d "$testpath"; then
-              UTIL_FIXUP_PATH([path])
-              UTIL_APPEND_TO_PATH(VS_PATH, $path)
+              UTIL_APPEND_TO_PATH(VS_PATH, $testpath)
             fi
             IFS=";"
           fi
@@ -577,11 +572,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
         if test "x$ipath" != x; then
           IFS="$OLDIFS"
           # Check that directory exists before calling fixup_path
+          # FIXME: is this still a problem?
           testpath=$ipath
-          UTIL_REWRITE_AS_UNIX_PATH([testpath])
+          UTIL_FIXUP_PATH([testpath])
           if test -d "$testpath"; then
-            UTIL_FIXUP_PATH([ipath])
-            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$testpath"
           fi
           IFS=";"
         fi
@@ -593,11 +588,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
         if test "x$libpath" != x; then
           IFS="$OLDIFS"
           # Check that directory exists before calling fixup_path
+          # FIXME
           testpath=$libpath
-          UTIL_REWRITE_AS_UNIX_PATH([testpath])
+          UTIL_FIXUP_PATH([testpath])
           if test -d "$testpath"; then
-            UTIL_FIXUP_PATH([libpath])
-            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$testpath"
           fi
           IFS=";"
         fi
@@ -661,18 +656,18 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
       if test "$VS_VERSION" -lt 2017; then
         # Probe: Using well-known location from Visual Studio 12.0 and older
         if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
         else
-          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
         fi
       else
         CYGWIN_VC_TOOLS_REDIST_DIR="$VCToolsRedistDir"
         UTIL_FIXUP_PATH(CYGWIN_VC_TOOLS_REDIST_DIR)
         # Probe: Using well-known location from VS 2017 and VS 2019
         if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
         else
-          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
         fi
       fi
       # In case any of the above finds more than one file, loop over them.
@@ -694,7 +689,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   if test "x$MSVC_DLL" = x; then
     # Probe: Look in the Windows system32 directory
     CYGWIN_SYSTEMROOT="$SYSTEMROOT"
-    UTIL_REWRITE_AS_UNIX_PATH(CYGWIN_SYSTEMROOT)
+    UTIL_FIXUP_PATH(CYGWIN_SYSTEMROOT)
     POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
     TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
         [well-known location in SYSTEMROOT])
@@ -704,7 +699,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     # Probe: If Visual Studio Express is installed, there is usually one with the debugger
     if test "x$VS100COMNTOOLS" != x; then
       CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
-      UTIL_REWRITE_AS_UNIX_PATH(CYGWIN_VS_TOOLS_DIR)
+      UTIL_FIXUP_PATH(CYGWIN_VS_TOOLS_DIR)
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
         POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
         | $GREP -i /x64/ | $HEAD --lines 1`
@@ -843,10 +838,10 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       if test "x$dll_subdir" = "xx86_64"; then
         dll_subdir="x64"
       fi
-      UCRT_DLL_DIR="$CYGWIN_WINDOWSSDKDIR/Redist/ucrt/DLLs/$dll_subdir"
+      UCRT_DLL_DIR="$CYGWIN_WINDOWSSDKDIR/redist/ucrt/dlls/$dll_subdir"
       if test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then
         # Try with version subdir
-        UCRT_DLL_DIR="`ls -d $CYGWIN_WINDOWSSDKDIR/Redist/*/ucrt/DLLs/$dll_subdir \
+        UCRT_DLL_DIR="`ls -d $CYGWIN_WINDOWSSDKDIR/redist/*/ucrt/dlls/$dll_subdir \
             2> /dev/null | $SORT -d | $HEAD -n1`"
         if test -z "$UCRT_DLL_DIR" \
             || test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then

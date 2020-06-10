@@ -485,7 +485,7 @@ CFLAGS_CCACHE:=@CFLAGS_CCACHE@
 ADLC_CXXFLAG=@ADLC_CXXFLAG@
 
 # Tools that potentially need to be cross compilation aware.
-CC:=@FIXPATH@ @CCACHE@ @ICECC@ @CC@
+CC := @CCACHE@ @ICECC@ @CC@
 
 # CFLAGS used to compile the jdk native libraries (C-code)
 CFLAGS_JDKLIB:=@CFLAGS_JDKLIB@
@@ -511,12 +511,12 @@ EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 EXTRA_ASFLAGS = @EXTRA_ASFLAGS@
 
-CXX:=@FIXPATH@ @CCACHE@ @ICECC@ @CXX@
+CXX := @CCACHE@ @ICECC@ @CXX@
 
-CPP:=@FIXPATH@ @CPP@
+CPP := @CPP@
 
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
-LD:=@FIXPATH@ @LD@
+LD := @LD@
 
 # Linker used by the jaotc tool for AOT compilation.
 LD_JAOTC:=@LD_JAOTC@
@@ -536,7 +536,7 @@ JDKEXE_LIBS:=@JDKEXE_LIBS@
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 
 # Sometimes a different linker is needed for c++ libs
-LDCXX:=@FIXPATH@ @LDCXX@
+LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX:=@LIBCXX@
 
@@ -545,22 +545,22 @@ LDFLAGS_TESTEXE:=@LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
-BUILD_CC:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CC@
-BUILD_CXX:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CXX@
-BUILD_LD:=@FIXPATH@ @BUILD_LD@
-BUILD_LDCXX:=@FIXPATH@ @BUILD_LDCXX@
-BUILD_AS:=@FIXPATH@ @BUILD_AS@
-BUILD_AR:=@FIXPATH@ @BUILD_AR@
-BUILD_NM:=@FIXPATH@ @BUILD_NM@
+BUILD_CC := @BUILD_ICECC@ @BUILD_CC@
+BUILD_CXX := @BUILD_ICECC@ @BUILD_CXX@
+BUILD_LD := @BUILD_LD@
+BUILD_LDCXX := @BUILD_LDCXX@
+BUILD_AS := @BUILD_AS@
+BUILD_AR := @BUILD_AR@
+BUILD_NM := @BUILD_NM@
 BUILD_OBJCOPY:=@BUILD_OBJCOPY@
 BUILD_STRIP:=@BUILD_STRIP@
 BUILD_SYSROOT_CFLAGS:=@BUILD_SYSROOT_CFLAGS@
 BUILD_SYSROOT_LDFLAGS:=@BUILD_SYSROOT_LDFLAGS@
 
-AS:=@FIXPATH@ @AS@
+AS := @AS@
 
 # AR is used to create a static library (is ar in unix, lib.exe in windows)
-AR:=@FIXPATH@ @AR@
+AR := @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
@@ -737,9 +737,9 @@ WC:=@WC@
 XARGS:=@XARGS@
 ZIPEXE:=@ZIPEXE@
 UNZIP:=@UNZIP@
-MT:=@FIXPATH@ @MT@
-RC:=@FIXPATH@ @RC@
-DUMPBIN:=@FIXPATH@ @DUMPBIN@
+MT:=@MT@
+RC:=@RC@
+DUMPBIN:=@DUMPBIN@
 CYGPATH:=@CYGPATH@
 WSLPATH:=@WSLPATH@
 LDD:=@LDD@

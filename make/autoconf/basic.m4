@@ -80,6 +80,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_SUBST(PATH_SEP)
   AC_SUBST(EXE_SUFFIX)
 
+  echo entry: TOPDIR=$TOPDIR
   # We get the top-level directory from the supporting wrappers.
   AC_MSG_CHECKING([for top-level directory])
   AC_MSG_RESULT([$TOPDIR])
@@ -95,7 +96,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # We can only call UTIL_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   UTIL_FIXUP_PATH(CONFIGURE_START_DIR)
+  echo pre fixup $TOPDIR
   UTIL_FIXUP_PATH(TOPDIR)
+  echo post fixup $TOPDIR
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf

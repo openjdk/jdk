@@ -559,6 +559,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
 AC_DEFUN([UTIL_PATH_PROGS],
 [
   UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2, , $3)])
+ # UTIL_FIXUP_EXECUTABLE($1)
 ])
 
 ###############################################################################
@@ -568,6 +569,7 @@ AC_DEFUN([UTIL_PATH_PROGS],
 AC_DEFUN([UTIL_CHECK_TOOLS],
 [
   UTIL_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $2)])
+ # UTIL_FIXUP_EXECUTABLE($1)
 ])
 
 ###############################################################################
@@ -588,6 +590,7 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
 AC_DEFUN([UTIL_REQUIRE_SPECIAL],
 [
   UTIL_SETUP_TOOL($1, [$2])
+#  UTIL_FIXUP_EXECUTABLE($1)
   UTIL_CHECK_NONEMPTY($1)
 ])
 
@@ -608,5 +611,14 @@ AC_DEFUN([UTIL_REQUIRE_BUILTIN_PROGS],
       AC_MSG_ERROR([Required tool $2 also not found as built-in.])
     fi
   fi
+ # UTIL_FIXUP_EXECUTABLE($1)
   UTIL_CHECK_NONEMPTY($1)
+])
+
+###############################################################################
+# Add FIXPATH prefix to variable, if needed on the current platform
+# $1: variable to add fixpath to
+AC_DEFUN([UTIL_ADD_FIXPATH],
+[
+  $1="$FIXPATH [$]$1"
 ])

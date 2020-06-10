@@ -323,6 +323,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
 
 # Before we start detecting the toolchain executables, we might need some
 # special setup, e.g. additional paths etc.
+AC_DEFUN_ONCE([TOOLCHAIN_PRE_FLAGS],
+[
+  # On Windows, we need to detect the visual studio installation first.
+  if test "x$OPENJDK_BUILD_OS" = "xwindows" \
+      && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+    # We now got SYSROOT flags
+  fi
+])
+
+# Before we start detecting the toolchain executables, we might need some
+# special setup, e.g. additional paths etc.
 AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 [
   # FIXME: Is this needed?
@@ -341,21 +353,15 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # it for DLL resolution in runtime.
   if test "x$OPENJDK_BUILD_OS" = "xwindows" \
       && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
-    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+    # Append VS_PATH. In WSL, VS_PATH will not contain the WSL env path needed
+    # for using basic Unix tools, so need to keep the original PATH.
+    NEW_PATH="$VS_PATH"
+    UTIL_APPEND_TO_PATH(NEW_PATH, $PATH)
+    PATH="$NEW_PATH"
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-      # Append VS_PATH. In WSL, VS_PATH will not contain the WSL env path needed
-      # for using basic Unix tools, so need to keep the original PATH.
-      UTIL_APPEND_TO_PATH(PATH, $VS_PATH)
-      UTIL_APPEND_TO_PATH(WSLENV, "PATH/l:LIB:INCLUDE")
+      UTIL_APPEND_TO_PATH(WSLENV, "PATH/l")
       export WSLENV
-    else
-      # Reset path to VS_PATH. It will include everything that was on PATH at the time we
-      # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
-      PATH="$VS_PATH"
     fi
-    # The microsoft toolchain also requires INCLUDE and LIB to be set.
-    export INCLUDE="$VS_INCLUDE"
-    export LIB="$VS_LIB"
   else
     if test "x$XCODE_VERSION_OUTPUT" != x; then
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
@@ -660,10 +666,28 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   TOOLCHAIN_FIND_COMPILER([CC], [C], $TOOLCHAIN_CC_BINARY)
   # Now that we have resolved CC ourself, let autoconf have its go at it
+  echo CC is $CC. now auto
+  echo CFLAGS is $CFLAGS
+  echo LDFLAGS is $LDFLAGS
+  echo LIBS=$LIBS
+  LIBS="-link $LDFLAGS"
+  LDFLAGS=
+  OLD_CC="$CC"
+  UTIL_ADD_FIXPATH([CC])
+#  CC="$FIXPATH $CC"
+  echo new CC is $CC.
   AC_PROG_CC([$CC])
+  echo done
 
+echo will find CXX
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
+  echo found CXX=$CXX
   # Now that we have resolved CXX ourself, let autoconf have its go at it
+  OLD_CXX="$CXX"
+ # CXX="$FIXPATH $CXX"
+
+ UTIL_ADD_FIXPATH([CXX])
+  echo running CXX: $CXX.
   AC_PROG_CXX([$CXX])
 
   # This is the compiler version number on the form X.Y[.Z]
@@ -687,6 +711,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   UTIL_FIXUP_EXECUTABLE(CPP)
   AC_PROG_CXXCPP
   UTIL_FIXUP_EXECUTABLE(CXXCPP)
+#  CC="$OLD_CC"
+#  CXX="$OLD_CXX"
+
+  echo we got CPP=$CPP
+  echo CXXCPP=$CXXCPP
 
   #
   # Setup the linker (LD)
@@ -695,15 +724,20 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # In the Microsoft toolchain we have a separate LD command "link".
     # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
     # a cygwin program for something completely different.
-    AC_CHECK_PROG([LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
-    UTIL_FIXUP_EXECUTABLE(LD)
+    echo should rejet $CYGWIN_LINK
+    UTIL_PATH_PROGS(LD, link$EXE_SUFFIX)
+#    echo PATH is $PATH.
+#    AC_CHECK_PROG([LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
+#    AC_CHECK_PROG([LD], [link$EXE_SUFFIX],,,, [$CYGWIN_LINK])
+    #UTIL_FIXUP_EXECUTABLE(LD)
+    UTIL_ADD_FIXPATH([LD])
     # Verify that we indeed succeeded with this trick.
     AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
 
     # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
     # which, in combination with WSLENV, will make the WSL layer complain
-    old_path="$PATH"
-    PATH=
+#    old_path="$PATH"
+#    PATH=
 
     "$LD" --version > /dev/null
 
@@ -714,7 +748,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
       AC_MSG_RESULT([yes])
     fi
 
-    PATH="$old_path"
+ #   PATH="$old_path"
 
     LDCXX="$LD"
     # jaotc being a windows program expects the linker to be supplied with exe suffix.
@@ -746,8 +780,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   # Setup the assembler (AS)
   #
-  # FIXME: is this correct for microsoft?
-  AS="$CC -c"
+  if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
+    AS="$CC -c"
+  else
+    UTIL_PATH_PROGS(AS, ml$EXE_SUFFIX)
+    #UTIL_FIXUP_EXECUTABLE(AS)
+    UTIL_ADD_FIXPATH([AS])
+  fi
   AC_SUBST(AS)
 
   #
@@ -755,7 +794,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
-    AC_CHECK_PROG([AR], [lib$EXE_SUFFIX],[lib$EXE_SUFFIX],,,)
+#    AC_CHECK_PROG([AR], [lib$EXE_SUFFIX],[lib$EXE_SUFFIX],,,)
+    UTIL_PATH_PROGS(AR, lib$EXE_SUFFIX)
+    #UTIL_FIXUP_EXECUTABLE(AR)
+    UTIL_ADD_FIXPATH([AR])
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_CHECK_TOOLS(AR, ar gcc-ar)
   else
@@ -779,21 +821,23 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    AC_CHECK_PROG([MT], [mt$EXE_SUFFIX], [mt$EXE_SUFFIX],,, [/usr/bin/mt])
+  #(variable, prog-to-check-for, value-if-found, [value-if-not-found], [path = ‘$PATH’], [reject])
+    #AC_CHECK_PROG([MT], [mt$EXE_SUFFIX], [mt$EXE_SUFFIX],,, [/usr/bin/mt])
+    #— Macro: AC_PATH_PROGS (variable, progs-to-check-for, [value-if-not-found], [path = ‘$PATH’])
+    UTIL_PATH_PROGS(MT, mt$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(MT)
+    UTIL_ADD_FIXPATH(MT)
+
     # Setup the resource compiler (RC)
-    AC_CHECK_PROG([RC], [rc$EXE_SUFFIX], [rc$EXE_SUFFIX],,, [/usr/bin/rc])
+    #AC_CHECK_PROG([RC], [rc$EXE_SUFFIX], [rc$EXE_SUFFIX],,, [/usr/bin/rc])
+    UTIL_PATH_PROGS(RC, rc$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(RC)
-    AC_CHECK_PROG([DUMPBIN], [dumpbin$EXE_SUFFIX], [dumpbin$EXE_SUFFIX],,,)
+    UTIL_ADD_FIXPATH(RC)
+
+    UTIL_PATH_PROGS(DUMPBIN, dumpbin$EXE_SUFFIX)
+#    AC_CHECK_PROG([DUMPBIN], [dumpbin$EXE_SUFFIX], [dumpbin$EXE_SUFFIX],,,)
     UTIL_FIXUP_EXECUTABLE(DUMPBIN)
-    # We need to check for 'msbuild.exe' because at the place where we expect to
-    # find 'msbuild.exe' there's also a directory called 'msbuild' and configure
-    # won't find the 'msbuild.exe' executable in that case (and the
-    # 'ac_executable_extensions' is unusable due to performance reasons).
-    # Notice that we intentionally don't fix up the path to MSBUILD because we
-    # will call it in a DOS shell during freetype detection on Windows (see
-    # 'LIB_SETUP_FREETYPE' in "libraries.m4"
-    AC_CHECK_PROG([MSBUILD], [msbuild$EXE_SUFFIX], [msbuild$EXE_SUFFIX],,,)
+    UTIL_ADD_FIXPATH(DUMPBIN)
   fi
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then

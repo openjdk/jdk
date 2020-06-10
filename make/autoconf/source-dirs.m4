@@ -28,9 +28,6 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_DIRS],
   OUTPUTDIR="$OUTPUTDIR"
   AC_SUBST(OUTPUTDIR)
   JDK_OUTPUTDIR="$OUTPUTDIR/jdk"
-
-  # Where are the sources.
-  AC_SUBST(TOPDIR)
 ])
 
 ################################################################################

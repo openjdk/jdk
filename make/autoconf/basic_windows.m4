@@ -112,75 +112,13 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([unknown])
     AC_MSG_WARN([It seems that your find utility is non-standard.])
   fi
+  
+  FIXPATH="$BASH $TOPDIR/make/scripts/fixpath.sh exec"
+  AC_SUBST(FIXPATH)
 ])
 
 AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
 [
-  # When using cygwin or msys, we need a wrapper binary that renames
-  # /cygdrive/c/ arguments into c:/ arguments and peeks into
-  # @files and rewrites these too! This wrapper binary is
-  # called fixpath.
-  FIXPATH=
-  if test "x$OPENJDK_BUILD_OS" = xwindows; then
-    AC_MSG_CHECKING([if fixpath can be created])
-    FIXPATH_SRC="$TOPDIR/make/src/native/fixpath.c"
-    FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
-    FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
-    if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
-      # Important to keep the .exe suffix on Cygwin for Hotspot makefiles
-      FIXPATH="$FIXPATH_BIN -c"
-    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.msys2; then
-      # Take all collected prefixes and turn them into a -m/c/foo@/c/bar@... command line
-      # @ was chosen as separator to minimize risk of other tools messing around with it
-      all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" \
-          | tr ' ' '\n' | $GREP '^/./' | $SORT | $UNIQ`
-      fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
-      FIXPATH="$FIXPATH_BIN -m$fixpath_argument_list"
-    elif test "x$OPENJDK_BUILD_OS_ENV" = xwindows.wsl; then
-      FIXPATH="$FIXPATH_BIN -w"
-    fi
-    FIXPATH_SRC_W="$FIXPATH_SRC"
-    FIXPATH_BIN_W="$FIXPATH_BIN"
-    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_SRC_W])
-    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_BIN_W])
-    $RM -rf $FIXPATH_BIN $FIXPATH_DIR
-    $MKDIR -p $FIXPATH_DIR $CONFIGURESUPPORT_OUTPUTDIR/bin
-    cd $FIXPATH_DIR
-    $CC $FIXPATH_SRC_W -Fe$FIXPATH_BIN_W > $FIXPATH_DIR/fixpath1.log 2>&1
-    cd $CONFIGURE_START_DIR
-
-    if test ! -x $FIXPATH_BIN; then
-      AC_MSG_RESULT([no])
-      cat $FIXPATH_DIR/fixpath1.log
-      AC_MSG_ERROR([Could not create $FIXPATH_BIN])
-    fi
-    AC_MSG_RESULT([yes])
-
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-      OLD_WSLENV="$WSLENV"
-      WSLENV=`$ECHO $WSLENV | $SED 's/PATH\/l://'`
-      UTIL_APPEND_TO_PATH(WSLENV, "FIXPATH_PATH")
-      export WSLENV
-      export FIXPATH_PATH=$VS_PATH_WINDOWS
-      AC_MSG_NOTICE([FIXPATH_PATH is $FIXPATH_PATH])
-      AC_MSG_NOTICE([Rewriting WSLENV from $OLD_WSLENV to $WSLENV])
-    fi
-
-    AC_MSG_CHECKING([if fixpath.exe works])
-    cd $FIXPATH_DIR
-    $FIXPATH $CC $FIXPATH_SRC -Fe$FIXPATH_DIR/fixpath2.exe \
-        > $FIXPATH_DIR/fixpath2.log 2>&1
-    cd $CONFIGURE_START_DIR
-    if test ! -x $FIXPATH_DIR/fixpath2.exe; then
-      AC_MSG_RESULT([no])
-      cat $FIXPATH_DIR/fixpath2.log
-      AC_MSG_ERROR([fixpath did not work!])
-    fi
-    AC_MSG_RESULT([yes])
-
-    FIXPATH_DETACH_FLAG="--detach"
-  fi
-
-  AC_SUBST(FIXPATH)
+  FIXPATH_DETACH_FLAG=""
   AC_SUBST(FIXPATH_DETACH_FLAG)
 ])

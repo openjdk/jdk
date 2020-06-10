@@ -175,6 +175,7 @@ TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
 # The global flags are needed for configure to be able to run the compilers
 # correctly.
+TOOLCHAIN_PRE_FLAGS
 FLAGS_PRE_TOOLCHAIN
 
 # Then detect the actual binaries needed
