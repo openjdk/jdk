@@ -94,6 +94,17 @@ void AbstractWorkGang::threads_do(ThreadClosure* tc) const {
   }
 }
 
+static void run_foreground_task_if_needed(AbstractGangTask* task, uint num_workers,
+                                          bool add_foreground_work) {
+  if (add_foreground_work) {
+    log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: foreground",
+      Thread::current()->name(), task->name());
+    task->work(num_workers);
+    log_develop_trace(gc, workgang)("Finished work gang: %s task: %s worker: foreground "
+      "thread: " PTR_FORMAT, Thread::current()->name(), task->name(), p2i(Thread::current()));
+  }
+}
+
 // WorkGang dispatcher implemented with semaphores.
 //
 // Semaphores don't require the worker threads to re-claim the lock when they wake up.
@@ -124,13 +135,15 @@ public:
     delete _end_semaphore;
   }
 
-  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
+  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
     // No workers are allowed to read the state variables until they have been signaled.
     _task         = task;
     _not_finished = num_workers;
 
     // Dispatch 'num_workers' number of tasks.
     _start_semaphore->signal(num_workers);
+
+    run_foreground_task_if_needed(task, num_workers, add_foreground_work);
 
     // Wait for the last worker to signal the coordinator.
     _end_semaphore->wait();
@@ -188,7 +201,7 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
     delete _monitor;
   }
 
-  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
+  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
     MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
 
     _task        = task;
@@ -196,6 +209,8 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
 
     // Tell the workers to get to work.
     _monitor->notify_all();
+
+    run_foreground_task_if_needed(task, num_workers, add_foreground_work);
 
     // Wait for them to finish.
     while (_finished < _num_workers) {
@@ -263,14 +278,14 @@ void WorkGang::run_task(AbstractGangTask* task) {
   run_task(task, active_workers());
 }
 
-void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
+void WorkGang::run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
   guarantee(num_workers <= total_workers(),
             "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
             task->name(), num_workers, total_workers());
   guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
   uint old_num_workers = _active_workers;
   update_active_workers(num_workers);
-  _dispatcher->coordinator_execute_on_workers(task, num_workers);
+  _dispatcher->coordinator_execute_on_workers(task, num_workers, add_foreground_work);
   update_active_workers(old_num_workers);
 }
 
