@@ -1,11 +1,13 @@
 #!/bin/bash
 
-PATHTOOL=cygpath
+#PATHTOOL=cygpath
+PATHTOOL=wslpath
 
-DRIVEPREFIX=/cygdrive
-DRIVEPREFIX=
-ENVROOT="c:\cygwin64"
-#ENVROOT='\\wsl$\Ubuntu-20.04'
+#DRIVEPREFIX=/cygdrive
+#DRIVEPREFIX=
+DRIVEPREFIX=/mnt
+#ENVROOT="c:\cygwin64"
+ENVROOT='\\wsl$\Ubuntu-20.04'
 
 TEMPDIRS=""
 trap "cleanup" EXIT
@@ -71,7 +73,7 @@ cygwin_import_to_unix() {
     dirpart="$(dirname "$path")"
     dirpart="$(cd "$dirpart" 2>&1 > /dev/null && pwd)"
     if [[ $? -ne 0 ]]; then
-      echo fixpath: failure: Directory "'"$path"'" does not exist 1>&2
+      echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
       exit 1
     fi
     basepart="$(basename "$path")"
@@ -79,22 +81,27 @@ cygwin_import_to_unix() {
   fi
 
   # Now turn it into a windows path
-  winpath="$($PATHTOOL -w "$path")"
-
-  # On WSL1, PATHTOOL will fail for files in envroot. We assume that if PATHTOOL
-  # fails, we have a valid unix path in path.
+  winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
 
   if [[ $? -eq 0 ]]; then
     if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
       # If it is not in envroot, it's a generic windows path
       if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
         # Path has forbidden characters, rewrite as short name
-        shortpath="$(cmd.exe /q /c for %I in \( "$winpath" \) do echo %~sI | tr -d \\n\\r)"
+        shortpath="$(cmd.exe /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
         path="$($PATHTOOL -u "$shortpath")"
         # Path is now unix style, based on short name
       fi
       # Make it lower case
       path="$(echo "$path" | tr [:upper:] [:lower:])"
+    fi
+  else
+    # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
+    # exists, we assume that $path is a valid unix path.
+
+    if [[ ! -e $path ]]; then
+      echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
+      exit 1
     fi
   fi
 
