@@ -10,31 +10,23 @@ setup() {
         exit 2
       fi
     fi
-    echo PATHTOOL=$PATHTOOL
   fi
 
   if [[ $ENVROOT == "" ]]; then
-    ENVROOT="$($PATHTOOL -w / 2> /dev/null)"
-    echo envrot1=$ENVROOT
+    unixroot="$($PATHTOOL -w / 2> /dev/null)"
     # Remove trailing backslash
-    ENVROOT=${ENVROOT%\\}
-    echo ENVROOT=$ENVROOT
+    ENVROOT=${unixroot%\\}
   fi
 
   if [[ $DRIVEPREFIX == "" ]]; then
     winroot=$($PATHTOOL -u c:/)
-    echo winroot=$winroot
     DRIVEPREFIX=${winroot%/c/}
-    echo DRIVEPREFIX?=$DRIVEPREFIX
   fi
 
   if [[ $CMD == "" ]]; then
     CMD=$DRIVEPREFIX/c/windows/system32/cmd.exe
-    echo CMD=$CMD
   fi
 }
-
-setup
 
 TEMPDIRS=""
 trap "cleanup" EXIT
@@ -174,17 +166,7 @@ cygwin_import_to_unix() {
   result="$path"
 }
 
-
-os_env="$1"
-action="$2"
-shift 2
-
-if [[ "$action" == "exec-detach" ]] ; then
-  DETACH=true
-  action=exec
-fi
-
-if [[ "$action" == "print" ]] ; then
+cygwin_convert_command_line() {
   args=""
   for arg in "$@" ; do
     if [[ $arg =~ ^@(.*$) ]] ; then
@@ -195,7 +177,49 @@ if [[ "$action" == "print" ]] ; then
     args="$args$result "
   done
   # FIXME: fix quoting?
-  echo "$args"
+  result="$args"
+}
+
+cygwin_exec_command_line() {
+  args=""
+  command=""
+  for arg in "$@" ; do
+    if [[ $command == "" ]]; then
+      if [[ $arg =~ ^(.*)=(.*)$ ]]; then
+        # It's a leading env variable assignment
+        key="${BASH_REMATCH[1]}"
+        arg="${BASH_REMATCH[2]}"
+        cygwin_convert_to_win "$arg"
+        export $key="$result"
+      else
+        # The actual command will be executed by bash, so don't convert it
+        command="$arg"
+      fi
+    else 
+      if [[ $arg =~ ^@(.*$) ]] ; then
+        cygwin_convert_at_file "${BASH_REMATCH[1]}"
+      else
+        cygwin_convert_to_win "$arg"
+      fi
+      args="$args$result "
+    fi
+  done
+  # Strip trailing space
+  cmdline="$command ${args% }"
+  # Now execute it
+  $cmdline
+}
+
+#### MAIN FUNCTION
+
+setup
+
+action="$1"
+shift
+
+if [[ "$action" == "print" ]] ; then
+  cygwin_convert_command_line "$@"
+  echo "$result"
 elif [[ "$action" == "verify" ]] ; then
   orig="$1"
   cygwin_verify_conversion "$orig"
@@ -205,13 +229,9 @@ elif [[ "$action" == "import" ]] ; then
   cygwin_import_to_unix "$orig"
   echo "$result"
 elif [[ "$action" == "exec" ]] ; then
-  for arg in "$@" ; do
-
-    win_style=$(cygwin_convert_to_win "$arg")
-    args="$args $win_style"
-  done
-  # FIXME: fix quoting
-  echo "$args"
+  cygwin_exec_command_line "$@"
+  # Propagate exit code
+  exit $?
 else
   echo Unknown operation: "$action"
 fi
