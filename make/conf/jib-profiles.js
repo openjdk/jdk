@@ -1045,10 +1045,10 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "5.0",
+            version: "5.1",
             build_number: "b01",
             checksum_file: "MD5_VALUES",
-            file: "bundles/jtreg_bin-5.0.zip",
+            file: "bundles/jtreg_bin-5.1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
