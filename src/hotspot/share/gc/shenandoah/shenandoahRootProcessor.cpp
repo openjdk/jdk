@@ -199,8 +199,7 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase p
 ShenandoahRootScanner::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
   _serial_roots(phase),
-  _thread_roots(phase, n_workers > 1),
-  _dedup_roots(phase) {
+  _thread_roots(phase, n_workers > 1) {
   nmethod::oops_do_marking_prologue();
 }
 
@@ -233,9 +232,6 @@ void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CLDClosur
 
   // Process serial-claiming roots first
   _serial_roots.oops_do(oops, worker_id);
-
-   // Process light-weight/limited parallel roots then
-  _dedup_roots.oops_do(&always_true, oops, worker_id);
 
   // Process heavy-weight/fully parallel roots the last
   _thread_roots.threads_do(&tc_cl, worker_id);
