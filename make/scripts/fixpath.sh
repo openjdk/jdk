@@ -12,7 +12,7 @@ DRIVEPREFIX=/mnt
 #ENVROOT="c:\cygwin64"
 #ENVROOT='\\wsl$\Ubuntu-20.04'
 #ENVROOT="c:\msys64"
-ENVROOT=UNAVAILABLE
+ENVROOT=
 
 TEMPDIRS=""
 trap "cleanup" EXIT
@@ -43,7 +43,7 @@ cygwin_convert_to_win() {
       # Does arg contain a potential unix path? Check for /foo/bar
       prefix="${BASH_REMATCH[1]}"
       pathmatch="${BASH_REMATCH[2]}"
-      if [[ $ENVROOT == UNAVAILABLE ]]; then
+      if [[ $ENVROOT == "" ]]; then
         echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
         exit 1
       fi
@@ -63,6 +63,18 @@ cygwin_convert_to_win() {
   IFS="$old_ifs"
 
   result="$converted"
+}
+
+cygwin_verify_conversion() {
+  arg="$1"
+  if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+    return 0
+  elif [[ $arg =~ ^(/[^/]+/[^/]+.*$) ]] ; then
+    if [[ $ENVROOT != "" ]]; then
+      return 0
+    fi
+  fi
+  return 1
 }
 
 cygwin_convert_at_file() {
@@ -162,6 +174,10 @@ if [[ "$action" == "print" ]] ; then
   done
   # FIXME: fix quoting?
   echo "$args"
+elif [[ "$action" == "verify" ]] ; then
+  orig="$1"
+  cygwin_verify_conversion "$orig"
+  exit $?
 elif [[ "$action" == "import" ]] ; then
   orig="$1"
   cygwin_import_to_unix "$orig"
