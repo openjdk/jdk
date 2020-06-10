@@ -44,6 +44,9 @@ public class QuietOption {
     final File testSrc;
     final String thisClassName;
 
+    /**
+     * Dummy javadoc comment.
+     */
     public QuietOption() {
         File javaHome = new File(System.getProperty("java.home"));
         if (javaHome.getName().endsWith("jre"))
@@ -53,6 +56,11 @@ public class QuietOption {
         thisClassName = QuietOption.class.getName();
     }
 
+    /**
+     * Dummy javadoc comment.
+     * @param args dummy
+     * @throws Exception if error
+     */
     public static void main(String... args) throws Exception {
         QuietOption test = new QuietOption();
         test.run1();

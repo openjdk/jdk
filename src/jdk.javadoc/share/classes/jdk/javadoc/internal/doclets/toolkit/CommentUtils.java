@@ -38,6 +38,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,9 +75,17 @@ public class CommentUtils {
     final Utils utils;
     final Resources resources;
     final DocTreeFactory treeFactory;
-    final HashMap<Element, DocCommentDuo> dcTreesMap = new HashMap<>();
     final DocTrees trees;
     final Elements elementUtils;
+
+    /**
+     * A map for storing automatically generated comments for various
+     * elements, such as mandated elements (Enum.values, Enum.valueOf, etc)
+     * and JavaFX properties.
+     *
+     * @see Utils#dcTreeCache
+     */
+    final HashMap<Element, DocCommentInfo> dcInfoMap = new HashMap<>();
 
     protected CommentUtils(BaseConfiguration configuration) {
         this.configuration = configuration;
@@ -133,7 +142,7 @@ public class CommentUtils {
         List<DocTree> tags = new ArrayList<>();
         tags.add(treeFactory.newReturnTree(descriptions));
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, tags);
-        dcTreesMap.put(ee, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(null, docTree));
     }
 
     public void setEnumValueOfTree(ExecutableElement ee) {
@@ -167,7 +176,7 @@ public class CommentUtils {
 
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, tags);
 
-        dcTreesMap.put(ee, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(null, docTree));
     }
 
     /**
@@ -190,7 +199,7 @@ public class CommentUtils {
         }
 
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, tags);
-        dcTreesMap.put(ee, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(null, docTree));
     }
 
     /**
@@ -226,7 +235,7 @@ public class CommentUtils {
 
         TreePath treePath = utils.getTreePath(ee.getEnclosingElement());
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, List.of(paramTree, returnTree));
-        dcTreesMap.put(ee, new DocCommentDuo(treePath, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(treePath, docTree));
     }
 
     private void add(List<DocTree> contents, String resourceKey) {
@@ -262,7 +271,7 @@ public class CommentUtils {
                 List.of(makeTextTreeForResource("doclet.record_hashCode_doc.return")));
 
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, List.of(returnTree));
-        dcTreesMap.put(ee, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(null, docTree));
     }
 
     /**
@@ -277,7 +286,7 @@ public class CommentUtils {
                 treeFactory.newTextTree(resources.getText("doclet.record_toString_doc.return"))));
 
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, List.of(returnTree));
-        dcTreesMap.put(ee, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(null, docTree));
     }
 
     /**
@@ -294,7 +303,7 @@ public class CommentUtils {
                     makeDescriptionWithComponent("doclet.record_accessor_doc.return", te, ee.getSimpleName()));
 
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, List.of(returnTree));
-        dcTreesMap.put(ee, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ee, new DocCommentInfo(null, docTree));
     }
 
     /**
@@ -308,7 +317,7 @@ public class CommentUtils {
             makeDescriptionWithComponent("doclet.record_field_doc.fullbody", te, ve.getSimpleName());
 
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, List.of());
-        dcTreesMap.put(ve, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(ve, new DocCommentInfo(null, docTree));
     }
 
     /**
@@ -395,16 +404,19 @@ public class CommentUtils {
     }
 
     /*
-     * Returns the TreePath/DocCommentTree duo for synthesized element.
+     * Returns the TreePath/DocCommentTree info that has been generated for an element.
+     * @param e the element
+     * @return the info object containing the tree path and doc comment
      */
-    public DocCommentDuo getSyntheticCommentDuo(Element e) {
-        return dcTreesMap.get(e);
+    // "synthetic" is not the best word here, and should not be confused with synthetic elements
+    public DocCommentInfo getSyntheticCommentInfo(Element e) {
+        return dcInfoMap.get(e);
     }
 
     /*
-     * Returns the TreePath/DocCommentTree duo for html sources.
+     * Returns the TreePath/DocCommentTree info for HTML sources.
      */
-    public DocCommentDuo getHtmlCommentDuo(Element e) {
+    public DocCommentInfo getHtmlCommentInfo(Element e) {
         FileObject fo = null;
         PackageElement pe = null;
         switch (e.getKind()) {
@@ -431,7 +443,7 @@ public class CommentUtils {
             return null;
         }
         DocTreePath treePath = trees.getDocTreePath(fo, pe);
-        return new DocCommentDuo(treePath.getTreePath(), dcTree);
+        return new DocCommentInfo(treePath.getTreePath(), dcTree);
     }
 
     public DocCommentTree parse(URI uri, String text) {
@@ -447,24 +459,34 @@ public class CommentUtils {
     public void setDocCommentTree(Element element, List<? extends DocTree> fullBody,
                                   List<? extends DocTree> blockTags) {
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, blockTags);
-        dcTreesMap.put(element, new DocCommentDuo(null, docTree));
+        dcInfoMap.put(element, new DocCommentInfo(null, docTree));
         // A method having null comment (no comment) that might need to be replaced
-        // with a synthetic comment, remove such a comment from the cache.
+        // with a generated comment, remove such a comment from the cache.
         utils.removeCommentHelper(element);
     }
 
     /**
-     * A simplistic container to transport a TreePath, DocCommentTree pair.
-     * Here is why we need this:
-     * a. not desirable to add javac's pair.
-     * b. DocTreePath is not a viable  option either, as a null TreePath is required
-     * to represent synthetic comments for Enum.values, valuesOf, javafx properties.
+     * Info about a doc comment:
+     *   the position in the enclosing AST, and
+     *   the parsed doc comment itself.
+     *
+     * The position in the AST is {@code null} for automatically generated comments,
+     * such as for {@code Enum.values}, {@code Enum.valuesOf}, and JavaFX properties.
      */
-    public static class DocCommentDuo {
+    public static class DocCommentInfo {
+        /**
+         * The position of the comment in the enclosing AST, or {@code null}
+         * for automatically generated comments.
+         */
         public final TreePath treePath;
+
+        /**
+         * The doc comment tree that is the root node of a parsed doc comment,
+         * or {@code null} if there is no comment.
+         */
         public final DocCommentTree dcTree;
 
-        public DocCommentDuo(TreePath treePath, DocCommentTree dcTree) {
+        public DocCommentInfo(TreePath treePath, DocCommentTree dcTree) {
             this.treePath = treePath;
             this.dcTree = dcTree;
         }

@@ -107,7 +107,7 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
-import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
+import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
@@ -2651,13 +2651,13 @@ public class Utils {
      * @return TreePath
      */
     public TreePath getTreePath(Element e) {
-        DocCommentDuo duo = dcTreeCache.get(e);
-        if (duo != null && duo.treePath != null) {
-            return duo.treePath;
+        DocCommentInfo info = dcTreeCache.get(e);
+        if (info != null && info.treePath != null) {
+            return info.treePath;
         }
-        duo = configuration.cmtUtils.getSyntheticCommentDuo(e);
-        if (duo != null && duo.treePath != null) {
-            return duo.treePath;
+        info = configuration.cmtUtils.getSyntheticCommentInfo(e);
+        if (info != null && info.treePath != null) {
+            return info.treePath;
         }
         Map<Element, TreePath> elementToTreePath = configuration.workArounds.getElementToTreePath();
         TreePath path = elementToTreePath.get(e);
@@ -2668,7 +2668,14 @@ public class Utils {
         return elementToTreePath.computeIfAbsent(e, docTrees::getPath);
     }
 
-    private final Map<Element, DocCommentDuo> dcTreeCache = new LinkedHashMap<>();
+    /**
+     * A cache of doc comment info objects for elements.
+     * The entries may come from the AST and DocCommentParser, or may be autromatically
+     * generated comments for mandated elements and JavaFX properties.
+     *
+     * @see CommentUtils.dcInfoMap
+     */
+    private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 
     /**
      * Retrieves the doc comments for a given element.
@@ -2677,34 +2684,34 @@ public class Utils {
      */
     public DocCommentTree getDocCommentTree0(Element element) {
 
-        DocCommentDuo duo = null;
+        DocCommentInfo info = null;
 
         ElementKind kind = element.getKind();
         if (kind == ElementKind.PACKAGE || kind == ElementKind.OTHER) {
-            duo = dcTreeCache.get(element); // local cache
-            if (duo == null && kind == ElementKind.PACKAGE) {
+            info = dcTreeCache.get(element); // local cache
+            if (info == null && kind == ElementKind.PACKAGE) {
                 // package-info.java
-                duo = getDocCommentTuple(element);
+                info = getDocCommentInfo(element);
             }
-            if (duo == null) {
+            if (info == null) {
                 // package.html or overview.html
-                duo = configuration.cmtUtils.getHtmlCommentDuo(element); // html source
+                info = configuration.cmtUtils.getHtmlCommentInfo(element); // html source
             }
         } else {
-            duo = configuration.cmtUtils.getSyntheticCommentDuo(element);
-            if (duo == null) {
-                duo = dcTreeCache.get(element); // local cache
+            info = configuration.cmtUtils.getSyntheticCommentInfo(element);
+            if (info == null) {
+                info = dcTreeCache.get(element); // local cache
             }
-            if (duo == null) {
-                duo = getDocCommentTuple(element); // get the real mccoy
+            if (info == null) {
+                info = getDocCommentInfo(element); // get the real mccoy
             }
         }
 
-        DocCommentTree docCommentTree = isValidDuo(duo) ? duo.dcTree : null;
-        TreePath path = isValidDuo(duo) ? duo.treePath : null;
+        DocCommentTree docCommentTree = info == null ? null : info.dcTree;
         if (!dcTreeCache.containsKey(element)) {
-            if (docCommentTree != null && path != null) {
-                if (!configuration.isAllowScriptInComments()) {
+            TreePath path = info == null ? null : info.treePath;
+            if (path != null) {
+                if (docCommentTree != null && !configuration.isAllowScriptInComments()) {
                     try {
                         javaScriptScanner.scan(docCommentTree, path, p -> {
                             throw new JavaScriptScanner.Fault();
@@ -2714,20 +2721,21 @@ public class Utils {
                         throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
                     }
                 }
+                // run doclint even if docCommentTree is null, to trigger checks for missing comments
                 configuration.workArounds.runDocLint(path);
             }
-            dcTreeCache.put(element, duo);
+            dcTreeCache.put(element, info);
         }
         return docCommentTree;
     }
 
-    private DocCommentDuo getDocCommentTuple(Element element) {
+    private DocCommentInfo getDocCommentInfo(Element element) {
         // prevent nasty things downstream with overview element
         if (element.getKind() != ElementKind.OTHER) {
             TreePath path = getTreePath(element);
             if (path != null) {
                 DocCommentTree docCommentTree = docTrees.getDocCommentTree(path);
-                return new DocCommentDuo(path, docCommentTree);
+                return new DocCommentInfo(path, docCommentTree);
             }
         }
         return null;
@@ -2750,10 +2758,6 @@ public class Utils {
                 throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
             }
         }
-    }
-
-    boolean isValidDuo(DocCommentDuo duo) {
-        return duo != null && duo.dcTree != null;
     }
 
     public DocCommentTree getDocCommentTree(Element element) {

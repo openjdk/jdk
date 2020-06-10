@@ -108,6 +108,8 @@ public class DocLintTest {
 
         DL_ERR_P1TEST(ERROR, "P1Test.java:3:16: compiler.err.proc.messager: malformed HTML"),
         DL_ERR_P2TEST(ERROR, "P2Test.java:3:16: compiler.err.proc.messager: malformed HTML"),
+        DL_WARN_P1TEST(WARNING, "P1Test.java:2:8: compiler.warn.proc.messager: no comment"),
+        DL_WARN_P2TEST(WARNING, "P2Test.java:2:8: compiler.warn.proc.messager: no comment"),
 
         // doclint messages when -XDrawDiagnostics is not in effect
         DL_ERR9A(ERROR, "Test.java:9: error: reference not found"),
@@ -201,11 +203,13 @@ public class DocLintTest {
 
             test(List.of(htmlVersion, rawDiags),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR_P1TEST, Message.DL_ERR_P2TEST));
+                    EnumSet.of(Message.DL_ERR_P1TEST, Message.DL_ERR_P2TEST,
+                            Message.DL_WARN_P1TEST, Message.DL_WARN_P2TEST));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint/package:p1"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR_P1TEST));
+                    EnumSet.of(Message.DL_ERR_P1TEST,
+                            Message.DL_WARN_P1TEST));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint/package:*p"),
                     Main.Result.ERROR,
