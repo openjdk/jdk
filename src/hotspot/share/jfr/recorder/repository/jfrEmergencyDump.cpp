@@ -33,7 +33,6 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -426,10 +425,6 @@ static bool prepare_for_emergency_dump(Thread* thread) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (thread->is_Watcher_thread()) {
     // need WatcherThread as a safeguard against potential deadlocks
-    return false;
-  }
-  if (JfrStream_lock->owned_by_self()) {
-    // crashed during jfr rotation, disallow recursion
     return false;
   }
 
