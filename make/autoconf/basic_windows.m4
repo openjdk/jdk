@@ -35,6 +35,15 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   WINENV_VENDOR=${OPENJDK_BUILD_OS_ENV#windows.}
   AC_MSG_RESULT([$WINENV_VENDOR])
 
+  if test "x$WINENV_VENDOR" = x; then
+    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys2, wsl1 nor wsl2 was detected.])
+  fi
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+    # Must be done prior to calling any commands to avoid mangling of command line
+    export MSYS2_ARG_CONV_EXCL="*"
+  fi
+
   if test "x$CYGPATH" = x; then
     AC_MSG_ERROR([Something is wrong with your $WINENV_VENDOR installation since I cannot find cygpath or wslpath in your path])
   fi
@@ -60,7 +69,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   AC_SUBST(WINENV_PREFIX)
 
   AC_MSG_CHECKING([$WINENV_VENDOR temp directory])
-  WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
+  WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
   AC_MSG_RESULT([$WINENV_TEMP_DIR])
 
   AC_MSG_CHECKING([$WINENV_VENDOR release])
@@ -86,16 +95,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
-    export MSYS2_ARG_CONV_EXCL="*"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
     AC_MSG_CHECKING([wsl distribution])
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
     AC_MSG_RESULT([$WSL_DISTRIBUTION])
 
     WINENV_VERSION="$WINENV_VERSION ($WSL_DISTRIBUTION)"
-  else
-    AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys2, nor wsl was detected.])
   fi
 
   # Test if windows or unix "find" is first in path.
