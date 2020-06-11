@@ -227,7 +227,8 @@ public final class BasicTest {
     @Parameter({ "java.desktop", "jdk.jartool" })
     public void testAddModules(String... addModulesArg) {
         JPackageCommand cmd = JPackageCommand
-                .helloAppImage("goodbye.jar:com.other/com.other.Hello");
+                .helloAppImage("goodbye.jar:com.other/com.other.Hello")
+                .ignoreDefaultRuntime(true); // because of --add-modules
         Stream.of(addModulesArg).map(v -> Stream.of("--add-modules", v)).flatMap(
                 s -> s).forEachOrdered(cmd::addArgument);
         cmd.executeAndAssertHelloAppImageCreated();
@@ -270,10 +271,6 @@ public final class BasicTest {
         .run(PackageTest.Action.CREATE);
 
         createTest.get()
-        .addInitializer(cmd -> {
-            // Clean output from the previus jpackage run.
-            Files.delete(cmd.outputBundle());
-        })
         // Temporary directory should not be empty,
         // jpackage should exit with error.
         .setExpectedExitCode(1)
