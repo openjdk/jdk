@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import jdk.incubator.jpackage.internal.IOUtils;
 
 
 final public class FileAssociations {
@@ -63,6 +64,13 @@ final public class FileAssociations {
     public FileAssociations setIcon(Path v) {
         icon = v;
         return this;
+    }
+
+    Path getLinuxIconFileName() {
+        if (icon == null) {
+            return null;
+        }
+        return Path.of(getMime().replace('/', '-') + IOUtils.getSuffix(icon));
     }
 
     Path getPropertiesFile() {

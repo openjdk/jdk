@@ -239,6 +239,10 @@ public final class PackageTest extends RunnablePackageTest {
         // running check of type of environment.
         addHelloAppInitializer(null);
 
+        forTypes(PackageType.LINUX, () -> {
+            LinuxHelper.addFileAssociationsVerifier(this, fa);
+        });
+
         String noActionMsg = "Not running file associations test";
         if (GraphicsEnvironment.isHeadless()) {
             TKit.trace(String.format(
@@ -273,10 +277,6 @@ public final class PackageTest extends RunnablePackageTest {
                 HelloApp.verifyOutputFile(appOutput, expectedArgs,
                         Collections.emptyMap());
             });
-        });
-
-        forTypes(PackageType.LINUX, () -> {
-            LinuxHelper.addFileAssociationsVerifier(this, fa);
         });
 
         return this;
