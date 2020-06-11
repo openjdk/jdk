@@ -48,7 +48,14 @@ inline void ShenandoahPacer::report_alloc(size_t words) {
 inline void ShenandoahPacer::report_internal(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
   STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
-  Atomic::add(&_budget, (intptr_t)words);
+  intptr_t inc = (intptr_t) words;
+  intptr_t new_budget = Atomic::add(&_budget, inc);
+
+  // Was the budget replenished beyond zero? Then all pacing claims
+  // are satisfied, notify the waiters.
+  if (new_budget >= 0 && (new_budget - inc) < 0) {
+    notify_waiters();
+  }
 }
 
 inline void ShenandoahPacer::report_progress_internal(size_t words) {
