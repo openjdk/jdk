@@ -432,9 +432,22 @@ public final class SecuritySupport {
 
     static void ensureClassIsInitialized(Class<?> clazz) {
         try {
-            MethodHandles.privateLookupIn(clazz, LOOKUP).ensureInitialized(clazz);
+            MethodHandles.Lookup lookup;
+            if (System.getSecurityManager() == null) {
+                lookup = MethodHandles.privateLookupIn(clazz, LOOKUP);
+            } else {
+                lookup = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
+                    @Override
+                    public MethodHandles.Lookup run() throws IllegalAccessException {
+                        return MethodHandles.privateLookupIn(clazz, LOOKUP);
+                    }
+                }, null, new ReflectPermission("suppressAccessChecks"));
+            }
+            lookup.ensureInitialized(clazz);
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
+        } catch (PrivilegedActionException e) {
+            throw new InternalError(e.getCause());
         }
     }
 
