@@ -30,6 +30,7 @@
 #include "services/memTracker.hpp"
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
+#include "utilities/ostream.hpp"
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
 
@@ -288,7 +289,9 @@ size_t ReservedMemoryRegion::committed_size() const {
 }
 
 void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
-  assert((flag() == mtNone || flag() == f), "Overwrite memory type");
+  assert((flag() == mtNone || flag() == f),
+         "Overwrite memory type for region [" PTR_FORMAT "-" PTR_FORMAT "), %u->%u.",
+         p2i(base()), p2i(end()), (unsigned)flag(), (unsigned)f);
   if (flag() != f) {
     VirtualMemorySummary::move_reserved_memory(flag(), f, size());
     VirtualMemorySummary::move_committed_memory(flag(), f, committed_size());
@@ -385,6 +388,13 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         return true;
       }
 
+      // Print some more details. Don't use UL here to avoid circularities.
+#ifdef ASSERT
+      tty->print_cr("Error: existing region: [" PTR_FORMAT "-" PTR_FORMAT "), flag %u.\n"
+                    "       new region: [" PTR_FORMAT "-" PTR_FORMAT "), flag %u.",
+                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->flag(),
+                    p2i(base_addr), p2i(base_addr + size), (unsigned)flag);
+#endif
       ShouldNotReachHere();
       return false;
     }

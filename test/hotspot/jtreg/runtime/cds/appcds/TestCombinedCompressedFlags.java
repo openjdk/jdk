@@ -163,7 +163,8 @@ public class TestCombinedCompressedFlags {
                       new String[] {"Hello"},
                       getCompressedOopsArg(t.dumpArg.useCompressedOops),
                       getCompressedClassPointersArg(t.dumpArg.useCompressedClassPointers),
-                      "-Xlog:cds");
+                      "-Xlog:cds",
+                      "-XX:NativeMemoryTracking=detail");
             out.shouldContain("Dumping shared data to file:");
             out.shouldHaveExitValue(0);
 
@@ -172,6 +173,7 @@ public class TestCombinedCompressedFlags {
                                       "-cp",
                                       helloJar,
                                       "-Xlog:cds",
+                                      "-XX:NativeMemoryTracking=detail",
                                       getCompressedOopsArg(c.useCompressedOops),
                                       getCompressedClassPointersArg(c.useCompressedClassPointers),
                                       "Hello");
