@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.module.Configuration;
+import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import jdk.internal.module.ModuleInfoWriter;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -50,7 +53,6 @@ import static org.testng.Assert.*;
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.commons
  *          java.base/jdk.internal.module
- *          java.xml
  * @run testng AnnotationsTest
  * @summary Basic test of annotations on modules
  */
@@ -68,19 +70,20 @@ public class AnnotationsTest {
     }
 
     /**
-     * Test loading a module with a RuntimeVisibleAnnotation attribute.
-     * The test copies the module-info.class for java.xml, adds the attribute,
-     * and then loads the updated module.
+     * Test reflectively reading the annotations on a named module.
      */
     @Test
     public void testNamedModule() throws IOException {
+        Path mods = Files.createTempDirectory(Path.of(""), "mods");
 
-        // "deprecate" java.xml
-        Path dir = Files.createTempDirectory(Paths.get(""), "mods");
-        deprecateModule("java.xml", true, "9", dir);
+        // @Deprecated(since="9", forRemoval=true) module foo { }
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo").build();
+        byte[] classBytes = ModuleInfoWriter.toBytes(descriptor);
+        classBytes = addDeprecated(classBytes, true, "9");
+        Files.write(mods.resolve("module-info.class"), classBytes);
 
-        // "load" the cloned java.xml
-        Module module = loadModule(dir, "java.xml");
+        // create module layer with module foo
+        Module module = loadModule(mods, "foo");
 
         // check the annotation is present
         assertTrue(module.isAnnotationPresent(Deprecated.class));
@@ -94,50 +97,81 @@ public class AnnotationsTest {
         assertEquals(module.getDeclaredAnnotations(), a);
     }
 
+    /**
+     * Test reflectively reading annotations on a named module where the module
+     * is mapped to a class loader that can locate a module-info.class.
+     */
+    @Test
+    public void testWithModuleInfoResourceXXXX() throws IOException {
+        Path mods = Files.createTempDirectory(Path.of(""), "mods");
+
+        // classes directory with module-info.class
+        Path classes = Files.createTempDirectory(Path.of("."), "classes");
+        Path mi = classes.resolve("module-info.class");
+        try (OutputStream out = Files.newOutputStream(mi)) {
+            ModuleDescriptor descriptor = ModuleDescriptor.newModule("lurker").build();
+            ModuleInfoWriter.write(descriptor, out);
+        }
+
+        // URLClassLoader that can locate a module-info.class resource
+        URL url = classes.toUri().toURL();
+        URLClassLoader loader = new URLClassLoader(new URL[] { url });
+        assertTrue(loader.findResource("module-info.class") != null);
+
+        // module foo { }
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo").build();
+        byte[] classBytes = ModuleInfoWriter.toBytes(descriptor);
+        Files.write(mods.resolve("module-info.class"), classBytes);
+
+        // create module layer with module foo
+        Module foo = loadModule(mods, "foo", loader);
+
+        // check the annotation is not present
+        assertFalse(foo.isAnnotationPresent(Deprecated.class));
+
+        // @Deprecated(since="11", forRemoval=true) module bar { }
+        descriptor = ModuleDescriptor.newModule("bar").build();
+        classBytes = ModuleInfoWriter.toBytes(descriptor);
+        classBytes = addDeprecated(classBytes, true, "11");
+        Files.write(mods.resolve("module-info.class"), classBytes);
+
+        // create module layer with module bar
+        Module bar = loadModule(mods, "bar", loader);
+
+        // check the annotation is present
+        assertTrue(bar.isAnnotationPresent(Deprecated.class));
+    }
 
     /**
-     * Copy the module-info.class for the given module, add the
-     * Deprecated annotation, and write the updated module-info.class
-     * to a directory.
+     * Adds the Deprecated annotation to the given module-info class file.
      */
-    static void deprecateModule(String name,
-                                boolean forRemoval,
-                                String since,
-                                Path output) throws IOException {
-        Module module = ModuleLayer.boot().findModule(name).orElse(null);
-        assertNotNull(module, name + " not found");
+    static byte[] addDeprecated(byte[] bytes, boolean forRemoval, String since) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
+                                         + ClassWriter.COMPUTE_FRAMES);
 
-        InputStream in = module.getResourceAsStream("module-info.class");
-        assertNotNull(in, "No module-info.class for " + name);
+        ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) { };
 
-        try (in) {
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                             + ClassWriter.COMPUTE_FRAMES);
+        ClassReader cr = new ClassReader(bytes);
+        List<Attribute> attrs = new ArrayList<>();
+        attrs.add(new ModuleTargetAttribute());
+        cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
 
-            ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) { };
+        AnnotationVisitor annotationVisitor
+            = cv.visitAnnotation("Ljava/lang/Deprecated;", true);
+        annotationVisitor.visit("forRemoval", forRemoval);
+        annotationVisitor.visit("since", since);
+        annotationVisitor.visitEnd();
 
-            ClassReader cr = new ClassReader(in);
-            List<Attribute> attrs = new ArrayList<>();
-            attrs.add(new ModuleTargetAttribute());
-            cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
-
-            AnnotationVisitor annotationVisitor
-                = cv.visitAnnotation("Ljava/lang/Deprecated;", true);
-            annotationVisitor.visit("forRemoval", forRemoval);
-            annotationVisitor.visit("since", since);
-            annotationVisitor.visitEnd();
-
-            byte[] bytes = cw.toByteArray();
-            Path mi = output.resolve("module-info.class");
-            Files.write(mi, bytes);
-        }
+        return cw.toByteArray();
     }
 
     /**
      * Load the module of the given name in the given directory into a
-     * child layer.
+     * child layer with the given class loader as the parent class loader.
      */
-    static Module loadModule(Path dir, String name) throws IOException {
+    static Module loadModule(Path dir, String name, ClassLoader parent)
+        throws IOException
+    {
         ModuleFinder finder = ModuleFinder.of(dir);
 
         ModuleLayer bootLayer = ModuleLayer.boot();
@@ -145,11 +179,14 @@ public class AnnotationsTest {
         Configuration cf = bootLayer.configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of(name));
 
-        ClassLoader scl = ClassLoader.getSystemClassLoader();
-        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, parent);
 
         Module module = layer.findModule(name).orElse(null);
         assertNotNull(module, name + " not loaded");
         return module;
+    }
+
+    static Module loadModule(Path dir, String name) throws IOException {
+        return loadModule(dir, name, ClassLoader.getSystemClassLoader());
     }
 }

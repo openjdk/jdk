@@ -42,7 +42,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1502,6 +1501,24 @@ public final class Module implements AnnotatedElement {
                     return super.defineClass(cn, bytes, 0, bytes.length);
                 } else {
                     throw new ClassNotFoundException(cn);
+                }
+            }
+            @Override
+            protected Class<?> loadClass(String cn, boolean resolve)
+                throws ClassNotFoundException
+            {
+                synchronized (getClassLoadingLock(cn)) {
+                    Class<?> c = findLoadedClass(cn);
+                    if (c == null) {
+                        if (cn.equals(MODULE_INFO)) {
+                            c = findClass(cn);
+                        } else {
+                            c = super.loadClass(cn, resolve);
+                        }
+                    }
+                    if (resolve)
+                        resolveClass(c);
+                    return c;
                 }
             }
         };
