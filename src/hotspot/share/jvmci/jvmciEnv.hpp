@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ class JVMCICompileState : public ResourceObj {
   jbyte  _jvmti_can_access_local_variables;
   jbyte  _jvmti_can_post_on_exceptions;
   jbyte  _jvmti_can_pop_frame;
+  bool   _target_method_is_old;
 
   // Compilation result values.
   bool             _retryable;
@@ -119,6 +120,7 @@ class JVMCICompileState : public ResourceObj {
   bool  jvmti_can_access_local_variables() const     { return  _jvmti_can_access_local_variables != 0; }
   bool  jvmti_can_post_on_exceptions() const         { return  _jvmti_can_post_on_exceptions != 0; }
   bool  jvmti_can_pop_frame() const                  { return  _jvmti_can_pop_frame != 0; }
+  bool  target_method_is_old() const                 { return  _target_method_is_old; }
 
   const char* failure_reason() { return _failure_reason; }
   bool failure_reason_on_C_heap() { return _failure_reason_on_C_heap; }

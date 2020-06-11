@@ -2149,14 +2149,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     TraceTime t1("compilation", &time);
     EventCompilation event;
+    JVMCICompileState compile_state(task);
 
     // Skip redefined methods
-    if (target_handle->is_old()) {
+    if (compile_state.target_method_is_old()) {
       failure_reason = "redefined method";
       retry_message = "not retryable";
       compilable = ciEnv::MethodCompilable_never;
     } else {
-      JVMCICompileState compile_state(task);
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
       methodHandle method(thread, target_handle);
       env.runtime()->compile_method(&env, jvmci, method, osr_bci);
@@ -2193,7 +2193,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     // The thread-env() field is cleared in ~CompileTaskWrapper.
 
     // Cache Jvmti state
-    ci_env.cache_jvmti_state();
+    bool method_is_old = ci_env.cache_jvmti_state();
+
+    // Skip redefined methods
+    if (method_is_old) {
+      ci_env.record_method_not_compilable("redefined method", true);
+    }
 
     // Cache DTrace flags
     ci_env.cache_dtrace_flags();
@@ -2205,7 +2210,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     if (comp == NULL) {
       ci_env.record_method_not_compilable("no compiler", !TieredCompilation);
-    } else {
+    } else if (!ci_env.failing()) {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
         MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
         while (WhiteBox::compilation_locked) {
