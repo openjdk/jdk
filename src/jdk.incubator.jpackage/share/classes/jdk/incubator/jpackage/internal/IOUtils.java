@@ -251,6 +251,7 @@ public class IOUtils {
     public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
             IOException {
         XMLOutputFactory xmlFactory = XMLOutputFactory.newInstance();
+        Files.createDirectories(dstFile.getParent());
         try (Writer w = Files.newBufferedWriter(dstFile)) {
             // Wrap with pretty print proxy
             XMLStreamWriter xml = (XMLStreamWriter) Proxy.newProxyInstance(

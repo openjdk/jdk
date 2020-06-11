@@ -95,7 +95,10 @@ public class AppImageFile {
      * @param appImageDir - path to application image
      */
     public static Path getPathInAppImage(Path appImageDir) {
-        return appImageDir.resolve(FILENAME);
+        return ApplicationLayout.platformAppImage()
+                .resolveAt(appImageDir)
+                .appDirectory()
+                .resolve(FILENAME);
     }
 
     /**

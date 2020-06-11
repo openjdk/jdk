@@ -335,6 +335,15 @@ public final class BasicTest {
                 "--no-header-files",
                 "--no-man-pages");
 
+        TKit.trace("jlink output BEGIN");
+        try (Stream<Path> paths = Files.walk(runtimeDir)) {
+            paths.filter(Files::isRegularFile)
+                    .map(runtimeDir::relativize)
+                    .map(Path::toString)
+                    .forEach(TKit::trace);
+        }
+        TKit.trace("jlink output END");
+
         if (moduleName != null) {
             jlink.addArguments("--add-modules", moduleName, "--module-path",
                     Path.of(cmd.getArgumentValue("--module-path")).resolve(

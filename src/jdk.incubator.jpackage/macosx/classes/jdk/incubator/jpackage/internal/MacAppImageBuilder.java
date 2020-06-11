@@ -310,6 +310,19 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         // generate java runtime info.plist
         writeRuntimeInfoPlist(
                 runtimeDir.resolve("Contents/Info.plist").toFile(), params);
+
+        // copy library
+        Path runtimeMacOSDir = Files.createDirectories(
+                runtimeDir.resolve("Contents/MacOS"));
+
+        final Path jliName = Path.of("libjli.dylib");
+        try (Stream<Path> walk = Files.walk(runtimeRoot.resolve("lib"))) {
+            final Path jli = walk
+                    .filter(file -> file.getFileName().equals(jliName))
+                    .findFirst()
+                    .get();
+            Files.copy(jli, runtimeMacOSDir.resolve(jliName));
+        }
     }
 
     private void sign(Map<String, ? super Object> params) throws IOException {

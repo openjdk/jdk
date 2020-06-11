@@ -336,10 +336,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         File mountedRoot = new File(imagesRoot.getAbsolutePath(),
                     APP_NAME.fetchFrom(params));
         try {
-            Files.deleteIfExists(AppImageFile.getPathInAppImage(
-                    mountedRoot.toPath().resolve(APP_NAME.fetchFrom(params)
-                            + ".app")));
-
             // background image
             File bgdir = new File(mountedRoot, BACKGROUND_IMAGE_FOLDER);
             bgdir.mkdirs();
