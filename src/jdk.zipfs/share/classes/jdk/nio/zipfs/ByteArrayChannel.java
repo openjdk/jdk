@@ -244,7 +244,7 @@ public class ByteArrayChannel implements SeekableByteChannel {
 
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) // overflow
-            throw new OutOfMemoryError();
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
         return (minCapacity > MAX_ARRAY_SIZE) ?
             Integer.MAX_VALUE :
             MAX_ARRAY_SIZE;

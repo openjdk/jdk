@@ -661,7 +661,7 @@ final class StringUTF16 {
             resultLen = Math.addExact(valLen,
                     Math.multiplyExact(++p, replLen - targLen));
         } catch (ArithmeticException ignored) {
-            throw new OutOfMemoryError();
+           throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         if (resultLen == 0) {
             return "";

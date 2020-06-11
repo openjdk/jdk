@@ -2187,7 +2187,7 @@ public final class String
                 resultLen = Math.addExact(thisLen, Math.multiplyExact(
                         Math.addExact(thisLen, 1), replLen));
             } catch (ArithmeticException ignored) {
-                throw new OutOfMemoryError();
+                throw new OutOfMemoryError("Required length exceeds implementation limit");
             }
 
             StringBuilder sb = new StringBuilder(resultLen);
@@ -3571,14 +3571,13 @@ public final class String
         if (len == 0 || count == 0) {
             return "";
         }
+        if (Integer.MAX_VALUE / count < len) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
         if (len == 1) {
             final byte[] single = new byte[count];
             Arrays.fill(single, value[0]);
             return new String(single, coder);
-        }
-        if (Integer.MAX_VALUE / count < len) {
-            throw new OutOfMemoryError("Repeating " + len + " bytes String " + count +
-                    " times will produce a String exceeding maximum size.");
         }
         final int limit = len * count;
         final byte[] multiple = new byte[limit];
