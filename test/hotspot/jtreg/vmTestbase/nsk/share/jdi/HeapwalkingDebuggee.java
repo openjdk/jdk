@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package nsk.share.jdi;
 
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.Method;
 import nsk.share.Log;
 import nsk.share.ObjectInstancesManager;
 import nsk.share.TestBug;
@@ -70,9 +71,13 @@ public class HeapwalkingDebuggee extends AbstractJDIDebuggee {
     //create instance with all type referrers
     static public final String COMMAND_CREATE_ALL_TYPE_REFERENCES = "createAllTypeReferences";
 
+    // check jfr is active process
+    public static boolean isJFRActive;
+
     protected void init(String args[]) {
         super.init(args);
         objectInstancesManager = new ObjectInstancesManager(log);
+        isJFRActive = isJFRActive();
     }
 
     public void initDebuggee(DebugeeArgumentHandler argHandler, Log log, IOPipe pipe, String args[], boolean callExit) {
@@ -186,38 +191,15 @@ public class HeapwalkingDebuggee extends AbstractJDIDebuggee {
         return false;
     }
 
-    // instances of some classes couldn't be strictly controlled during test execution, use non-strict checks for this classes
-    public static boolean useStrictCheck(String className, boolean otherThreadPresent) {
-        if (className.equals("java.lang.String"))
+    // check if jfr is initialized
+    public static boolean isJFRActive() {
+        try {
+            Class cls = Class.forName("jdk.jfr.FlightRecorder");
+            Method method = cls.getDeclaredMethod("isInitialized", new Class[0]);
+            return (Boolean)method.invoke(cls, new Object[0]);
+        } catch(Exception e) {
             return false;
-
-        if (className.equals("char[]"))
-            return false;
-
-        if (className.equals("byte[]"))
-            return false;
-
-        if (className.equals("boolean[]"))
-            return false;
-
-        if (className.equals("float[]"))
-            return false;
-
-        if (className.equals("long[]"))
-            return false;
-
-        if (className.equals("int[]"))
-            return false;
-
-        if (className.equals("double[]"))
-            return false;
-
-        if (className.equals("java.lang.Thread")) {
-            if (otherThreadPresent)
-                return false;
         }
-
-        return true;
     }
 
     // is reference with given type should be included in ObjectReference.referringObjects
