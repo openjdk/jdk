@@ -50,12 +50,8 @@
  * notion of progress is clear: we get reported the "used" size from the processed regions
  * and use the global heap-used as the baseline.
  *
- * The allocatable space when GC is running is "free" at the start of cycle, but the
+ * The allocatable space when GC is running is "free" at the start of phase, but the
  * accounted budget is based on "used". So, we need to adjust the tax knowing that.
- * Also, since we effectively count the used space three times (mark, evac, update-refs),
- * we need to multiply the tax by 3. Example: for 10 MB free and 90 MB used, GC would
- * come back with 3*90 MB budget, and thus for each 1 MB of allocation, we have to pay
- * 3*90 / 10 MBs. In the end, we would pay back the entire budget.
  */
 
 void ShenandoahPacer::setup_for_mark() {
@@ -68,7 +64,7 @@ void ShenandoahPacer::setup_for_mark() {
   size_t taxable = free - non_taxable;
 
   double tax = 1.0 * live / taxable; // base tax for available free space
-  tax *= 3;                          // mark is phase 1 of 3, claim 1/3 of free for it
+  tax *= 1;                          // mark can succeed with immediate garbage, claim all available space
   tax *= ShenandoahPacingSurcharge;  // additional surcharge to help unclutter heap
 
   restart_with(non_taxable, tax);
@@ -91,7 +87,7 @@ void ShenandoahPacer::setup_for_evac() {
   size_t taxable = free - non_taxable;
 
   double tax = 1.0 * used / taxable; // base tax for available free space
-  tax *= 2;                          // evac is phase 2 of 3, claim 1/2 of remaining free
+  tax *= 2;                          // evac is followed by update-refs, claim 1/2 of remaining free
   tax = MAX2<double>(1, tax);        // never allocate more than GC processes during the phase
   tax *= ShenandoahPacingSurcharge;  // additional surcharge to help unclutter heap
 
@@ -115,7 +111,7 @@ void ShenandoahPacer::setup_for_updaterefs() {
   size_t taxable = free - non_taxable;
 
   double tax = 1.0 * used / taxable; // base tax for available free space
-  tax *= 1;                          // update-refs is phase 3 of 3, claim the remaining free
+  tax *= 1;                          // update-refs is the last phase, claim the remaining free
   tax = MAX2<double>(1, tax);        // never allocate more than GC processes during the phase
   tax *= ShenandoahPacingSurcharge;  // additional surcharge to help unclutter heap
 
