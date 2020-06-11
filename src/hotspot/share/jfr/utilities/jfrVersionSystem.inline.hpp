@@ -25,11 +25,9 @@
 #ifndef SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 #define SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/utilities/jfrVersionSystem.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/vm_version.hpp"
 
 inline JfrVersionSystem::Node::Node() : _next(NULL), _version(0), _live(true) {}
 
@@ -65,10 +63,6 @@ inline JfrVersionSystem::Type JfrVersionSystem::tip() const {
 }
 
 inline JfrVersionSystem::Type JfrVersionSystem::increment() {
-  if (!VM_Version::supports_cx8()) {
-    JfrSpinlockHelper lock(&_spinlock);
-    return ++_tip._value;
-  }
   traceid cmp;
   traceid xchg;
   do {

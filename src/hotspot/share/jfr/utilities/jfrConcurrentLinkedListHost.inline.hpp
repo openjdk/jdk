@@ -222,7 +222,7 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
   assert(is_marked_for_removal(successor->_next), "invariant");
   // Now attempt to physically excise the successor node.
   // If the cas fails, we can optimize for the slow path if we know we are not performing
-  // insertions from the head. Then a failed cas results not from new a node being inserted,
+  // insertions from the head. Then a failed cas results not from a new node being inserted,
   // but only because another thread excised us already.
   if (!cas(&predecessor->_next, successor, successor_next) && insert_is_head) {
     // Physically excise using slow path, can be completed asynchronously by other threads.

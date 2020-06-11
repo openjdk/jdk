@@ -33,6 +33,7 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -422,7 +423,7 @@ const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
 */
 static bool prepare_for_emergency_dump(Thread* thread) {
   assert(thread != NULL, "invariant");
-
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (thread->is_Watcher_thread()) {
     // need WatcherThread as a safeguard against potential deadlocks
     return false;
@@ -501,29 +502,38 @@ static bool guard_reentrancy() {
   return Atomic::cmpxchg(&jfr_shutdown_lock, 0, 1) == 0;
 }
 
-class JavaThreadInVM : public StackObj {
+class JavaThreadInVMAndNative : public StackObj {
  private:
   JavaThread* const _jt;
   JavaThreadState _original_state;
  public:
 
-  JavaThreadInVM(Thread* t) : _jt(t->is_Java_thread() ? (JavaThread*)t : NULL),
-                              _original_state(_thread_max_state) {
-    if ((_jt != NULL) && (_jt->thread_state() != _thread_in_vm)) {
+  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? (JavaThread*)t : NULL),
+                                       _original_state(_thread_max_state) {
+    if (_jt != NULL) {
       _original_state = _jt->thread_state();
-      _jt->set_thread_state(_thread_in_vm);
+      if (_original_state != _thread_in_vm) {
+        _jt->set_thread_state(_thread_in_vm);
+      }
     }
   }
 
-  ~JavaThreadInVM() {
+  ~JavaThreadInVMAndNative() {
     if (_original_state != _thread_max_state) {
       _jt->set_thread_state(_original_state);
     }
   }
 
+  void transition_to_native() {
+    if (_jt != NULL) {
+      assert(_jt->thread_state() == _thread_in_vm, "invariant");
+      _jt->set_thread_state(_thread_in_native);
+    }
+  }
 };
 
-static void post_events(bool exception_handler) {
+static void post_events(bool exception_handler, Thread* thread) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (exception_handler) {
     EventShutdown e;
     e.set_reason("VM Error");
@@ -547,11 +557,14 @@ void JfrEmergencyDump::on_vm_shutdown(bool exception_handler) {
     return;
   }
   // Ensure a JavaThread is _thread_in_vm when we make this call
-  JavaThreadInVM jtivm(thread);
+  JavaThreadInVMAndNative jtivm(thread);
   if (!prepare_for_emergency_dump(thread)) {
     return;
   }
-  post_events(exception_handler);
+  post_events(exception_handler, thread);
+  // if JavaThread, transition to _thread_in_native to issue a final flushpoint
+  NoHandleMark nhm;
+  jtivm.transition_to_native();
   const int messages = MSGBIT(MSG_VM_ERROR);
   JfrRecorderService service;
   service.rotate(messages);

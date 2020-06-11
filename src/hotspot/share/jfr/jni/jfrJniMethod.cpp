@@ -179,6 +179,12 @@ NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jobject jvm))
   return JfrChunkRotation::should_rotate() ? JNI_TRUE : JNI_FALSE;
 NO_TRANSITION_END
 
+NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstring type))
+  const char* type_name = env->GetStringUTFChars(type, NULL);
+  jlong id = JfrType::name_to_id(type_name);
+  env->ReleaseStringUTFChars(type, type_name);
+  return id;
+NO_TRANSITION_END
 /*
  * JVM_ENTRY_NO_ENV entries
  *
@@ -350,11 +356,3 @@ JVM_END
 JVM_ENTRY_NO_ENV(jboolean, jfr_set_handler(JNIEnv * env, jobject jvm, jobject clazz, jobject handler))
   return JfrJavaSupport::set_handler(clazz, handler, thread);
 JVM_END
-
-NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstring type))
-  const char* type_name= env->GetStringUTFChars(type, NULL);
-  jlong id = JfrType::name_to_id(type_name);
-  env->ReleaseStringUTFChars(type, type_name);
-  return id;
-NO_TRANSITION_END
-

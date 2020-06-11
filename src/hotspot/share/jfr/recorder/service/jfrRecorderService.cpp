@@ -45,9 +45,8 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -373,8 +372,6 @@ static void stop() {
 }
 
 void JfrRecorderService::clear() {
-  ResourceMark rm;
-  HandleMark hm;
   pre_safepoint_clear();
   invoke_safepoint_clear();
   post_safepoint_clear();
@@ -388,6 +385,7 @@ void JfrRecorderService::pre_safepoint_clear() {
 
 void JfrRecorderService::invoke_safepoint_clear() {
   JfrVMOperation<JfrRecorderService, &JfrRecorderService::safepoint_clear> safepoint_task(*this);
+  ThreadInVMfromNative transition((JavaThread*)Thread::current());
   VMThread::execute(&safepoint_task);
 }
 
@@ -474,6 +472,7 @@ void JfrRecorderService::vm_error_rotation() {
 
 void JfrRecorderService::rotate(int msgs) {
   assert(!JfrStream_lock->owned_by_self(), "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
   if (msgs & MSGBIT(MSG_VM_ERROR)) {
     // emergency dump
     if (!prepare_for_vm_error_rotation()) {
@@ -521,8 +520,6 @@ void JfrRecorderService::finalize_current_chunk() {
 }
 
 void JfrRecorderService::write() {
-  ResourceMark rm;
-  HandleMark hm;
   pre_safepoint_write();
   invoke_safepoint_write();
   post_safepoint_write();
@@ -547,6 +544,8 @@ void JfrRecorderService::pre_safepoint_write() {
 
 void JfrRecorderService::invoke_safepoint_write() {
   JfrVMOperation<JfrRecorderService, &JfrRecorderService::safepoint_write> safepoint_task(*this);
+  // can safepoint here
+  ThreadInVMfromNative transition((JavaThread*)Thread::current());
   VMThread::execute(&safepoint_task);
 }
 
@@ -632,8 +631,6 @@ void JfrRecorderService::invoke_flush() {
   assert(JfrStream_lock->owned_by_self(), "invariant");
   assert(_chunkwriter.is_valid(), "invariant");
   Thread* const t = Thread::current();
-  ResourceMark rm(t);
-  HandleMark hm(t);
   ++flushpoint_id;
   reset_thread_local_buffer(t);
   FlushFunctor flushpoint(*this);
@@ -644,6 +641,7 @@ void JfrRecorderService::invoke_flush() {
 }
 
 void JfrRecorderService::flushpoint() {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
   MutexLocker lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
   if (_chunkwriter.is_valid()) {
     invoke_flush();
@@ -651,11 +649,13 @@ void JfrRecorderService::flushpoint() {
 }
 
 void JfrRecorderService::process_full_buffers() {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
   if (_chunkwriter.is_valid()) {
     _storage.write_full();
   }
 }
 
 void JfrRecorderService::evaluate_chunk_size_for_rotation() {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
   JfrChunkRotation::evaluate(_chunkwriter);
 }

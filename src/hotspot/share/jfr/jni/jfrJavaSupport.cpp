@@ -723,18 +723,20 @@ static bool check_exclusion_state_on_thread_start(JavaThread* jt) {
   return true;
 }
 
-jlong JfrJavaSupport::jfr_thread_id(jobject thread) {
+static JavaThread* get_native(jobject thread) {
   ThreadsListHandle tlh;
   JavaThread* native_thread = NULL;
   (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, NULL);
+  return native_thread;
+}
+
+jlong JfrJavaSupport::jfr_thread_id(jobject thread) {
+  JavaThread* native_thread = get_native(thread);
   return native_thread != NULL ? JFR_THREAD_ID(native_thread) : 0;
 }
 
 void JfrJavaSupport::exclude(jobject thread) {
-  HandleMark hm;
-  ThreadsListHandle tlh;
-  JavaThread* native_thread = NULL;
-  (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, NULL);
+  JavaThread* native_thread = get_native(thread);
   if (native_thread != NULL) {
     JfrThreadLocal::exclude(native_thread);
   } else {
@@ -744,10 +746,7 @@ void JfrJavaSupport::exclude(jobject thread) {
 }
 
 void JfrJavaSupport::include(jobject thread) {
-  HandleMark hm;
-  ThreadsListHandle tlh;
-  JavaThread* native_thread = NULL;
-  (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, NULL);
+  JavaThread* native_thread = get_native(thread);
   if (native_thread != NULL) {
     JfrThreadLocal::include(native_thread);
   } else {
@@ -757,10 +756,7 @@ void JfrJavaSupport::include(jobject thread) {
 }
 
 bool JfrJavaSupport::is_excluded(jobject thread) {
-  HandleMark hm;
-  ThreadsListHandle tlh;
-  JavaThread* native_thread = NULL;
-  (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, NULL);
+  JavaThread* native_thread = get_native(thread);
   return native_thread != NULL ? native_thread->jfr_thread_local()->is_excluded() : is_thread_excluded(thread);
 }
 

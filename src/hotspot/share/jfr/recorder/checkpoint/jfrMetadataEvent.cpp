@@ -29,14 +29,18 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 static jbyteArray metadata_blob = NULL;
 static u8 metadata_id = 0;
 static u8 last_metadata_id = 0;
 
-static void write_metadata_blob(JfrChunkWriter& chunkwriter) {
+static void write_metadata_blob(JfrChunkWriter& chunkwriter, Thread* thread) {
+  assert(chunkwriter.is_valid(), "invariant");
+  assert(thread != NULL, "invariant");
   assert(metadata_blob != NULL, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   const typeArrayOop arr = (typeArrayOop)JfrJavaSupport::resolve_non_null(metadata_blob);
   assert(arr != NULL, "invariant");
   const int length = arr->length();
@@ -47,11 +51,15 @@ static void write_metadata_blob(JfrChunkWriter& chunkwriter) {
   chunkwriter.write_unbuffered(data_address, length);
 }
 
-bool JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
+void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   assert(chunkwriter.is_valid(), "invariant");
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
-    return false;
+    return;
   }
+  JavaThread* const jt = (JavaThread*)Thread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  // can safepoint here
+  ThreadInVMfromNative transition(jt);
   // header
   const int64_t metadata_offset = chunkwriter.reserve(sizeof(u4));
   chunkwriter.write<u8>(EVENT_METADATA); // ID 0
@@ -59,13 +67,12 @@ bool JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   chunkwriter.write(JfrTicks::now());
   chunkwriter.write((u8)0); // duration
   chunkwriter.write(metadata_id); // metadata id
-  write_metadata_blob(chunkwriter); // payload
+  write_metadata_blob(chunkwriter, jt); // payload
   // fill in size of metadata descriptor event
   const int64_t size_written = chunkwriter.current_offset() - metadata_offset;
   chunkwriter.write_padded_at_offset((u4)size_written, metadata_offset);
   chunkwriter.set_last_metadata_offset(metadata_offset);
   last_metadata_id = metadata_id;
-  return true;
 }
 
 void JfrMetadataEvent::update(jbyteArray metadata) {
