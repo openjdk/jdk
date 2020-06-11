@@ -1200,6 +1200,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
 jvmtiError
 JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count_ptr, jobject** owned_monitors_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
+  JavaThread* calling_thread = JavaThread::current();
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
@@ -1207,11 +1208,11 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
-  if (java_thread == JavaThread::current()) {
-    err = get_owned_monitors(java_thread, owned_monitors_list);
+  if (java_thread == calling_thread) {
+    err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
   } else {
     // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, owned_monitors_list);
+    GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
     Handshake::execute_direct(&op, java_thread);
     err = op.result();
   }
@@ -1244,6 +1245,7 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
 jvmtiError
 JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_info_count_ptr, jvmtiMonitorStackDepthInfo** monitor_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
+  JavaThread* calling_thread = JavaThread::current();
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
@@ -1251,11 +1253,11 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
-  if (java_thread == JavaThread::current()) {
-    err = get_owned_monitors(java_thread, owned_monitors_list);
+  if (java_thread == calling_thread) {
+    err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
   } else {
     // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, owned_monitors_list);
+    GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
     Handshake::execute_direct(&op, java_thread);
     err = op.result();
   }
@@ -1291,14 +1293,15 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
 jvmtiError
 JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
+  JavaThread* calling_thread = JavaThread::current();
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
-  if (java_thread == JavaThread::current()) {
-    err = get_current_contended_monitor(java_thread, monitor_ptr);
+  if (java_thread == calling_thread) {
+    err = get_current_contended_monitor(calling_thread, java_thread, monitor_ptr);
   } else {
     // get contended monitor information with handshake
-    GetCurrentContendedMonitorClosure op(this, monitor_ptr);
+    GetCurrentContendedMonitorClosure op(calling_thread, this, monitor_ptr);
     Handshake::execute_direct(&op, java_thread);
     err = op.result();
   }
