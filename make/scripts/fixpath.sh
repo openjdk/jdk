@@ -23,6 +23,10 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+# FIXME: hack for WSL
+PATH=$PATH:/usr/bin
+
 setup() {
   if [[ $PATHTOOL == "" ]]; then
     PATHTOOL="$(type -p cygpath)"

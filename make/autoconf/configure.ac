@@ -296,6 +296,8 @@ BASIC_CHECK_LEFTOVER_OVERRIDDEN
 CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
+# FIXME: hack for WSL
+cd $CONFIGURE_START_DIR
 AC_OUTPUT
 
 # After AC_OUTPUT, we need to do final work

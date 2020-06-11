@@ -433,7 +433,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
     # but the compiler name may vary depending on locale.
-    COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
+    COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 1>/dev/null | $HEAD -n 1 | $TR -d '\r'`
     # Check that this is likely to be Microsoft CL.EXE.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft" > /dev/null
     if test $? -ne 0; then
@@ -670,7 +670,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   LDFLAGS=
   UTIL_ADD_FIXPATH([CC])
   AC_PROG_CC([$CC])
-
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
   # Now that we have resolved CXX ourself, let autoconf have its go at it
   UTIL_ADD_FIXPATH([CXX])
@@ -965,7 +964,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Check for extra potential brokenness.
   if test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # On Windows, double-check that we got the right compiler.
-    CC_VERSION_OUTPUT=`$CC 2>&1 | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
+    # FIXME: already done this?
+    CC_VERSION_OUTPUT=`"$COMPILER" 2>&1 1>/dev/null | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
       if test "x$COMPILER_CPU_TEST" != "x80x86" -a "x$COMPILER_CPU_TEST" != "xx86"; then
