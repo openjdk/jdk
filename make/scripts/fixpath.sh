@@ -76,30 +76,31 @@ cygwin_convert_pathlist_to_win() {
     converted=""
     old_ifs="$IFS"
     IFS=":"
-    for arg in "$1"; do
-      if [[ ! -e $arg ]]; then
-        result=""
-        return 1
-      fi
+    pathlist_args="$1"
+    IFS=':' read -r -a arg_array <<< "$pathlist_args"
+    for arg in "${arg_array[@]}"; do
       mixedpath=""
       if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
         # Start looking for drive prefix
         mixedpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
-      elif [[ $arg =~ ^(/[^/]+/[^/]+.*$) ]] ; then
+        # If it was a converted path, change slash to backslash
+        mixedpath="${mixedpath//'/'/'\'}"
+      elif [[ "$arg" =~ ^(/[-_.*a-zA-Z0-9]+(/[-_.*a-zA-Z0-9]+)+.*$) ]] ; then
         # Does arg contain a potential unix path? Check for /foo/bar
         pathmatch="${BASH_REMATCH[1]}"
         if [[ $ENVROOT == "" ]]; then
           echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
           exit 1
         fi
-        mixedpath="$ENVROOT$pathmatch"
+        # If it was a converted path, change slash to backslash
+        mixedpath="${pathmatch//'/'/'\'}"
+        mixedpath="$ENVROOT$mixedpath"
       else
         result=""
         return 1
       fi
       if [[ $mixedpath != "" ]]; then
-        # If it was a converted path, change slash to backslash
-        arg="$prefix${mixedpath//'/'/'\'}"
+        arg="$mixedpath"
       fi
 
       if [[ "$converted" = "" ]]; then
@@ -122,6 +123,7 @@ cygwin_convert_to_win() {
       return 0
     fi
   fi
+  arg="$1"
 
   # Arg did not contain ":", or not all elements was possible to convert to
   # Windows paths, so it was not presumed to be a pathlist.
@@ -130,19 +132,23 @@ cygwin_convert_to_win() {
     # Start looking for drive prefix
     prefix="${BASH_REMATCH[1]}"
     mixedpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
-  elif [[ $arg =~ (^[^/]*)(/[^/]+/[^/]+.*$) ]] ; then
+    # If it was a converted path, change slash to backslash
+    mixedpath="${mixedpath//'/'/'\'}"
+  elif [[ $arg =~ (^[^/]*)(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
     # Does arg contain a potential unix path? Check for /foo/bar
     prefix="${BASH_REMATCH[1]}"
     pathmatch="${BASH_REMATCH[2]}"
+    suffix="${BASH_REMATCH[4]}"
     if [[ $ENVROOT == "" ]]; then
       echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
       exit 1
     fi
-    mixedpath="$ENVROOT$pathmatch"
+    # If it was a converted path, change slash to backslash
+    mixedpath="${pathmatch//'/'/'\'}"
+    mixedpath="$ENVROOT$mixedpath$suffix"
   fi
   if [[ $mixedpath != "" ]]; then
-    # If it was a converted path, change slash to backslash
-    arg="$prefix${mixedpath//'/'/'\'}"
+    arg="$prefix$mixedpath"
   fi
 
   result="$arg"
@@ -270,17 +276,17 @@ cygwin_import_pathlist() {
 }
 
 cygwin_convert_command_line() {
-  args=""
+  converted_args=""
   for arg in "$@" ; do
     if [[ $arg =~ ^@(.*$) ]] ; then
       cygwin_convert_at_file "${BASH_REMATCH[1]}"
     else
       cygwin_convert_to_win "$arg"
     fi
-    args="$args$result "
+    converted_args="$converted_args$result "
   done
   # FIXME: fix quoting?
-  result="$args"
+  result="$converted_args"
 }
 
 cygwin_exec_command_line() {
@@ -292,7 +298,7 @@ cygwin_exec_command_line() {
     cd $DRIVEPREFIX/c
     echo fixpath: warning: Changing directory to $DRIVEPREFIX/c 1>&2
   fi
-  args=()
+  collected_args=()
   command=""
   for arg in "$@" ; do
     if [[ $command == "" ]]; then
@@ -313,14 +319,14 @@ cygwin_exec_command_line() {
       else
         cygwin_convert_to_win "$arg"
       fi
-      args=("${args[@]}" "$result")
+      collected_args=("${collected_args[@]}" "$result")
     fi
   done
   # Now execute it
   if [[ -v DEBUG_FIXPATH ]]; then
-    echo fixpath: debug: "$command" "${args[@]}" 1>&2
+    echo fixpath: debug: "$command" "${collected_args[@]}" 1>&2
   fi
-  "$command" "${args[@]}"
+  "$command" "${collected_args[@]}"
 }
 
 #### MAIN FUNCTION

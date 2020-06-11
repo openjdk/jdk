@@ -194,7 +194,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     $(error Cannot continue.)
   endif
   FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.sh exec
-  PATH_SEP:=;
+  PATH_SEP:=:
 else
   FIXPATH :=
   PATH_SEP:=:

@@ -1841,7 +1841,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
         }
         commentStart = (Csyntax ? "/*" : "//");
         commentEnd = (Csyntax ? " */" : "");
-        commandLineDescription = desc.toString();
+        commandLineDescription = desc.toString().replace("\\", "\\\\");
     }
 
     private static void searchBins(long[] map, int binsOccupied) throws Exception {

@@ -439,13 +439,8 @@ endif
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
 ifeq ($(call isTargetOs, windows), true)
-  ifeq ($(call isBuildOsEnv, windows.wsl), true)
-    FixPath = \
-      $(shell $(WSLPATH) -m $1)
-  else
-    FixPath = \
-      $(shell $(CYGPATH) -m $1)
-  endif
+  FixPath = \
+    $(strip $(subst \,\\, $(shell $(FIXPATH_PRINT) $(patsubst $(FIXPATH), , $1))))
 else
   FixPath = \
       $1

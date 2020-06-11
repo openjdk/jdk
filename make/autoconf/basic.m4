@@ -70,7 +70,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    PATH_SEP=";"
+    PATH_SEP=":"
     EXE_SUFFIX=".exe"
     BASIC_CHECK_PATHS_WINDOWS
   else

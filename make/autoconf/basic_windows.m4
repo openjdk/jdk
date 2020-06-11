@@ -112,9 +112,11 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([unknown])
     AC_MSG_WARN([It seems that your find utility is non-standard.])
   fi
-  
+
   FIXPATH="$BASH $TOPDIR/make/scripts/fixpath.sh exec"
   AC_SUBST(FIXPATH)
+  FIXPATH_PRINT="$BASH $TOPDIR/make/scripts/fixpath.sh print"
+  AC_SUBST(FIXPATH_PRINT)
 ])
 
 AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],

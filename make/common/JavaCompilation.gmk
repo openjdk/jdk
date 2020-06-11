@@ -211,7 +211,7 @@ define SetupJavaCompilationBody
       # How to launch the server. This must use JAVA_DETACH, which is the "big" java
       # with an ability to detach from fixpath (on Windows)
       # This will be executed by the client, if needed.
-      $1_JAVAC_SERVER_CMD := $$(JAVA_DETACH) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+      $1_JAVAC_SERVER_CMD := $$(call FixPath, $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC))
       $1_ESCAPED_CMD := $$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_JAVAC_SERVER_CMD))))
 
       # The port file contains the tcp/ip on which the server listens
