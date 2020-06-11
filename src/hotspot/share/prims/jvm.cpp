@@ -3736,6 +3736,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jobject instantiatedMethodType,
                                               jclass lambdaProxyClass))
   JVMWrapper("JVM_RegisterLambdaProxyClassForArchiving");
+#if INCLUDE_CDS
   if (!DynamicDumpSharedSpaces) {
     return;
   }
@@ -3772,7 +3773,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
 
   SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, invoked_name, invoked_type,
                                                  method_type, m, instantiated_method_type);
-
+#endif // INCLUDE_CDS
 JVM_END
 
 JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
@@ -3784,6 +3785,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jobject instantiatedMethodType,
                                                         jboolean initialize))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
+#if INCLUDE_CDS
   if (!DynamicArchive::is_mapped()) {
     return NULL;
   }
@@ -3822,6 +3824,9 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
     jcls = loaded_lambda == NULL ? NULL : (jclass) JNIHandles::make_local(env, loaded_lambda->java_mirror());
   }
   return jcls;
+#else
+  return NULL;
+#endif // INCLUDE_CDS
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
